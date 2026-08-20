@@ -99,10 +99,10 @@ final class DuckAiCheaperModelSuggesterTests: XCTestCase {
         XCTAssertEqual(sut.suggestion(), .none(reason: .everydayUseModelMissingCapability))
     }
 
-    func testWhenTheEverydayModelLacksARequiredFileTypeThenNothingIsSuggested() {
+    func testWhenTheEverydayModelLacksARequiredMimeTypeThenNothingIsSuggested() {
         let sut = makeSUT(models: [gptMini, luna],
                           currentModelId: gptMini.id,
-                          requirements: DuckAiChatCapabilityRequirements(requiredFileTypes: ["key"]))
+                          requirements: DuckAiChatCapabilityRequirements(requiredMimeTypes: ["application/vnd.apple.keynote"]))
 
         XCTAssertEqual(sut.suggestion(), .none(reason: .everydayUseModelMissingCapability))
     }
@@ -115,10 +115,11 @@ final class DuckAiCheaperModelSuggesterTests: XCTestCase {
         XCTAssertEqual(sut.suggestion(), .none(reason: .everydayUseModelMissingCapability))
     }
 
-    func testFileTypeMatchingIgnoresCase() {
+    /// `supportedFileTypes` carries MIME types, so requirements must too.
+    func testMimeTypeMatchingIgnoresCase() {
         let sut = makeSUT(models: [gptMini, luna],
                           currentModelId: gptMini.id,
-                          requirements: DuckAiChatCapabilityRequirements(requiredFileTypes: ["APPLICATION/PDF"]))
+                          requirements: DuckAiChatCapabilityRequirements(requiredMimeTypes: ["APPLICATION/PDF"]))
 
         XCTAssertEqual(sut.suggestion().suggestion?.modelId, luna.id)
     }
@@ -127,7 +128,7 @@ final class DuckAiCheaperModelSuggesterTests: XCTestCase {
         let sut = makeSUT(models: [gptMini, luna],
                           currentModelId: gptMini.id,
                           requirements: DuckAiChatCapabilityRequirements(needsImageUpload: true,
-                                                                         requiredFileTypes: ["application/pdf"],
+                                                                         requiredMimeTypes: ["application/pdf"],
                                                                          requiredTools: [.webSearch]))
 
         XCTAssertEqual(sut.suggestion().suggestion?.modelId, luna.id)

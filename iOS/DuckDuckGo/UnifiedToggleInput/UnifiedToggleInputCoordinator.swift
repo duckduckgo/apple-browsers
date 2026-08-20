@@ -1343,11 +1343,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                     isFireTab: Bool,
                                     keyValueStore: ThrowingKeyValueStoring,
                                     pixelFiring: DuckAiNativeStoragePixelFiring) {
+        // A fire-tab dismissal must not outlive the session it was made in.
+        let dismissalStore: DuckAiUsageWarningDismissalStoring = isFireTab
+            ? InMemoryDuckAiUsageWarningDismissalStore()
+            : DuckAiUsageWarningDismissalStore(keyValueStore: keyValueStore)
         usageWarningViewModel = DuckAiUsageWarningViewModelFactory.make(
             isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatUsageWarnings),
             storage: storageHandler,
-            isBurner: isFireTab,
-            keyValueStore: keyValueStore,
+            dismissalStore: dismissalStore,
             tierProvider: { [weak self] in self?.modelStore.subscriptionState.userTier ?? .free },
             isInternalUser: { [weak featureFlagger] in featureFlagger?.internalUserDecider.isInternalUser ?? false },
             cheaperModelSuggester: DuckAiCheaperModelSuggester(
@@ -1367,7 +1370,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let attachments = viewController.currentAttachments
         return DuckAiChatCapabilityRequirements(
             needsImageUpload: attachments.contains(where: \.isImage),
-            requiredFileTypes: attachments.filter(\.isFile).map { ($0.fileName as NSString).pathExtension },
+            requiredMimeTypes: attachments.filter(\.isFile).compactMap(\.mimeType),
             requiredTools: toolsController.selectedTool.map { [$0] } ?? []
         )
     }
@@ -1936,9 +1939,9 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Tools
 
     func handleModelsUpdated() {
-        // Tier and models land after the bind that resolved the warning, so the first banner after a
-        // tier change would otherwise show a stale tier and no CTA.
-        refreshUsageWarnings()
+        // Tier and models land after the bind that resolved the warning. Deferred, so the CTA resolves
+        // against reconciled tool, attachment and selection state on either exit path.
+        defer { refreshUsageWarnings() }
         toolsController.clearSelectionIfUnsupported(for: modelStore)
         attachmentController.removeUnsupportedAttachmentsForSelectedModel()
         modelSelector.updateModelChipLabel()

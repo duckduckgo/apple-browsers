@@ -148,6 +148,7 @@ final class AIChatOmnibarController {
     private var chatCapabilityRequirements: DuckAiChatCapabilityRequirements {
         DuckAiChatCapabilityRequirements(
             needsImageUpload: hasImageAttachments,
+            requiredMimeTypes: activeFileAttachments.map(\.mimeType),
             requiredTools: activeToolMode.map { [$0.ragTool] } ?? []
         )
     }
@@ -337,8 +338,12 @@ final class AIChatOmnibarController {
     }
 
     private func setUpUsageWarnings() {
+        // A burner dismissal must not outlive the session it was made in.
+        let dismissalStore: DuckAiUsageWarningDismissalStoring = isBurner
+            ? InMemoryDuckAiUsageWarningDismissalStore()
+            : DuckAiUsageWarningDismissalStore()
         usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
-            isBurner: isBurner,
+            dismissalStore: dismissalStore,
             tierProvider: { [weak self] in self?.userTier ?? .free },
             cheaperModelSuggester: DuckAiCheaperModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },

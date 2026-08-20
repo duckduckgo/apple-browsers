@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import Persistence
 
 /// Takes an already-evaluated flag value, which keeps the platform-specific `FeatureFlag` enums in
 /// their own app targets.
@@ -26,19 +25,13 @@ public enum DuckAiUsageWarningViewModelFactory {
     /// `nil` when the feature is inactive: flag off, or no storage bridge on this surface.
     public static func make(isFeatureEnabled: Bool,
                             storage: DuckAiNativeStorageHandling?,
-                            isBurner: Bool,
-                            keyValueStore: ThrowingKeyValueStoring,
+                            dismissalStore: DuckAiUsageWarningDismissalStoring,
                             tierProvider: @escaping () -> AIChatUserTier,
                             isInternalUser: @escaping () -> Bool,
                             cheaperModelSuggester: DuckAiCheaperModelSuggesting = NullDuckAiCheaperModelSuggester(),
                             pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
     ) -> DuckAiUsageWarningViewModel? {
         guard isFeatureEnabled, let storage else { return nil }
-
-        // A burner dismissal must not outlive the session it was made in.
-        let dismissalStore: DuckAiUsageWarningDismissalStoring = isBurner
-            ? InMemoryDuckAiUsageWarningDismissalStore()
-            : DuckAiUsageWarningDismissalStore(keyValueStore: keyValueStore)
 
         return DuckAiUsageWarningViewModel(
             limitsProvider: DuckAiUsageLimitsProvider(storage: storage, pixelFiring: pixelFiring),

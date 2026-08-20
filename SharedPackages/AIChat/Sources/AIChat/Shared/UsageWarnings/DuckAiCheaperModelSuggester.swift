@@ -34,16 +34,17 @@ public struct DuckAiCheaperModelSuggestion: Equatable {
 public struct DuckAiChatCapabilityRequirements: Equatable {
 
     public let needsImageUpload: Bool
-    public let requiredFileTypes: [String]
+    /// MIME types, matching what `AIChatModel.supportedFileTypes` carries.
+    public let requiredMimeTypes: [String]
     public let requiredTools: [AIChatRAGTool]
 
     public static let plainText = DuckAiChatCapabilityRequirements()
 
     public init(needsImageUpload: Bool = false,
-                requiredFileTypes: [String] = [],
+                requiredMimeTypes: [String] = [],
                 requiredTools: [AIChatRAGTool] = []) {
         self.needsImageUpload = needsImageUpload
-        self.requiredFileTypes = requiredFileTypes
+        self.requiredMimeTypes = requiredMimeTypes
         self.requiredTools = requiredTools
     }
 }
@@ -143,8 +144,8 @@ public struct DuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
     private static func model(_ model: AIChatModel, covers requirements: DuckAiChatCapabilityRequirements) -> Bool {
         guard !requirements.needsImageUpload || model.supportsImageUpload else { return false }
 
-        let supportedFileTypes = Set(model.supportedFileTypes.map { $0.lowercased() })
-        guard requirements.requiredFileTypes.allSatisfy({ supportedFileTypes.contains($0.lowercased()) }) else { return false }
+        let supported = Set(model.supportedFileTypes.map { $0.lowercased() })
+        guard requirements.requiredMimeTypes.allSatisfy({ supported.contains($0.lowercased()) }) else { return false }
 
         return requirements.requiredTools.allSatisfy(model.supportsTool)
     }

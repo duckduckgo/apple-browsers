@@ -287,15 +287,18 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     /// Rebuilt per refresh because the burner mode depends on the requesting webview.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
+    /// Retained across those rebuilds, or a dismissal would be forgotten on the next activation.
+    private let usageDismissalStore = DuckAiUsageWarningDismissalStore()
+    private lazy var burnerUsageDismissalStore = InMemoryDuckAiUsageWarningDismissalStore()
+
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?) {
         guard let windowControllersManager else { return }
         let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
         let store = DuckAiUsageLimitsStore(storageHandler: duckAiStorageHandlerProvider(burnerMode),
-                                           featureFlagger: featureFlagger,
-                                           keyValueStore: keyValueStore)
+                                           featureFlagger: featureFlagger)
         usageWarningViewModel = store.makeWarningViewModel(
-            isBurner: burnerMode.isBurner,
+            dismissalStore: burnerMode.isBurner ? burnerUsageDismissalStore : usageDismissalStore,
             tierProvider: userTierProvider,
             cheaperModelSuggester: DuckAiCheaperModelSuggester(
                 modelsProvider: availableModelsProvider,

@@ -19,7 +19,6 @@
 import AIChat
 import AppKit
 import FeatureFlags_macOS
-import Persistence
 import PrivacyConfig
 
 /// Owns the app-side flag gating so the shared logic stays flag-agnostic and call sites don't repeat it.
@@ -28,25 +27,21 @@ final class DuckAiUsageLimitsStore {
 
     private let storageHandler: DuckAiNativeStorageHandling?
     private let featureFlagger: FeatureFlagger
-    private let keyValueStore: ThrowingKeyValueStoring
 
     init(storageHandler: DuckAiNativeStorageHandling?,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.storageHandler = storageHandler
         self.featureFlagger = featureFlagger
-        self.keyValueStore = keyValueStore
     }
 
     /// `nil` means inactive (flag off, or no storage bridge), which differs from having nothing to show.
-    func makeWarningViewModel(isBurner: Bool,
+    func makeWarningViewModel(dismissalStore: DuckAiUsageWarningDismissalStoring,
                               tierProvider: @escaping () -> AIChatUserTier,
                               cheaperModelSuggester: DuckAiCheaperModelSuggesting) -> DuckAiUsageWarningViewModel? {
         DuckAiUsageWarningViewModelFactory.make(
             isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatUsageWarnings),
             storage: storageHandler,
-            isBurner: isBurner,
-            keyValueStore: keyValueStore,
+            dismissalStore: dismissalStore,
             tierProvider: tierProvider,
             isInternalUser: { [featureFlagger] in featureFlagger.internalUserDecider.isInternalUser },
             cheaperModelSuggester: cheaperModelSuggester,

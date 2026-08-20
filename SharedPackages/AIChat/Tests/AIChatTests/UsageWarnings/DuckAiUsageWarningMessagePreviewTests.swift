@@ -27,11 +27,10 @@ final class DuckAiUsageWarningMessagePreviewTests: XCTestCase {
         let preview = warning(kind: .approaching, window: .weekly, percent: 75).messagePreview
 
         XCTAssertEqual(preview.title, "75% of weekly limit · Resets in 4d")
-        XCTAssertNil(preview.subtitle, "no subtitle without a CTA")
         XCTAssertNil(preview.button)
     }
 
-    func testApproachingWithACheaperModelCarriesTheSubtitleAndButton() {
+    func testApproachingWithACheaperModelCarriesTheButton() {
         let preview = warning(
             kind: .approaching,
             window: .weekly,
@@ -40,8 +39,20 @@ final class DuckAiUsageWarningMessagePreviewTests: XCTestCase {
         ).messagePreview
 
         XCTAssertEqual(preview.title, "75% of weekly limit · Resets in 4d")
-        XCTAssertEqual(preview.subtitle, "Reduce usage with a more efficient model")
         XCTAssertEqual(preview.button, "Switch to 5.6 Luna")
+    }
+
+    /// Web pairs the CTA with a "Reduce usage with a more efficient model" subtitle. iOS and macOS
+    /// deliberately don't, so the preview is title plus button and nothing else.
+    func testThereIsNoSubtitleAlongsideTheCTA() {
+        let preview = warning(
+            kind: .approaching,
+            window: .weekly,
+            percent: 75,
+            suggestion: DuckAiCheaperModelSuggestion(modelId: "gpt-5.6-luna", modelShortName: "5.6 Luna")
+        ).messagePreview
+
+        XCTAssertFalse(preview.title.localizedCaseInsensitiveContains("efficient model"))
     }
 
     func testButtonFallsBackWhenTheModelHasNoShortName() {
@@ -60,7 +71,6 @@ final class DuckAiUsageWarningMessagePreviewTests: XCTestCase {
         let preview = warning(kind: .reached, window: .daily, percent: 100).messagePreview
 
         XCTAssertEqual(preview.title, "Daily limit reached")
-        XCTAssertNil(preview.subtitle)
         XCTAssertNil(preview.button)
     }
 

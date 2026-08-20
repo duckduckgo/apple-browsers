@@ -135,7 +135,6 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
 
         Logger.aiChat.debug("""
             Duck.ai usage warning: title="\(message.title, privacy: .public)" \
-            subtitle="\(message.subtitle ?? "—", privacy: .public)" \
             button="\(message.button ?? "—", privacy: .public)" \
             dismissible=\(warning.isDismissible, privacy: .public) \
             [window=\(warning.window.rawValue, privacy: .public) \

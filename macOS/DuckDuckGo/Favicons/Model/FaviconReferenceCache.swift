@@ -119,6 +119,8 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
         // (network error, 404, cancelled navigation) reaches this point with both URLs `nil`; writing
         // that would destroy the favicon reference the site already has, and the favicon would stay
         // missing until the next successful fetch.
+        // This also means that we wouldn't immediately clear a favicon on a website that removed a favicon,
+        // but it's a reasonable trade-off considering the breakage caused by otherwise displaying incorrect favicons.
         if faviconUrls.smallFaviconUrl == nil, faviconUrls.mediumFaviconUrl == nil, hasReference(for: documentUrl) {
             Logger.favicons.debug("Keeping existing reference for \(documentUrl.shortDescription); no favicon was found this time")
             return

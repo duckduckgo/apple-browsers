@@ -52,29 +52,57 @@ final class PixelRetryQueueTests: XCTestCase {
                                    timestamp: timestamp)
     }
 
-    // MARK: - Persist on failure
-
-    func testWhenOrganicFireSucceeds_ThenNothingIsStored_AndCompletionIsForwarded() {
-        let queue = makeQueue()
-        let completed = expectation(description: "onComplete")
-
-        queue.fireRequest("m_organic", [:], ["k": "v"], nil, true) { success, error in
-            XCTAssertTrue(success)
-            XCTAssertNil(error)
-            completed.fulfill()
-        }
-
-        wait(for: [completed], timeout: 1.0)
-        XCTAssertTrue(store.items.isEmpty)
+    /// Fires through the queue with the opt-in explicit at every call site, since it is what these
+    /// tests are mostly about.
+    private func fire(_ queue: PixelRetryQueue,
+                      _ pixelName: String,
+                      headers: [String: String] = [:],
+                      parameters: [String: String] = [:],
+                      allowedQueryReservedCharacters: CharacterSet? = nil,
+                      retryOnFailure: Bool,
+                      onComplete: @escaping PixelKit.CompletionBlock = { _, _ in }) {
+        queue.fire(pixelName: pixelName,
+                   headers: headers,
+                   parameters: parameters,
+                   allowedQueryReservedCharacters: allowedQueryReservedCharacters,
+                   callBackOnMainThread: true,
+                   retryOnFailure: retryOnFailure,
+                   onComplete: onComplete)
     }
 
-    func testWhenOrganicFireFails_ThenItemIsStoredWithTimestamp_AndCompletionIsForwarded() {
+    private func iso8601(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.string(from: date)
+    }
+
+    // MARK: - Opting in
+
+    func testWhenFireFailsWithoutOptingIn_ThenNothingIsStored_AndCompletionIsForwarded() {
         let error = NSError(domain: "test", code: 7)
         fireMock.defaultResult = (false, error)
         let queue = makeQueue()
         let completed = expectation(description: "onComplete")
 
-        queue.fireRequest("m_organic", ["H": "V"], ["k": "v"], nil, true) { success, returnedError in
+        fire(queue, "m_organic", parameters: ["k": "v"], retryOnFailure: false) { success, returnedError in
+            XCTAssertFalse(success)
+            XCTAssertEqual((returnedError as NSError?)?.code, 7)
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 1.0)
+
+        // Retry is opt-in: a pixel that didn't ask for it is dropped on failure, as if there were no queue.
+        XCTAssertTrue(store.items.isEmpty)
+    }
+
+    func testWhenFireFailsAfterOptingIn_ThenItemIsStoredWithTimestamp_AndCompletionIsForwarded() {
+        let error = NSError(domain: "test", code: 7)
+        fireMock.defaultResult = (false, error)
+        let queue = makeQueue()
+        let completed = expectation(description: "onComplete")
+
+        fire(queue, "m_organic", headers: ["H": "V"], parameters: ["k": "v"], retryOnFailure: true) { success, returnedError in
             XCTAssertFalse(success)
             XCTAssertEqual((returnedError as NSError?)?.code, 7)
             completed.fulfill()
@@ -86,8 +114,22 @@ final class PixelRetryQueueTests: XCTestCase {
         let stored = store.items[0]
         XCTAssertEqual(stored.pixelName, "m_organic")
         XCTAssertEqual(stored.headers, ["H": "V"])
-        XCTAssertEqual(stored.parameters["k"], "v")
+        XCTAssertEqual(stored.parameters, ["k": "v"])
         XCTAssertEqual(stored.timestamp, now)
+    }
+
+    func testWhenFireSucceeds_ThenNothingIsStored_AndCompletionIsForwarded() {
+        let queue = makeQueue()
+        let completed = expectation(description: "onComplete")
+
+        fire(queue, "m_organic", parameters: ["k": "v"], retryOnFailure: true) { success, error in
+            XCTAssertTrue(success)
+            XCTAssertNil(error)
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 1.0)
+        XCTAssertTrue(store.items.isEmpty)
     }
 
     // MARK: - Draining
@@ -108,17 +150,23 @@ final class PixelRetryQueueTests: XCTestCase {
         XCTAssertTrue(store.items.isEmpty)
         XCTAssertEqual(fireMock.calls.count, 1)
         XCTAssertEqual(fireMock.calls.first?.pixelName, "m_queued")
-        // The replay carries the item's stored parameters unchanged — nothing is injected on send.
-        XCTAssertEqual(fireMock.calls.first?.parameters, item.parameters)
+        // The replay carries the item's parameters plus the two retry markers.
+        XCTAssertEqual(fireMock.calls.first?.parameters, [
+            "key": "value",
+            PixelRetryQueue.Parameters.originalPixelTimestamp: iso8601(item.timestamp),
+            PixelRetryQueue.Parameters.retriedPixel: "1"
+        ])
     }
 
-    func testWhenReplayingItemWithLegacyTimestampParameter_ThenItIsStrippedBeforeSending() {
-        // Items persisted by builds that still baked in `originalPixelTimestamp` must not replay with it.
+    func testWhenReplayingItemQueuedBeforeRetryWasOptIn_ThenItIsDroppedWithoutSending() {
+        // Builds that queued every failure wrote no `optedIn` key, so those items decode as not opted in.
+        // Those pixels never opted into retry, so they must not be replayed.
         let legacy = PixelRetryQueueItem(pixelName: "m_queued",
                                          headers: [:],
-                                         parameters: ["key": "value", "originalPixelTimestamp": "2026-06-11T00:00:00Z"],
+                                         parameters: ["key": "value"],
                                          allowedQueryReservedCharacters: nil,
-                                         timestamp: now)
+                                         timestamp: now,
+                                         optedIn: false)
         try? store.append([legacy])
         let queue = makeQueue()
         let drained = expectation(description: "drained")
@@ -126,7 +174,8 @@ final class PixelRetryQueueTests: XCTestCase {
         queue.sendQueuedPixels { _ in drained.fulfill() }
         wait(for: [drained], timeout: 2.0)
 
-        XCTAssertEqual(fireMock.calls.first?.parameters, ["key": "value"])
+        XCTAssertTrue(fireMock.calls.isEmpty)
+        XCTAssertTrue(store.items.isEmpty)
     }
 
     func testWhenItemIsOlderThan28Days_ThenItIsNotSentButIsRemoved() {
@@ -192,9 +241,9 @@ final class PixelRetryQueueTests: XCTestCase {
         XCTAssertEqual(fireMock.calls.first?.allowedQueryReservedCharacters, CharacterSet(charactersIn: ",;"))
     }
 
-    // MARK: - Decorator-specific behaviour
+    // MARK: - Wrapper-specific behaviour
 
-    func testWhenOrganicFireSucceeds_ThenQueueIsDrained() {
+    func testWhenFireSucceedsWithoutOptingIn_ThenQueueIsStillDrained() {
         let item = makeItem(name: "m_queued")
         try? store.append([item])
         let queue = makeQueue()
@@ -205,8 +254,9 @@ final class PixelRetryQueueTests: XCTestCase {
             if call.pixelName == "m_queued" { queuedReplayed.fulfill() }
         }
 
-        // An organic success should trigger a drain that replays the queued item.
-        queue.fireRequest("m_organic", [:], [:], nil, true) { _, _ in }
+        // Draining isn't gated on the opt-in: any successful send replays whatever is queued, so an
+        // opted-in pixel doesn't have to wait for another opted-in pixel to succeed.
+        fire(queue, "m_organic", retryOnFailure: false)
 
         wait(for: [queuedReplayed], timeout: 2.0)
         XCTAssertTrue(fireMock.calls.contains { $0.pixelName == "m_queued" })
@@ -230,7 +280,7 @@ final class PixelRetryQueueTests: XCTestCase {
 
         // Fire a failing organic pixel while the drain is in flight.
         let organicCompleted = expectation(description: "organic completed")
-        queue.fireRequest("m_new", [:], [:], nil, true) { _, _ in organicCompleted.fulfill() }
+        fire(queue, "m_new", retryOnFailure: true) { _, _ in organicCompleted.fulfill() }
         wait(for: [organicCompleted], timeout: 2.0)
 
         // The new failed pixel is stored alongside the initial one.
@@ -261,8 +311,8 @@ final class PixelRetryQueueTests: XCTestCase {
         let queue = makeQueue()
         let completed = expectation(description: "onComplete")
 
-        // A failing organic fire enqueues the new pixel and prunes already-expired items (no drain needed).
-        queue.fireRequest("m_new", [:], [:], nil, true) { _, _ in completed.fulfill() }
+        // A failing opted-in fire enqueues the new pixel and prunes already-expired items (no drain needed).
+        fire(queue, "m_new", retryOnFailure: true) { _, _ in completed.fulfill() }
         wait(for: [completed], timeout: 1.0)
 
         XCTAssertEqual(store.items.count, 1)
@@ -277,7 +327,7 @@ final class PixelRetryQueueTests: XCTestCase {
         let completed = expectation(description: "onComplete")
 
         // A prune failure must not prevent the new failed pixel from being queued.
-        queue.fireRequest("m_new", [:], [:], nil, true) { _, _ in completed.fulfill() }
+        fire(queue, "m_new", retryOnFailure: true) { _, _ in completed.fulfill() }
         wait(for: [completed], timeout: 1.0)
 
         XCTAssertTrue(store.items.contains { $0.pixelName == "m_new" })

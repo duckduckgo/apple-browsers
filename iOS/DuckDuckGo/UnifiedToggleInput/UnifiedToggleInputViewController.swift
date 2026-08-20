@@ -191,20 +191,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.modelPickerMenu = newValue }
     }
 
-    var usesUpdatedModelPickerPresentation: Bool {
-        get { inputBarView.usesUpdatedModelPickerPresentation }
-        set { inputBarView.usesUpdatedModelPickerPresentation = newValue }
-    }
-
-    var onUpdatedModelPickerTapped: (() -> Void)? {
-        get { inputBarView.onUpdatedModelPickerTapped }
-        set { inputBarView.onUpdatedModelPickerTapped = newValue }
-    }
-
-    var modelPickerSourceView: UIView {
-        inputBarView.modelPickerSourceView
-    }
-
     @discardableResult
     func presentModelPickerMenu() -> Bool {
         inputBarView.presentModelPickerMenu()

@@ -94,10 +94,11 @@ extension XCUIApplication {
 
         static let fireDialogTitle = "FireDialogView.title"
         static let fireDialogSegmentedControl = "FireDialogView.segmentedControl"
+        static let fireDialogDetailsDisclosureButton = "FireDialogView.detailsDisclosureButton"
         static let fireDialogTabsToggle = "FireDialogView.tabsToggle"
         static let fireDialogHistoryToggle = "FireDialogView.historyToggle"
         static let fireDialogCookiesToggle = "FireDialogView.cookiesToggle"
-        static let fireDialogCookiesInfoButton = "FireDialogView.cookiesInfoButton"
+        static let fireDialogCookiesDetailButton = "FireDialogView.cookiesDetailButton"
         static let fireDialogManageFireproofButton = "FireDialogView.manageFireproofButton"
         static let fireDialogIndividualSitesLink = "FireDialogView.individualSitesLink"
         static let fireDialogSitesOverlayCloseButton = "FireDialogView.sitesOverlayCloseButton"
@@ -109,6 +110,9 @@ extension XCUIApplication {
         static let fireButton = "TabBarViewController.fireButton"
         static let fakeFireButton = "FireViewController.fakeFireButton"
         static let homeButton = "NavigationBarViewController.HomeButton"
+
+        static let fireDialogMoreOptionsMenuButton = "FireDialogView.toolbarMoreButton"
+        static let fireDialogManageFireproofSites = "FireDialogView.moreOptions.manageFireproofSites"
     }
 
     static func setUp(environment: [String: String]? = nil,
@@ -824,6 +828,10 @@ extension XCUIApplication {
         groups[AccessibilityIdentifiers.fireDialogSegmentedControl]
     }
 
+    var fireDialogDetailsDisclosureButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogDetailsDisclosureButton]
+    }
+
     var fireDialogTabsToggle: XCUIElement {
         checkBoxes[AccessibilityIdentifiers.fireDialogTabsToggle]
     }
@@ -836,8 +844,8 @@ extension XCUIApplication {
         checkBoxes[AccessibilityIdentifiers.fireDialogCookiesToggle]
     }
 
-    var fireDialogCookiesInfoButton: XCUIElement {
-        buttons[AccessibilityIdentifiers.fireDialogCookiesInfoButton]
+    var fireDialogCookiesDetailButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogCookiesDetailButton]
     }
 
     var fireDialogManageFireproofButton: XCUIElement {
@@ -858,6 +866,14 @@ extension XCUIApplication {
 
     var fireDialogBurnButton: XCUIElement {
         buttons[AccessibilityIdentifiers.fireDialogBurnButton]
+    }
+
+    var fireDialogMoreOptionsMenuButton: XCUIElement {
+        menuButtons[AccessibilityIdentifiers.fireDialogMoreOptionsMenuButton]
+    }
+
+    var fireDialogManageFireproofSitesMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.fireDialogManageFireproofSites]
     }
 
     var fireproofDomainsAddButton: XCUIElement {

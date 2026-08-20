@@ -740,7 +740,9 @@ private extension AIChatContextualSheetViewController {
             }
         )
 
+        // Inject the presenting context's true size class; the built-in one reports `.compact` inside the sheet/popover.
         let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
+            .environment(\.presentationHorizontalSizeClass, UserInterfaceSizeClass(traitCollection.horizontalSizeClass))
         let hostingController = UIHostingController(rootView: confirmationView)
         hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         hostingController.modalTransitionStyle = .coverVertical
@@ -755,8 +757,8 @@ private extension AIChatContextualSheetViewController {
         present(hostingController, animated: true)
     }
 
-    private func configureIPadPopoverPresentation(for hostingController: UIHostingController<ScopedFireConfirmationView>,
-                                                  confirmationView: ScopedFireConfirmationView) {
+    private func configureIPadPopoverPresentation<Content: View>(for hostingController: UIHostingController<Content>,
+                                                                 confirmationView: Content) {
         if let popover = hostingController.popoverPresentationController {
             popover.sourceView = fireButton
             popover.sourceRect = fireButton.bounds
@@ -772,8 +774,8 @@ private extension AIChatContextualSheetViewController {
         }
     }
 
-    private func configureIPhoneSheetPresentation(for hostingController: UIHostingController<ScopedFireConfirmationView>,
-                                                  confirmationView: ScopedFireConfirmationView) {
+    private func configureIPhoneSheetPresentation<Content: View>(for hostingController: UIHostingController<Content>,
+                                                                 confirmationView: Content) {
         if let sheet = hostingController.sheetPresentationController {
             if #available(iOS 16.0, *) {
                 let sizingController = UIHostingController(rootView: confirmationView)
@@ -909,13 +911,11 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     /// Attaches context, waits for the frontend, then submits. Also used by the floating input, which
     /// promotes to this sheet first so the web view exists to receive the prompt.
     func submitSuggestion(_ suggestion: ContextualSuggestedPrompt) {
-        // Selection suggestions act on the attached selection, so they must not take the page route
-        // below: it attaches the whole page and submits the label as prompt text.
-        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
-              AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) == nil else {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else {
             abandonAwaitedSubmittedChat()
             return
         }
+        let actsOnSelection = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) != nil
         cancelSuggestionSubmission()
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
         contextualInputViewController.setStartActionsDimmed(true)
@@ -933,10 +933,28 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
                 }
             }
 
-            if await self.deliverSuggestionPrompt(suggestion) == false {
+            let didDeliver = if actsOnSelection {
+                await self.deliverSelectionSuggestionPrompt(suggestion)
+            } else {
+                await self.deliverSuggestionPrompt(suggestion)
+            }
+            if !didDeliver {
                 self.abandonAwaitedSubmittedChat()
             }
         }
+    }
+
+    private func deliverSelectionSuggestionPrompt(_ suggestion: ContextualSuggestedPrompt) async -> Bool {
+        guard !sessionState.attachedSelections.isEmpty,
+              let webViewController else { return false }
+
+        let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
+        guard isFrontendReady else { return false }
+        guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
+        guard !sessionState.attachedSelections.isEmpty else { return false }
+
+        submitSuggestionPrompt(suggestion.prompt)
+        return true
     }
 
     /// Attaches the context, waits for the frontend, then submits. Returns whether anything is still

@@ -191,8 +191,14 @@ private extension AutocompleteTests {
             "Fire dialog didn't appear in a reasonable timeframe."
         )
 
-        // Select "Everything" scope to clear all history
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope to clear all history
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        let detailsDisclosureButton = app.fireDialogDetailsDisclosureButton
+        if (detailsDisclosureButton.value as? String) != "expanded" {
+            detailsDisclosureButton.click()
+        }
 
         // Ensure history, cookies, and tabs toggles are enabled
         let fireDialogHistoryToggle = app.fireDialogHistoryToggle

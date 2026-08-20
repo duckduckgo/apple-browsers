@@ -30,6 +30,8 @@ import DesignResourcesKitIcons
 struct OnboardingPersonalizationToggleItem: Identifiable {
     let item: OnboardingPersonalizationContent.Item
     let isOn: Binding<Bool>
+    /// Rows shown only while this item's toggle is on
+    let dependentItems: [OnboardingPersonalizationToggleItem]
 
     var id: OnboardingPersonalizationContent.Item.ItemType {
         item.type
@@ -38,9 +40,10 @@ struct OnboardingPersonalizationToggleItem: Identifiable {
 
 extension OnboardingPersonalizationToggleItem {
 
-    init(_ item: OnboardingPersonalizationContent.Item, isOn: Binding<Bool>) {
+    init(_ item: OnboardingPersonalizationContent.Item, isOn: Binding<Bool>, dependentItems: [OnboardingPersonalizationToggleItem] = []) {
         self.item = item
         self.isOn = isOn
+        self.dependentItems = dependentItems
     }
 
 }
@@ -94,13 +97,22 @@ extension OnboardingPersonalizationContent.Item.ItemType {
                     manager.setYouTubeAdBlocking($0)
                 }
             )
-        case .duckPlayer:
+        case .rejectOptionalCookies:
             Binding(
                 get: {
-                    manager.isDuckPlayerEnabled
+                    manager.isCookiePopUpProtectionEnabled
                 },
                 set: {
-                    manager.setDuckPlayer($0)
+                    manager.setCookiePopUpProtection($0)
+                }
+            )
+        case .acceptOtherCookies:
+            Binding(
+                get: {
+                    manager.isPopUpsWithoutOptOutsEnabled
+                },
+                set: {
+                    manager.setPopUpsWithoutOptOuts($0)
                 }
             )
         }
@@ -118,6 +130,10 @@ extension OnboardingView {
     /// Screens whose *shape* differs — e.g. the single-select model picker — get their own view
     /// rather than bending this one with mode flags. Same shape → reuse; different shape → new view.
     struct PersonalizationToggleTemplate: View {
+        private enum Metrics {
+            static let contentTopPadding: CGFloat = 24
+        }
+
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -144,7 +160,7 @@ extension OnboardingView {
         var body: some View {
             LinearDialogContentContainer(
                 metrics: .init(
-                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    outerSpacing: Metrics.contentTopPadding,
                     textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
                     contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing

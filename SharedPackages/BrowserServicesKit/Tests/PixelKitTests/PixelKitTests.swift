@@ -1212,13 +1212,15 @@ final class PixelKitTests: XCTestCase {
         XCTAssertEqual(PixelKit.Options.namePrefix("p_"), PixelKit.Options(namePrefix: "p_"))
         XCTAssertEqual(PixelKit.Options.parameters(["a": "b"], namePrefix: "p_"),
                        PixelKit.Options(additionalParameters: ["a": "b"], namePrefix: "p_"))
+        XCTAssertEqual(PixelKit.Options.withRetry, PixelKit.Options(retryOnFailure: true))
     }
 
-    /// Defaults must be the non-intrusive ones: prefix enforced, app version included.
+    /// Defaults must be the non-intrusive ones: prefix enforced, app version included, no retry.
     func testOptionsDefaultsAreConservative() {
         let options = PixelKit.Options()
         XCTAssertTrue(options.enforcePrefix)
         XCTAssertTrue(options.includeAppVersionParameter)
+        XCTAssertFalse(options.retryOnFailure)
         XCTAssertNil(options.headers)
         XCTAssertNil(options.additionalParameters)
         XCTAssertNil(options.namePrefix)
@@ -1253,6 +1255,77 @@ final class PixelKitTests: XCTestCase {
         // Omitting options must still default it.
         XCTAssertEqual(recorder.calls[1].frequency, .daily)
         XCTAssertEqual(recorder.calls[1].options, .default)
+    }
+
+    // MARK: - Retry opt-in
+
+    /// `PixelKit` instance whose retry queue is backed by an in-memory store, so the opt-in wiring can be
+    /// asserted without touching the real Application Support file.
+    private func makePixelKit(retryQueueStore: PixelRetryQueueStoring,
+                              fireRequest: @escaping PixelKit.FireRequest) -> PixelKit {
+        PixelKit(dryRun: false,
+                 appVersion: "1.0.0",
+                 source: nil,
+                 session: UUID().uuidString,
+                 channel: nil,
+                 defaultHeaders: [:],
+                 pixelCalendar: nil,
+                 dateGenerator: Date.init,
+                 defaults: userDefaults(),
+                 retryQueueStore: retryQueueStore,
+                 fireRequest: fireRequest)
+    }
+
+    /// Fails every send, recording the fully-resolved pixel names it was asked for, so assertions can
+    /// compare what was queued against what was actually attempted without restating the platform prefix.
+    private final class FailingFireRequestRecorder {
+        private(set) var pixelNames = [String]()
+
+        lazy var fireRequest: PixelKit.FireRequest = { [self] pixelName, _, _, _, _, completion in
+            pixelNames.append(pixelName)
+            completion(false, NSError(domain: "test", code: 1))
+        }
+    }
+
+    /// Retry is off unless the pixel asks for it, so a plain failed fire leaves nothing behind.
+    func testFailedFireIsNotQueuedByDefault() {
+        let store = MockPixelRetryQueueStore()
+        let recorder = FailingFireRequestRecorder()
+        let pixelKit = makePixelKit(retryQueueStore: store, fireRequest: recorder.fireRequest)
+        let fired = expectation(description: "fired")
+
+        pixelKit.fire(event: TestEventV2.testEvent, frequency: .standard, options: .default) { _, _ in fired.fulfill() }
+
+        wait(for: [fired], timeout: 1.0)
+        XCTAssertEqual(recorder.pixelNames.count, 1)
+        XCTAssertTrue(store.items.isEmpty)
+    }
+
+    func testFailedFireIsQueuedWhenThePixelOptsIntoRetry() {
+        let store = MockPixelRetryQueueStore()
+        let recorder = FailingFireRequestRecorder()
+        let pixelKit = makePixelKit(retryQueueStore: store, fireRequest: recorder.fireRequest)
+        let fired = expectation(description: "fired")
+
+        pixelKit.fire(event: TestEventV2.testEvent, frequency: .standard, options: .withRetry) { _, _ in fired.fulfill() }
+
+        wait(for: [fired], timeout: 1.0)
+        XCTAssertEqual(store.items.map(\.pixelName), recorder.pixelNames)
+        XCTAssertEqual(store.items.count, 1)
+    }
+
+    /// The opt-in has to survive the per-`Frequency` handlers, not just the `.standard` one.
+    func testFailedDailyFireIsQueuedWhenThePixelOptsIntoRetry() {
+        let store = MockPixelRetryQueueStore()
+        let recorder = FailingFireRequestRecorder()
+        let pixelKit = makePixelKit(retryQueueStore: store, fireRequest: recorder.fireRequest)
+        let fired = expectation(description: "fired")
+
+        pixelKit.fire(event: TestEventV2.dailyEvent, frequency: .daily, options: .withRetry) { _, _ in fired.fulfill() }
+
+        wait(for: [fired], timeout: 1.0)
+        XCTAssertEqual(store.items.map(\.pixelName), recorder.pixelNames)
+        XCTAssertEqual(store.items.first?.pixelName.hasSuffix("_daily"), true)
     }
 
     // MARK: - Static async entry point

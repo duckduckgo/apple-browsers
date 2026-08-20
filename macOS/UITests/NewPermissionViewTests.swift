@@ -77,7 +77,12 @@ class NewPermissionViewTests: UITestCase {
         )
 
         // Select "Everything" scope to clear all history
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        if (app.fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            app.fireDialogDetailsDisclosureButton.click()
+        }
 
         // Ensure toggles are enabled
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
@@ -751,7 +756,13 @@ final class NewPermissionViewPopupTests: UITestCase {
     override func tearDown() {
         // Burn all data to clear permissions between tests
         app.fireButton.click()
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        if (app.fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            app.fireDialogDetailsDisclosureButton.click()
+        }
+
         app.fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         app.fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         app.fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })

@@ -17,19 +17,62 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 
+struct HomeMessagePresentationContext: Hashable {
+    let messageID: String
+    let acquisitionIdentity: PromoQueueAcquisitionIdentity
+}
+
+@MainActor
 protocol HomePageMessagesConfiguration {
     var homeMessages: [HomeMessage] { get }
+    var mode: PromoCoordinationMode { get }
+    var contentDidChangePublisher: AnyPublisher<Void, Never> { get }
 
     func refresh(openedAfterIdle: Bool)
+    func prepareForNTP(openedAfterIdle: Bool)
+    func handleAppBackgrounded()
+    func handleAppForegrounded()
+    func presentationContext(for homeMessage: HomeMessage) -> HomeMessagePresentationContext?
     
     func dismissHomeMessage(_ homeMessage: HomeMessage) async
+    func dismissHomeMessage(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) async
     func didAppear(_ homeMessage: HomeMessage)
+    func didAppear(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?)
 }
 
 extension HomePageMessagesConfiguration {
+    var mode: PromoCoordinationMode {
+        .legacy
+    }
+
+    var contentDidChangePublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
+
     func refresh() {
         refresh(openedAfterIdle: false)
+    }
+
+    func prepareForNTP(openedAfterIdle: Bool) {
+        refresh(openedAfterIdle: openedAfterIdle)
+    }
+
+    func handleAppBackgrounded() {}
+
+    func handleAppForegrounded() {}
+
+    func presentationContext(for homeMessage: HomeMessage) -> HomeMessagePresentationContext? {
+        nil
+    }
+
+    func dismissHomeMessage(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) async {
+        await dismissHomeMessage(homeMessage)
+    }
+
+    func didAppear(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) {
+        didAppear(homeMessage)
     }
 }

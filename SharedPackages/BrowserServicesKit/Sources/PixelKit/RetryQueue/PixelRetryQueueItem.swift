@@ -32,22 +32,29 @@ struct PixelRetryQueueItem: Codable, Equatable, Identifiable {
     public let allowedQueryReservedCharacters: CharacterSet?
     public let timestamp: Date
 
+    /// Whether the pixel opted into retry via `PixelKit.Options.retryOnFailure`. Only an opted-in pixel is
+    /// ever queued now, hence the default, but builds before the opt-in queued every failure and wrote no
+    /// such key — those items decode as `false` and are dropped rather than replayed.
+    public let optedIn: Bool
+
     public init(id: UUID = UUID(),
                 pixelName: String,
                 headers: [String: String],
                 parameters: [String: String],
                 allowedQueryReservedCharacters: CharacterSet?,
-                timestamp: Date) {
+                timestamp: Date,
+                optedIn: Bool = true) {
         self.id = id
         self.pixelName = pixelName
         self.headers = headers
         self.parameters = parameters
         self.allowedQueryReservedCharacters = allowedQueryReservedCharacters
         self.timestamp = timestamp
+        self.optedIn = optedIn
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, pixelName, headers, parameters, allowedQueryReservedCharacters, timestamp
+        case id, pixelName, headers, parameters, allowedQueryReservedCharacters, timestamp, optedIn
     }
 
     public init(from decoder: Decoder) throws {
@@ -57,6 +64,8 @@ struct PixelRetryQueueItem: Codable, Equatable, Identifiable {
         headers = try container.decode([String: String].self, forKey: .headers)
         parameters = try container.decode([String: String].self, forKey: .parameters)
         timestamp = try container.decode(Date.self, forKey: .timestamp)
+        // Absent means the item was persisted before retry became opt-in.
+        optedIn = try container.decodeIfPresent(Bool.self, forKey: .optedIn) ?? false
         if let bitmap = try container.decodeIfPresent(Data.self, forKey: .allowedQueryReservedCharacters) {
             allowedQueryReservedCharacters = CharacterSet(bitmapRepresentation: bitmap)
         } else {
@@ -71,6 +80,7 @@ struct PixelRetryQueueItem: Codable, Equatable, Identifiable {
         try container.encode(headers, forKey: .headers)
         try container.encode(parameters, forKey: .parameters)
         try container.encode(timestamp, forKey: .timestamp)
+        try container.encode(optedIn, forKey: .optedIn)
         try container.encodeIfPresent(allowedQueryReservedCharacters?.bitmapRepresentation, forKey: .allowedQueryReservedCharacters)
     }
 }

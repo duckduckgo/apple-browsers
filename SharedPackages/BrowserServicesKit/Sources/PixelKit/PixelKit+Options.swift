@@ -54,18 +54,31 @@ extension PixelKit {
         /// `doNotEnforcePrefix: true` becomes `enforcePrefix: false`.
         public var enforcePrefix: Bool
 
+        /// Whether a failed send is persisted and replayed later. Off by default.
+        ///
+        /// Opting in changes what reaches the server, so it is a per-pixel decision rather than a
+        /// PixelKit-wide one: a replayed pixel carries two extra parameters, `originalPixelTimestamp`
+        /// (when the send first failed) and `retriedPixel`. `originalPixelTimestamp` in particular
+        /// reintroduces the time-based correlation that PETAL exists to remove, so a pixel must have
+        /// been privacy triaged for both parameters before it sets this.
+        ///
+        /// See `RetryQueue/README.md` for the mechanics.
+        public var retryOnFailure: Bool
+
         public init(headers: [String: String]? = nil,
                     additionalParameters: [String: String]? = nil,
                     namePrefix: String? = nil,
                     allowedQueryReservedCharacters: CharacterSet? = nil,
                     includeAppVersionParameter: Bool = true,
-                    enforcePrefix: Bool = true) {
+                    enforcePrefix: Bool = true,
+                    retryOnFailure: Bool = false) {
             self.headers = headers
             self.additionalParameters = additionalParameters
             self.namePrefix = namePrefix
             self.allowedQueryReservedCharacters = allowedQueryReservedCharacters
             self.includeAppVersionParameter = includeAppVersionParameter
             self.enforcePrefix = enforcePrefix
+            self.retryOnFailure = retryOnFailure
         }
 
         // MARK: - Curated presets
@@ -85,6 +98,10 @@ extension PixelKit {
 
         /// For pixels that must not carry the `appVersion` parameter, such as crash reports.
         public static let withoutAppVersion = Options(includeAppVersionParameter: false)
+
+        /// For pixels whose delivery matters enough to survive a failed send, and that have been
+        /// privacy triaged for the retry parameters. See `retryOnFailure`.
+        public static let withRetry = Options(retryOnFailure: true)
 
         /// Attaches extra query parameters.
         public static func parameters(_ parameters: [String: String]) -> Options {

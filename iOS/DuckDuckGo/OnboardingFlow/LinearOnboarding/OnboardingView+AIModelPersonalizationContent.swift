@@ -45,6 +45,10 @@ extension OnboardingView {
     /// the prefetcher returns a fallback list, so this view is always synchronous: options in,
     /// selection tracked locally, persisted through the slice. No view model needed.
     struct AIModelSelection: View {
+        private enum Metrics {
+            static let contentTopPadding: CGFloat = 24
+        }
+
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -82,7 +86,7 @@ extension OnboardingView {
             LinearDialogContentContainer(
                 metrics: .init(
                     outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
-                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: Metrics.contentTopPadding,
                     contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),

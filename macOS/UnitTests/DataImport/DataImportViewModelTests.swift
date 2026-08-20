@@ -22,6 +22,10 @@ import Foundation
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
+import FeatureFlags_macOS
+import Persistence
+import PersistenceTestingUtils
+import PrivacyConfig
 import UniformTypeIdentifiers
 import SharedTestUtilities
 
@@ -1173,6 +1177,137 @@ final class DataImportViewModelTests: XCTestCase {
             // THEN
             XCTAssertTrue(model.screen.isArchiveImport)
         }
+    }
+
+    // MARK: - Browser data directory permission (macOS 27+)
+
+    func testInit_whenSourceHasOnlyPermissionDeniedProfile_thenSourceIsAvailableAndFlagged() {
+        // WHEN
+        model = DataImportViewModel(
+            importSource: .chrome,
+            availableImportSources: [.chrome, .firefox],
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                if browser == .chrome {
+                    return .init(browser: browser, profiles: [BrowserProfile.permissionDenied(fileStore: self.fileStore)(browser)])
+                }
+                return .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
+            }
+        )
+
+        // THEN the browser is still offered for import, flagged as needing directory access
+        XCTAssertTrue(model.availableImportSources.contains(.chrome))
+        XCTAssertTrue(model.browserProfiles?.requiresDirectoryAccessPermission == true)
+        XCTAssertEqual(model.selectedProfile?.accessState, .permissionDenied)
+    }
+
+    func testInit_whenSourceHasReadableProfile_thenItIsNotFlagged() {
+        // WHEN
+        model = DataImportViewModel(
+            importSource: .firefox,
+            availableImportSources: [.chrome, .firefox],
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
+            }
+        )
+
+        // THEN
+        XCTAssertFalse(model.browserProfiles?.requiresDirectoryAccessPermission == true)
+        XCTAssertEqual(model.selectedProfile?.accessState, .readable)
+    }
+
+    @MainActor
+    func testInitiateImport_whenProfileRequiresDirectoryAccess_thenShowsDirectoryReadPermissionScreen() {
+        // GIVEN a source whose data directory isn't accessible
+        self.importTask = { _, _ in [:] }
+        model = DataImportViewModel(
+            importSource: .chrome,
+            availableImportSources: [.chrome],
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                .init(browser: browser, profiles: [BrowserProfile.permissionDenied(fileStore: self.fileStore)(browser)])
+            },
+            dataImporterFactory: { _, _, _, _ in ImporterMock(importTask: self.importTask) },
+            directoryAccessAvailability: .mock()
+        )
+        XCTAssertEqual(model.screen, .sourceAndDataTypesPicker)
+
+        // WHEN
+        model.performAction(for: .initiateImport(disabled: false), dismiss: {})
+
+        // THEN the permission screen is shown instead of starting the import
+        XCTAssertEqual(model.screen, .getDirectoryReadPermission(model.selectedProfile!.profileURL))
+        XCTAssertNil(model.importTaskId)
+    }
+
+    @MainActor
+    func testInitiateImport_whenProfileIsReadable_thenImportStartsWithoutPermissionScreen() {
+        // GIVEN
+        self.importTask = { _, _ in [:] }
+        model = DataImportViewModel(
+            importSource: .chrome,
+            availableImportSources: [.chrome],
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
+            },
+            dataImporterFactory: { _, _, _, _ in ImporterMock(importTask: self.importTask) },
+            directoryAccessAvailability: .mock()
+        )
+
+        // WHEN
+        model.performAction(for: .initiateImport(disabled: false), dismiss: {})
+
+        // THEN
+        XCTAssertNotNil(model.importTaskId)
+    }
+
+    @MainActor
+    func testForceMacOS27PermissionsFix_forcesTheAccessFlowForReadableBrowsers() {
+        // GIVEN the debug override is on and the browser's data is actually readable
+        self.importTask = { _, _ in [:] }
+        model = DataImportViewModel(
+            importSource: .chrome,
+            availableImportSources: [.chrome],
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
+            },
+            dataImporterFactory: { _, _, _, _ in ImporterMock(importTask: self.importTask) },
+            directoryAccessAvailability: .mock(isForcingPermissionFix: true)
+        )
+        XCTAssertEqual(model.selectedProfile?.accessState, .readable)
+
+        // WHEN
+        model.performAction(for: .initiateImport(disabled: false), dismiss: {})
+
+        // THEN the access flow is presented even though the profile is readable
+        XCTAssertEqual(model.screen, .getDirectoryReadPermission(model.selectedProfile!.profileURL))
+        XCTAssertNil(model.importTaskId)
+    }
+
+    @MainActor
+    func testForceMacOS27PermissionsFix_whenDisabled_readableBrowserIsNotFlagged() {
+        // GIVEN
+        self.importTask = { _, _ in [:] }
+        model = DataImportViewModel(
+            importSource: .chrome,
+            availableImportSources: [.chrome],
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
+            },
+            dataImporterFactory: { _, _, _, _ in ImporterMock(importTask: self.importTask) },
+            directoryAccessAvailability: .mock(isForcingPermissionFix: false)
+        )
+
+        // WHEN
+        model.performAction(for: .initiateImport(disabled: false), dismiss: {})
+
+        // THEN
+        XCTAssertNotEqual(model.screen, .getDirectoryReadPermission(model.selectedProfile!.profileURL))
+        XCTAssertNotNil(model.importTaskId)
     }
 
     @MainActor
@@ -2520,7 +2655,8 @@ final class DataImportViewModelTests: XCTestCase {
             },
             dataImporterFactory: dataImporterFactory ?? { _, _, _, _ in ImporterMock(importTask: self.importTask) },
             requestPrimaryPasswordCallback: requestPrimaryPasswordCallback ?? { _ in nil },
-            openPanelCallback: { self.openPanelCallback!($0) }
+            openPanelCallback: { self.openPanelCallback!($0) },
+            directoryAccessAvailability: .mock()
         )
     }
 
@@ -2562,6 +2698,17 @@ private extension DataImport.BrowserProfile {
             let profile = Self(browser: browser, profileURL: .profile(named: "Test Profile 3"), fileStore: fileStore)
             Self.configureFileStore(fileStore, for: profile)
             return profile
+        }
+    }
+
+    /// A profile whose data directory exists but is access-restricted (macOS 27+ TCC). The mock file store has
+    /// no contents for it, so it has no importable data and must be surfaced via `.permissionDenied`.
+    static func permissionDenied(fileStore: FileStoreMock) -> (ThirdPartyBrowser) -> Self {
+        return { browser in
+            Self(browser: browser,
+                 profileURL: .profile(named: DataImport.BrowserProfileList.Constants.chromiumDefaultProfileName),
+                 fileStore: fileStore,
+                 accessState: .permissionDenied)
         }
     }
 
@@ -2659,6 +2806,22 @@ private class ImporterMock: DataImporter {
         .detachedWithProgress { [importTask=importTask!] updateProgress in
             await importTask(types, updateProgress)
         }
+    }
+}
+
+private extension DirectoryAccessAvailability {
+
+    /// Deterministic stand-in for the real availability: an in-memory debug store and a stubbed feature flagger,
+    /// so tests never depend on `UserDefaults.standard` or on the OS the suite happens to run on.
+    static func mock(isFeatureFlagOn: Bool = true, isForcingPermissionFix: Bool = false) -> DirectoryAccessAvailability {
+        let debugSettings: any KeyedStoring<DataImportDebugSettings> = InMemoryKeyValueStore().keyedStoring()
+        debugSettings.isForcingMacOS27PermissionsFix = isForcingPermissionFix
+
+        return DirectoryAccessAvailability(
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportDataDirectoryAccess.rawValue: isFeatureFlagOn]),
+            debugSettings: debugSettings,
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
+        )
     }
 }
 

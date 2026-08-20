@@ -41,6 +41,9 @@ struct DataImportViewModel {
 
     private let featureFlagger: FeatureFlagger
 
+    /// Whether the macOS 27+ data-directory access flow applies.
+    private let directoryAccessAvailability: DirectoryAccessAvailability
+
     let selectableImportTypes: Set<DataType>
 
     /// Browser to import data from
@@ -229,12 +232,14 @@ struct DataImportViewModel {
          requestPrimaryPasswordCallback: @escaping @MainActor (Source) -> String? = Self.requestPrimaryPasswordCallback,
          openPanelCallback: @escaping @MainActor ([UTType]) -> URL? = Self.openPanelCallback,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+         directoryAccessAvailability: DirectoryAccessAvailability? = nil,
          reportSenderFactory: @escaping ReportSenderFactory = { FeedbackSender().sendDataImportReport },
          wideEvent: WideEventManaging = Application.appDelegate.wideEvent,
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
-        let directoryAccessFeature = DirectoryAccessAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
-        let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessFeature.isEnabled) }
+        let directoryAccessAvailability = directoryAccessAvailability
+            ?? DirectoryAccessAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
+        let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessAvailability.isEnabled) }
 
         let filteredAvailableSources = availableImportSources.filter {
             // Filter out CSV and HTML as we're using the new combined file import option
@@ -292,6 +297,7 @@ struct DataImportViewModel {
         self.requestPrimaryPasswordCallback = requestPrimaryPasswordCallback
         self.openPanelCallback = openPanelCallback
         self.featureFlagger = featureFlagger
+        self.directoryAccessAvailability = directoryAccessAvailability
         self.reportSenderFactory = reportSenderFactory
         self.wideEvent = wideEvent
         self.onFinished = onFinished
@@ -947,6 +953,7 @@ extension DataImportViewModel {
                      dataImporterFactory: dataImporterFactory,
                      requestPrimaryPasswordCallback: requestPrimaryPasswordCallback,
                      featureFlagger: featureFlagger,
+                     directoryAccessAvailability: directoryAccessAvailability,
                      reportSenderFactory: reportSenderFactory,
                      onFinished: onFinished,
                      onCancelled: onCancelled)
@@ -983,6 +990,7 @@ extension DataImportViewModel {
                      requestPrimaryPasswordCallback: requestPrimaryPasswordCallback,
                      openPanelCallback: openPanelCallback,
                      featureFlagger: featureFlagger,
+                     directoryAccessAvailability: directoryAccessAvailability,
                      reportSenderFactory: reportSenderFactory,
                      wideEvent: wideEvent,
                      onFinished: onFinished,
@@ -1057,8 +1065,7 @@ extension DataImportViewModel {
             return false
         }
 
-        let directoryAccessFeature = DirectoryAccessAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
-        let isImportScreenAndForced = (screen == .sourceAndDataTypesPicker && directoryAccessFeature.mustForcePermissionFix)
+        let isImportScreenAndForced = (screen == .sourceAndDataTypesPicker && directoryAccessAvailability.mustForcePermissionFix)
         return selectedProfile.requiresDirectoryAccessPermission || isImportScreenAndForced
     }
 

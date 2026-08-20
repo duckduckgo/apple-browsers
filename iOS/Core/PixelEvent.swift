@@ -3791,7 +3791,6 @@ extension Pixel.Event {
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
         case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
-
         // MARK: Unified Toggle Input (UTI)
         case .unifiedToggleInputImageGenerationSelected: return "m_aichat_unified_input_image_generation_selected"
         case .unifiedToggleInputImageGenerationDeselected: return "m_aichat_unified_input_image_generation_deselected"

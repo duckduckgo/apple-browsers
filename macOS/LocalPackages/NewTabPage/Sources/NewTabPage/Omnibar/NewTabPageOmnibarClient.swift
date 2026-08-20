@@ -260,18 +260,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             NewTabPageDataModel.AIModelSection(
                 header: section.header,
                 items: section.items.map { item in
-                    NewTabPageDataModel.AIModelItem(
-                        id: item.id,
-                        name: item.name,
-                        shortName: item.shortName,
-                        isAvailable: item.isAvailable,
-                        supportsImageUpload: item.supportsImageUpload,
-                        supportedTools: item.supportedTools,
-                        accessTier: item.accessTier,
-                        reasoningEfforts: [],
-                        supportedFileTypes: item.supportedFileTypes,
-                        upsell: item.upsell
-                    )
+                    var copy = item
+                    copy.reasoningEfforts = []
+                    return copy
                 }
             )
         }

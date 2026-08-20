@@ -219,19 +219,6 @@ actor SubscriptionRequestCoalescer {
     }
 }
 
-private enum LocalTokenSnapshot {
-    case present(TokenContainer)
-    case missing
-    case readError
-
-    var tokenContainer: TokenContainer? {
-        guard case .present(let tokenContainer) = self else {
-            return nil
-        }
-        return tokenContainer
-    }
-}
-
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
 public final class DefaultSubscriptionManager: SubscriptionManager {
 
@@ -556,8 +543,15 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func localTokenState() -> LocalSubscriptionTokenState {
+        localTokenSnapshot().state
+    }
+
+    private func localTokenSnapshot() -> LocalTokenSnapshot {
         do {
-            return try oAuthClient.currentTokenContainer() == nil ? .missing : .present
+            guard let tokenContainer = try oAuthClient.currentTokenContainer() else {
+                return .missing
+            }
+            return .present(tokenContainer)
         } catch {
             return .readError
         }
@@ -616,12 +610,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         let tokenBeforeAttempt = localTokenSnapshot()
 
         do {
-#if DEBUG
-            if case .present = tokenBeforeAttempt {
-                // Uncomment this to simulate an automatic signout:
-                // throw OAuthClientError.unknownAccount
-            }
-#endif
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
 
@@ -653,28 +641,21 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
                     return recoveredTokenContainer
-                } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
-                    // No restore ran (no handler, or the platform can't restore): record the refresh
-                    // as a failure whose recovery was never attempted, keeping its invalid-token error.
-                    await automaticallySignOut(reason: .invalidRefreshToken,
-                                               tokenStatus: automaticSignOutTokenStatus(tokenStatus),
-                                               recoveryOutcome: .notAttempted,
-                                               policy: policy,
-                                               tokenBeforeAttempt: tokenBeforeAttempt,
-                                               notifyUI: false)
-                    pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
-                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil)
-                    throw SubscriptionManagerError.noTokenAvailable
                 } catch {
-                    // A restore ran but did not yield a valid token.
+                    // `tokenRecoveryNotAttempted` means no restore ran (no handler, or the platform
+                    // can't restore), which is a different finding from a restore that ran and
+                    // failed to yield a valid token. Either way the refresh is a failure.
+                    let notAttempted = (error as? SubscriptionManagerError) == .tokenRecoveryNotAttempted
                     await automaticallySignOut(reason: .invalidRefreshToken,
-                                               tokenStatus: automaticSignOutTokenStatus(tokenStatus),
-                                               recoveryOutcome: .failed,
+                                               tokenStatus: .init(tokenStatus),
+                                               recoveryOutcome: notAttempted ? .notAttempted : .failed,
                                                policy: policy,
                                                tokenBeforeAttempt: tokenBeforeAttempt,
                                                notifyUI: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
-                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .failed, error: error)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(
+                        outcome: notAttempted ? .notAttempted : .failed,
+                        error: notAttempted ? nil : error)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 
@@ -696,193 +677,16 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
         await signOut(notifyUI: notifyUI, userInitiated: false)
 
-        let data = SubscriptionAutomaticSignOutPixelData(
-            reason: reason,
-            tokenStatus: tokenStatus,
-            recoveryOutcome: recoveryOutcome,
-            tokenCachePolicy: .init(policy),
-            entitlementStateBefore: entitlementState(from: tokenBeforeAttempt),
-            accessTokenTimeRemainingBefore: timeRemainingBucket(
-                until: tokenBeforeAttempt.tokenContainer?.decodedAccessToken.expirationDate,
-                now: now),
-            refreshTokenTimeRemainingBefore: timeRemainingBucket(
-                until: tokenBeforeAttempt.tokenContainer?.decodedRefreshToken.expirationDate,
-                now: now),
-            refreshTokenAgeBefore: tokenAgeBucket(
-                issuedAt: tokenBeforeAttempt.tokenContainer?.decodedRefreshToken.issuedAtDate,
-                now: now),
-            cachedSubscriptionStatusBefore: cachedSubscriptionStatus(from: cachedSubscription),
-            cachedSubscriptionTrialStatusBefore: cachedSubscriptionTrialStatus(from: cachedSubscription),
-            cachedSubscriptionPurchasePlatformBefore: cachedSubscriptionPurchasePlatform(from: cachedSubscription),
-            cachedSubscriptionTimeRemainingBefore: cachedSubscriptionTimeRemainingBucket(from: cachedSubscription, now: now),
-            storedRefreshTokenStateDuringAttempt: storedRefreshTokenState(before: tokenBeforeAttempt, after: tokenAfterAttempt),
-            localTokenStateAfterSignOut: automaticSignOutLocalTokenState(localTokenState()))
+        let data = SubscriptionAutomaticSignOutPixelData(reason: reason,
+                                                         tokenStatus: tokenStatus,
+                                                         recoveryOutcome: recoveryOutcome,
+                                                         policy: policy,
+                                                         tokenBeforeAttempt: tokenBeforeAttempt,
+                                                         tokenAfterAttempt: tokenAfterAttempt,
+                                                         cachedSubscription: cachedSubscription,
+                                                         localTokenStateAfterSignOut: localTokenState(),
+                                                         now: now)
         pixelHandler.handle(pixel: .automaticSignOut(data))
-    }
-
-    private func localTokenSnapshot() -> LocalTokenSnapshot {
-        do {
-            guard let tokenContainer = try oAuthClient.currentTokenContainer() else {
-                return .missing
-            }
-            return .present(tokenContainer)
-        } catch {
-            return .readError
-        }
-    }
-
-    private func automaticSignOutTokenStatus(
-        _ tokenStatus: OAuthRequest.TokenStatus?
-    ) -> SubscriptionAutomaticSignOutPixelData.TokenStatus {
-        switch tokenStatus {
-        case .invalid:
-            return .invalid
-        case .expired:
-            return .expired
-        case .reused:
-            return .reused
-        case .loggedOut:
-            return .loggedOut
-        case .fraudDetected:
-            return .fraudDetected
-        case nil:
-            return .unknown
-        }
-    }
-
-    private func entitlementState(from snapshot: LocalTokenSnapshot) -> SubscriptionAutomaticSignOutPixelData.EntitlementState {
-        guard let tokenContainer = snapshot.tokenContainer else {
-            return .unknown
-        }
-        return tokenContainer.decodedAccessToken.subscriptionEntitlements.isEmpty ? .absent : .present
-    }
-
-    private func tokenAgeBucket(issuedAt: Date?, now: Date) -> SubscriptionAutomaticSignOutPixelData.TokenAgeBucket {
-        guard let issuedAt else {
-            return .unknown
-        }
-
-        let age = now.timeIntervalSince(issuedAt)
-        switch age {
-        case ..<0:
-            return .issuedInFuture
-        case ..<TimeInterval.hours(1):
-            return .lessThanOneHour
-        case ..<TimeInterval.days(1):
-            return .oneHourToOneDay
-        case ...TimeInterval.days(3):
-            return .oneToThreeDays
-        default:
-            return .moreThanThreeDays
-        }
-    }
-
-    private func timeRemainingBucket(until date: Date?, now: Date) -> SubscriptionAutomaticSignOutPixelData.TimeRemainingBucket {
-        guard let date else {
-            return .unknown
-        }
-
-        let timeRemaining = date.timeIntervalSince(now)
-        switch timeRemaining {
-        case ...0:
-            return .expired
-        case ..<TimeInterval.hours(1):
-            return .lessThanOneHour
-        case ..<TimeInterval.days(1):
-            return .oneHourToOneDay
-        case ...TimeInterval.days(3):
-            return .oneToThreeDays
-        default:
-            return .moreThanThreeDays
-        }
-    }
-
-    private func cachedSubscriptionStatus(
-        from subscription: DuckDuckGoSubscription?
-    ) -> SubscriptionAutomaticSignOutPixelData.CachedSubscriptionStatus {
-        guard let subscription else {
-            return .notPresentInProcess
-        }
-
-        switch subscription.status {
-        case .autoRenewable:
-            return .autoRenewable
-        case .notAutoRenewable:
-            return .notAutoRenewable
-        case .gracePeriod:
-            return .gracePeriod
-        case .inactive:
-            return .inactive
-        case .expired:
-            return .expired
-        case .unknown:
-            return .unknown
-        }
-    }
-
-    private func cachedSubscriptionTimeRemainingBucket(from subscription: DuckDuckGoSubscription?,
-                                                       now: Date) -> SubscriptionAutomaticSignOutPixelData.TimeRemainingBucket {
-        guard let subscription else {
-            return .notPresentInProcess
-        }
-        return timeRemainingBucket(until: subscription.expiresOrRenewsAt, now: now)
-    }
-
-    private func cachedSubscriptionTrialStatus(
-        from subscription: DuckDuckGoSubscription?
-    ) -> SubscriptionAutomaticSignOutPixelData.CachedSubscriptionTrialStatus {
-        guard let subscription else {
-            return .notPresentInProcess
-        }
-        return subscription.hasActiveTrialOffer ? .active : .notActive
-    }
-
-    private func cachedSubscriptionPurchasePlatform(
-        from subscription: DuckDuckGoSubscription?
-    ) -> SubscriptionAutomaticSignOutPixelData.CachedSubscriptionPurchasePlatform {
-        guard let subscription else {
-            return .notPresentInProcess
-        }
-
-        switch subscription.platform {
-        case .apple:
-            return .appStore
-        case .google:
-            return .playStore
-        case .stripe:
-            return .stripe
-        case .unknown:
-            return .unknown
-        }
-    }
-
-    private func storedRefreshTokenState(before: LocalTokenSnapshot,
-                                         after: LocalTokenSnapshot) -> SubscriptionAutomaticSignOutPixelData.StoredRefreshTokenState {
-        guard let tokenBeforeAttempt = before.tokenContainer else {
-            return .unavailableBeforeAttempt
-        }
-
-        switch after {
-        case .present(let tokenAfterAttempt):
-            return tokenBeforeAttempt.refreshToken == tokenAfterAttempt.refreshToken ? .unchanged : .changed
-        case .missing:
-            return .missing
-        case .readError:
-            return .readError
-        }
-    }
-
-    private func automaticSignOutLocalTokenState(
-        _ state: LocalSubscriptionTokenState
-    ) -> SubscriptionAutomaticSignOutPixelData.LocalTokenState {
-        switch state {
-        case .present:
-            return .present
-        case .missing:
-            return .missing
-        case .readError:
-            return .readError
-        }
     }
 
     func attemptTokenRecovery() async throws -> TokenContainer {

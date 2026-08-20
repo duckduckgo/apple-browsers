@@ -91,9 +91,8 @@ enum SubscriptionPixel: PixelKit.Event {
 
     var parameters: [String: String]? {
         switch self {
-        case .subscriptionInvalidRefreshTokenDetected(let source):
-            return [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
-        case .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
+        case .subscriptionInvalidRefreshTokenDetected(let source),
+                .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
                 .subscriptionPendingTransactionApproved(let source),
                 .subscriptionKeychainManagerDataAddedToTheBacklog(let source),
                 .subscriptionKeychainManagerDeallocatedWithBacklog(let source),
@@ -101,7 +100,7 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
-            return [SubscriptionPixelsDefaults.policyCacheKey: SubscriptionAutomaticSignOutPixelData.TokenCachePolicy(policy).rawValue,
+            return [SubscriptionPixelsDefaults.policyCacheKey: TokenCachePolicyParameter(policy).rawValue,
                     SubscriptionPixelsDefaults.sourceKey: source.rawValue]
         case .subscriptionAutomaticSignOut(let data, let source):
             var parameters = data.parameters

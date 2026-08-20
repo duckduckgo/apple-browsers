@@ -128,7 +128,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
                 PixelKit.Parameters.underlyingErrorDomain: OAuthRequest.TokenStatus.errorDomain,
                 PixelKit.Parameters.errorDomain: OAuthClientError.errorDomain,
                 "source": subscriptionSource.rawValue,
-                "policycache": SubscriptionAutomaticSignOutPixelData.TokenCachePolicy.localValid.rawValue
+                "policycache": TokenCachePolicyParameter.localValid.rawValue
             ]
         )
     }

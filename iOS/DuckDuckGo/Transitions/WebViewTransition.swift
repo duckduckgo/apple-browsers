@@ -21,12 +21,29 @@ import Core
 import FeatureFlags_iOS
 
 class WebViewTransition: TabSwitcherTransition {
-    
+
     fileprivate let tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
-    
+
     fileprivate func tabSwitcherCellFrame(for attributes: UICollectionViewLayoutAttributes) -> CGRect {
         return self.tabSwitcherViewController.collectionView.convert(attributes.frame,
                                                                      to: self.tabSwitcherViewController.view)
+    }
+
+    /// `UIView.animateKeyframes` only ever sees the *final* value set inside a keyframe block, so a
+    /// bare `layer.cornerRadius = ...` there doesn't get the from/to pair it needs to interpolate --
+    /// it just snaps at that keyframe's start. That made the growing/shrinking screenshot flash sharp
+    /// corners the instant the transition began, jarring against the rounded card it was supposed to
+    /// be continuous with. An explicit `CABasicAnimation` (independent of the keyframe machinery)
+    /// animates it properly over the same span; the model-value assignment after `add(_:forKey:)`
+    /// keeps the rest state correct once the animation is removed.
+    fileprivate func animateCornerRadius(of view: UIView, to radius: CGFloat, duration: TimeInterval) {
+        let animation = CABasicAnimation(keyPath: "cornerRadius")
+        animation.fromValue = view.layer.cornerRadius
+        animation.toValue = radius
+        animation.duration = duration
+        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        view.layer.add(animation, forKey: "cornerRadius")
+        view.layer.cornerRadius = radius
     }
 }
 
@@ -54,6 +71,7 @@ class FromWebViewTransition: WebViewTransition {
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab)
         else {
             tabSwitcherViewController.view.alpha = 1
+            mainViewController.isTabSwitcherTransitionOwningToolbar = false
             transitionContext.completeTransition(true)
             return
         }
@@ -65,6 +83,7 @@ class FromWebViewTransition: WebViewTransition {
               let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         else {
             tabSwitcherViewController.view.alpha = 1
+            mainViewController.isTabSwitcherTransitionOwningToolbar = false
             transitionContext.completeTransition(true)
             return
         }
@@ -77,22 +96,25 @@ class FromWebViewTransition: WebViewTransition {
 
         // Floating UI's toolbar capsule sits outside `contentContainer`/the webview screenshot, so it
         // was never part of this transition -- it just sat there at full size until the tab switcher's
-        // view opaquely covered it, reading as a sudden pop rather than a smooth exit. Animating the
-        // *live* toolbar's alpha here would race against `tabSwitcherViewController.view`'s own
-        // fade-in keyframe below -- the two compound and the toolbar visually vanishes well before
-        // the fade either animation implies alone, before the screenshot even looks like it's
-        // shrinking. Snapshotting it and animating the snapshot keeps this fully under this
-        // transition's own timing, in step with the screenshot's shrink, matching how Safari shrinks
-        // the whole page as one unit. Shrinks toward its own bottom edge (scaling around the default
-        // centre anchor and translating back down by half the height lost pins the bottom edge in
-        // place) while fading out.
+        // view opaquely covered it, reading as a sudden pop. Mirrors `ToWebViewTransition`'s reveal:
+        // a snapshot, brought to the very front, shrinks + fades in one continuous animation over the
+        // whole duration, rather than the real view (which sits *behind* `tabSwitcherViewController
+        // .view` for this whole presentation) waiting for the switcher's own bars to arrive first --
+        // see that transition's setup comment for why that produced a visible appear/disappear/
+        // reappear gap. `isTabSwitcherTransitionOwningToolbar` still protects the real (now-hidden)
+        // toolbar's alpha from every other code path that could otherwise write it mid-transition.
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
+        let reduceMotion = UIAccessibility.isReduceMotionEnabled
         var toolbarSnapshot: UIView?
-        if isFloating, let snapshot = toolbar.snapshotView(afterScreenUpdates: false) {
-            snapshot.frame = toolbar.convert(toolbar.bounds, to: transitionContext.containerView)
-            transitionContext.containerView.insertSubview(snapshot, aboveSubview: imageContainer)
-            toolbarSnapshot = snapshot
+        if isFloating {
+            mainViewController.isTabSwitcherTransitionOwningToolbar = true
+            if let snapshot = makeToolbarSnapshot(of: toolbar,
+                                                  in: transitionContext.containerView,
+                                                  afterScreenUpdates: false) {
+                transitionContext.containerView.addSubview(snapshot)
+                toolbarSnapshot = snapshot
+            }
             toolbar.alpha = 0
         }
 
@@ -110,6 +132,11 @@ class FromWebViewTransition: WebViewTransition {
                                                forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
                                                byHeight: -mainViewController.omniBar.barView.expectedHeight)
         }
+        // `imageView`'s aspect-fit frame doesn't necessarily cover 100% of `imageContainer`'s bounds
+        // at every point along the shrink (its target sizing math differs at the tab-cell end versus
+        // the full-webview end), so a plain background here shows through any sliver that's left over
+        // instead of whatever dark content happened to be behind the container.
+        imageContainer.backgroundColor = theme.backgroundColor
         imageView.frame = imageContainer.bounds
         imageView.image = preview
 
@@ -138,24 +165,18 @@ class FromWebViewTransition: WebViewTransition {
                
         }
 
+        animateCornerRadius(of: imageContainer, to: TabViewCell.Constants.cellCornerRadius, duration: TabSwitcherTransition.Constants.duration)
+
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
 
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
                 self.imageContainer.frame = containerFrame
-                self.imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
                 self.imageView.frame = WebViewTransitionGeometry.previewFrame(for: containerFrame.size,
                                                                               previewSize: preview.size,
                                                                               isGridViewEnabled: self.tabSwitcherSettings.isGridViewEnabled)
-                if let toolbarSnapshot {
-                    let scale: CGFloat = 0.7
-                    let heightLost = toolbarSnapshot.bounds.height * (1 - scale) / 2
-                    toolbarSnapshot.transform = CGAffineTransform(scaleX: scale, y: scale)
-                        .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
-                    toolbarSnapshot.alpha = 0
-                }
             }
-            
+
             UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.7) {
                 self.tabSwitcherViewController.view.alpha = 1
             }
@@ -171,12 +192,29 @@ class FromWebViewTransition: WebViewTransition {
                     self.imageView.alpha = 0
                 }
             }
+
+            if let toolbarSnapshot {
+                // One continuous shrink + fade, the whole 0-100%, always on top -- see the setup
+                // comment above for why this replaced a "wait for the real view" approach.
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                    if !reduceMotion {
+                        let scale: CGFloat = 0.7
+                        let heightLost = toolbarSnapshot.bounds.height * (1 - scale) / 2
+                        toolbarSnapshot.transform = CGAffineTransform(scaleX: scale, y: scale)
+                            .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
+                    }
+                    toolbarSnapshot.alpha = 0
+                }
+            }
         }, completion: { _ in
             self.solidBackground.removeFromSuperview()
             self.imageContainer.removeFromSuperview()
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {
-                toolbar.alpha = 1
+                // Toolbar stays hidden for the whole tab-switcher presentation (`ToWebViewTransition`
+                // is what reveals it again); hand ownership back now that the snapshot is gone.
+                toolbar.alpha = 0
+                self.mainViewController.isTabSwitcherTransitionOwningToolbar = false
             }
             transitionContext.completeTransition(true)
         })
@@ -198,6 +236,7 @@ class ToWebViewTransition: WebViewTransition {
             // Crossfade fallback when destination is no longer a web view; mirrors ToHomeScreenTransition.
             if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
                 mainViewController.view.alpha = 1
+                mainViewController.isTabSwitcherTransitionOwningToolbar = false
                 if mainViewController.isFloatingUIEnabled {
                     mainViewController.viewCoordinator.toolbar.transform = .identity
                     mainViewController.viewCoordinator.toolbar.alpha = 1
@@ -212,29 +251,50 @@ class ToWebViewTransition: WebViewTransition {
             })
             return
         }
-                
+
         let theme = ThemeManager.shared.currentTheme
         let webViewFrame = webView.convert(webView.bounds, to: nil)
         mainViewController.view.alpha = 1
 
-        // Reverse of `FromWebViewTransition`'s shrink, same reasoning: animating the *live* toolbar's
-        // alpha here would compound with `tabSwitcherViewController.view`'s own fade-out in the same
-        // block below, so a snapshot carries the reveal instead, self-contained regardless of
-        // whatever state the toolbar was left in (e.g. a fresh presentation, not just the matching
-        // `FromWebViewTransition`). Starts in that same shrunk/faded state, then animates back to
-        // identity alongside the webview screenshot growing back to full size.
+        // The tab coming into focus scales + fades the floating platter in. The real toolbar sits
+        // *behind* `tabSwitcherViewController.view` for this whole presentation (`.overCurrentContext`
+        // never removes `mainViewController.view` from the hierarchy, it just gets covered), so
+        // revealing the real view directly meant it could only become visible once the switcher's own
+        // bars had fully faded out of the way first -- a real gap between "old bar gone" and "new bar
+        // visible" that read as the bar appearing, disappearing, then reappearing. A snapshot has no
+        // such constraint: it's added straight to the transition's container and brought to the very
+        // front, so it can animate once, continuously, the whole 0-100%, sitting on top of the
+        // switcher's own chrome (and the growing page) the entire time instead of waiting for it.
+        // `chromeManager.reset` first restores the toolbar's full resting shape (it can still be
+        // scroll-collapsed from wherever the backgrounded tab was left), and `afterScreenUpdates: true`
+        // makes sure the snapshot actually reflects that reset rather than whatever was last rendered
+        // -- without both of those the snapshot could desync from the real toolbar's resting shape and
+        // read as a doubled toolbar/tab-count/address-pill, which is why this was dropped once before;
+        // both are still in place here.
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
+        let reduceMotion = UIAccessibility.isReduceMotionEnabled
         var toolbarSnapshot: UIView?
-        if isFloating, let snapshot = toolbar.snapshotView(afterScreenUpdates: false) {
-            let scale: CGFloat = 0.7
-            let heightLost = toolbar.bounds.height * (1 - scale) / 2
-            snapshot.frame = toolbar.convert(toolbar.bounds, to: transitionContext.containerView)
-            snapshot.transform = CGAffineTransform(scaleX: scale, y: scale)
-                .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
-            snapshot.alpha = 0
-            transitionContext.containerView.insertSubview(snapshot, aboveSubview: imageContainer)
-            toolbarSnapshot = snapshot
+        if isFloating {
+            mainViewController.chromeManager.reset(animated: false)
+            mainViewController.isTabSwitcherTransitionOwningToolbar = true
+            // Snapshot while the real toolbar is still fully visible (alpha 1) -- hiding it first
+            // would capture a blank view, so the "animation" would just be an invisible view fading
+            // into another invisible view, and the real toolbar would appear to pop to visible all
+            // at once in the completion block below instead of animating in.
+            if let snapshot = makeToolbarSnapshot(of: toolbar,
+                                                  in: transitionContext.containerView,
+                                                  afterScreenUpdates: true) {
+                if !reduceMotion {
+                    let scale: CGFloat = 0.7
+                    let heightLost = snapshot.bounds.height * (1 - scale) / 2
+                    snapshot.transform = CGAffineTransform(scaleX: scale, y: scale)
+                        .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
+                }
+                snapshot.alpha = 0
+                transitionContext.containerView.addSubview(snapshot)
+                toolbarSnapshot = snapshot
+            }
             toolbar.alpha = 0
         }
 
@@ -246,7 +306,12 @@ class ToWebViewTransition: WebViewTransition {
         
         imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
         imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
-        
+        // See `FromWebViewTransition`'s equivalent setup for why this matters: `imageView`'s
+        // aspect-fit frame won't necessarily cover 100% of `imageContainer` at every point along the
+        // grow, so a plain background here shows through any sliver instead of whatever dark content
+        // happened to be behind the container (the tab switcher's own backdrop, in this direction).
+        imageContainer.backgroundColor = theme.backgroundColor
+
         let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         if let preview = preview {
             imageView.frame = WebViewTransitionGeometry.previewFrame(for: imageContainer.bounds.size,
@@ -262,20 +327,48 @@ class ToWebViewTransition: WebViewTransition {
         }
         
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
-        
-        UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
-            self.imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
-            self.imageContainer.layer.cornerRadius = 0
 
-            self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: webViewFrame.size,
-                                                                                   previewSize: preview?.size)
-            self.imageView.alpha = 1
+        animateCornerRadius(of: imageContainer, to: 0, duration: TabSwitcherTransition.Constants.duration)
 
-            self.solidBackground.alpha = 1
-            self.tabSwitcherViewController.view.alpha = 0
+        UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                self.imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
+
+                self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: webViewFrame.size,
+                                                                                       previewSize: preview?.size)
+                self.imageView.alpha = 1
+                self.solidBackground.alpha = 1
+            }
+
+            // Front-loaded: the whole card-grow/switcher-fade keeps its existing feel over 0-70%.
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.7) {
+                self.tabSwitcherViewController.view.alpha = 0
+            }
+
             if let toolbarSnapshot {
-                toolbarSnapshot.transform = .identity
-                toolbarSnapshot.alpha = 1
+                // Still one continuous reveal, always on top (see the setup comment above), but
+                // eased out rather than linear: the switcher's icons (dots/+/chat) and the real
+                // toolbar's (back/forward/tab-count/menu) sit at different x-positions, so a linear
+                // fade spends its whole first half as an illegible overlap of both, then resolves
+                // into a clean bar right at the end -- which reads as a sudden pop even though the
+                // alpha change itself is continuous. Front-loading the reveal (85% of the way there
+                // by 60% of the duration) means it's already legible well before the end, so there's
+                // nothing left to "pop" once the switcher's icons finish fading away underneath.
+                let easedScale: CGFloat = 0.955 // 0.7 + 0.85 * (1 - 0.7)
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.6) {
+                    if !reduceMotion {
+                        let heightLost = toolbarSnapshot.bounds.height * (1 - easedScale) / 2
+                        toolbarSnapshot.transform = CGAffineTransform(scaleX: easedScale, y: easedScale)
+                            .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
+                    }
+                    toolbarSnapshot.alpha = 0.85
+                }
+                UIView.addKeyframe(withRelativeStartTime: 0.6, relativeDuration: 0.4) {
+                    if !reduceMotion {
+                        toolbarSnapshot.transform = .identity
+                    }
+                    toolbarSnapshot.alpha = 1
+                }
             }
         }, completion: { _ in
             self.solidBackground.removeFromSuperview()
@@ -283,6 +376,7 @@ class ToWebViewTransition: WebViewTransition {
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {
                 toolbar.alpha = 1
+                mainViewController.isTabSwitcherTransitionOwningToolbar = false
             }
             transitionContext.completeTransition(true)
         })

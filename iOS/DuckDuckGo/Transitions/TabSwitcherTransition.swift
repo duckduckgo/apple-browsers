@@ -22,7 +22,10 @@ import UIKit
 class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
     
     struct Constants {
-        static let duration = 0.20
+        // 0.28s splits into a ~125ms "old chrome leaves" phase and a ~155ms "new chrome arrives"
+        // phase (see `WebViewTransition.swift`) -- closer to Safari's ~220ms sequential handoff than
+        // the previous 0.20s, which left no room to stop the two chromes cross-dissolving at once.
+        static let duration = 0.28
     }
     
     // Used to hide contents of the 'from' VC when animating.
@@ -47,6 +50,21 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         transitionContext.containerView.addSubview(imageContainer)
     }
     
+    /// Snapshots the floating toolbar for the transition to animate, capturing the whole glass
+    /// capsule rather than just the part inside the view's `bounds` -- see
+    /// `BrowserToolbarView.visibleCapsuleRect` for why a plain `snapshotView` returns a
+    /// flat-bottomed, corner-less copy. Returns a view already framed in `containerView`'s space.
+    func makeToolbarSnapshot(of toolbar: BrowserToolbarView,
+                             in containerView: UIView,
+                             afterScreenUpdates: Bool) -> UIView? {
+        let captureRect = toolbar.visibleCapsuleRect
+        guard let snapshot = toolbar.resizableSnapshotView(from: captureRect,
+                                                           afterScreenUpdates: afterScreenUpdates,
+                                                           withCapInsets: .zero) else { return nil }
+        snapshot.frame = toolbar.convert(captureRect, to: containerView)
+        return snapshot
+    }
+
     // MARK: UIViewControllerAnimatedTransitioning
 
     // Override - Abstract function

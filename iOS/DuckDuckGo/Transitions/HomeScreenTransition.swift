@@ -93,12 +93,34 @@ class FromHomeScreenTransition: HomeScreenTransition {
               let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: IndexPath(row: rowIndex, section: 0))
         else {
             tabSwitcherViewController.view.alpha = 1
+            mainViewController.isTabSwitcherTransitionOwningToolbar = false
             transitionContext.completeTransition(true)
             return
         }
 
+        // No floating platter to scale/grow from here (unlike `WebViewTransition`), but the toolbar
+        // still needs to fade out under the same `isTabSwitcherTransitionOwningToolbar` protection --
+        // otherwise it's exposed to the same async `showBars()`/KVO paths mid-transition. A snapshot,
+        // brought to the front, fades out continuously over the whole duration instead of waiting on
+        // the switcher's own bars first -- see `WebViewTransition`'s equivalent setup for why (a real
+        // view stuck behind `tabSwitcherViewController.view` for the whole presentation otherwise
+        // reads as appear-disappear-reappear rather than one animation).
+        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
+        let isFloating = mainViewController.isFloatingUIEnabled
+        var toolbarSnapshot: UIView?
+        if isFloating {
+            mainViewController.isTabSwitcherTransitionOwningToolbar = true
+            if let snapshot = makeToolbarSnapshot(of: toolbar,
+                                                  in: transitionContext.containerView,
+                                                  afterScreenUpdates: false) {
+                transitionContext.containerView.addSubview(snapshot)
+                toolbarSnapshot = snapshot
+            }
+            toolbar.alpha = 0
+        }
+
         let theme = ThemeManager.shared.currentTheme
-        
+
         solidBackground.frame = adjustFrame(homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil),
                                             forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
                                             byHeight: -mainViewController.omniBar.barView.expectedHeight)
@@ -148,10 +170,21 @@ class FromHomeScreenTransition: HomeScreenTransition {
                 }
             }
 
+            if let toolbarSnapshot {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                    toolbarSnapshot.alpha = 0
+                }
+            }
+
         }, completion: { _ in
             self.solidBackground.removeFromSuperview()
             self.imageContainer.removeFromSuperview()
             self.settingsButtonSnapshot?.removeFromSuperview()
+            toolbarSnapshot?.removeFromSuperview()
+            if isFloating {
+                toolbar.alpha = 0
+                self.mainViewController.isTabSwitcherTransitionOwningToolbar = false
+            }
             transitionContext.completeTransition(true)
         })
     }
@@ -172,6 +205,10 @@ class ToHomeScreenTransition: HomeScreenTransition {
             // hasn't laid out its cell yet. Fall back to a simple crossfade to avoid a flash.
             if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
                 mainViewController.view.alpha = 1
+                mainViewController.isTabSwitcherTransitionOwningToolbar = false
+                if mainViewController.isFloatingUIEnabled {
+                    mainViewController.viewCoordinator.toolbar.alpha = 1
+                }
             }
             UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
                 self.tabSwitcherViewController.view.alpha = 0
@@ -184,7 +221,30 @@ class ToHomeScreenTransition: HomeScreenTransition {
         }
 
         mainViewController.view.alpha = 1
-        
+
+        // No floating platter to scale/grow from here (unlike `WebViewTransition`), but the toolbar
+        // still needs to fade in under the same `isTabSwitcherTransitionOwningToolbar` protection. A
+        // snapshot, brought to the front, fades in continuously over the whole duration instead of
+        // waiting on the switcher's own bars to leave first -- see `WebViewTransition`'s equivalent
+        // setup for why (a real view stuck behind `tabSwitcherViewController.view` otherwise reads as
+        // appear-disappear-reappear rather than one animation).
+        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
+        let isFloating = mainViewController.isFloatingUIEnabled
+        var toolbarSnapshot: UIView?
+        if isFloating {
+            mainViewController.isTabSwitcherTransitionOwningToolbar = true
+            // Snapshot while still visible -- see `ToWebViewTransition`'s equivalent setup for why
+            // hiding the real view first would capture a blank snapshot.
+            if let snapshot = makeToolbarSnapshot(of: toolbar,
+                                                  in: transitionContext.containerView,
+                                                  afterScreenUpdates: true) {
+                snapshot.alpha = 0
+                transitionContext.containerView.addSubview(snapshot)
+                toolbarSnapshot = snapshot
+            }
+            toolbar.alpha = 0
+        }
+
         let theme = ThemeManager.shared.currentTheme
         imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
 
@@ -235,10 +295,21 @@ class ToHomeScreenTransition: HomeScreenTransition {
             UIView.addKeyframe(withRelativeStartTime: 0.7, relativeDuration: 0.3) {
                 self.tabSwitcherViewController.view.alpha = 0
             }
-            
+
+            if let toolbarSnapshot {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                    toolbarSnapshot.alpha = 1
+                }
+            }
+
         }, completion: { _ in
             self.imageContainer.removeFromSuperview()
             self.settingsButtonSnapshot?.removeFromSuperview()
+            toolbarSnapshot?.removeFromSuperview()
+            if isFloating {
+                toolbar.alpha = 1
+                mainViewController.isTabSwitcherTransitionOwningToolbar = false
+            }
             transitionContext.completeTransition(true)
         })
     }

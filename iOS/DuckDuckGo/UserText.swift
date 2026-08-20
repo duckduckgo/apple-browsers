@@ -1770,7 +1770,7 @@ public struct UserText {
     public static let escapeHatchMenuReturnToTab = NSLocalizedString("escapeHatch.menu.returnToLastUsedTab", value: "Return to Last Used Tab", comment: "Menu item that returns the user to the last used open tab from the escape hatch card")
     public static let escapeHatchMenuCloseTab = NSLocalizedString("escapeHatch.menu.closeLastUsedTab", value: "Close Last Used Tab", comment: "Menu item that closes the last used open tab referenced by the escape hatch card")
     public static let escapeHatchMenuDeleteTab = NSLocalizedString("escapeHatch.menu.deleteTab", value: "Delete Tab", comment: "Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card")
-    public static let escapeHatchMenuHideTheseShortcuts = NSLocalizedString("escapeHatch.menu.hideReturnToShortcut", value: "Hide ‘Return To’ Shortcut", comment: "Menu item that hides the 'Return To' shortcut so only the tab switcher is shown after inactivity")
+    public static let escapeHatchMenuHideTheseShortcuts = NSLocalizedString("escapeHatch.menu.hideReturnToShortcut", value: "Hide ‘Return to’ Shortcut", comment: "Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity")
     public static let escapeHatchSwipeActionCloseTab = NSLocalizedString("escapeHatch.swipeAction.closeTab", value: "Close Tab", comment: "Swipe action that closes the open tab referenced by the escape hatch card")
     public static let escapeHatchTabSwitcherPrivateTabsLabel = NSLocalizedString("escapeHatch.tabSwitcher.privateTabs.label", value: "Private Tabs", comment: "Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form")
     

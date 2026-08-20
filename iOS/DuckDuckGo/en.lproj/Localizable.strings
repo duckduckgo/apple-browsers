@@ -2446,8 +2446,8 @@
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Delete Tab";
 
-/* Menu item that hides the 'Return To' shortcut so only the tab switcher is shown after inactivity */
-"escapeHatch.menu.hideReturnToShortcut" = "Hide ‘Return To’ Shortcut";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Hide ‘Return to’ Shortcut";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
 "escapeHatch.menu.returnToLastUsedTab" = "Return to Last Used Tab";
@@ -5481,3 +5481,4 @@ https://duckduckgo.com/windows";
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "What do you want to import?";
+

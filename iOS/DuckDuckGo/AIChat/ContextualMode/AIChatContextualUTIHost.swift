@@ -342,6 +342,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         isBoundToUserScript = true
         let chatID = userScript.webView?.url?.duckAIChatID
         coordinator.bindToTab(userScript, hasExistingChat: hasActiveChat() || chatID != nil)
+        coordinator.refreshUsageWarnings()
         if let chatID {
             coordinator.restoreLastUsedModel(forChatID: chatID)
         }

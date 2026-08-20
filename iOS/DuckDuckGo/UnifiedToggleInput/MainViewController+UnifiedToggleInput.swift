@@ -790,6 +790,7 @@ private extension MainViewController {
     func bindAITabIfPossible(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator, hasExistingChat: Bool) {
         if let userScript = tab.userScripts?.aiChatUserScript {
             coordinator.bindToTab(userScript, hasExistingChat: hasExistingChat)
+            coordinator.refreshUsageWarnings()
             if hasExistingChat, let chatID = tab.webView.url?.duckAIChatID {
                 coordinator.restoreLastUsedModel(forChatID: chatID)
                 coordinator.restoreLastUsedReasoningMode(forChatID: chatID)

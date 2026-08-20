@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Subscription
 
 /// Represents the origin point from which the user enters the subscription funnel in the iOS app.
 enum SubscriptionFunnelOrigin: String {
@@ -139,6 +140,51 @@ enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel by tapping the VPN push notification without an active VPN entitlement.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1215398999855859
     case notificationVPN = "funnel_notification_ios__subscriptionvpn"
+}
+
+extension SubscriptionFunnelOrigin {
+
+    static func purchaseWideEventEntryPoint(for origin: String?) -> SubscriptionPurchaseWideEventData.EntryPoint {
+        guard let origin else { return .web }
+        guard let funnelOrigin = Self(rawValue: origin) else { return .unknown }
+        return funnelOrigin.purchaseWideEventEntryPoint
+    }
+
+    private var purchaseWideEventEntryPoint: SubscriptionPurchaseWideEventData.EntryPoint {
+        switch self {
+        case .newTabMenu:
+            return .newTabPage
+        case .addressBarModelPicker,
+                .addressBarReasoningPicker,
+                .duckAIModelPicker,
+                .duckAIReasoningPicker,
+                .duckAIFreeLabel,
+                .duckAIAiSidebar,
+                .duckAIActivateSubscription,
+                .duckAIFreeLimit,
+                .duckAIImageGenerationLimit,
+                .duckAIPlusLimit,
+                .duckAIPromotionCard,
+                .duckAISettings,
+                .duckAIDisclaimerBanner,
+                .duckAIVoiceChatLimit,
+                .duckAIVoiceChatDurationLimit:
+            return .duckAI
+        case .onboarding,
+                .skippedOnboarding,
+                .existingUserPromo,
+                .appSettings,
+                .winBackLaunch,
+                .winBackSettings,
+                .vpnAccessRevokedAlert,
+                .toolbarVPN,
+                .addressBarVPN,
+                .widgetVPN,
+                .shortcutVPN,
+                .notificationVPN:
+            return .inApp
+        }
+    }
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the iOS app.

@@ -489,9 +489,10 @@
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                "key": "feature.data.ext.funnel_name",
+                "key": "feature.data.ext.entry_point",
                 "type": "string",
-                "description": "The funnel that led to the subscription flow"
+                "description": "The coarse product surface that led to the subscription flow",
+                "enum": ["in_app", "new_tab_page", "web", "duck_ai", "unknown"]
             },
             {
                 "key": "context.name",

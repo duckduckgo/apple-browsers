@@ -25,7 +25,7 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
         featureName: "subscription-purchase",
         mobileMetaType: "ios-subscription-purchase",
         desktopMetaType: "macos-subscription-purchase",
-        version: "1.1.0"
+        version: "1.2.0"
     )
 
     public static let activationTimeout: TimeInterval = .hours(4)
@@ -42,7 +42,7 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
     public var completePurchaseDuration: WideEvent.MeasuredInterval?
     public var activateAccountDuration: WideEvent.MeasuredInterval?
 
-    public var funnelName: String?
+    public let entryPoint: EntryPoint
 
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
@@ -51,7 +51,7 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
 
     private enum CodingKeys: String, CodingKey {
         case globalData, contextData, appData
-        case purchasePlatform, subscriptionIdentifier, freeTrialEligible, funnelName
+        case purchasePlatform, subscriptionIdentifier, freeTrialEligible, entryPoint
         case createAccountDuration, completePurchaseDuration, activateAccountDuration
         case failingStep, errorData
     }
@@ -60,7 +60,7 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
                 failingStep: FailingStep? = nil,
                 subscriptionIdentifier: String?,
                 freeTrialEligible: Bool,
-                funnelName: String? = nil,
+                entryPoint: EntryPoint,
                 createAccountDuration: WideEvent.MeasuredInterval? = nil,
                 completePurchaseDuration: WideEvent.MeasuredInterval? = nil,
                 activateAccountDuration: WideEvent.MeasuredInterval? = nil,
@@ -72,7 +72,7 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
         self.failingStep = failingStep
         self.subscriptionIdentifier = subscriptionIdentifier
         self.freeTrialEligible = freeTrialEligible
-        self.funnelName = funnelName
+        self.entryPoint = entryPoint
         self.createAccountDuration = createAccountDuration
         self.completePurchaseDuration = completePurchaseDuration
         self.activateAccountDuration = activateAccountDuration
@@ -115,6 +115,14 @@ extension SubscriptionPurchaseWideEventData {
         case stripe
     }
 
+    public enum EntryPoint: String, Codable, CaseIterable {
+        case inApp = "in_app"
+        case newTabPage = "new_tab_page"
+        case web
+        case duckAI = "duck_ai"
+        case unknown
+    }
+
     public enum FailingStep: String, Codable, CaseIterable {
         case flowStart = "FLOW_START"
         case accountCreate = "ACCOUNT_CREATE"
@@ -136,7 +144,7 @@ extension SubscriptionPurchaseWideEventData {
             (WideEventParameter.SubscriptionFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.SubscriptionFeature.subscriptionIdentifier, subscriptionIdentifier),
             (WideEventParameter.SubscriptionFeature.freeTrialEligible, freeTrialEligible),
-            (WideEventParameter.SubscriptionFeature.funnelName, funnelName),
+            (WideEventParameter.SubscriptionFeature.entryPoint, entryPoint.rawValue),
             (WideEventParameter.SubscriptionFeature.accountCreationLatency, createAccountDuration?.intValue(bucket)),
             (WideEventParameter.SubscriptionFeature.accountPaymentLatency, completePurchaseDuration?.intValue(bucket)),
             (WideEventParameter.SubscriptionFeature.accountActivationLatency, activateAccountDuration?.intValue(bucket)),
@@ -169,7 +177,7 @@ extension WideEventParameter {
         static let failingStep = "feature.data.ext.failing_step"
         static let subscriptionIdentifier = "feature.data.ext.subscription_identifier"
         static let freeTrialEligible = "feature.data.ext.free_trial_eligible"
-        static let funnelName = "feature.data.ext.funnel_name"
+        static let entryPoint = "feature.data.ext.entry_point"
         static let accountCreationLatency = "feature.data.ext.account_creation_latency_ms_bucketed"
         static let accountPaymentLatency = "feature.data.ext.account_payment_latency_ms_bucketed"
         static let accountActivationLatency = "feature.data.ext.account_activation_latency_ms_bucketed"

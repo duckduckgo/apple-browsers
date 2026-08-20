@@ -480,7 +480,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(started.purchasePlatform, .appStore)
         XCTAssertEqual(started.subscriptionIdentifier, "yearly")
         XCTAssertEqual(started.freeTrialEligible, true)
-        XCTAssertEqual(started.funnelName, "funnel_appsettings_ios")
+        XCTAssertEqual(started.entryPoint, .inApp)
 
         let updated = try XCTUnwrap(mockWideEvent.updates.last as? SubscriptionPurchaseWideEventData)
         XCTAssertNotNil(updated.activateAccountDuration?.start)
@@ -489,6 +489,20 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let completion = try XCTUnwrap(mockWideEvent.completions.first)
         XCTAssertTrue(completion.0 is SubscriptionPurchaseWideEventData)
         XCTAssertEqual(completion.1, .success(reason: nil))
+    }
+
+    func testWhenMappingPurchaseWideEventOriginsThenOnlyCoarseEntryPointsAreReturned() {
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.appSettings.rawValue),
+            .inApp)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.newTabMenu.rawValue),
+            .newTabPage)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.duckAISettings.rawValue),
+            .duckAI)
+        XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: nil), .web)
+        XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: "unexpected-origin"), .unknown)
     }
 
     @MainActor
@@ -566,7 +580,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
 
         let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
-        XCTAssertEqual(started.funnelName, SubscriptionFunnelOrigin.appSettings.rawValue)
+        XCTAssertEqual(started.entryPoint, .inApp)
     }
 
     // MARK: - SubscriptionChangeSelected Tests

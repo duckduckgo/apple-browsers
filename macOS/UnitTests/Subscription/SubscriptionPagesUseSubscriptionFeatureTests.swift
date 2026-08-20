@@ -25,8 +25,7 @@ import SubscriptionTestingUtilities
 import WebKit
 import XCTest
 import UserScript
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
@@ -1234,7 +1233,7 @@ final class MockSubscriptionEventReporter: SubscriptionEventReporter {
         reportedActivationErrors.append(subscriptionActivationError)
     }
 
-    func report(subscriptionTierOptionEvent: PixelKitEvent) {
+    func report(subscriptionTierOptionEvent: PixelKit.Event) {
         reportedTierOptionEvents.append(TierOptionEventRecord(eventName: subscriptionTierOptionEvent.name))
     }
 }

@@ -556,7 +556,7 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
                 undoManager: bookmarksContextMenuDelegate?.undoManager
             )
         default:
-            assertionFailure("Failed to retrieve BookmarkFolder from Reorder by Name context menu item")
+            assertionFailure("Failed to retrieve BookmarkFolder from Sort by name permanently context menu item")
         }
     }
 

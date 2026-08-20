@@ -23,7 +23,7 @@ import Foundation
 public typealias ConversionWindow = ClosedRange<Int>
 public typealias NumberOfCalls = Int
 
-struct ExperimentEvent: PixelKitEvent {
+struct ExperimentEvent: PixelKit.Event {
     var name: String
     var parameters: [String: String]?
     var standardParameters: [PixelKitStandardParameter]? {
@@ -42,13 +42,15 @@ extension PixelKit {
         static let enrollmentDateKey = "enrollmentDate"
         static let searchMetricValue = "search"
         static let appUseMetricValue = "app_use"
+        static let aiChatMetricValue = "duck_ai_prompt_sent"
+        static let aiChatNewChatMetricValue = "duck_ai_new_chat"
     }
 
     // Static property to hold shared dependencies
     struct ExperimentConfig {
         static var featureFlagger: FeatureFlagger?
         static var eventTracker: ExperimentEventTracking = ExperimentEventTracker()
-        static var fireFunction: (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
+        static var fireFunction: (PixelKit.Event, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
             fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersion)
         }
     }
@@ -57,7 +59,7 @@ extension PixelKit {
     public static func configureExperimentKit(
         featureFlagger: FeatureFlagger,
         eventTracker: ExperimentEventTracking = ExperimentEventTracker(),
-        fire: @escaping (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
+        fire: @escaping (PixelKit.Event, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
             fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersion)
         }
     ) {
@@ -183,6 +185,54 @@ extension PixelKit {
                 for: experiment.key,
                 experimentData: experiment.value,
                 metric: Constants.appUseMetricValue,
+                valueConversionDictionary: valueConversionDictionary
+            )
+        }
+    }
+
+    /// Fires AI chat prompt experiment pixels for all active experiments.
+    ///
+    /// This function iterates through all active experiments and triggers
+    /// pixel firing based on predefined AI chat value and conversion window mappings.
+    /// - The value and conversion windows define when and how many AI prompt sent actions
+    ///   must occur before the pixel is fired.
+    public static func fireNewAIPromptExperimentPixels() {
+        let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
+            1: [0...0, 1...1, 5...7, 8...14]
+        ]
+        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+            assertionFailure("PixelKit is not configured for experiments")
+            return
+        }
+        featureFlagger.allActiveExperiments.forEach { experiment in
+            fireExperimentPixels(
+                for: experiment.key,
+                experimentData: experiment.value,
+                metric: Constants.aiChatMetricValue,
+                valueConversionDictionary: valueConversionDictionary
+            )
+        }
+    }
+
+    /// Fires new AI chat experiment pixels for all active experiments.
+    ///
+    /// This function iterates through all active experiments and triggers
+    /// pixel firing based on predefined AI chat value and conversion window mappings.
+    /// - The value and conversion windows define when and how many new AI chat sent actions
+    ///   must occur before the pixel is fired.
+    public static func fireNewAIChatExperimentPixels() {
+        let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
+            1: [0...0, 1...1, 5...7, 8...14]
+        ]
+        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+            assertionFailure("PixelKit is not configured for experiments")
+            return
+        }
+        featureFlagger.allActiveExperiments.forEach { experiment in
+            fireExperimentPixels(
+                for: experiment.key,
+                experimentData: experiment.value,
+                metric: Constants.aiChatNewChatMetricValue,
                 valueConversionDictionary: valueConversionDictionary
             )
         }

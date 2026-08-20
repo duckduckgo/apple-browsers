@@ -99,6 +99,11 @@ final class ToolbarHandler: ToolbarStateHandling {
     // MARK: - Public Methods
 
     func setTabSwitcherView(_ view: UIView) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            view.widthAnchor.constraint(equalToConstant: BrowserChromeButton.toolbarButtonSize),
+            view.heightAnchor.constraint(equalToConstant: BrowserChromeButton.toolbarButtonSize),
+        ])
         tabSwitcherView = view
         if let state {
             applyToolbarLayout(for: state)

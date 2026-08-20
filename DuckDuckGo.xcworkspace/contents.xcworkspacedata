@@ -23,10 +23,13 @@
          location = "group:BrowserServicesKit">
       </FileRef>
       <FileRef
+         location = "group:Common">
+      </FileRef>
+      <FileRef
          location = "group:DataBrokerProtectionCore">
       </FileRef>
       <FileRef
-         location = "group:EventHub">
+         location = "group:DDGError">
       </FileRef>
       <FileSystemSynchronizedGroup
          location = "group:Infrastructure"
@@ -34,6 +37,12 @@
       </FileSystemSynchronizedGroup>
       <FileRef
          location = "group:Onboarding">
+      </FileRef>
+      <FileRef
+         location = "group:Persistence">
+      </FileRef>
+      <FileRef
+         location = "group:PixelKit">
       </FileRef>
       <FileRef
          location = "group:ScreenTimeDataCleaner">

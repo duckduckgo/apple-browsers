@@ -133,6 +133,7 @@ class TabViewController: UIViewController {
         static let trackerNetworksAnimationDelay: TimeInterval = 0.7
         static let secGPCHeader = "Sec-GPC"
         static let navigationExpectationInterval = 3.0
+        static let floatingRefreshControlClearance: CGFloat = 12
     }
 
     /// Set by `loadVoiceMode()` so that `refreshUnifiedToggleInput` can suppress
@@ -469,7 +470,7 @@ class TabViewController: UIViewController {
     public var link: Core.Link? {
         if isError {
             if let url = url ?? webView.url ?? URL(string: "") {
-                return Link(title: errorText, url: url)
+                return Link(title: errorText, url: SerpSearchTokenInterceptor.strippingToken(from: url))
             }
         }
         
@@ -477,7 +478,9 @@ class TabViewController: UIViewController {
             return tabModel.link
         }
                         
-        let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
+        // Strip the search-token param so it never surfaces to the user via this link (address bar,
+        // bookmarks, favorites, copy/share all read `link`). The live network request keeps the token.
+        let finalURL = SerpSearchTokenInterceptor.strippingToken(from: duckPlayerNavigationHandler.getDuckURLFor(url))
         let activeLink = Link(title: title, url: finalURL)
         guard let storedLink = tabModel.link else {
             return activeLink
@@ -739,7 +742,8 @@ class TabViewController: UIViewController {
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            selectionJourneyScopeID: tabModel.uid
         )
         coordinator.delegate = self
         return coordinator
@@ -1058,6 +1062,10 @@ class TabViewController: UIViewController {
         let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
             ? .zero
             : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+        let refreshControlTopOffset = appSettings.currentAddressBarPosition == .top
+            ? max(0, obscuredInsets.top - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
+            : 0
+        pullToRefreshViewAdapter?.setTopOffset(refreshControlTopOffset)
         if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
             scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
         }
@@ -1080,6 +1088,7 @@ class TabViewController: UIViewController {
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+        pullToRefreshViewAdapter?.setTopOffset(0)
         if #available(iOS 26, *) {
             webView.obscuredContentInsets = .zero
         }
@@ -1144,6 +1153,9 @@ class TabViewController: UIViewController {
     
     func updateTabModel() {
         if let url = url {
+            // Strip the search-token param before it persists into `tabModel.link` (read directly by the
+            // tab switcher, autocomplete, and tab restore). Shadow `url` so the comparison below matches.
+            let url = SerpSearchTokenInterceptor.strippingToken(from: url)
             let hasTitle = title != nil && !title!.isEmpty
             let previousTitle = (tabModel.link?.url == url) ? tabModel.link?.title : nil
             let link = Link(title: hasTitle ? title : previousTitle, url: url)
@@ -1195,6 +1207,10 @@ class TabViewController: UIViewController {
             self?.isSearchSelectionItemAvailable ?? false
         }
 
+        webView.isSelectionFrameAvailable = { [weak self] in
+            self?.userScripts?.selectionFrameScript.frameWithSelection != nil
+        }
+
         webView.askAIChatHandler = { [weak self] text in
             guard let self else { return }
             self.delegate?.tab(self, didRequestAIChatForSelectedText: text)
@@ -1203,6 +1219,10 @@ class TabViewController: UIViewController {
         webView.searchWithDuckDuckGoHandler = { [weak self] text in
             guard let self else { return }
             self.delegate?.tab(self, didRequestSearchForSelectedText: text)
+        }
+
+        webView.selectionFrameProvider = { [weak self] in
+            self?.userScripts?.selectionFrameScript.frameWithSelection
         }
     }
 
@@ -2197,6 +2217,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        userScripts?.selectionFrameScript.reset()
+
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
@@ -3093,13 +3115,13 @@ extension TabViewController: WKNavigationDelegate {
             didModifyRequest = true
         }
 
-        // Attach Search Token experiment signals (dindexexp param + token header) to SERP navigations.
+        // Attach Search Token experiment signals (dindexexp + dindextoken URL params) to SERP navigations.
         // Enrolled devices only, skipping back/forward so we don't wipe forward history.
         if navigationAction.isTargetingMainFrame(),
            navigationAction.navigationType != .backForward,
            let url = navigationAction.request.url,
            SerpSearchTokenInterceptor.isSerpURL(url),
-           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV2) as? FeatureFlag.SearchTokenExperimentCohort {
+           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV3) as? FeatureFlag.SearchTokenExperimentCohort {
             // Pin the UA this SERP navigation will send so it can't inherit a stale `customUserAgent`
             // from a prior (non-DDG) navigation. Matches the UA the token was warmed against.
             webView.customUserAgent = userAgentManager.userAgent(isDesktop: tabModel.isDesktop, url: url)
@@ -3109,6 +3131,11 @@ extension TabViewController: WKNavigationDelegate {
                                                                            token: token) {
                 modifiedRequest = signalled
                 didModifyRequest = true
+                // Fires only when we mutate the request, i.e. the first pass — the cancel+reload re-enters
+                // with signals already present so `signalledRequest` returns nil, avoiding a double count.
+                if cohort == .treatment {
+                    fireSearchTokenAttachPixel(token: token)
+                }
             }
         }
 
@@ -3928,6 +3955,8 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        userScripts?.selectionFrameScript.reset()
+
         let isDuckAITab = webView.url?.isDuckAIURL == true
         if isDuckAITab {
             DailyPixel.fireDailyAndCount(.aiChatTabDidTerminate, error: nil, withAdditionalParameters: [:])
@@ -5394,6 +5423,30 @@ private extension WKProcessTerminationReason {
         case .requestedByClient: return "requested_by_client"
         case .crash: return "crash"
         case .exceededSharedProcessCrashLimit: return "exceeded_shared_process_crash_limit"
+        }
+    }
+}
+
+// MARK: - Search Token (Dindex) experiment diagnostics
+
+private extension TabViewController {
+
+    /// Fires the treatment-only `search-token_serp-attach` diagnostic for a SERP navigation the interceptor
+    /// just decorated: whether a token was attached and its length bucket. Daily+count, low-cardinality, no PII.
+    func fireSearchTokenAttachPixel(token: String?) {
+        PixelKit.fire(SearchTokenPixel.serpAttach(outcome: token != nil ? "attached" : "no_token",
+                                                  tokenLength: Self.tokenLengthBucket(token?.count ?? 0)),
+                      frequency: .dailyAndCount)
+    }
+
+    // A normal token is ~347 chars; buckets bracket that so truncation (1_256) and oversize (513_plus)
+    // stand out from the normal range (257_512).
+    static func tokenLengthBucket(_ length: Int) -> String {
+        switch length {
+        case 0: return "0"
+        case 1...256: return "1_256"
+        case 257...512: return "257_512"
+        default: return "513_plus"
         }
     }
 }

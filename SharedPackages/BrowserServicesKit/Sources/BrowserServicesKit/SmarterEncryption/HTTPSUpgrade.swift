@@ -89,6 +89,12 @@ public actor HTTPSUpgrade {
         return .success(result)
     }
 
+    /// Whether a Bloom filter is currently held in memory.
+    ///
+    /// `false` means the last `loadData()` failed or never ran, so every upgrade check fails until it is
+    /// called again. Callers that only reload on new data use this to spot - and recover from - that state.
+    public var isBloomFilterLoaded: Bool { bloomFilter != nil }
+
     nonisolated public func loadDataAsync() {
         logger.debug("loadDataAsync")
         Task {
@@ -115,11 +121,13 @@ public actor HTTPSUpgrade {
         return bloomFilter
     }
 
-    public func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws {
+    @discardableResult
+    public func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
         try store.persistBloomFilter(specification: specification, data: data)
     }
 
-    public func persistExcludedDomains(_ domains: [String]) throws {
+    @discardableResult
+    public func persistExcludedDomains(_ domains: [String]) throws -> Bool {
         try store.persistExcludedDomains(domains)
     }
 

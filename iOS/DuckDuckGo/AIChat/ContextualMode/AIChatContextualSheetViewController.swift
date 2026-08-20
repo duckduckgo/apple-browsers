@@ -78,6 +78,13 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user taps a suggested prompt.
     func aiChatContextualSheetViewControllerAttachContextForSuggestion(_ viewController: AIChatContextualSheetViewController) async
 
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,
+                                             didSelectSelectionSuggestion action: AIChatTextSelectionAction?)
+
+    func aiChatContextualSheetViewControllerDidViewSelectionSuggestions(_ viewController: AIChatContextualSheetViewController)
+
+    func aiChatContextualSheetViewControllerSelectionSuggestionDeliveryTimedOut(_ viewController: AIChatContextualSheetViewController)
+
     /// Called when the user confirms chat deletion from the fire button confirmation
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController)
 }
@@ -198,6 +205,14 @@ final class AIChatContextualSheetViewController: UIViewController {
         view.backgroundColor = .clear
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
+    }()
+
+    private lazy var aiChatEditHeaderView: AIChatEditHeaderView = {
+        let header = AIChatEditHeaderView(preferredHeight: nil)
+        header.delegate = self
+        header.translatesAutoresizingMaskIntoConstraints = false
+        header.isHidden = true
+        return header
     }()
 
     private lazy var leftButtonContainer: UIView = {
@@ -431,7 +446,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         dismissRecentChatsPopup()
         view.endEditing(true)
         removeKeyboardObserver()
-        pixelHandler.fireSheetDismissed()
+        pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
         hideDimmingView(animated: animated)
     }
 
@@ -444,6 +459,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         super.viewDidDisappear(animated)
         areSuggestionsVisible = false
         if isBeingDismissed {
+            persistentUTIHost?.endEditMode()
             prepareForDismissal()
             delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
         }
@@ -731,7 +747,9 @@ private extension AIChatContextualSheetViewController {
             }
         )
 
+        // Inject the presenting context's true size class; the built-in one reports `.compact` inside the sheet/popover.
         let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
+            .environment(\.presentationHorizontalSizeClass, UserInterfaceSizeClass(traitCollection.horizontalSizeClass))
         let hostingController = UIHostingController(rootView: confirmationView)
         hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         hostingController.modalTransitionStyle = .coverVertical
@@ -746,8 +764,8 @@ private extension AIChatContextualSheetViewController {
         present(hostingController, animated: true)
     }
 
-    private func configureIPadPopoverPresentation(for hostingController: UIHostingController<ScopedFireConfirmationView>,
-                                                  confirmationView: ScopedFireConfirmationView) {
+    private func configureIPadPopoverPresentation<Content: View>(for hostingController: UIHostingController<Content>,
+                                                                 confirmationView: Content) {
         if let popover = hostingController.popoverPresentationController {
             popover.sourceView = fireButton
             popover.sourceRect = fireButton.bounds
@@ -763,8 +781,8 @@ private extension AIChatContextualSheetViewController {
         }
     }
 
-    private func configureIPhoneSheetPresentation(for hostingController: UIHostingController<ScopedFireConfirmationView>,
-                                                  confirmationView: ScopedFireConfirmationView) {
+    private func configureIPhoneSheetPresentation<Content: View>(for hostingController: UIHostingController<Content>,
+                                                                 confirmationView: Content) {
         if let sheet = hostingController.sheetPresentationController {
             if #available(iOS 16.0, *) {
                 let sizingController = UIHostingController(rootView: confirmationView)
@@ -833,6 +851,12 @@ private extension AIChatContextualSheetViewController {
 
 // MARK: - UIGestureRecognizerDelegate
 
+extension AIChatContextualSheetViewController: AIChatEditHeaderViewDelegate {
+    func aiChatEditHeaderDidTapCancel() {
+        persistentUTIHost?.endEditMode()
+    }
+}
+
 extension AIChatContextualSheetViewController: UIGestureRecognizerDelegate {
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         Self.isPredominantlyVerticalDrag(velocity: contentDragKeyboardDismissRecognizer.velocity(in: contentContainerView))
@@ -894,14 +918,14 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     /// Attaches context, waits for the frontend, then submits. Also used by the floating input, which
     /// promotes to this sheet first so the web view exists to receive the prompt.
     func submitSuggestion(_ suggestion: ContextualSuggestedPrompt) {
-        // Selection suggestions act on the attached selection, so they must not take the page route
-        // below: it attaches the whole page and submits the label as prompt text.
-        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
-              AIChatTextSelectionAction(selectionSuggestionID: suggestion.id) == nil else {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else {
             abandonAwaitedSubmittedChat()
             return
         }
+        let selectionAction = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id)
+        let actsOnSelection = selectionAction != nil
         cancelSuggestionSubmission()
+        delegate?.aiChatContextualSheetViewController(self, didSelectSelectionSuggestion: selectionAction)
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
         contextualInputViewController.setStartActionsDimmed(true)
         let submissionID = UUID()
@@ -918,10 +942,33 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
                 }
             }
 
-            if await self.deliverSuggestionPrompt(suggestion) == false {
+            let didDeliver = if actsOnSelection {
+                await self.deliverSelectionSuggestionPrompt(suggestion)
+            } else {
+                await self.deliverSuggestionPrompt(suggestion)
+            }
+            if !didDeliver {
                 self.abandonAwaitedSubmittedChat()
             }
         }
+    }
+
+    private func deliverSelectionSuggestionPrompt(_ suggestion: ContextualSuggestedPrompt) async -> Bool {
+        guard !sessionState.attachedSelections.isEmpty,
+              let webViewController else { return false }
+
+        let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
+        guard isFrontendReady else {
+            guard !Task.isCancelled else { return true }
+            pixelHandler.fireSelectionToolDeliveryTimedOut()
+            delegate?.aiChatContextualSheetViewControllerSelectionSuggestionDeliveryTimedOut(self)
+            return false
+        }
+        guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
+        guard !sessionState.attachedSelections.isEmpty else { return false }
+
+        submitSuggestionPrompt(suggestion.prompt)
+        return true
     }
 
     /// Attaches the context, waits for the frontend, then submits. Returns whether anything is still
@@ -1165,8 +1212,13 @@ private extension AIChatContextualSheetViewController {
         guard isVisible, !areSuggestionsVisible else { return }
         pixelHandler.fireSuggestionsViewed(
             isSmart: viewState.suggestionsAreSmart,
-            pageType: viewState.suggestionsPageType
+            pageType: viewState.suggestionsPageType,
+            scope: viewState.suggestionsScope,
+            surface: .sheet
         )
+        if viewState.suggestionsScope == .selection {
+            delegate?.aiChatContextualSheetViewControllerDidViewSelectionSuggestions(self)
+        }
     }
 }
 
@@ -1275,6 +1327,7 @@ private extension AIChatContextualSheetViewController {
         view.addSubview(topSeparator)
 
         view.addSubview(headerView)
+        view.addSubview(aiChatEditHeaderView)
 
         headerView.addSubview(leftButtonContainer)
         leftButtonContainer.addSubview(leftButtonStack)
@@ -1350,6 +1403,11 @@ private extension AIChatContextualSheetViewController {
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: Constants.headerHeight),
 
+            aiChatEditHeaderView.topAnchor.constraint(equalTo: headerView.topAnchor),
+            aiChatEditHeaderView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            aiChatEditHeaderView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            aiChatEditHeaderView.bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
+
             leftButtonContainer.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: Constants.headerHorizontalPadding),
             leftButtonContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
@@ -1386,6 +1444,10 @@ private extension AIChatContextualSheetViewController {
         guard let persistentUTIHost, !hasMountedPersistentUTIHost else { return }
         hasMountedPersistentUTIHost = true
 
+        persistentUTIHost.onEditModeChange = { [weak self] isEditing in
+            self?.setEditMode(isEditing)
+        }
+
         let utiView = persistentUTIHost.mount(in: self)
         contentContainerBottomConstraint?.isActive = false
         let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
@@ -1397,6 +1459,14 @@ private extension AIChatContextualSheetViewController {
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {
         guard gesture.state == .began else { return }
         persistentUTIHost?.deactivateInput()
+    }
+
+    private func setEditMode(_ editing: Bool) {
+        headerView.isHidden = editing
+        aiChatEditHeaderView.isHidden = !editing
+        UIView.animate(withDuration: 0.2) {
+            self.contentContainerView.alpha = editing ? 0 : 1
+        }
     }
     
     func updateShadowPath() {

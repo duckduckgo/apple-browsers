@@ -1448,6 +1448,7 @@ extension Pixel {
         case settingsSyncRecoveryConfirmedTapped
         case settingsSyncAnotherDevicePromptShown
         case settingsSyncAnotherDevicePromptOptionTapped
+        case settingsSyncAnotherDevicePromptDismissed
         case settingsAppearanceOpen
         case settingsThemeSelectorPressed
         case settingsAddressBarTopSelected
@@ -1889,6 +1890,11 @@ extension Pixel {
         case unifiedToggleInputFileValidationFailed
         case unifiedToggleInputVoiceTapped
         case unifiedToggleInputStopGenerationTapped
+        case unifiedToggleInputEditReceived
+        case unifiedToggleInputEditSubmitted
+        case unifiedToggleInputEditCancelled
+        case unifiedToggleInputEditImageRemoved
+        case unifiedToggleInputEditFileRemoved
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
         case unifiedToggleInputChatHeaderUpgradeShown
@@ -1897,6 +1903,8 @@ extension Pixel {
         case unifiedToggleInputSubmitChangeModel
         case unifiedToggleInputSubmitChangeModelPromptSent
         case unifiedToggleInputDuckAIDirectNavigation
+        case aiChatDuckAIDirectNavigation
+        case unifiedToggleInputQuerySubmitted
 
         // MARK: Unified Toggle Input - Duck.ai autocomplete suggestion clicks
         case autocompleteDuckAIClickWebsite
@@ -2088,9 +2096,6 @@ extension Pixel {
         case fireModeLastTabClosedBurn
         case fireModeEmptyStateNewTab
         case linkLongPressMenuShown
-        case linkLongPressNewTab
-        case linkLongPressBackgroundTab
-        case linkLongPressFireTab
 
         // MARK: - Custom Product Page
         case customProductPageDuckAIOpenedAIChat
@@ -2201,6 +2206,7 @@ extension Pixel.Event {
         case .settingsSyncRecoveryConfirmedTapped: return "m_settings_sync_recovery_confirmed_tapped"
         case .settingsSyncAnotherDevicePromptShown: return "m_settings_sync_another_device_prompt_shown"
         case .settingsSyncAnotherDevicePromptOptionTapped: return "m_settings_sync_another_device_prompt_option_tapped"
+        case .settingsSyncAnotherDevicePromptDismissed: return "settings_sync_another_device_prompt_dismissed"
         case .settingsAppearanceOpen: return "m_settings_appearance_open"
         case .settingsThemeSelectorPressed: return "m_settings_theme_selector_pressed"
         case .settingsAddressBarTopSelected: return "m_settings_address_bar_top_selected"
@@ -3785,7 +3791,6 @@ extension Pixel.Event {
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
         case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
-
         // MARK: Unified Toggle Input (UTI)
         case .unifiedToggleInputImageGenerationSelected: return "m_aichat_unified_input_image_generation_selected"
         case .unifiedToggleInputImageGenerationDeselected: return "m_aichat_unified_input_image_generation_deselected"
@@ -3805,6 +3810,11 @@ extension Pixel.Event {
         case .unifiedToggleInputFileValidationFailed: return "m_aichat_unified_input_file_validation_failed"
         case .unifiedToggleInputVoiceTapped: return "m_aichat_unified_input_voice_tapped"
         case .unifiedToggleInputStopGenerationTapped: return "m_aichat_unified_input_stop_generation_tapped"
+        case .unifiedToggleInputEditReceived: return "aichat_edit_prompt_opened"
+        case .unifiedToggleInputEditSubmitted: return "aichat_edit_prompt_submitted"
+        case .unifiedToggleInputEditCancelled: return "aichat_edit_prompt_cancelled"
+        case .unifiedToggleInputEditImageRemoved: return "aichat_edit_prompt_image_removed"
+        case .unifiedToggleInputEditFileRemoved: return "aichat_edit_prompt_file_removed"
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
         case .unifiedToggleInputChatHeaderUpgradeShown: return "m_aichat_unified_input_chat_header_upgrade_shown"
@@ -3813,6 +3823,8 @@ extension Pixel.Event {
         case .unifiedToggleInputSubmitChangeModel: return "aichat_unified_input_submit_change_model"
         case .unifiedToggleInputSubmitChangeModelPromptSent: return "aichat_unified_input_submit_change_model_prompt_sent"
         case .unifiedToggleInputDuckAIDirectNavigation: return "m_aichat_unified_input_duck_ai_direct_navigation"
+        case .aiChatDuckAIDirectNavigation: return "m_aichat_duck_ai_direct_navigation"
+        case .unifiedToggleInputQuerySubmitted: return "m_aichat_unified_input_query_submitted"
 
         case .autocompleteDuckAIClickWebsite: return "m_autocomplete_duckai_click_website"
         case .autocompleteDuckAIClickBookmark: return "m_autocomplete_duckai_click_bookmark"
@@ -4064,9 +4076,6 @@ extension Pixel.Event {
         case .fireModeLastTabClosedBurn: return "m_fire-mode_last-tab-closed_burn"
         case .fireModeEmptyStateNewTab: return "m_fire-mode_empty-state_new-tab"
         case .linkLongPressMenuShown: return "m_link-long-press_menu-shown"
-        case .linkLongPressNewTab: return "m_link-long-press_new-tab"
-        case .linkLongPressBackgroundTab: return "m_link-long-press_background-tab"
-        case .linkLongPressFireTab: return "m_link-long-press_fire-tab"
 
         // MARK: - Custom Product Page
         case .customProductPageDuckAIOpenedAIChat: return "m_custom-product-page_duck-ai_opened-ai-chat"
@@ -4193,7 +4202,7 @@ extension Pixel.Event {
 
 // This is a temporary mapper from PixelKit to Pixel events for MaliciousSiteProtection
 // Malicious Site Protection BSK library depends on PixelKit which is not ready yet to be ported to iOS.
-// The below code maps between `PixelKitEvent` to `Pixel.Event` in order to use `Pixel.fire` on the client.
+// The below code maps between `PixelKit.Event` to `Pixel.Event` in order to use `Pixel.fire` on the client.
 public extension Pixel.Event {
 
     enum MaliciousSiteProtectionEvent: Equatable {
@@ -4238,7 +4247,7 @@ public extension Pixel.Event {
             }
         }
 
-        private var event: PixelKitEvent {
+        private var event: PixelKit.Event {
             switch self {
             case .errorPageShown(let category, let clientSideHit):
                 return MaliciousSiteProtection.Event.errorPageShown(category: category, clientSideHit: clientSideHit)

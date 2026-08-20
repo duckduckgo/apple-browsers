@@ -124,6 +124,7 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var buttonsContainerViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var buttonsContainerViewTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
+    @IBOutlet var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
     @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarTextTrailingConstraint: NSLayoutConstraint!
@@ -871,23 +872,44 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateSwitchToTabBoxAppearance() {
-        guard case .editing(.openTabSuggestion) = mode,
-              addressBarTextField.isVisible, let editor = addressBarTextField.editor,
-              view.frame.size.width > 280 else {
-            switchToTabBox.isHidden = true
-            switchToTabBox.alphaValue = 0
+        guard calculateSwitchToTabBoxMinX() != nil else {
+            refreshSwitchToTabVisibility(isHidden: true)
             return
         }
 
-        if !switchToTabBox.isVisible {
-            switchToTabBox.isShown = true
-            switchToTabBox.alphaValue = 0
-        }
         // update box position on the next pass after text editor layout is updated
         DispatchQueue.main.async {
-            self.switchToTabBox.alphaValue = 1
-            self.switchToTabBoxMinXConstraint.constant = editor.textSize.width + Constants.switchToTabMinXPadding
+            guard let minX = self.calculateSwitchToTabBoxMinX() else {
+                self.refreshSwitchToTabVisibility(isHidden: true)
+                return
+            }
+
+            self.refreshSwitchToTabVisibility(isHidden: false)
+            self.switchToTabBoxMinXConstraint.constant = minX
         }
+    }
+
+    private func calculateSwitchToTabBoxMinX() -> CGFloat? {
+        guard case .editing(.openTabSuggestion) = mode, addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
+            return nil
+        }
+
+        let trailingInset = switchToTabBoxTrailingConstraint.constant
+        let switchToWidth = switchToTabBox.fittingSize.width
+
+        /// We're placing the `SwitchToTabBox` component at the tail of the Address Bar text.
+        /// But such location is also limited by the actually visible width.
+        let textWidth = min(editor.textSize.width, max(0, addressBarTextField.bounds.width - switchToWidth))
+
+        let switchToMinX = Constants.switchToTabMinXPadding + textWidth
+        let requiredWidth = switchToMinX + switchToWidth + trailingInset
+
+        return requiredWidth <= view.bounds.width ? switchToMinX : nil
+    }
+
+    private func refreshSwitchToTabVisibility(isHidden: Bool) {
+        switchToTabBox.isHidden = isHidden
+        switchToTabBox.alphaValue = isHidden ? 0 : 1
     }
 
     private func updateShadowViewPresence(_ isFirstResponder: Bool) {

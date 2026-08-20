@@ -80,11 +80,18 @@ final class WebViewSelectionMenuTests: XCTestCase {
         let webView = makeWebView()
         webView.isAskAIChatItemAvailable = { askAvailable }
         webView.isSearchWithDuckDuckGoItemAvailable = { searchAvailable }
+        webView.isSelectionFrameAvailable = { true }
         return webView
     }
 
     func testWhenAvailabilityUnsetThenNoItemsAreOffered() {
         XCTAssertEqual(makeWebView().selectionMenuItems(forSystem: .context), [])
+    }
+
+    func testWhenSelectionFrameIsUnavailableThenNoItemsAreOffered() {
+        let webView = makeWebView(askAvailable: true, searchAvailable: true)
+        webView.isSelectionFrameAvailable = { false }
+        XCTAssertEqual(webView.selectionMenuItems(forSystem: .context), [])
     }
 
     func testWhenBothAreAvailableThenAskIsOfferedFirst() {
@@ -117,6 +124,7 @@ final class WebViewSelectionMenuTests: XCTestCase {
         let webView = makeWebView()
         var available = false
         webView.isAskAIChatItemAvailable = { available }
+        webView.isSelectionFrameAvailable = { true }
 
         XCTAssertEqual(webView.selectionMenuItems(forSystem: .context), [])
         available = true

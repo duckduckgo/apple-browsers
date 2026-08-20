@@ -71,6 +71,7 @@ final class MainCoordinator {
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let promoCoordinationService: PromoCoordinationService
+    private let homePageConfiguration: HomePageConfiguration
     private let launchSourceManager: LaunchSourceManaging
     private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
@@ -122,6 +123,7 @@ final class MainCoordinator {
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
          didFinishLaunchingStartTime: CFAbsoluteTime?,
+         isAppLaunchedInBackground: Bool,
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
@@ -158,7 +160,10 @@ final class MainCoordinator {
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
-                                                          isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
+                                                          isStillOnboarding: { daxDialogsManager.isStillOnboarding() },
+                                                          promoGate: promoCoordinationService,
+                                                          isRMFAdmissionEnabled: !isAppLaunchedInBackground)
+        self.homePageConfiguration = homePageConfiguration
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
         let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
@@ -317,8 +322,7 @@ final class MainCoordinator {
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
-                                        newTabPagePromoCoordinator: promoCoordinationService,
-                                        recentModalPromptStatusProvider: promoCoordinationService)
+                                        promoCoordinationService: promoCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -664,9 +668,15 @@ final class MainCoordinator {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
+    func prepareHomePageMessagesForForegroundIfNeeded() {
+        controller.prepareHomePageMessagesForForegroundIfNeeded()
+    }
+
     // MARK: App Lifecycle handling
 
     func onForeground(isFirstForeground: Bool) {
+        homePageConfiguration.handleAppForegrounded()
+
         // Apply tracker animation suppression based on launch source
         // Must be called after launchSourceManager.handleAppAction sets the source
         if isFirstForeground {
@@ -688,6 +698,7 @@ final class MainCoordinator {
     }
 
     func onBackground() {
+        homePageConfiguration.handleAppBackgrounded()
         resetAppStartTime()
         Task {
             await privacyStats.handleAppTermination()
@@ -823,7 +834,7 @@ extension MainCoordinator: URLHandling {
           controller.clearNavigationStack()
           // Give the `clearNavigationStack` call time to complete.
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
-              self.controller.openAIChat()
+              self.controller.openAIChat(source: .iconShortcut)
           }
           Pixel.fire(pixel: .openAIChatFromIconShortcut)
       }
@@ -898,8 +909,9 @@ extension MainCoordinator: UserActivityHandling {
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
-    func showNewTabPageAfterIdleReturn() {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
         if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
         }
 
@@ -911,17 +923,39 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return
         }
 
+        // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
         }
     }
 
-    func markLastUsedTabAsResumedAfterIdle() {
-        controller.postIdleSessionInstrumentation.sessionStarted(surface: .lut)
+    func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: .lut, focused: false)
+    }
+
+    func recordOrdinaryReturn(timeAwayMs: Int?) {
+        startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+    }
+
+    /// A return where no after-idle treatment was applied, so `after_idle` stays false and
+    /// the post-idle event — which only reports on treated returns — is not started.
+    private func startUntreatedReturnSession(timeAwayMs: Int?) {
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: nil, focused: false)
+    }
+
+    private func landedOnForCurrentTab() -> ReturnSessionWideEventData.LandedOn {
+        guard let url = tabManager.currentTabsModel.currentTab?.link?.url else { return .ntpUserInitiated }
+        if url.isDuckAIURL { return .duckAI }
+        if url.isDuckDuckGoSearch { return .serp }
+        return .web
     }
 
 }

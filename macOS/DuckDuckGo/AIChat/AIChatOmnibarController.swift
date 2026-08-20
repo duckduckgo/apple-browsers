@@ -99,6 +99,11 @@ final class AIChatOmnibarController {
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
     private let subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling
+    private let usageLimitsStore: DuckAiUsageLimitsStore?
+    private lazy var attachedTabsTracker = AIChatAttachedTabsTracker(
+        origin: origin,
+        windowControllersManager: Application.appDelegate.windowControllersManager
+    )
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var draftStoreCancellable: AnyCancellable?
@@ -125,6 +130,9 @@ final class AIChatOmnibarController {
     /// models endpoint, resolved to the user's tier. `nil` until fetched, or when the endpoint
     /// omits the block — callers fall back to the previously shipped defaults in that case.
     private(set) var attachmentLimits: AIChatAttachmentTierLimits?
+
+    /// `nil` when the usage-warnings feature isn't active, which is not the same as `.noData`.
+    @Published private(set) var usageLimits: DuckAiUsageLimits?
 
     /// Called after a successful submit so the container VC can cancel any in-flight image
     /// resize tasks (data is cleared via `persistAttachmentsToActiveTab([])`).
@@ -265,7 +273,8 @@ final class AIChatOmnibarController {
         // `AIChatOmnibarSubscriptionUpsellPresenter.init` and `Application.appDelegate.subscriptionNavigationCoordinator`
         // are both @MainActor-isolated; a default *parameter value* is evaluated in a nonisolated
         // context even though this initializer's body is not, so the real default is resolved below.
-        subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil
+        subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -283,6 +292,7 @@ final class AIChatOmnibarController {
         self.subscriptionManager = subscriptionManager
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
+        self.usageLimitsStore = usageLimitsStore
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -365,6 +375,7 @@ final class AIChatOmnibarController {
         }
 
         fetchModels()
+        refreshUsageLimits()
 
         // If feature is disabled, clear any existing suggestions and don't fetch
         if !isSuggestionsEnabled {
@@ -375,6 +386,12 @@ final class AIChatOmnibarController {
         if shouldFetchSuggestions {
             fetchSuggestionsIfNeeded(query: currentText)
         }
+    }
+
+    /// Synchronous: a lookup in the already-loaded entries blob, so it doesn't need the async treatment
+    /// `fetchModels()` gets for its network call.
+    private func refreshUsageLimits() {
+        usageLimits = usageLimitsStore?.currentLimits()
     }
 
     private func fetchModels() {
@@ -822,6 +839,7 @@ final class AIChatOmnibarController {
     /// Called by the container VC whenever the tab attachment list changes (toggle from menu, removal from carousel).
     func persistTabAttachmentsToActiveTab(_ attachments: [AIChatTabAttachment]) {
         draftStore?.setAIChatTabAttachments(attachments)
+        attachedTabsTracker.trackAttachments(of: draftStore)
     }
 
     /// The tab attachments persisted for the current tab, or an empty list if none / no shared state.
@@ -861,6 +879,26 @@ final class AIChatOmnibarController {
             return
         }
         resolved.tab.reload()
+    }
+
+    /// Attach/detach from a picker, whose rows are a snapshot: a tab closed since it was taken, or
+    /// one that has since left the page the row showed, is no longer the thing the user picked.
+    /// Returns whether the attachments changed, so callers can skip their pixel when nothing did.
+    @discardableResult
+    func togglePickedTabAttachment(_ attachment: AIChatTabAttachment) -> Bool {
+        guard !activeTabAttachments.contains(where: { $0.id == attachment.id }) else {
+            toggleTabAttachment(attachment)
+            return true
+        }
+        guard let stillOffered = openTabsForOmnibarPicker().first(where: { $0.id == attachment.id }),
+              stillOffered.url == attachment.url else {
+            // Every picker works from a snapshot, so say why the pick didn't take rather than
+            // leaving the click looking ignored.
+            onAttachmentValidationFailed?(UserText.aiChatAttachTabsStaleSelection)
+            return false
+        }
+        toggleTabAttachment(stillOffered)
+        return true
     }
 
     /// Removes a tab attachment from the active tab's prompt, identified by `id`. No-op if not
@@ -1018,6 +1056,7 @@ final class AIChatOmnibarController {
         activeToolMode = nil
         hasImageAttachments = false
         hasBeenActivated = false
+        usageLimits = nil
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
         currentFetchTask = nil
@@ -1097,6 +1136,7 @@ final class AIChatOmnibarController {
                     .sink { [weak self] panelAttachments in
                         self?.onActiveTabPanelAttachmentsChanged?(panelAttachments)
                     }
+                self.attachedTabsTracker.trackAttachments(of: store)
                 if store == nil {
                     // No store → empty carousel; nothing can deliver the empty value for us.
                     self.onActiveTabPanelAttachmentsChanged?([])
@@ -1275,7 +1315,8 @@ final class AIChatOmnibarController {
             } else {
                 pageContextPayload = await self.extractPageContextsForOmnibarSubmit(
                     tabAttachments: snapshotTabAttachments,
-                    activeTabUUID: snapshotActiveTabUUID
+                    activeTabUUID: snapshotActiveTabUUID,
+                    promptStore: snapshotDraftStore
                 )
                 pixelHandler.fire(.submittedWithTabs(count: snapshotTabAttachments.count))
             }
@@ -1346,7 +1387,8 @@ final class AIChatOmnibarController {
     @MainActor
     private func extractPageContextsForOmnibarSubmit(
         tabAttachments: [AIChatTabAttachment],
-        activeTabUUID: String?
+        activeTabUUID: String?,
+        promptStore: (any DuckAIPromptDraftStoring)?
     ) async -> AIChatPageContextPayload? {
         guard !tabAttachments.isEmpty, let origin = origin?.originTabCollectionViewModel else { return nil }
 
@@ -1368,9 +1410,17 @@ final class AIChatOmnibarController {
 
         // Stamp `tabId` on each successful extraction (or strip it if the entry matches the
         // active tab), then re-order to match the carousel's insertion order.
+        // Extraction resolves the live tab, which may have navigated while the extraction ran, so
+        // only attachments this submission made — and that are still attached — may ship.
+        let submittedInstanceIDs = Dictionary(tabAttachments.map { ($0.id, $0.instanceID) }, uniquingKeysWith: { _, latest in latest })
+        // Matched on instanceID, so a tab detached and reattached mid-submit is a different
+        // attachment and its new page can't ride along with this prompt.
+        let attachedNow = Set((promptStore?.aiChatTabAttachments ?? tabAttachments)
+            .filter { submittedInstanceIDs[$0.id] == $0.instanceID }
+            .map(\.id))
         var byId: [String: AIChatPageContextData] = [:]
         for (tabId, maybeContext) in extracted {
-            guard let ctx = maybeContext else { continue }
+            guard let ctx = maybeContext, attachedNow.contains(tabId) else { continue }
             let stampedTabId: String? = (tabId == activeTabUUID) ? nil : tabId
             byId[tabId] = ctx.withTabId(stampedTabId)
         }

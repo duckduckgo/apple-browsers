@@ -128,6 +128,7 @@ class DebugScreensViewModel: ObservableObject {
         }
     }
 
+    @MainActor
     func executeAction(_ screen: DebugScreen) {
         switch screen {
         case .action(_, let action):

@@ -305,6 +305,9 @@ public struct AIChatNativePrompt: Codable, Equatable {
     public let tool: Tool?
     public let pageContext: AIChatPageContextPayload?
 
+    /// Text selections attached to this prompt, sent alongside `pageContext` rather than folded into it.
+    public let selections: [AIChatSelectionContextData]?
+
     public enum Tool: Equatable {
         case query(Query)
         case summary(TextSummary)
@@ -442,12 +445,17 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case summary
         case translation
         case pageContext
+        case selections
     }
 
-    public init(platform: String, tool: Tool?, pageContext: AIChatPageContextPayload? = nil) {
+    public init(platform: String,
+                tool: Tool?,
+                pageContext: AIChatPageContextPayload? = nil,
+                selections: [AIChatSelectionContextData]? = nil) {
         self.platform = platform
         self.tool = tool
         self.pageContext = pageContext
+        self.selections = selections
     }
 
     public init(from decoder: Decoder) throws {
@@ -472,6 +480,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
         }
 
         pageContext = try container.decodeIfPresent(AIChatPageContextPayload.self, forKey: .pageContext)
+        selections = try container.decodeIfPresent([AIChatSelectionContextData].self, forKey: .selections)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -494,10 +503,11 @@ public struct AIChatNativePrompt: Codable, Equatable {
         }
 
         try container.encodeIfPresent(pageContext, forKey: .pageContext)
+        try container.encodeIfPresent(selections, forKey: .selections)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext)
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext, selections: selections)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

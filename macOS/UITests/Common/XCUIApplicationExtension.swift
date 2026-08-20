@@ -94,10 +94,11 @@ extension XCUIApplication {
 
         static let fireDialogTitle = "FireDialogView.title"
         static let fireDialogSegmentedControl = "FireDialogView.segmentedControl"
+        static let fireDialogDetailsDisclosureButton = "FireDialogView.detailsDisclosureButton"
         static let fireDialogTabsToggle = "FireDialogView.tabsToggle"
         static let fireDialogHistoryToggle = "FireDialogView.historyToggle"
         static let fireDialogCookiesToggle = "FireDialogView.cookiesToggle"
-        static let fireDialogCookiesInfoButton = "FireDialogView.cookiesInfoButton"
+        static let fireDialogCookiesDetailButton = "FireDialogView.cookiesDetailButton"
         static let fireDialogManageFireproofButton = "FireDialogView.manageFireproofButton"
         static let fireDialogIndividualSitesLink = "FireDialogView.individualSitesLink"
         static let fireDialogSitesOverlayCloseButton = "FireDialogView.sitesOverlayCloseButton"
@@ -109,6 +110,9 @@ extension XCUIApplication {
         static let fireButton = "TabBarViewController.fireButton"
         static let fakeFireButton = "FireViewController.fakeFireButton"
         static let homeButton = "NavigationBarViewController.HomeButton"
+
+        static let fireDialogMoreOptionsMenuButton = "FireDialogView.toolbarMoreButton"
+        static let fireDialogManageFireproofSites = "FireDialogView.moreOptions.manageFireproofSites"
     }
 
     static func setUp(environment: [String: String]? = nil,
@@ -325,8 +329,9 @@ extension XCUIApplication {
             "The address bar text field didn't become available in a reasonable timeframe."
         )
         addressBar.pasteURL(url, pressingEnter: true)
+        Self.dismissLocalNetworkPromptIfPresent()
         XCTAssertTrue(
-            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }
@@ -344,6 +349,7 @@ extension XCUIApplication {
             "The address bar text field didn't become available in a reasonable timeframe."
         )
         addressBar.pasteURL(url, pressingEnter: true)
+        Self.dismissLocalNetworkPromptIfPresent()
         if let expectedLabel {
             XCTAssertTrue(
                 windows.firstMatch.webViews[expectedLabel].waitForExistence(timeout: UITests.Timeouts.navigation),
@@ -375,6 +381,27 @@ extension XCUIApplication {
             progressIndicator.waitForNonExistence(timeout: UITests.Timeouts.navigation),
             "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
         )
+    }
+
+    /// Dismisses the macOS "Allow … to find devices on local networks?" system prompt if it's on
+    /// screen. It's a TCC alert owned by `UserNotificationCenter`, so it floats above our window and
+    /// steals key focus: while it's up the browser window isn't hittable and the next click/wait
+    /// fails at a nondeterministic point — a recurring source of flakiness on the macOS 15+ CI VMs.
+    /// Tapping "Allow" lets the tests-server loopback traffic proceed unchanged.
+    @discardableResult
+    static func dismissLocalNetworkPromptIfPresent() -> Bool {
+        let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
+        for label in ["Allow", "Don’t Allow", "Don't Allow"] {
+            // `.firstMatch`: UserNotificationCenter can surface the same label more than once
+            // (nested hierarchy / stacked notifications); a bare query would fail `.click()` with
+            // "multiple matching elements". Any match dismisses the prompt.
+            let button = notificationCenter.buttons[label].firstMatch
+            if button.exists {
+                button.click()
+                return true
+            }
+        }
+        return false
     }
 
     // MARK: - Bookmarks
@@ -417,7 +444,7 @@ extension XCUIApplication {
         )
         addressBarTextField.typeURL(url)
         XCTAssertTrue(
-            windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         if bookmarkingViaDialog {
@@ -801,6 +828,10 @@ extension XCUIApplication {
         groups[AccessibilityIdentifiers.fireDialogSegmentedControl]
     }
 
+    var fireDialogDetailsDisclosureButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogDetailsDisclosureButton]
+    }
+
     var fireDialogTabsToggle: XCUIElement {
         checkBoxes[AccessibilityIdentifiers.fireDialogTabsToggle]
     }
@@ -813,8 +844,8 @@ extension XCUIApplication {
         checkBoxes[AccessibilityIdentifiers.fireDialogCookiesToggle]
     }
 
-    var fireDialogCookiesInfoButton: XCUIElement {
-        buttons[AccessibilityIdentifiers.fireDialogCookiesInfoButton]
+    var fireDialogCookiesDetailButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogCookiesDetailButton]
     }
 
     var fireDialogManageFireproofButton: XCUIElement {
@@ -835,6 +866,14 @@ extension XCUIApplication {
 
     var fireDialogBurnButton: XCUIElement {
         buttons[AccessibilityIdentifiers.fireDialogBurnButton]
+    }
+
+    var fireDialogMoreOptionsMenuButton: XCUIElement {
+        menuButtons[AccessibilityIdentifiers.fireDialogMoreOptionsMenuButton]
+    }
+
+    var fireDialogManageFireproofSitesMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.fireDialogManageFireproofSites]
     }
 
     var fireproofDomainsAddButton: XCUIElement {

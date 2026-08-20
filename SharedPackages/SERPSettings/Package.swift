@@ -16,6 +16,9 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../Common"),
+        .package(path: "../Persistence"),
+        .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../AIChat")
@@ -24,12 +27,12 @@ let package = Package(
         .target(
             name: "SERPSettings",
             dependencies: [
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 .product(name: "AIChat", package: "AIChat")
             ]
@@ -39,8 +42,8 @@ let package = Package(
             dependencies: [
                 "SERPSettings",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PersistenceTestingUtils", package: "Persistence"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 .product(name: "AIChat", package: "AIChat")
             ]

@@ -31,7 +31,7 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
     var storageLocation: URL!
     var appearancePreferences: AppearancePreferences!
     var userBackgroundImagesManager: CapturingUserBackgroundImagesManager!
-    var sendPixelEvents: [PixelKitEvent] = []
+    var sendPixelEvents: [PixelKit.Event] = []
     var openFilePanel: () -> URL? = { return "file:///sample.jpg".url! }
     var openFilePanelCallCount = 0
     var showImageFailedAlertCallCount = 0

@@ -96,6 +96,20 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(config.isEligibleForFreeTrial, true)
     }
 
+    /// The web omnibar sends no focus message, so entering Duck.ai mode is the read trigger.
+    @MainActor
+    func testUsageLimitsAreReadOnlyWhenTheOmnibarIsInDuckAiMode() async throws {
+        configProvider.mode = .search
+        var config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(config.mode, .search)
+        XCTAssertEqual(configProvider.refreshUsageLimitsCallCount, 0)
+
+        configProvider.mode = .ai
+        config = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(config.mode, .ai)
+        XCTAssertEqual(configProvider.refreshUsageLimitsCallCount, 1)
+    }
+
     /// NTP reuses one webview per window rather than a fresh one per "new tab", so an already-open
     /// tab relies on this refetch to notice a subscription purchase completing.
     @MainActor
@@ -117,6 +131,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(configProvider.mode, .ai)
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)
         XCTAssertEqual(configProvider.isAIChatSettingVisible, true)
+        XCTAssertEqual(configProvider.refreshUsageLimitsCallCount, 1)
     }
 
     @MainActor

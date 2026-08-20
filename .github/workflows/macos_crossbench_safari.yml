@@ -80,6 +80,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Download validated WPR archives
         uses: actions/download-artifact@v7
         with:

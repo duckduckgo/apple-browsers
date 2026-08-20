@@ -44,8 +44,6 @@ TSPROXY_PORT="${TSPROXY_PORT:-9997}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 DDG_AUTOMATION_PY="${DDG_AUTOMATION_PY:-$SCRIPT_DIR/ddg-automation.py}"
 DDG_LAUNCHER="${DDG_LAUNCHER:-$SCRIPT_DIR/launch-ddg-app.sh}"
-CAFFEINATE_BIN="${CAFFEINATE_BIN:-/usr/bin/caffeinate}"
-OPEN_BIN="${OPEN_BIN:-/usr/bin/open}"
 WATCHDOG_PY="${WATCHDOG_PY:-$SCRIPT_DIR/run-with-watchdog.py}"
 DDG_APP="${DDG_APP:-/Applications/DuckDuckGo Review.app}"
 DDG_EXECUTABLE="${DDG_EXECUTABLE:-}"
@@ -694,13 +692,6 @@ start_app() {
   DDG_LOG_MONITOR_PID=$!
   if ! wait_for_port "$AUTOMATION_PORT" 20 "$DDG_AUTOMATION_HOST"; then
     echo "ERROR: DuckDuckGo automation server did not become ready." >&2
-    return 1
-  fi
-  # Hosted macOS runners can let the display sleep while the app remains
-  # running. Mark the user active before reopening the app so WebKit exposes
-  # the measured page as visible and foregrounded.
-  if ! "$CAFFEINATE_BIN" -u -t 1 || ! "$OPEN_BIN" "$DDG_APP"; then
-    echo "ERROR: DuckDuckGo could not be activated through LaunchServices." >&2
     return 1
   fi
   # The check polls both the content blocker and the first tab, and the window

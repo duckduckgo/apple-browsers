@@ -60,8 +60,6 @@ class DDGHarnessTests(unittest.TestCase):
             free_ports(4)
         )
         self.app_launches = self.root / "app-launches.jsonl"
-        self.app_activations = self.root / "app-activations.txt"
-        self.caffeinate_calls = self.root / "caffeinate-calls.txt"
         self.tsproxy_args = self.root / "tsproxy-args.json"
         self.tsproxy_launches = self.root / "tsproxy-launches.jsonl"
         self._write_fakes()
@@ -84,10 +82,6 @@ class DDGHarnessTests(unittest.TestCase):
             "DDG_APP": str(self.app),
             "DDG_AUTOMATION_PY": str(self.bin / "fake-automation.py"),
             "DDG_LAUNCHER": str(self.bin / "fake-launcher"),
-            "CAFFEINATE_BIN": str(self.bin / "fake-caffeinate"),
-            "OPEN_BIN": str(self.bin / "fake-open"),
-            "APP_ACTIVATIONS_FILE": str(self.app_activations),
-            "CAFFEINATE_CALLS_FILE": str(self.caffeinate_calls),
             "DDG_AUTOMATION_HOST": "127.0.0.1",
             "AUTOMATION_PORT": str(self.automation),
             "APP_LAUNCHES_FILE": str(self.app_launches),
@@ -260,22 +254,6 @@ class DDGHarnessTests(unittest.TestCase):
             """,
         )
         self._write_executable(
-            self.bin / "fake-caffeinate",
-            r"""
-            #!/usr/bin/env bash
-            set -euo pipefail
-            printf '%s\n' "$*" >>"$CAFFEINATE_CALLS_FILE"
-            """,
-        )
-        self._write_executable(
-            self.bin / "fake-open",
-            r"""
-            #!/usr/bin/env bash
-            set -euo pipefail
-            printf '%s\n' "$1" >>"$APP_ACTIVATIONS_FILE"
-            """,
-        )
-        self._write_executable(
             self.bin / "fake-automation.py",
             r"""
             #!/usr/bin/env python3
@@ -435,14 +413,6 @@ class DDGHarnessTests(unittest.TestCase):
         self.assertEqual(len(self.measurement_rows()), 2)
         launches = self.launches()
         self.assertEqual(len(launches), 2)
-        self.assertEqual(
-            self.caffeinate_calls.read_text().splitlines(),
-            ["-u -t 1", "-u -t 1"],
-        )
-        self.assertEqual(
-            self.app_activations.read_text().splitlines(),
-            [str(self.app), str(self.app)],
-        )
         shaping_launches = self.shaping_launches()
         self.assertEqual(len(shaping_launches), 2)
         self.assertEqual(len({item["token"] for item in launches}), 2)

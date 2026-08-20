@@ -110,6 +110,10 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
         guard let tab = currentTab else {
             return false
         }
+        activeMainViewController?.view.window?.makeKeyAndOrderFront(nil)
+        if !NSApp.isActive {
+            NSApp.activate(ignoringOtherApps: true)
+        }
         tab.setContent(.contentFromURL(url, source: .userEntered(url.absoluteString, downloadRequested: false)))
         return true
     }

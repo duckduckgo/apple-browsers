@@ -71,10 +71,31 @@ class FromWebViewTransition: WebViewTransition {
 
         let theme = ThemeManager.shared.currentTheme
         let webViewFrame = webView.convert(webView.bounds, to: nil)
-        
+
         solidBackground.backgroundColor = theme.backgroundColor
         solidBackground.frame = webViewFrame
-        
+
+        // Floating UI's toolbar capsule sits outside `contentContainer`/the webview screenshot, so it
+        // was never part of this transition -- it just sat there at full size until the tab switcher's
+        // view opaquely covered it, reading as a sudden pop rather than a smooth exit. Animating the
+        // *live* toolbar's alpha here would race against `tabSwitcherViewController.view`'s own
+        // fade-in keyframe below -- the two compound and the toolbar visually vanishes well before
+        // the fade either animation implies alone, before the screenshot even looks like it's
+        // shrinking. Snapshotting it and animating the snapshot keeps this fully under this
+        // transition's own timing, in step with the screenshot's shrink, matching how Safari shrinks
+        // the whole page as one unit. Shrinks toward its own bottom edge (scaling around the default
+        // centre anchor and translating back down by half the height lost pins the bottom edge in
+        // place) while fading out.
+        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
+        let isFloating = mainViewController.isFloatingUIEnabled
+        var toolbarSnapshot: UIView?
+        if isFloating, let snapshot = toolbar.snapshotView(afterScreenUpdates: false) {
+            snapshot.frame = toolbar.convert(toolbar.bounds, to: transitionContext.containerView)
+            transitionContext.containerView.insertSubview(snapshot, aboveSubview: imageContainer)
+            toolbarSnapshot = snapshot
+            toolbar.alpha = 0
+        }
+
         imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
         imageContainer.frame = adjustFrame(imageContainer.frame,
                                            forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
@@ -116,6 +137,13 @@ class FromWebViewTransition: WebViewTransition {
                 self.imageView.frame = WebViewTransitionGeometry.previewFrame(for: containerFrame.size,
                                                                               previewSize: preview.size,
                                                                               isGridViewEnabled: self.tabSwitcherSettings.isGridViewEnabled)
+                if let toolbarSnapshot {
+                    let scale: CGFloat = 0.7
+                    let heightLost = toolbarSnapshot.bounds.height * (1 - scale) / 2
+                    toolbarSnapshot.transform = CGAffineTransform(scaleX: scale, y: scale)
+                        .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
+                    toolbarSnapshot.alpha = 0
+                }
             }
             
             UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.7) {
@@ -136,6 +164,10 @@ class FromWebViewTransition: WebViewTransition {
         }, completion: { _ in
             self.solidBackground.removeFromSuperview()
             self.imageContainer.removeFromSuperview()
+            toolbarSnapshot?.removeFromSuperview()
+            if isFloating {
+                toolbar.alpha = 1
+            }
             transitionContext.completeTransition(true)
         })
 
@@ -156,6 +188,10 @@ class ToWebViewTransition: WebViewTransition {
             // Crossfade fallback when destination is no longer a web view; mirrors ToHomeScreenTransition.
             if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
                 mainViewController.view.alpha = 1
+                if mainViewController.isFloatingUIEnabled {
+                    mainViewController.viewCoordinator.toolbar.transform = .identity
+                    mainViewController.viewCoordinator.toolbar.alpha = 1
+                }
             }
             UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
                 self.tabSwitcherViewController.view.alpha = 0
@@ -170,7 +206,28 @@ class ToWebViewTransition: WebViewTransition {
         let theme = ThemeManager.shared.currentTheme
         let webViewFrame = webView.convert(webView.bounds, to: nil)
         mainViewController.view.alpha = 1
-        
+
+        // Reverse of `FromWebViewTransition`'s shrink, same reasoning: animating the *live* toolbar's
+        // alpha here would compound with `tabSwitcherViewController.view`'s own fade-out in the same
+        // block below, so a snapshot carries the reveal instead, self-contained regardless of
+        // whatever state the toolbar was left in (e.g. a fresh presentation, not just the matching
+        // `FromWebViewTransition`). Starts in that same shrunk/faded state, then animates back to
+        // identity alongside the webview screenshot growing back to full size.
+        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
+        let isFloating = mainViewController.isFloatingUIEnabled
+        var toolbarSnapshot: UIView?
+        if isFloating, let snapshot = toolbar.snapshotView(afterScreenUpdates: false) {
+            let scale: CGFloat = 0.7
+            let heightLost = toolbar.bounds.height * (1 - scale) / 2
+            snapshot.frame = toolbar.convert(toolbar.bounds, to: transitionContext.containerView)
+            snapshot.transform = CGAffineTransform(scaleX: scale, y: scale)
+                .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
+            snapshot.alpha = 0
+            transitionContext.containerView.insertSubview(snapshot, aboveSubview: imageContainer)
+            toolbarSnapshot = snapshot
+            toolbar.alpha = 0
+        }
+
         solidBackground.backgroundColor = theme.backgroundColor
         solidBackground.frame = webView.bounds
         // Put overlay above webview to hide its content till the end of the transition
@@ -203,12 +260,20 @@ class ToWebViewTransition: WebViewTransition {
             self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: webViewFrame.size,
                                                                                    previewSize: preview?.size)
             self.imageView.alpha = 1
-            
+
             self.solidBackground.alpha = 1
             self.tabSwitcherViewController.view.alpha = 0
+            if let toolbarSnapshot {
+                toolbarSnapshot.transform = .identity
+                toolbarSnapshot.alpha = 1
+            }
         }, completion: { _ in
             self.solidBackground.removeFromSuperview()
             self.imageContainer.removeFromSuperview()
+            toolbarSnapshot?.removeFromSuperview()
+            if isFloating {
+                toolbar.alpha = 1
+            }
             transitionContext.completeTransition(true)
         })
     }

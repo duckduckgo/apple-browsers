@@ -18,8 +18,7 @@
 //
 
 import Foundation
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import Testing
 @testable import DuckDuckGo
 

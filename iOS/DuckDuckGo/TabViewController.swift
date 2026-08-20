@@ -2239,10 +2239,15 @@ extension TabViewController: WKNavigationDelegate {
 
     /// Whether the committed page was reached via an HTTPS upgrade.
     ///
-    /// Guards on `lastUpgradedURL` so an upgrade is only reported when one actually happened.
+    /// Needs both an upgrade on record and an HTTPS commit: `lastUpgradedURL` isn't reset across
+    /// same-domain navigations, so without the scheme check a later HTTP commit on the same domain
+    /// would be mis-flagged. Mirrors macOS's `connectionUpgradedTo != nil`.
     static func isHTTPSForced(lastUpgradedURL: URL?, currentURL: URL?, tld: TLD) -> Bool {
-        guard let lastUpgradedURL else { return false }
-        return tld.domain(lastUpgradedURL.host) == tld.domain(currentURL?.host)
+        guard let lastUpgradedURL, let currentURL, currentURL.isHttps else { return false }
+        guard let upgradedDomain = tld.domain(lastUpgradedURL.host) else {
+            return lastUpgradedURL.host == currentURL.host
+        }
+        return upgradedDomain == tld.domain(currentURL.host)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {

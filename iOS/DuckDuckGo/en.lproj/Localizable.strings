@@ -3985,14 +3985,14 @@ Take back control of your personal information with the browser designed for dat
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Inactivity Timer";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Last Used Tab";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Open Last Used Tab";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "New Tab";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Open New Tab";
 
-/* Settings picker label for choosing what to open when returning after inactivity */
-"settings.afterInactivity.v3.label" = "After Inactivity Open";
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "After Inactivity";
 
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Duck.ai Settings";

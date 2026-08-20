@@ -287,20 +287,15 @@ class DuckPlayerTests: UITestCase {
 
         sleep(2)
 
-        let youTubeAddBlockButton = app.buttons["AddressBarButtonsViewController.youTubeAdBlockButton"].firstMatch
-        if youTubeAddBlockButton.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
-            youTubeAddBlockButton.click()
-        }
-
         // Wait for the Duck Player overlay to appear and click "Watch in Duck Player"
-        let turnOnDuckPlayerLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
+        let watchInDuckPlayerLink = app.links.containing(.staticText, identifier: Self.watchOnDuckPlayerLink).firstMatch
 
-        guard turnOnDuckPlayerLink.waitForExistence(timeout: UITests.Timeouts.elementExistence) else {
+        guard watchInDuckPlayerLink.waitForExistence(timeout: UITests.Timeouts.elementExistence) else {
             XCTAssertTrue(app.staticTexts["Sign in to confirm you’re not a bot"].exists,
                           "If Duck Player overlay did not appear – YouTube bot confirmation should be visible")
             throw XCTSkip("Duck Player overlay did not appear")
         }
-        turnOnDuckPlayerLink.click()
+        watchInDuckPlayerLink.click()
 
         sleep(2)
 

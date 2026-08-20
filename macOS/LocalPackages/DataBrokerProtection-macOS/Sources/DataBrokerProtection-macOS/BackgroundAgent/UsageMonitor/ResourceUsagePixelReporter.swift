@@ -35,20 +35,24 @@ final class ResourceUsagePixelReporter {
         isOnBattery: Bool?,
         thermalState: ProcessInfo.ThermalState
     ) {
-        pixelHandler.fire(
-            .resourceUsageRun(
-                cpuTimeSecondsBucket: Self.durationBucket(snapshot.cpu.totalTime),
-                elapsedSecondsBucket: Self.durationBucket(snapshot.cpu.elapsedTime),
-                coreUtilizationPercentBucket: Self.utilizationBucket(snapshot.cpu.averagePercent),
-                agentPeakFootprintMBBucket: Self.memoryBucket(snapshot.memory.agent.peakFootprintBytes),
-                webPeakFootprintMBBucket: Self.memoryBucket(
-                    snapshot.memory.webProcesses.peakFootprintBytes
-                ),
-                hadCriticalPressure: snapshot.memory.hadCriticalPressure,
-                isOnBattery: isOnBattery,
-                thermalState: Self.thermalStateName(thermalState),
-                architecture: Self.currentArchitecture
-            )
+        pixelHandler.fire(makeRunEvent(snapshot, isOnBattery: isOnBattery, thermalState: thermalState))
+    }
+
+    func makeRunEvent(
+        _ snapshot: ResourceSnapshot,
+        isOnBattery: Bool?,
+        thermalState: ProcessInfo.ThermalState
+    ) -> DataBrokerProtectionMacOSPixels {
+        .resourceUsageRun(
+            cpuTimeSecondsBucket: Self.durationBucket(snapshot.cpu.totalTime),
+            elapsedSecondsBucket: Self.durationBucket(snapshot.cpu.elapsedTime),
+            coreUtilizationPercentBucket: Self.utilizationBucket(snapshot.cpu.averagePercent),
+            agentPeakFootprintMBBucket: Self.memoryBucket(snapshot.memory.agent.peakFootprintBytes),
+            webPeakFootprintMBBucket: Self.memoryBucket(snapshot.memory.webProcesses.peakFootprintBytes),
+            hadCriticalPressure: snapshot.memory.hadCriticalPressure,
+            isOnBattery: isOnBattery,
+            thermalState: Self.thermalStateName(thermalState),
+            architecture: Self.currentArchitecture
         )
     }
 

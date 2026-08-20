@@ -626,15 +626,16 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
             switch error {
             case OAuthClientError.unknownAccount:
+                let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 await automaticallySignOut(reason: .unknownAccount,
                                            tokenStatus: .notApplicable,
                                            recoveryOutcome: .notApplicable,
-                                           policy: policy,
-                                           tokenBeforeAttempt: tokenBeforeAttempt,
+                                           failedRequest: failedRequest,
                                            notifyUI: true)
                 throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.invalidTokenRequest(let tokenStatus):
+                let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 pixelHandler.handle(pixel: .invalidRefreshToken)
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
@@ -649,8 +650,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     await automaticallySignOut(reason: .invalidRefreshToken,
                                                tokenStatus: .init(tokenStatus),
                                                recoveryOutcome: notAttempted ? .notAttempted : .failed,
-                                               policy: policy,
-                                               tokenBeforeAttempt: tokenBeforeAttempt,
+                                               failedRequest: failedRequest,
                                                notifyUI: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(
@@ -665,27 +665,43 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
+    /// The state a failed token request leaves behind, as it stood before any recovery ran.
+    private struct FailedTokenRequestState {
+        let policy: AuthTokensCachePolicy
+        let tokenBeforeAttempt: LocalTokenSnapshot
+        let tokenAfterAttempt: LocalTokenSnapshot
+        let cachedSubscription: DuckDuckGoSubscription?
+        let capturedAt: Date
+    }
+
+    /// Snapshots what the sign-out pixel reports about a failed token request. Call this in the
+    /// `catch`, never at sign-out time: recovery runs in between and rewrites both the stored token
+    /// container and the subscription cache.
+    private func captureFailedTokenRequestState(policy: AuthTokensCachePolicy,
+                                                tokenBeforeAttempt: LocalTokenSnapshot) async -> FailedTokenRequestState {
+        FailedTokenRequestState(policy: policy,
+                                tokenBeforeAttempt: tokenBeforeAttempt,
+                                tokenAfterAttempt: localTokenSnapshot(),
+                                cachedSubscription: await subscriptionCachingService.get(),
+                                capturedAt: Date())
+    }
+
     private func automaticallySignOut(reason: SubscriptionAutomaticSignOutPixelData.Reason,
                                       tokenStatus: SubscriptionAutomaticSignOutPixelData.TokenStatus,
                                       recoveryOutcome: SubscriptionAutomaticSignOutPixelData.RecoveryOutcome,
-                                      policy: AuthTokensCachePolicy,
-                                      tokenBeforeAttempt: LocalTokenSnapshot,
+                                      failedRequest: FailedTokenRequestState,
                                       notifyUI: Bool) async {
-        let now = Date()
-        let tokenAfterAttempt = localTokenSnapshot()
-        let cachedSubscription = await subscriptionCachingService.get()
-
         await signOut(notifyUI: notifyUI, userInitiated: false)
 
         let data = SubscriptionAutomaticSignOutPixelData(reason: reason,
                                                          tokenStatus: tokenStatus,
                                                          recoveryOutcome: recoveryOutcome,
-                                                         policy: policy,
-                                                         tokenBeforeAttempt: tokenBeforeAttempt,
-                                                         tokenAfterAttempt: tokenAfterAttempt,
-                                                         cachedSubscription: cachedSubscription,
+                                                         policy: failedRequest.policy,
+                                                         tokenBeforeAttempt: failedRequest.tokenBeforeAttempt,
+                                                         tokenAfterAttempt: failedRequest.tokenAfterAttempt,
+                                                         cachedSubscription: failedRequest.cachedSubscription,
                                                          localTokenStateAfterSignOut: localTokenState(),
-                                                         now: now)
+                                                         now: failedRequest.capturedAt)
         pixelHandler.handle(pixel: .automaticSignOut(data))
     }
 

@@ -29,8 +29,6 @@ class HomeScreenTransition: TabSwitcherTransition {
     fileprivate var homeScreenSnapshot: UIView?
     fileprivate var settingsButtonSnapshot: UIView?
 
-    /// The size the home screen snapshot was captured at, so the morph can keep its aspect ratio.
-    /// See `homeScreenSnapshotFrame(in:)`.
     fileprivate var homeScreenSnapshotSourceSize: CGSize?
 
     fileprivate let tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
@@ -54,21 +52,6 @@ class HomeScreenTransition: TabSwitcherTransition {
         }
     }
 
-    /// Aspect-preserving frame for the home screen snapshot inside the morphing container: the
-    /// snapshot scales *down* uniformly and stays centred, rather than being stretched to fill.
-    ///
-    /// A `resizableSnapshotView` stretches its content to whatever frame it's given, so driving the
-    /// snapshot straight off `imageContainer.bounds` distorted it non-uniformly as the container
-    /// morphed between the full screen and a tab cell. In grid view the cell's aspect ratio is close
-    /// enough to the screen's for that to pass unnoticed (and a centred logo is crossfaded over it
-    /// anyway), but a list-view row is far wider than it is tall, so the whole page -- Dax most
-    /// visibly -- squashed flat and "folded" over the transition.
-    ///
-    /// Fitting on the smaller of the two ratios is what makes this a scale rather than a crop. A
-    /// list row is already full-width, so matching the container's *width* would leave the snapshot
-    /// at nearly full size and simply clip it to a thin strip, taking Dax with it; taking the
-    /// minimum instead shrinks the whole page toward the row and keeps it centred and intact while
-    /// it crossfades out.
     fileprivate func homeScreenSnapshotFrame(in containerBounds: CGRect) -> CGRect {
         guard let sourceSize = homeScreenSnapshotSourceSize,
               sourceSize.width > 0,

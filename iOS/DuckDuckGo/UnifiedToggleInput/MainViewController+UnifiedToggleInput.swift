@@ -641,58 +641,38 @@ private extension MainViewController {
         NotificationCenter.default.publisher(for: .aiChatShowModelPicker)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] webView in
-                self?.handleShowModelPicker(for: webView)
-            }
+            .sink { [weak self] in self?.handleShowPicker(.model, for: $0) }
             .store(in: &unifiedToggleInputCancellables)
-        
+
         NotificationCenter.default.publisher(for: .aiChatShowReasoningPicker)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] webView in
-                self?.handleShowReasoningPicker(for: webView)
-            }
+            .sink { [weak self] in self?.handleShowPicker(.reasoning, for: $0) }
             .store(in: &unifiedToggleInputCancellables)
 
         NotificationCenter.default.publisher(for: .aiChatOpenAttachmentPicker)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] webView in
-                self?.handleOpenAttachmentPicker(for: webView)
-            }
+            .sink { [weak self] in self?.handleShowPicker(.attachment, for: $0) }
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    /// Routes the FE's `showModelPicker` to the foreground Duck.ai tab's UTI so the user can pick a
-    /// supported model for the active chat (recovery-card "Switch Model" CTA). No-op when there's no
-    /// foreground Duck.ai UTI.
-    private func handleShowModelPicker(for webView: WKWebView) {
-        let isCurrent = tabManager.controller(forWebView: webView) === currentTab
-        let isAITab = currentTab?.isAITab == true
-        guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
-            return
-        }
-        coordinator.presentModelPickerForActiveChat()
-    }
-    
-    /// Routes the FE's `showReasoningPicker` (reasoning promo CTA) to the foreground Duck.ai tab's UTI.
-    private func handleShowReasoningPicker(for webView: WKWebView) {
-        let isCurrent = tabManager.controller(forWebView: webView) === currentTab
-        let isAITab = currentTab?.isAITab == true
-        guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
-            return
-        }
-        coordinator.presentReasoningPickerForActiveChat()
+    private enum AIChatPickerRequest {
+        case model, reasoning, attachment
     }
 
-    /// Routes the FE's `openAttachmentPicker` (promo CTA) to the foreground Duck.ai tab's UTI.
-    private func handleOpenAttachmentPicker(for webView: WKWebView) {
+    /// Routes an FE picker CTA to the foreground Duck.ai tab's UTI.
+    private func handleShowPicker(_ picker: AIChatPickerRequest, for webView: WKWebView) {
         let isCurrent = tabManager.controller(forWebView: webView) === currentTab
         let isAITab = currentTab?.isAITab == true
         guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
             return
         }
-        coordinator.presentAttachmentPickerForActiveChat()
+        switch picker {
+        case .model: coordinator.presentModelPickerForActiveChat()
+        case .reasoning: coordinator.presentReasoningPickerForActiveChat()
+        case .attachment: coordinator.presentAttachmentPickerForActiveChat()
+        }
     }
 
     /// Updates the foreground tab's UTI to reflect an FE-initiated image-generation chat.

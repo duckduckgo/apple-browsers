@@ -1375,18 +1375,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelReporter.reportSubmitChangeModel(modelId: modelId)
     }
 
-    /// Surfaces the native model picker on the **active** chat in response to the FE's
-    /// `showModelPicker` (e.g. the recovery card's "Switch Model" CTA). Expands the input and
-    /// reveals the model chip **without starting a new chat** — the chat stays `hasSubmittedPrompt`,
-    /// so a subsequent supported-model selection still emits `submitChangeModelAction`.
+    /// Surfaces the native model picker on the active chat (FE `showModelPicker` / recovery card).
     func presentModelPickerForActiveChat() {
         isModelPickerForcedVisible = true
-        // If the bar is already expanded (keyboard kept up), avoid re-running showExpanded (which reloads
-        // the bar); just apply the toolbar so the forced model chip still shows for the recovery flow.
         if !isInputPaneExpanded {
             showExpanded(inputMode: .aiChat)
         } else {
-            applyToolbarPresentation()
+            applyToolbarPresentation() // reveal the forced chip without reloading the expanded bar
         }
         if isSubmitBlockedByRecoveryCard,
            let supportedModel = modelStore.selectedModel,
@@ -1394,8 +1389,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isSubmitBlockedByRecoveryCard = false
             notifyFrontendOfActiveChatModelChange(supportedModel.id)
         }
-        // Defer to the next runloop so the toolbar (and the now-revealed chip) is laid out after the
-        // expand animation before we ask the button to open its menu.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.pixelReporter.reportShowModelPicker()
@@ -1404,16 +1397,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             }
         }
     }
-    
-    /// Surfaces the native reasoning picker on the active chat for the FE's `showReasoningPicker`
-    /// (reasoning promo CTA). No-ops when the current model has no reasoning support.
+
+    /// Surfaces the native reasoning picker on the active chat (FE `showReasoningPicker`).
     func presentReasoningPickerForActiveChat() {
-        // If the input bar is already expanded (keyboard kept up), just open the picker — don't re-run
-        // showExpanded, which reloads/re-lays-out the bar. Only expand when it's actually collapsed.
         if !isInputPaneExpanded {
             showExpanded(inputMode: .aiChat)
         }
-        // Defer so the toolbar is laid out after the expand animation before opening the menu.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             if self.viewController.presentReasoningPickerMenu() {
@@ -1422,16 +1411,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    /// Opens the system file picker on the active chat for the FE's `openAttachmentPicker` (pdf promo
-    /// CTA). Goes straight to the document picker, not the attach menu; no-ops when files can't be
-    /// attached to the active chat.
+    /// Opens the system file picker on the active chat (FE `openAttachmentPicker`).
     func presentAttachmentPickerForActiveChat() {
-        // If the input bar is already expanded (keyboard kept up), just open the picker — don't re-run
-        // showExpanded, which reloads/re-lays-out the bar. Only expand when it's actually collapsed.
         if !isInputPaneExpanded {
             showExpanded(inputMode: .aiChat)
         }
-        // Defer so the input is expanded (attachment chip has somewhere to land) before presenting.
         DispatchQueue.main.async { [weak self] in
             self?.attachmentController.presentFilePicker()
         }

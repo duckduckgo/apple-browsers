@@ -28,9 +28,13 @@ class HomeScreenTransition: TabSwitcherTransition {
     
     fileprivate var homeScreenSnapshot: UIView?
     fileprivate var settingsButtonSnapshot: UIView?
-    
+
+    /// The size the home screen snapshot was captured at, so the morph can keep its aspect ratio.
+    /// See `homeScreenSnapshotFrame(in:)`.
+    fileprivate var homeScreenSnapshotSourceSize: CGSize?
+
     fileprivate let tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
-    
+
     fileprivate func prepareSnapshots(with transitionSource: HomeScreenTransitionSource,
                                       transitionContext: UIViewControllerContextTransitioning,
                                       addressBarPosition: AddressBarPosition,
@@ -44,9 +48,39 @@ class HomeScreenTransition: TabSwitcherTransition {
                                                                afterScreenUpdates: false,
                                                                withCapInsets: .zero) {
             imageContainer.addSubview(snapshot)
-            snapshot.frame = imageContainer.bounds
+            homeScreenSnapshotSourceSize = frameToSnapshot.size
+            snapshot.frame = homeScreenSnapshotFrame(in: imageContainer.bounds)
             homeScreenSnapshot = snapshot
         }
+    }
+
+    /// Aspect-preserving frame for the home screen snapshot inside the morphing container: the
+    /// snapshot scales *down* uniformly and stays centred, rather than being stretched to fill.
+    ///
+    /// A `resizableSnapshotView` stretches its content to whatever frame it's given, so driving the
+    /// snapshot straight off `imageContainer.bounds` distorted it non-uniformly as the container
+    /// morphed between the full screen and a tab cell. In grid view the cell's aspect ratio is close
+    /// enough to the screen's for that to pass unnoticed (and a centred logo is crossfaded over it
+    /// anyway), but a list-view row is far wider than it is tall, so the whole page -- Dax most
+    /// visibly -- squashed flat and "folded" over the transition.
+    ///
+    /// Fitting on the smaller of the two ratios is what makes this a scale rather than a crop. A
+    /// list row is already full-width, so matching the container's *width* would leave the snapshot
+    /// at nearly full size and simply clip it to a thin strip, taking Dax with it; taking the
+    /// minimum instead shrinks the whole page toward the row and keeps it centred and intact while
+    /// it crossfades out.
+    fileprivate func homeScreenSnapshotFrame(in containerBounds: CGRect) -> CGRect {
+        guard let sourceSize = homeScreenSnapshotSourceSize,
+              sourceSize.width > 0,
+              sourceSize.height > 0 else { return containerBounds }
+
+        let scale = min(containerBounds.width / sourceSize.width,
+                        containerBounds.height / sourceSize.height)
+        let size = CGSize(width: sourceSize.width * scale, height: sourceSize.height * scale)
+        return CGRect(x: containerBounds.midX - size.width / 2,
+                      y: containerBounds.midY - size.height / 2,
+                      width: size.width,
+                      height: size.height)
     }
 
     fileprivate func tabSwitcherCellFrame(for attributes: UICollectionViewLayoutAttributes) -> CGRect {
@@ -124,7 +158,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
                 self.imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
                 self.imageContainer.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
                 self.imageView.frame = self.previewFrame(for: self.imageContainer.bounds.size)
-                self.homeScreenSnapshot?.frame = self.imageContainer.bounds
+                self.homeScreenSnapshot?.frame = self.homeScreenSnapshotFrame(in: self.imageContainer.bounds)
             }
 
             // Slowly fade out to create a cross fade effect
@@ -216,7 +250,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
                 self.imageContainer.backgroundColor = theme.backgroundColor
                 self.imageView.frame = CGRect(origin: .zero,
                                               size: self.imageContainer.bounds.size)
-                self.homeScreenSnapshot?.frame = self.imageContainer.bounds
+                self.homeScreenSnapshot?.frame = self.homeScreenSnapshotFrame(in: self.imageContainer.bounds)
             }
 
             if tab.viewed {

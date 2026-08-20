@@ -338,8 +338,8 @@ final class TabCollectionViewModelTests: XCTestCase {
     }
 
     // Regression tests for APPLE-MACOS-BD7 and APPLE-MACOS-D57: setting `selectionIndex`
-    // from inside `insert`/`append` publishes `selectedTabViewModel`, and subscribers can
-    // synchronously re-enter and mutate tabs. The delegate must be notified before that
+    // from inside incremental `insert`/`append` publishes `selectedTabViewModel`, and subscribers
+    // can synchronously re-enter and mutate tabs. The delegate must be notified before that
     // publication so the collection view's item count stays in sync with the data source.
     // Cell sizing does not depend on this ordering — the tab bar sizes the incoming tab
     // from the `index`/`selected` arguments of the delegate call itself.
@@ -383,8 +383,10 @@ final class TabCollectionViewModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    // Bulk changes reload the whole collection, so the delegate needs the final selection
+    // rather than the incremental-update ordering asserted above.
     @MainActor
-    func testWhenAppendTabsWithSelectLast_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+    func testWhenAppendTabsWithSelectLast_ThenSelectionPublishesBeforeDelegateIsNotified() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let delegate = TabCollectionViewModelDelegateMock()
         tabCollectionViewModel.delegate = delegate
@@ -399,7 +401,9 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         tabCollectionViewModel.append(tabs: [.loaded(Tab()), .loaded(Tab())], andSelect: true)
 
-        XCTAssertEqual(didMultipleChangesCalledWhenSelectionPublished, true)
+        XCTAssertEqual(didMultipleChangesCalledWhenSelectionPublished, false)
+        XCTAssertTrue(delegate.didMultipleChangesCalled)
+        XCTAssertEqual(tabCollectionViewModel.selectionIndex, .unpinned(tabCollectionViewModel.tabCollection.tabs.count - 1))
         cancellable.cancel()
     }
 

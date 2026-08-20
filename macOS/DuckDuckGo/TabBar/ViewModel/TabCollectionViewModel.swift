@@ -493,12 +493,12 @@ final class TabCollectionViewModel: NSObject {
         }
 
         tabCollection.append(tabs: tabsToAppend)
-        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
-        delegate?.tabCollectionViewModelDidMultipleChanges(self)
         if shouldSelectLastTab {
             let newSelectionIndex = tabCollection.tabs.count - 1
             selectUnpinnedTab(at: newSelectionIndex)
         }
+        // The delegate reloads the whole collection and needs the final selection for layout.
+        delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
     func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {

@@ -2087,7 +2087,6 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         if frozenLayout {
             updateLayout()
         }
-        updateTabMode(for: collectionView.numberOfItems(inSection: 0) + 1)
 
         if selected {
             clearSelection()
@@ -2095,18 +2094,25 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         }
         defer { incomingSelectionIndex = nil }
 
+        let collectionViewItemCount = collectionView.numberOfItems(inSection: 0)
+        let modelItemCount = tabCollectionViewModel.tabCollection.tabs.count
+
         // See `tabCollectionViewModelDidInsert(_:at:selected:)` on the count check.
-        guard collectionView.numberOfItems(inSection: 0) == tabCollectionViewModel.tabCollection.tabs.count - 1 else {
+        guard collectionViewItemCount == modelItemCount - 1 else {
             Logger.general.error("TabBarViewController: item count out of sync on append, reloading")
             collectionView.reloadData()
+            updateTabMode(for: modelItemCount)
             if selected {
                 collectionView.selectItems(at: lastIndexPathSet, scrollPosition: .centeredHorizontally)
+            } else {
+                collectionView.scroll(to: IndexPath(item: lastIndex))
             }
-            scrollCollectionViewToEnd()
             updateEmptyTabArea()
             hideTabPreview()
             return
         }
+
+        updateTabMode(for: collectionViewItemCount + 1)
 
         if tabMode == .divided {
             collectionView.animator().insertItems(at: lastIndexPathSet)

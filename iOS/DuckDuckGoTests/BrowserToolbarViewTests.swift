@@ -1,28 +1,7 @@
-//
-//  BrowserToolbarViewTests.swift
-//  DuckDuckGo
-//
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//  http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
 
 import XCTest
 @testable import DuckDuckGo
 
-/// Covers `setButtonRowCollapseProgress`, the button-fade/shrink stage of the scroll-coupled chrome
-/// collapse, and the corresponding fix to `restingCapsuleFrame` (which must report a stable single-row
-/// height rather than the live, mid-animation panel height).
 final class BrowserToolbarViewTests: XCTestCase {
 
     private let omnibarHeight: CGFloat = 60
@@ -102,11 +81,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(sut.buttonRowAlphaForTesting, 1, accuracy: 0.001)
     }
 
-    // MARK: - restingCapsuleFrame stability
-
-    /// The regression this guards: the pill's morph target used to read the live, animating
-    /// `buttonsHeightConstraint.constant` directly, so as the button row shrank the pill's own target
-    /// moved under it -- a feedback loop. It must report the stable single-row height throughout.
     func testWhenButtonRowIsMidCollapseThenRestingCapsuleFrameStillReportsSingleRowHeight() {
         let sut = makeSUT()
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))

@@ -29,19 +29,11 @@ import UIKit
 /// exact transition instead.
 final class ChromeMorphAnimator {
 
-    /// Easing applied to the scrubbed progress. All cases are functions of normalized time, so scaling
-    /// a duration compresses the curve rather than truncating it.
     enum Curve {
-        /// Ease-in-out. Appropriate when the motion starts from rest.
         case smoothstep
 
-        /// Starts at full speed and decelerates. The right family for a released fling: the bars are
-        /// already moving when the finger lifts, so an ease-in would visibly stall before continuing.
         case easeOutCubic
 
-        /// Unit-step response of a damped second-order system. `naturalFrequency` is in radians per unit
-        /// duration (not per second) so the shape holds when the duration is scaled. A `dampingRatio`
-        /// below 1 overshoots by `exp(-pi * ratio / sqrt(1 - ratio * ratio))`; 1 or above never does.
         case spring(dampingRatio: CGFloat, naturalFrequency: CGFloat)
 
         func value(at t: CGFloat) -> CGFloat {

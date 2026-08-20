@@ -198,8 +198,6 @@ final class BrowserToolbarView: UIView {
     /// floats near the device bottom (see `floatingBottomMargin`). Kept in sync with the host's
     /// safe-area inset in `layoutSubviews`; also widens the hit-test region.
     private var floatingBottomOffset: CGFloat = 0
-    /// Current scale applied by `setStandaloneCollapseProgress`, combined with `floatingBottomOffset`
-    /// in `applyMaterialBackgroundTransform` since both target the same `transform` property.
     private var standaloneCollapseScale: CGFloat = 1
     /// The tab switcher reuses this bar purely for button-position parity with the browser, but
     /// paints its own backdrop — so in the non-floating style its own background must stay clear.
@@ -230,10 +228,6 @@ final class BrowserToolbarView: UIView {
         return (verticalContentPadding * 2) + targetHeight + omnibarHeight + omnibarToButtonsSpacing
     }
 
-    /// Height of the bar once the button row has fully collapsed away, leaving only the omnibar row.
-    /// This is what `setButtonRowCollapseProgress` shrinks the panel toward, and what `restingCapsuleFrame`
-    /// reports as the pill's morph target — a value stable across the whole collapse rather than the
-    /// live, mid-animation `buttonsHeightConstraint.constant`.
     static func singleRowHeight(withOmnibarHeight omnibarHeight: CGFloat) -> CGFloat {
         (verticalContentPadding * 2) + omnibarHeight
     }
@@ -290,7 +284,6 @@ final class BrowserToolbarView: UIView {
     }
 
     #if DEBUG
-    /// Test seam for `setButtonRowCollapseProgress`'s effect on the button row and panel height.
     var buttonRowAlphaForTesting: CGFloat { buttonStack.alpha }
     var buttonRowTransformForTesting: CGAffineTransform { buttonStack.transform }
     var panelHeightForTesting: CGFloat { buttonsHeightConstraint.constant }
@@ -594,10 +587,6 @@ final class BrowserToolbarView: UIView {
         let safeBottom = view.safeAreaInsets.bottom
         let insets = Self.floatingBarOuterInsets
         let width = bounds.width - insets.left - insets.right
-        // Once the button row has fully faded, the bar's shape is the single omnibar row -- not the
-        // live `buttonsHeightConstraint.constant`, which is still mid-shrink for part of the collapse
-        // and would make the pill's morph target move under it. Falls back to the live height when
-        // there's no omnibar to hand off to (the standalone, buttons-only toolbar).
         let height = hasEmbeddedOmnibar
             ? Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
             : buttonsHeightConstraint.constant
@@ -606,14 +595,6 @@ final class BrowserToolbarView: UIView {
         return CGRect(x: bounds.minX + insets.left, y: bottom - height, width: width, height: height)
     }
 
-    /// Drives the button-row fade/shrink stage of the scroll-coupled chrome collapse: as `collapseProgress`
-    /// goes from 0 (buttons fully shown) to 1 (buttons fully gone, bar down to just the omnibar row), the
-    /// button row fades and scales down while the panel's height shrinks to match. `collapseProgress` is
-    /// pre-normalized by the caller against `FloatingDomainCapsuleController.handoffStart` -- this view
-    /// only knows about its own two heights, not the bars-visibility fraction those are staged against.
-    /// A no-op (buttons fully shown, panel at full height) outside floating bottom mode, with an expanded
-    /// menu open, or under Reduce Motion. Returns the panel height actually applied, so the caller can
-    /// keep the outer toolbar-height layout constraint in lockstep (this view has no reference to it).
     @discardableResult
     func setButtonRowCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) -> CGFloat {
         let fullHeight = Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant, isFloating: isFloatingStyleEnabled)
@@ -639,18 +620,9 @@ final class BrowserToolbarView: UIView {
     }
 
     #if DEBUG
-    /// Test seam for `setStandaloneCollapseProgress`'s effect on the capsule.
     var standaloneCapsuleTransformForTesting: CGAffineTransform { materialBackgroundView.transform }
     #endif
 
-    /// Drives the scroll-coupled collapse for the standalone, buttons-only toolbar -- no embedded
-    /// omnibar to hand off to (e.g. the top address bar position, where the bottom floating UI is just
-    /// the button row). There's nothing to shrink toward the way the embedded case shrinks toward the
-    /// single omnibar row, so the whole capsule scales down toward its own centre as it fades; the
-    /// existing bottom-edge slide (`MainViewController.updateToolbarConstant`, uncompressed for this
-    /// case) carries it the rest of the way off-screen. A no-op when this toolbar hosts an embedded
-    /// omnibar instead (handled by `setButtonRowCollapseProgress`), outside floating style, or under
-    /// Reduce Motion.
     func setStandaloneCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) {
         guard isFloatingStyleEnabled, !hasEmbeddedOmnibar, !reduceMotion else {
             standaloneCollapseScale = 1
@@ -663,9 +635,6 @@ final class BrowserToolbarView: UIView {
         applyMaterialBackgroundTransform()
     }
 
-    /// Combines `floatingBottomOffset`'s translation with `standaloneCollapseScale` -- both drive
-    /// `materialBackgroundView.transform` independently, so writing either one in isolation would
-    /// clobber the other.
     private func applyMaterialBackgroundTransform() {
         materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: floatingBottomOffset)
             .concatenating(CGAffineTransform(scaleX: standaloneCollapseScale, y: standaloneCollapseScale))

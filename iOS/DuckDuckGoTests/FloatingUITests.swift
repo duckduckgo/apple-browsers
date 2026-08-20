@@ -770,7 +770,6 @@ final class ChromeMorphAnimatorCurveTests: XCTestCase {
         XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
         XCTAssertEqual(curve.value(at: 0.5), 0.875, accuracy: 0.0001)
         XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
-        // The defining property for a released fling: most of the distance is covered early.
         XCTAssertGreaterThan(curve.value(at: 0.25), 0.5)
     }
 
@@ -781,8 +780,6 @@ final class ChromeMorphAnimatorCurveTests: XCTestCase {
         }
     }
 
-    /// The scrubber snaps to the target when normalized time reaches 1, so whatever the spring hasn't
-    /// settled by then becomes a visible jump. At the shipped parameters the residual is ~0.0007.
     func testWhenExpandingThenTheSpringSettlesByTheEndOfItsDuration() {
         XCTAssertEqual(expandCurve.value(at: 0), 0, accuracy: 0.0001)
         XCTAssertEqual(expandCurve.value(at: 1),

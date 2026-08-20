@@ -1622,12 +1622,6 @@ class MainViewController: UIViewController {
         return CGRect(x: centerX - width / 2, y: centerY - expectedHeight / 2, width: width, height: expectedHeight)
     }
 
-    /// Alpha for the real chrome (nav bar / tabs) during a bars transition. In the floating capsule
-    /// morph the real chrome is opaque above `handoffStart` (where the button row's own fade/shrink,
-    /// driven separately by `setButtonRowCollapseProgress`, is doing the visible work) and transparent
-    /// below it, with only a narrow ramp straddling the boundary — the complement of
-    /// `FloatingDomainCapsuleController.pillAlpha`, so the two swap without a wide simultaneous
-    /// cross-fade. Everywhere else it tracks `percent` linearly (unchanged behaviour).
     private func chromeAlpha(for percent: CGFloat) -> CGFloat {
         guard isFloatingCapsuleActive, !UIAccessibility.isReduceMotionEnabled else { return percent }
         let handoffStart = FloatingDomainCapsuleController.handoffStart
@@ -1635,14 +1629,6 @@ class MainViewController: UIViewController {
         return rampedProgress(percent, from: handoffStart - halfWidth, to: handoffStart + halfWidth)
     }
 
-    /// Alpha for `viewCoordinator.toolbar` specifically. Only shares `chromeAlpha`'s narrow handoff
-    /// band when the toolbar is actually hosting the embedded omnibar (bottom address bar) and so has
-    /// a domain-capsule pill taking its place underneath. A standalone, buttons-only toolbar (e.g. top
-    /// address bar position) has no such counterpart — cutting its alpha on that same narrow band, in
-    /// sync with a slide that's also compressed to finish by `handoffStart`, reads as the toolbar
-    /// abruptly vanishing rather than gently collapsing. It fades linearly across the full range
-    /// instead, alongside `setStandaloneCollapseProgress`'s scale-down and the uncompressed slide in
-    /// `updateToolbarConstant`.
     private func toolbarAlpha(for percent: CGFloat) -> CGFloat {
         guard viewCoordinator.isOmnibarInToolbar else { return percent }
         return chromeAlpha(for: percent)
@@ -4434,22 +4420,13 @@ extension MainViewController: BrowserChromeDelegate {
         static let duration = 0.1
 
         /// Longer than `duration` so the floating capsule morph is legible; the pill grows/moves into
-        /// the bars (and back) rather than snapping across the short legacy cross-fade. Asymmetric
-        /// because iOS 26 Safari collapses noticeably faster than it expands.
         static let morphCollapseDuration = 0.20
         static let morphExpandDuration = 0.34
 
-        /// The collapse follows a released fling, so it decelerates from full speed rather than easing
-        /// in from rest. No overshoot: the bars clip against the screen edge, where a bounce reads as a
-        /// glitch rather than as weight.
         static let morphCollapseCurve = ChromeMorphAnimator.Curve.easeOutCubic
 
-        /// ~1% overshoot, settled well inside `morphExpandDuration`. Raise the damping ratio to 1 for a
-        /// critically damped, strictly non-overshooting expand.
         static let morphExpandCurve = ChromeMorphAnimator.Curve.spring(dampingRatio: 0.82, naturalFrequency: 8.84)
 
-        /// Floor on the duration scaling applied to a partial transition, so an interrupted scrub
-        /// covering a short range finishes quicker without becoming an instant jump.
         static let minMorphDurationScale: CGFloat = 0.55
     }
 
@@ -4513,8 +4490,6 @@ extension MainViewController: BrowserChromeDelegate {
 
         if useMorphScrub {
             let isExpanding = percent > fromPercent
-            // A partial transition shouldn't take as long as a full one, but shouldn't collapse to an
-            // instant jump either. Scaling normalized time also keeps the spring's shape intact.
             let durationScale = max(ChromeAnimationConstants.minMorphDurationScale, abs(percent - fromPercent))
             let baseDuration = isExpanding
                 ? ChromeAnimationConstants.morphExpandDuration
@@ -4567,9 +4542,6 @@ extension MainViewController: BrowserChromeDelegate {
         if isFloatingUIEnabled {
             viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
         }
-        // Ahead of `updateToolbarConstant` so its slide math reads this frame's height, not last
-        // frame's. Stage the button row's own fade/shrink from `percent` (1 = expanded) into the
-        // [0, 1] "how collapsed are the buttons" progress `setButtonRowCollapseProgress` expects.
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
         let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
             ? ((1 - percent) / (1 - FloatingDomainCapsuleController.handoffStart)).clamped(to: 0...1)
@@ -4580,8 +4552,6 @@ extension MainViewController: BrowserChromeDelegate {
         )
         viewCoordinator.constraints.toolbarHeight.constant = panelHeight
 
-        // The standalone (no embedded omnibar) toolbar has no domain-capsule pill to hand off to, so
-        // it collapses over the full range rather than the compressed-to-`handoffStart` progress above.
         let standaloneCollapseProgress = isFloatingCapsuleActive && !viewCoordinator.isOmnibarInToolbar && !reduceMotion
             ? 1 - percent
             : 0
@@ -4691,9 +4661,6 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.constraints.toolbarHeight.constant
     }
 
-    /// Gated on the feature flag rather than `isFloatingCapsuleActive`, so the retuned scroll distance
-    /// also applies on AI tabs and in minimal chrome, where the floating bars still slide even though the
-    /// domain capsule doesn't own the transition.
     var isFloatingChromeEnabled: Bool {
         isFloatingUIEnabled
     }
@@ -4820,14 +4787,6 @@ extension MainViewController: BrowserChromeDelegate {
             bottomHeight += viewCoordinator.navigationBarContainer.frame.height
         }
         bottomHeight += view.safeAreaInsets.bottom
-        // With the floating capsule morph, the panel shouldn't slide at all while its button row is
-        // still fading/shrinking in place (`setButtonRowCollapseProgress`) -- sliding at the same time
-        // would compound two motions where the user should see one. Remapped so the slide is pinned at
-        // "fully shown" until `handoffStart`, then covers the retraction over the remaining range. Below
-        // `handoffStart` the panel is already alpha-0 (the capsule pill has taken over), so where
-        // exactly it sits off-screen no longer has a visual effect. Only applies when the toolbar is
-        // actually hosting the embedded omnibar -- a standalone toolbar has no pill to hand off to, so
-        // it slides over the full range in sync with `setStandaloneCollapseProgress`'s scale-down.
         let slideRatio = isFloatingCapsuleActive && viewCoordinator.isOmnibarInToolbar && !UIAccessibility.isReduceMotionEnabled
             ? min(1, ratio / FloatingDomainCapsuleController.handoffStart)
             : ratio

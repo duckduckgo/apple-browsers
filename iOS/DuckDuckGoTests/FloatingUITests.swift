@@ -171,6 +171,18 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         XCTAssertEqual(height, 70, accuracy: 0.001)
     }
 
+    func testWhenVisibleToolbarIsTallerThanTheInterpolatedSlotThenBottomObscuredHeightUsesTheVisibleChrome() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0.8,
+            toolbarSlotHeight: 100,
+            visibleToolbarHeight: 90,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 90, accuracy: 0.001)
+    }
+
     func testWhenBarsVisibleThenTopObscuredHeightIsExpandedChrome() {
         let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
             barsVisibilityPercent: 1,
@@ -748,5 +760,62 @@ final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
         XCTAssertNil(outgoingView.layer.mask)
         XCTAssertNil(incomingView.layer.mask)
         XCTAssertNil(incomingView.superview)
+    }
+}
+
+final class ChromeMorphAnimatorCurveTests: XCTestCase {
+
+    private let expandCurve = MainViewController.ChromeAnimationConstants.morphExpandCurve
+    private let collapseCurve = MainViewController.ChromeAnimationConstants.morphCollapseCurve
+
+    func testWhenCurveIsSmoothstepThenItEasesInAndOutSymmetrically() {
+        let curve = ChromeMorphAnimator.Curve.smoothstep
+
+        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 0.5), 0.5, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
+    }
+
+    func testWhenCurveIsEaseOutCubicThenItStartsFastAndDecelerates() {
+        let curve = ChromeMorphAnimator.Curve.easeOutCubic
+
+        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 0.5), 0.875, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
+        XCTAssertGreaterThan(curve.value(at: 0.25), 0.5)
+    }
+
+    func testWhenCollapsingThenTheCurveNeverOvershoots() {
+        for step in 0...100 {
+            let value = collapseCurve.value(at: CGFloat(step) / 100)
+            XCTAssertLessThanOrEqual(value, 1.0, "Collapse must not overshoot at t = \(CGFloat(step) / 100)")
+        }
+    }
+
+    func testWhenExpandingThenTheSpringSettlesByTheEndOfItsDuration() {
+        XCTAssertEqual(expandCurve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(expandCurve.value(at: 1),
+                       1,
+                       accuracy: 0.001,
+                       "Residual at the cutoff becomes a snap. Raise naturalFrequency or the damping ratio.")
+    }
+
+    func testWhenExpandingThenOvershootStaysBelowOnePointFivePercent() {
+        var peak: CGFloat = 0
+        for step in 0...200 {
+            peak = max(peak, expandCurve.value(at: CGFloat(step) / 200))
+        }
+
+        XCTAssertGreaterThan(peak, 1.0, "A lightly damped spring is expected to overshoot slightly")
+        XCTAssertLessThan(peak, 1.015, "Overshoot on a bar that clips the screen edge reads as a glitch")
+    }
+
+    func testWhenSpringIsCriticallyDampedThenItNeverOvershoots() {
+        let curve = ChromeMorphAnimator.Curve.spring(dampingRatio: 1, naturalFrequency: 8.84)
+
+        for step in 0...100 {
+            XCTAssertLessThanOrEqual(curve.value(at: CGFloat(step) / 100), 1.0)
+        }
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.01)
     }
 }

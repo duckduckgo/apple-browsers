@@ -39,6 +39,11 @@ protocol BrowserChromeDelegate: AnyObject {
     var barsMaxHeight: CGFloat { get }
     var isInMinimalChromeLayout: Bool { get }
 
+    var isFloatingChromeEnabled: Bool { get }
+
+    var floatingMorphCollapseDuration: CFTimeInterval { get }
+    var floatingMorphExpandDuration: CFTimeInterval { get }
+
     /// Height (from the screen bottom) obscured by the visible bottom chrome at the given chrome
     /// visibility fraction, used to resize the floating web view so page-fixed footers pin to the top
     /// of whatever is on screen (toolbar -> capsule -> safe area).
@@ -50,6 +55,14 @@ protocol BrowserChromeDelegate: AnyObject {
 
     var omniBar: any OmniBar { get }
     var tabBarContainer: UIView { get }
+}
+
+extension BrowserChromeDelegate {
+
+    var isFloatingChromeEnabled: Bool { false }
+
+    var floatingMorphCollapseDuration: CFTimeInterval { 0.20 }
+    var floatingMorphExpandDuration: CFTimeInterval { 0.34 }
 }
 
 class BrowserChromeManager: NSObject, UIScrollViewDelegate {

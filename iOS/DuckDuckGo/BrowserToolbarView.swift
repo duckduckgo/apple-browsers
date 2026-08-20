@@ -90,6 +90,8 @@ final class BrowserToolbarView: UIView {
 
     static let extendedHitWidth: CGFloat = 45
     static let floatingButtonsHeight: CGFloat = 62
+    static let buttonRowCollapseScaleAmount: CGFloat = 0.2
+    static let buttonRowCollapseTranslationY: CGFloat = 8
 
     /// Non-floating (legacy) buttons-only bar height, matching the original `UIToolbar` on `main`.
     /// The floating style uses the taller `buttonsHeight`.
@@ -198,6 +200,7 @@ final class BrowserToolbarView: UIView {
     /// floats near the device bottom (see `floatingBottomMargin`). Kept in sync with the host's
     /// safe-area inset in `layoutSubviews`; also widens the hit-test region.
     private var floatingBottomOffset: CGFloat = 0
+    private var standaloneCollapseScale: CGFloat = 1
     /// The tab switcher reuses this bar purely for button-position parity with the browser, but
     /// paints its own backdrop — so in the non-floating style its own background must stay clear.
     private var isLegacyBackgroundTransparent = false
@@ -225,6 +228,10 @@ final class BrowserToolbarView: UIView {
             return targetHeight
         }
         return (verticalContentPadding * 2) + targetHeight + omnibarHeight + omnibarToButtonsSpacing
+    }
+
+    static func singleRowHeight(withOmnibarHeight omnibarHeight: CGFloat) -> CGFloat {
+        (verticalContentPadding * 2) + omnibarHeight
     }
 
     override init(frame: CGRect) {
@@ -277,6 +284,12 @@ final class BrowserToolbarView: UIView {
     var arrangedToolbarButtonViews: [UIView] {
         buttonStack.arrangedSubviews
     }
+
+    #if DEBUG
+    var buttonRowAlphaForTesting: CGFloat { buttonStack.alpha }
+    var buttonRowTransformForTesting: CGAffineTransform { buttonStack.transform }
+    var panelHeightForTesting: CGFloat { buttonsHeightConstraint.constant }
+    #endif
 
     func setFloatingStyleEnabled(_ enabled: Bool, animated: Bool = false) {
         guard isFloatingStyleEnabled != enabled else { return }
@@ -576,12 +589,59 @@ final class BrowserToolbarView: UIView {
         let safeBottom = view.safeAreaInsets.bottom
         let insets = Self.floatingBarOuterInsets
         let width = bounds.width - insets.left - insets.right
-        let height = buttonsHeightConstraint.constant
+        let height = hasEmbeddedOmnibar
+            ? Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
+            : buttonsHeightConstraint.constant
         let offset = max(0, safeBottom - floatingBottomMargin)
         let bottom = bounds.maxY - safeBottom + offset
         return CGRect(x: bounds.minX + insets.left, y: bottom - height, width: width, height: height)
     }
-    
+
+    @discardableResult
+    func setButtonRowCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) -> CGFloat {
+        let fullHeight = Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant, isFloating: isFloatingStyleEnabled)
+
+        guard isFloatingStyleEnabled, hasEmbeddedOmnibar, !hasExpandedContent, !reduceMotion else {
+            buttonStack.alpha = 1
+            buttonStack.transform = .identity
+            buttonsHeightConstraint.constant = fullHeight
+            return fullHeight
+        }
+
+        let progress = collapseProgress.clamped(to: 0...1)
+        buttonStack.alpha = 1 - progress
+        let scale = 1 - Self.buttonRowCollapseScaleAmount * progress
+        buttonStack.transform = CGAffineTransform(scaleX: scale, y: scale)
+            .concatenating(CGAffineTransform(translationX: 0, y: Self.buttonRowCollapseTranslationY * progress))
+
+        let singleRowHeight = Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
+        let height = fullHeight - (fullHeight - singleRowHeight) * progress
+        buttonsHeightConstraint.constant = height
+        updateCornerStyle()
+        return height
+    }
+
+    #if DEBUG
+    var standaloneCapsuleTransformForTesting: CGAffineTransform { materialBackgroundView.transform }
+    #endif
+
+    func setStandaloneCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) {
+        guard isFloatingStyleEnabled, !hasEmbeddedOmnibar, !reduceMotion else {
+            standaloneCollapseScale = 1
+            applyMaterialBackgroundTransform()
+            return
+        }
+
+        let progress = collapseProgress.clamped(to: 0...1)
+        standaloneCollapseScale = 1 - Self.buttonRowCollapseScaleAmount * progress
+        applyMaterialBackgroundTransform()
+    }
+
+    private func applyMaterialBackgroundTransform() {
+        materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: floatingBottomOffset)
+            .concatenating(CGAffineTransform(scaleX: standaloneCollapseScale, y: standaloneCollapseScale))
+    }
+
     /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,
     /// leaving `floatingBottomMargin`. Done as a transform (not a constraint change) so it doesn't
     /// disturb the toolbar's layout slot or the runtime chrome hide/show constant logic.
@@ -590,7 +650,7 @@ final class BrowserToolbarView: UIView {
         let target = isFloatingStyleEnabled ? max(0, hostBottomInset - floatingBottomMargin) : 0
         guard target != floatingBottomOffset else { return }
         floatingBottomOffset = target
-        materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: target)
+        applyMaterialBackgroundTransform()
     }
 
     private func updateCornerStyle() {

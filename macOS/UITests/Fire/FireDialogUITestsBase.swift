@@ -46,7 +46,7 @@ extension FireDialogUITests {
 
         // Clear state
         app.fireButton.click()
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        switchSegmentedControl(to: .everything)
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
@@ -223,4 +223,16 @@ extension FireDialogUITests {
             line: line
         )
     }
+
+    func switchSegmentedControl(to segment: FireDialogSegment) {
+        let button = app.fireDialogSegmentedControl.buttons[segment.rawValue]
+        let coordinate = button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        coordinate.click()
+    }
+
+}
+enum FireDialogSegment: String {
+    case tab = "Tab"
+    case window = "Window"
+    case everything = "Everything"
 }

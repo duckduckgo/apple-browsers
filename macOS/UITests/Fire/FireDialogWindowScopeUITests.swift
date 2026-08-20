@@ -70,7 +70,7 @@ final class FireDialogWindowScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Window" scope
-        app.fireDialogSegmentedControl.buttons["Window"].click()
+        switchSegmentedControl(to: .window)
 
         // Enable cookies toggle to verify Sites overlay
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -178,7 +178,7 @@ final class FireDialogWindowScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Window" scope
-        app.fireDialogSegmentedControl.buttons["Window"].click()
+        switchSegmentedControl(to: .window)
 
         // Enable only history toggle (tabs and cookies off)
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
@@ -259,7 +259,7 @@ final class FireDialogWindowScopeUITests: UITestCase, FireDialogUITests {
         openFireDialog()
 
         // Select "Window" scope
-        app.fireDialogSegmentedControl.buttons["Window"].click()
+        switchSegmentedControl(to: .window)
 
         // Enable cookies toggle to verify Sites overlay
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -355,7 +355,7 @@ final class FireDialogWindowScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Window" scope
-        app.fireDialogSegmentedControl.buttons["Window"].click()
+        switchSegmentedControl(to: .window)
 
         // Enable cookies toggle to verify Sites overlay
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -438,7 +438,7 @@ final class FireDialogWindowScopeUITests: UITestCase, FireDialogUITests {
         openFireDialog()
 
         // Select "Window" scope
-        app.fireDialogSegmentedControl.buttons["Window"].click()
+        switchSegmentedControl(to: .window)
 
         // Enable tabs and history, disable cookies
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -495,7 +495,7 @@ final class FireDialogWindowScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Window" scope
-        app.fireDialogSegmentedControl.buttons["Window"].click()
+        switchSegmentedControl(to: .window)
 
         // Disable tabs and history, enable cookies only
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
@@ -559,7 +559,7 @@ final class FireDialogWindowScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Window" scope
-        app.fireDialogSegmentedControl.buttons["Window"].click()
+        switchSegmentedControl(to: .window)
 
         // Enable tabs only, disable history and cookies
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })

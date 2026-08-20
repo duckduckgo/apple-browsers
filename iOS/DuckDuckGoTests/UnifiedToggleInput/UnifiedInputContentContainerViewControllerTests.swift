@@ -35,12 +35,14 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
                      isFireTab: Bool = false,
                      isTyping: Bool = false,
                      inputMode: TextEntryMode = .search,
-                     hasFavorites: Bool = true) -> Placement {
+                     hasFavorites: Bool = true,
+                     hasRecents: Bool = false) -> Placement {
             Placement.resolve(hasEscapeHatch: hasEscapeHatch,
                               isFireTab: isFireTab,
                               isTyping: isTyping,
                               inputMode: inputMode,
-                              hasFavorites: hasFavorites)
+                              hasFavorites: hasFavorites,
+                              hasRecents: hasRecents)
         }
 
         XCTAssertEqual(resolve(hasEscapeHatch: false), .none)
@@ -49,6 +51,7 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         XCTAssertEqual(resolve(), .embedded)
         XCTAssertEqual(resolve(hasFavorites: false), .pinned)
         XCTAssertEqual(resolve(inputMode: .aiChat), .pinned)
+        XCTAssertEqual(resolve(inputMode: .aiChat, hasRecents: true), .embedded)
     }
 
     func testDuckAISuggestionsDidRequestSyncSetup_RequestsSyncSetupOnDelegate() {

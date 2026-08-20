@@ -135,7 +135,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
     private var escapeHatchModel: EscapeHatchModel?
-    /// Pins the non-favorites hatch to the bar; the NTP owns the hatch while it scrolls with favorites.
+    /// Pins the hatch when there is no scrollable content; favorites or recents own it otherwise.
     private var chromeHostingController: UIHostingController<FocusedChromeView>?
     private var chromeTopConstraint: NSLayoutConstraint?
     private var chromeHeightConstraint: NSLayoutConstraint?
@@ -400,18 +400,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         case none
         /// Pins the Escape Hatch above the focused content.
         case pinned
-        /// Embeds the Escape Hatch in the scrollable favorites content.
+        /// Embeds the Escape Hatch in the current scrollable content.
         case embedded
 
         static func resolve(hasEscapeHatch: Bool,
                             isFireTab: Bool,
                             isTyping: Bool,
                             inputMode: TextEntryMode,
-                            hasFavorites: Bool) -> EscapeHatchPlacement {
+                            hasFavorites: Bool,
+                            hasRecents: Bool) -> EscapeHatchPlacement {
             guard hasEscapeHatch, !isFireTab, !isTyping else {
                 return .none
             }
-            return inputMode == .search && hasFavorites ? .embedded : .pinned
+            let hasScrollableContent = inputMode == .search ? hasFavorites : hasRecents
+            return hasScrollableContent ? .embedded : .pinned
         }
     }
 
@@ -422,7 +424,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             isTyping: UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
                                                                hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText),
             inputMode: switchBarHandler.currentToggleState,
-            hasFavorites: suggestionTrayDependencies?.favoritesViewModel.favorites.isEmpty == false)
+            hasFavorites: suggestionTrayDependencies?.favoritesViewModel.favorites.isEmpty == false,
+            hasRecents: duckAIStateRelay.value?.hasRecents == true)
     }
 
     private var embeddedEscapeHatchModel: EscapeHatchModel? {
@@ -700,7 +703,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsTopConstraint?.constant = topBarContentGap
     }
 
-    /// Omits the top-bar gap while the NTP owns the hatch to prevent a jump during the focus/dismiss handoff.
+    /// Scrollable content owns its hatch spacing, so the container-level gap only applies to pinned content.
     private var topBarContentGap: CGFloat {
         isUsingTopBarPosition && escapeHatchPlacement != .embedded ? Metrics.topBarContentClearance : 0
     }

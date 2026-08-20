@@ -36,6 +36,7 @@ final class UnifiedSuggestionsHost {
     /// config's install-time value, which is stale once the bar position is finalized).
     private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
+    private var escapeHatch: EscapeHatchModel?
     private var syncPromo: AnyView?
     private var escapeHatchTopInset: CGFloat = 0
     private var contentInsets: UIEdgeInsets = .zero
@@ -55,6 +56,9 @@ final class UnifiedSuggestionsHost {
 
     func setEscapeHatch(_ model: EscapeHatchModel?, openedAfterIdle: Bool) {
         cachedFavoritesController?.setEscapeHatch(model, openedAfterIdle: openedAfterIdle)
+        guard escapeHatch !== model else { return }
+        escapeHatch = model
+        rebuildRootView()
     }
 
     func setSyncPromo(_ promo: AnyView?) {
@@ -95,6 +99,7 @@ final class UnifiedSuggestionsHost {
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
+            escapeHatch: escapeHatch,
             syncPromo: syncPromo,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
         let hosting = UIHostingController(rootView: view)
@@ -224,6 +229,7 @@ final class UnifiedSuggestionsHost {
         hosting.rootView = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
+            escapeHatch: escapeHatch,
             syncPromo: syncPromo,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
     }

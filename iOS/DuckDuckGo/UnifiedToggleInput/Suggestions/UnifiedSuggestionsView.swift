@@ -25,14 +25,15 @@ struct UnifiedSuggestionsView: View {
 
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
+    let escapeHatch: EscapeHatchModel?
     let syncPromo: AnyView?
     /// Built lazily by the host for the `.favorites` state; nil when favorites aren't supported (Duck.ai).
     let favoritesProvider: () -> NewTabPageViewController?
 
     var body: some View {
-        // The escape hatch is pinned to the bar by the container while the sync promo scrolls with
-        // recents. The logo overlays the content, anchored to the keyboard (the host's fixed bottom) so
-        // neither the bar-driven top inset nor a Search↔Duck.ai toggle moves it.
+        // The escape hatch is pinned when content is empty and scrolls with favorites or recents otherwise.
+        // The logo overlays the content, anchored to the keyboard (the host's fixed bottom) so neither the
+        // bar-driven top inset nor a Search↔Duck.ai toggle moves it.
         ZStack(alignment: .bottom) {
             contentArea
             logoLayer
@@ -88,6 +89,7 @@ struct UnifiedSuggestionsView: View {
     private var listLayer: some View {
         SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
                             isAddressBarAtBottom: isAddressBarAtBottom,
+                            escapeHatch: activeListKind == .recents ? escapeHatch : nil,
                             syncPromo: activeListKind == .recents ? syncPromo : nil)
             .opacity(isShowingList ? 1 : 0)
             // Fade *in* on a mode change, but snap *out* — otherwise the recents list lingers over the

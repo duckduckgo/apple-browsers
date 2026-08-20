@@ -198,8 +198,8 @@ class SubscriptionManagerTests: XCTestCase {
 
         let automaticSignOutData = try XCTUnwrap(automaticSignOutPixelData())
         XCTAssertEqual(automaticSignOutData.reason, .unknownAccount)
-        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .notPresentInProcess)
-        XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .notPresentInProcess)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .unavailable)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .unavailable)
         XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .present)
     }
 

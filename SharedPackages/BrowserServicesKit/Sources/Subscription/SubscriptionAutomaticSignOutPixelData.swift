@@ -138,7 +138,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
         case oneToThreeDays = "1_to_3_days"
         case moreThanThreeDays = "more_than_3_days"
         case unknown
-        case notPresentInProcess = "not_present_in_process"
+        case unavailable
 
         public init(until date: Date?, now: Date) {
             guard let date else {
@@ -166,7 +166,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
 
         public init(cachedSubscription: DuckDuckGoSubscription?, now: Date) {
             guard let cachedSubscription else {
-                self = .notPresentInProcess
+                self = .unavailable
                 return
             }
             self.init(until: cachedSubscription.expiresOrRenewsAt, now: now)
@@ -180,11 +180,11 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
         case inactive
         case expired
         case unknown
-        case notPresentInProcess = "not_present_in_process"
+        case unavailable
 
         public init(_ subscription: DuckDuckGoSubscription?) {
             guard let subscription else {
-                self = .notPresentInProcess
+                self = .unavailable
                 return
             }
 
@@ -208,11 +208,11 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
     public enum CachedSubscriptionTrialStatus: String {
         case active
         case notActive = "not_active"
-        case notPresentInProcess = "not_present_in_process"
+        case unavailable
 
         public init(_ subscription: DuckDuckGoSubscription?) {
             guard let subscription else {
-                self = .notPresentInProcess
+                self = .unavailable
                 return
             }
             self = subscription.hasActiveTrialOffer ? .active : .notActive
@@ -224,11 +224,11 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
         case playStore = "play_store"
         case stripe
         case unknown
-        case notPresentInProcess = "not_present_in_process"
+        case unavailable
 
         public init(_ subscription: DuckDuckGoSubscription?) {
             guard let subscription else {
-                self = .notPresentInProcess
+                self = .unavailable
                 return
             }
 

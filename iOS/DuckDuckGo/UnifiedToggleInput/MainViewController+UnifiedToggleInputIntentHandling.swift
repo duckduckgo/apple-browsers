@@ -196,6 +196,46 @@ private extension MainViewController {
         updateUnifiedInputContentVisibility(for: coordinator, renderState: renderState)
     }
 
+    private func animateOmnibarEditingShow(coordinator: UnifiedToggleInputCoordinator,
+                                           duration: TimeInterval,
+                                           pendingHeight: CGFloat?,
+                                           isSeamlessHandoff: Bool,
+                                           growsFromBottom: Bool,
+                                           contentContainer: UIView) {
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: .curveEaseOut,
+            animations: { [weak self] in
+                guard let self else { return }
+                coordinator.viewController.applyOmnibarEditingShowPose()
+                if coordinator.cardPosition == .bottom {
+                    self.applyBottomOmnibarVisibility(.active)
+                    if self.isFloatingUIEnabled {
+                        self.viewCoordinator.applyDetachedToolbarHeight()
+                    }
+                }
+                if let pendingHeight {
+                    self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
+                }
+                self.viewCoordinator.superview.layoutIfNeeded()
+                coordinator.pushContentInsets()
+                if !isSeamlessHandoff {
+                    contentContainer.alpha = 1
+                    if growsFromBottom {
+                        contentContainer.transform = .identity
+                    }
+                }
+                coordinator.viewController.setTextHorizontalShift(0)
+            },
+            completion: { _ in
+                if growsFromBottom {
+                    contentContainer.layer.shouldRasterize = false
+                }
+            }
+        )
+    }
+
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
         warmSearchTokenIfEligible()
         guard let coordinator = unifiedToggleInputCoordinator else { return }
@@ -265,38 +305,12 @@ private extension MainViewController {
         }
 
         let duration = Constants.omnibarTransitionDuration(isBottom: isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
-        UIView.animate(
-            withDuration: duration,
-            delay: 0,
-            options: .curveEaseOut,
-            animations: { [weak self] in
-                guard let self else { return }
-                coordinator.viewController.applyOmnibarEditingShowPose()
-                if coordinator.cardPosition == .bottom {
-                    self.applyBottomOmnibarVisibility(.active)
-                    if self.isFloatingUIEnabled {
-                        self.viewCoordinator.applyDetachedToolbarHeight()
-                    }
-                }
-                if let pendingHeight {
-                    self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
-                }
-                self.viewCoordinator.superview.layoutIfNeeded()
-                coordinator.pushContentInsets()
-                if !isSeamlessHandoff {
-                    unifiedInputContentContainer.alpha = 1
-                    if growsFromBottom {
-                        unifiedInputContentContainer.transform = .identity
-                    }
-                }
-                coordinator.viewController.setTextHorizontalShift(0)
-            },
-            completion: { _ in
-                if growsFromBottom {
-                    unifiedInputContentContainer.layer.shouldRasterize = false
-                }
-            }
-        )
+        animateOmnibarEditingShow(coordinator: coordinator,
+                                  duration: duration,
+                                  pendingHeight: pendingHeight,
+                                  isSeamlessHandoff: isSeamlessHandoff,
+                                  growsFromBottom: growsFromBottom,
+                                  contentContainer: unifiedInputContentContainer)
 
         if let omnibarPlaceholderColor {
             coordinator.viewController.animatePlaceholderColorTransition(

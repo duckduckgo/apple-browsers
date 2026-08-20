@@ -231,8 +231,3 @@ extension FireDialogUITests {
     }
 
 }
-enum FireDialogSegment: String {
-    case tab = "Tab"
-    case window = "Window"
-    case everything = "Everything"
-}

@@ -68,10 +68,10 @@ class ErrorPageUITests: UITestCase {
     func testErrorPage_FromNewTab_UnreachableHost_BackReturnsToNewTabSurface() throws {
         // setUp closes all windows; open a new one to restore the New Tab surface.
         app.openNewWindow()
-        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.navigation), "WebView should be ready after launch")
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.elementExistence), "WebView should be ready after launch")
         let newTabChrome = webView.popUpButtons["Customize"]
         XCTAssertTrue(
-            newTabChrome.waitForExistence(timeout: UITests.Timeouts.navigation),
+            newTabChrome.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Precondition: first tab should be the new tab page before navigating away"
         )
 
@@ -82,7 +82,7 @@ class ErrorPageUITests: UITestCase {
         XCTAssertTrue(app.backButton.isEnabled, "Host-not-found error should keep Back enabled toward the prior new tab entry")
 
         app.backButton.click()
-        XCTAssertTrue(newTabChrome.waitForExistence(timeout: UITests.Timeouts.navigation), "Back should restore the new tab page")
+        XCTAssertTrue(newTabChrome.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Back should restore the new tab page")
         let errorHeader = webView.staticTexts.containing(\.value, containing: Self.errorPageHeader).firstMatch
         XCTAssertFalse(errorHeader.exists, "Error page should be dismissed after Back to the new tab history entry")
     }
@@ -215,7 +215,7 @@ class ErrorPageUITests: UITestCase {
         assertGenericErrorPageVisible()
         let alternateDescription = webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulatedNotConnectedDescription).firstMatch
         XCTAssertTrue(
-            alternateDescription.waitForExistence(timeout: UITests.Timeouts.navigation),
+            alternateDescription.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Reactivation should show the second simulated URLError description"
         )
         let firstDescription = webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulatedConnectionLostDescription).firstMatch
@@ -224,7 +224,7 @@ class ErrorPageUITests: UITestCase {
             "Error surface should update away from the first simulated failure description"
         )
         XCTAssertTrue(
-            webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulateAttemptSuffix(2)).firstMatch.waitForExistence(timeout: UITests.Timeouts.navigation),
+            webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulateAttemptSuffix(2)).firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Second handler pass should surface attempt 2 in the error copy (visible reload counter)"
         )
 
@@ -248,7 +248,7 @@ class ErrorPageUITests: UITestCase {
         assertGenericErrorPageVisible()
         XCTAssertTrue(
             webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulatedNotConnectedDescription).firstMatch
-                .waitForExistence(timeout: UITests.Timeouts.navigation),
+                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Query should force not-connected copy on every load"
         )
         XCTAssertTrue(
@@ -360,7 +360,7 @@ class ErrorPageUITests: UITestCase {
         assertGenericErrorPageVisible()
         let notConnectedAfterResubmit = webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulatedNotConnectedDescription).firstMatch
         XCTAssertTrue(
-            notConnectedAfterResubmit.waitForExistence(timeout: UITests.Timeouts.navigation),
+            notConnectedAfterResubmit.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Second navigation to alternating-failures demo should advance the alternating failure copy"
         )
 
@@ -403,7 +403,7 @@ class ErrorPageUITests: UITestCase {
         assertGenericErrorPageVisible()
         let connectionLostSecondSubmit = webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulatedConnectionLostDescription).firstMatch
         XCTAssertTrue(
-            connectionLostSecondSubmit.waitForExistence(timeout: UITests.Timeouts.navigation),
+            connectionLostSecondSubmit.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Cmd+R after back (attempt 3) should show the connection-lost simulated description (alternating failure chain)"
         )
 
@@ -547,7 +547,7 @@ class ErrorPageUITests: UITestCase {
         let connectionLostLine = webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulatedConnectionLostDescription).firstMatch
         let notConnectedLine = webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulatedNotConnectedDescription).firstMatch
         XCTAssertTrue(
-            notConnectedLine.waitForExistence(timeout: UITests.Timeouts.navigation),
+            notConnectedLine.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Back re-invokes the scheme handler (attempt 2) → not-connected copy should be visible"
         )
         XCTAssertFalse(connectionLostLine.exists, "Back (attempt 2) should not show connection-lost copy")
@@ -555,7 +555,7 @@ class ErrorPageUITests: UITestCase {
         // First reload: connection-lost (attempt 3).
         app.typeKey("r", modifierFlags: [.command])
         XCTAssertTrue(
-            connectionLostLine.waitForExistence(timeout: UITests.Timeouts.navigation),
+            connectionLostLine.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "First reload (attempt 3) should surface the alternating connection-lost copy"
         )
         XCTAssertTrue(
@@ -567,7 +567,7 @@ class ErrorPageUITests: UITestCase {
         // Second reload: back to not-connected (attempt 4).
         app.typeKey("r", modifierFlags: [.command])
         XCTAssertTrue(
-            notConnectedLine.waitForExistence(timeout: UITests.Timeouts.navigation),
+            notConnectedLine.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Second reload (attempt 4) should return to the not-connected line of copy"
         )
         XCTAssertTrue(
@@ -766,7 +766,7 @@ class ErrorPageUITests: UITestCase {
         // Wait for error page chrome + copy.
         XCTAssertTrue(
             webView.staticTexts.containing(\.value, containing: Self.errorPageHeader).firstMatch
-                .waitForExistence(timeout: UITests.Timeouts.navigation),
+                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Error page should appear for unreachable URL"
         )
 
@@ -800,7 +800,7 @@ class ErrorPageUITests: UITestCase {
 
         XCTAssertTrue(
             webView.staticTexts.containing(\.value, containing: Self.errorPageHeader).firstMatch
-                .waitForExistence(timeout: UITests.Timeouts.navigation),
+                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Error page should appear for failing domain"
         )
 
@@ -826,7 +826,7 @@ class ErrorPageUITests: UITestCase {
         // Error state first.
         XCTAssertTrue(
             webView.staticTexts.containing(\.value, containing: Self.errorPageHeader).firstMatch
-                .waitForExistence(timeout: UITests.Timeouts.navigation),
+                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Error page should appear for temporary error"
         )
 
@@ -853,7 +853,7 @@ class ErrorPageUITests: UITestCase {
         // Initial load fails.
         XCTAssertTrue(
             webView.staticTexts.containing(\.value, containing: Self.errorPageHeader).firstMatch
-                .waitForExistence(timeout: UITests.Timeouts.navigation),
+                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Error page should appear for reload error test"
         )
 
@@ -914,7 +914,7 @@ class ErrorPageUITests: UITestCase {
 
         XCTAssertTrue(
             webView.staticTexts.containing(\.value, containing: Self.errorPageHeader).firstMatch
-                .waitForExistence(timeout: UITests.Timeouts.navigation),
+                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Error page should appear for forward test error"
         )
 
@@ -1269,7 +1269,7 @@ class ErrorPageUITests: UITestCase {
         // Open a fresh tab first, then select the restored tab (reload on activation succeeds once simulate is off).
         app.openNewTab()
         let newTabChrome = webView.popUpButtons["Customize"]
-        XCTAssertTrue(newTabChrome.waitForExistence(timeout: UITests.Timeouts.navigation), "Fresh tab should show the new tab page")
+        XCTAssertTrue(newTabChrome.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fresh tab should show the new tab page")
         XCTAssertEqual(app.windows.firstMatch.tabs.count, 2)
 
         ensureSimulateFailureURLSchemeOff()
@@ -1317,7 +1317,7 @@ class ErrorPageUITests: UITestCase {
         // Switch to the fresh tab and back — history shape on tab 0 should be unchanged.
         selectUnpinnedTab(at: 1)
         XCTAssertTrue(
-            newTabChrome.waitForExistence(timeout: UITests.Timeouts.navigation),
+            newTabChrome.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The other tab should still be the new tab page"
         )
 
@@ -1505,7 +1505,7 @@ class ErrorPageUITests: UITestCase {
         assertGenericErrorPageVisible()
         XCTAssertTrue(
             webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulatedHostNotFoundDescription).firstMatch
-                .waitForExistence(timeout: UITests.Timeouts.navigation),
+                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Error page should show the simulated host-not-found copy"
         )
         XCTAssertTrue(
@@ -1703,7 +1703,7 @@ private extension ErrorPageUITests {
     func assertFailureSchemeDemoPageBodyVisible(file: StaticString = #filePath, line: UInt = #line) {
         let demoBody = webView.staticTexts.containing(\.value, containing: Self.failureSchemeDemoPageBody).firstMatch
         XCTAssertTrue(
-            demoBody.waitForExistence(timeout: UITests.Timeouts.navigation),
+            demoBody.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "debug://failure HTML should be visible (distinct from error-page copy that also mentions debug://failure)",
             file: file,
             line: line
@@ -1713,7 +1713,7 @@ private extension ErrorPageUITests {
     func assertFailureSchemeSimulatedConnectionErrorDescriptionVisible(file: StaticString = #filePath, line: UInt = #line) {
         let descriptionLabel = webView.staticTexts.containing(\.value, containing: Self.failureSchemeSimulatedConnectionLostDescription).firstMatch
         XCTAssertTrue(
-            descriptionLabel.waitForExistence(timeout: UITests.Timeouts.navigation),
+            descriptionLabel.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Error page should surface the debug simulated connection-lost copy from the scheme handler",
             file: file,
             line: line
@@ -1731,7 +1731,7 @@ private extension ErrorPageUITests {
     func assertGenericErrorPageVisible(file: StaticString = #filePath, line: UInt = #line) {
         let header = webView.staticTexts.containing(\.value, containing: Self.errorPageHeader).firstMatch
         XCTAssertTrue(
-            header.waitForExistence(timeout: UITests.Timeouts.navigation),
+            header.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Error page header should be visible",
             file: file,
             line: line

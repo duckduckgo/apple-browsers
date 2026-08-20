@@ -119,15 +119,18 @@ class FromWebViewTransition: WebViewTransition {
         }
 
         imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
-        if !isFloating {
+        if isFloating {
+            imageContainer.frame = WebViewTransitionGeometry.webContentFrame(
+                from: imageContainer.frame,
+                topObscuredHeight: webView.scrollView.contentInset.top)
+        } else {
             // Legacy bottom chrome resizes `contentContainer` to sit above the omnibar, but at the
             // moment this frame is read it still measures the taller, pre-resize value, so this
-            // compensates. Floating UI's `contentContainer` anchors to the safe area instead (the
-            // toolbar floats on top via obscured content insets, not a frame resize), so it's
-            // already the right height -- applying this compensation there shrank the screenshot
-            // substitute a few points shorter than the live webview it was replacing, reading as a
-            // slight "shrink" the instant the tab button is pressed. `ToWebViewTransition`'s mirror
-            // image (growing back from the tab cell) never applied this adjustment either.
+            // compensates. Floating UI's `contentContainer` anchors behind the status bar instead (the
+            // toolbar floats on top via obscured content insets, not a frame resize). Cropping the
+            // top inset above matches the live page; applying this height compensation there shrank
+            // the screenshot a few points shorter than the live webview. `ToWebViewTransition`'s
+            // mirror image never applied this adjustment either.
             imageContainer.frame = adjustFrame(imageContainer.frame,
                                                forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
                                                byHeight: -mainViewController.omniBar.barView.expectedHeight)
@@ -253,7 +256,6 @@ class ToWebViewTransition: WebViewTransition {
         }
 
         let theme = ThemeManager.shared.currentTheme
-        let webViewFrame = webView.convert(webView.bounds, to: nil)
         mainViewController.view.alpha = 1
 
         // The tab coming into focus scales + fades the floating platter in. The real toolbar sits
@@ -332,9 +334,15 @@ class ToWebViewTransition: WebViewTransition {
 
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
-                self.imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
+                var destinationFrame = mainViewController.viewCoordinator.contentContainer.frame
+                if isFloating {
+                    destinationFrame = WebViewTransitionGeometry.webContentFrame(
+                        from: destinationFrame,
+                        topObscuredHeight: webView.scrollView.contentInset.top)
+                }
+                self.imageContainer.frame = destinationFrame
 
-                self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: webViewFrame.size,
+                self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: destinationFrame.size,
                                                                                        previewSize: preview?.size)
                 self.imageView.alpha = 1
                 self.solidBackground.alpha = 1

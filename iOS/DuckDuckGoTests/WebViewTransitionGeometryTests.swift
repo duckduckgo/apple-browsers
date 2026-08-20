@@ -96,6 +96,32 @@ final class WebViewTransitionGeometryTests: XCTestCase {
         XCTAssertEqual(frame.height, 780) // 390 * (200/100)
     }
 
+    // MARK: - webContentFrame
+
+    func testWebContentFrameInsetsTheContainerBelowTheObscuredTop() {
+        let container = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let frame = WebViewTransitionGeometry.webContentFrame(from: container, topObscuredHeight: 59)
+
+        XCTAssertEqual(frame, CGRect(x: 0, y: 59, width: 390, height: 785))
+    }
+
+    func testWebContentFrameIsUnchangedWhenTopObscuredHeightIsZero() {
+        let container = CGRect(x: 10, y: 20, width: 390, height: 844)
+        XCTAssertEqual(WebViewTransitionGeometry.webContentFrame(from: container, topObscuredHeight: 0), container)
+    }
+
+    func testWebContentFrameIsUnchangedWhenTopObscuredHeightExceedsContainer() {
+        let container = CGRect(x: 0, y: 0, width: 390, height: 50)
+        XCTAssertEqual(WebViewTransitionGeometry.webContentFrame(from: container, topObscuredHeight: 59), container)
+    }
+
+    func testWebContentFrameIsFiniteForNonFiniteTopObscuredHeight() {
+        let container = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let frame = WebViewTransitionGeometry.webContentFrame(from: container, topObscuredHeight: .infinity)
+        assertFinite(frame)
+        XCTAssertEqual(frame, container)
+    }
+
     // MARK: - Helpers
 
     private func assertFinite(_ rect: CGRect, file: StaticString = #filePath, line: UInt = #line) {

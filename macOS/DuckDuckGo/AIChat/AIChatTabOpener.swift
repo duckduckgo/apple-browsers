@@ -189,19 +189,32 @@ struct AIChatTabOpener: AIChatTabOpening {
 
     @MainActor
     func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController) {
-        promptHandler.setData(.queryPrompt(query, autoSubmit: true))
-        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewTabOf: windowController, hasPrompt: true)
-        fireNewChatExperimentPixels()
+        openNewChatTab(withQuery: query, target: .newTabOf(windowController))
     }
 
     @MainActor
     func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint) {
-        promptHandler.setData(.queryPrompt(query, autoSubmit: true))
-        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewWindowAt: droppingPoint, hasPrompt: true)
-        fireNewChatExperimentPixels()
+        openNewChatTab(withQuery: query, target: .newWindowAt(droppingPoint))
     }
 
     // MARK: - Private Helpers
+
+    private enum NewChatPromptTarget {
+        case newTabOf(MainWindowController)
+        case newWindowAt(NSPoint)
+    }
+
+    @MainActor
+    private func openNewChatTab(withQuery query: String, target: NewChatPromptTarget) {
+        promptHandler.setData(.queryPrompt(query, autoSubmit: true))
+        switch target {
+        case .newTabOf(let windowController):
+            aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewTabOf: windowController, hasPrompt: true)
+        case .newWindowAt(let droppingPoint):
+            aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewWindowAt: droppingPoint, hasPrompt: true)
+        }
+        fireNewChatExperimentPixels()
+    }
 
     /// Returns `true` if a new chat surface was actually opened (`false` on a no-op).
     @MainActor

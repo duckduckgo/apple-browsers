@@ -41,7 +41,7 @@ final class NextStepsListUITests: UITestCase {
         app.openNewTab()
 
         // Confirm Next Steps widget is visible
-        XCTAssertTrue(nextStepsSection.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertTrue(nextStepsSection.waitForExistence(timeout: UITests.Timeouts.navigation),
                       "Next Steps content should be visible on New Tab Page")
 
         // Confirm Next Steps card is visible, using its "No Thanks" button

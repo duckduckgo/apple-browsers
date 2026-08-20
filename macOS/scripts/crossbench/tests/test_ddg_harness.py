@@ -738,6 +738,29 @@ class DDGHarnessTests(unittest.TestCase):
         ]
         self.assertNotIn("record_machine_load", measure)
 
+    def test_session_diagnostics_are_bounded_and_outside_lcp_window(self):
+        harness = SCRIPT.read_text(encoding="utf-8")
+        body = harness[
+            harness.index("record_session_diagnostics() {") :
+            harness.index("record_machine_load() {")
+        ]
+        self.assertIn('[ "$CAPTURE_SCREENSHOTS" = 1 ]', body)
+        self.assertIn("system_profiler SPDisplaysDataType", body)
+        self.assertIn("scutil show State:/Users/ConsoleUser", body)
+        self.assertIn('launchctl print "gui/$current_uid"', body)
+        self.assertIn("pmset -g assertions", body)
+        self.assertIn("ioreg -r -c IODisplayConnect", body)
+        self.assertIn("lsappinfo front", body)
+        self.assertIn("sed -n '1,320p'", body)
+        self.assertIn('record_session_diagnostics "run-start"', harness)
+        screenshot = harness[
+            harness.index("capture_screenshot() {") :
+            harness.index("record_session_diagnostics() {")
+        ]
+        self.assertIn(
+            'record_session_diagnostics "during-$site-rep$rep"', screenshot
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

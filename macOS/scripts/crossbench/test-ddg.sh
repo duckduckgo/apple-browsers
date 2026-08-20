@@ -1060,6 +1060,84 @@ capture_screenshot() {
   else
     log "screen: capture failed for $site rep=$rep"
   fi
+  record_session_diagnostics "during-$site-rep$rep"
+}
+
+# Records enough macOS GUI, display, power and session state to distinguish a
+# sleeping display from a headless runner or an app launched outside the Aqua
+# console session. It runs only with screenshot diagnostics and outside the LCP
+# window. Output is deliberately filtered and bounded for the CI artifact.
+record_session_diagnostics() {
+  [ "$CAPTURE_SCREENSHOTS" = 1 ] || return 0
+  local label="$1" safe_label out console_uid current_uid
+  safe_label="$(printf '%s' "$label" | tr -c 'A-Za-z0-9._-' '_')"
+  out="$DIAGNOSTICS_DIR/session-$safe_label.txt"
+  mkdir -p "$DIAGNOSTICS_DIR" || return 0
+  console_uid="$(/usr/bin/stat -f '%u' /dev/console 2>/dev/null)" || console_uid=""
+  current_uid="$(/usr/bin/id -u 2>/dev/null)" || current_uid=""
+
+  {
+    printf 'label=%s\n' "$label"
+    /bin/date -u '+utc=%Y-%m-%dT%H:%M:%SZ' || true
+    printf '\n[identity]\n'
+    /usr/bin/id || true
+    printf 'console_owner='
+    /usr/bin/stat -f '%Su uid=%u' /dev/console || true
+    /usr/sbin/scutil show State:/Users/ConsoleUser || true
+    /usr/bin/who -a || true
+
+    printf '\n[gui-bootstrap]\n'
+    if [ -n "$current_uid" ] && /bin/launchctl print "gui/$current_uid" >/dev/null 2>&1; then
+      printf 'current_user_gui_domain=available uid=%s\n' "$current_uid"
+    else
+      printf 'current_user_gui_domain=unavailable uid=%s\n' "${current_uid:-unknown}"
+    fi
+    if [ -n "$console_uid" ] && /bin/launchctl print "gui/$console_uid" >/dev/null 2>&1; then
+      printf 'console_user_gui_domain=available uid=%s\n' "$console_uid"
+    else
+      printf 'console_user_gui_domain=unavailable uid=%s\n' "${console_uid:-unknown}"
+    fi
+    printf 'frontmost_app='
+    /usr/bin/lsappinfo front || true
+    /usr/bin/lsappinfo list 2>/dev/null \
+      | awk '/DuckDuckGo|Safari|loginwindow|WindowServer/ {print}' \
+      | head -80 || true
+
+    printf '\n[displays]\n'
+    /usr/sbin/system_profiler SPDisplaysDataType -detailLevel mini || true
+    /usr/sbin/ioreg -r -c IODisplayConnect -l 2>/dev/null \
+      | awk '/IODisplayConnect|DisplayProductName|IODisplayPrefsKey|IODisplayLocation|IODisplayIsDigital/ {print}' \
+      | head -120 || true
+    /usr/sbin/ioreg -r -n IODisplayWrangler -d 1 2>/dev/null \
+      | awk '/CurrentPowerState|DevicePowerState|MaxPowerState|IOPowerManagement/ {print}' \
+      | head -80 || true
+
+    printf '\n[power-and-sleep]\n'
+    /usr/bin/pmset -g || true
+    /usr/bin/pmset -g assertions || true
+    /usr/bin/pmset -g therm || true
+    /usr/sbin/ioreg -r -n IOPMrootDomain -d 1 2>/dev/null \
+      | awk '/CurrentPowerState|DevicePowerState|System Sleep|SleepDisabled|UserIsActive|Clamshell/ {print}' \
+      | head -100 || true
+    /usr/bin/pmset -g log 2>/dev/null | tail -80 || true
+
+    printf '\n[performance]\n'
+    printf 'loadavg='
+    /usr/sbin/sysctl -n vm.loadavg || true
+    printf 'logical_cpu='
+    /usr/sbin/sysctl -n hw.logicalcpu || true
+    printf 'memory_bytes='
+    /usr/sbin/sysctl -n hw.memsize || true
+    /usr/bin/memory_pressure -Q || true
+    /bin/ps -Ao %cpu=,pid=,ppid=,user=,stat=,ucomm= 2>/dev/null \
+      | sort -rn | head -12 || true
+    /bin/ps -axo pid=,ppid=,user=,stat=,command= 2>/dev/null \
+      | awk '/WindowServer|loginwindow|Runner.Listener|Runner.Worker|DuckDuckGo/ {print}' \
+      | head -80 || true
+  } > "$out" 2>&1 || return 0
+
+  log "macOS session diagnostics: $label"
+  sed -n '1,320p' "$out" || true
 }
 
 # Records what else the machine was doing, sampled between sites so the reading
@@ -1090,6 +1168,7 @@ run_ddg() {
   echo "ddg:     $BROWSER_VERSION"
   echo "route:   DDG WKWebView -> tsproxy:$TSPROXY_PORT -> per-site WPR"
   echo "results: $RESULTS_FILE"
+  record_session_diagnostics "run-start"
 
   for site in "${SITES[@]}"; do
     log "site: $site"

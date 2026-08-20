@@ -62,7 +62,6 @@ extension Pixel {
         case forgetAllPressedTabSwitching
         case forgetAllPressedSettings
         case forgetAllExecuted
-        case forgetAllDataCleared
         
         case forgetAllPressedBrowsingDaily
         case forgetAllPressedTabSwitcherDaily
@@ -70,7 +69,6 @@ extension Pixel {
 
         // MARK: Single Tab Burn
         case singleTabBurnExecuted
-        case singleTabDataCleared
         
         case privacyDashboardOpened
         case privacyDashboardFirstTimeOpenedUnique
@@ -2091,8 +2089,6 @@ extension Pixel {
         case tabSwitcherModeToggled
         case fireModeBurnExecuted
         case normalModeBurnExecuted
-        case fireModeDataCleared
-        case normalModeDataCleared
         case fireModeLastTabClosedBurn
         case fireModeEmptyStateNewTab
         case linkLongPressMenuShown
@@ -2133,7 +2129,6 @@ extension Pixel.Event {
         case .forgetAllPressedTabSwitching: return "mf_tp"
         case .forgetAllPressedSettings: return "m_forget-all-pressed_settings"
         case .forgetAllExecuted: return "mf"
-        case .forgetAllDataCleared: return "mf_dc"
         
         case .forgetAllPressedBrowsingDaily: return "m_forget-all-pressed_browsing_daily"
         case .forgetAllPressedTabSwitcherDaily: return "m_forget-all-pressed_tab-switcher_daily"
@@ -2141,7 +2136,6 @@ extension Pixel.Event {
 
         // MARK: Single Tab Burn
         case .singleTabBurnExecuted: return "m_single-tab-burn_executed"
-        case .singleTabDataCleared: return "m_single-tab-data_cleared"
             
         case .privacyDashboardOpened: return "mp"
         case .privacyDashboardFirstTimeOpenedUnique: return "m_privacy_dashboard_first_time_used_unique"
@@ -4072,8 +4066,6 @@ extension Pixel.Event {
         case .tabSwitcherModeToggled: return "m_tab-switcher_mode-toggled"
         case .fireModeBurnExecuted: return "m_fire-mode_burn_executed"
         case .normalModeBurnExecuted: return "m_normal-mode_burn_executed"
-        case .fireModeDataCleared: return "m_fire-mode_data-cleared"
-        case .normalModeDataCleared: return "m_normal-mode_data-cleared"
         case .fireModeLastTabClosedBurn: return "m_fire-mode_last-tab-closed_burn"
         case .fireModeEmptyStateNewTab: return "m_fire-mode_empty-state_new-tab"
         case .linkLongPressMenuShown: return "m_link-long-press_menu-shown"

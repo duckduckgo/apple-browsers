@@ -41,7 +41,7 @@ final class NextStepsListUITests: UITestCase {
         app.openNewTab()
 
         // Confirm Next Steps widget is visible
-        XCTAssertTrue(nextStepsSection.waitForExistence(timeout: UITests.Timeouts.navigation),
+        XCTAssertTrue(nextStepsSection.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Next Steps content should be visible on New Tab Page")
 
         // Confirm Next Steps card is visible, using its "No Thanks" button
@@ -93,7 +93,7 @@ private extension NextStepsListUITests {
     }
 
     var nextStepsSection: XCUIElement {
-        webView.staticTexts["Next Steps"]
+        webView.staticTexts.containing(\.value, containing: "NEXT STEPS").firstMatch
     }
 
     var nextStepsCardDismissButton: XCUIElement {

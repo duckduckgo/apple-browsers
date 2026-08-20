@@ -46,11 +46,7 @@
             "additionalProperties": false,
             "properties": {
                 "name": { "type": "string", "description": "The feature name for this event", "enum": ["duckai-selection-journey"] },
-                "status": {
-                    "type": "string",
-                    "description": "The overall status of the operation",
-                    "enum": ["SUCCESS", "FAILURE"]
-                },
+                "status": { "type": "string", "description": "The overall status of the operation", "enum": ["SUCCESS", "FAILURE"] },
                 "data": {
                     "type": "object",
                     "required": ["ext"],
@@ -80,7 +76,7 @@
                                 },
                                 "submission": {
                                     "type": "object",
-                                    "description": "How the user submitted the selection interaction. Present only for SUCCESS.",
+                                    "description": "How the user submitted the selection journey. Present only for SUCCESS.",
                                     "properties": {
                                         "action": {
                                             "type": "string",

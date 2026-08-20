@@ -94,7 +94,6 @@ final class AIChatTabOpenerTests: XCTestCase {
 
     @MainActor
     func testNewChatNoOpDoesNotFireNewChatExperimentPixel() {
-        // The manager reports it did not open a surface (e.g. already on an empty Duck.ai tab): no metric.
         let mockManager = WindowControllersManagerMock()
         mockManager.openAIChatDidOpen = false
         var fireCount = 0
@@ -118,8 +117,6 @@ final class AIChatTabOpenerTests: XCTestCase {
 
     @MainActor
     func testPlainURLTriggerDoesNotFireNewChatExperimentPixel() {
-        // A .url without a mode param (e.g. the customize-responses modal or a sidebar handoff URL)
-        // is not a new chat.
         let mockManager = WindowControllersManagerMock()
         var fireCount = 0
         let opener = makeOpener(mockManager) { fireCount += 1 }

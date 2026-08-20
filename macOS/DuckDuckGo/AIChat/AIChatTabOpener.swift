@@ -121,7 +121,6 @@ protocol AIChatTabOpening {
 struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
     private let aiChatTabManaging: AIChatTabManaging
-    /// Fires the `duck_ai_new_chat` retention experiment metric. Injected so it can be observed in tests.
     private let fireNewChatExperimentPixels: () -> Void
 
     let aiChatRemoteSettings = AIChatRemoteSettings()
@@ -140,25 +139,18 @@ struct AIChatTabOpener: AIChatTabOpening {
 
     @MainActor
     func openAIChatTab(with trigger: AIChatOpenTrigger, behavior: LinkOpenBehavior) {
+        var startedNewChat = false
+
         switch trigger {
         case .newChat:
-            if openAIChatTab(query: nil, with: behavior, autoSubmit: true) {
-                fireNewChatExperimentPixels()
-            }
+            startedNewChat = openAIChatTab(query: nil, with: behavior, autoSubmit: true)
 
         case .query(let query, shouldAutoSubmit: let shouldAutoSubmit):
-            if openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit) {
-                fireNewChatExperimentPixels()
-            }
+            startedNewChat = openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)
 
         case .url(let url):
             let didOpen = aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
-            // A mode URL (e.g. `?mode=image`) starts a fresh mode-driven chat, like `.mode`, so it
-            // counts. Other `.url` uses — the customize-responses modal, the sidebar handoff — carry no
-            // `mode` param and are not new chats.
-            if didOpen, url.getParameter(named: AIChatURLParameters.modeName) != nil {
-                fireNewChatExperimentPixels()
-            }
+            startedNewChat = didOpen && url.getParameter(named: AIChatURLParameters.modeName) != nil
 
         case .payload(let payload):
             aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, payload: payload)
@@ -167,18 +159,18 @@ struct AIChatTabOpener: AIChatTabOpening {
             aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, restorationData: data)
 
         case .existingChat(let chatId):
-            let chatURL = buildChatURL(for: chatId)
-            aiChatTabManaging.openAIChat(chatURL, with: behavior, hasPrompt: false)
+            aiChatTabManaging.openAIChat(buildChatURL(for: chatId), with: behavior, hasPrompt: false)
 
         case .mode(let mode):
-            let prompt = AIChatNativePrompt.queryPrompt("", autoSubmit: false, mode: mode)
-            promptHandler.setData(prompt)
-            if aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: behavior, hasPrompt: true) {
-                fireNewChatExperimentPixels()
-            }
+            promptHandler.setData(AIChatNativePrompt.queryPrompt("", autoSubmit: false, mode: mode))
+            startedNewChat = aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: behavior, hasPrompt: true)
 
         case .openSettings:
             aiChatTabManaging.insertAIChatTabRequestingOpenSettings(with: aiChatRemoteSettings.aiChatURL)
+        }
+
+        if startedNewChat {
+            fireNewChatExperimentPixels()
         }
     }
 
@@ -211,9 +203,7 @@ struct AIChatTabOpener: AIChatTabOpening {
 
     // MARK: - Private Helpers
 
-    /// - Returns: `true` if a new Duck.ai chat surface was actually opened (so the caller can fire the
-    ///   `duck_ai_new_chat` metric), `false` when the request resolved to a no-op — e.g. tapping New Chat
-    ///   while already sitting on an empty Duck.ai tab with no prompt.
+    /// Returns `true` if a new chat surface was actually opened (`false` on a no-op).
     @MainActor
     @discardableResult
     private func openAIChatTab(query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) -> Bool {
@@ -240,9 +230,7 @@ struct AIChatTabOpener: AIChatTabOpening {
 }
 
 protocol AIChatTabManaging {
-    /// - Returns: `true` if a Duck.ai chat surface was actually opened/shown, `false` for a no-op
-    ///   (e.g. `.currentTab` onto an already-loaded Duck.ai tab with no prompt) or a navigation to an
-    ///   existing chat. Callers use this to avoid counting no-ops toward the `duck_ai_new_chat` metric.
+    /// Returns `true` if a chat surface was actually opened/shown, `false` for a no-op or existing-chat navigation.
     @MainActor
     @discardableResult
     func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool) -> Bool
@@ -302,7 +290,6 @@ extension WindowControllersManager: AIChatTabManaging {
                     show(url: url, source: .ui, newTab: false)
                     return false
                 }
-                // Already on an empty Duck.ai tab with no prompt: nothing to open.
                 return false
             } else {
                 show(url: url, source: .ui, newTab: false)

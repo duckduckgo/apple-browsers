@@ -447,6 +447,33 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric fires new-chat experiment pixel for userDidCreateNewChat", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatUserDidCreateNewChatFiresNewChatExperimentPixel() async {
+        var fireCount = 0
+        let testHandler = AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: MockFeatureFlagger(),
+            notificationCenter: notificationCenter,
+            fireNewChatExperimentPixels: { fireCount += 1 }
+        )
+
+        await withCheckedContinuation { continuation in
+            testHandler.didReportMetric(.init(metricName: .userDidCreateNewChat)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(fireCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("didReportMetric fires start new conversation pixel for first prompt", .timeLimit(.minutes(1)))
     @MainActor
     func testThatUserDidSubmitFirstPromptFiresStartNewConversationPixel() async throws {

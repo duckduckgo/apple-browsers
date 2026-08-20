@@ -137,4 +137,50 @@ final class AIChatTabOpenerTests: XCTestCase {
 
         XCTAssertEqual(fireCount, 1, "A mode-driven fresh chat (e.g. image generation) must count as a new chat")
     }
+
+    @MainActor
+    func testOpenSettingsTriggerDoesNotFireNewChatExperimentPixel() {
+        let mockManager = WindowControllersManagerMock()
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+
+        opener.openAIChatTab(with: .openSettings, behavior: .newTab(selected: true))
+
+        XCTAssertEqual(fireCount, 0)
+    }
+
+    @MainActor
+    func testNewVoiceSessionFiresNewChatExperimentPixel() {
+        let mockManager = WindowControllersManagerMock()
+        mockManager.focusActiveVoiceSessionTabResult = false
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+
+        opener.openVoiceSession(inSourceCollection: nil, behavior: .newTab(selected: true))
+
+        XCTAssertEqual(fireCount, 1, "Opening a new voice chat must count as a new chat")
+    }
+
+    @MainActor
+    func testVoiceSessionFocusingExistingTabDoesNotFireNewChatExperimentPixel() {
+        let mockManager = WindowControllersManagerMock()
+        mockManager.focusActiveVoiceSessionTabResult = true
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+
+        opener.openVoiceSession(inSourceCollection: nil, behavior: .newTab(selected: true))
+
+        XCTAssertEqual(fireCount, 0, "Focusing an already-active voice tab is a resume, not a new chat")
+    }
+
+    @MainActor
+    func testPromptBarNewWindowFiresNewChatExperimentPixel() {
+        let mockManager = WindowControllersManagerMock()
+        var fireCount = 0
+        let opener = makeOpener(mockManager) { fireCount += 1 }
+
+        opener.openAIChatTab(withQuery: "hello", inNewWindowAt: .zero)
+
+        XCTAssertEqual(fireCount, 1)
+    }
 }

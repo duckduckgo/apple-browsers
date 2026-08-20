@@ -22,7 +22,25 @@ import UIKit
 class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
     
     struct Constants {
-        static let duration = 0.28
+        static let duration = 0.20
+        static let floatingDuration = 0.28
+        static let collapsedToolbarScale: CGFloat = 0.7
+        static let revealMidpointAlpha: CGFloat = 0.85
+        static let revealMidpointScale: CGFloat = collapsedToolbarScale + revealMidpointAlpha * (1 - collapsedToolbarScale)
+    }
+
+    static func duration(isFloatingUIEnabled: Bool) -> TimeInterval {
+        isFloatingUIEnabled ? Constants.floatingDuration : Constants.duration
+    }
+
+    static func toolbarTransform(scale: CGFloat, for view: UIView) -> CGAffineTransform {
+        let heightLost = view.bounds.height * (1 - scale) / 2
+        return CGAffineTransform(scaleX: scale, y: scale)
+            .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
+    }
+
+    static func collapsedToolbarTransform(for view: UIView) -> CGAffineTransform {
+        toolbarTransform(scale: Constants.collapsedToolbarScale, for: view)
     }
     
     // Used to hide contents of the 'from' VC when animating.
@@ -58,6 +76,31 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         return snapshot
     }
 
+    func installToolbarSnapshot(for mainViewController: MainViewController,
+                                transitionContext: UIViewControllerContextTransitioning,
+                                afterScreenUpdates: Bool,
+                                seedCollapsed: Bool) -> UIView? {
+        guard mainViewController.isFloatingUIEnabled else { return nil }
+
+        mainViewController.beginTabSwitcherToolbarOwnership()
+        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
+        defer { toolbar.alpha = 0 }
+
+        guard let snapshot = makeToolbarSnapshot(of: toolbar,
+                                                 in: transitionContext.containerView,
+                                                 afterScreenUpdates: afterScreenUpdates) else { return nil }
+
+        if seedCollapsed {
+            if !UIAccessibility.isReduceMotionEnabled {
+                snapshot.transform = Self.collapsedToolbarTransform(for: snapshot)
+            }
+            snapshot.alpha = 0
+        }
+
+        transitionContext.containerView.addSubview(snapshot)
+        return snapshot
+    }
+
     // MARK: UIViewControllerAnimatedTransitioning
 
     // Override - Abstract function
@@ -66,7 +109,9 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
     }
     
     func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
-        return TabSwitcherTransition.Constants.duration
+        let mainViewController = (transitionContext?.viewController(forKey: .from) as? MainViewController)
+            ?? (transitionContext?.viewController(forKey: .to) as? MainViewController)
+        return Self.duration(isFloatingUIEnabled: mainViewController?.isFloatingUIEnabled ?? false)
     }
     
     // MARK: Common logic

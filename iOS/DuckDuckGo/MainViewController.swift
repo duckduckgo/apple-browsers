@@ -249,7 +249,15 @@ class MainViewController: UIViewController {
     /// separately from container alpha because the floating capsule morph drives chrome alpha with a
     /// non-linear handoff ramp, so alpha is no longer a reliable source for the real percent.
     private var lastChromeVisibilityPercent: CGFloat = 1
-    var isTabSwitcherTransitionOwningToolbar = false
+    private(set) var isTabSwitcherTransitionOwningToolbar = false
+
+    func beginTabSwitcherToolbarOwnership() {
+        isTabSwitcherTransitionOwningToolbar = true
+    }
+
+    func endTabSwitcherToolbarOwnership() {
+        isTabSwitcherTransitionOwningToolbar = false
+    }
     private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool, topInset: CGFloat) = (false, false, -1)
     private lazy var isWindowControlsRowEnabled = WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
     private var lastForegroundEntryDate = Date.distantPast

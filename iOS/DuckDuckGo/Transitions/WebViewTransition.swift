@@ -38,44 +38,6 @@ class WebViewTransition: TabSwitcherTransition {
         view.layer.add(animation, forKey: "cornerRadius")
         view.layer.cornerRadius = radius
     }
-
-    static let collapsedToolbarScale: CGFloat = 0.7
-
-    /// Scaled-down, bottom-pinned transform used at the collapsed end of the toolbar's animation.
-    fileprivate static func collapsedToolbarTransform(for view: UIView) -> CGAffineTransform {
-        let scale = collapsedToolbarScale
-        let heightLost = view.bounds.height * (1 - scale) / 2
-        return CGAffineTransform(scaleX: scale, y: scale)
-            .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
-    }
-
-    /// Installs the floating toolbar snapshot this transition animates, on top of everything in the
-    /// container, and hides the real toolbar behind it. Returns nil when floating UI is off.
-    /// Pass `seedCollapsed` to start the snapshot scaled down and invisible (the reveal direction).
-    fileprivate func installToolbarSnapshot(for mainViewController: MainViewController,
-                                            transitionContext: UIViewControllerContextTransitioning,
-                                            afterScreenUpdates: Bool,
-                                            seedCollapsed: Bool) -> UIView? {
-        guard mainViewController.isFloatingUIEnabled else { return nil }
-
-        mainViewController.isTabSwitcherTransitionOwningToolbar = true
-        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
-        defer { toolbar.alpha = 0 }
-
-        guard let snapshot = makeToolbarSnapshot(of: toolbar,
-                                                 in: transitionContext.containerView,
-                                                 afterScreenUpdates: afterScreenUpdates) else { return nil }
-
-        if seedCollapsed {
-            if !UIAccessibility.isReduceMotionEnabled {
-                snapshot.transform = Self.collapsedToolbarTransform(for: snapshot)
-            }
-            snapshot.alpha = 0
-        }
-
-        transitionContext.containerView.addSubview(snapshot)
-        return snapshot
-    }
 }
 
 class FromWebViewTransition: WebViewTransition {
@@ -129,7 +91,7 @@ class FromWebViewTransition: WebViewTransition {
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab)
         else {
             tabSwitcherViewController.view.alpha = 1
-            mainViewController.isTabSwitcherTransitionOwningToolbar = false
+            mainViewController.endTabSwitcherToolbarOwnership()
             transitionContext.completeTransition(true)
             return
         }
@@ -141,7 +103,7 @@ class FromWebViewTransition: WebViewTransition {
               let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         else {
             tabSwitcherViewController.view.alpha = 1
-            mainViewController.isTabSwitcherTransitionOwningToolbar = false
+            mainViewController.endTabSwitcherToolbarOwnership()
             transitionContext.completeTransition(true)
             return
         }
@@ -154,6 +116,7 @@ class FromWebViewTransition: WebViewTransition {
 
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
+        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
         let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
                                                      transitionContext: transitionContext,
@@ -180,9 +143,9 @@ class FromWebViewTransition: WebViewTransition {
         // the AI cell is a screenshot, so there's nothing to crossfade to
         let cellSnapshot = installAITabCellSnapshot(for: tab, at: indexPath)
 
-        animateCornerRadius(of: imageContainer, to: TabViewCell.Constants.cellCornerRadius, duration: TabSwitcherTransition.Constants.duration)
+        animateCornerRadius(of: imageContainer, to: TabViewCell.Constants.cellCornerRadius, duration: duration)
 
-        UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
+        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
 
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
@@ -211,10 +174,7 @@ class FromWebViewTransition: WebViewTransition {
             if let toolbarSnapshot {
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                     if !reduceMotion {
-                        let scale: CGFloat = 0.7
-                        let heightLost = toolbarSnapshot.bounds.height * (1 - scale) / 2
-                        toolbarSnapshot.transform = CGAffineTransform(scaleX: scale, y: scale)
-                            .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
+                        toolbarSnapshot.transform = TabSwitcherTransition.collapsedToolbarTransform(for: toolbarSnapshot)
                     }
                     toolbarSnapshot.alpha = 0
                 }
@@ -225,7 +185,7 @@ class FromWebViewTransition: WebViewTransition {
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {
                 toolbar.alpha = 0
-                self.mainViewController.isTabSwitcherTransitionOwningToolbar = false
+                self.mainViewController.endTabSwitcherToolbarOwnership()
             }
             transitionContext.completeTransition(true)
         })
@@ -238,15 +198,17 @@ class ToWebViewTransition: WebViewTransition {
     /// Crossfade fallback when the destination is no longer a web view; mirrors ToHomeScreenTransition.
     /// Hands the toolbar back to its normal owner so a guard-failed transition can't strand it hidden.
     private func completeWithCrossfadeFallback(using transitionContext: UIViewControllerContextTransitioning) {
-        if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
+        let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController
+        if let mainViewController {
             mainViewController.view.alpha = 1
-            mainViewController.isTabSwitcherTransitionOwningToolbar = false
+            mainViewController.endTabSwitcherToolbarOwnership()
             if mainViewController.isFloatingUIEnabled {
                 mainViewController.viewCoordinator.toolbar.transform = .identity
                 mainViewController.viewCoordinator.toolbar.alpha = 1
             }
         }
-        UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
+        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: mainViewController?.isFloatingUIEnabled ?? false)
+        UIView.animate(withDuration: duration, animations: {
             self.tabSwitcherViewController.view.alpha = 0
         }, completion: { _ in
             self.solidBackground.removeFromSuperview()
@@ -273,6 +235,7 @@ class ToWebViewTransition: WebViewTransition {
 
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
+        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
         if isFloating {
             mainViewController.chromeManager.reset(animated: false)
@@ -308,9 +271,9 @@ class ToWebViewTransition: WebViewTransition {
         
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
 
-        animateCornerRadius(of: imageContainer, to: 0, duration: TabSwitcherTransition.Constants.duration)
+        animateCornerRadius(of: imageContainer, to: 0, duration: duration)
 
-        UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
+        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 var destinationFrame = mainViewController.viewCoordinator.contentContainer.frame
                 if isFloating {
@@ -331,14 +294,13 @@ class ToWebViewTransition: WebViewTransition {
             }
 
             if let toolbarSnapshot {
-                let easedScale: CGFloat = 0.955 // 0.7 + 0.85 * (1 - 0.7)
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.6) {
                     if !reduceMotion {
-                        let heightLost = toolbarSnapshot.bounds.height * (1 - easedScale) / 2
-                        toolbarSnapshot.transform = CGAffineTransform(scaleX: easedScale, y: easedScale)
-                            .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
+                        toolbarSnapshot.transform = TabSwitcherTransition.toolbarTransform(
+                            scale: Constants.revealMidpointScale,
+                            for: toolbarSnapshot)
                     }
-                    toolbarSnapshot.alpha = 0.85
+                    toolbarSnapshot.alpha = Constants.revealMidpointAlpha
                 }
                 UIView.addKeyframe(withRelativeStartTime: 0.6, relativeDuration: 0.4) {
                     if !reduceMotion {
@@ -353,7 +315,7 @@ class ToWebViewTransition: WebViewTransition {
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {
                 toolbar.alpha = 1
-                mainViewController.isTabSwitcherTransitionOwningToolbar = false
+                mainViewController.endTabSwitcherToolbarOwnership()
             }
             transitionContext.completeTransition(true)
         })

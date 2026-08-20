@@ -93,24 +93,18 @@ class FromHomeScreenTransition: HomeScreenTransition {
               let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: IndexPath(row: rowIndex, section: 0))
         else {
             tabSwitcherViewController.view.alpha = 1
-            mainViewController.isTabSwitcherTransitionOwningToolbar = false
+            mainViewController.endTabSwitcherToolbarOwnership()
             transitionContext.completeTransition(true)
             return
         }
 
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
-        var toolbarSnapshot: UIView?
-        if isFloating {
-            mainViewController.isTabSwitcherTransitionOwningToolbar = true
-            if let snapshot = makeToolbarSnapshot(of: toolbar,
-                                                  in: transitionContext.containerView,
-                                                  afterScreenUpdates: false) {
-                transitionContext.containerView.addSubview(snapshot)
-                toolbarSnapshot = snapshot
-            }
-            toolbar.alpha = 0
-        }
+        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
+        let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
+                                                     transitionContext: transitionContext,
+                                                     afterScreenUpdates: false,
+                                                     seedCollapsed: false)
 
         let theme = ThemeManager.shared.currentTheme
 
@@ -131,7 +125,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
             imageView.image = TabViewCell.logoImage(for: tab)
         }
         
-        UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
+        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
@@ -176,7 +170,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {
                 toolbar.alpha = 0
-                self.mainViewController.isTabSwitcherTransitionOwningToolbar = false
+                self.mainViewController.endTabSwitcherToolbarOwnership()
             }
             transitionContext.completeTransition(true)
         })
@@ -198,12 +192,13 @@ class ToHomeScreenTransition: HomeScreenTransition {
             // hasn't laid out its cell yet. Fall back to a simple crossfade to avoid a flash.
             if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
                 mainViewController.view.alpha = 1
-                mainViewController.isTabSwitcherTransitionOwningToolbar = false
+                mainViewController.endTabSwitcherToolbarOwnership()
                 if mainViewController.isFloatingUIEnabled {
                     mainViewController.viewCoordinator.toolbar.alpha = 1
                 }
             }
-            UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
+            let isFloating = (transitionContext.viewController(forKey: .to) as? MainViewController)?.isFloatingUIEnabled ?? false
+            UIView.animate(withDuration: TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating), animations: {
                 self.tabSwitcherViewController.view.alpha = 0
             }, completion: { _ in
                 self.solidBackground.removeFromSuperview()
@@ -217,18 +212,15 @@ class ToHomeScreenTransition: HomeScreenTransition {
 
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
-        var toolbarSnapshot: UIView?
+        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
         if isFloating {
-            mainViewController.isTabSwitcherTransitionOwningToolbar = true
-            if let snapshot = makeToolbarSnapshot(of: toolbar,
-                                                  in: transitionContext.containerView,
-                                                  afterScreenUpdates: true) {
-                snapshot.alpha = 0
-                transitionContext.containerView.addSubview(snapshot)
-                toolbarSnapshot = snapshot
-            }
-            toolbar.alpha = 0
+            mainViewController.chromeManager.reset(animated: false)
         }
+        let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
+                                                     transitionContext: transitionContext,
+                                                     afterScreenUpdates: true,
+                                                     seedCollapsed: false)
+        toolbarSnapshot?.alpha = 0
 
         let theme = ThemeManager.shared.currentTheme
         imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
@@ -250,7 +242,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
 
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
         
-        UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
+        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 self.imageContainer.frame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
@@ -293,7 +285,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {
                 toolbar.alpha = 1
-                mainViewController.isTabSwitcherTransitionOwningToolbar = false
+                mainViewController.endTabSwitcherToolbarOwnership()
             }
             transitionContext.completeTransition(true)
         })

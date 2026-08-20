@@ -70,6 +70,16 @@ fi
   --env "AUTOMATION_TOKEN=$AUTOMATION_TOKEN" \
   "$app" --args "$@"
 
+# In a headless / loginwindow session, `open -n` lands the new window behind
+# loginwindow, so the WKWebView reports visibilityState:hidden / hasFocus:false
+# and WebKit background-throttles the page, inflating LCP. Re-activate the app
+# via LaunchServices to bring it forward. Uses the app PATH (not a bundle-id
+# lookup, which can stall on an unindexed bundle) and plain `open` (no System
+# Events / Automation TCC gate). Hard-timeboxed so it can never wedge the
+# launcher. Best effort: if this does not flip visibilityState, the durable fix
+# is app-side (force the WKWebView activity state in the Review build).
+/usr/bin/open "$app" 2>/dev/null || true
+
 for _ in {1..40}; do
   pids=()
   while IFS= read -r pid; do

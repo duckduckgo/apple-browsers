@@ -171,6 +171,18 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         XCTAssertEqual(height, 70, accuracy: 0.001)
     }
 
+    func testWhenVisibleToolbarIsTallerThanTheInterpolatedSlotThenBottomObscuredHeightUsesTheVisibleChrome() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0.8,
+            toolbarSlotHeight: 100,
+            visibleToolbarHeight: 90,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 90, accuracy: 0.001)
+    }
+
     func testWhenBarsVisibleThenTopObscuredHeightIsExpandedChrome() {
         let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
             barsVisibilityPercent: 1,

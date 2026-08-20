@@ -4690,6 +4690,20 @@ extension MainViewController: BrowserChromeDelegate {
         toolbarHeight + view.safeAreaInsets.bottom
     }
 
+    private func floatingToolbarOnScreenFraction(for percent: CGFloat) -> CGFloat {
+        guard isFloatingCapsuleActive,
+              viewCoordinator.isOmnibarInToolbar,
+              !UIAccessibility.isReduceMotionEnabled else {
+            return percent
+        }
+        return min(1, percent / FloatingDomainCapsuleController.handoffStart)
+    }
+
+    private func floatingVisibleToolbarHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        guard !viewCoordinator.toolbar.isHidden, !isInMinimalChromeLayout else { return 0 }
+        return floatingToolbarSlotHeight * floatingToolbarOnScreenFraction(for: barsVisibilityPercent)
+    }
+
     /// Height obscured by the resting floating domain capsule, measured from the screen bottom, with a
     /// little extra clearance so a page-fixed footer doesn't sit flush against the pill. The capsule
     /// only rests at the bottom in bottom-address-bar mode, and only when it is eligible to show for a
@@ -4731,6 +4745,7 @@ extension MainViewController: BrowserChromeDelegate {
         return FloatingUILayoutPolicy.webViewBottomObscuredHeight(
             barsVisibilityPercent: barsVisibilityPercent,
             toolbarSlotHeight: floatingToolbarSlotHeight,
+            visibleToolbarHeight: floatingVisibleToolbarHeight(for: barsVisibilityPercent),
             bottomCapsuleObscuredHeight: floatingBottomCapsuleObscuredHeight,
             safeAreaBottom: view.safeAreaInsets.bottom
         )
@@ -4787,9 +4802,7 @@ extension MainViewController: BrowserChromeDelegate {
             bottomHeight += viewCoordinator.navigationBarContainer.frame.height
         }
         bottomHeight += view.safeAreaInsets.bottom
-        let slideRatio = isFloatingCapsuleActive && viewCoordinator.isOmnibarInToolbar && !UIAccessibility.isReduceMotionEnabled
-            ? min(1, ratio / FloatingDomainCapsuleController.handoffStart)
-            : ratio
+        let slideRatio = floatingToolbarOnScreenFraction(for: ratio)
         // Minimal chrome owns the toolbar slot as a permanent offscreen spacer for the bottom
         // address bar, and on iPad the toolbar is permanently hidden (its layout slot would
         // otherwise leave a 49pt gap below the webview). Everywhere else the slot tracks

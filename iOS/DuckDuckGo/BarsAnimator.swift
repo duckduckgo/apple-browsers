@@ -139,7 +139,7 @@ class BarsAnimator {
             switch committed {
             case .collapsing where reversal <= -Metrics.floatingSnapCommitDistance:
                 commitFloatingTransition(.revealing, at: scrollView.contentOffset.y)
-            case .revealing where reversal >= Metrics.floatingSnapCommitDistance:
+            case .revealing where reversal >= Metrics.floatingSnapCommitDistance && scrollView.contentOffset.y > 0:
                 commitFloatingTransition(.collapsing, at: scrollView.contentOffset.y)
             default:
                 break
@@ -148,10 +148,10 @@ class BarsAnimator {
         }
 
         let distanceFromAnchor = scrollView.contentOffset.y - transitionStartPosY
-        if distanceFromAnchor >= Metrics.floatingSnapCommitDistance {
+        if distanceFromAnchor >= Metrics.floatingSnapCommitDistance, scrollView.contentOffset.y > 0 {
             commitFloatingTransition(.collapsing, at: scrollView.contentOffset.y)
             return
-        } else if distanceFromAnchor <= -Metrics.floatingSnapCommitDistance {
+        } else if distanceFromAnchor <= -Metrics.floatingSnapCommitDistance, barsState != .revealed {
             commitFloatingTransition(.revealing, at: scrollView.contentOffset.y)
             return
         }

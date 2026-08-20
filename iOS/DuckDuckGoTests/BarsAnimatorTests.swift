@@ -556,6 +556,23 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertTrue(delegate.receivedMessages.isEmpty)
     }
 
+    func testWhenRubberBandingAtTopThenChromeStaysRevealed() {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+        let commit = BarsAnimator.Metrics.floatingSnapCommitDistance
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+        advanceOffset(sut, scrollView, clock, to: -commit - 4)
+
+        XCTAssertEqual(sut.barsState, .revealed)
+
+        advanceOffset(sut, scrollView, clock, to: 0)
+
+        XCTAssertEqual(sut.barsState, .revealed)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
+    }
+
     private func scroll<Offsets: Sequence>(_ sut: BarsAnimator,
                                            _ scrollView: UIScrollView,
                                            _ clock: TestClock,

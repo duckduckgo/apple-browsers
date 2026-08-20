@@ -90,6 +90,8 @@ final class BrowserToolbarView: UIView {
 
     static let extendedHitWidth: CGFloat = 45
     static let floatingButtonsHeight: CGFloat = 62
+    static let buttonRowCollapseScaleAmount: CGFloat = 0.2
+    static let buttonRowCollapseTranslationY: CGFloat = 8
 
     /// Non-floating (legacy) buttons-only bar height, matching the original `UIToolbar` on `main`.
     /// The floating style uses the taller `buttonsHeight`.
@@ -608,9 +610,9 @@ final class BrowserToolbarView: UIView {
 
         let progress = collapseProgress.clamped(to: 0...1)
         buttonStack.alpha = 1 - progress
-        let scale = 1 - 0.2 * progress
+        let scale = 1 - Self.buttonRowCollapseScaleAmount * progress
         buttonStack.transform = CGAffineTransform(scaleX: scale, y: scale)
-            .concatenating(CGAffineTransform(translationX: 0, y: 8 * progress))
+            .concatenating(CGAffineTransform(translationX: 0, y: Self.buttonRowCollapseTranslationY * progress))
 
         let singleRowHeight = Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
         let height = fullHeight - (fullHeight - singleRowHeight) * progress
@@ -631,7 +633,7 @@ final class BrowserToolbarView: UIView {
         }
 
         let progress = collapseProgress.clamped(to: 0...1)
-        standaloneCollapseScale = 1 - 0.2 * progress
+        standaloneCollapseScale = 1 - Self.buttonRowCollapseScaleAmount * progress
         applyMaterialBackgroundTransform()
     }
 

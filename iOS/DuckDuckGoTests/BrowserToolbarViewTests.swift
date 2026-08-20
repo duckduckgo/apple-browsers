@@ -66,6 +66,11 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         XCTAssertEqual(height, (fullHeight + singleRowHeight) / 2, accuracy: 0.01)
         XCTAssertEqual(sut.buttonRowAlphaForTesting, 0.5, accuracy: 0.001)
+        XCTAssertEqual(
+            sut.buttonRowTransformForTesting.a,
+            1 - BrowserToolbarView.buttonRowCollapseScaleAmount * 0.5,
+            accuracy: 0.001
+        )
     }
 
     func testWhenReduceMotionThenProgressIsIgnoredAndButtonRowStaysFullyShown() {

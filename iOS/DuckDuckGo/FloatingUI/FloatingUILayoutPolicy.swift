@@ -32,17 +32,19 @@ enum FloatingUILayoutPolicy {
     /// (the screen bottom). The floating web view is resized up by this amount so a page `position: fixed`
     /// footer pins to the top of whatever is on screen at the bottom:
     /// - toolbar shown -> `toolbarSlotHeight` (footer above the toolbar),
+    /// - toolbar still on screen during the morph -> `visibleToolbarHeight` (footer above the live bar),
     /// - toolbar hidden + bottom capsule -> `bottomCapsuleObscuredHeight` (footer above the capsule),
     /// - neither -> `safeAreaBottom` (footer at the safe area).
     ///
-    /// `max` gives a smooth crossover: the shrinking toolbar term dominates while the bars are visible,
-    /// then the (stable) capsule / safe-area term takes over once the bars have hidden.
+    /// `max` gives a smooth crossover: the shrinking toolbar term and the on-screen floor dominate while
+    /// the bars are visible, then the (stable) capsule / safe-area term takes over once the bars have hidden.
     static func webViewBottomObscuredHeight(barsVisibilityPercent: CGFloat,
                                             toolbarSlotHeight: CGFloat,
+                                            visibleToolbarHeight: CGFloat = 0,
                                             bottomCapsuleObscuredHeight: CGFloat,
                                             safeAreaBottom: CGFloat) -> CGFloat {
         let clampedPercent = max(0, min(1, barsVisibilityPercent))
-        return max(toolbarSlotHeight * clampedPercent, bottomCapsuleObscuredHeight, safeAreaBottom)
+        return max(toolbarSlotHeight * clampedPercent, visibleToolbarHeight, bottomCapsuleObscuredHeight, safeAreaBottom)
     }
 
     static func webViewTopObscuredHeight(barsVisibilityPercent: CGFloat,

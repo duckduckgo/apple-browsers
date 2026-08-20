@@ -689,7 +689,7 @@ class DDGHarnessTests(unittest.TestCase):
         # image shows the page the LCP number was read from.
         measure_then_capture = harness.index('capture_screenshot "$site" "$rep"')
         self.assertLess(
-            harness.index('measure "https://$site"'), measure_then_capture
+            harness.index('measure "$navigation_url"'), measure_then_capture
         )
         self.assertLess(
             measure_then_capture,

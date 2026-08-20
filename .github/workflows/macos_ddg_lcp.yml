@@ -30,6 +30,11 @@ on:
         type: boolean
         required: false
         default: false
+      youtube-theme-refresh:
+        description: "Navigate YouTube directly to its theme-refresh URL"
+        type: boolean
+        required: false
+        default: false
       alert-asana:
         description: "Create Asana subtasks for validation or measurement errors"
         type: boolean
@@ -190,6 +195,7 @@ jobs:
           DIAGNOSTICS_DIR: ${{ github.workspace }}/macOS/scripts/crossbench/ddg-diagnostics
           RUNNER_IMAGE: ${{ vars.MACOS_PERFORMANCE_RUNNER_IMAGE || runner.name }}
           CAPTURE_SCREENSHOTS: ${{ inputs.capture-screenshots && '1' || '0' }}
+          YOUTUBE_THEME_REFRESH: ${{ inputs.youtube-theme-refresh && '1' || '0' }}
         run: |
           args=()
           if [ -n "$SITES" ]; then

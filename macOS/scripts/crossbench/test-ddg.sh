@@ -53,6 +53,7 @@ DDG_AUTOMATION_HOST="${DDG_AUTOMATION_HOST:-::1}"
 LOAD_WINDOW_SECONDS="${LOAD_WINDOW_SECONDS:-12}"
 ALLOW_TEST_OVERRIDES="${ALLOW_TEST_OVERRIDES:-0}"
 CAPTURE_SCREENSHOTS="${CAPTURE_SCREENSHOTS:-0}"
+YOUTUBE_THEME_REFRESH="${YOUTUBE_THEME_REFRESH:-0}"
 LCP_SETTLE_MS="${LCP_SETTLE_MS:-600}"
 REPETITION_TIMEOUT_SECONDS="${REPETITION_TIMEOUT_SECONDS:-60}"
 SERVICE_START_TIMEOUT_SECONDS="${SERVICE_START_TIMEOUT_SECONDS:-15}"
@@ -93,6 +94,7 @@ bounded_integer SERVICE_START_TIMEOUT_SECONDS 1 30
 bounded_integer AUTOMATION_READY_TIMEOUT_SECONDS 1 120
 bounded_integer LCP_SETTLE_MS 0 5000
 bounded_integer CAPTURE_SCREENSHOTS 0 1
+bounded_integer YOUTUBE_THEME_REFRESH 0 1
 bounded_integer MAX_SITE_DIAGNOSTICS 0 22
 bounded_integer MAX_DIAGNOSTIC_BYTES 1 10485760
 bounded_integer MAX_TOTAL_DIAGNOSTIC_BYTES 1 104857600
@@ -755,7 +757,7 @@ reset_site_counters() {
 }
 
 measure_site() {
-  local site="$1" rep before output command_status status_file
+  local site="$1" rep before output command_status status_file navigation_url proxy_site
   local watchdog_state watchdog_code watchdog_cleanup watchdog_extra
   local watchdog_lines cleanup_failed tsproxy_failed
   local lcp detail landed_url offsite field field_count
@@ -776,6 +778,12 @@ measure_site() {
     return
   fi
   ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
+  navigation_url="https://$site"
+  proxy_site="$site"
+  if [ "$YOUTUBE_THEME_REFRESH" = 1 ] && [ "$site" = youtube.com ]; then
+    navigation_url="https://www.youtube.com/?themeRefresh=1"
+    proxy_site="www.youtube.com"
+  fi
 
   if ! start_wpr "$VALIDATED_ARCHIVE"; then
     set_runtime_failure 30 replay wpr_start_failed "WPR did not become ready"
@@ -828,7 +836,7 @@ measure_site() {
           --term-grace-seconds 2 \
           --status-file "$status_file" \
           -- "$PYTHON_BIN" "$DDG_AUTOMATION_PY" \
-            "$AUTOMATION_PORT" measure "https://$site" \
+            "$AUTOMATION_PORT" measure "$navigation_url" \
             "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" 2>&1
     )"
     command_status=$?
@@ -960,7 +968,7 @@ measure_site() {
       finish_repetition_logs "$site" "$rep" 1
       continue
     fi
-    if ! tsproxy_saw_site "$before" "$site"; then
+    if ! tsproxy_saw_site "$before" "$proxy_site"; then
       site_failed=1
       no_metric=$((no_metric + 1))
       set_runtime_failure 30 replay missing_proxy_route "repetition=$rep"

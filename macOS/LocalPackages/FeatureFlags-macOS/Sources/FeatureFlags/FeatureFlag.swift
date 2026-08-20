@@ -477,7 +477,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064249?focus=true
     case syncCanWriteUnifiedDeviceList
 
-    /// https://app.asana.com/1/137249556945/task/1216792120319849
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217684925915706?focus=true
     case syncCanUsePatchEndpointForLegacyDeviceRename
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064261?focus=true

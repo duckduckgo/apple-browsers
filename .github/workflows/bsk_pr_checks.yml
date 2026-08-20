@@ -277,6 +277,8 @@ jobs:
 
       - name: Resolve package dependencies
         run: |
+          set -o pipefail
+
           echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
           echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 

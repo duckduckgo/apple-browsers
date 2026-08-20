@@ -146,9 +146,15 @@ class DDGAutomationTests(unittest.TestCase):
             "resourceEncodedBytes",
             "navigationResponseEnd",
             "readyState",
+            "visibilityState",
+            "documentHidden",
+            "hasFocus",
             "ytInitialData",
             "ytdAppChildCount",
             "richGrid",
+            "richItemCount",
+            "richGridVisibility",
+            "titleVisibility",
         ):
             self.assertIn(field, probe)
         self.assertNotIn("resources.map", probe)

@@ -1043,9 +1043,10 @@ record_after_shared_failure() {
 capture_screenshot() {
   [ "$CAPTURE_SCREENSHOTS" = 1 ] || return 0
   [ "$2" = 1 ] || return 0
-  local site="$1" rep="$2" out
+  local site="$1" rep="$2" out screen_out
   mkdir -p "$DIAGNOSTICS_DIR" || return 0
   out="$DIAGNOSTICS_DIR/screenshot-$site-rep$rep.png"
+  screen_out="$DIAGNOSTICS_DIR/screen-$site-rep$rep.png"
   # Best effort, like the load sampler below: the app is about to be shut down
   # regardless, and a failed capture must never turn a good measurement into a
   # failed run.
@@ -1053,6 +1054,11 @@ capture_screenshot() {
       "$PYTHON_BIN" "$DDG_AUTOMATION_PY" \
         "$AUTOMATION_PORT" screenshot "$out" 2>&1; then
     log "screenshot: capture failed for $site rep=$rep"
+  fi
+  if /usr/sbin/screencapture -x "$screen_out"; then
+    log "screen: $screen_out bytes=$(wc -c < "$screen_out")"
+  else
+    log "screen: capture failed for $site rep=$rep"
   fi
 }
 

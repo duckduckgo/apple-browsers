@@ -702,6 +702,8 @@ class DDGHarnessTests(unittest.TestCase):
             harness.index("record_machine_load() {")
         ]
         self.assertIn('log "screenshot: capture failed', body)
+        self.assertIn("/usr/sbin/screencapture -x", body)
+        self.assertIn('log "screen: capture failed', body)
         self.assertNotIn("set_shared_failure", body)
         self.assertNotIn("exit 1", body)
 

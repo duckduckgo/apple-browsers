@@ -133,7 +133,7 @@ struct EscapeHatchModelTests {
 
         sut.primarySwipeAction.perform()
 
-        #expect(sut.primarySwipeAction.label == UserText.escapeHatchMenuCloseTab)
+        #expect(sut.primarySwipeAction.label == UserText.escapeHatchSwipeActionCloseTab)
         #expect(router.closeCalls.count == 1)
         #expect(router.closeCalls.first === targetTab)
         #expect(router.burnImmediatelyCalls.isEmpty)

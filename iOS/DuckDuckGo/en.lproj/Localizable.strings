@@ -2464,6 +2464,9 @@
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Return to %1$@, %2$@";
 
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Close Tab";
+
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Private Tabs";
 
@@ -4294,7 +4297,7 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";
 
-/* Settings toggle subtitle describing the Return To Shortcut option */
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
 "settings.lastTabShortcut.subtitle" = "Displays a link to return to the last used tab when you launch the app after inactivity.";
 
 /* Link text for learning more about a feature */
@@ -4361,7 +4364,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.refreshButton.position.title" = "Reload Button Position";
 
 /* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
-"settings.returnToShortcut.label" = "Return To Shortcut";
+"settings.returnToShortcut.label" = "‘Return to’ Shortcut";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Search Settings";
@@ -5478,4 +5481,3 @@ https://duckduckgo.com/windows";
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "What do you want to import?";
-

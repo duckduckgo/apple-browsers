@@ -110,6 +110,27 @@ public struct DuckAiUsageWarning: Equatable {
     }
 }
 
+extension DuckAiUsageWarning {
+
+    /// The English copy the UI will render, composed for the debug log only — the shipped strings get
+    /// localized in the app targets when the UI lands. Logged so a native decision can be read straight
+    /// across against the web banner rather than decoded from field names.
+    var messagePreview: (title: String, subtitle: String?, button: String?) {
+        switch kind {
+        case .reached:
+            // Sticky, no reset copy and nothing left to head off — see Message 2.
+            return ("\(window.rawValue.capitalized) limit reached", nil, nil)
+
+        case .approaching:
+            let title = "\(percent)% of \(window.rawValue) limit · Resets in \(resetsIn.shortDescription)"
+            guard let suggestion = cheaperModelSuggestion else { return (title, nil, nil) }
+            return (title,
+                    "Reduce usage with a more efficient model",
+                    suggestion.modelShortName.map { "Switch to \($0)" } ?? "Switch Model")
+        }
+    }
+}
+
 extension DuckAiUsageWindow {
 
     /// Below this the warning is hidden entirely, unless the window is already blocked.

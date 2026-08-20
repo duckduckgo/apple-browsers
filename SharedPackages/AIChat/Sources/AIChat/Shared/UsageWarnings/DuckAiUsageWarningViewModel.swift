@@ -117,24 +117,32 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         }
     }
 
-    /// The decision fields go out public so the rules can be checked from `log stream`; the percentage
-    /// stays private, matching how the raw snapshot used to be logged.
+    /// Leads with the copy the UI will render, so a native decision can be compared straight across
+    /// against the web banner. The diagnostic fields follow, since they are what makes each gate
+    /// observable while there is no UI.
+    ///
+    /// The title carries the rounded percentage and goes out `.public`, unlike the `.private` percentage
+    /// this replaced. It is a debug-level log behind an internal-only flag, and `severity` already
+    /// narrows the number to a 15-point band — redacting the one line the message is meant to be read
+    /// from bought little and cost the whole point of logging it.
     private func log(_ warning: DuckAiUsageWarning, cheaperModel: DuckAiCheaperModelOutcome) {
-        let cta: String
+        let message = warning.messagePreview
+        let ctaDiagnosis: String
         switch cheaperModel {
-        case .suggestion(let suggestion): cta = "switch-to:\(suggestion.modelId)"
-        case .none(let reason): cta = "none reason=\(reason.rawValue)"
+        case .suggestion(let suggestion): ctaDiagnosis = "model=\(suggestion.modelId)"
+        case .none(let reason): ctaDiagnosis = "none reason=\(reason.rawValue)"
         }
 
         Logger.aiChat.debug("""
-            Duck.ai usage warning: window=\(warning.window.rawValue, privacy: .public) \
+            Duck.ai usage warning: title="\(message.title, privacy: .public)" \
+            subtitle="\(message.subtitle ?? "—", privacy: .public)" \
+            button="\(message.button ?? "—", privacy: .public)" \
+            dismissible=\(warning.isDismissible, privacy: .public) \
+            [window=\(warning.window.rawValue, privacy: .public) \
             kind=\(warning.kind.rawValue, privacy: .public) \
             severity=\(warning.severity.loggingName, privacy: .public) \
-            dismissible=\(warning.isDismissible, privacy: .public) \
-            resetsIn=\(warning.resetsIn.shortDescription, privacy: .public) \
             tier=\(self.tierProvider().rawValue, privacy: .public) \
-            cta=\(cta, privacy: .public) \
-            percent=\(warning.percent, privacy: .private)
+            cta=\(ctaDiagnosis, privacy: .public)]
             """)
     }
 }

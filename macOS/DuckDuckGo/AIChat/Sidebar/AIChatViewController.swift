@@ -122,6 +122,13 @@ final class AIChatViewController: NSViewController {
         aiTab.aiChat?.submitAIChatSelectionContext(selection)
     }
 
+    /// Hands keyboard focus to the chat web view so the user can type right away.
+    /// ponytail: relies on WebKit restoring DOM focus to the last focused element (the input);
+    /// if that proves flaky, add a native→FE "focus input" message.
+    func focusChatWebView() {
+        view.window?.makeFirstResponder(aiTab.webView)
+    }
+
     public func setAIChatRestorationData(_ restorationData: AIChatRestorationData?) {
         aiTab.aiChat?.setAIChatRestorationData(restorationData)
     }

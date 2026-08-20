@@ -116,10 +116,15 @@ extension SubscriptionPurchaseWideEventData {
     }
 
     public enum EntryPoint: String, Codable, CaseIterable {
-        case inApp = "in_app"
+        case appMenu = "app_menu"
+        case appPromotion = "app_promotion"
+        case settings
+        case onboarding
         case newTabPage = "new_tab_page"
-        case web
         case duckAI = "duck_ai"
+        case vpn
+        case personalInformationRemoval = "personal_information_removal"
+        case web
         case unknown
     }
 

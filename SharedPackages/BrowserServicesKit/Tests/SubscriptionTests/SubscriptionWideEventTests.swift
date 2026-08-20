@@ -94,7 +94,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
-            entryPoint: .inApp
+            entryPoint: .settings
         )
 
         wideEvent.startFlow(subscriptionData)
@@ -147,7 +147,7 @@ final class SubscriptionWideEventTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "10000")
-        XCTAssertEqual(params["feature.data.ext.entry_point"], "in_app")
+        XCTAssertEqual(params["feature.data.ext.entry_point"], "settings")
         XCTAssertNil(params["feature.data.ext.funnel_name"])
         XCTAssertNil(params["context.name"])
 

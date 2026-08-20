@@ -373,20 +373,35 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(mockWideEvent.completions.count, 2)
         let startedFirst = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
         let startedSecond = try XCTUnwrap(mockWideEvent.started.last as? SubscriptionRestoreWideEventData)
-        XCTAssertEqual(startedFirst.entryPoint, .inApp)
+        XCTAssertEqual(startedFirst.entryPoint, .settings)
         XCTAssertEqual(startedSecond.funnelName, "funnel_onpurchasecheck_multiple")
     }
 
     func testWhenMappingPurchaseWideEventOriginsThenOnlyCoarseEntryPointsAreReturned() {
         XCTAssertEqual(
             SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.appSettings.rawValue),
-            .inApp)
+            .settings)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.appMenu.rawValue),
+            .appMenu)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.winBackLaunch.rawValue),
+            .appPromotion)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue),
+            .onboarding)
         XCTAssertEqual(
             SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.newTabPageNextStepsCard.rawValue),
             .newTabPage)
         XCTAssertEqual(
             SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.duckAISettings.rawValue),
             .duckAI)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.vpnToolbarUpsell.rawValue),
+            .vpn)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.freeScan.rawValue),
+            .personalInformationRemoval)
         XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: nil), .web)
         XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: "unexpected-origin"), .unknown)
     }

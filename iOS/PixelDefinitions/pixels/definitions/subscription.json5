@@ -585,7 +585,7 @@
                 "key": "feature.data.ext.entry_point",
                 "type": "string",
                 "description": "The coarse product surface that led to the subscription flow",
-                "enum": ["in_app", "new_tab_page", "web", "duck_ai", "unknown"]
+                "enum": ["app_menu", "app_promotion", "settings", "onboarding", "new_tab_page", "duck_ai", "vpn", "personal_information_removal", "web", "unknown"]
             },
             {
                 "key": "context.name",

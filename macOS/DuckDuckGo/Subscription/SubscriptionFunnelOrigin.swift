@@ -172,17 +172,22 @@ extension SubscriptionFunnelOrigin {
                 .duckAISwitchModel,
                 .duckAIUnknown:
             return .duckAI
+        case .appMenu,
+                .winBackMenu:
+            return .appMenu
+        case .winBackLaunch:
+            return .appPromotion
         case .appSettings,
-                .appMenu,
-                .freeScan,
-                .winBackLaunch,
-                .winBackMenu,
-                .winBackSettings,
-                .onboardingSubscriptionUpsell,
-                .vpnToolbarUpsell,
+                .winBackSettings:
+            return .settings
+        case .onboardingSubscriptionUpsell:
+            return .onboarding
+        case .vpnToolbarUpsell,
                 .vpnToolbarRevoked,
                 .vpnMenuBarRevoked:
-            return .inApp
+            return .vpn
+        case .freeScan:
+            return .personalInformationRemoval
         }
     }
 }

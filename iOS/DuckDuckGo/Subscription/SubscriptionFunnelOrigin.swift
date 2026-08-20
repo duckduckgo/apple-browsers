@@ -171,18 +171,21 @@ extension SubscriptionFunnelOrigin {
                 .duckAIVoiceChatDurationLimit:
             return .duckAI
         case .onboarding,
-                .skippedOnboarding,
-                .existingUserPromo,
-                .appSettings,
-                .winBackLaunch,
-                .winBackSettings,
-                .vpnAccessRevokedAlert,
+                .skippedOnboarding:
+            return .onboarding
+        case .existingUserPromo,
+                .winBackLaunch:
+            return .appPromotion
+        case .appSettings,
+                .winBackSettings:
+            return .settings
+        case .vpnAccessRevokedAlert,
                 .toolbarVPN,
                 .addressBarVPN,
                 .widgetVPN,
                 .shortcutVPN,
                 .notificationVPN:
-            return .inApp
+            return .vpn
         }
     }
 }

@@ -37,7 +37,7 @@
                     "entry_point": {
                         "type": "string",
                         "description": "The coarse product surface from which the user entered the purchase flow.",
-                        "enum": ["in_app", "new_tab_page", "web", "duck_ai", "unknown"]
+                        "enum": ["app_menu", "app_promotion", "settings", "onboarding", "new_tab_page", "duck_ai", "vpn", "personal_information_removal", "web", "unknown"]
                     },
                     "account_creation_latency_ms_bucketed": {
                         "type": "integer",

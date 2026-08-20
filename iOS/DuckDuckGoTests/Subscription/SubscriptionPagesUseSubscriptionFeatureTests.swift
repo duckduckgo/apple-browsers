@@ -480,7 +480,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(started.purchasePlatform, .appStore)
         XCTAssertEqual(started.subscriptionIdentifier, "yearly")
         XCTAssertEqual(started.freeTrialEligible, true)
-        XCTAssertEqual(started.entryPoint, .inApp)
+        XCTAssertEqual(started.entryPoint, .settings)
 
         let updated = try XCTUnwrap(mockWideEvent.updates.last as? SubscriptionPurchaseWideEventData)
         XCTAssertNotNil(updated.activateAccountDuration?.start)
@@ -494,13 +494,22 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testWhenMappingPurchaseWideEventOriginsThenOnlyCoarseEntryPointsAreReturned() {
         XCTAssertEqual(
             SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.appSettings.rawValue),
-            .inApp)
+            .settings)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.onboarding.rawValue),
+            .onboarding)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.existingUserPromo.rawValue),
+            .appPromotion)
         XCTAssertEqual(
             SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.newTabMenu.rawValue),
             .newTabPage)
         XCTAssertEqual(
             SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.duckAISettings.rawValue),
             .duckAI)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.toolbarVPN.rawValue),
+            .vpn)
         XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: nil), .web)
         XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: "unexpected-origin"), .unknown)
     }
@@ -580,7 +589,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
 
         let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
-        XCTAssertEqual(started.entryPoint, .inApp)
+        XCTAssertEqual(started.entryPoint, .settings)
     }
 
     // MARK: - SubscriptionChangeSelected Tests

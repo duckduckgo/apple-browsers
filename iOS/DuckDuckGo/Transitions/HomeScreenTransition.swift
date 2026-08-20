@@ -28,9 +28,11 @@ class HomeScreenTransition: TabSwitcherTransition {
     
     fileprivate var homeScreenSnapshot: UIView?
     fileprivate var settingsButtonSnapshot: UIView?
-    
+
+    fileprivate var homeScreenSnapshotSourceSize: CGSize?
+
     fileprivate let tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
-    
+
     fileprivate func prepareSnapshots(with transitionSource: HomeScreenTransitionSource,
                                       transitionContext: UIViewControllerContextTransitioning,
                                       addressBarPosition: AddressBarPosition,
@@ -44,9 +46,15 @@ class HomeScreenTransition: TabSwitcherTransition {
                                                                afterScreenUpdates: false,
                                                                withCapInsets: .zero) {
             imageContainer.addSubview(snapshot)
-            snapshot.frame = imageContainer.bounds
+            homeScreenSnapshotSourceSize = frameToSnapshot.size
+            snapshot.frame = HomeScreenTransitionGeometry.snapshotFrame(for: frameToSnapshot.size,
+                                                                        in: imageContainer.bounds)
             homeScreenSnapshot = snapshot
         }
+    }
+
+    fileprivate func homeScreenSnapshotFrame(in containerBounds: CGRect) -> CGRect {
+        HomeScreenTransitionGeometry.snapshotFrame(for: homeScreenSnapshotSourceSize ?? .zero, in: containerBounds)
     }
 
     fileprivate func tabSwitcherCellFrame(for attributes: UICollectionViewLayoutAttributes) -> CGRect {
@@ -133,7 +141,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
                 self.imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
                 self.imageContainer.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
                 self.imageView.frame = self.previewFrame(for: self.imageContainer.bounds.size)
-                self.homeScreenSnapshot?.frame = self.imageContainer.bounds
+                self.homeScreenSnapshot?.frame = self.homeScreenSnapshotFrame(in: self.imageContainer.bounds)
             }
 
             // Slowly fade out to create a cross fade effect
@@ -253,7 +261,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
                 self.imageContainer.backgroundColor = theme.backgroundColor
                 self.imageView.frame = CGRect(origin: .zero,
                                               size: self.imageContainer.bounds.size)
-                self.homeScreenSnapshot?.frame = self.imageContainer.bounds
+                self.homeScreenSnapshot?.frame = self.homeScreenSnapshotFrame(in: self.imageContainer.bounds)
             }
 
             if tab.viewed {

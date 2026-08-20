@@ -101,8 +101,10 @@ final class UnifiedToggleInputView: UIView {
         /// Card container's outer horizontal margin in the non-flanked layouts.
         static let cardHorizontalMargin: CGFloat = 8
         static let cardVerticalMargin: CGFloat = 8
-        /// Outer horizontal margin for the expanded card at the bottom-bar position.
-        static let cardHorizontalMarginBottom: CGFloat = 8
+        /// Outer horizontal margin for the expanded card at the bottom-bar position. Matches
+        /// `BrowserToolbarView.floatingBarOuterInsets`'s 16pt so the card's leading/trailing edge
+        /// lines up with the floating toolbar capsule it replaces, instead of jumping inward.
+        static let cardHorizontalMarginBottom: CGFloat = 16
         static let cardVerticalMarginBottom: CGFloat = 8
         /// Omnibar pill's horizontal inset; the card's hand-off start width so it animates to the
         /// narrower editing margins. Mirrors `DefaultOmniBarView`'s portrait value (landscape/iPad differ).

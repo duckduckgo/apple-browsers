@@ -362,19 +362,40 @@ class MainViewCoordinator {
 
     func ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded() {
         guard isFloatingUIEnabled, addressBarPosition.isBottom else { return }
-        returnOmnibarToNavigationContainerIfNeeded()
+        // Deferred: applying the toolbar's now-buttons-only height here, before the UTI focus
+        // animation has even started, snapped the floating capsule to its smaller size in one
+        // unanimated frame. The caller applies it inside its own animation block instead, via
+        // `applyDetachedToolbarHeight()`, so the capsule shrinks smoothly alongside everything else.
+        returnOmnibarToNavigationContainerIfNeeded(applyingToolbarHeightImmediately: false)
     }
 
     /// Detaches the bottom omnibar from the toolbar back into the nav container (used by minimal
     /// chrome, where the toolbar is hidden, and the unified toggle input flow).
-    func returnOmnibarToNavigationContainerIfNeeded() {
+    func returnOmnibarToNavigationContainerIfNeeded(applyingToolbarHeightImmediately: Bool = true) {
         guard isOmnibarInToolbar else { return }
         toolbar.setOmnibarView(nil, height: 0)
-        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+        if applyingToolbarHeightImmediately {
+            applyDetachedToolbarHeight()
+        }
         navigationBarContainer.isHidden = false
         navigationBarContainer.alpha = 1
         navigationBarContainer.isUserInteractionEnabled = true
         isOmnibarInToolbar = false
+    }
+
+    /// The floating toolbar's height once the omnibar has been detached from it (buttons-only).
+    /// Split out from `returnOmnibarToNavigationContainerIfNeeded` so a caller mid-animation-setup
+    /// can fold this into its own animated block instead of snapping it instantly.
+    func applyDetachedToolbarHeight() {
+        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+    }
+
+    /// The floating toolbar's height once it's grown back to reabsorb the omnibar. Split out from
+    /// `ensureBottomOmnibarAttachedToToolbarIfNeeded` so a UTI dismiss animation can grow the toolbar
+    /// smoothly -- the separated, buttons-only bar expanding upward into the address bar it's about
+    /// to become -- before the omnibar view is actually reparented into it at completion.
+    func applyAttachedToolbarHeight() {
+        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight, isFloating: isFloatingUIEnabled)
     }
 
     func updateToolbarWithState(_ state: ToolbarContentState) {
@@ -490,7 +511,10 @@ class MainViewCoordinator {
     func hideUnifiedToggleInputOmnibar(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
         omnibarDismissAnimator?.stopAnimation(true)
 
-        let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom), curve: .easeOut) { [weak self] in
+        // .easeInOut (vs the plain .easeOut used elsewhere in this transition) eases the toolbar's
+        // reabsorption in gently at the start too, rather than starting at full speed -- reads more
+        // like settling into place than snapping toward it.
+        let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled), curve: .easeInOut) { [weak self] in
             self?.animateUnifiedToggleInputOmnibarDismissLayout()
             additionalAnimations?()
         }
@@ -525,6 +549,12 @@ class MainViewCoordinator {
     func animateUnifiedToggleInputOmnibarDismissLayout() {
         if addressBarPosition.isBottom {
             setNavBarContainerBottomToToolbar()
+            // The separated, buttons-only toolbar grows upward to reabsorb the omnibar -- the exact
+            // reverse of `applyDetachedToolbarHeight` on focus-in -- rather than staying small until
+            // an unanimated snap at completion.
+            if isFloatingUIEnabled {
+                applyAttachedToolbarHeight()
+            }
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         superview.layoutIfNeeded()
@@ -541,6 +571,15 @@ class MainViewCoordinator {
             navigationBarCollectionView.alpha = 0
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1
+        } else if isFloatingUIEnabled, addressBarPosition.isBottom {
+            // Reabsorb the omnibar back into the floating toolbar (already grown to full height by
+            // `animateUnifiedToggleInputOmnibarDismissLayout`) instead of resting it in the nav
+            // container, which is what the plain `else` branch below does for non-floating chrome.
+            unifiedToggleInputContainer.isHidden = true
+            unifiedToggleInputContainer.alpha = 1
+            ensureBottomOmnibarAttachedToToolbarIfNeeded()
+            omniBar?.barView.restoreBarChrome()
+            omniBar?.barView.setIconContainersAlpha(1)
         } else {
             // Snap chrome (pill + text field) back now that UTI is gone; icons faded in alongside the collapse.
             navigationBarCollectionView.alpha = 1

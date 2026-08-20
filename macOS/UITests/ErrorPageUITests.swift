@@ -492,7 +492,7 @@ class ErrorPageUITests: UITestCase {
         app.backButton.click()
         assertGenericErrorPageVisible()
         assertFailureSchemeSimulatedConnectionErrorDescriptionVisible()
-        XCTAssertTrue(app.backButton.isEnabled) // NewTabPage 
+        XCTAssertFalse(app.backButton.isEnabled) // NewTabPage 
         XCTAssertEqual(
             navigationHistoryMenuTitlesFromRightClicking(app.forwardButton),
             [Self.failureSchemeCommittedHostMenuLabel, okTitle],

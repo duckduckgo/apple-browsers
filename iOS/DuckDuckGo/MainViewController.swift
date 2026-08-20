@@ -2655,7 +2655,7 @@ class MainViewController: UIViewController {
             attachTab(tab: tab)
         }
         themeColorManager.updateThemeColor()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        tabsBarController?.refreshStyleInPlace(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         bindAIChatChromeChipToCurrentTab()
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         if daxDialogsManager.shouldShowFireButtonPulse {
@@ -7030,7 +7030,8 @@ extension MainViewController: TabSwitcherDelegate {
 
     func closeTab(_ tab: Tab,
                   behavior: TabClosingBehavior = .onlyClose,
-                  clearTabHistory: Bool = true) {
+                  clearTabHistory: Bool = true,
+                  refreshInPlace: Bool = false) {
         
         func replaceTabWith(newTab: Tab) {
             tabManager.replace(tab: tab, withNewTab: newTab, clearTabHistory: clearTabHistory)
@@ -7047,6 +7048,9 @@ extension MainViewController: TabSwitcherDelegate {
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
         themeColorManager.updateThemeColor()
+
+        // Captured before removal so the tabs bar can delete exactly this cell in place.
+        let removedIndex = tabManager.currentTabsModel.indexOf(tab: tab)
 
         switch behavior {
         case .createEmptyTabAtSamePosition:
@@ -7068,8 +7072,15 @@ extension MainViewController: TabSwitcherDelegate {
             tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)
         }
 
-        updateCurrentTab()
-        refreshTabBar()
+        // In-place close: delete the cell before updateCurrentTab() so the follow-up restyle stays in
+        // place instead of reloading (a reload flashes the hover highlight on the wrong tab).
+        if refreshInPlace, behavior == .onlyClose, let removedIndex {
+            tabsBarController?.removeTab(at: removedIndex, tabsModel: tabManager.currentTabsModel)
+            updateCurrentTab()
+        } else {
+            updateCurrentTab()
+            refreshTabBar()
+        }
     }
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {

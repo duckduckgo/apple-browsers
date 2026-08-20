@@ -98,6 +98,25 @@ class StatisticsLoaderTests: XCTestCase {
         XCTAssertFalse(firedOSDistributionMetrics.contains(.client))
     }
 
+    func testRefreshRetentionAtbOnDuckAIPromptSubmissionFiresSearchExperimentPixels() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchretentionatb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+
+        // A Duck.ai prompt counts as a search, so it must fire the search experiment pixels
+        // (via refreshSearchRetentionAtb) in addition to the AI-prompt experiment pixels.
+        XCTAssertTrue(fireSearchExperimentPixelsCalled)
+        XCTAssertTrue(fireNewAIPromptExperimentPixelsCalled)
+    }
+
     override func tearDown() {
         HTTPStubs.removeAllStubs()
         PixelFiringMock.tearDown()

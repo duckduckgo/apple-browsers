@@ -25,7 +25,7 @@ final class NextStepsListUITests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["fireDialogSimplified": false])
+        app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         resetNextSteps()
         webView = app.webViews.firstMatch

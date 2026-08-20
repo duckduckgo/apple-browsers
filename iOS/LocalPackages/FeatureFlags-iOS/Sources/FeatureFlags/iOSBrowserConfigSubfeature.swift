@@ -79,7 +79,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
-    /// https://app.asana.com/1/137249556945/project/414709148257752/task/1217575998563977
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true
     case appSwitcherSnapshotClearing
 
     case screenTimeCleaning

@@ -151,15 +151,15 @@ class AddressBarUITests: UITestCase {
     func testAddressBar_PartialDomain_CompletesToURL() throws {
         // Activate address bar and paste via app scope to avoid focus flakiness
         app.activateAddressBar()
-        app.pasteURL(URL(string: "example.com")!, pressingEnter: true)
+        app.pasteURL(URL(string: "github.com")!, pressingEnter: true)
 
         // Should complete to valid URL
-        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should complete partial domain to full URL")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Should complete partial domain to full URL")
 
         // Validate URL completion (HTTPS upgrade is tested in HTTPSUpgradeUITests)
         let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertTrue(addressBarValue.contains("example.com"), "Should complete partial domain to valid URL")
+        XCTAssertTrue(addressBarValue.contains("github.com"), "Should complete partial domain to valid URL")
     }
 
     // MARK: - Punycode/International Domain Tests
@@ -335,8 +335,8 @@ class AddressBarUITests: UITestCase {
         let passiveValue = app.addressBarValueActivatingIfNeeded(shouldActivate: false) ?? ""
         XCTAssertEqual(passiveValue, searchQuery, "Search suffix should not be visible when address bar is not focused, got: \(passiveValue)")
 
-        // Now test with a URL input (which triggers "– Visit example.com" suffix)
-        let urlQuery = "example.com"
+        // Now test with a URL input (which triggers "– Visit github.com" suffix)
+        let urlQuery = "github.com"
         app.activateAddressBar()
         addressBarTextField.typeText(urlQuery)
 
@@ -371,11 +371,11 @@ class AddressBarUITests: UITestCase {
         addressBarTextField.typeText("  privacy-test-pages.site  ")
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
-        // Should navigate to example.com (whitespace trimmed).
-        let exampleContent = webView.staticTexts
+        // Should navigate to privacy-test-pages.site (whitespace trimmed).
+        let pageContent = webView.staticTexts
             .containing(\.value, containing: "Privacy Test Pages")
             .firstMatch
-        XCTAssertTrue(exampleContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
         let currentValue = app.addressBarValueActivatingIfNeeded() ?? ""
 

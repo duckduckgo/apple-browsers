@@ -21,13 +21,91 @@ import XCTest
 
 final class DuckAiCheaperModelSuggesterTests: XCTestCase {
 
-    // MARK: - The happy path
+    // MARK: - Claude ladder: Opus → Sonnet → Haiku
 
-    func testWhenCurrentModelIsOpusAndSonnetIsAccessibleThenSonnetIsSuggested() {
+    func testWhenCurrentModelIsOpusThenTheCheapestCapableClaudeIsSuggested() {
         let outcome = makeSUT(models: [opus, sonnet, haiku], currentModelId: opus.id).suggestion()
 
+        XCTAssertEqual(outcome.suggestion?.modelId, haiku.id, "cheapest that fits, not one rung down")
+    }
+
+    func testWhenTheCheapestClaudeIsMissingThenTheNextCheapestIsSuggested() {
+        let outcome = makeSUT(models: [opus, sonnet], currentModelId: opus.id).suggestion()
+
         XCTAssertEqual(outcome.suggestion?.modelId, sonnet.id)
-        XCTAssertEqual(outcome.suggestion?.modelShortName, "Sonnet 4.6")
+    }
+
+    func testWhenCurrentModelIsMidLadderThenOnlyCheaperRungsAreOffered() {
+        let outcome = makeSUT(models: [opus, sonnet, haiku], currentModelId: sonnet.id).suggestion()
+
+        XCTAssertEqual(outcome.suggestion?.modelId, haiku.id)
+    }
+
+    func testWhenCurrentModelIsAlreadyTheCheapestThenNothingIsSuggested() {
+        let outcome = makeSUT(models: [opus, sonnet, haiku], currentModelId: haiku.id).suggestion()
+
+        XCTAssertEqual(outcome, .none(reason: .noCheaperModelAvailable))
+    }
+
+    // MARK: - GPT ladder: 5.4 → mini → nano
+
+    /// The case seen in the wild: a warning on a GPT model offering "Switch to 5.4-nano".
+    func testWhenCurrentModelIsFullGPTThenTheCheapestCapableGPTIsSuggested() {
+        let outcome = makeSUT(models: [gpt, gptMini, gptNano], currentModelId: gpt.id).suggestion()
+
+        XCTAssertEqual(outcome.suggestion?.modelId, gptNano.id)
+        XCTAssertEqual(outcome.suggestion?.modelShortName, "5.4-nano")
+    }
+
+    func testWhenCurrentModelIsGPTMiniThenOnlyNanoIsCheaper() {
+        let outcome = makeSUT(models: [gpt, gptMini, gptNano], currentModelId: gptMini.id).suggestion()
+
+        XCTAssertEqual(outcome.suggestion?.modelId, gptNano.id)
+    }
+
+    /// "GPT-5.4 nano" contains "gpt" as well, so the qualifiers have to be matched before the bare family.
+    func testGPTQualifiersAreNotSwallowedByTheFamilyMatch() {
+        let outcome = makeSUT(models: [gptNano, gpt], currentModelId: gptNano.id).suggestion()
+
+        XCTAssertEqual(outcome, .none(reason: .noCheaperModelAvailable), "nano is the cheapest rung")
+    }
+
+    // MARK: - Families don't mix
+
+    /// Stepping from Claude to GPT is a bigger change than a quota nudge should make unprompted.
+    func testCheaperModelsInAnotherFamilyAreNotSuggested() {
+        let outcome = makeSUT(models: [opus, gptNano], currentModelId: opus.id).suggestion()
+
+        XCTAssertEqual(outcome, .none(reason: .noCheaperModelAvailable))
+    }
+
+    // MARK: - Rejections
+
+    func testWhenNoModelIsSelectedThenNothingIsSuggested() {
+        let outcome = makeSUT(models: [opus, sonnet], currentModelId: nil).suggestion()
+
+        XCTAssertEqual(outcome, .none(reason: .unknownCurrentModel))
+    }
+
+    func testWhenTheCurrentModelHasNoKnownLadderThenNothingIsSuggested() {
+        let llama = model(id: "llama-4", name: "Llama 4")
+        let outcome = makeSUT(models: [llama, gptNano], currentModelId: llama.id).suggestion()
+
+        XCTAssertEqual(outcome, .none(reason: .unknownCurrentModel))
+    }
+
+    /// Suggesting a model the user's tier can't select would be a dead end.
+    func testGatedCheaperModelsAreNotSuggested() {
+        let gatedHaiku = model(id: "claude-haiku-4.5", name: "Claude Haiku 4.5", hasAccess: false)
+        let outcome = makeSUT(models: [opus, gatedHaiku], currentModelId: opus.id).suggestion()
+
+        XCTAssertEqual(outcome, .none(reason: .noCheaperModelAvailable))
+    }
+
+    func testWhenTheUserHasJustSteppedDownThenNothingIsSuggested() {
+        let sut = makeSUT(models: [opus, sonnet], currentModelId: opus.id, didRecentlyStepDown: true)
+
+        XCTAssertEqual(sut.suggestion(), .none(reason: .recentlySteppedDown))
     }
 
     /// Ids are inconsistent in the wild — "claude-opus-4-6" ships next to "claude-sonnet-4.6" — which is
@@ -38,77 +116,44 @@ final class DuckAiCheaperModelSuggesterTests: XCTestCase {
         XCTAssertEqual(outcome.suggestion?.modelId, "claude-sonnet-4.6")
     }
 
-    // MARK: - Rejections
-
-    /// Web only nudges from Opus, so a user already on a cheaper model isn't told to switch again.
-    func testWhenCurrentModelIsNotOpusThenNothingIsSuggested() {
-        let outcome = makeSUT(models: [opus, sonnet], currentModelId: sonnet.id).suggestion()
-
-        XCTAssertEqual(outcome, .none(reason: .currentModelNotOpus))
-    }
-
-    func testWhenNoModelIsSelectedThenNothingIsSuggested() {
-        let outcome = makeSUT(models: [opus, sonnet], currentModelId: nil).suggestion()
-
-        XCTAssertEqual(outcome, .none(reason: .currentModelNotOpus))
-    }
-
-    func testWhenSonnetIsNotInTheListThenNothingIsSuggested() {
-        let outcome = makeSUT(models: [opus, haiku], currentModelId: opus.id).suggestion()
-
-        XCTAssertEqual(outcome, .none(reason: .noAccessibleSonnet))
-    }
-
-    /// Suggesting a model the user's tier can't select would be a dead end.
-    func testWhenSonnetIsGatedForThisTierThenNothingIsSuggested() {
-        let gatedSonnet = model(id: "claude-sonnet-4.6", name: "Claude Sonnet 4.6", hasAccess: false)
-        let outcome = makeSUT(models: [opus, gatedSonnet], currentModelId: opus.id).suggestion()
-
-        XCTAssertEqual(outcome, .none(reason: .noAccessibleSonnet))
-    }
-
-    func testWhenTheUserHasJustSteppedDownThenNothingIsSuggested() {
-        let sut = makeSUT(models: [opus, sonnet], currentModelId: opus.id, didRecentlyStepDown: true)
-
-        XCTAssertEqual(sut.suggestion(), .none(reason: .recentlySteppedDown))
-    }
-
     // MARK: - Capability cover
 
-    func testWhenTheChatNeedsImagesAndSonnetCannotUploadThemThenNothingIsSuggested() {
-        let textOnlySonnet = model(id: "claude-sonnet-4.6", name: "Claude Sonnet 4.6", supportsImageUpload: false)
-        let sut = makeSUT(models: [opus, textOnlySonnet],
-                          currentModelId: opus.id,
+    /// The whole point of "cheapest that fits": nano can't take the image, so the nudge falls back to mini
+    /// rather than giving up.
+    func testWhenTheCheapestRungCannotCoverTheChatThenTheNextCheapestIsSuggested() {
+        let textOnlyNano = model(id: "gpt-5.4-nano", name: "GPT-5.4 nano", supportsImageUpload: false)
+        let sut = makeSUT(models: [gpt, gptMini, textOnlyNano],
+                          currentModelId: gpt.id,
                           requirements: DuckAiChatCapabilityRequirements(needsImageUpload: true))
 
-        XCTAssertEqual(sut.suggestion(), .none(reason: .sonnetMissingCapability))
+        XCTAssertEqual(sut.suggestion().suggestion?.modelId, gptMini.id)
     }
 
-    func testWhenTheChatNeedsAFileTypeSonnetDoesNotSupportThenNothingIsSuggested() {
-        let sut = makeSUT(models: [opus, sonnet],
+    func testWhenNoCheaperModelCoversTheChatThenNothingIsSuggested() {
+        let sut = makeSUT(models: [opus, sonnet, haiku],
                           currentModelId: opus.id,
                           requirements: DuckAiChatCapabilityRequirements(requiredFileTypes: ["key"]))
 
-        XCTAssertEqual(sut.suggestion(), .none(reason: .sonnetMissingCapability))
+        XCTAssertEqual(sut.suggestion(), .none(reason: .cheaperModelMissingCapability))
     }
 
     func testFileTypeMatchingIgnoresCase() {
-        let sut = makeSUT(models: [opus, sonnet],
+        let sut = makeSUT(models: [opus, haiku],
                           currentModelId: opus.id,
                           requirements: DuckAiChatCapabilityRequirements(requiredFileTypes: ["PDF"]))
 
-        XCTAssertEqual(sut.suggestion().suggestion?.modelId, sonnet.id)
+        XCTAssertEqual(sut.suggestion().suggestion?.modelId, haiku.id)
     }
 
-    func testWhenTheChatNeedsAToolSonnetDoesNotSupportThenNothingIsSuggested() {
+    func testWhenTheChatNeedsAToolTheCheaperModelLacksThenNothingIsSuggested() {
         let sut = makeSUT(models: [opus, sonnet],
                           currentModelId: opus.id,
                           requirements: DuckAiChatCapabilityRequirements(requiredTools: [.imageGeneration]))
 
-        XCTAssertEqual(sut.suggestion(), .none(reason: .sonnetMissingCapability))
+        XCTAssertEqual(sut.suggestion(), .none(reason: .cheaperModelMissingCapability))
     }
 
-    func testWhenSonnetCoversEveryRequirementThenItIsStillSuggested() {
+    func testWhenTheCheaperModelCoversEveryRequirementThenItIsSuggested() {
         let sut = makeSUT(models: [opus, sonnet],
                           currentModelId: opus.id,
                           requirements: DuckAiChatCapabilityRequirements(needsImageUpload: true,
@@ -122,7 +167,10 @@ final class DuckAiCheaperModelSuggesterTests: XCTestCase {
 
     private lazy var opus = model(id: "claude-opus-4-6", name: "Claude Opus 4.6")
     private lazy var sonnet = model(id: "claude-sonnet-4.6", name: "Claude Sonnet 4.6", shortName: "Sonnet 4.6")
-    private lazy var haiku = model(id: "claude-haiku-4.5", name: "Claude Haiku 4.5")
+    private lazy var haiku = model(id: "claude-haiku-4.5", name: "Claude Haiku 4.5", shortName: "Haiku 4.5")
+    private lazy var gpt = model(id: "gpt-5.4", name: "GPT-5.4", shortName: "5.4")
+    private lazy var gptMini = model(id: "gpt-5.4-mini", name: "GPT-5.4 mini", shortName: "5.4-mini")
+    private lazy var gptNano = model(id: "gpt-5.4-nano", name: "GPT-5.4 nano", shortName: "5.4-nano")
 
     private func makeSUT(models: [AIChatModel],
                          currentModelId: String?,
@@ -145,7 +193,7 @@ final class DuckAiCheaperModelSuggesterTests: XCTestCase {
             id: id,
             name: name,
             shortName: shortName,
-            provider: .anthropic,
+            provider: name.lowercased().contains("gpt") ? .openAI : .anthropic,
             supportsImageUpload: supportsImageUpload,
             supportedFileTypes: ["pdf", "txt"],
             supportedTools: [.webSearch],

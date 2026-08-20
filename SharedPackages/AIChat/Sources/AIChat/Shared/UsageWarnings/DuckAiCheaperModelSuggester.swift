@@ -51,9 +51,12 @@ public struct DuckAiChatCapabilityRequirements: Equatable {
 /// Why no cheaper model was offered. Carried so the rule chain stays observable while there is no UI.
 public enum DuckAiCheaperModelUnavailableReason: String {
     case recentlySteppedDown
-    case currentModelNotOpus
-    case noAccessibleSonnet
-    case sonnetMissingCapability
+    /// No model is selected, or its family has no known step-down ladder.
+    case unknownCurrentModel
+    /// Nothing cheaper in the same family that this user's tier can select.
+    case noCheaperModelAvailable
+    /// Cheaper siblings exist, but none cover the images / files / tools this chat needs.
+    case cheaperModelMissingCapability
     /// The caller never asked — a reached message, or a surface with no CTA.
     case notApplicable
 }
@@ -78,10 +81,12 @@ public struct NullDuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
     public func suggestion() -> DuckAiCheaperModelOutcome { .none(reason: .notApplicable) }
 }
 
-/// First version of the cheaper-model CTA: a one-click step down from Opus to Sonnet.
+/// The cheaper-model CTA: a one-click step down to the cheapest sibling in the same family that still
+/// covers what the chat needs.
 ///
-/// Only Opus gets a proactive nudge, matching the web app, and Sonnet is the only target — the full
-/// Opus → Sonnet → Haiku and GPT-5.4 → mini → nano ladders come later.
+/// Two ladders, both ordered most to least expensive: Opus → Sonnet → Haiku, and GPT-5.4 → mini → nano.
+/// Suggestions never cross families — stepping from Claude to GPT is a bigger change than a quota nudge
+/// should make on the user's behalf.
 ///
 /// Live state is read through closures rather than passed into `suggestion()`, so the protocol stays
 /// zero-argument and callers don't have to thread chat state they have no other use for.
@@ -107,16 +112,28 @@ public struct DuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
 
         let models = modelsProvider()
         let currentModelId = currentModelIdProvider()
-        guard let current = models.first(where: { $0.id == currentModelId }), Self.isOpus(current) else {
-            return .none(reason: .currentModelNotOpus)
+        guard let current = models.first(where: { $0.id == currentModelId }),
+              let currentRung = Self.rung(for: current) else {
+            return .none(reason: .unknownCurrentModel)
         }
 
-        guard let target = models.first(where: { $0.entityHasAccess && $0.id != current.id && Self.isSonnet($0) }) else {
-            return .none(reason: .noAccessibleSonnet)
+        let cheaperSiblings: [(model: AIChatModel, cheapness: Int)] = models.compactMap { model in
+            guard model.entityHasAccess, model.id != current.id,
+                  let rung = Self.rung(for: model),
+                  rung.family == currentRung.family,
+                  rung.cheapness > currentRung.cheapness else { return nil }
+            return (model, rung.cheapness)
         }
+        guard !cheaperSiblings.isEmpty else { return .none(reason: .noCheaperModelAvailable) }
 
-        guard Self.model(target, covers: requirementsProvider()) else {
-            return .none(reason: .sonnetMissingCapability)
+        // Cheapest that still fits, rather than one rung down: the point of the nudge is to buy back as
+        // much quota as the chat can afford to give up.
+        let requirements = requirementsProvider()
+        guard let target = cheaperSiblings
+            .filter({ Self.model($0.model, covers: requirements) })
+            .max(by: { $0.cheapness < $1.cheapness })?
+            .model else {
+            return .none(reason: .cheaperModelMissingCapability)
         }
 
         return .suggestion(DuckAiCheaperModelSuggestion(
@@ -125,20 +142,40 @@ public struct DuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
         ))
     }
 
+    private enum ModelFamily {
+        case claude
+        case gpt
+    }
+
+    /// `cheapness` orders rungs within a family — higher is cheaper, so a bigger number is a bigger saving.
+    private struct Rung {
+        let family: ModelFamily
+        let cheapness: Int
+    }
+
     // Model ids are inconsistent in the wild — "claude-opus-4-6" ships alongside "claude-sonnet-4.6" —
     // so families are matched on the lowercased display name, the same convention
     // `AIChatModelSectionBuilder.recommendedModelMatchers` already uses. Both go away together once the
     // backend ships ordering and `AIChatModelLabel.usesLimitsFaster` / `.everydayUse` can drive this.
     // https://app.asana.com/1/137249556945/task/1216559729471554
-
-    private static func isOpus(_ model: AIChatModel) -> Bool {
+    private static func rung(for model: AIChatModel) -> Rung? {
         let name = model.name.lowercased()
-        return name.contains("claude") && name.contains("opus")
-    }
 
-    private static func isSonnet(_ model: AIChatModel) -> Bool {
-        let name = model.name.lowercased()
-        return name.contains("claude") && name.contains("sonnet")
+        if name.contains("claude") {
+            if name.contains("opus") { return Rung(family: .claude, cheapness: 0) }
+            if name.contains("sonnet") { return Rung(family: .claude, cheapness: 1) }
+            if name.contains("haiku") { return Rung(family: .claude, cheapness: 2) }
+            return nil
+        }
+
+        // Order matters: "GPT-5.4 nano" contains "gpt" too, so the qualifiers have to be checked first.
+        if name.contains("gpt") {
+            if name.contains("nano") { return Rung(family: .gpt, cheapness: 2) }
+            if name.contains("mini") { return Rung(family: .gpt, cheapness: 1) }
+            return Rung(family: .gpt, cheapness: 0)
+        }
+
+        return nil
     }
 
     private static func model(_ model: AIChatModel, covers requirements: DuckAiChatCapabilityRequirements) -> Bool {

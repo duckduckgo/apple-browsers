@@ -367,14 +367,24 @@ class MainViewCoordinator {
 
     /// Detaches the bottom omnibar from the toolbar back into the nav container (used by minimal
     /// chrome, where the toolbar is hidden, and the unified toggle input flow).
-    func returnOmnibarToNavigationContainerIfNeeded() {
+    func returnOmnibarToNavigationContainerIfNeeded(applyingToolbarHeightImmediately: Bool = true) {
         guard isOmnibarInToolbar else { return }
         toolbar.setOmnibarView(nil, height: 0)
-        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+        if applyingToolbarHeightImmediately {
+            applyDetachedToolbarHeight()
+        }
         navigationBarContainer.isHidden = false
         navigationBarContainer.alpha = 1
         navigationBarContainer.isUserInteractionEnabled = true
         isOmnibarInToolbar = false
+    }
+
+    func applyDetachedToolbarHeight() {
+        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+    }
+
+    func applyAttachedToolbarHeight() {
+        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight, isFloating: isFloatingUIEnabled)
     }
 
     func updateToolbarWithState(_ state: ToolbarContentState) {
@@ -490,7 +500,7 @@ class MainViewCoordinator {
     func hideUnifiedToggleInputOmnibar(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
         omnibarDismissAnimator?.stopAnimation(true)
 
-        let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom), curve: .easeOut) { [weak self] in
+        let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled), curve: .easeInOut) { [weak self] in
             self?.animateUnifiedToggleInputOmnibarDismissLayout()
             additionalAnimations?()
         }
@@ -522,9 +532,12 @@ class MainViewCoordinator {
     }
 
     /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.
-    func animateUnifiedToggleInputOmnibarDismissLayout() {
+    func animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: Bool = true) {
         if addressBarPosition.isBottom {
             setNavBarContainerBottomToToolbar()
+            if reattachingOmnibar, isFloatingUIEnabled {
+                applyAttachedToolbarHeight()
+            }
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
         superview.layoutIfNeeded()
@@ -541,6 +554,19 @@ class MainViewCoordinator {
             navigationBarCollectionView.alpha = 0
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1
+        } else if isFloatingUIEnabled, addressBarPosition.isBottom {
+            unifiedToggleInputContainer.isHidden = true
+            unifiedToggleInputContainer.alpha = 1
+            ensureBottomOmnibarAttachedToToolbarIfNeeded()
+            omniBar?.barView.restoreBarChrome()
+            omniBar?.barView.setIconContainersAlpha(0)
+            UIView.animate(
+                withDuration: MainViewController.Constants.omnibarTransitionDuration(isBottom: true, isFloatingUIEnabled: true)
+                    * MainViewController.Constants.omnibarIconFadeInDurationMultiplier,
+                delay: 0,
+                options: [.curveEaseIn, .allowUserInteraction],
+                animations: { [weak self] in self?.omniBar?.barView.setIconContainersAlpha(1) }
+            )
         } else {
             // Snap chrome (pill + text field) back now that UTI is gone; icons faded in alongside the collapse.
             navigationBarCollectionView.alpha = 1

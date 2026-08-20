@@ -43,8 +43,8 @@ extension MainViewController {
         static let utiLandscapeKeyboardGap: CGFloat = 8
 
         // Bottom is longer to accommodate concurrent keyboard descent.
-        static func omnibarTransitionDuration(isBottom: Bool) -> TimeInterval {
-            isBottom ? 0.35 : 0.25
+        static func omnibarTransitionDuration(isBottom: Bool, isFloatingUIEnabled: Bool) -> TimeInterval {
+            FloatingOmnibarTransitionMetrics.duration(isBottom: isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         }
 
         /// Stretch the icon fade-in past UTI's collapse so the build-up reads rather than front-loading.
@@ -1056,7 +1056,7 @@ extension MainViewController {
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
-        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
+        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
 
         // Pick the NTP handoff from the host's current content + the NTP's *resting* content (the NTP's
         // `isShowing*` is unreliable here — the focus handoff hid one for the session). logo→logo morphs
@@ -1163,7 +1163,7 @@ extension MainViewController {
         viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         viewCoordinator.unifiedInputContentContainer.isHidden = true
         viewCoordinator.showAIChatTabChatHeader()
-        viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
+        viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: false)
         coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
         coordinator.showCollapsed()
         if let tab = currentTab {

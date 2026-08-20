@@ -27,7 +27,7 @@ struct SuggestionsListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool
-    var escapeHatch: EscapeHatchModel? = nil
+    var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
     var isFloatingPopover: Bool = false
 

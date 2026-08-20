@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FCFC00031F00000000030001 /* URLPredictor in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000030001 /* URLPredictor */; };
+		FCFC00031F00000000020001 /* DDGError in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000020001 /* DDGError */; };
+		FCFC00031F00000000010001 /* DDGError in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000010001 /* DDGError */; };
 		02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		021440742C7FAB1900426724 /* ConfigurationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440732C7FAB1900426724 /* ConfigurationManager.swift */; };
 		021440762C7FAB4100426724 /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440752C7FAB4100426724 /* ConfigurationStore.swift */; };
@@ -377,7 +380,7 @@
 		4B97357B2F704924002E4A54 /* CreditCardsCleanupErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C54A22E7472A5003451F5 /* CreditCardsCleanupErrorHandling.swift */; };
 		4BA2C1752FC1232500D7C62E /* DuckAIWideEventInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA2C1742FC1232500D7C62E /* DuckAIWideEventInstrumentationTests.swift */; };
 		4BB7CBB02AF59C310014A35F /* VPNWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */; };
-		4BB88F3F2E5D701200DE539A /* PixelKitTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB88F3E2E5D701200DE539A /* PixelKitTestingUtilities */; };
+		4BB88F3F2E5D701200DE539A /* PixelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB88F3E2E5D701200DE539A /* PixelKit */; };
 		4BBBBA922B03291700D965DA /* VPNWaitlistUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */; };
 		4BC21A2F27238B7500229F0E /* RunLoopExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC21A2C272388BD00229F0E /* RunLoopExtensionTests.swift */; };
 		4BC5E8632E174D5400391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8622E174D5400391C19 /* DesignResourcesKit */; };
@@ -5736,6 +5739,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FCFC00031F00000000020001 /* DDGError in Frameworks */,
 				ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */,
 				02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */,
 				4BC95EB12D7417BF002FAB32 /* Subscription in Frameworks */,
@@ -5757,6 +5761,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FCFC00031F00000000010001 /* DDGError in Frameworks */,
 				A64F1A060000000000000006 /* FeatureFlags-iOS in Frameworks */,
 				8518F12B2F742E1800B53C75 /* ScreenTimeDataCleaner in Frameworks */,
 				CBDD5AC62F238F7300441F0A /* PrivacyStats in Frameworks */,
@@ -5824,7 +5829,7 @@
 				9F5412772E3998B000DBF008 /* SetDefaultBrowserTestSupport in Frameworks */,
 				4BC95EAB2D74179B002FAB32 /* PersistenceTestingUtils in Frameworks */,
 				5654CF572E22A9820074E806 /* BrowserServicesKitTestsUtils in Frameworks */,
-				4BB88F3F2E5D701200DE539A /* PixelKitTestingUtilities in Frameworks */,
+				4BB88F3F2E5D701200DE539A /* PixelKit in Frameworks */,
 				9FA8A625300EF678000DF5DE /* WebExtensionsTestSupport in Frameworks */,
 				4BC95EA52D741787002FAB32 /* Common in Frameworks */,
 				374E760C2EF56D7F00F8AADE /* PrivacyConfigTestsUtils in Frameworks */,
@@ -5969,6 +5974,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FCFC00031F00000000030001 /* URLPredictor in Frameworks */,
 				A64F1A050000000000000005 /* FeatureFlags-iOS in Frameworks */,
 				C1A60F242F1FE5EC0078851C /* Common in Frameworks */,
 				4BC95E812D7416D7002FAB32 /* Bookmarks in Frameworks */,
@@ -12418,6 +12424,7 @@
 			);
 			name = PacketTunnelProvider;
 			packageProductDependencies = (
+				FCFC00021F00000000020001 /* DDGError */,
 				4BC8948B2C7902E6009AA141 /* WireGuard */,
 				4BC95EB02D7417BF002FAB32 /* Subscription */,
 				7BC26CA12DFC0CB800E52480 /* VPN */,
@@ -12477,6 +12484,7 @@
 			);
 			name = DuckDuckGo;
 			packageProductDependencies = (
+				FCFC00021F00000000010001 /* DDGError */,
 				A64F1A030000000000000003 /* FeatureFlags-iOS */,
 				31E69A62280F4CB600478327 /* DuckUI */,
 				F4D7F633298C00C3006C3AE9 /* FindInPageIOSJSSupport */,
@@ -12549,7 +12557,7 @@
 				5654CF562E22A9820074E806 /* BrowserServicesKitTestsUtils */,
 				9FE59CD92E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport */,
 				9F5412762E3998B000DBF008 /* SetDefaultBrowserTestSupport */,
-				4BB88F3E2E5D701200DE539A /* PixelKitTestingUtilities */,
+				4BB88F3E2E5D701200DE539A /* PixelKit */,
 				31C71A772E6F4F5B004D503F /* RemoteMessagingTestsUtils */,
 				374E760B2EF56D7F00F8AADE /* PrivacyConfigTestsUtils */,
 				C118DAD32F1007C6004F403A /* AIChatTestingUtilities */,
@@ -12806,6 +12814,7 @@
 			);
 			name = Core;
 			packageProductDependencies = (
+				FCFC00021F00000000030001 /* URLPredictor */,
 				A64F1A020000000000000002 /* FeatureFlags-iOS */,
 				F486D33325069BBB002D07D7 /* Kingfisher */,
 				C14882EC27F211A000D59F0C /* SwiftSoup */,
@@ -12942,6 +12951,11 @@
 			);
 			mainGroup = 84E341891E2F7EFB00BDBA6F;
 			packageReferences = (
+				FCFC00011F00000000050001 /* XCLocalSwiftPackageReference "../SharedPackages/URLPredictor" */,
+				FCFC00011F00000000010001 /* XCLocalSwiftPackageReference "../SharedPackages/DDGError" */,
+				FCFC00011F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */,
+				FCFC00011F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */,
+				FCFC00011F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */,
 				F486D2EF25069482002D07D7 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				F486D2FD25069744002D07D7 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				F486D3022506975E002D07D7 /* XCRemoteSwiftPackageReference "swifter" */,
@@ -19092,6 +19106,26 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		FCFC00011F00000000050001 /* XCLocalSwiftPackageReference "../SharedPackages/URLPredictor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/URLPredictor;
+		};
+		FCFC00011F00000000010001 /* XCLocalSwiftPackageReference "../SharedPackages/DDGError" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/DDGError;
+		};
+		FCFC00011F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/Common;
+		};
+		FCFC00011F00000000030001 /* XCLocalSwiftPackageReference "../SharedPackages/Persistence" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/Persistence;
+		};
+		FCFC00011F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/PixelKit;
+		};
 		315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/DebugServer;
@@ -19236,6 +19270,18 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		FCFC00021F00000000030001 /* URLPredictor */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = URLPredictor;
+		};
+		FCFC00021F00000000020001 /* DDGError */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DDGError;
+		};
+		FCFC00021F00000000010001 /* DDGError */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DDGError;
+		};
 		0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0238E44D29C0FAA100615E30 /* XCRemoteSwiftPackageReference "ios-js-support" */;
@@ -19319,9 +19365,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = "SyncUI-iOS";
 		};
-		4BB88F3E2E5D701200DE539A /* PixelKitTestingUtilities */ = {
+		4BB88F3E2E5D701200DE539A /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = PixelKitTestingUtilities;
+			productName = PixelKit;
 		};
 		4BC5E8622E174D5400391C19 /* DesignResourcesKit */ = {
 			isa = XCSwiftPackageProductDependency;

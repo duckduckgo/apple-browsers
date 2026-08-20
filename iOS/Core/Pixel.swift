@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import PixelKit
 import PrivacyConfig
 import Common
 import FoundationExtensions

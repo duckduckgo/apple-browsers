@@ -1,0 +1,84 @@
+//
+//  PixelKitMock.swift
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+@_spi(Testing)
+public final class PixelKitMock: PixelFiring {
+
+    /// An array of fire calls, in order, that this mock expects
+    ///
+    public var expectedFireCalls: [ExpectedFireCall]
+
+    /// The actual fire calls
+    ///
+    public private(set) var actualFireCalls = [ExpectedFireCall]()
+
+    public init(expecting expectedFireCalls: [ExpectedFireCall] = []) {
+        self.expectedFireCalls = expectedFireCalls
+    }
+
+    public func fire(event: PixelKit.Event,
+                     frequency: PixelKit.Frequency,
+                     options: PixelKit.Options,
+                     onComplete: @escaping PixelKit.CompletionBlock) {
+        let fireCall = ExpectedFireCall(pixel: event,
+                                        frequency: frequency,
+                                        additionalParameters: options.additionalParameters,
+                                        namePrefix: options.namePrefix,
+                                        doNotEnforcePrefix: !options.enforcePrefix,
+                                        includeAppVersionParameter: options.includeAppVersionParameter)
+        actualFireCalls.append(fireCall)
+        onComplete(true, nil)
+    }
+}
+
+@_spi(Testing)
+public struct ExpectedFireCall: Equatable {
+    public let pixel: PixelKit.Event
+    public let frequency: PixelKit.Frequency
+    public let additionalParameters: [String: String]?
+    public let namePrefix: String?
+    public let doNotEnforcePrefix: Bool
+    public let includeAppVersionParameter: Bool
+
+    public init(pixel: PixelKit.Event,
+                frequency: PixelKit.Frequency,
+                additionalParameters: [String: String]? = nil,
+                namePrefix: String? = nil,
+                doNotEnforcePrefix: Bool = false,
+                includeAppVersionParameter: Bool = true) {
+        self.pixel = pixel
+        self.frequency = frequency
+        self.additionalParameters = additionalParameters
+        self.namePrefix = namePrefix
+        self.doNotEnforcePrefix = doNotEnforcePrefix
+        self.includeAppVersionParameter = includeAppVersionParameter
+    }
+
+    public static func == (lhs: ExpectedFireCall, rhs: ExpectedFireCall) -> Bool {
+        lhs.pixel.name == rhs.pixel.name
+        && lhs.pixel.parameters == rhs.pixel.parameters
+        && lhs.pixel.error == rhs.pixel.error
+        && lhs.frequency == rhs.frequency
+        && lhs.additionalParameters == rhs.additionalParameters
+        && lhs.namePrefix == rhs.namePrefix
+        && lhs.doNotEnforcePrefix == rhs.doNotEnforcePrefix
+        && lhs.includeAppVersionParameter == rhs.includeAppVersionParameter
+    }
+}

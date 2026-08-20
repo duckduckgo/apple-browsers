@@ -17,8 +17,7 @@
 //  limitations under the License.
 //
 
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import XCTest
 
 @testable import DuckDuckGo
@@ -183,5 +182,17 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireUserActionBeforeCompletionPixel()
 
         // Then - no crash occurred
+    }
+}
+
+// MARK: - PixelKitMock assertion helper
+
+/// Local to this test target. PixelKit's testing support deliberately does not link XCTest — a target that
+/// does cannot be built as a dynamic framework, so Xcode links it statically and absorbs PixelKit into each
+/// test bundle, giving the app and the tests separate `PixelKit.shared` values.
+private extension PixelKitMock {
+
+    func verifyExpectations(file: StaticString = #file, line: UInt = #line) {
+        XCTAssertEqual(expectedFireCalls, actualFireCalls, file: file, line: line)
     }
 }

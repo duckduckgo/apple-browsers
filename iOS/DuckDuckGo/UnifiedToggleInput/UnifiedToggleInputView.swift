@@ -101,9 +101,6 @@ final class UnifiedToggleInputView: UIView {
         /// Card container's outer horizontal margin in the non-flanked layouts.
         static let cardHorizontalMargin: CGFloat = 8
         static let cardVerticalMargin: CGFloat = 8
-        /// Outer horizontal margin for the expanded card, at either address-bar position. Matches
-        /// `BrowserToolbarView.floatingBarOuterInsets`'s 16pt so the card's leading/trailing edge
-        /// lines up with the floating toolbar capsule it replaces, instead of jumping inward.
         static let cardHorizontalMarginExpanded: CGFloat = 16
         static let cardVerticalMarginBottom: CGFloat = 8
         /// Omnibar pill's horizontal inset; the card's hand-off start width so it animates to the
@@ -1266,11 +1263,6 @@ final class UnifiedToggleInputView: UIView {
         Constants.cardHorizontalMargin
     }
 
-    /// Outer horizontal margin for the expanded card, at either address-bar position, once it's
-    /// replaced the floating toolbar rather than sitting inline with the plain omnibar. Kept as a
-    /// single source so the toggle-reveal and inactive-appearance paths (which bypass
-    /// `applyCardLayout`) can't drift back out of sync with it, as `.top` did before matching
-    /// `.bottom`'s 16pt margin.
     private var expandedCardHorizontalMargin: CGFloat {
         usesOmnibarMargins ? Constants.cardHorizontalMargin : Constants.cardHorizontalMarginExpanded
     }

@@ -47,9 +47,6 @@ extension MainViewController {
             guard isFloatingUIEnabled else {
                 return isBottom ? 0.35 : 0.25
             }
-            // Floating UI only: two successive 50%-faster passes from the legacy values above (which
-            // read as sluggish once the floating chrome's own transitions are this snappy), then eased
-            // back up 25% after that landed a little too fast.
             return isBottom ? 0.109375 : 0.078125
         }
 

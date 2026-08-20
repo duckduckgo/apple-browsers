@@ -243,22 +243,12 @@ private extension MainViewController {
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
 
-        // Floating UI, bottom bar only: grow the content up from its bottom edge as it fades in,
-        // rather than a flat cross-fade, so it reads as rising out of the omnibar it's replacing.
-        // Scaling around the view's default centre anchor would shrink both edges toward the middle;
-        // translating back down by half the height lost pins the bottom edge in place instead, so
-        // only the top edge visibly rises.
         let growsFromBottom = isBottom && isFloatingUIEnabled && !isSeamlessHandoff
         if growsFromBottom {
             let initialScale: CGFloat = 0.85
             let heightLost = unifiedInputContentContainer.bounds.height * (1 - initialScale) / 2
             unifiedInputContentContainer.transform = CGAffineTransform(scaleX: initialScale, y: initialScale)
                 .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
-            // The container hosts the suggestions/favorites content, which can be a deep view
-            // hierarchy -- rasterize it for the scale animation's duration so Core Animation composites
-            // a cached bitmap instead of re-rendering that hierarchy every frame. Otherwise this can
-            // compete with the keyboard's own presentation animation for main-thread/compositor time,
-            // right when `becomeFirstResponder` is racing to show it, and read as the focus being slow.
             unifiedInputContentContainer.layer.shouldRasterize = true
             unifiedInputContentContainer.layer.rasterizationScale = UIScreen.main.scale
         }
@@ -319,9 +309,6 @@ private extension MainViewController {
 
     func handleHideOmnibarEditingIntent(animated: Bool) {
         let coordinator = unifiedToggleInputCoordinator
-        // Mirrors `growsFromBottom` in `handleShowOmnibarEditingIntent` -- the exact reverse of the
-        // focus-in scale/fade, rather than an instant `isHidden` snap while the rest of the chrome
-        // is still animating.
         let shrinksToBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
@@ -342,8 +329,6 @@ private extension MainViewController {
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
             if shrinksToBottom {
-                // See the matching comment in `handleShowOmnibarEditingIntent`: cache the content
-                // hierarchy as a bitmap for the scale-down instead of re-rendering it every frame.
                 unifiedInputContentContainer.layer.shouldRasterize = true
                 unifiedInputContentContainer.layer.rasterizationScale = UIScreen.main.scale
             }
@@ -387,9 +372,6 @@ private extension MainViewController {
     }
 
     /// Shared intent teardown; restores the NTP logo/favorites hidden at focus, mirroring the animated back-button dismiss (idempotent).
-    /// - Parameter hidingContent: pass `false` when the caller is animating the content container's own
-    ///   fade/scale-down (floating UI, bottom bar) and will hide it itself once that finishes -- an
-    ///   instant `isHidden = true` here would otherwise make it invisible before the animation runs.
     func resetUnifiedInputContentAfterHide(hidingContent: Bool = true) {
         unifiedToggleInputCoordinator?.contentViewController.setActive(false)
         if hidingContent {

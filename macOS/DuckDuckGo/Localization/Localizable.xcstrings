@@ -7345,10 +7345,58 @@
       "comment" : "Subtitle beneath a recommended model in the model picker",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideal für den täglichen Gebrauch"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Best for everyday use"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideal para el uso diario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idéal pour une utilisation quotidienne"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideale per l'uso quotidiano"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideaal voor dagelijks gebruik"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najlepsze do codziennego użytku"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideal para o dia a dia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Идеально подходит для повседневного использования"
           }
         }
       }
@@ -7357,10 +7405,58 @@
       "comment" : "Subtitle beneath a recommended model in the model picker that consumes usage limits faster",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solide, erreicht Limits aber früher"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Solid but hits limits sooner"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran calidad, pero llega a los límites antes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Performant, mais atteint les limites plus tôt"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solido, ma raggiunge i limiti prima"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solide, maar bereikt limieten sneller"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solidny, ale szybciej zużywa limity"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eficaz, mas atinge os limites mais depressa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Работает стабильно, но быстрее исчерпывает лимиты"
           }
         }
       }
@@ -7429,22 +7525,58 @@
       "comment" : "Section header above gated models in the model picker, shown to a non-subscriber who is no longer eligible for the free trial — the models below span both paid plans",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exklusiv für Abonnenten"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Subscriber Exclusive"
           }
-        }
-      }
-    },
-    "aichat.model-picker.section.available-with-plus" : {
-      "comment" : "Section header above Plus-gated rows in the model and reasoning-effort pickers",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
+        },
+        "es" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Available with Plus"
+            "state" : "translated",
+            "value" : "Exclusivo para suscriptores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réservé aux abonnés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esclusiva per abbonati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen voor abonnees"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko dla subskrybentów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo para subscritores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эксклюзивно для подписчиков"
           }
         }
       }
@@ -7453,10 +7585,58 @@
       "comment" : "Section header above Pro-only models in the model picker, shown to a Plus subscriber",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exklusiv für Pro-Abonnenten"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Pro Plan Exclusive"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo del plan Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusif au forfait Pro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piano Pro Esclusivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusief voor Pro"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko dla planu Pro"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo do Plano Pro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эксклюзивно для тарифа Pro"
           }
         }
       }
@@ -7465,10 +7645,58 @@
       "comment" : "Section header above gated models in the model picker, shown when a free trial is available",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenlos testen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Try for Free"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probar gratis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer gratuitement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova gratuitamente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer gratis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj bezpłatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimentar gratuitamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробовать бесплатно"
           }
         }
       }
@@ -7539,8 +7767,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PLUS"
+            "state" : "translated",
+            "value" : "Plus"
           }
         },
         "en" : {
@@ -7551,44 +7779,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PLUS"
+            "state" : "translated",
+            "value" : "Plus"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PLUS"
+            "state" : "translated",
+            "value" : "Plus"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PLUS"
+            "state" : "translated",
+            "value" : "Plus"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PLUS"
+            "state" : "translated",
+            "value" : "Plus"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PLUS"
+            "state" : "translated",
+            "value" : "Plus"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PLUS"
+            "state" : "translated",
+            "value" : "Plus"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PLUS"
+            "state" : "translated",
+            "value" : "Plus"
           }
         }
       }
@@ -7599,8 +7827,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PRO"
+            "state" : "translated",
+            "value" : "Pro"
           }
         },
         "en" : {
@@ -7611,44 +7839,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PRO"
+            "state" : "translated",
+            "value" : "Pro"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PRO"
+            "state" : "translated",
+            "value" : "Pro"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PRO"
+            "state" : "translated",
+            "value" : "Pro"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PRO"
+            "state" : "translated",
+            "value" : "Pro"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PRO"
+            "state" : "translated",
+            "value" : "Pro"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PRO"
+            "state" : "translated",
+            "value" : "Pro"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "PRO"
+            "state" : "translated",
+            "value" : "Pro"
           }
         }
       }
@@ -25131,7 +25359,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Probiere es kostenlos aus!"
+            "value" : "Kostenlos testen!"
           }
         },
         "en" : {
@@ -25155,7 +25383,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Provalo gratis!"
+            "value" : "Prova gratuitamente!"
           }
         },
         "nl" : {
@@ -25167,19 +25395,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wypróbuj za darmo!"
+            "value" : "Wypróbuj bezpłatnie!"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Experimenta grátis!"
+            "value" : "Experimenta gratuitamente!"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Попробуй бесплатно!"
+            "value" : "Попробуйте бесплатно!"
           }
         }
       }
@@ -25251,7 +25479,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo bietet auch ein *optionales kostenpflichtiges Abonnement* mit einem sicheren *VPN* und *fortschrittlicher, privater KI*."
+            "value" : "DuckDuckGo bietet auch ein *optionales kostenpflichtiges Abonnement* mit einem sicheren *VPN* und *fortschrittlicher, privater KI.*"
           }
         },
         "en" : {
@@ -25263,43 +25491,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo también tiene una *suscripción opcional de pago*, con una *VPN* segura y una *IA privada avanzada*."
+            "value" : "DuckDuckGo también tiene una *suscripción opcional de pago*, con una *VPN* segura y *una IA privada avanzada.*"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo propose également un *abonnement payant en option*, avec un *VPN* sécurisé et une *IA privée et évoluée*."
+            "value" : "DuckDuckGo propose également un *abonnement payant en option*, avec un *VPN* sécurisé et une *IA privée et évoluée.*"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo offre anche un *abbonamento a pagamento facoltativo*, con *VPN* sicura e *AI avanzata e privata*."
+            "value" : "DuckDuckGo offre anche un *abbonamento a pagamento facoltativo*, con una *VPN* sicura e *AI avanzata e privata*."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo heeft ook een *optioneel betaald abonnement*, met een veilige *VPN* en *geavanceerde, privé-AI*."
+            "value" : "DuckDuckGo heeft ook een *optioneel betaald abonnement*, met een veilige *VPN* en *geavanceerde, privé-AI.*"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo oferuje również *opcjonalną płatną subskrypcję*, z bezpieczną *siecią VPN* i *zaawansowaną, prywatną sztuczną inteligencją*."
+            "value" : "DuckDuckGo oferuje również *opcjonalną płatną subskrypcję*, z bezpieczną *siecią VPN* i *zaawansowaną, prywatną sztuczną inteligencją.*"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O DuckDuckGo também tem uma *subscrição paga opcional*, com uma *VPN* segura e *IA avançada e privada*."
+            "value" : "O DuckDuckGo também tem uma *subscrição paga opcional*, com uma *VPN* segura e *IA avançada e privada.*"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo также предлагает *дополнительную платную подписку* с безопасным *VPN* и *приватным ИИ с расширенными возможностями*."
+            "value" : "DuckDuckGo также предлагает *платную подписку* с безопасным *VPN* и *частным ИИ с расширенными возможностями.*"
           }
         }
       }
@@ -25353,7 +25581,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ah, antes que me esqueça…"
+            "value" : "Ah, antes que me esqueça..."
           }
         },
         "ru" : {

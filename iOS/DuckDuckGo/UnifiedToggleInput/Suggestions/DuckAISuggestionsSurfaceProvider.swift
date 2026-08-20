@@ -129,11 +129,9 @@ final class DuckAISuggestionsSurfaceProvider {
 
         let (chatManager, chatViewModel) = AIChatHistoryManager.makeHistoryManager(
             isFireTab: switchBarHandler.isFireTab,
-            isIPadExperience: false,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager,
             chatSyncCleaner: aiChatSyncCleaner,
-            chatSettings: aiChatSettings,
             nativeStorageHandler: duckAiNativeStorageHandler)
 
         let requestRunner = AutocompleteRequestRunner()

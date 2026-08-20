@@ -633,7 +633,6 @@ class SmallOmniBarStateTests: XCTestCase {
         let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // Then
-        XCTAssertTrue(sut.showAIChatFullModeBranding)
         XCTAssertFalse(sut.showBackButton)
         XCTAssertFalse(sut.showForwardButton)
         XCTAssertFalse(sut.showBookmarksButton)

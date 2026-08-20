@@ -446,91 +446,15 @@ extension NewTabPageViewController {
         // Completion dialog should not hide NTP background state.
         newTabPageViewModel.finishOnboarding()
 
-        // UTI mode: no OmniBarEditingStateViewController is presented; embed the dialog in the
-        // UTI's content area (below the bar) and wire up subscription-promo check on dismiss.
-        if let mainVC = parent as? MainViewController,
-           let coordinator = mainVC.unifiedToggleInputCoordinator,
-           coordinator.isOmnibarSession {
-            showDuckAIOnboardingCompletionDialogInUTI(mainVC: mainVC, coordinator: coordinator, message: message)
-            return
-        }
-
-        let presentedHostViewController = parent?.presentedViewController ?? parent
-        guard let editingController = presentedHostViewController as? OmniBarEditingStateViewController else {
+        guard let mainVC = parent as? MainViewController,
+              let coordinator = mainVC.unifiedToggleInputCoordinator,
+              coordinator.isOmnibarSession else {
             isShowingDuckAICompletionDialog = false
             setLogoHidden(false)
             view.alpha = 1
             return
         }
-
-        isShowingDuckAICompletionDialog = true
-        editingController.setLogoHidden(true)
-
-        let onDismiss = { [weak self, weak editingController] in
-            guard let self else { return }
-            let finishDismissal = {
-                // Mark EOJ as seen before peeking the next spec so that
-                // peekNextHomeScreenMessageExperiment() enters the finalDaxDialogSeen
-                // branch and can return .subscriptionPromotion. Without this the
-                // chat-path branch returns nil and dismiss() is called immediately,
-                // making isEnabled = false and blocking the promo forever (r3257196584).
-                self.daxDialogsManager.setFinalOnboardingDialogSeen()
-                // Check for subscription promo before ending onboarding, mirroring
-                // the same check in showNextDaxDialogNew's onDismiss.
-                let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
-                if nextSpec == .subscriptionPromotion {
-                    // Editing state is about to be dismissed for the subscription promo —
-                    // keep the suppressed Dax non-installed so the dismiss animation can't
-                    // slide it in along with the editing state's logo Y-offset animation.
-                    self.dismissHostingController(didFinishNTPOnboarding: true)
-                    self.chromeDelegate?.omniBar.endEditing()
-                    self.showNextDaxDialog()
-                } else {
-                    // Staying in the editing state — lazily install/restore the Dax so
-                    // it's visible normally for subsequent visibility updates.
-                    editingController?.setLogoHidden(false)
-                    self.daxDialogsManager.dismiss()
-                    self.dismissHostingController(didFinishNTPOnboarding: true)
-                    ViewHighlighter.hideAll()
-                }
-            }
-
-            guard let hostingView = self.hostingController?.view else {
-                finishDismissal()
-                return
-            }
-            hostingView.isUserInteractionEnabled = false
-            UIView.animate(withDuration: 0.2, animations: {
-                hostingView.alpha = 0
-            }, completion: { _ in
-                finishDismissal()
-            })
-        }
-
-        let root = newTabDialogFactory.createDuckAIFireOnboardingCompletionDialog(message: message, onDismiss: onDismiss)
-        let hostingController = UIHostingController(rootView: root)
-        self.hostingController = hostingController
-        hostingController.view.backgroundColor = .clear
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        editingController.addChild(hostingController)
-        let container = editingController.contentStackContainerView
-        container.addSubview(hostingController.view)
-        NSLayoutConstraint.activate([
-            // Keep the completion content pinned to the top; in bottom-bar mode it gets cropped from the bottom
-            // as the bar moves up with the keyboard.
-            editingController.isUsingTopBarPositionForLayout ?
-                hostingController.view.topAnchor.constraint(equalTo: editingController.contentStackTopAnchor,
-                                                            constant: editingController.addressBarToToggleSpacing) :
-                hostingController.view.topAnchor.constraint(equalTo: container.topAnchor),
-            editingController.isUsingTopBarPositionForLayout ?
-                hostingController.view.heightAnchor.constraint(equalTo: container.heightAnchor) :
-                hostingController.view.bottomAnchor.constraint(equalTo: editingController.contentStackBottomAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor)
-        ])
-        hostingController.didMove(toParent: editingController)
-        container.bringSubviewToFront(editingController.switchBarVC.view)
+        showDuckAIOnboardingCompletionDialogInUTI(mainVC: mainVC, coordinator: coordinator, message: message)
     }
 
     // Mirrors showDuckAIOnboardingCompletionDialog for UTI mode where no editing-state VC exists.

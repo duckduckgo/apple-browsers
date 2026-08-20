@@ -22,11 +22,9 @@ import PrivacyConfig
 import Common
 import FoundationExtensions
 import Subscription
-import AIChat
 
 enum InterceptedURLType: String {
     case subscription
-    case aiChat
 }
 
 struct InterceptedURLInfo {
@@ -43,15 +41,12 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     typealias CanPurchaseUpdater = () -> Bool
     private let canPurchase: CanPurchaseUpdater
     private let featureFlagger: FeatureFlagger
-    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
     init(featureFlagger: FeatureFlagger,
-         canPurchase: @escaping CanPurchaseUpdater,
-         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()
+         canPurchase: @escaping CanPurchaseUpdater
     ) {
         self.canPurchase = canPurchase
         self.featureFlagger = featureFlagger
-        self.aichatFullModeFeature = aichatFullModeFeature
     }
 
     static let interceptedURLs: [InterceptedURLInfo] = SubscriptionPurchaseFlowPath.allCases.map {
@@ -59,10 +54,6 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     }
     
     func allowsNavigatingTo(url: URL) -> Bool {
-        if url.isDuckAIURL && !aichatFullModeFeature.isAvailable && !DevicePlatform.isIpad {
-            return handleURLInterception(interceptedURLType: .aiChat, interceptedURL: url)
-        }
-
         guard url.isPart(ofDomain: "duckduckgo.com") || (url.isPart(ofDomain: "duck.co") && featureFlagger.internalUserDecider.isInternalUser),
               let components = normalizeScheme(url.absoluteString),
               let matchingURL = urlToIntercept(path: components.path) else {
@@ -92,7 +83,7 @@ extension TabURLInterceptorDefault {
         return URLComponents(string: "\(URL.NavigationalScheme.https.separated())\(noScheme)")
     }
 
-    private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil, interceptedURL: URL? = nil) -> Bool {
+    private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil) -> Bool {
         switch interceptedURLType {
             // Opens the DuckDuckGo Subscription Purchase page (if user can purchase)
         case .subscription:
@@ -112,18 +103,6 @@ extension TabURLInterceptorDefault {
                 )
                 return false
             }
-        case .aiChat:
-            var userInfo: [AnyHashable: Any]?
-            if let url = interceptedURL {
-                userInfo = [TabURLInterceptorParameter.interceptedURL: url]
-            }
-
-            NotificationCenter.default.post(
-                name: .urlInterceptAIChat,
-                object: nil,
-                userInfo: userInfo
-            )
-            return false
         }
         return true
     }
@@ -136,7 +115,6 @@ extension NSNotification.Name {
 
 public enum TabURLInterceptorParameter {
     public static let interceptedURLComponents = "interceptedURLComponents"
-    public static let interceptedURL = "interceptedURL"
     /// Set only by the front-end `openAIChat` message, never by the interceptor: the page that asked
     /// native to open Duck.ai, so its entry is attributed to that page rather than to a typed address.
     public static let aiChatRequestHost = "aiChatRequestHost"

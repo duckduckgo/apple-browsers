@@ -370,8 +370,6 @@ struct SmallOmniBarState {
         let showDismiss = false
         let showVoiceSearch = false
         let isBrowsing = false
-        let showAIChatFullModeBranding = true
-        
         var allowCustomization = false
 
         var name: String { "Phone" + Type.name(self) }

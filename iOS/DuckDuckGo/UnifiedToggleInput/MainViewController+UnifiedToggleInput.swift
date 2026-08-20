@@ -1207,11 +1207,8 @@ extension MainViewController {
             DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
         }
 
-        // Skipped when `TabURLInterceptor` cancels the navigation and reports the entry from there,
-        // which would otherwise attribute one submission twice.
-        guard !duckAINavigationIsIntercepted else { return }
         // `loadQuery` loads duck.ai in-tab without going through `openAIChat`, so this is the
-        // only place the `direct_url` entry can be reported when the interceptor does not run.
+        // only place the `direct_url` entry can be reported.
         let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
             currentIsAI: currentTab?.isAITab == true,
             currentHasContent: currentTab?.tabModel.link != nil,

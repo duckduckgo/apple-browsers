@@ -209,9 +209,6 @@ class MainViewController: UIViewController {
     /// VPN connection state as the user left the New Tab Page for the VPN screen, so a toggle made
     /// there can be told apart from a reconnect that happened on its own.
     var vpnConnectedWhenLeavingNewTabPage: Bool?
-    /// The entry whose duck.ai navigation `TabURLInterceptor` is about to cancel, so the
-    /// re-entry reports that source instead of a second `direct_url`.
-    private var interceptedDuckAIEntrySource: AIChatEntryPointSource?
     /// The most recent Duck.ai entry, consumed as the `origin` of prompts sent on the opened surface.
     private(set) var lastDuckAIEntrySource: AIChatEntryPointSource?
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
@@ -385,7 +382,6 @@ class MainViewController: UIViewController {
     let mobileCustomization: MobileCustomization
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
-    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
     lazy var aiChatContextualFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature()
     let duckAIAddressBarPixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()
@@ -521,7 +517,6 @@ class MainViewController: UIViewController {
         profileStateManager: DBPProfileStateManaging,
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-        aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         remoteMessagingImageLoader: RemoteMessagingImageLoading,
@@ -622,7 +617,6 @@ class MainViewController: UIViewController {
         self.launchSourceManager = launchSourceManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
-        self.aichatFullModeFeature = aichatFullModeFeature
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.privacyStats = privacyStats
@@ -1088,7 +1082,6 @@ class MainViewController: UIViewController {
     private func reevaluateSuggestionTrayAfterHomeMessagesChanged() {
         guard newTabPageViewController == nil,
               omniBar.isTextFieldEditing,
-              !(presentedViewController is OmniBarEditingStateViewController),
               unifiedToggleInputCoordinator?.isOmnibarSession != true else { return }
 
         if isPad {
@@ -2848,7 +2841,7 @@ class MainViewController: UIViewController {
         let logoURL = logoURLForCurrentPage(tab: tab)
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
-        if tab.isAITab && (aichatFullModeFeature.isAvailable || DevicePlatform.isIpad) {
+        if tab.isAITab {
             // AI tabs use branding UI rather than the standard toggle setup.
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
@@ -3555,11 +3548,6 @@ class MainViewController: UIViewController {
             completion()
             return
         }
-        // Don't dismiss the omni bar's editing state (keyboard/switch), we're reusing NTP and want to preserve focus
-        if presented is OmniBarEditingStateViewController {
-            completion()
-            return
-        }
         presented.dismiss(animated: true, completion: completion)
     }
     
@@ -3708,30 +3696,11 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .urlInterceptAIChat)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
-                let interceptedURL = notification.userInfo?[TabURLInterceptorParameter.interceptedURL] as? URL
                 let payload = notification.object as? AIChatPayload
-                var query: String?
-                var shouldAutoSend = false
-                if let url = interceptedURL,
-                   let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                   let queryItems = components.queryItems {
-                    query = queryItems.first(where: { $0.name == AIChatURLParameters.promptQueryName })?.value
-                    shouldAutoSend = queryItems.first(where: { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })?.value == AIChatURLParameters.autoSubmitPromptQueryValue
-                }
-
-                // The direct-navigation pixels are not fired here: the interceptor sees every
-                // duck.ai navigation, so it cannot tell a typed address from an in-page link.
-                // An entry that already deferred to us reports under its own source, not `direct_url`;
-                // next the page that asked us to open Duck.ai; `direct_url` is only what the interceptor saw.
                 let requestHost = notification.userInfo?[TabURLInterceptorParameter.aiChatRequestHost] as? String
-                let source = self?.consumeInterceptedDuckAIEntrySource()
-                    ?? AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: requestHost)
+                let source = AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: requestHost)
                     ?? .directURL
-                if let query = query {
-                    self?.openAIChat(source: source, query, autoSend: shouldAutoSend, payload: payload)
-                } else {
-                    self?.openAIChat(source: source, payload: payload)
-                }
+                self?.openAIChat(source: source, payload: payload)
             }
             .store(in: &urlInterceptorCancellables)
     }
@@ -4149,28 +4118,8 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters)
     }
 
-    /// Mirrors `TabURLInterceptor`'s duck.ai condition: it cancels the navigation and
-    /// reopens Duck.ai itself, so callers must not also report that navigation.
-    var duckAINavigationIsIntercepted: Bool {
-        !(aichatFullModeFeature.isAvailable || DevicePlatform.isIpad)
-    }
-
-    /// Reports an entry that is about to load a duck.ai URL itself. When `TabURLInterceptor` is
-    /// active it cancels that navigation and re-enters `openAIChat`, so defer to the interceptor
-    /// with the real source rather than reporting the same entry twice.
     func reportDuckAIEntryForUpcomingNavigation(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
-        guard !duckAINavigationIsIntercepted else {
-            interceptedDuckAIEntrySource = source
-            return
-        }
         fireAIChatEntryPointPixel(source: source, opensNewTab: opensNewTab, hasPrompt: hasPrompt)
-    }
-
-    /// Set only immediately before the navigation the interceptor is about to cancel, so a stale
-    /// value cannot outlive it.
-    private func consumeInterceptedDuckAIEntrySource() -> AIChatEntryPointSource? {
-        defer { interceptedDuckAIEntrySource = nil }
-        return interceptedDuckAIEntrySource
     }
 
     /// `source` has no default on purpose: the compiler enumerates every entry
@@ -4192,36 +4141,20 @@ class MainViewController: UIViewController {
         // without one they are only opening the chat surface.
         newTabPageSessionInstrumentation.visitEnded(terminalAction: query == nil ? .loadDuckai : .loadDuckaiResponse)
 
-        if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
-            openAIChatInTab(
-                source: source,
-                query,
-                autoSend: autoSend,
-                payload: payload,
-                flowType: flowType,
-                tools: tools,
-                modelId: modelId,
-                reasoningEffort: reasoningEffort,
-                images: images,
-                files: files,
-                reportsNewTab: reportsNewTab,
-                fromDeepLink: fromDeepLink
-            )
-        } else {
-            fireAIChatEntryPointPixel(source: source, opensNewTab: reportsNewTab ?? false, hasPrompt: query?.isEmpty == false)
-            aiChatViewControllerManager.openAIChat(
-                query,
-                payload: payload,
-                autoSend: autoSend,
-                flowType: flowType,
-                tools: tools,
-                modelId: modelId,
-                reasoningEffort: reasoningEffort,
-                images: images,
-                files: files,
-                on: self
-            )
-        }
+        openAIChatInTab(
+            source: source,
+            query,
+            autoSend: autoSend,
+            payload: payload,
+            flowType: flowType,
+            tools: tools,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort,
+            images: images,
+            files: files,
+            reportsNewTab: reportsNewTab,
+            fromDeepLink: fromDeepLink
+        )
     }
 
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
@@ -4258,13 +4191,7 @@ class MainViewController: UIViewController {
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
         let source = deepLinkSource ?? .voice
         let fromDeepLink = deepLinkSource != nil
-        if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
-            // Fired inside, once the new-tab decision is known.
-            openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)
-        } else {
-            fireAIChatEntryPointPixel(source: source, opensNewTab: false, hasPrompt: false)
-            aiChatViewControllerManager.openAIChatVoiceMode(on: self)
-        }
+        openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)
     }
 
     private func openAIChatVoiceModeInTab(source: AIChatEntryPointSource, fromDeepLink: Bool = false) {
@@ -5102,7 +5029,7 @@ extension MainViewController: OmniBarDelegate {
         let context: BrowsingMenuContext
         if newTabPageViewController != nil {
             context = .newTabPage
-        } else if aichatFullModeFeature.isAvailable && tab.isAITab {
+        } else if DevicePlatform.isIphone && tab.isAITab {
             context = .aiChatTab
         } else {
             context = .website
@@ -5871,21 +5798,6 @@ extension MainViewController: OmniBarDelegate {
         recordNewTabPageSessionAction { $0.utiBackArrow() }
     }
 
-    /// Delegate method called when the AI Chat left button is tapped
-    func onAIChatLeftButtonPressed() {
-        DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarSidebarButtonTapped)
-        currentTab?.submitToggleSidebarAction()
-    }
-
-    /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.
-    func onAIChatBrandingPressed() {
-        ViewHighlighter.hideAll()
-        Pixel.fire(pixel: .addressBarClickOnAIChat, withAdditionalParameters: [
-            PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue
-        ])
-        viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
-    }
-
     func escapeHatchForEditingState() -> EscapeHatchModel? {
         guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle(),
               tabManager.currentTabsModel.currentTab?.link == nil,
@@ -6514,13 +6426,6 @@ extension MainViewController: TabDelegate {
     func tabDidRequestNewTab(_ tab: TabViewController) {
         endNewTabPageSessionWithMenuItem()
         _ = findInPageView?.resignFirstResponder()
-        // Pre-arm logo hiding BEFORE newTab() because attachHomeScreen() may call
-        // omniBar.beginEditing(animated:) when KeyboardSettings.onNewTab is enabled, which
-        // would create the editing-state VC before presentChatPathOnboardingCompletionIfNeeded()
-        // gets a chance to set the pending flag.
-        if daxDialogsManager.chatPathPhase == .trackerToEOJ, aiChatSettings.isAIChatEnabled {
-            omniBar.setEditingStateLogoHidden(true)
-        }
         newTab()
     }
 
@@ -7741,23 +7646,7 @@ extension MainViewController: OnboardingDelegate {
             return
         }
 
-        // For Duck.ai tailored flow, the NTP completion dialog hosts inside `OmniBarEditingStateViewController`,
-        // which only installs when `shouldUseExperimentalEditingState` is true — itself gated on
-        // `aiChatSettings.isAIChatSearchInputUserSettingsEnabled`.
-        //
-        // IMPORTANT: Contrary to the Duck.ai fire onboarding on the default flow we do not call `ensureDuckAiCompletionDialogPresentationPrerequisites()`.
-        // The full prerequisite also calls `daxDialogsManager.disableContextualDaxDialogs()`, which would set
-        // `isEnabled = false` before the tailored completion dialog is presented, breaking the subscription
-        // chain inside the dialog's `onDismiss` (`nextHomeScreenMessageNew()` would return `nil` from its
-        // `guard isEnabled` and the EOJ → subscription transition would silently drop).
-        if onboardingManager.currentOnboardingFlow == .duckAI && !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-            aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
-        }
-
         controller.modalTransitionStyle = .crossDissolve
-        // The Duck.ai tailored flow's NTP completion dialog presents `OmniBarEditingStateViewController`.
-        // Wait for the OnboardingIntroViewController to be dismissed before presenting `OmniBarEditingStateViewController`
-        // otherwise `OmniBarEditingStateViewController` will not be presented while the onboarding is mid-dismissal.
         controller.dismiss(animated: true) { [weak self] in
             self?.newTabPageViewController?.onboardingCompleted()
         }
@@ -8098,38 +7987,6 @@ extension MainViewController: MessageNavigationDelegate {
 
 }
 
-extension MainViewController: MainViewEditingStateTransitioning {
-
-    private var isDaxLogoVisible: Bool {
-        newTabPageViewController?.isShowingLogo == true
-    }
-
-    var logoView: UIView? {
-        if newTabPageViewController?.isShowingLogo == true {
-            // Treat NTP view as logo view, but only if it's visible.
-            // This prevents favorites from flickering during transition.
-            return newTabPageViewController?.view
-        } else {
-            return nil
-        }
-    }
-
-    func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {
-        if isDaxLogoVisible {
-            omniBar.barView.layer.sublayerTransform = CATransform3DMakeTranslation(0, barYOffset, 0)
-        } else {
-            additionalSafeAreaInsets.top = contentYOffset
-        }
-        omniBar.barView.hideButtons()
-    }
-
-    func show() {
-        omniBar.barView.layer.sublayerTransform = CATransform3DIdentity
-        additionalSafeAreaInsets.top = 0
-        omniBar.barView.revealButtons()
-    }
-}
-
 // MARK: AutoClear Action Delegate
 extension MainViewController: SettingsAutoClearActionDelegate {
     func performDataClearing(for request: FireRequest) {
@@ -8427,19 +8284,6 @@ extension MainViewController {
         }
     }
 
-}
-
-// MARK: - AIChatHistoryManagerDelegate
-
-extension MainViewController: AIChatHistoryManagerDelegate {
-
-    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL) {
-        onChatHistorySelected(url: url)
-    }
-
-    func aiChatHistoryManagerDidSelectViewAllChats(_ manager: AIChatHistoryManager) {
-        openAIChatHistory(source: .addressBar)
-    }
 }
 
 // MARK: - Duck.ai Wide Event

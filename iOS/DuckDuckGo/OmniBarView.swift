@@ -100,11 +100,6 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onDismissPressed: (() -> Void)? { get set }
     var onFirePressed: (() -> Void)? { get set }
 
-    /// Callback triggered when the AI Chat left button is tapped
-    var onAIChatLeftButtonPressed: (() -> Void)? { get set }
-
-    /// Callback triggered when the omnibar branding area is tapped while in AI Chat mode
-    var onAIChatBrandingPressed: (() -> Void)? { get set }
     var longPressMenuProvider: (() -> UIMenu?)? { get set }
     var onLongPressMenuDisplayed: (() -> Void)? { get set }
 
@@ -181,7 +176,6 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isAIChatButtonHidden: Bool { get set }
     var isSearchLoupeHidden: Bool { get set }
     var isDismissButtonHidden: Bool { get set }
-    var isFullAIChatHidden: Bool { get set }
     var isFireButtonHidden: Bool { get set }
     var isTabSwitcherButtonHidden: Bool { get set }
     var layoutMode: OmniBarLayoutMode { get }

@@ -33,6 +33,11 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     private(set) var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?
     private(set) var attachmentLimits: NewTabPageDataModel.AttachmentLimits?
     private(set) var isEligibleForFreeTrial = false
+
+    /// Kept from the last fetch so the omnibar's usage warnings can resolve tier and cheaper-model
+    /// suggestions without repeating the subscription lookup. `.free` / empty until the first fetch.
+    private(set) var lastResolvedUserTier: AIChatUserTier = .free
+    private(set) var lastFetchedModels: [AIChatModel] = []
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
@@ -62,6 +67,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             attachmentLimits = mapAttachmentLimits(response.attachmentLimits?.limits(for: userTier))
             isEligibleForFreeTrial = userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
             let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+            lastResolvedUserTier = userTier
+            lastFetchedModels = models
 
             // Flat, ordered accessible list mirrors the address bar's `modelPickerItems` — the old
             // Basic/Advanced split left a stray empty section for tiers with both kinds (e.g. Pro).

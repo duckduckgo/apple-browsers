@@ -19,40 +19,40 @@
 import AIChat
 import AppKit
 import FeatureFlags_macOS
-import os.log
+import Persistence
 import PrivacyConfig
 
-/// Owns the app-side flag gating so the shared reader stays flag-agnostic and call sites don't repeat it.
-/// Mirrors `CustomizeResponsesStore`: cheap to build, constructed with a burner-aware handler per surface.
+/// Owns the app-side flag gating so the shared warning logic stays flag-agnostic and call sites don't
+/// repeat it. Mirrors `CustomizeResponsesStore`: cheap to build, constructed with a burner-aware handler
+/// per surface.
 final class DuckAiUsageLimitsStore {
 
-    private let provider: DuckAiUsageLimitsProviding?
+    private let storageHandler: DuckAiNativeStorageHandling?
     private let featureFlagger: FeatureFlagger
+    private let keyValueStore: ThrowingKeyValueStoring
 
     init(storageHandler: DuckAiNativeStorageHandling?,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
-        self.provider = storageHandler.map {
-            DuckAiUsageLimitsProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
-        }
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
+        self.storageHandler = storageHandler
         self.featureFlagger = featureFlagger
+        self.keyValueStore = keyValueStore
     }
 
-    /// `nil` means the feature is inactive (flag off, or no storage bridge); `.noData` means active but nothing
-    /// worth warning about. Callers must keep the two apart.
-    func currentLimits() -> DuckAiUsageLimits? {
-        guard featureFlagger.isFeatureOn(.aiChatUsageWarnings), let provider else { return nil }
-        let limits = provider.currentUsageLimits()
-        // Marked private so the percentages are redacted wherever redaction applies; local debug builds
-        // still show them, which is what makes a read verifiable while testing.
-        Logger.aiChat.debug("""
-            Duck.ai usage limits read: daily=\(Self.describe(limits.daily), privacy: .private) \
-            weekly=\(Self.describe(limits.weekly), privacy: .private)
-            """)
-        return limits
-    }
-
-    private static func describe(_ window: DuckAiUsageLimitWindow?) -> String {
-        guard let window else { return "none" }
-        return "\(window.percentUsed)% resets \(window.resetsAt)"
+    /// `nil` means the feature is inactive — the flag is off, or this surface has no storage bridge.
+    /// That is not the same as an active feature with nothing to show.
+    func makeWarningViewModel(isBurner: Bool,
+                              tierProvider: @escaping () -> AIChatUserTier,
+                              cheaperModelSuggester: DuckAiCheaperModelSuggesting) -> DuckAiUsageWarningViewModel? {
+        DuckAiUsageWarningViewModelFactory.make(
+            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatUsageWarnings),
+            storage: storageHandler,
+            isBurner: isBurner,
+            keyValueStore: keyValueStore,
+            tierProvider: tierProvider,
+            isInternalUser: { [featureFlagger] in featureFlagger.internalUserDecider.isInternalUser },
+            cheaperModelSuggester: cheaperModelSuggester,
+            pixelFiring: DuckAiNativeStoragePixelAdapter()
+        )
     }
 }

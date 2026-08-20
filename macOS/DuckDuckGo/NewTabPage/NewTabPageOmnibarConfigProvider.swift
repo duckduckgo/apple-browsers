@@ -99,6 +99,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
+    private let userTierProvider: () -> AIChatUserTier
+    private let availableModelsProvider: () -> [AIChatModel]
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
@@ -113,6 +115,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
+         userTierProvider: @escaping () -> AIChatUserTier = { .free },
+         availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
@@ -121,6 +125,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
+        self.userTierProvider = userTierProvider
+        self.availableModelsProvider = availableModelsProvider
         self.firePixel = firePixel
 
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
@@ -278,15 +284,29 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         customizeResponsesChangedSubject.eraseToAnyPublisher()
     }
 
-    /// `nil` when the usage-warnings feature isn't active, which is not the same as `.noData`.
-    private(set) var usageLimits: DuckAiUsageLimits?
+    /// `nil` when the usage-warnings feature isn't active, which is not the same as "active with nothing
+    /// to show". Rebuilt per refresh because the burner mode depends on the requesting webview.
+    private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?) {
         guard let windowControllersManager else { return }
         let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
-        usageLimits = DuckAiUsageLimitsStore(storageHandler: duckAiStorageHandlerProvider(burnerMode),
-                                             featureFlagger: featureFlagger).currentLimits()
+        let store = DuckAiUsageLimitsStore(storageHandler: duckAiStorageHandlerProvider(burnerMode),
+                                           featureFlagger: featureFlagger,
+                                           keyValueStore: keyValueStore)
+        usageWarningViewModel = store.makeWarningViewModel(
+            isBurner: burnerMode.isBurner,
+            tierProvider: userTierProvider,
+            cheaperModelSuggester: DuckAiCheaperModelSuggester(
+                modelsProvider: availableModelsProvider,
+                currentModelIdProvider: { [aiChatPreferencesPersistor] in aiChatPreferencesPersistor.selectedModelId }
+            )
+        )
+        usageWarningViewModel?.onSwitchToSuggestedModel = { [weak self] suggestion in
+            self?.aiChatPreferencesPersistor.selectedModelId = suggestion.modelId
+        }
+        usageWarningViewModel?.refresh()
     }
 
     func notifyCustomizeResponsesChanged() {

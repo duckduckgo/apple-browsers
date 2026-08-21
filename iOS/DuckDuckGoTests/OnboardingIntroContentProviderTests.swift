@@ -1292,7 +1292,8 @@ struct OnboardingIntroContentProviderTests {
                     )
                 ],
                 primaryCTA: "Next",
-                daxAnimation: .wingLeft
+                daxAnimation: .wingLeft,
+                footer: "You can always adjust later in Settings."
             )
 
             // WHEN

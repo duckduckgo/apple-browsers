@@ -140,17 +140,8 @@ class FromWebViewTransition: WebViewTransition {
         imageView.frame = imageContainer.bounds
         imageView.image = preview
 
-        // Duck.ai tabs land on a rich card, not a screenshot. Crossfade a snapshot of the
-        // destination cell over the webview preview so the shrink ends on matching content
-        // instead of popping from screenshot to card. Gated on the rich-card flag: with it off
-        // the AI cell is a screenshot, so there's nothing to crossfade to
         let cellSnapshot = installAITabCellSnapshot(for: tab, at: indexPath)
-
-        if tabSwitcherSettings.isGridViewEnabled,
-           cellSnapshot == nil,
-           let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
-            prepareGridChromeSnapshot(for: cell, initiallyVisible: false)
-        }
+        prepareOutgoingTabChrome(at: indexPath, cellSnapshot: cellSnapshot)
 
         UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
 
@@ -162,6 +153,9 @@ class FromWebViewTransition: WebViewTransition {
                 self.imageView.frame = WebViewTransitionGeometry.previewFrame(for: containerFrame.size,
                                                                               previewSize: preview.size,
                                                                               isGridViewEnabled: self.tabSwitcherSettings.isGridViewEnabled)
+                if !self.tabSwitcherSettings.isGridViewEnabled {
+                    self.applyListChromePose(isVisible: true)
+                }
             }
 
             if self.tabSwitcherSettings.isGridViewEnabled {

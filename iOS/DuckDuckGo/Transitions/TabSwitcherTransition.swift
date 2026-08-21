@@ -48,11 +48,14 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
     let solidBackground = UIView()
     // Draws outside the clipped transition card so depth can participate in the morph.
     let cardShadow = UIView()
+    let cardBorder = UIView()
     // Container for the image, will clip subviews like tab switcher cell does.
     let imageContainer = UIView()
     // Image to display as a preview.
     let imageView = UIImageView()
     private(set) var gridChromeSnapshot: UIView?
+    private weak var listCellBorder: UIView?
+    private var listCellBorderWasHidden = false
     
     let tabSwitcherViewController: TabSwitcherViewController
     
@@ -87,6 +90,12 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
 
         imageContainer.frame = frame
         imageContainer.layer.cornerRadius = cornerRadius
+
+        if cardBorder.superview != nil {
+            let borderOutset = TabViewCell.Constants.borderOutset / 2
+            cardBorder.frame = frame.insetBy(dx: -borderOutset, dy: -borderOutset)
+            cardBorder.layer.cornerRadius = cornerRadius == 0 ? 0 : TabViewCell.Constants.borderRadius
+        }
     }
 
     func prepareGridChromeSnapshot(for cell: TabViewGridCell, initiallyVisible: Bool) {
@@ -101,26 +110,55 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
             return
         }
 
+        snapshot.frame = CGRect(x: imageContainer.bounds.minX,
+                                y: imageContainer.bounds.minY,
+                                width: imageContainer.bounds.width,
+                                height: TabViewGridCell.Constants.headerHeight)
+        snapshot.autoresizingMask = [.flexibleWidth]
         imageContainer.addSubview(snapshot)
         gridChromeSnapshot = snapshot
         applyGridChromePose(isVisible: initiallyVisible, in: imageContainer.bounds)
     }
 
-    func applyGridChromePose(isVisible: Bool, in containerBounds: CGRect) {
+    func applyGridChromePose(isVisible: Bool, in _: CGRect) {
         guard let gridChromeSnapshot else { return }
-        let headerHeight = TabViewGridCell.Constants.headerHeight
-        gridChromeSnapshot.frame = CGRect(x: containerBounds.minX,
-                                          y: isVisible ? containerBounds.minY : containerBounds.minY - headerHeight,
-                                          width: containerBounds.width,
-                                          height: headerHeight)
+        gridChromeSnapshot.transform = isVisible
+            ? .identity
+            : CGAffineTransform(translationX: 0, y: -TabViewGridCell.Constants.headerHeight)
         gridChromeSnapshot.alpha = isVisible ? 1 : 0
+    }
+
+    func prepareListChrome(for cell: TabViewListCell, initiallyVisible: Bool) {
+        cell.layoutIfNeeded()
+        cardBorder.backgroundColor = .clear
+        cardBorder.isUserInteractionEnabled = false
+        cardBorder.layer.cornerCurve = .continuous
+        cardBorder.layer.borderColor = cell.border.layer.borderColor
+        cardBorder.layer.borderWidth = cell.border.layer.borderWidth
+        imageContainer.superview?.addSubview(cardBorder)
+
+        listCellBorder = cell.border
+        listCellBorderWasHidden = cell.border.isHidden
+        cell.border.isHidden = true
+
+        let borderOutset = TabViewCell.Constants.borderOutset / 2
+        cardBorder.frame = imageContainer.frame.insetBy(dx: -borderOutset, dy: -borderOutset)
+        cardBorder.layer.cornerRadius = initiallyVisible ? TabViewCell.Constants.borderRadius : 0
+        applyListChromePose(isVisible: initiallyVisible)
+    }
+
+    func applyListChromePose(isVisible: Bool) {
+        cardBorder.alpha = isVisible ? 1 : 0
     }
 
     func removeTransitionViews() {
         solidBackground.removeFromSuperview()
         cardShadow.removeFromSuperview()
+        cardBorder.removeFromSuperview()
         imageContainer.removeFromSuperview()
         gridChromeSnapshot = nil
+        listCellBorder?.isHidden = listCellBorderWasHidden
+        listCellBorder = nil
     }
     
     func makeToolbarSnapshot(of toolbar: BrowserToolbarView,

@@ -80,8 +80,25 @@ class HomeScreenTransition: TabSwitcherTransition {
     }
     
     fileprivate func previewFrame(for cellBounds: CGSize) -> CGRect {
-        return CGRect(origin: .zero, size: cellBounds)
-            .offsetBy(dx: 0, dy: -TabViewCell.Constants.previewPadding)
+        guard tabSwitcherSettings.isGridViewEnabled else {
+            return CGRect(origin: .zero, size: cellBounds)
+                .offsetBy(dx: 0, dy: -TabViewCell.Constants.previewPadding)
+        }
+
+        // Match TabViewGridCell.previewClipView / WebViewTransitionGeometry.previewFrame:
+        // logo sits in the preview area below the cell header, not the full cell.
+        let horizontalInset = TabViewGridCell.Constants.previewHorizontalInset / 2
+        let availableWidth = cellBounds.width - TabViewGridCell.Constants.previewHorizontalInset
+        let availableHeight = cellBounds.height
+            - TabViewGridCell.Constants.headerHeight
+            - TabViewGridCell.Constants.previewBottomPadding
+        guard availableWidth > 0, availableHeight > 0 else {
+            return CGRect(origin: .zero, size: cellBounds)
+        }
+        return CGRect(x: horizontalInset,
+                      y: TabViewGridCell.Constants.headerHeight,
+                      width: availableWidth,
+                      height: availableHeight)
     }
     
 }
@@ -153,6 +170,8 @@ class FromHomeScreenTransition: HomeScreenTransition {
             if let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewGridCell {
                 prepareGridChromeSnapshot(for: cell, initiallyVisible: false)
             }
+        } else if let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewListCell {
+            prepareListChrome(for: cell, initiallyVisible: false)
         }
         
         UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
@@ -167,6 +186,9 @@ class FromHomeScreenTransition: HomeScreenTransition {
                 self.homeScreenSnapshot?.frame = self.homeScreenSnapshotFrame(
                     in: CGRect(origin: .zero, size: containerFrame.size),
                     includesGridChrome: true)
+                if !self.tabSwitcherSettings.isGridViewEnabled {
+                    self.applyListChromePose(isVisible: true)
+                }
             }
 
             if self.tabSwitcherSettings.isGridViewEnabled {
@@ -193,7 +215,11 @@ class FromHomeScreenTransition: HomeScreenTransition {
                 }
             } else {
                 UIView.addKeyframe(withRelativeStartTime: 0.7, relativeDuration: 0.3) {
+                    // Fade card chrome with the snapshot so a blank rounded card
+                    // does not linger over the list row.
                     self.imageContainer.alpha = 0
+                    self.cardShadow.alpha = 0
+                    self.cardBorder.alpha = 0
                     self.settingsButtonSnapshot?.alpha = 0
                 }
             }
@@ -290,6 +316,8 @@ class ToHomeScreenTransition: HomeScreenTransition {
             if let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewGridCell {
                 prepareGridChromeSnapshot(for: cell, initiallyVisible: true)
             }
+        } else if let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewListCell {
+            prepareListChrome(for: cell, initiallyVisible: true)
         }
         imageView.backgroundColor = .clear
 
@@ -310,6 +338,9 @@ class ToHomeScreenTransition: HomeScreenTransition {
                                               size: self.imageContainer.bounds.size)
                 self.homeScreenSnapshot?.frame = self.homeScreenSnapshotFrame(
                     in: CGRect(origin: .zero, size: destinationFrame.size))
+                if !self.tabSwitcherSettings.isGridViewEnabled {
+                    self.applyListChromePose(isVisible: false)
+                }
             }
 
             if self.tabSwitcherSettings.isGridViewEnabled {

@@ -97,12 +97,32 @@ final class FireDialogViewModel: ObservableObject {
             }
         }
 
-        var shouldShowChatHistoryToggle: Bool {
+        var shouldShowDetailsDisclosure: Bool {
+            return shouldShowVisitsToggle
+        }
+
+        /// Show the History (visits) toggle?
+        ///
+        /// The compact dialog always deletes the records the History view scoped it to, so it offers
+        /// no way to exclude them.
+        ///
+        /// Only the compact dialog reads this. The legacy dialog always shows its History row and
+        /// reads the user's choice from `includeHistory`, so this needs no feature flag.
+        var shouldShowVisitsToggle: Bool {
             switch self {
-            case .fireButton,
-                    .mainMenuAll,
-                    .historyView(query: .rangeFilter(.all)):
+            case .historyView:
+                return false
+            default:
                 return true
+            }
+        }
+
+        func shouldShowChatHistoryToggle(_ featureFlagger: FeatureFlagger) -> Bool {
+            switch self {
+            case .fireButton, .mainMenuAll:
+                return true
+            case .historyView(query: .rangeFilter(.all)):
+                return !featureFlagger.isFeatureOn(.fireDialogSimplified)
             case .historyView:
                 return false
             }
@@ -119,20 +139,78 @@ final class FireDialogViewModel: ObservableObject {
         }
 
         /// Compute custom title for dialog based on mode (when applicable)
-        var dialogTitle: String {
-            let title = switch self {
-            case .fireButton: UserText.fireDialogTitle
-            case .mainMenuAll,
-                 .historyView(query: .rangeFilter(.all)),
-                 .historyView(query: .rangeFilter(.allSites)): HistoryViewDeleteDialogModel.DeleteMode.all.title
-            case .historyView(query: .rangeFilter(.today)): HistoryViewDeleteDialogModel.DeleteMode.today.title
-            case .historyView(query: .rangeFilter(.yesterday)): HistoryViewDeleteDialogModel.DeleteMode.yesterday.title
-            case .historyView(query: .dateFilter(let date)): HistoryViewDeleteDialogModel.DeleteMode.date(date).title
-            case .historyView(query: .domainFilter(let domains)): HistoryViewDeleteDialogModel.DeleteMode.sites(domains).title
-            case .historyView(query: .rangeFilter(.older)): HistoryViewDeleteDialogModel.DeleteMode.older.title
-            case .historyView: UserText.fireDialogTitle
+        func dialogTitle(_ featureFlagger: FeatureFlagger) -> String {
+            guard featureFlagger.isFeatureOn(.fireDialogSimplified) else {
+                return legacyDialogTitle
             }
-            return title.replacingOccurrences(of: #"\n"#, with: " ")
+            return compactDialogTitle
+        }
+
+        /// Title of the compact dialog.
+        ///
+        /// The compact dialog is shorter than the legacy one and shows the title on a single line, so
+        /// it replaces the line break of the longer titles with a space. It also titles the weekday
+        /// sections of the History view, which each stand for a single date.
+        private var compactDialogTitle: String {
+            let title = {
+                switch self {
+                case .fireButton:
+                    return UserText.fireDialogTitle
+                case .mainMenuAll,
+                        .historyView(query: .rangeFilter(.all)),
+                        .historyView(query: .rangeFilter(.allSites)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.all.compactTitle
+                case .historyView(query: .rangeFilter(.today)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.today.compactTitle
+                case .historyView(query: .rangeFilter(.yesterday)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.yesterday.compactTitle
+                case .historyView(query: .rangeFilter(.older)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.older.compactTitle
+                case .historyView(query: .rangeFilter(let range)):
+                    guard let date = range.date(for: Date()) else {
+                        return UserText.fireDialogTitle
+                    }
+                    return HistoryViewDeleteDialogModel.DeleteMode.date(date).compactTitle
+                case .historyView(query: .dateFilter(let date)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.date(date).compactTitle
+                case .historyView(query: .domainFilter(let domains)):
+                    return HistoryViewDeleteDialogModel.DeleteMode.sites(domains).compactTitle
+                case .historyView(query: .visits(let visits)):
+                    return UserText.fireDialogHistoryItemsTitle(visits.uniqued(on: { $0.uuid }).count)
+                case .historyView:
+                    return UserText.fireDialogTitle
+                }
+            }()
+            return title.replacingOccurrences(of: "\n", with: " ")
+        }
+
+        /// Title of the legacy dialog.
+        ///
+        /// The legacy dialog spells dates out in full, keeps the line break of the longer titles, and
+        /// has no title for the weekday sections of the History view.
+        private var legacyDialogTitle: String {
+            switch self {
+            case .fireButton:
+                return UserText.fireDialogTitle
+            case .mainMenuAll,
+                    .historyView(query: .rangeFilter(.all)),
+                    .historyView(query: .rangeFilter(.allSites)):
+                return HistoryViewDeleteDialogModel.DeleteMode.all.title
+            case .historyView(query: .rangeFilter(.today)):
+                return HistoryViewDeleteDialogModel.DeleteMode.today.title
+            case .historyView(query: .rangeFilter(.yesterday)):
+                return HistoryViewDeleteDialogModel.DeleteMode.yesterday.title
+            case .historyView(query: .rangeFilter(.older)):
+                return HistoryViewDeleteDialogModel.DeleteMode.older.title
+            case .historyView(query: .dateFilter(let date)):
+                return HistoryViewDeleteDialogModel.DeleteMode.date(date).title
+            case .historyView(query: .domainFilter(let domains)):
+                return HistoryViewDeleteDialogModel.DeleteMode.sites(domains).title
+            case .historyView(query: .visits(let visits)):
+                return UserText.fireDialogHistoryItemsTitle(visits.uniqued(on: { $0.uuid }).count)
+            case .historyView:
+                return UserText.fireDialogTitle
+            }
         }
     }
 
@@ -157,6 +235,7 @@ final class FireDialogViewModel: ObservableObject {
          includeCookiesAndSiteData: Bool? = nil,
          includeChatHistory: Bool? = nil,
          sectionsExpanded: Bool? = nil,
+         isCurrentTabOptionEnabled: Bool? = nil,
          mode: Mode = .fireButton,
          settings: (any KeyedStoring<FireDialogViewSettings>)? = nil,
          scopeCookieDomains: Set<String>? = nil,
@@ -187,7 +266,19 @@ final class FireDialogViewModel: ObservableObject {
         self.scopeCookieDomains = scopeCookieDomains
 
         self.settings = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
-        self.clearingOption = clearingOption ?? self.settings.lastSelectedClearingOption ?? .currentTab
+
+        // Disabling the current tab scope belongs to the new dialog only.
+        let currentTabOptionEnabled = if featureFlagger.isFeatureOn(.fireDialogSimplified) {
+            isCurrentTabOptionEnabled ?? Self.isCurrentTabOptionEnabled(for: tabCollectionViewModel.selectedTab)
+        } else {
+            true
+        }
+        self.isCurrentTabOptionEnabled = currentTabOptionEnabled
+
+        // Fall back to All Data when the current tab holds nothing to delete. This is set here,
+        // and not after initialization, to keep the last selected clearing option untouched.
+        let selectedClearingOption = clearingOption ?? self.settings.lastSelectedClearingOption ?? .currentTab
+        self.clearingOption = (selectedClearingOption == .currentTab && !currentTabOptionEnabled) ? .allData : selectedClearingOption
         self.includeTabsAndWindows = includeTabsAndWindows ?? self.settings.lastIncludeTabsAndWindowsState ?? true
         self.includeHistory = includeHistory ?? self.settings.lastIncludeHistoryState ?? true
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? self.settings.lastIncludeCookiesAndSiteDataState ?? true
@@ -203,6 +294,24 @@ final class FireDialogViewModel: ObservableObject {
         self.chats = aiChatHistoryCleaner.allChats()
     }
 
+    /// Whether the user can choose the "From this tab" scope.
+    ///
+    /// A tab that shows no website, and that has nothing to go back or forward to, holds no data
+    /// to delete. The scope is then disabled, and the dialog uses "All data" instead.
+    let isCurrentTabOptionEnabled: Bool
+
+    private static func isCurrentTabOptionEnabled(for tab: Tab?) -> Bool {
+        guard let tab else { return true }
+
+        // This check is here to catch cases when Fire Dialog is opened for a freshly burned tab that wasn't closed.
+        // In that case such tab isn't recorded in history and we're unable to present a history item for it,
+        // and effectively burning a tab wouldn't delete any history items.
+        let hasVisitWithHistoryItems = tab.localHistory.contains(where: { $0.historyEntry != nil })
+        guard hasVisitWithHistoryItems else { return false }
+
+        return tab.content.isExternalUrl || tab.canGoBack || tab.canGoForward
+    }
+
     private func updateLastSelectedClearingOptionIfNeeded() {
         guard featureFlagger.isFeatureOn(.fireDialogSimplified), clearingOption == .currentWindow else {
             return
@@ -212,12 +321,23 @@ final class FireDialogViewModel: ObservableObject {
 
     private(set) var shouldShowPinnedTabsInfo: Bool = false
 
+    /// Title of the dialog.
+    ///
+    /// The history item count title belongs to the new dialog only, so the legacy dialog keeps
+    /// the generic title it was designed with.
+    var dialogTitle: String {
+        if case .historyView(query: .visits) = mode, !featureFlagger.isFeatureOn(.fireDialogSimplified) {
+            return UserText.fireDialogTitle
+        }
+        return mode.dialogTitle(featureFlagger)
+    }
+
     var shouldShowChatHistoryToggle: Bool {
         let isPresentedOnAIChatTab = tabCollectionViewModel?.selectedTab?.url?.isDuckAIURL ?? false
         // Only hide chats toggle when no chats in the new dialog, so default this to `true` when the flag is off.
         let hasChats = featureFlagger.isFeatureOn(.fireDialogSimplified) ? chats.count > 0 : true
         return aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption
-            && mode.shouldShowChatHistoryToggle
+            && mode.shouldShowChatHistoryToggle(featureFlagger)
             && (clearingOption.shouldShowChatHistoryToggle || isPresentedOnAIChatTab)
             && hasChats
     }
@@ -248,6 +368,8 @@ final class FireDialogViewModel: ObservableObject {
     }
 
     /// when true, selected tabs/windows are closed; when false, tabs remain open, but their history/session state is cleared if includeHistory is true.
+    ///
+    /// Use `shouldCloseTabsAndWindows` as source of truth that also covers toggle hidden case.
     @Published var includeTabsAndWindows: Bool {
         didSet {
             settings.lastIncludeTabsAndWindowsState = includeTabsAndWindows
@@ -255,7 +377,15 @@ final class FireDialogViewModel: ObservableObject {
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleCloseTabs, frequency: .dailyAndCount, options: .unenforcedPrefix)
         }
     }
-    /// when true, history is cleared for the selected scope.
+
+    /// Whether tabs and windows should be closed. It's always `false` if the toggle is hidden.
+    var shouldCloseTabsAndWindows: Bool {
+        return mode.shouldShowCloseTabsToggle ? includeTabsAndWindows : false
+    }
+
+    /// when true, history is cleared for the selected scope when the toggle was shown.
+    ///
+    /// Use `shouldDeleteHistory` as source of truth that also covers toggle hidden case.
     @Published var includeHistory: Bool {
         didSet {
             settings.lastIncludeHistoryState = includeHistory
@@ -263,6 +393,12 @@ final class FireDialogViewModel: ObservableObject {
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearHistory, frequency: .dailyAndCount, options: .unenforcedPrefix)
         }
     }
+
+    /// Whether history should be cleared. It's always `true` if the toggle is hidden.
+    var shouldDeleteHistory: Bool {
+        return mode.shouldShowVisitsToggle ? includeHistory : true
+    }
+
     /// when true, cookies/site data are cleared for the selected (non-fireproof) domains in scope.
     @Published var includeCookiesAndSiteData: Bool {
         didSet {
@@ -294,6 +430,11 @@ final class FireDialogViewModel: ObservableObject {
         didSet {
             settings.lastSectionsExpandedState = isSectionsExpanded
         }
+    }
+
+    /// When current mode doesn't display details disclosure indicator, we should always expand sections
+    var shouldShowSectionsExpanded: Bool {
+        return isSectionsExpanded || !mode.shouldShowDetailsDisclosure
     }
 
     /// Collapses the "Choose what to delete" sections for all later dialogs, if the user did not
@@ -419,7 +560,7 @@ final class FireDialogViewModel: ObservableObject {
         case .allData:
             self.historyVisits = scopeVisits ?? historyCoordinating.allHistoryVisits ?? []
         case .currentTab:
-            self.historyVisits = tabCollectionViewModel?.selectedTabViewModel?.tab.localHistory ?? []
+            self.historyVisits = tabCollectionViewModel?.selectedTabViewModel?.tab.localHistory.filter({ $0.historyEntry != nil }) ?? []
         case .currentWindow:
             self.historyVisits = tabCollectionViewModel?.localHistory ?? []
         }
@@ -429,8 +570,23 @@ final class FireDialogViewModel: ObservableObject {
 
     var historyItemsCountForCurrentScope: Int { historyVisits.count }
 
+    var hasHistoryItemsInScope: Bool { historyItemsCountForCurrentScope > 0 }
+
     /// Cookies/sites are deleted for non-fireproofed visited eTLD+1 domains
     var cookiesSitesCountForCurrentScope: Int { selectable.count }
+
+    var hasCookiesAndSiteDataInScope: Bool { cookiesSitesCountForCurrentScope > 0 }
+
+    /// Whether the dialog deletes anything, which is what the Delete button needs to be enabled.
+    ///
+    /// This uses the same sources of truth as the confirmed result, so that the button is never
+    /// disabled while confirming would still delete something.
+    var isDeleteEnabled: Bool {
+        shouldCloseTabsAndWindows
+        || (shouldDeleteHistory && hasHistoryItemsInScope)
+        || (includeCookiesAndSiteData && hasCookiesAndSiteDataInScope)
+        || includeChatHistory
+    }
 
     /// Duck.ai chats aren't partitioned by tab/window, so this is a global count.
     var chatsCountForCurrentScope: Int { chats.count }

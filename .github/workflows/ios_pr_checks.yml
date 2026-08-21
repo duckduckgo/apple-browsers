@@ -103,7 +103,7 @@ jobs:
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: bitrise:macos26-m4
+    runs-on: [image:osx-tahoe-26, size:large]
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
     env:
@@ -133,6 +133,15 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.branch || github.ref_name }}
+
+    - name: Override RUNS_ON
+      if: runner.environment == 'self-hosted'
+      run: |
+        if [[ "${{ contains(runner.name, 'm4pro') }}" == "true" ]]; then
+          echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
+        else
+          echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
+        fi
 
     - name: Print macOS version
       run: sw_vers
@@ -189,6 +198,11 @@ jobs:
 
     - name: Build and test
       id: run-unit-tests
+      env:
+        # Under CI, SPM builds packages in release configuration (the CI configuration maps to .release),
+        # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
+        # This forces DEBUG on for the package build. Read in SyncUI-iOS/Package.swift.
+        SPM_FORCE_DEBUG_FOR_SNAPSHOTS: "1"
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
@@ -322,7 +336,7 @@ jobs:
       inputs.skip-release != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: bitrise:macos26-m4
+    runs-on: [image:osx-tahoe-26, size:large]
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
     env:
@@ -349,6 +363,15 @@ jobs:
       uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch || github.ref_name }}
+
+    - name: Override RUNS_ON
+      if: runner.environment == 'self-hosted'
+      run: |
+        if [[ "${{ contains(runner.name, 'm4pro') }}" == "true" ]]; then
+          echo "RUNS_ON=bitrise:macos26-m4pro" >> $GITHUB_ENV
+        else
+          echo "RUNS_ON=bitrise:macos26-m4" >> $GITHUB_ENV
+        fi
 
     - name: Print macOS version
       run: sw_vers

@@ -251,20 +251,6 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.modelPickerMenu = newValue }
     }
 
-    var usesUpdatedModelPickerPresentation: Bool {
-        get { toolsToolbar.usesUpdatedModelPickerPresentation }
-        set { toolsToolbar.usesUpdatedModelPickerPresentation = newValue }
-    }
-
-    var onUpdatedModelPickerTapped: (() -> Void)? {
-        get { toolsToolbar.onUpdatedModelPickerTapped }
-        set { toolsToolbar.onUpdatedModelPickerTapped = newValue }
-    }
-
-    var modelPickerSourceView: UIView {
-        toolsToolbar.modelPickerSourceView
-    }
-
     @discardableResult
     func presentModelPickerMenu() -> Bool {
         toolsToolbar.presentModelPickerMenu()
@@ -378,6 +364,8 @@ final class UnifiedToggleInputView: UIView {
         editReplaceDisclaimerCard.isHidden = !visible
         cardBottomConstraint.isActive = !visible
         cardEditBottomConstraint.isActive = visible
+        expandedShadowBottomConstraint.isActive = !visible
+        expandedShadowEditBottomConstraint.isActive = visible
     }
 
     private static func makeEditReplaceDisclaimerCard() -> UIView {
@@ -386,10 +374,6 @@ final class UnifiedToggleInputView: UIView {
         card.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         card.layer.cornerRadius = Constants.cardCornerRadiusExpanded
         card.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-        card.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
-        card.layer.shadowOpacity = 1
-        card.layer.shadowOffset = CGSize(width: 0, height: 6)
-        card.layer.shadowRadius = 12
         card.isUserInteractionEnabled = false
         card.isHidden = true
 
@@ -630,6 +614,8 @@ final class UnifiedToggleInputView: UIView {
     private var cardTrailingFlankedConstraint: NSLayoutConstraint!
     private var cardBottomConstraint: NSLayoutConstraint!
     private var cardEditBottomConstraint: NSLayoutConstraint!
+    private var expandedShadowBottomConstraint: NSLayoutConstraint!
+    private var expandedShadowEditBottomConstraint: NSLayoutConstraint!
     private var cardPinnedHeightConstraint: NSLayoutConstraint!
     private var toggleTopConstraint: NSLayoutConstraint!
     private var toggleLeadingConstraint: NSLayoutConstraint!
@@ -925,7 +911,8 @@ final class UnifiedToggleInputView: UIView {
         cardTopConstraint.priority = .required
         // Flanked: hide the in-pill voice icon (external accessories flank the pill, voice is in the Plus menu).
         // Snap synchronously so the focus animation drives the transition — animating here would snapshot at the old layout and drift.
-        textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : .aiVoicePlain), animated: false)
+        let collapsedVoice: SwitchBarTextEntryView.VoiceButtonAppearance = handler.prefersDictationOverVoiceChat ? .microphone : .aiVoicePlain
+        textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : collapsedVoice), animated: false)
         if layout != .flanked {
             // Non-flanked: card spans full width, so external fire/menu must hide. The reverse is `setAITabCollapsedFooterPoseActive` (fades in).
             aiTabCollapsedFireButton.isHidden = true
@@ -1504,11 +1491,14 @@ private extension UnifiedToggleInputView {
         addSubview(aiTabCollapsedFireButton)
         addSubview(aiTabCollapsedMenuButton)
 
+        expandedShadowBottomConstraint = expandedShadowView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
+        expandedShadowEditBottomConstraint = expandedShadowView.bottomAnchor.constraint(equalTo: editReplaceDisclaimerCard.bottomAnchor)
+        expandedShadowEditBottomConstraint.isActive = false
         NSLayoutConstraint.activate([
             expandedShadowView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             expandedShadowView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             expandedShadowView.topAnchor.constraint(equalTo: cardView.topAnchor),
-            expandedShadowView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
+            expandedShadowBottomConstraint,
         ])
 
         toggleView.translatesAutoresizingMaskIntoConstraints = false

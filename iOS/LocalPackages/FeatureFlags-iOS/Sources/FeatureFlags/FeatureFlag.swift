@@ -239,14 +239,6 @@ public enum FeatureFlag: String {
     /// Gates the "Strict routing" VPN toggle.
     case vpnStrictRoutingToggle
 
-    /// Gates the "Exclude Carrier-Grade NAT" VPN toggle.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
-    case vpnExcludeCGNATToggle
-
-    /// Toggle for the Copy VPN Diagnostics button in the VPN status screen.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
-    case vpnShowCopyDiagnosticsButton
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
@@ -441,9 +433,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
-    /// https://app.asana.com/1/137249556945/project/1214749231578703/task/1213613180881406
-    case fireButtonSingleTabDeleteAll
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
 
@@ -486,6 +475,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603
     case newTabPageSessionInstrumentation
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
+    case newTabPageRedesign
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -523,7 +515,7 @@ public enum FeatureFlag: String {
 
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperimentV2
+    case searchTokenExperimentV3
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -737,10 +729,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.vpnMenuItem))
         case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
-        case .vpnExcludeCGNATToggle:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT))
-        case .vpnShowCopyDiagnosticsButton:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.showCopyDiagnosticsButton))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:
@@ -810,7 +798,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
         case .aiChatContextualFloatingInput:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .freeTrialConversionWideEvent:
@@ -825,10 +813,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .uiTestExperiment:
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
-        case .searchTokenExperimentV2:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV2), cohortType: SearchTokenExperimentCohort.self)
+        case .searchTokenExperimentV3:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV3), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
-            Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment), cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment2:
             Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment2), cohortType: MonthlyFreeTrialExperimentCohort.self)
         case .genericBackgroundTask:
@@ -869,8 +857,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
         case .fireButtonRefinements:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
-        case .fireButtonSingleTabDeleteAll:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonSingleTabDeleteAll))
         case .aiChatOmnibarDefaultPosition:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:
@@ -899,6 +885,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customizeNTPIcons))
         case .newTabPageSessionInstrumentation:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageSessionInstrumentation))
+        case .newTabPageRedesign:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageRedesign))
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
@@ -926,7 +914,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .iPadTabsBarInWindowControlsRow:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         }
     }
 

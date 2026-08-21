@@ -22,8 +22,9 @@ import Core
 import AIChat
 
 protocol AIChatDeepLinkPresenting: UIViewController {
-    func openAIVoiceChatFromDeepLink()
+    func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource)
     func openAIChat(
+        source: AIChatEntryPointSource,
         _ query: String?,
         autoSend: Bool,
         payload: Any?,
@@ -33,14 +34,16 @@ protocol AIChatDeepLinkPresenting: UIViewController {
         reasoningEffort: AIChatReasoningEffort?,
         images: [AIChatNativePrompt.NativePromptImage]?,
         files: [AIChatNativePrompt.NativePromptFile]?,
+        reportsNewTab: Bool?,
         fromDeepLink: Bool
     )
 }
 
 extension AIChatDeepLinkPresenting {
 
-    func openAIChat(fromDeepLink: Bool) {
+    func openAIChat(fromDeepLink: Bool, source: AIChatEntryPointSource = .deepLinkOther) {
         openAIChat(
+            source: source,
             nil,
             autoSend: false,
             payload: nil,
@@ -50,6 +53,7 @@ extension AIChatDeepLinkPresenting {
             reasoningEffort: nil,
             images: nil,
             files: nil,
+            reportsNewTab: nil,
             fromDeepLink: fromDeepLink
         )
     }
@@ -72,11 +76,14 @@ struct AIChatDeepLinkHandler {
             }
         }
 
+        // Widget, Control Center and lock-screen entries carry their own source, so they land on
+        // `m_aichat_entry_point` as themselves rather than collapsing into `deep_link_other`.
+        let source = AIChatEntryPointSource.forDeepLink(url)
         mainViewController.dismiss(animated: true) {
             if voiceMode {
-                mainViewController.openAIVoiceChatFromDeepLink()
+                mainViewController.openAIVoiceChatFromDeepLink(source: source)
             } else {
-                mainViewController.openAIChat(fromDeepLink: true)
+                mainViewController.openAIChat(fromDeepLink: true, source: source)
             }
         }
     }

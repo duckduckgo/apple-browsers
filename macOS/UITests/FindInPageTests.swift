@@ -42,7 +42,7 @@ class FindInPageTests: UITestCase {
         addressBarTextField.pasteURL(loremIpsumFileURL, pressingEnter: true)
         XCTAssertTrue(
             loremIpsumWebView.staticTexts.containing(\.value, containing: "Lorem ipsum").firstMatch
-                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                .waitForExistence(timeout: UITests.Timeouts.navigation),
             "The \"Lorem Ipsum\" web page didn't load in a reasonable timeframe."
         )
     }

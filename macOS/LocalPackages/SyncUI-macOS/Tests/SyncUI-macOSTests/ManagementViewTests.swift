@@ -22,7 +22,7 @@ import Testing
 @testable import SyncUI_macOS
 
 @MainActor
-@Suite("Management View Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))
+@Suite("Management View Tests")
 final class ManagementViewTests {
 
     @available(macOS 13, *)

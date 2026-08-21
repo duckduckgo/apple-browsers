@@ -96,9 +96,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216535350078652
-    case fireButtonSingleTabDeleteAll
-
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
     case omniBarLongPressMenu
 
@@ -122,7 +119,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperimentV2
+    case searchTokenExperimentV3
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -139,4 +136,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603?focus=true
     case newTabPageSessionInstrumentation
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
+    case newTabPageRedesign
 }

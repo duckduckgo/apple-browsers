@@ -22,15 +22,7 @@ import Foundation
 
 // MARK: - Delegate
 
-@MainActor
-protocol AIChatRecentChatsPopupViewModelDelegate: AnyObject {
-    func recentChatsPopupDidSelectNewChat()
-    func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion)
-    func recentChatsPopupDidSelectViewAll()
-    func recentChatsPopupDidDismiss()
-}
-
-/// View model for the recent chats popup, extracting presentation logic from the view controller.
+/// Backs the chats menu: the recent chats to offer, capped, plus whether New Chat applies.
 @MainActor
 final class AIChatRecentChatsPopupViewModel {
 
@@ -40,11 +32,6 @@ final class AIChatRecentChatsPopupViewModel {
 
     // MARK: - Properties
 
-    weak var delegate: AIChatRecentChatsPopupViewModelDelegate?
-
-    /// Whether the "New chat" row should be shown at the top.
-    let showNewChat: Bool
-
     /// The chat suggestions (up to maxVisibleChats).
     let suggestions: [AIChatSuggestion]
 
@@ -53,37 +40,10 @@ final class AIChatRecentChatsPopupViewModel {
     /// Creates a view model from raw fetched data.
     /// - Parameters:
     ///   - suggestions: The chat suggestions to display (will be capped at maxVisibleChats).
-    ///   - showNewChat: Whether the "New chat" row should be shown (true when there's an active chat).
-    init(suggestions: [AIChatSuggestion], showNewChat: Bool = false) {
+    init(suggestions: [AIChatSuggestion]) {
         self.suggestions = Array(suggestions.prefix(Self.maxVisibleChats))
-        self.showNewChat = showNewChat
     }
 
-    // MARK: - Actions
-
-    func didSelectNewChat() {
-        delegate?.recentChatsPopupDidSelectNewChat()
-    }
-
-    func didSelectChat(at index: Int) {
-        guard let suggestion = suggestion(at: index) else { return }
-        delegate?.recentChatsPopupDidSelectChat(suggestion)
-    }
-
-    func didSelectViewAll() {
-        delegate?.recentChatsPopupDidSelectViewAll()
-    }
-
-    func didDismiss() {
-        delegate?.recentChatsPopupDidDismiss()
-    }
-
-    // MARK: - Private
-
-    private func suggestion(at index: Int) -> AIChatSuggestion? {
-        guard index >= 0, index < suggestions.count else { return nil }
-        return suggestions[index]
-    }
 }
 
 // MARK: - Fetching
@@ -91,13 +51,12 @@ final class AIChatRecentChatsPopupViewModel {
 extension AIChatRecentChatsPopupViewModel {
 
     /// Fetches recent chats from the reader and creates a view model.
-    /// Returns nil only if the reader is nil.
-    /// When there are no recent suggestions, the popup shows just the "View all chats" link.
-    static func fetch(using reader: AIChatSuggestionsReading?, showNewChat: Bool = false) async -> AIChatRecentChatsPopupViewModel? {
+    /// Returns nil only if the reader is nil; the popup still opens with no suggestions.
+    static func fetch(using reader: AIChatSuggestionsReading?) async -> AIChatRecentChatsPopupViewModel? {
         guard let reader else { return nil }
         let result = await reader.fetchSuggestions(query: nil, maxChats: maxVisibleChats + 1)
         let all = result.pinned + result.recent
         let capped = Array(all.prefix(maxVisibleChats))
-        return AIChatRecentChatsPopupViewModel(suggestions: capped, showNewChat: showNewChat)
+        return AIChatRecentChatsPopupViewModel(suggestions: capped)
     }
 }

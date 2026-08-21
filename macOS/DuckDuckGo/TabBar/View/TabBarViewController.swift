@@ -627,6 +627,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         // Menu-button layout: a single "Ask Duck.ai" pill; the sidebar sub-button and divider never render.
         if isMenuButtonLayout {
+            // Runs at most once, here rather than at launch because the layout can flip on a config
+            // fetch. Reading the flag straight after picks up the migrated value, so there's no flicker.
+            duckAIChromeButtonsVisibilityManager.migrateVisibilityForMenuButtonLayoutIfNeeded()
             let duckAIHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
             titleButton.isHidden = duckAIHidden
             sidebarButton.isHidden = true
@@ -1000,9 +1003,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAITitlebarButtonAction(_ sender: NSButton) {
-        // Menu-button layout: left-click opens the dropdown; middle-click opens a new Duck.ai tab directly.
+        // Menu-button layout: left-click opens the dropdown; middle-click and ⌘-click skip it and start a
+        // new chat right away, preserving the one-click access the split button used to offer.
         if isMenuButtonLayout {
-            if NSApp.currentEvent?.type == .otherMouseUp {
+            if NSApp.currentEvent?.type == .otherMouseUp || NSApp.isCommandPressed {
                 duckAIMenuNewChatAction()
             } else {
                 presentDuckAIMenuButtonMenu(from: sender)
@@ -1541,6 +1545,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private var frozenLayout = false
+    /// Selection an in-flight insert is about to apply. `sizeForItemAt` runs synchronously
+    /// from `insertItems(at:)`, before the view model publishes the new `selectionIndex`, so
+    /// it consults this to size the inserted tab as selected and the outgoing one as not.
+    private var incomingSelectionIndex: TabIndex?
     @Published private var tabMode = TabMode.divided
 
     private func updateTabMode(for numberOfItems: Int? = nil, updateLayout: Bool? = nil) {
@@ -1947,8 +1955,22 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         let indexPathSet = Set(arrayLiteral: IndexPath(item: index.item))
         if selected {
             clearSelection(animated: true)
+            incomingSelectionIndex = index
         }
-        collectionView.animator().insertItems(at: indexPathSet)
+        defer { incomingSelectionIndex = nil }
+
+        // A mutation re-entering between the model update and this callback leaves the
+        // collection view's item count stale; an incremental insert would then raise
+        // NSInternalInconsistencyException, so reconcile with a full reload instead.
+        let modelCount = index.isPinnedTab
+            ? (tabCollectionViewModel.pinnedTabsCollection?.tabs.count ?? 0)
+            : tabCollectionViewModel.tabCollection.tabs.count
+        if collectionView.numberOfItems(inSection: 0) == modelCount - 1 {
+            collectionView.animator().insertItems(at: indexPathSet)
+        } else {
+            Logger.general.error("TabBarViewController: item count out of sync on insert, reloading")
+            collectionView.reloadData()
+        }
         if selected {
             collectionView.selectItems(at: indexPathSet, scrollPosition: .centeredHorizontally)
             collectionView.scrollToSelected()
@@ -2065,11 +2087,32 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         if frozenLayout {
             updateLayout()
         }
-        updateTabMode(for: collectionView.numberOfItems(inSection: 0) + 1)
 
         if selected {
             clearSelection()
+            incomingSelectionIndex = .unpinned(lastIndex)
         }
+        defer { incomingSelectionIndex = nil }
+
+        let collectionViewItemCount = collectionView.numberOfItems(inSection: 0)
+        let modelItemCount = tabCollectionViewModel.tabCollection.tabs.count
+
+        // See `tabCollectionViewModelDidInsert(_:at:selected:)` on the count check.
+        guard collectionViewItemCount == modelItemCount - 1 else {
+            Logger.general.error("TabBarViewController: item count out of sync on append, reloading")
+            collectionView.reloadData()
+            updateTabMode(for: modelItemCount)
+            if selected {
+                collectionView.selectItems(at: lastIndexPathSet, scrollPosition: .centeredHorizontally)
+            } else {
+                collectionView.scroll(to: IndexPath(item: lastIndex))
+            }
+            updateEmptyTabArea()
+            hideTabPreview()
+            return
+        }
+
+        updateTabMode(for: collectionViewItemCount + 1)
 
         if tabMode == .divided {
             collectionView.animator().insertItems(at: lastIndexPathSet)
@@ -2152,7 +2195,11 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
         guard collectionView != pinnedTabsCollectionView else {
             return NSSize(width: pinnedTabWidth, height: pinnedTabHeight)
         }
-        let isItemSelected = tabCollectionViewModel.selectionIndex == .unpinned(indexPath.item)
+        // During an insert the view model's `selectionIndex` is not updated yet — the
+        // delegate is notified first so the item count stays in sync — so prefer the
+        // in-flight selection when there is one.
+        let selectionIndex = incomingSelectionIndex ?? tabCollectionViewModel.selectionIndex
+        let isItemSelected = selectionIndex == .unpinned(indexPath.item)
         return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: standardTabHeight)
     }
 

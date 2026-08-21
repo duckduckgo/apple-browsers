@@ -19,12 +19,13 @@
 
 import Core
 import Foundation
+import PixelKit
 
 /// Protocol for firing contextual mode pixels, enabling dependency injection and testing.
 protocol AIChatContextualModePixelFiring {
     // MARK: - Sheet Lifecycle
     func fireSheetOpened()
-    func fireSheetDismissed()
+    func fireSheetDismissed(hadUnsubmittedSelections: Bool)
     func fireSessionRestored()
 
     // MARK: - Sheet Actions
@@ -43,13 +44,16 @@ protocol AIChatContextualModePixelFiring {
     func fireAddressBarMenuAskAboutPageSelected()
 
     // MARK: - Floating Input
-    func fireFloatingInputDismissedWithoutSubmission()
+    func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool)
     func fireFloatingInputPromotedToSheet()
 
     // MARK: - Suggested Prompts
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType)
     func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType)
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType)
+    func fireSuggestionsViewed(isSmart: Bool,
+                               pageType: SuggestionsPageType,
+                               scope: ResolvePageSuggestionsInput.Scope,
+                               surface: AIChatContextualSuggestionsSurface)
     func fireSuggestionsContextCollectionTimedOut()
 
     // MARK: - Recent Chats Popup
@@ -66,6 +70,13 @@ protocol AIChatContextualModePixelFiring {
     // MARK: - Page Context Removal
     func firePageContextRemovedNative()
     func firePageContextRemovedFrontend()
+
+    // MARK: - Text Selections
+    func fireSelectionAttached()
+    func fireSelectionLimitReached()
+    func fireSelectionRemoved()
+    func firePromptSubmittedWithSelections(count: Int)
+    func fireSelectionToolDeliveryTimedOut()
 
     // MARK: - Page Context Collection
     func firePageContextCollectionEmpty()
@@ -104,6 +115,7 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     private let firePixel: (Pixel.Event) -> Void
     private let firePixelWithParameters: (Pixel.Event, [String: String]) -> Void
+    private let fireSelectionPixel: (PixelKit.Event, PixelKit.Frequency) -> Void
 
     // MARK: - Public Properties
 
@@ -116,9 +128,13 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     init(firePixel: @escaping (Pixel.Event) -> Void = { DailyPixel.fireDailyAndCount(pixel: $0) },
          firePixelWithParameters: @escaping (Pixel.Event, [String: String]) -> Void = {
              DailyPixel.fireDailyAndCount(pixel: $0, withAdditionalParameters: $1)
+         },
+         fireSelectionPixel: @escaping (PixelKit.Event, PixelKit.Frequency) -> Void = {
+             PixelKit.fire($0, frequency: $1)
          }) {
         self.firePixel = firePixel
         self.firePixelWithParameters = firePixelWithParameters
+        self.fireSelectionPixel = fireSelectionPixel
     }
 
     // MARK: - Sheet Lifecycle
@@ -127,8 +143,9 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualSheetOpened)
     }
 
-    func fireSheetDismissed() {
-        firePixel(.aiChatContextualSheetDismissed)
+    func fireSheetDismissed(hadUnsubmittedSelections: Bool) {
+        firePixelWithParameters(.aiChatContextualSheetDismissed,
+                                [PixelParameters.aiChatHadUnsubmittedSelections: String(hadUnsubmittedSelections)])
     }
 
     func fireSessionRestored() {
@@ -173,8 +190,9 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualAddressBarMenuAskAboutPageSelected)
     }
 
-    func fireFloatingInputDismissedWithoutSubmission() {
-        firePixel(.aiChatContextualFloatingInputDismissedWithoutSubmission)
+    func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {
+        firePixelWithParameters(.aiChatContextualFloatingInputDismissedWithoutSubmission,
+                                [PixelParameters.aiChatHadUnsubmittedSelections: String(hadUnsubmittedSelections)])
     }
 
     func fireFloatingInputPromotedToSheet() {
@@ -217,6 +235,35 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualPageContextRemovedFrontend)
     }
 
+    // MARK: - Text Selections
+
+    func fireSelectionAttached() {
+        fireSelectionPixel(AIChatContextualSelectionPixel.attached, .dailyAndCount)
+    }
+
+    func fireSelectionLimitReached() {
+        fireSelectionPixel(AIChatContextualSelectionPixel.limitReached, .dailyAndCount)
+    }
+
+    func fireSelectionRemoved() {
+        fireSelectionPixel(AIChatContextualSelectionPixel.removed, .dailyAndCount)
+    }
+
+    func firePromptSubmittedWithSelections(count: Int) {
+        let countBucket: String
+        switch count {
+        case 1: countBucket = "1"
+        case 2: countBucket = "2"
+        case 3...AIChatSelectionContextBuilder.maxAttachedSelections: countBucket = "3-5"
+        default: return
+        }
+        fireSelectionPixel(AIChatContextualSelectionPixel.promptSubmitted(selectionCount: countBucket), .dailyAndCount)
+    }
+
+    func fireSelectionToolDeliveryTimedOut() {
+        fireSelectionPixel(AIChatContextualSelectionPixel.toolDeliveryTimedOut, .dailyAndCount)
+    }
+
     // MARK: - Page Context Collection
 
     func firePageContextCollectionEmpty() {
@@ -250,10 +297,15 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         ])
     }
 
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType) {
+    func fireSuggestionsViewed(isSmart: Bool,
+                               pageType: SuggestionsPageType,
+                               scope: ResolvePageSuggestionsInput.Scope,
+                               surface: AIChatContextualSuggestionsSurface) {
         firePixelWithParameters(.aiChatContextualSuggestionsViewed, [
             PixelParameters.suggestionsAreSmart: String(isSmart),
-            PixelParameters.suggestionsPageType: pageType.rawValue
+            PixelParameters.suggestionsPageType: pageType.rawValue,
+            PixelParameters.aiChatSuggestionScope: scope.rawValue,
+            PixelParameters.aiChatSuggestionsSurface: surface.rawValue
         ])
     }
 
@@ -297,4 +349,41 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
             _isManualAttachInProgress = false
         }
     }
+}
+
+enum AIChatContextualSuggestionsSurface: String {
+    case floatingInput = "floating_input"
+    case sheet
+}
+
+enum AIChatContextualSelectionPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+    case attached
+    case limitReached
+    case removed
+    case promptSubmitted(selectionCount: String)
+    case toolDeliveryTimedOut
+
+    var namePrefix: String { "" }
+
+    var name: String {
+        switch self {
+        case .attached:
+            return "aichat_contextual_selection_attached"
+        case .limitReached:
+            return "aichat_contextual_selection_limit_reached"
+        case .removed:
+            return "aichat_contextual_selection_removed"
+        case .promptSubmitted:
+            return "aichat_contextual_prompt_submitted_with_selections"
+        case .toolDeliveryTimedOut:
+            return "debug_aichat_contextual_selection_tool_delivery_timed_out"
+        }
+    }
+
+    var parameters: [String: String]? {
+        guard case .promptSubmitted(let selectionCount) = self else { return nil }
+        return [PixelParameters.aiChatSelectionCount: selectionCount]
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

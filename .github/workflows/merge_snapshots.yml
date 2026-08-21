@@ -32,7 +32,7 @@ jobs:
 
       - name: Merge snapshots PR and update pointer
         env:
-          GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+          GH_TOKEN: ${{ secrets.SNAPSHOTS_REPO_TOKEN }}
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}
         working-directory: pull-request
         run: ../trusted/scripts/merge-snapshots.sh "$PR_BRANCH"

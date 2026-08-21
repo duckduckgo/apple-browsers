@@ -40,7 +40,18 @@ extension MainViewController {
         guard duckAIAddressBarEntry == .menu else {
             button?.menu = nil
             button?.showsMenuAsPrimaryAction = false
+            (button as? BrowserChromeButton)?.menuHighlightTarget = nil
+            duckAIMenuAnchor?.removeFromSuperview()
+            duckAIMenuAnchor = nil
             return
+        }
+
+        // UIKit reparents the preview, so hand it a stand-in from outside the field's glass group.
+        if let button = button as? BrowserChromeButton {
+            button.menuHighlightTarget = { [weak self, weak button] in
+                guard let button else { return nil }
+                return self?.duckAIMenuAnchorView(over: button)
+            }
         }
 
         // Deferred so the shown pixel records an actual display rather than the menu being attached.
@@ -53,9 +64,31 @@ extension MainViewController {
         button?.showsMenuAsPrimaryAction = true
     }
 
+    /// Transparent stand-in over the button, outside the glass field, for the menu to reparent.
+    private func duckAIMenuAnchorView(over button: UIView) -> UIView? {
+        guard let container: UIView = viewCoordinator.navigationBarContainer else { return nil }
+        let anchor = duckAIMenuAnchor ?? {
+            let view = UIView()
+            view.isUserInteractionEnabled = false
+            view.isAccessibilityElement = false
+            duckAIMenuAnchor = view
+            return view
+        }()
+        if anchor.superview !== container {
+            container.addSubview(anchor)
+        }
+        // Laid out first: the bar repositions its buttons after a surface closes.
+        container.layoutIfNeeded()
+        anchor.frame = container.convert(button.bounds, from: button)
+        return anchor
+    }
+
     func askAboutCurrentPageFromAddressBar() {
         guard let currentTab else { return }
         omniBar.endEditing()
+        // The floating input is a contextual surface that bypasses `openAIChat` and the sheet, so
+        // report the entry here; promoting it to the sheet later must not report a second one.
+        fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: false)
         currentTab.presentContextualFloatingInput(from: self)
     }
 
@@ -78,7 +111,6 @@ extension MainViewController {
 
     private func duckAIAddressBarMenuChildren() -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
-            pageFavicon: currentPageFavicon(),
             onNewChat: { [weak self] in
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuNewChatSelected()
                 self?.openFreshDuckAIChatFromAddressBarMenu()
@@ -90,17 +122,10 @@ extension MainViewController {
         )
     }
 
-    private func currentPageFavicon() -> UIImage? {
-        guard let domain = currentTab?.url?.host else { return nil }
-        let result = FaviconsHelper.loadFaviconSync(forDomain: domain, usingCache: .tabs, useFakeFavicon: false)
-        guard !result.isFake else { return nil }
-        return result.image
-    }
-
     /// `openAIChat()` rather than `openAIChatFromAddressBar`: the latter sends the omnibar's text as
     /// a prompt whenever the field is being edited, and New Chat must always open empty.
     private func openFreshDuckAIChatFromAddressBarMenu() {
         omniBar.endEditing()
-        openAIChat()
+        openAIChat(source: .addressBarIcon)
     }
 }

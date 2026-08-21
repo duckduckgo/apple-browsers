@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DDGError
 import CommonCrypto
 import Common
 import FoundationExtensions

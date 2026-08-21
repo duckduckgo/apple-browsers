@@ -29,6 +29,7 @@ class BrowsingHistoryTests: UITestCase {
     private var fireDialogCookiesToggle: XCUIElement { app.fireDialogCookiesToggle }
     private var fireDialogTabsToggle: XCUIElement { app.fireDialogTabsToggle }
     private var fireDialogBurnButton: XCUIElement { app.fireDialogBurnButton }
+    private var fireDialogDetailsDisclosureButton: XCUIElement { app.fireDialogDetailsDisclosureButton }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -56,7 +57,12 @@ class BrowsingHistoryTests: UITestCase {
         )
 
         // Select "Everything" scope to clear all history
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Ensure history toggle is enabled
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
@@ -130,12 +136,12 @@ class BrowsingHistoryTests: UITestCase {
         app.reopenLastClosedWindowMenuItem.click()
 
         XCTAssertTrue(
-            app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Restored visited tab 1 wasn't available with the expected title in a reasonable timeframe."
         )
         app.closeCurrentTab()
         XCTAssertTrue(
-            app.windows.webViews[titleOfSecondTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[titleOfSecondTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Restored visited tab 2 wasn't available with the expected title in a reasonable timeframe."
         )
     }

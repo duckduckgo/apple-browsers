@@ -31,6 +31,9 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func turnOnSync()
     func enterRecoveryCodePressed()
     func copyCode()
+    func syncAnotherDevicePromptDidAppear()
+    func syncThisDeviceOnlyFromPrompt() async
+    func syncWithAnotherDeviceFromPrompt()
     func openSystemPasswordSettings()
     func userConfirmedSwitchAccounts(recoveryCode: String)
     func userPressedCancel(from dialog: ManagementDialogKind)
@@ -50,6 +53,12 @@ public final class ManagementDialogModel: ObservableObject {
     @Published public var shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen: Bool = false
     @Published public var shouldShowSwitchAccountsMessage: Bool = false
     @Published public var isAppRebranded: Bool = false
+    @Published public var isConnectingThisDeviceOnly: Bool = false
+    @Published public var isConnectingAnotherDevice: Bool = false
+
+    public var isConnecting: Bool {
+        isConnectingThisDeviceOnly || isConnectingAnotherDevice
+    }
 
     public weak var delegate: ManagementDialogModelDelegate?
 

@@ -131,7 +131,11 @@ extension NewTabPageActionsManager {
             featureFlagger: featureFlagger,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
             searchPreferences: NSApp.delegateTyped.searchPreferences,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            duckAiStorageHandlerProvider: { burnerMode in
+                NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode)
+                    ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+            }
         )
         omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
             omnibarConfigProvider?.notifyCustomizeResponsesChanged()

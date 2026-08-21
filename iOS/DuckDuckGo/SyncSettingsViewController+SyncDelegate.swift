@@ -476,6 +476,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             Pixel.fire(pixel: .settingsSyncAnotherDevicePromptOptionTapped,
                        withAdditionalParameters: parameters,
                        includedParameters: [.appVersion])
+        case .anotherDevicePromptDismissed:
+            pixelFiring.fire(.settingsSyncAnotherDevicePromptDismissed,
+                             withAdditionalParameters: uiVersionParameters,
+                             includedParameters: [.appVersion],
+                             onComplete: { _ in })
         }
     }
 

@@ -193,6 +193,10 @@ class UITestCase: XCTestCase {
 
         continueAfterFailure = false
 
+        addUIInterruptionMonitor(withDescription: "Interruption Monitor") { element in
+            Logger.log("🟠 Received interruption event: \((try? element.snapshot().toDictionary()) ??? "<nil>")")
+        }
+
         if !Self.didCallFirstRun {
             Self.didCallFirstRun = true
             Logger.log("🥇 Resetting environment for the first run")

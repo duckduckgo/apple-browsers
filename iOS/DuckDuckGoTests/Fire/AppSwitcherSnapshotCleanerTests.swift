@@ -58,7 +58,7 @@ final class AppSwitcherSnapshotCleanerTests: XCTestCase {
 
         let fireCall = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
-        XCTAssertEqual(fireCall.pixel.name, "m_app-switcher_snapshot_enumeration_failed")
+        XCTAssertEqual(fireCall.pixel.name, "app-switcher_snapshot_enumeration_failed")
         XCTAssertEqual(fireCall.pixel.error?.domain, NSCocoaErrorDomain)
         XCTAssertEqual(fireCall.pixel.error?.code, CocoaError.fileReadNoSuchFile.rawValue)
         XCTAssertEqual(fireCall.frequency, .dailyAndCount)

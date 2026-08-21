@@ -44,7 +44,7 @@ extension DataClearingPixels: PixelKit.Event {
         case .userActionBeforeCompletion:
             return "m_fire_user_action_before_completion"
         case .appSwitcherSnapshotEnumerationFailed:
-            return "m_app-switcher_snapshot_enumeration_failed"
+            return "app-switcher_snapshot_enumeration_failed"
         }
     }
 

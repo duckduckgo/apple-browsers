@@ -18,10 +18,10 @@
 
 import Foundation
 import Combine
-import Persistence
 
 /// In-memory implementation of KeyValueStoring with observation support.
 /// Useful for testing and temporary storage scenarios.
+@_spi(Testing)
 open class InMemoryKeyValueStore: ObservableKeyValueStoring {
 
     public var store = [String: Any?]()
@@ -62,6 +62,7 @@ open class InMemoryKeyValueStore: ObservableKeyValueStoring {
     }
 }
 
+@_spi(Testing)
 extension InMemoryKeyValueStore: DictionaryRepresentable {
     public func dictionaryRepresentation() -> [String: Any] {
         return store as [String: Any]
@@ -69,4 +70,5 @@ extension InMemoryKeyValueStore: DictionaryRepresentable {
 }
 
 /// Backward compatibility typealias for existing code
+@_spi(Testing)
 public typealias MockKeyValueStore = InMemoryKeyValueStore

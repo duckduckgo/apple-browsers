@@ -22,7 +22,7 @@ import Testing
 @testable import DuckDuckGo
 @testable import Core
 import DesignResourcesKitIcons
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import VPN
 import VPNTestUtils
 

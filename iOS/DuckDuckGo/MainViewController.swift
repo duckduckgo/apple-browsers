@@ -1145,7 +1145,7 @@ class MainViewController: UIViewController {
             return
         }
 
-        // Every runtime input to `duckAIAddressBarEntry` and `hasContextualChatToReturnTo`, so neither the
+        // Every runtime input to `duckAIAddressBarEntry` and `hasContextualSession`, so neither the
         // tap nor the glyph can go stale. `isHomeTab` only changes with navigation, which refreshes the omnibar.
         let sessionState = coordinator.sessionState
         let hasActiveChat = sessionState.$viewState
@@ -1168,7 +1168,7 @@ class MainViewController: UIViewController {
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
         // iPhone-only: iPad's tabs-bar chip already indicates sheet state, so avoid a duplicate.
         if UIDevice.current.userInterfaceIdiom == .phone {
-            omniBar.barView.updateAIChatButtonForContextualChat(hasChatToReturnTo: hasContextualChatToReturnTo)
+            omniBar.barView.updateAIChatButtonForContextualChat(hasContextualSession: hasContextualSession)
         }
         refreshDuckAIAddressBarMenu()
         guard let tabsBarController else { return }

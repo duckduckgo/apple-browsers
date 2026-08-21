@@ -137,9 +137,9 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     /// Re-asserts the field's resting background for the current position. No-op unless floating UI.
     func restoreFloatingFieldAppearance()
 
-    /// Swaps the omnibar Duck.ai button glyph to reflect whether this tab has a contextual chat to
-    /// return to, whether or not its surface is currently on screen.
-    func updateAIChatButtonForContextualChat(hasChatToReturnTo: Bool)
+    /// Swaps the omnibar Duck.ai button glyph to reflect a contextual session on this tab: a surface
+    /// on screen, or a chat to return to once it is gone.
+    func updateAIChatButtonForContextualChat(hasContextualSession: Bool)
 
     /// In floating UI minimal chrome, wraps the button groups in their own glass capsules (the field
     /// keeps its glass). Pass `false` to restore the standard per-position appearance.

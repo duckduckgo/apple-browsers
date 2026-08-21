@@ -24,21 +24,26 @@ extension MainViewController {
 
     /// What the address-bar Duck.ai button should do for the current tab and session.
     var duckAIAddressBarEntry: DuckAIAddressBarEntry {
-        let coordinator = currentTab?.aiChatContextualSheetCoordinator
-        return DuckAIAddressBarEntry.resolve(
+        DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: aiChatContextualModeFeature.isAvailable,
             isFloatingInputAvailable: aiChatContextualFloatingInputFeature.isAvailable,
             isHomeTab: currentTab?.tabModel.isHomeTab ?? true,
             hasChatToReopen: currentTab?.hasContextualChatToReopen ?? false,
-            isContextualSurfacePresented: coordinator?.isSheetPresented == true || coordinator?.isFloatingInputPresented == true
+            isContextualSurfacePresented: isContextualSurfacePresented
         )
     }
 
-    /// Whether the address-bar Duck.ai button shows its return-to-chat glyph. Keyed to the chat
-    /// existing rather than its surface being on screen, so it survives dismiss and reopen.
-    var hasContextualChatToReturnTo: Bool {
+    /// A contextual surface — the sheet or the floating input — is on screen for this tab.
+    var isContextualSurfacePresented: Bool {
+        let coordinator = currentTab?.aiChatContextualSheetCoordinator
+        return coordinator?.isSheetPresented == true || coordinator?.isFloatingInputPresented == true
+    }
+
+    /// Whether the address-bar Duck.ai button shows its contextual glyph: a surface is open, or this
+    /// tab has a chat to come back to. A surface dismissed without a prompt leaves neither.
+    var hasContextualSession: Bool {
         guard aiChatContextualModeFeature.isAvailable else { return false }
-        return currentTab?.hasContextualChatToReopen ?? false
+        return currentTab?.hasContextualChatToReopen == true || isContextualSurfacePresented
     }
 
     /// Attaches the Duck.ai menu to the address-bar button, or detaches it so a tap acts directly.

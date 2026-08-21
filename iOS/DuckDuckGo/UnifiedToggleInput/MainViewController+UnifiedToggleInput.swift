@@ -1164,7 +1164,7 @@ extension MainViewController {
         viewCoordinator.unifiedInputContentContainer.isHidden = true
         viewCoordinator.showAIChatTabChatHeader()
         viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: false)
-        coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
+        coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false, reattachingOmnibar: false)
         coordinator.showCollapsed()
         if let tab = currentTab {
             refreshUnifiedToggleInput(for: tab)

@@ -504,11 +504,13 @@ class MainViewCoordinator {
     // MARK: - Omnibar Editing Layout
 
     @MainActor
-    func hideUnifiedToggleInputOmnibar(additionalAnimations: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
+    func hideUnifiedToggleInputOmnibar(reattachingOmnibar: Bool = true,
+                                       additionalAnimations: (() -> Void)? = nil,
+                                       completion: (() -> Void)? = nil) {
         omnibarDismissAnimator?.stopAnimation(true)
 
         let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled), curve: .easeInOut) { [weak self] in
-            self?.animateUnifiedToggleInputOmnibarDismissLayout()
+            self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
             additionalAnimations?()
         }
         animator.addCompletion { [weak self] position in

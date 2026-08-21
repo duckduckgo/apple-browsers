@@ -145,6 +145,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
+    private let clearAppSwitcherSnapshots: @MainActor () async -> Void
     private let tabTerminationTelemetry: any TabTerminationTelemetry
     private let tabTerminationErrorPageDetector: any TabTerminationErrorPageDetecting
     private let tabEvictionSettings: TabEvictionSettings
@@ -239,7 +240,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
          tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
          applicationState: (@MainActor () -> UIApplication.State)? = nil,
-         isPad: Bool? = nil
+         isPad: Bool? = nil,
+         clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {
+             await AppSwitcherSnapshotCleaner().clearSnapshots()
+         }
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
@@ -257,6 +261,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.clearAppSwitcherSnapshots = clearAppSwitcherSnapshots
         let tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)
         self.tabEvictionSettings = tabEvictionSettings
         self.tabTerminationTelemetry = tabTerminationTelemetry ?? DefaultTabTerminationTelemetry(
@@ -892,6 +897,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         if clearTabHistory {
             removeTabHistory(for: tabIDs)
+        }
+
+        if featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) {
+            Task {
+                await clearAppSwitcherSnapshots()
+            }
         }
 
         tabsCacheNeedsCleanup = true

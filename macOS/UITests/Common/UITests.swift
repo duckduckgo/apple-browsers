@@ -174,7 +174,7 @@ class UITestCase: XCTestCase {
 
     /// System TCC alerts can appear asynchronously mid-test and steal key focus. A repeating timer
     /// on the main run loop fires during XCTest waits and dismisses them before the next click.
-    private func startSystemPermissionPromptDismissTimer() {
+    private func startSystemPermissionPromptDismissTimerIfNeeded() {
         guard Self.systemPermissionPromptPollingTimer == nil else { return }
 
         let timer = Timer(timeInterval: 5, repeats: true) { _ in
@@ -187,6 +187,7 @@ class UITestCase: XCTestCase {
 
     override class func tearDown() {
         systemPermissionPromptPollingTimer?.invalidate()
+        systemPermissionPromptPollingTimer = nil
         XCTestObservationCenter.shared.removeTestObserver(failureObserver)
         super.tearDown()
     }
@@ -203,12 +204,12 @@ class UITestCase: XCTestCase {
             return XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         }
 
+        if isSystemPermissionPromptPollingTimerEnabled {
+            startSystemPermissionPromptDismissTimerIfNeeded()
+        }
         if !Self.didCallFirstRun {
             Self.didCallFirstRun = true
             Logger.log("🥇 Resetting environment for the first run")
-            if isSystemPermissionPromptPollingTimerEnabled {
-                startSystemPermissionPromptDismissTimer()
-            }
             UITests.firstRun()
         }
     }

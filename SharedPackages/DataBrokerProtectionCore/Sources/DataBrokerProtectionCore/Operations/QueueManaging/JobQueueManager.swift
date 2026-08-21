@@ -101,7 +101,14 @@ public protocol JobQueueManaging {
 
 public protocol JobQueueManagerDelegate: AnyObject {
     func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging)
+    func queueManagerDidStartOperations(_ queueManager: JobQueueManaging)
+    func queueManagerDidFinishOperations(_ queueManager: JobQueueManaging)
     func queueManagerDidCompleteIndividualJob(_ queueManager: JobQueueManaging, identifier: CompletedJobIdentifier?)
+}
+
+public extension JobQueueManagerDelegate {
+    func queueManagerDidStartOperations(_ queueManager: JobQueueManaging) {}
+    func queueManagerDidFinishOperations(_ queueManager: JobQueueManaging) {}
 }
 
 public final class JobQueueManager: JobQueueManaging {
@@ -166,6 +173,7 @@ public final class JobQueueManager: JobQueueManaging {
                                                           completion: (() -> Void)?) {
         cancelCurrentModeAndResetIfNeeded()
         mode = .immediate(errorHandler: nil, completion: nil)
+        delegate?.queueManagerDidStartOperations(self)
         addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
         addJobs(for: .optOut,
                 showWebView: showWebView,
@@ -280,6 +288,8 @@ private extension JobQueueManager {
         cancelCurrentModeAndResetIfNeeded()
         mode = newMode
 
+        delegate?.queueManagerDidStartOperations(self)
+
         addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
         addJobs(for: type,
                 priorityDate: mode.priorityDate,
@@ -297,6 +307,7 @@ private extension JobQueueManager {
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.interrupted, operationErrors: operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
             resetMode()
+            delegate?.queueManagerDidFinishOperations(self)
             completion?()
         default:
             break
@@ -334,6 +345,7 @@ private extension JobQueueManager {
             Logger.dataBrokerProtection.error("DataBrokerProtectionProcessor error: addOperations, error: \(error.localizedDescription, privacy: .public)")
             errorHandler?(DataBrokerProtectionJobsErrorCollection(oneTimeError: error))
             resetMode()
+            delegate?.queueManagerDidFinishOperations(self)
             completion?()
             return
         }
@@ -342,6 +354,9 @@ private extension JobQueueManager {
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: nil, operationErrors: self?.operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
             self?.resetMode()
+            if let self {
+                self.delegate?.queueManagerDidFinishOperations(self)
+            }
             completion?()
         }
     }

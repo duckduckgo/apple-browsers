@@ -419,8 +419,7 @@ private extension AIChatContextualFloatingInputViewController {
     }
 
 
-    /// Resigns with the slide like every other dismissal. Deferring it to the end left the keyboard standing
-    /// through the whole exit — the surface slid down behind it and only then did it drop.
+    /// Resigns with the slide, so the keyboard travels with the surface rather than after it.
     @objc func handlePageTap() {
         requestDismiss()
     }
@@ -466,11 +465,8 @@ private extension AIChatContextualFloatingInputViewController {
     }
 
     /// How far the surface rose from the bottom on the way in, and so how far it settles back down on the way
-    /// out: the keyboard guide's travel, from where its top rests with the keyboard down to where it is now.
-    ///
-    /// Measured to the view's bottom edge, not the safe area's — a dismissing keyboard travels until its top
-    /// reaches the screen bottom, so anchoring to the safe area leaves the surface short by the bottom inset
-    /// and it drifts behind the keyboard it is meant to ride down with.
+    /// out: the keyboard guide's travel. To the view's bottom edge, not the safe area's — a dismissing
+    /// keyboard travels until its top reaches the screen bottom, and falling short lags it the whole way.
     var entranceTravel: CGFloat {
         max(0, view.bounds.maxY - view.keyboardLayoutGuide.layoutFrame.minY)
     }

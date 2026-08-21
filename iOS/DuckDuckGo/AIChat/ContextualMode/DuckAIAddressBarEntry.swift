@@ -47,10 +47,8 @@ enum DuckAIAddressBarEntry: Equatable {
         return .menu
     }
 
-    /// Whether the button wears its contextual glyph rather than the plain Duck.ai one: a surface is
-    /// open, or this tab has a chat to come back to. Kept beside `resolve` and over the same inputs so
-    /// the glyph can't contradict what a tap does — the enum alone can't answer it, because
-    /// `.contextualSheet` covers both having a chat and the floating input being unavailable.
+    /// A surface is open, or this tab has a chat to come back to. Beside `resolve` and over the same
+    /// inputs so the glyph can't contradict what a tap does.
     static func showsContextualGlyph(isContextualModeAvailable: Bool,
                                      isHomeTab: Bool,
                                      hasChatToReopen: Bool,

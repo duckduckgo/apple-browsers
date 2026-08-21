@@ -209,9 +209,8 @@ private extension AIChatQuickActionChipView {
         return effectView
     }
 
-    /// Re-made rather than mutated: `UIGlassEffect`'s tint is fixed at init, so a light/dark flip
-    /// needs a fresh effect for the new tint to take. Skipped when the tint has not moved, since
-    /// assigning `effect` rebuilds the backdrop chain.
+    /// `UIGlassEffect`'s tint is fixed at init, so a theme flip needs a fresh effect. Skipped when the
+    /// tint hasn't moved — assigning `effect` rebuilds the backdrop chain.
     func applyGlassTint(on glass: UIVisualEffectView) {
         guard #available(iOS 26.0, *) else { return }
 

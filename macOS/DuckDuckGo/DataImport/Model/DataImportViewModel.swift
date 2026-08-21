@@ -1083,6 +1083,7 @@ extension DataImportViewModel {
     mutating func showDirectoryReadPermissionScreen() {
         guard let selectedProfile else { return }
 
+        PixelKit.fire(DataImportPermissionPixel.directoryPermissionPromptScreenShown(source: importSource.pixelSourceParameterName))
         screen = .getDirectoryReadPermission(selectedProfile.profileURL)
     }
 
@@ -1090,18 +1091,27 @@ extension DataImportViewModel {
     mutating func grantAccessButtonPressed() {
         guard let selectedProfile else { return }
 
+        let source = importSource.pixelSourceParameterName
+
         switch requestDirectoryAccess(for: selectedProfile.profileURL) {
         case .granted:
+            PixelKit.fire(DataImportPermissionPixel.directoryPermissionGranted(source: source))
             reloadProfilesAfterGrantingAccess()
             importButtonPressed()
 
-        case .denied, .cancelled:
+        case .denied:
+            PixelKit.fire(DataImportPermissionPixel.directoryPermissionDenied(source: source))
+            showDirectoryReadPermissionDeniedScreen(for: selectedProfile)
+
+        case .cancelled:
+            PixelKit.fire(DataImportPermissionPixel.directoryPermissionCancelled(source: source))
             showDirectoryReadPermissionDeniedScreen(for: selectedProfile)
         }
     }
 
     @MainActor
     private mutating func showDirectoryReadPermissionDeniedScreen(for profile: BrowserProfile) {
+        PixelKit.fire(DataImportPermissionPixel.directoryPermissionRetryScreenShown(source: importSource.pixelSourceParameterName))
         screen = .directoryReadPermissionDenied(profile.profileURL)
     }
 

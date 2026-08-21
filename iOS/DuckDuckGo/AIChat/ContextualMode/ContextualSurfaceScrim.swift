@@ -1,7 +1,8 @@
 //
-//  AppearancePreferencesMock.swift
+//  ContextualSurfaceScrim.swift
+//  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,19 +17,10 @@
 //  limitations under the License.
 //
 
-#if DEBUG
+import CoreGraphics
 
-@_spi(Testing) import Persistence
-import BrowserServicesKit
-import PrivacyConfig
-import PrivacyConfigTestsUtils
-
-extension AppearancePreferences {
-    static let mock = AppearancePreferences(
-        persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: MockKeyValueFileStore()),
-        privacyConfigurationManager: MockPrivacyConfigurationManager(),
-        featureFlagger: MockFeatureFlagger(),
-        aiChatMenuConfig: MockAIChatConfig()
-    )
+/// How far the page behind a contextual surface is dimmed. Shared by the sheet and the floating
+/// input: they are alternating presentations of the same chat, so a drift between them is visible.
+enum ContextualSurfaceScrim {
+    static let alpha: CGFloat = 0.3
 }
-#endif

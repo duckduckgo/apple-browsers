@@ -1,5 +1,5 @@
 //
-//  InMemoryObservableThrowingKeyValueStore.swift
+//  InMemoryThrowingKeyValueStore.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,12 +16,10 @@
 //  limitations under the License.
 //
 
-import Combine
-import Persistence
-
-/// In-memory implementation of ObservableThrowingKeyValueStoring with observation support.
-/// Useful for testing throwing operations with change notifications.
-open class InMemoryObservableThrowingKeyValueStore: ObservableThrowingKeyValueStoring {
+/// In-memory implementation of ThrowingKeyValueStoring.
+/// Useful for testing throwing operations without actual persistence.
+@_spi(Testing)
+open class InMemoryThrowingKeyValueStore: ThrowingKeyValueStoring {
 
     /// Direct access to underlying storage dictionary for test setup and assertions
     public var underlyingDict: [String: Any]
@@ -53,12 +51,7 @@ open class InMemoryObservableThrowingKeyValueStore: ObservableThrowingKeyValueSt
         set { throwOnRemove = newValue ? MockError.removeError : nil }
     }
 
-    public var objectWillChange = ObservableObjectPublisher()
-
-    // Internal subject for key-specific change notifications
-    private var keyChanges = PassthroughSubject<String?, Never>()
-
-    public enum MockError: Error, Equatable {
+    public enum MockError: Error {
         case getError
         case setError
         case removeError
@@ -74,38 +67,30 @@ open class InMemoryObservableThrowingKeyValueStore: ObservableThrowingKeyValueSt
         try error.map { throw $0 }
     }
 
-    public func updatesPublisher(forKey key: String) -> AnyPublisher<Void, Never> {
-        keyChanges.compactMap { change -> Void? in
-            guard change == nil /* all */ || change == key else { return nil }
-            return ()
-        }.eraseToAnyPublisher()
-    }
-
-    public func object(forKey key: String) throws -> Any? {
+    public func object(forKey defaultName: String) throws -> Any? {
         if let throwOnRead {
             throw throwOnRead
         }
-        return underlyingDict[key]
+        return underlyingDict[defaultName]
     }
 
-    public func set(_ value: Any?, forKey key: String) throws {
+    public func set(_ value: Any?, forKey defaultName: String) throws {
         if let throwOnSet {
             throw throwOnSet
         }
-        underlyingDict[key] = value
-        objectWillChange.send()
-        keyChanges.send(key)
+        underlyingDict[defaultName] = value
     }
 
-    public func removeObject(forKey key: String) throws {
+    public func removeObject(forKey defaultName: String) throws {
         if let throwOnRemove {
             throw throwOnRemove
         }
-        underlyingDict.removeValue(forKey: key)
-        objectWillChange.send()
-        keyChanges.send(key)
+        underlyingDict.removeValue(forKey: defaultName)
     }
 }
 
-/// Backward compatibility typealias for existing code
-public typealias MockObservableThrowingKeyValueStore = InMemoryObservableThrowingKeyValueStore
+/// Backward compatibility typealiases for existing code
+@_spi(Testing)
+public typealias MockThrowingKeyValueStore = InMemoryThrowingKeyValueStore
+@_spi(Testing)
+public typealias MockKeyValueFileStore = InMemoryThrowingKeyValueStore

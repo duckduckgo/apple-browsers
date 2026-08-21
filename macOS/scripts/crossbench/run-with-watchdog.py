@@ -32,7 +32,7 @@ def copy_output(source: BinaryIO) -> None:
 def process_group_exists(process_group: int) -> bool:
     try:
         os.killpg(process_group, 0)
-    except ProcessLookupError:
+    except (ProcessLookupError, PermissionError):
         return False
     return True
 
@@ -43,7 +43,7 @@ def terminate_process_group(process: subprocess.Popen[bytes], grace: int) -> str
         return "already_exited"
     try:
         os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
+    except (ProcessLookupError, PermissionError):
         return "already_exited"
     deadline = time.monotonic() + grace
     while time.monotonic() < deadline:
@@ -53,7 +53,7 @@ def terminate_process_group(process: subprocess.Popen[bytes], grace: int) -> str
         time.sleep(0.05)
     try:
         os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
+    except (ProcessLookupError, PermissionError):
         return "terminated"
     try:
         process.wait(timeout=grace)

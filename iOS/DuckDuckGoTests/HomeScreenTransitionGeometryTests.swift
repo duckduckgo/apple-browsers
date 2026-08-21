@@ -36,7 +36,7 @@ final class HomeScreenTransitionGeometryTests: XCTestCase {
         XCTAssertEqual(frame.width / frame.height, sourceSize.width / sourceSize.height, accuracy: 0.001)
     }
 
-    func testWhenGridCellIsTallerThanThePageThenSnapshotScalesUniformlyAndStaysCentred() {
+    func testWhenGridCellIsWiderThanThePageThenSnapshotScalesUniformlyAndStaysCentred() {
         let sourceSize = CGSize(width: 390, height: 800)
         let container = CGRect(x: 10, y: 20, width: 180, height: 240)
 
@@ -45,7 +45,7 @@ final class HomeScreenTransitionGeometryTests: XCTestCase {
             in: container,
             isGridViewEnabled: true)
 
-        XCTAssertEqual(frame.width, 180 * (240 / 800), accuracy: 0.001)
+        XCTAssertEqual(frame.width, sourceSize.width * (container.height / sourceSize.height), accuracy: 0.001)
         XCTAssertEqual(frame.height, 240)
         XCTAssertEqual(frame.midX, container.midX, accuracy: 0.001)
         XCTAssertEqual(frame.midY, container.midY, accuracy: 0.001)

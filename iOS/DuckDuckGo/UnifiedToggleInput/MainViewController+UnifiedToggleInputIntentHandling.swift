@@ -246,6 +246,7 @@ private extension MainViewController {
         coordinator.cachedOmnibarPlaceholderWindowX = omnibarPlaceholderWindowX
 
         if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
+            coordinator.viewController.prepareForOmnibarMaterialTransition()
             viewCoordinator.returnOmnibarToNavigationContainerIfNeeded(applyingToolbarHeightImmediately: false)
         } else {
             viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
@@ -315,17 +316,20 @@ private extension MainViewController {
         let coordinator = unifiedToggleInputCoordinator
         let fadesForFloatingBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
-        if fadesForFloatingBottom {
-            newTabPageViewController?.setLogoHidden(false)
-            newTabPageViewController?.setFavoritesHidden(false)
-            newTabPageViewController?.view.setNeedsLayout()
-            newTabPageViewController?.view.layoutIfNeeded()
-        }
+        let isLogoToLogo = coordinator?.contentViewController.isShowingLogoContent == true
+            && newTabPageViewController?.restingContentIsLogo == true
+        let isFavoritesToFavorites = coordinator?.contentViewController.isShowingFavoritesContent == true
+            && newTabPageViewController?.restingContentIsFavorites == true
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
             coordinator?.clearText()
             if fadesForFloatingBottom {
+                self?.newTabPageViewController?.setLogoHidden(false)
+                self?.newTabPageViewController?.setFavoritesHidden(false)
+                self?.newTabPageViewController?.view.setNeedsLayout()
+                self?.newTabPageViewController?.view.layoutIfNeeded()
                 self?.viewCoordinator.hideUnifiedInputContent()
             }
         }
@@ -342,10 +346,10 @@ private extension MainViewController {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
                 if fadesForFloatingBottom {
-                    unifiedInputContentContainer.alpha = 0
-                    unifiedInputContentContainer.transform = UIAccessibility.isReduceMotionEnabled
-                        ? .identity
-                        : CGAffineTransform(scaleX: 0.95, y: 0.95)
+                    if !isSeamlessHandoff {
+                        unifiedInputContentContainer.alpha = 0
+                        unifiedInputContentContainer.transform = .identity
+                    }
                     self.viewCoordinator.focusedStateBackground.alpha = 0
                 }
             }

@@ -1067,11 +1067,6 @@ extension MainViewController {
             coordinator.contentViewController.beginDismissFade()
         }
 
-        newTabPageViewController?.setLogoHidden(false)
-        newTabPageViewController?.setFavoritesHidden(false)
-        newTabPageViewController?.view.setNeedsLayout()
-        newTabPageViewController?.view.layoutIfNeeded()
-
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             additionalAnimations: { [weak self, weak coordinator] in
@@ -1085,14 +1080,16 @@ extension MainViewController {
                 self.viewCoordinator.focusedStateBackground.alpha = 0
                 if !isSeamlessHandoff {
                     self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-                    self.viewCoordinator.unifiedInputContentContainer.transform = UIAccessibility.isReduceMotionEnabled
-                        ? .identity
-                        : CGAffineTransform(scaleX: 0.95, y: 0.95)
+                    self.viewCoordinator.unifiedInputContentContainer.transform = .identity
                 }
             },
             completion: { [weak self] in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 coordinator.contentViewController.setActive(false)
+                self.newTabPageViewController?.setLogoHidden(false)
+                self.newTabPageViewController?.setFavoritesHidden(false)
+                self.newTabPageViewController?.view.setNeedsLayout()
+                self.newTabPageViewController?.view.layoutIfNeeded()
                 self.viewCoordinator.hideUnifiedInputContent()
                 coordinator.contentViewController.setContentInset(top: 0, bottom: 0)
                 self.hideSuggestionTray()

@@ -585,6 +585,7 @@ final class UnifiedToggleInputView: UIView {
     /// be measured — so the symmetric dismiss can land back on the pill without re-measuring (the
     /// pill has been removed from the toolbar by then).
     private var cachedOmnibarMatchedInsets: OmnibarMatchedInsets?
+    private var omnibarMaterialTransitionBackgroundColor: UIColor?
 
     private struct OmnibarMatchedInsets {
         let leading: CGFloat
@@ -724,15 +725,18 @@ final class UnifiedToggleInputView: UIView {
 
     private func applyFireModeAppearance(isFireTab: Bool) {
         let background = cardBackgroundColor(isFireTab: isFireTab)
-        cardView.backgroundColor = background
-        // Shadow silhouette is an opaque fill covered by cardView, so both must share the same background.
-        expandedShadowView.backgroundColor = background
+        applyCardBackgroundColor(background)
         // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
         // Future direct content subviews inherit fire-mode appearance by default; card chrome and collapsed flanking accessories keep the OS trait.
         fireModeContentSubviews.forEach {
             $0.overrideUserInterfaceStyle = style
         }
+    }
+
+    private func applyCardBackgroundColor(_ color: UIColor) {
+        cardView.backgroundColor = color
+        expandedShadowView.backgroundColor = color
     }
 
     private var fireModeContentSubviews: [UIView] {
@@ -1072,8 +1076,19 @@ final class UnifiedToggleInputView: UIView {
         alignWithOmnibarChrome()
     }
 
+    func prepareForOmnibarMaterialTransition() {
+        guard cardPosition == .bottom else { return }
+        if omnibarMaterialTransitionBackgroundColor == nil {
+            omnibarMaterialTransitionBackgroundColor = cardView.backgroundColor
+        }
+        applyCardBackgroundColor(.clear)
+    }
+
     /// Active editing pose. Call inside a UIView.animate block.
     func applyOmnibarEditingShowPose() {
+        if let omnibarMaterialTransitionBackgroundColor {
+            applyCardBackgroundColor(omnibarMaterialTransitionBackgroundColor)
+        }
         switch (cardPosition, isToggleEnabled) {
         case (.top, true):
             applyToggleRevealChanges()
@@ -1090,6 +1105,9 @@ final class UnifiedToggleInputView: UIView {
     /// Shadow swap is deferred to `finalizeOmnibarEditingDismiss` so the dominant expanded shadow
     /// stays visible during collapse instead of snapping off mid-animation.
     func applyOmnibarEditingDismissPose() {
+        if omnibarMaterialTransitionBackgroundColor != nil {
+            applyCardBackgroundColor(.clear)
+        }
         switch (cardPosition, isToggleEnabled) {
         case (.top, true):
             applyToggleHideChanges()
@@ -1176,6 +1194,10 @@ final class UnifiedToggleInputView: UIView {
     /// animation; this restores the collapsed shadow once the UTI is hidden. Top + toggle-on
     /// never alters the shadow during animation, so it doesn't need finalizing here.
     func finalizeOmnibarEditingDismiss() {
+        if let omnibarMaterialTransitionBackgroundColor {
+            applyCardBackgroundColor(omnibarMaterialTransitionBackgroundColor)
+            self.omnibarMaterialTransitionBackgroundColor = nil
+        }
         let needsShadowFinalize = cardPosition.isBottom || (cardPosition == .top && !isToggleEnabled)
         guard needsShadowFinalize else { return }
         expandedShadowView.isHidden = true

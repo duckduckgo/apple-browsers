@@ -53,9 +53,7 @@ class FromWebViewTransition: WebViewTransition {
               let tab = mainViewController.tabManager.currentTabsModel.currentTab,
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab)
         else {
-            tabSwitcherViewController.view.alpha = 1
-            removeTransitionViews()
-            transitionContext.completeTransition(true)
+            completeWithoutAnimation(using: transitionContext)
             return
         }
 
@@ -65,9 +63,7 @@ class FromWebViewTransition: WebViewTransition {
         guard let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: indexPath),
               let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         else {
-            tabSwitcherViewController.view.alpha = 1
-            removeTransitionViews()
-            transitionContext.completeTransition(true)
+            completeWithoutAnimation(using: transitionContext)
             return
         }
 
@@ -85,31 +81,53 @@ class FromWebViewTransition: WebViewTransition {
         imageView.frame = imageContainer.bounds
         imageView.image = preview
 
-        // Duck.ai tabs land on a rich card, not a screenshot. Crossfade a snapshot of the
-        // destination cell over the webview preview so the shrink ends on matching content
-        // instead of popping from screenshot to card. Gated on the rich-card flag: with it off
-        // the AI cell is a screenshot, so there's nothing to crossfade to
-        var cellSnapshot: UIView?
-        if tab.isAITab, mainViewController.featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) {
-            tabSwitcherViewController.collectionView.layoutIfNeeded()
-            if let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
-                // Force the .image thumbnail in synchronously — its async load won't finish
-                // before snapshotView captures the cell.
-                cell.prepareForSnapshot()
-                let currentBorderHidden = cell.border.isHidden
-                cell.border.isHidden = true
-                if let snapshot = cell.snapshotView(afterScreenUpdates: true) {
-                    snapshot.frame = imageContainer.bounds
-                    snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-                    snapshot.alpha = 0
-                    imageContainer.addSubview(snapshot)
-                    cellSnapshot = snapshot
-                }
-                cell.border.isHidden = currentBorderHidden
-            }
-               
+        let cellSnapshot = makeAITabCellSnapshotIfNeeded(for: tab, at: indexPath)
+        prepareOutgoingTabChrome(at: indexPath, cellSnapshot: cellSnapshot)
+        animateToTabSwitcher(layoutAttr: layoutAttr,
+                             preview: preview,
+                             cellSnapshot: cellSnapshot,
+                             transitionContext: transitionContext)
+    }
+
+    private func completeWithoutAnimation(using transitionContext: UIViewControllerContextTransitioning) {
+        tabSwitcherViewController.view.alpha = 1
+        removeTransitionViews()
+        transitionContext.completeTransition(true)
+    }
+
+    /// Duck.ai tabs land on a rich card, not a screenshot. Crossfade a snapshot of the
+    /// destination cell over the webview preview so the shrink ends on matching content
+    /// instead of popping from screenshot to card. Gated on the rich-card flag: with it off
+    /// the AI cell is a screenshot, so there's nothing to crossfade to.
+    private func makeAITabCellSnapshotIfNeeded(for tab: Tab, at indexPath: IndexPath) -> UIView? {
+        guard tab.isAITab,
+              mainViewController.featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) else {
+            return nil
         }
 
+        tabSwitcherViewController.collectionView.layoutIfNeeded()
+        guard let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell else {
+            return nil
+        }
+
+        // Force the .image thumbnail in synchronously — its async load won't finish
+        // before snapshotView captures the cell.
+        cell.prepareForSnapshot()
+        let currentBorderHidden = cell.border.isHidden
+        cell.border.isHidden = true
+        defer { cell.border.isHidden = currentBorderHidden }
+
+        guard let snapshot = cell.snapshotView(afterScreenUpdates: true) else {
+            return nil
+        }
+        snapshot.frame = imageContainer.bounds
+        snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        snapshot.alpha = 0
+        imageContainer.addSubview(snapshot)
+        return snapshot
+    }
+
+    private func prepareOutgoingTabChrome(at indexPath: IndexPath, cellSnapshot: UIView?) {
         if tabSwitcherSettings.isGridViewEnabled,
            cellSnapshot == nil,
            let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
@@ -118,7 +136,12 @@ class FromWebViewTransition: WebViewTransition {
                   let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewListCell {
             prepareListChrome(for: cell, initiallyVisible: false)
         }
+    }
 
+    private func animateToTabSwitcher(layoutAttr: UICollectionViewLayoutAttributes,
+                                      preview: UIImage,
+                                      cellSnapshot: UIView?,
+                                      transitionContext: UIViewControllerContextTransitioning) {
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
 
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
@@ -161,7 +184,6 @@ class FromWebViewTransition: WebViewTransition {
             self.removeTransitionViews()
             transitionContext.completeTransition(true)
         })
-
     }
 }
 

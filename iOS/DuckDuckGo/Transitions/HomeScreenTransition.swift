@@ -77,8 +77,25 @@ class HomeScreenTransition: TabSwitcherTransition {
     }
     
     fileprivate func previewFrame(for cellBounds: CGSize) -> CGRect {
-        return CGRect(origin: .zero, size: cellBounds)
-            .offsetBy(dx: 0, dy: -TabViewCell.Constants.previewPadding)
+        guard tabSwitcherSettings.isGridViewEnabled else {
+            return CGRect(origin: .zero, size: cellBounds)
+                .offsetBy(dx: 0, dy: -TabViewCell.Constants.previewPadding)
+        }
+
+        // Match TabViewGridCell.previewClipView / WebViewTransitionGeometry.previewFrame:
+        // logo sits in the preview area below the cell header, not the full cell.
+        let horizontalInset = TabViewGridCell.Constants.previewHorizontalInset / 2
+        let availableWidth = cellBounds.width - TabViewGridCell.Constants.previewHorizontalInset
+        let availableHeight = cellBounds.height
+            - TabViewGridCell.Constants.headerHeight
+            - TabViewGridCell.Constants.previewBottomPadding
+        guard availableWidth > 0, availableHeight > 0 else {
+            return CGRect(origin: .zero, size: cellBounds)
+        }
+        return CGRect(x: horizontalInset,
+                      y: TabViewGridCell.Constants.headerHeight,
+                      width: availableWidth,
+                      height: availableHeight)
     }
     
 }
@@ -178,7 +195,11 @@ class FromHomeScreenTransition: HomeScreenTransition {
                 }
             } else {
                 UIView.addKeyframe(withRelativeStartTime: 0.7, relativeDuration: 0.3) {
+                    // Fade card chrome with the snapshot so a blank rounded card
+                    // does not linger over the list row.
                     self.imageContainer.alpha = 0
+                    self.cardShadow.alpha = 0
+                    self.cardBorder.alpha = 0
                     self.settingsButtonSnapshot?.alpha = 0
                 }
             }

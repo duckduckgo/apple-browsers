@@ -100,7 +100,7 @@ jobs:
         uses: ./.github/actions/select-xcode-version
 
       - name: Setup Bitrise Build Cache
-        if: runner.environment == 'self-hosted'
+        if: runner.environment == 'self-hosted' && vars.BITRISE_BUILD_CACHE_ENABLED == '1'
         uses: ./.github/actions/bitrise-build-cache
         with:
           token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
@@ -291,7 +291,7 @@ jobs:
           exit 1
 
       - name: Setup Bitrise Build Cache
-        if: runner.environment == 'self-hosted'
+        if: runner.environment == 'self-hosted' && vars.BITRISE_BUILD_CACHE_ENABLED == '1'
         uses: ./.github/actions/bitrise-build-cache
         with:
           token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}

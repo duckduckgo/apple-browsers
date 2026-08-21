@@ -268,7 +268,7 @@ jobs:
           xcode-compilation-cache-${{ matrix.flavor }}-
 
     - name: Setup Bitrise Build Cache
-      if: runner.environment == 'self-hosted'
+      if: runner.environment == 'self-hosted' && vars.BITRISE_BUILD_CACHE_ENABLED == '1'
       uses: ./.github/actions/bitrise-build-cache
       with:
         token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
@@ -650,7 +650,7 @@ jobs:
           xcode-compilation-cache-release-
 
     - name: Setup Bitrise Build Cache
-      if: runner.environment == 'self-hosted'
+      if: runner.environment == 'self-hosted' && vars.BITRISE_BUILD_CACHE_ENABLED == '1'
       uses: ./.github/actions/bitrise-build-cache
       with:
         token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}

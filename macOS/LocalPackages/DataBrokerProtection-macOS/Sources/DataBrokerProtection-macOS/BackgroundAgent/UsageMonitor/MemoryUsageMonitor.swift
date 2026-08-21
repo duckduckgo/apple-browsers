@@ -38,20 +38,23 @@ struct MemoryUsageMonitor {
     private var current: MemoryUsageSample
     private var peak: PeakUsage
     private var hadCriticalPressure = false
+    private let sampleProvider: (Set<pid_t>?) -> MemoryUsageSample
 
     /// Immediately takes the first memory reading for the run.
-    init(webProcessPIDs: Set<pid_t>?) {
-        let sample = MemoryUsageSampler().takeSample(webProcessPIDs: webProcessPIDs)
+    init(webProcessPIDs: Set<pid_t>?,
+         sampleProvider: @escaping (Set<pid_t>?) -> MemoryUsageSample = { MemoryUsageSampler().takeSample(webProcessPIDs: $0) }) {
+        let sample = sampleProvider(webProcessPIDs)
         current = sample
         peak = PeakUsage(
             agentFootprint: sample.agentFootprint,
             webProcessesFootprint: sample.webProcessesFootprint
         )
+        self.sampleProvider = sampleProvider
     }
 
     /// Replaces the current reading and updates the highest values seen in this run.
     mutating func recordSample(webProcessPIDs: Set<pid_t>?) {
-        let sample = MemoryUsageSampler().takeSample(webProcessPIDs: webProcessPIDs)
+        let sample = sampleProvider(webProcessPIDs)
         current = sample
         peak.record(sample)
     }

@@ -38,7 +38,7 @@ import Foundation
 struct CPUUsageMonitor {
 
     private typealias Identity = CPUUsageSample.ProcessIdentity
-    private typealias ProcessCPUTime = CPUUsageSample.ProcessCPUTime
+    typealias ProcessCPUTime = CPUUsageSample.ProcessCPUTime
 
     /// Mach timers count ticks rather than nanoseconds. `numer / denom` converts one tick to nanoseconds.
     private static let timebaseInfo: mach_timebase_info_data_t = {
@@ -70,20 +70,27 @@ struct CPUUsageMonitor {
     // Keep counters for exited processes so their recorded CPU remains in the run total.
     private var webProcesses: [Identity: CPUCounter]
     private let runStartAbsoluteTime: UInt64
+    private let sampleProvider: (Set<pid_t>) -> CPUUsageSample
+    private let secondsFromMachTime: (ProcessCPUTime) -> TimeInterval
     private let startUptime: TimeInterval
     private var latestUptime: TimeInterval
 
-    init(webProcessPIDs: Set<pid_t>, runStartAbsoluteTime: UInt64) {
-        let sample = CPUUsageSampler().takeSample(webProcessPIDs: webProcessPIDs)
+    init(webProcessPIDs: Set<pid_t>,
+         runStartAbsoluteTime: UInt64,
+         sampleProvider: @escaping (Set<pid_t>) -> CPUUsageSample = { CPUUsageSampler().takeSample(webProcessPIDs: $0) },
+         secondsFromMachTime: @escaping (ProcessCPUTime) -> TimeInterval = Self.seconds(fromMachTime:)) {
+        let sample = sampleProvider(webProcessPIDs)
         agent = CPUCounter(baseline: sample.agent)
         webProcesses = sample.webProcesses.mapValues { CPUCounter(baseline: $0) }
         self.runStartAbsoluteTime = runStartAbsoluteTime
+        self.sampleProvider = sampleProvider
+        self.secondsFromMachTime = secondsFromMachTime
         startUptime = sample.uptime
         latestUptime = sample.uptime
     }
 
     mutating func recordSample(webProcessPIDs: Set<pid_t>) {
-        let sample = CPUUsageSampler().takeSample(webProcessPIDs: webProcessPIDs)
+        let sample = sampleProvider(webProcessPIDs)
         updateAgentCPUTime(with: sample.agent)
         updateWebProcessCPUTime(with: sample.webProcesses)
         latestUptime = sample.uptime
@@ -93,9 +100,9 @@ struct CPUUsageMonitor {
 
     func makeReport() -> ResourceSnapshot.CPUUsage {
         let elapsedTime = max(0, latestUptime - startUptime)
-        let agentTime = Self.seconds(fromMachTime: agent.total)
+        let agentTime = secondsFromMachTime(agent.total)
         let webProcessesCPUTime = webProcesses.values.reduce(ProcessCPUTime(0)) { $0 + $1.total }
-        let webProcessesTime = Self.seconds(fromMachTime: webProcessesCPUTime)
+        let webProcessesTime = secondsFromMachTime(webProcessesCPUTime)
         let totalTime = agentTime + webProcessesTime
         // CPU seconds divided by elapsed run time is average usage of one core. Concurrent work can exceed 100%.
         let averagePercent = elapsedTime > 0 ? totalTime / elapsedTime * 100 : 0

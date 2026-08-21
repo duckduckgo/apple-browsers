@@ -369,9 +369,11 @@ class MainViewCoordinator {
     /// chrome, where the toolbar is hidden, and the unified toggle input flow).
     func returnOmnibarToNavigationContainerIfNeeded(applyingToolbarHeightImmediately: Bool = true) {
         guard isOmnibarInToolbar else { return }
-        toolbar.setOmnibarView(nil, height: 0)
         if applyingToolbarHeightImmediately {
+            toolbar.setOmnibarView(nil, height: 0)
             applyDetachedToolbarHeight()
+        } else {
+            toolbar.prepareForOmnibarDetachment()
         }
         navigationBarContainer.isHidden = false
         navigationBarContainer.alpha = 1
@@ -381,10 +383,12 @@ class MainViewCoordinator {
 
     func applyDetachedToolbarHeight() {
         constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+        toolbar.applyOmnibarDetachmentPose()
     }
 
     func applyAttachedToolbarHeight() {
         constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight, isFloating: isFloatingUIEnabled)
+        toolbar.prepareForOmnibarAttachment(height: omniBar.barView.expectedHeight)
     }
 
     func updateToolbarWithState(_ state: ToolbarContentState) {
@@ -600,6 +604,8 @@ class MainViewCoordinator {
     @MainActor
     func hideUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = true
+        unifiedInputContentContainer.transform = .identity
+        focusedStateBackground.alpha = 1
         hideFocusedStateBackground()
         superview.insertSubview(statusBackground, aboveSubview: topSlideContainer)
     }

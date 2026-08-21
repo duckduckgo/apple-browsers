@@ -217,10 +217,12 @@ private extension MainViewController {
                 if let pendingHeight {
                     self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
                 }
+                self.viewCoordinator.focusedStateBackground.alpha = 1
                 self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
                 if !isSeamlessHandoff {
                     contentContainer.alpha = 1
+                    contentContainer.transform = .identity
                 }
                 coordinator.viewController.setTextHorizontalShift(0)
             }
@@ -257,10 +259,12 @@ private extension MainViewController {
         // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
         let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
+        viewCoordinator.focusedStateBackground.alpha = isSeamlessHandoff ? 1 : 0
 
         // The container is now laid out at its editing-start frame; pin the collapsed card to the
         // measured pill so frame 0 of the focus animation matches the omnibar exactly (bottom only).
@@ -274,9 +278,11 @@ private extension MainViewController {
             newTabPageViewController?.setFavoritesHidden(true)
         }
         // Seamless handoffs (logo/favorites) show the content immediately; only other content fades in.
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
+        unifiedInputContentContainer.transform = isSeamlessHandoff || UIAccessibility.isReduceMotionEnabled
+            ? .identity
+            : CGAffineTransform(scaleX: 0.95, y: 0.95)
 
         if let omnibarPlaceholderWindowX {
             coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
@@ -333,6 +339,10 @@ private extension MainViewController {
                 }
                 if fadesForFloatingBottom {
                     unifiedInputContentContainer.alpha = 0
+                    unifiedInputContentContainer.transform = UIAccessibility.isReduceMotionEnabled
+                        ? .identity
+                        : CGAffineTransform(scaleX: 0.95, y: 0.95)
+                    self.viewCoordinator.focusedStateBackground.alpha = 0
                 }
             }
             viewCoordinator.hideUnifiedToggleInputOmnibar(additionalAnimations: additionalAnimations, completion: onDismissed)

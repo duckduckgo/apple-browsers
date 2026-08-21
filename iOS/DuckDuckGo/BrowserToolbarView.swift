@@ -303,14 +303,10 @@ final class BrowserToolbarView: UIView {
     }
     
     func setOmnibarView(_ view: UIView?, height: CGFloat) {
-        endOmnibarSwipe()
-        hostedOmnibarView?.removeFromSuperview()
-        hostedOmnibarView = nil
+        prepareForOmnibarDetachment()
         
         guard let view else {
-            omnibarHeightConstraint.constant = 0
-            buttonsHeightConstraint.constant = buttonsOnlyHeight
-            updateCornerStyle()
+            applyOmnibarDetachmentPose()
             return
         }
         
@@ -329,6 +325,25 @@ final class BrowserToolbarView: UIView {
             view.bottomAnchor.constraint(equalTo: omnibarContainer.bottomAnchor),
         ])
         
+        updateCornerStyle()
+    }
+
+    func prepareForOmnibarDetachment() {
+        endOmnibarSwipe()
+        hostedOmnibarView?.removeFromSuperview()
+        hostedOmnibarView = nil
+    }
+
+    func applyOmnibarDetachmentPose() {
+        omnibarHeightConstraint.constant = 0
+        buttonsHeightConstraint.constant = buttonsOnlyHeight
+        updateCornerStyle()
+    }
+
+    func prepareForOmnibarAttachment(height: CGFloat) {
+        guard isFloatingStyleEnabled, hostedOmnibarView == nil else { return }
+        omnibarHeightConstraint.constant = height
+        buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: true)
         updateCornerStyle()
     }
 

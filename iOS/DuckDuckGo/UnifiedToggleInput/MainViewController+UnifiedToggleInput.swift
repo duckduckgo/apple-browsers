@@ -1060,6 +1060,13 @@ extension MainViewController {
         let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsFavorites == true
         let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
+            || coordinator.contentViewController.isShowingFavoritesContent
+        let contentContainer = viewCoordinator.unifiedInputContentContainer
+        let stationaryContentSnapshot = makeStationaryFocusedContentSnapshotIfNeeded(
+            keepsFocusedContentStationary: keepsFocusedContentStationary,
+            contentContainer: contentContainer
+        )
 
         if isLogoToLogo {
             coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
@@ -1067,42 +1074,32 @@ extension MainViewController {
             coordinator.contentViewController.beginDismissFade()
         }
 
-        newTabPageViewController?.setLogoHidden(false)
-        newTabPageViewController?.setFavoritesHidden(false)
-        newTabPageViewController?.view.setNeedsLayout()
-        newTabPageViewController?.view.layoutIfNeeded()
-
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
         viewCoordinator.hideUnifiedToggleInputOmnibar(
+            contentSnapshot: stationaryContentSnapshot,
             additionalAnimations: { [weak self, weak coordinator] in
                 guard let self, let coordinator else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.superview.layoutIfNeeded()
-                coordinator.pushContentInsets()
+                if !keepsFocusedContentStationary {
+                    coordinator.pushContentInsets()
+                }
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
                 self.viewCoordinator.focusedStateBackground.alpha = 0
-                if !isSeamlessHandoff {
-                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-                    self.viewCoordinator.unifiedInputContentContainer.transform = UIAccessibility.isReduceMotionEnabled
-                        ? .identity
-                        : CGAffineTransform(scaleX: 0.95, y: 0.95)
+                if stationaryContentSnapshot != nil {
+                    self.viewCoordinator.fadeOmnibarDismissContentSnapshot()
+                } else if !isSeamlessHandoff, let contentContainer {
+                    contentContainer.alpha = 0
+                    contentContainer.transform = .identity
                 }
             },
+            interruptCleanup: { [weak self] in
+                self?.restoreChromeAfterInterruptedOmnibarDismiss()
+            },
             completion: { [weak self] in
-                guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-                coordinator.contentViewController.setActive(false)
-                self.viewCoordinator.hideUnifiedInputContent()
-                coordinator.contentViewController.setContentInset(top: 0, bottom: 0)
-                self.hideSuggestionTray()
-                coordinator.viewController.setTextHorizontalShift(0)
-                coordinator.completeOmnibarDeactivation(resetView: false)
-                coordinator.viewController.finalizeOmnibarEditingDismiss()
-                coordinator.clearText()
-                self.reconcileToolbarVisibilityForCurrentTab()
-                self.reconcileFloatingLayoutAfterUTIExit()
-                completion?()
+                self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
             }
         )
 
@@ -1113,6 +1110,46 @@ extension MainViewController {
                 duration: duration
             )
         }
+    }
+
+    private func makeStationaryFocusedContentSnapshotIfNeeded(keepsFocusedContentStationary: Bool,
+                                                              contentContainer: UIView?) -> UIView? {
+        guard keepsFocusedContentStationary, !isNewTabPageVisible,
+              let contentContainer,
+              let snapshot = contentContainer.snapshotView(afterScreenUpdates: false),
+              let superview = contentContainer.superview else {
+            return nil
+        }
+        snapshot.frame = contentContainer.convert(contentContainer.bounds, to: superview)
+        snapshot.isUserInteractionEnabled = false
+        superview.insertSubview(snapshot, aboveSubview: contentContainer)
+        contentContainer.alpha = 0
+        return snapshot
+    }
+
+    private func restoreChromeAfterInterruptedOmnibarDismiss() {
+        viewCoordinator.unifiedInputContentContainer.alpha = 1
+        newTabPageViewController?.setLogoHidden(false)
+        newTabPageViewController?.setFavoritesHidden(false)
+    }
+
+    private func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        coordinator.contentViewController.setActive(false)
+        newTabPageViewController?.setLogoHidden(false)
+        newTabPageViewController?.setFavoritesHidden(false)
+        newTabPageViewController?.view.setNeedsLayout()
+        newTabPageViewController?.view.layoutIfNeeded()
+        viewCoordinator.hideUnifiedInputContent()
+        coordinator.contentViewController.setContentInset(top: 0, bottom: 0)
+        hideSuggestionTray()
+        coordinator.viewController.setTextHorizontalShift(0)
+        coordinator.completeOmnibarDeactivation(resetView: false)
+        coordinator.viewController.finalizeOmnibarEditingDismiss()
+        coordinator.clearText()
+        reconcileToolbarVisibilityForCurrentTab()
+        reconcileFloatingLayoutAfterUTIExit()
+        completion?()
     }
 
     /// Routes a UTI omnibar-session dismiss to the matching chrome — Duck.ai header restore for

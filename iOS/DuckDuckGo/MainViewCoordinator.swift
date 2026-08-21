@@ -61,6 +61,10 @@ class MainViewCoordinator {
     var unifiedInputContentContainer: UIView!
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
     private var omnibarDismissAnimator: UIViewPropertyAnimator?
+    /// Stationary focused-content snapshot retained until dismiss ends or is interrupted.
+    private var omnibarDismissContentSnapshot: UIView?
+    /// Extra cleanup when dismiss is stopped mid-flight (e.g. NTP chrome restore); cleared on re-focus.
+    private var omnibarDismissInterruptCleanup: (() -> Void)?
     var toolbar: BrowserToolbarView!
     var toolbarSpacer: UIView!
     var toolbarBackButton: BrowserChromeButton { toolbarHandler.backButton }
@@ -363,6 +367,9 @@ class MainViewCoordinator {
     func ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded() {
         guard isFloatingUIEnabled, addressBarPosition.isBottom else { return }
         returnOmnibarToNavigationContainerIfNeeded()
+        // A prior UTI focus may have deferred the buttons-only height; non-focus callers still
+        // need the toolbar shrunk immediately once ownership is in the nav container.
+        applyDetachedToolbarHeight()
     }
 
     /// Detaches the bottom omnibar from the toolbar back into the nav container (used by minimal
@@ -410,7 +417,10 @@ class MainViewCoordinator {
 
     @MainActor
     func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
+        // Re-focus supersedes dismiss: drop any snapshot, but don't restore NTP under the new focus.
+        omnibarDismissInterruptCleanup = nil
         stopOmnibarDismissAnimatorAtCurrentPosition()
+        removeOmnibarDismissContentSnapshot()
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
@@ -504,9 +514,15 @@ class MainViewCoordinator {
 
     @MainActor
     func hideUnifiedToggleInputOmnibar(reattachingOmnibar: Bool = true,
+                                       contentSnapshot: UIView? = nil,
                                        additionalAnimations: (() -> Void)? = nil,
+                                       interruptCleanup: (() -> Void)? = nil,
                                        completion: (() -> Void)? = nil) {
         stopOmnibarDismissAnimatorAtCurrentPosition()
+        if let contentSnapshot {
+            installOmnibarDismissContentSnapshot(contentSnapshot)
+        }
+        omnibarDismissInterruptCleanup = interruptCleanup
 
         let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled), curve: .easeInOut) { [weak self] in
             self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
@@ -515,13 +531,40 @@ class MainViewCoordinator {
         animator.addCompletion { [weak self] position in
             guard let self else { return }
             self.omnibarDismissAnimator = nil
-            // Skip cleanup if the animation was superseded — otherwise it stomps fresh state from a concurrent show.
-            guard position == .end else { return }
-            self.finishUnifiedToggleInputOmnibarDismiss()
+            // Interrupted / superseded: still drop transient dismiss chrome, but skip finish so a concurrent show wins.
+            guard position == .end else {
+                self.performOmnibarDismissInterruptCleanup()
+                return
+            }
+            self.omnibarDismissInterruptCleanup = nil
+            self.removeOmnibarDismissContentSnapshot()
+            self.finishUnifiedToggleInputOmnibarDismiss(reattachingOmnibar: reattachingOmnibar)
             completion?()
         }
         omnibarDismissAnimator = animator
         animator.startAnimation()
+    }
+
+    private func installOmnibarDismissContentSnapshot(_ snapshot: UIView) {
+        removeOmnibarDismissContentSnapshot()
+        omnibarDismissContentSnapshot = snapshot
+    }
+
+    func removeOmnibarDismissContentSnapshot() {
+        omnibarDismissContentSnapshot?.removeFromSuperview()
+        omnibarDismissContentSnapshot = nil
+    }
+
+    func fadeOmnibarDismissContentSnapshot() {
+        omnibarDismissContentSnapshot?.alpha = 0
+    }
+
+    @MainActor
+    private func performOmnibarDismissInterruptCleanup() {
+        removeOmnibarDismissContentSnapshot()
+        let cleanup = omnibarDismissInterruptCleanup
+        omnibarDismissInterruptCleanup = nil
+        cleanup?()
     }
 
     @MainActor
@@ -559,14 +602,16 @@ class MainViewCoordinator {
         superview.layoutIfNeeded()
     }
 
-    func finishUnifiedToggleInputOmnibarDismiss() {
+    func finishUnifiedToggleInputOmnibarDismiss(reattachingOmnibar: Bool = true) {
         endOmnibarStatusBackgroundPresentation()
         navigationBarContainer.backgroundColor = nil
         suggestionTrayContainer.backgroundColor = .clear
         hideFocusedStateBackground()
         navigationBarCollectionView.isUserInteractionEnabled = true
 
-        if isNavigationChromeHidden {
+        if isNavigationChromeHidden || !reattachingOmnibar {
+            // AI chrome (and any non-reattach dismiss): keep UTI in the nav container; do not
+            // grow/rehost the floating toolbar around an omnibar that isn't coming back.
             navigationBarCollectionView.alpha = 0
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1

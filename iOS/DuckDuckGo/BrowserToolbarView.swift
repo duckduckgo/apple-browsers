@@ -192,6 +192,7 @@ final class BrowserToolbarView: UIView {
     private weak var hostedOmnibarView: UIView?
     private weak var swipeIncomingOmnibarView: UIView?
     private var swipeIncomingOmnibarConstraints: [NSLayoutConstraint] = []
+    private var isOmnibarMorphing = false
     private let outgoingSwipeMask = CAShapeLayer()
     private let incomingSwipeMask = CAShapeLayer()
     private weak var hostedExpandedContentView: UIView?
@@ -316,7 +317,10 @@ final class BrowserToolbarView: UIView {
     }
     
     func setOmnibarView(_ view: UIView?, height: CGFloat) {
-        prepareForOmnibarDetachment()
+        endOmnibarSwipe()
+        hostedOmnibarView?.removeFromSuperview()
+        hostedOmnibarView = nil
+        isOmnibarMorphing = false
         
         guard let view else {
             applyOmnibarDetachmentPose()
@@ -345,6 +349,7 @@ final class BrowserToolbarView: UIView {
         endOmnibarSwipe()
         hostedOmnibarView?.removeFromSuperview()
         hostedOmnibarView = nil
+        isOmnibarMorphing = true
     }
 
     func applyOmnibarDetachmentPose() {
@@ -355,6 +360,7 @@ final class BrowserToolbarView: UIView {
 
     func prepareForOmnibarAttachment(height: CGFloat) {
         guard isFloatingStyleEnabled, hostedOmnibarView == nil else { return }
+        isOmnibarMorphing = true
         omnibarHeightConstraint.constant = height
         buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: true)
         updateCornerStyle()
@@ -690,14 +696,19 @@ final class BrowserToolbarView: UIView {
             return
         }
 
+        // During focus/defocus morph the shell is still tall, so `.capsule()` would read as an
+        // oversized pill. Keep the same concentric corners as the resting combined floating UI
+        // so the round-rect lands without a radius pop.
+        let usesConcentricCorners = isOmnibarMorphing || hasEmbeddedOmnibar || hasExpandedContent
+
         if #available(iOS 26, *) {
-            materialBackgroundView.cornerConfiguration = hasEmbeddedOmnibar || hasExpandedContent
+            materialBackgroundView.cornerConfiguration = usesConcentricCorners
                 ? .corners(radius: UICornerRadius.containerConcentric(minimum: Self.floatingUICornerRadius))
                 : .capsule()
             return
         }
 
-        materialBackgroundView.contentView.layer.cornerRadius = hasEmbeddedOmnibar || hasExpandedContent
+        materialBackgroundView.contentView.layer.cornerRadius = usesConcentricCorners
             ? Self.floatingUICornerRadius
             : materialBackgroundView.contentView.bounds.height / 2
     }

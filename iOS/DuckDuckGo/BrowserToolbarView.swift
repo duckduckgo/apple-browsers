@@ -190,6 +190,7 @@ final class BrowserToolbarView: UIView {
     private weak var hostedOmnibarView: UIView?
     private weak var swipeIncomingOmnibarView: UIView?
     private var swipeIncomingOmnibarConstraints: [NSLayoutConstraint] = []
+    private var isOmnibarMorphing = false
     private let outgoingSwipeMask = CAShapeLayer()
     private let incomingSwipeMask = CAShapeLayer()
     private weak var hostedExpandedContentView: UIView?
@@ -303,7 +304,10 @@ final class BrowserToolbarView: UIView {
     }
     
     func setOmnibarView(_ view: UIView?, height: CGFloat) {
-        prepareForOmnibarDetachment()
+        endOmnibarSwipe()
+        hostedOmnibarView?.removeFromSuperview()
+        hostedOmnibarView = nil
+        isOmnibarMorphing = false
         
         guard let view else {
             applyOmnibarDetachmentPose()
@@ -332,6 +336,7 @@ final class BrowserToolbarView: UIView {
         endOmnibarSwipe()
         hostedOmnibarView?.removeFromSuperview()
         hostedOmnibarView = nil
+        isOmnibarMorphing = true
     }
 
     func applyOmnibarDetachmentPose() {
@@ -342,6 +347,7 @@ final class BrowserToolbarView: UIView {
 
     func prepareForOmnibarAttachment(height: CGFloat) {
         guard isFloatingStyleEnabled, hostedOmnibarView == nil else { return }
+        isOmnibarMorphing = true
         omnibarHeightConstraint.constant = height
         buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: true)
         updateCornerStyle()
@@ -611,6 +617,16 @@ final class BrowserToolbarView: UIView {
     private func updateCornerStyle() {
         guard isFloatingStyleEnabled else {
             materialBackgroundView.contentView.layer.cornerRadius = 0
+            return
+        }
+
+        if isOmnibarMorphing {
+            let cornerRadius = Self.floatingButtonsHeight / 2
+            if #available(iOS 26, *) {
+                materialBackgroundView.cornerConfiguration = .corners(radius: .fixed(Double(cornerRadius)))
+            } else {
+                materialBackgroundView.contentView.layer.cornerRadius = cornerRadius
+            }
             return
         }
 

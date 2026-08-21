@@ -1060,6 +1060,22 @@ extension MainViewController {
         let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsFavorites == true
         let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
+            || coordinator.contentViewController.isShowingFavoritesContent
+        let contentContainer = viewCoordinator.unifiedInputContentContainer
+        let stationaryContentSnapshot: UIView?
+        if keepsFocusedContentStationary, !isNewTabPageVisible,
+           let contentContainer,
+           let snapshot = contentContainer.snapshotView(afterScreenUpdates: false),
+           let superview = contentContainer.superview {
+            snapshot.frame = contentContainer.convert(contentContainer.bounds, to: superview)
+            snapshot.isUserInteractionEnabled = false
+            superview.insertSubview(snapshot, aboveSubview: contentContainer)
+            contentContainer.alpha = 0
+            stationaryContentSnapshot = snapshot
+        } else {
+            stationaryContentSnapshot = nil
+        }
 
         if isLogoToLogo {
             coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
@@ -1073,17 +1089,22 @@ extension MainViewController {
                 guard let self, let coordinator else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.superview.layoutIfNeeded()
-                coordinator.pushContentInsets()
+                if !keepsFocusedContentStationary {
+                    coordinator.pushContentInsets()
+                }
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
                 self.viewCoordinator.focusedStateBackground.alpha = 0
-                if !isSeamlessHandoff {
-                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-                    self.viewCoordinator.unifiedInputContentContainer.transform = .identity
+                if let stationaryContentSnapshot {
+                    stationaryContentSnapshot.alpha = 0
+                } else if !isSeamlessHandoff, let contentContainer {
+                    contentContainer.alpha = 0
+                    contentContainer.transform = .identity
                 }
             },
             completion: { [weak self] in
+                stationaryContentSnapshot?.removeFromSuperview()
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
                 coordinator.contentViewController.setActive(false)
                 self.newTabPageViewController?.setLogoHidden(false)

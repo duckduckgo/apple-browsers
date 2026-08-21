@@ -246,7 +246,6 @@ private extension MainViewController {
         coordinator.cachedOmnibarPlaceholderWindowX = omnibarPlaceholderWindowX
 
         if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
-            coordinator.viewController.prepareForOmnibarMaterialTransition()
             viewCoordinator.returnOmnibarToNavigationContainerIfNeeded(applyingToolbarHeightImmediately: false)
         } else {
             viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
@@ -272,6 +271,9 @@ private extension MainViewController {
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
+        if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
+            coordinator.viewController.prepareForOmnibarMaterialTransition()
+        }
 
         // The container is now laid out at its editing-start frame; pin the collapsed card to the
         // measured pill so frame 0 of the focus animation matches the omnibar exactly (bottom only).

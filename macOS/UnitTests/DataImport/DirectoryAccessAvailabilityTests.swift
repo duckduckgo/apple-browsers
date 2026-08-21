@@ -19,9 +19,9 @@
 import FeatureFlags_macOS
 import Foundation
 import Persistence
-import PersistenceTestingUtils
 import PrivacyConfig
 import XCTest
+@_spi(Testing) import Persistence
 
 @testable import DuckDuckGo_Privacy_Browser
 

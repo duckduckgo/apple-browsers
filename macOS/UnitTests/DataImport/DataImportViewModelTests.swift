@@ -20,14 +20,14 @@ import Common
 import FoundationExtensions
 import Foundation
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
 import FeatureFlags_macOS
 import Persistence
-import PersistenceTestingUtils
 import PrivacyConfig
 import UniformTypeIdentifiers
 import SharedTestUtilities
+@testable import DuckDuckGo_Privacy_Browser
+@_spi(Testing) import Persistence
 
 final class DataImportViewModelTests: XCTestCase {
 

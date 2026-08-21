@@ -48,6 +48,10 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         defaultsSuiteName = suiteName
         defaults = UserDefaults(suiteName: suiteName)!
 
+        pixelKit = makePixelKit(source: pixelSource)
+    }
+
+    private func makePixelKit(source: String) -> PixelKit {
         let fireRequest: PixelKit.FireRequest = { pixelName, _, parameters, _, _, onComplete in
             self.firedPixels.append(FiredPixel(name: pixelName, parameters: parameters))
             DispatchQueue.main.async {
@@ -55,10 +59,10 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             }
         }
 
-        pixelKit = PixelKit(
+        return PixelKit(
             dryRun: false,
             appVersion: "1.0.0",
-            source: pixelSource,
+            source: source,
             defaultHeaders: [:],
             defaults: defaults,
             fireRequest: fireRequest
@@ -151,9 +155,34 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         XCTAssertNil(data.parameters["token_status"])
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionAutomaticSignOut(data, subscriptionSource, error).name,
+            baseName: SubscriptionAutomaticSignOutPixel.automaticSignOut(data, subscriptionSource, error).name,
             expectedParameters: expectedParameters
         )
+    }
+
+    /// The platform and form-factor markers are the only thing separating this pixel from the Android
+    /// pixel of the same name, so the fired names are asserted in full.
+    func testAutomaticSignOutPixelCarriesPlatformAndFormFactorMarkers() {
+        let expectedMarkers: [(source: PixelKit.Source, marker: String)] = [
+            (.iOS, "_ios_phone"),
+            (.iPadOS, "_ios_tablet")
+        ]
+
+        for expected in expectedMarkers {
+            firedPixels.removeAll()
+            let data = makeAutomaticSignOutPixelData()
+            let error = OAuthClientError.invalidTokenRequest(.reused)
+            let handler = SubscriptionPixelHandler(source: subscriptionSource,
+                                                   pixelKit: makePixelKit(source: expected.source.rawValue))
+
+            handler.handle(pixel: .automaticSignOut(data, error))
+
+            let baseName = "m_privacy-pro_auth_account_automatically_signed_out" + expected.marker
+            XCTAssertNotNil(firedPixels.first(where: { $0.name == baseName + "_daily" }),
+                            "Expected \(baseName)_daily, got \(firedPixels.map(\.name))")
+            XCTAssertNotNil(firedPixels.first(where: { $0.name == baseName + "_count" }),
+                            "Expected \(baseName)_count, got \(firedPixels.map(\.name))")
+        }
     }
 
     func testInvalidRefreshTokenSignedOutPixel() {

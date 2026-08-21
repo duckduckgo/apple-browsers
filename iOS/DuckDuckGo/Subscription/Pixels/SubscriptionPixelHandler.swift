@@ -49,7 +49,7 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
         case .getTokensError(let policy, let error):
             pixelKit?.fire(SubscriptionPixel.subscriptionAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
         case .automaticSignOut(let data, let error):
-            pixelKit?.fire(SubscriptionPixel.subscriptionAutomaticSignOut(data, source, error), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionAutomaticSignOutPixel.automaticSignOut(data, source, error), frequency: .dailyAndCount)
         case .invalidRefreshTokenSignedOut:
             pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
         case .invalidRefreshTokenRecovered:

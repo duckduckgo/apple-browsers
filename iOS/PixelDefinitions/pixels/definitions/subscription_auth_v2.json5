@@ -4,7 +4,7 @@
         "description": "Fired after Privacy Pro automatically signs a user out because the backend reported an unknown account or an invalid refresh token that could not be recovered. Low-cardinality local state captured before deletion helps distinguish expected backend invalidation from client token races or inconsistent account state.",
         "owners": ["samsymons"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",

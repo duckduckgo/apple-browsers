@@ -32,8 +32,15 @@ enum WebViewTransitionGeometry {
     }
 
     static func previewFrame(for cellBounds: CGSize, previewSize: CGSize, isGridViewEnabled: Bool) -> CGRect {
-        guard isGridViewEnabled, let previewAspectRatio = aspectRatio(of: previewSize) else {
+        guard let previewAspectRatio = aspectRatio(of: previewSize) else {
             return CGRect(origin: .zero, size: cellBounds)
+        }
+
+        guard isGridViewEnabled else {
+            return CGRect(x: 0,
+                          y: 0,
+                          width: cellBounds.width,
+                          height: cellBounds.width * previewAspectRatio)
         }
 
         let availableHeight = cellBounds.height - TabViewCell.Constants.cellHeaderHeight

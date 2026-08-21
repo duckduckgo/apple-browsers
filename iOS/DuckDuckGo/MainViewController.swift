@@ -89,6 +89,22 @@ struct StartupOnboardingDecision {
     }
 }
 
+enum FloatingGlassAppearancePolicy {
+
+    static func interfaceStyle(isFireMode: Bool,
+                               traitCollection: UITraitCollection,
+                               pageBackgroundColor: UIColor?) -> UIUserInterfaceStyle {
+        if isFireMode || traitCollection.userInterfaceStyle == .dark {
+            return .dark
+        }
+        guard let pageBackgroundColor else {
+            return .light
+        }
+        let resolvedColor = pageBackgroundColor.resolvedColor(with: traitCollection)
+        return resolvedColor.brightnessPercentage < 50 ? .dark : .light
+    }
+}
+
 class MainViewController: UIViewController {
 
     /// iOS may deliver buffered accelerometer data as a spurious shake when returning from background.
@@ -257,7 +273,27 @@ class MainViewController: UIViewController {
 
     func endTabSwitcherToolbarOwnership() {
         isTabSwitcherTransitionOwningToolbar = false
+        guard isFloatingUIEnabled else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !isTabSwitcherTransitionOwningToolbar else { return }
+            refreshSettledFloatingGlassAppearance()
+        }
     }
+
+    private func refreshSettledFloatingGlassAppearance() {
+        guard isFloatingUIEnabled else { return }
+        let interfaceStyle = settledFloatingGlassInterfaceStyle
+        viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        (viewCoordinator.omniBar.barView as? DefaultOmniBarView)?.refreshFloatingGlassAppearance(interfaceStyle: interfaceStyle)
+    }
+
+    private var settledFloatingGlassInterfaceStyle: UIUserInterfaceStyle {
+        FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: tabManager.currentBrowsingMode == .fire,
+            traitCollection: traitCollection,
+            pageBackgroundColor: currentTab?.webView?.underPageBackgroundColor)
+    }
+
     private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool, topInset: CGFloat) = (false, false, -1)
     private lazy var isWindowControlsRowEnabled = WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
     private var lastForegroundEntryDate = Date.distantPast
@@ -7712,6 +7748,7 @@ extension MainViewController {
         if !themeColorManager.updateThemeColor() {
             updateStatusBarBackgroundColor()
         }
+        refreshSettledFloatingGlassAppearance()
         updateFindInPage()
 
         revealChromeIfPinned()

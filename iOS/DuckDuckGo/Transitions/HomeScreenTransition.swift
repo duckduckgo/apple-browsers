@@ -36,10 +36,13 @@ class HomeScreenTransition: TabSwitcherTransition {
     fileprivate func prepareSnapshots(with transitionSource: HomeScreenTransitionSource,
                                       transitionContext: UIViewControllerContextTransitioning,
                                       addressBarPosition: AddressBarPosition,
-                                      addressBarHeight: CGFloat) {
+                                      addressBarHeight: CGFloat,
+                                      isFloatingUIEnabled: Bool) {
 
         let viewToSnapshot = transitionSource.snapshotView
-        let sourceBounds = adjustFrame(transitionSource.rootContainerView.bounds, forAddressBarPosition: addressBarPosition, byHeight: -addressBarHeight)
+        let sourceBounds = isFloatingUIEnabled
+            ? transitionSource.rootContainerView.bounds
+            : adjustFrame(transitionSource.rootContainerView.bounds, forAddressBarPosition: addressBarPosition, byHeight: -addressBarHeight)
         let frameToSnapshot = transitionSource.rootContainerView.convert(sourceBounds, to: viewToSnapshot)
 
         if let snapshot = viewToSnapshot.resizableSnapshotView(from: frameToSnapshot,
@@ -109,6 +112,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
         let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
+        let reduceMotion = UIAccessibility.isReduceMotionEnabled
         let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
                                                      transitionContext: transitionContext,
                                                      afterScreenUpdates: false,
@@ -116,15 +120,22 @@ class FromHomeScreenTransition: HomeScreenTransition {
 
         let theme = ThemeManager.shared.currentTheme
 
-        solidBackground.frame = adjustFrame(homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil),
-                                            forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
-                                            byHeight: -mainViewController.omniBar.barView.expectedHeight)
+        let homeScreenFrame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
+        solidBackground.frame = isFloating
+            ? homeScreenFrame
+            : adjustFrame(homeScreenFrame,
+                          forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                          byHeight: -mainViewController.omniBar.barView.expectedHeight)
         solidBackground.backgroundColor = theme.backgroundColor
 
         imageContainer.frame = solidBackground.frame
         imageContainer.backgroundColor = theme.backgroundColor
         
-        prepareSnapshots(with: homeScreen, transitionContext: transitionContext, addressBarPosition: mainViewController.appSettings.currentAddressBarPosition, addressBarHeight: mainViewController.omniBar.barView.expectedHeight)
+        prepareSnapshots(with: homeScreen,
+                         transitionContext: transitionContext,
+                         addressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                         addressBarHeight: mainViewController.omniBar.barView.expectedHeight,
+                         isFloatingUIEnabled: isFloating)
 
         imageView.alpha = 0
         imageView.frame = imageContainer.bounds
@@ -167,6 +178,9 @@ class FromHomeScreenTransition: HomeScreenTransition {
 
             if let toolbarSnapshot {
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                    if !reduceMotion {
+                        toolbarSnapshot.transform = TabSwitcherTransition.collapsedToolbarTransform(for: toolbarSnapshot)
+                    }
                     toolbarSnapshot.alpha = 0
                 }
             }
@@ -202,6 +216,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
                 mainViewController.view.alpha = 1
                 mainViewController.endTabSwitcherToolbarOwnership()
                 if mainViewController.isFloatingUIEnabled {
+                    mainViewController.viewCoordinator.toolbar.transform = .identity
                     mainViewController.viewCoordinator.toolbar.alpha = 1
                 }
             }
@@ -221,14 +236,14 @@ class ToHomeScreenTransition: HomeScreenTransition {
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
         let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
+        let reduceMotion = UIAccessibility.isReduceMotionEnabled
         if isFloating {
             mainViewController.chromeManager.reset(animated: false)
         }
         let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
                                                      transitionContext: transitionContext,
                                                      afterScreenUpdates: true,
-                                                     seedCollapsed: false)
-        toolbarSnapshot?.alpha = 0
+                                                     seedCollapsed: true)
 
         let theme = ThemeManager.shared.currentTheme
         imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
@@ -236,7 +251,11 @@ class ToHomeScreenTransition: HomeScreenTransition {
         imageContainer.backgroundColor = theme.tabSwitcherCellBackgroundColor
         imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
         
-        prepareSnapshots(with: homeScreen, transitionContext: transitionContext, addressBarPosition: mainViewController.appSettings.currentAddressBarPosition, addressBarHeight: mainViewController.omniBar.barView.expectedHeight)
+        prepareSnapshots(with: homeScreen,
+                         transitionContext: transitionContext,
+                         addressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                         addressBarHeight: mainViewController.omniBar.barView.expectedHeight,
+                         isFloatingUIEnabled: isFloating)
         homeScreenSnapshot?.alpha = 0
         settingsButtonSnapshot?.alpha = 0
         
@@ -253,10 +272,12 @@ class ToHomeScreenTransition: HomeScreenTransition {
         UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
-                self.imageContainer.frame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
-                self.imageContainer.frame = self.adjustFrame(self.imageContainer.frame,
-                                                             forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
-                                                             byHeight: -mainViewController.omniBar.barView.expectedHeight)
+                let homeScreenFrame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
+                self.imageContainer.frame = isFloating
+                    ? homeScreenFrame
+                    : self.adjustFrame(homeScreenFrame,
+                                       forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                                       byHeight: -mainViewController.omniBar.barView.expectedHeight)
                 self.imageContainer.layer.cornerRadius = 0
                 self.imageContainer.backgroundColor = theme.backgroundColor
                 self.imageView.frame = CGRect(origin: .zero,
@@ -282,7 +303,18 @@ class ToHomeScreenTransition: HomeScreenTransition {
             }
 
             if let toolbarSnapshot {
-                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.6) {
+                    if !reduceMotion {
+                        toolbarSnapshot.transform = TabSwitcherTransition.toolbarTransform(
+                            scale: Constants.revealMidpointScale,
+                            for: toolbarSnapshot)
+                    }
+                    toolbarSnapshot.alpha = Constants.revealMidpointAlpha
+                }
+                UIView.addKeyframe(withRelativeStartTime: 0.6, relativeDuration: 0.4) {
+                    if !reduceMotion {
+                        toolbarSnapshot.transform = .identity
+                    }
                     toolbarSnapshot.alpha = 1
                 }
             }

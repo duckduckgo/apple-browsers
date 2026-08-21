@@ -360,6 +360,16 @@ final class BrowserToolbarView: UIView {
         updateCornerStyle()
     }
 
+    func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle) {
+        guard isFloatingStyleEnabled else { return }
+        UIView.performWithoutAnimation {
+            materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
+            materialBackgroundView.effect = nil
+            materialBackgroundView.effect = materialEffect()
+            materialBackgroundView.layoutIfNeeded()
+        }
+    }
+
     func isHostingOmnibarView(_ view: UIView) -> Bool {
         hostedOmnibarView === view
     }

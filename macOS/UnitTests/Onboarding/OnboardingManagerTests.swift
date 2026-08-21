@@ -20,8 +20,7 @@ import AIChat
 import Combine
 import FeatureFlags_macOS
 import Onboarding
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelExperimentKit
 import PixelKit
 import PrivacyConfig

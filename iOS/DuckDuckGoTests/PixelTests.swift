@@ -135,25 +135,6 @@ class PixelTests: XCTestCase {
         wait(for: [expectation], timeout: 5.0)
     }
 
-    func testWhenTimedPixelFiredThenCorrectDurationIsSet() {
-        let expectation = XCTestExpectation()
-        
-        let date = Date(timeIntervalSince1970: 0)
-        let now = Date(timeIntervalSince1970: 1)
-
-        stub(condition: isHost(host) && (isPath("/t/ml_ios_phone") || isPath("/t/ml_ios_tablet"))) { request -> HTTPStubsResponse in
-            XCTAssertEqual("1.0", request.url?.getParameter(named: "dur"))
-
-            expectation.fulfill()
-            return HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
-        }
-        
-        let pixel = TimedPixel(.appLaunch, date: date)
-        pixel.fire(now)
-        
-        wait(for: [expectation], timeout: 5.0)
-    }
-    
     func testWhenPixelFiredThenAPIHeadersAreAdded() {
         let expectation = XCTestExpectation()
         

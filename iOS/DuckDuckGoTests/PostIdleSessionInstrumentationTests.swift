@@ -19,8 +19,7 @@
 
 import Foundation
 import Testing
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo
 
 @Suite("Post Idle Session Instrumentation")

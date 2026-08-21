@@ -22,9 +22,9 @@ import Combine
 import Common
 import FoundationExtensions
 @testable import DDGSync
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import PrivacyConfig
-import SharedTestUtilities
+@_spi(Testing) import SharedTestUtilities
 import Subscription
 import Testing
 import UserScript

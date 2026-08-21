@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import DesignResourcesKit
 
 class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
     
@@ -45,10 +46,13 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
     
     // Used to hide contents of the 'from' VC when animating.
     let solidBackground = UIView()
+    // Draws outside the clipped transition card so depth can participate in the morph.
+    let cardShadow = UIView()
     // Container for the image, will clip subviews like tab switcher cell does.
     let imageContainer = UIView()
     // Image to display as a preview.
     let imageView = UIImageView()
+    private(set) var gridChromeSnapshot: UIView?
     
     let tabSwitcherViewController: TabSwitcherViewController
     
@@ -60,9 +64,63 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         
         transitionContext.containerView.addSubview(solidBackground)
 
+        cardShadow.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
+        cardShadow.layer.cornerCurve = .continuous
+        cardShadow.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
+        cardShadow.layer.shadowRadius = TabViewCell.Constants.shadowRadius
+        cardShadow.layer.shadowOffset = TabViewCell.Constants.shadowOffset
+        transitionContext.containerView.addSubview(cardShadow)
+
         imageContainer.clipsToBounds = true
+        imageContainer.layer.cornerCurve = .continuous
         imageContainer.addSubview(imageView)
         transitionContext.containerView.addSubview(imageContainer)
+    }
+
+    func setCardFrame(_ frame: CGRect, cornerRadius: CGFloat, shadowOpacity: Float) {
+        cardShadow.frame = frame
+        cardShadow.layer.cornerRadius = cornerRadius
+        cardShadow.layer.shadowOpacity = shadowOpacity
+        cardShadow.layer.shadowPath = UIBezierPath(
+            roundedRect: cardShadow.bounds,
+            cornerRadius: cornerRadius).cgPath
+
+        imageContainer.frame = frame
+        imageContainer.layer.cornerRadius = cornerRadius
+    }
+
+    func prepareGridChromeSnapshot(for cell: TabViewGridCell, initiallyVisible: Bool) {
+        cell.layoutIfNeeded()
+        let headerFrame = CGRect(x: 0,
+                                 y: 0,
+                                 width: cell.bounds.width,
+                                 height: TabViewGridCell.Constants.headerHeight)
+        guard let snapshot = cell.resizableSnapshotView(from: headerFrame,
+                                                        afterScreenUpdates: true,
+                                                        withCapInsets: .zero) else {
+            return
+        }
+
+        imageContainer.addSubview(snapshot)
+        gridChromeSnapshot = snapshot
+        applyGridChromePose(isVisible: initiallyVisible, in: imageContainer.bounds)
+    }
+
+    func applyGridChromePose(isVisible: Bool, in containerBounds: CGRect) {
+        guard let gridChromeSnapshot else { return }
+        let headerHeight = TabViewGridCell.Constants.headerHeight
+        gridChromeSnapshot.frame = CGRect(x: containerBounds.minX,
+                                          y: isVisible ? containerBounds.minY : containerBounds.minY - headerHeight,
+                                          width: containerBounds.width,
+                                          height: headerHeight)
+        gridChromeSnapshot.alpha = isVisible ? 1 : 0
+    }
+
+    func removeTransitionViews() {
+        solidBackground.removeFromSuperview()
+        cardShadow.removeFromSuperview()
+        imageContainer.removeFromSuperview()
+        gridChromeSnapshot = nil
     }
     
     func makeToolbarSnapshot(of toolbar: BrowserToolbarView,

@@ -24,10 +24,20 @@ enum HomeScreenTransitionGeometry {
     /// Aspect-fit frame for a captured new-tab-page snapshot inside a shrinking/growing
     /// tab-cell container. Fitting on the smaller ratio scales the page uniformly instead
     /// of stretching a `resizableSnapshotView` to the container's (often much wider) bounds.
-    static func snapshotFrame(for sourceSize: CGSize, in containerBounds: CGRect) -> CGRect {
+    static func snapshotFrame(for sourceSize: CGSize,
+                              in containerBounds: CGRect,
+                              isGridViewEnabled: Bool) -> CGRect {
         guard sourceSize.width > 0, sourceSize.height > 0,
               sourceSize.width.isFinite, sourceSize.height.isFinite else {
             return containerBounds
+        }
+
+        if !isGridViewEnabled {
+            let scale = containerBounds.width / sourceSize.width
+            return CGRect(x: containerBounds.minX,
+                          y: containerBounds.minY,
+                          width: containerBounds.width,
+                          height: sourceSize.height * scale)
         }
 
         let scale = min(containerBounds.width / sourceSize.width,

@@ -51,26 +51,32 @@ class HomeScreenTransition: TabSwitcherTransition {
             imageContainer.addSubview(snapshot)
             homeScreenSnapshotSourceSize = frameToSnapshot.size
             snapshot.frame = HomeScreenTransitionGeometry.snapshotFrame(for: frameToSnapshot.size,
-                                                                        in: imageContainer.bounds)
+                                                                        in: imageContainer.bounds,
+                                                                        isGridViewEnabled: tabSwitcherSettings.isGridViewEnabled)
             homeScreenSnapshot = snapshot
         }
     }
 
-    fileprivate func homeScreenSnapshotFrame(in containerBounds: CGRect) -> CGRect {
-        HomeScreenTransitionGeometry.snapshotFrame(for: homeScreenSnapshotSourceSize ?? .zero, in: containerBounds)
+    fileprivate func homeScreenSnapshotFrame(in containerBounds: CGRect, includesGridChrome: Bool = false) -> CGRect {
+        let snapshotBounds: CGRect
+        if tabSwitcherSettings.isGridViewEnabled, includesGridChrome {
+            snapshotBounds = CGRect(
+                x: TabViewGridCell.Constants.previewHorizontalInset / 2,
+                y: TabViewGridCell.Constants.headerHeight,
+                width: containerBounds.width - TabViewGridCell.Constants.previewHorizontalInset,
+                height: containerBounds.height - TabViewGridCell.Constants.headerHeight - TabViewGridCell.Constants.previewBottomPadding)
+        } else {
+            snapshotBounds = containerBounds
+        }
+        return HomeScreenTransitionGeometry.snapshotFrame(
+            for: homeScreenSnapshotSourceSize ?? .zero,
+            in: snapshotBounds,
+            isGridViewEnabled: tabSwitcherSettings.isGridViewEnabled)
     }
 
     fileprivate func tabSwitcherCellFrame(for attributes: UICollectionViewLayoutAttributes) -> CGRect {
-        var targetFrame = self.tabSwitcherViewController.collectionView.convert(attributes.frame,
-                                                                                to: self.tabSwitcherViewController.view)
-        
-        guard tabSwitcherSettings.isGridViewEnabled else {
-            return targetFrame
-        }
-        
-        targetFrame.origin.y += TabViewCell.Constants.cellHeaderHeight
-        targetFrame.size.height -= TabViewCell.Constants.cellHeaderHeight
-        return targetFrame
+        self.tabSwitcherViewController.collectionView.convert(attributes.frame,
+                                                              to: self.tabSwitcherViewController.view)
     }
     
     fileprivate func previewFrame(for cellBounds: CGSize) -> CGRect {
@@ -95,6 +101,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
         prepareSubviews(using: transitionContext)
         tabSwitcherViewController.view.alpha = 0
         transitionContext.containerView.insertSubview(tabSwitcherViewController.view, belowSubview: imageContainer)
+        transitionContext.containerView.insertSubview(cardShadow, belowSubview: imageContainer)
         tabSwitcherViewController.view.frame = transitionContext.finalFrame(for: tabSwitcherViewController)
         tabSwitcherViewController.prepareForPresentation()
         
@@ -104,6 +111,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
               let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: IndexPath(row: rowIndex, section: 0))
         else {
             tabSwitcherViewController.view.alpha = 1
+            removeTransitionViews()
             mainViewController.endTabSwitcherToolbarOwnership()
             transitionContext.completeTransition(true)
             return
@@ -128,7 +136,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
                           byHeight: -mainViewController.omniBar.barView.expectedHeight)
         solidBackground.backgroundColor = theme.backgroundColor
 
-        imageContainer.frame = solidBackground.frame
+        setCardFrame(solidBackground.frame, cornerRadius: 0, shadowOpacity: 0)
         imageContainer.backgroundColor = theme.backgroundColor
         
         prepareSnapshots(with: homeScreen,
@@ -142,17 +150,31 @@ class FromHomeScreenTransition: HomeScreenTransition {
         imageView.contentMode = .center
         if tabSwitcherSettings.isGridViewEnabled {
             imageView.image = TabViewCell.logoImage(for: tab)
+            if let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewGridCell {
+                prepareGridChromeSnapshot(for: cell, initiallyVisible: false)
+            }
         }
         
         UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
-                self.imageContainer.frame = containerFrame
-                self.imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
+                self.setCardFrame(containerFrame,
+                                  cornerRadius: TabViewCell.Constants.cellCornerRadius,
+                                  shadowOpacity: 1)
                 self.imageContainer.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
                 self.imageView.frame = self.previewFrame(for: self.imageContainer.bounds.size)
-                self.homeScreenSnapshot?.frame = self.homeScreenSnapshotFrame(in: self.imageContainer.bounds)
+                self.homeScreenSnapshot?.frame = self.homeScreenSnapshotFrame(
+                    in: CGRect(origin: .zero, size: containerFrame.size),
+                    includesGridChrome: true)
+            }
+
+            if self.tabSwitcherSettings.isGridViewEnabled {
+                UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.55) {
+                    self.applyGridChromePose(
+                        isVisible: true,
+                        in: CGRect(origin: .zero, size: self.tabSwitcherCellFrame(for: layoutAttr).size))
+                }
             }
 
             // Slowly fade out to create a cross fade effect
@@ -186,8 +208,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
             }
 
         }, completion: { _ in
-            self.solidBackground.removeFromSuperview()
-            self.imageContainer.removeFromSuperview()
+            self.removeTransitionViews()
             self.settingsButtonSnapshot?.removeFromSuperview()
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {
@@ -224,8 +245,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
             UIView.animate(withDuration: TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating), animations: {
                 self.tabSwitcherViewController.view.alpha = 0
             }, completion: { _ in
-                self.solidBackground.removeFromSuperview()
-                self.imageContainer.removeFromSuperview()
+                self.removeTransitionViews()
                 transitionContext.completeTransition(true)
             })
             return
@@ -246,16 +266,19 @@ class ToHomeScreenTransition: HomeScreenTransition {
                                                      seedCollapsed: true)
 
         let theme = ThemeManager.shared.currentTheme
-        imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
+        let initialContainerFrame = tabSwitcherCellFrame(for: layoutAttr)
+        setCardFrame(initialContainerFrame,
+                     cornerRadius: TabViewCell.Constants.cellCornerRadius,
+                     shadowOpacity: 1)
 
         imageContainer.backgroundColor = theme.tabSwitcherCellBackgroundColor
-        imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
         
         prepareSnapshots(with: homeScreen,
                          transitionContext: transitionContext,
                          addressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
                          addressBarHeight: mainViewController.omniBar.barView.expectedHeight,
                          isFloatingUIEnabled: isFloating)
+        homeScreenSnapshot?.frame = homeScreenSnapshotFrame(in: imageContainer.bounds, includesGridChrome: true)
         homeScreenSnapshot?.alpha = 0
         settingsButtonSnapshot?.alpha = 0
         
@@ -264,6 +287,9 @@ class ToHomeScreenTransition: HomeScreenTransition {
         if tabSwitcherSettings.isGridViewEnabled {
             imageView.image = TabViewCell.logoImage(for: tab)
             imageView.alpha = tab.viewed ? 1 : 0
+            if let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewGridCell {
+                prepareGridChromeSnapshot(for: cell, initiallyVisible: true)
+            }
         }
         imageView.backgroundColor = .clear
 
@@ -273,16 +299,30 @@ class ToHomeScreenTransition: HomeScreenTransition {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let homeScreenFrame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
-                self.imageContainer.frame = isFloating
+                let destinationFrame = isFloating
                     ? homeScreenFrame
                     : self.adjustFrame(homeScreenFrame,
                                        forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
                                        byHeight: -mainViewController.omniBar.barView.expectedHeight)
-                self.imageContainer.layer.cornerRadius = 0
+                self.setCardFrame(destinationFrame, cornerRadius: 0, shadowOpacity: 0)
                 self.imageContainer.backgroundColor = theme.backgroundColor
                 self.imageView.frame = CGRect(origin: .zero,
                                               size: self.imageContainer.bounds.size)
-                self.homeScreenSnapshot?.frame = self.homeScreenSnapshotFrame(in: self.imageContainer.bounds)
+                self.homeScreenSnapshot?.frame = self.homeScreenSnapshotFrame(
+                    in: CGRect(origin: .zero, size: destinationFrame.size))
+            }
+
+            if self.tabSwitcherSettings.isGridViewEnabled {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.55) {
+                    let homeScreenFrame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
+                    let destinationFrame = isFloating
+                        ? homeScreenFrame
+                        : self.adjustFrame(homeScreenFrame,
+                                           forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                                           byHeight: -mainViewController.omniBar.barView.expectedHeight)
+                    self.applyGridChromePose(isVisible: false,
+                                             in: CGRect(origin: .zero, size: destinationFrame.size))
+                }
             }
 
             if tab.viewed {
@@ -320,7 +360,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
             }
 
         }, completion: { _ in
-            self.imageContainer.removeFromSuperview()
+            self.removeTransitionViews()
             self.settingsButtonSnapshot?.removeFromSuperview()
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {

@@ -66,6 +66,23 @@ final class WebViewTransitionGeometryTests: XCTestCase {
         XCTAssertEqual(frame, CGRect(x: 4, y: 44, width: 172, height: 344))
     }
 
+    func testWhenGridPreviewIsWideThenItFillsBodyHeightAndStaysCentered() {
+        let frame = WebViewTransitionGeometry.previewFrame(for: CGSize(width: 180, height: 240),
+                                                           previewSize: CGSize(width: 400, height: 200),
+                                                           isGridViewEnabled: true)
+
+        XCTAssertEqual(frame, CGRect(x: -102, y: 44, width: 384, height: 192))
+    }
+
+    func testWhenGridCellCannotFitPreviewThenFrameFallsBackToCellBounds() {
+        let cellBounds = CGSize(width: 4, height: 40)
+        let frame = WebViewTransitionGeometry.previewFrame(for: cellBounds,
+                                                           previewSize: CGSize(width: 300, height: 600),
+                                                           isGridViewEnabled: true)
+
+        XCTAssertEqual(frame, CGRect(origin: .zero, size: cellBounds))
+    }
+
     func testPreviewFrameFillsListWidthAndCropsVerticallyWhenGridDisabled() {
         let cellBounds = CGSize(width: 180, height: 240)
         let frame = WebViewTransitionGeometry.previewFrame(for: cellBounds,

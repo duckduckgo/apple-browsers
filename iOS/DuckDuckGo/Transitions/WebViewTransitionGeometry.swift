@@ -43,26 +43,28 @@ enum WebViewTransitionGeometry {
                           height: cellBounds.width * previewAspectRatio)
         }
 
-        let availableHeight = cellBounds.height - TabViewCell.Constants.cellHeaderHeight
-        let containerAspectRatio = availableHeight / cellBounds.width
+        let horizontalInset = TabViewGridCell.Constants.previewHorizontalInset / 2
+        let availableWidth = cellBounds.width - TabViewGridCell.Constants.previewHorizontalInset
+        let availableHeight = cellBounds.height
+            - TabViewGridCell.Constants.headerHeight
+            - TabViewGridCell.Constants.previewBottomPadding
+        guard availableWidth > 0, availableHeight > 0 else {
+            return CGRect(origin: .zero, size: cellBounds)
+        }
+        let containerAspectRatio = availableHeight / availableWidth
 
         if previewAspectRatio <= containerAspectRatio {
-            // Wide (landscape) preview: fill the cell height and centre horizontally so the
-            // overflow is centre-cropped (matching `TabViewCell.updatePreviewToDisplay`), rather
-            // than showing only the left edge or leaving empty space.
             let width = availableHeight / previewAspectRatio
             return CGRect(x: (cellBounds.width - width) / 2,
-                          y: TabViewCell.Constants.cellHeaderHeight,
+                          y: TabViewGridCell.Constants.headerHeight,
                           width: width,
                           height: availableHeight)
         }
 
-        // Tall (portrait) preview: fit the cell width and anchor at the top, cropping excess height.
-        return CGRect(x: 0,
-                      y: TabViewCell.Constants.cellHeaderHeight,
-                      width: cellBounds.width,
-                      height: cellBounds.width * previewAspectRatio - 8)
-            .insetBy(dx: 4, dy: 4)
+        return CGRect(x: horizontalInset,
+                      y: TabViewGridCell.Constants.headerHeight,
+                      width: availableWidth,
+                      height: availableWidth * previewAspectRatio)
     }
 
     static func destinationImageFrame(for containerSize: CGSize, previewSize: CGSize?) -> CGRect {

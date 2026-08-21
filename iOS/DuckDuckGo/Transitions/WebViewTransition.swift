@@ -91,6 +91,7 @@ class FromWebViewTransition: WebViewTransition {
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab)
         else {
             tabSwitcherViewController.view.alpha = 1
+            removeTransitionViews()
             mainViewController.endTabSwitcherToolbarOwnership()
             transitionContext.completeTransition(true)
             return
@@ -103,6 +104,7 @@ class FromWebViewTransition: WebViewTransition {
               let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         else {
             tabSwitcherViewController.view.alpha = 1
+            removeTransitionViews()
             mainViewController.endTabSwitcherToolbarOwnership()
             transitionContext.completeTransition(true)
             return
@@ -123,16 +125,17 @@ class FromWebViewTransition: WebViewTransition {
                                                      afterScreenUpdates: false,
                                                      seedCollapsed: false)
 
-        imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
+        var initialContainerFrame = mainViewController.viewCoordinator.contentContainer.frame
         if isFloating {
-            imageContainer.frame = WebViewTransitionGeometry.webContentFrame(
-                from: imageContainer.frame,
+            initialContainerFrame = WebViewTransitionGeometry.webContentFrame(
+                from: initialContainerFrame,
                 topObscuredHeight: webView.scrollView.contentInset.top)
         } else {
-            imageContainer.frame = adjustFrame(imageContainer.frame,
-                                               forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
-                                               byHeight: -mainViewController.omniBar.barView.expectedHeight)
+            initialContainerFrame = adjustFrame(initialContainerFrame,
+                                                forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                                                byHeight: -mainViewController.omniBar.barView.expectedHeight)
         }
+        setCardFrame(initialContainerFrame, cornerRadius: 0, shadowOpacity: 0)
         imageContainer.backgroundColor = theme.backgroundColor
         imageView.frame = imageContainer.bounds
         imageView.image = preview
@@ -143,16 +146,30 @@ class FromWebViewTransition: WebViewTransition {
         // the AI cell is a screenshot, so there's nothing to crossfade to
         let cellSnapshot = installAITabCellSnapshot(for: tab, at: indexPath)
 
-        animateCornerRadius(of: imageContainer, to: TabViewCell.Constants.cellCornerRadius, duration: duration)
+        if tabSwitcherSettings.isGridViewEnabled,
+           cellSnapshot == nil,
+           let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
+            prepareGridChromeSnapshot(for: cell, initiallyVisible: false)
+        }
 
         UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
 
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
-                self.imageContainer.frame = containerFrame
+                self.setCardFrame(containerFrame,
+                                  cornerRadius: TabViewCell.Constants.cellCornerRadius,
+                                  shadowOpacity: 1)
                 self.imageView.frame = WebViewTransitionGeometry.previewFrame(for: containerFrame.size,
                                                                               previewSize: preview.size,
                                                                               isGridViewEnabled: self.tabSwitcherSettings.isGridViewEnabled)
+            }
+
+            if self.tabSwitcherSettings.isGridViewEnabled {
+                UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.55) {
+                    self.applyGridChromePose(
+                        isVisible: true,
+                        in: CGRect(origin: .zero, size: self.tabSwitcherCellFrame(for: layoutAttr).size))
+                }
             }
 
             UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.7) {
@@ -180,8 +197,7 @@ class FromWebViewTransition: WebViewTransition {
                 }
             }
         }, completion: { _ in
-            self.solidBackground.removeFromSuperview()
-            self.imageContainer.removeFromSuperview()
+            self.removeTransitionViews()
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {
                 toolbar.alpha = 0
@@ -211,8 +227,7 @@ class ToWebViewTransition: WebViewTransition {
         UIView.animate(withDuration: duration, animations: {
             self.tabSwitcherViewController.view.alpha = 0
         }, completion: { _ in
-            self.solidBackground.removeFromSuperview()
-            self.imageContainer.removeFromSuperview()
+            self.removeTransitionViews()
             transitionContext.completeTransition(true)
         })
     }
@@ -251,10 +266,11 @@ class ToWebViewTransition: WebViewTransition {
         solidBackground.removeFromSuperview()
         webView.addSubview(solidBackground)
         
-        imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
-        imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
+        let initialContainerFrame = tabSwitcherCellFrame(for: layoutAttr)
+        setCardFrame(initialContainerFrame,
+                     cornerRadius: TabViewCell.Constants.cellCornerRadius,
+                     shadowOpacity: 1)
         imageContainer.backgroundColor = theme.backgroundColor
-
         let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         if let preview = preview {
             imageView.frame = WebViewTransitionGeometry.previewFrame(for: imageContainer.bounds.size,
@@ -264,14 +280,17 @@ class ToWebViewTransition: WebViewTransition {
             imageView.frame = CGRect(origin: .zero, size: imageContainer.bounds.size)
         }
         imageView.image = preview
+
+        if tabSwitcherSettings.isGridViewEnabled,
+           let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewGridCell {
+            prepareGridChromeSnapshot(for: cell, initiallyVisible: true)
+        }
         
         if !tabSwitcherSettings.isGridViewEnabled {
             self.imageView.alpha = 0
         }
         
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
-
-        animateCornerRadius(of: imageContainer, to: 0, duration: duration)
 
         UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
@@ -281,8 +300,7 @@ class ToWebViewTransition: WebViewTransition {
                         from: destinationFrame,
                         topObscuredHeight: webView.scrollView.contentInset.top)
                 }
-                self.imageContainer.frame = destinationFrame
-
+                self.setCardFrame(destinationFrame, cornerRadius: 0, shadowOpacity: 0)
                 self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: destinationFrame.size,
                                                                                        previewSize: preview?.size)
                 self.imageView.alpha = 1
@@ -291,6 +309,20 @@ class ToWebViewTransition: WebViewTransition {
 
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.7) {
                 self.tabSwitcherViewController.view.alpha = 0
+            }
+
+            if self.tabSwitcherSettings.isGridViewEnabled {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.55) {
+                    var destinationFrame = mainViewController.viewCoordinator.contentContainer.frame
+                    if isFloating {
+                        destinationFrame = WebViewTransitionGeometry.webContentFrame(
+                            from: destinationFrame,
+                            topObscuredHeight: webView.scrollView.contentInset.top)
+                    }
+                    self.applyGridChromePose(
+                        isVisible: false,
+                        in: CGRect(origin: .zero, size: destinationFrame.size))
+                }
             }
 
             if let toolbarSnapshot {
@@ -310,8 +342,7 @@ class ToWebViewTransition: WebViewTransition {
                 }
             }
         }, completion: { _ in
-            self.solidBackground.removeFromSuperview()
-            self.imageContainer.removeFromSuperview()
+            self.removeTransitionViews()
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {
                 toolbar.alpha = 1

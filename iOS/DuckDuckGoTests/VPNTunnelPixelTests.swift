@@ -144,6 +144,17 @@ final class VPNTunnelPixelTests: XCTestCase {
         }
     }
 
+    func testAdapterShutdownDailyAndCountPixelsPreserveStandardFrequencySuffixes() {
+        for event in Self.standardDailyAndCountEvents {
+            let names = firedNames {
+                PixelKit.fireVPNTunnel(dailyAndCount: event, legacySuffixes: false)
+            }
+            XCTAssertEqual(names, [event.name + "_daily", event.name + "_count"],
+                           "Unexpected wire names for \(event.name)")
+            XCTAssertFalse(names.contains { $0.hasSuffix("_ios_phone") || $0.hasSuffix("_ios_tablet") })
+        }
+    }
+
     func testDailyHelperEmitsUnsuffixedFormFactorName() {
         for event in Self.dailyEvents {
             let names = firedNames { PixelKit.fireVPNTunnel(daily: event) }
@@ -244,6 +255,7 @@ final class VPNTunnelPixelTests: XCTestCase {
     // Each event below is fired by NetworkProtectionPacketTunnelProvider. The grouping records the
     // legacy firing mechanism it migrates from, which determines the PixelKit frequency:
     //   • fireDailyAndCount / persistentPixel.fireDailyAndCount → .legacyDailyAndCount (name_d + name_c)
+    //   • adapter-shutdown DailyPixel.fireDailyAndCount          → .dailyAndCount (name_daily + name_count)
     //   • DailyPixel.fire                                        → .legacyDailyNoSuffix (name verbatim)
     //   • Pixel.fire                                             → .standard            (name verbatim)
 
@@ -268,9 +280,6 @@ final class VPNTunnelPixelTests: XCTestCase {
         .networkProtectionFailureRecoveryCompletedUnhealthy,
         .networkProtectionFailureRecoveryFailed,
         .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
-        .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure,
-        .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess,
-        .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure,
         .networkProtectionDisconnected,
         .subscriptionKeychainAccessError,
         // Persistent-pixel events (retry now handled internally by PixelKit)
@@ -294,6 +303,13 @@ final class VPNTunnelPixelTests: XCTestCase {
         .networkProtectionWireguardErrorCannotStartWireguardBackend,
         .networkProtectionUnhandledError,
         .networkProtectionClientFailedToFetchServerStatus
+    ]
+
+    /// Fired via `DailyPixel.fireDailyAndCount` without legacy suffixes.
+    private static let standardDailyAndCountEvents: [Pixel.Event] = [
+        .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure,
+        .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess,
+        .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure
     ]
 
     /// Fired via `DailyPixel.fire` (once per day, name emitted verbatim).

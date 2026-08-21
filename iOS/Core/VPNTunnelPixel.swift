@@ -64,12 +64,15 @@ public extension PixelKit {
     /// Fires a VPN packet-tunnel pixel through `PixelKit` as a daily-and-count pixel,
     /// replacing `DailyPixel.fireDailyAndCount(…, pixelNameSuffixes: .legacyDailyPixelSuffixes)`
     /// and `persistentPixel.fireDailyAndCount(…)`. `.legacyDailyAndCount` reproduces the `_d`/`_c`
-    /// suffixes; callers can preserve persistence by opting into PixelKit's retry queue.
+    /// suffixes by default; the three adapter-shutdown events retain PixelKit's `_daily`/`_count`
+    /// suffixes. Callers can preserve persistence by opting into PixelKit's retry queue.
     static func fireVPNTunnel(dailyAndCount event: Pixel.Event,
+                              legacySuffixes: Bool = true,
                               error: Error? = nil,
                               retryOnFailure: Bool = false,
                               withAdditionalParameters params: [String: String] = [:]) {
         shared?.fireVPNTunnel(dailyAndCount: event,
+                              legacySuffixes: legacySuffixes,
                               error: error,
                               retryOnFailure: retryOnFailure,
                               withAdditionalParameters: params)
@@ -98,11 +101,12 @@ public extension PixelKit {
 extension PixelKit {
 
     func fireVPNTunnel(dailyAndCount event: Pixel.Event,
+                       legacySuffixes: Bool = true,
                        error: Error? = nil,
                        retryOnFailure: Bool = false,
                        withAdditionalParameters params: [String: String] = [:]) {
         fire(VPNTunnelPixel(event, error: error),
-             frequency: .legacyDailyAndCount,
+             frequency: legacySuffixes ? .legacyDailyAndCount : .dailyAndCount,
              options: Options(additionalParameters: params, retryOnFailure: retryOnFailure))
     }
 }

@@ -292,11 +292,16 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             if loopDetector.connectionLoopDetected { return }
             PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken, error: error)
         case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
-            PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure, error: error)
+            PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure,
+                                   legacySuffixes: false,
+                                   error: error)
         case .adapterEndTemporaryShutdownStateRecoverySuccess:
-            PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess)
+            PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess,
+                                   legacySuffixes: false)
         case .adapterEndTemporaryShutdownStateRecoveryFailure(let error):
-            PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure, error: error)
+            PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure,
+                                   legacySuffixes: false,
+                                   error: error)
         case .connectionFailureLoopDetected(let error):
             PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionConnectionFailureLoopDetected, error: error, retryOnFailure: true)
         }

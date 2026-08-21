@@ -1,5 +1,5 @@
 //
-//  AIChatRecentChatsPopupViewModelTests.swift
+//  AIChatRecentChatsMenuViewModelTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,7 +22,7 @@ import XCTest
 @testable import DuckDuckGo
 
 @MainActor
-final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
+final class AIChatRecentChatsMenuViewModelTests: XCTestCase {
 
     // MARK: - Mocks
 
@@ -45,23 +45,23 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
     // MARK: - Initialization Tests
 
     func testInitWithEmptySuggestions() {
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: [])
+        let vm = AIChatRecentChatsMenuViewModel(suggestions: [])
 
         XCTAssertTrue(vm.suggestions.isEmpty)
     }
 
     func testInitWithSuggestions() {
         let suggestions = makeSuggestions(count: 3)
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions)
+        let vm = AIChatRecentChatsMenuViewModel(suggestions: suggestions)
 
         XCTAssertEqual(vm.suggestions.count, 3)
     }
 
     func testInitCapsAtMaxVisibleChats() {
         let suggestions = makeSuggestions(count: 10)
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions)
+        let vm = AIChatRecentChatsMenuViewModel(suggestions: suggestions)
 
-        XCTAssertEqual(vm.suggestions.count, AIChatRecentChatsPopupViewModel.maxVisibleChats)
+        XCTAssertEqual(vm.suggestions.count, AIChatRecentChatsMenuViewModel.maxVisibleChats)
     }
 
     // MARK: - Pinned vs Regular Tests
@@ -69,7 +69,7 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
     func testPinnedSuggestionPreservesFlag() {
         let pinned = AIChatSuggestion(id: "1", title: "Pinned", isPinned: true, chatId: "c1")
         let regular = AIChatSuggestion(id: "2", title: "Regular", isPinned: false, chatId: "c2")
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: [pinned, regular])
+        let vm = AIChatRecentChatsMenuViewModel(suggestions: [pinned, regular])
 
         XCTAssertTrue(vm.suggestions[0].isPinned)
         XCTAssertFalse(vm.suggestions[1].isPinned)
@@ -80,14 +80,14 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
     // MARK: - fetch() Tests
 
     func testFetchReturnsNilWhenReaderIsNil() async {
-        let result = await AIChatRecentChatsPopupViewModel.fetch(using: nil)
+        let result = await AIChatRecentChatsMenuViewModel.fetch(using: nil)
         XCTAssertNil(result)
     }
 
     func testFetchReturnsViewModelWhenNoSuggestions() async {
         let reader = MockSuggestionsReader()
 
-        let result = await AIChatRecentChatsPopupViewModel.fetch(using: reader)
+        let result = await AIChatRecentChatsMenuViewModel.fetch(using: reader)
 
         XCTAssertNotNil(result)
         XCTAssertTrue(result?.suggestions.isEmpty ?? false)
@@ -98,7 +98,7 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         let reader = MockSuggestionsReader()
         reader.recentToReturn = makeSuggestions(count: 3)
 
-        let result = await AIChatRecentChatsPopupViewModel.fetch(using: reader)
+        let result = await AIChatRecentChatsMenuViewModel.fetch(using: reader)
 
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.suggestions.count, 3)
@@ -108,19 +108,19 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         let reader = MockSuggestionsReader()
         reader.recentToReturn = makeSuggestions(count: 3)
 
-        _ = await AIChatRecentChatsPopupViewModel.fetch(using: reader)
+        _ = await AIChatRecentChatsMenuViewModel.fetch(using: reader)
 
-        XCTAssertEqual(reader.lastMaxChats, AIChatRecentChatsPopupViewModel.maxVisibleChats + 1)
+        XCTAssertEqual(reader.lastMaxChats, AIChatRecentChatsMenuViewModel.maxVisibleChats + 1)
     }
 
     func testFetchCapsAtMaxVisibleChats() async {
         let reader = MockSuggestionsReader()
-        reader.recentToReturn = makeSuggestions(count: AIChatRecentChatsPopupViewModel.maxVisibleChats + 1)
+        reader.recentToReturn = makeSuggestions(count: AIChatRecentChatsMenuViewModel.maxVisibleChats + 1)
 
-        let result = await AIChatRecentChatsPopupViewModel.fetch(using: reader)
+        let result = await AIChatRecentChatsMenuViewModel.fetch(using: reader)
 
         XCTAssertNotNil(result)
-        XCTAssertEqual(result?.suggestions.count, AIChatRecentChatsPopupViewModel.maxVisibleChats)
+        XCTAssertEqual(result?.suggestions.count, AIChatRecentChatsMenuViewModel.maxVisibleChats)
     }
 
     func testFetchCombinesPinnedAndRecent() async {
@@ -132,7 +132,7 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
             AIChatSuggestion(id: "r1", title: "Recent Chat", isPinned: false, chatId: "recent-1")
         ]
 
-        let result = await AIChatRecentChatsPopupViewModel.fetch(using: reader)
+        let result = await AIChatRecentChatsMenuViewModel.fetch(using: reader)
 
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.suggestions.count, 2)

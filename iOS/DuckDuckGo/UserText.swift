@@ -2485,7 +2485,7 @@ public struct UserText {
     public static let aiChatQuickActionSummarizePage = NSLocalizedString("duckai.quick.action.summarize.page", value: "Summarize page", comment: "Title for the summarize page quick action chip in the improved Duck.ai contextual sheet")
     public static let aiChatQuickActionAttach = NSLocalizedString("duckai.quick.action.attach", value: "Attach Page Content", comment: "Title for the attach page content quick action chip in Duck.ai contextual sheet")
 
-    // MARK: - AI Chat Recent Chats Popup
+    // MARK: - AI Chat Recent Chats Menu
     public static let aiChatRecentChatsButtonAccessibility = NSLocalizedString("duckai.contextual.recent.chats.button", value: "Recent Chats", comment: "Accessibility label for the recent chats button in the Duck.ai contextual sheet header")
     public static let aiChatRecentChatsSectionTitle = NSLocalizedString("duckai.contextual.recent.chats.section", value: "Recent Chats", comment: "Section header in the recent chats popup")
     public static let duckAiContextualOpenDuckAi = NSLocalizedString("duckai.contextual.open.duckai", value: "Open Duck.ai", comment: "Row in the contextual chat's chats popup that opens Duck.ai in a new tab")

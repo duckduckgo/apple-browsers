@@ -707,7 +707,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
                                scope: ResolvePageSuggestionsInput.Scope,
                                surface: AIChatContextualSuggestionsSurface) {}
     func fireSuggestionsContextCollectionTimedOut() {}
-    func fireRecentChatsPopupDisplayed() {}
+    func fireRecentChatsMenuDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() {}

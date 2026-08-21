@@ -213,6 +213,7 @@ jobs:
           if [ -n "$REPS" ]; then
             args+=(--reps "$REPS")
           fi
+          ulimit -n 4096
           status_file="$RUNNER_TEMP/safari-harness-watchdog.tsv"
           set +e
           python3 ./run-with-watchdog.py \

@@ -75,6 +75,13 @@ class SafariHarnessContractTests(unittest.TestCase):
         self.assertIn("--timeout-seconds 9600", WORKFLOW)
         self.assertIn('exit "$harness_status"', WORKFLOW)
 
+    def test_ci_raises_open_file_limit_for_the_forward_proxy(self):
+        self.assertIn("ulimit -n 4096", WORKFLOW)
+        self.assertLess(
+            WORKFLOW.index("ulimit -n 4096"),
+            WORKFLOW.index("python3 ./run-with-watchdog.py"),
+        )
+
     def test_marker_lookup_failure_skips_task_creation(self):
         for workflow in (WORKFLOW, CHROME_WORKFLOW):
             self.assertIn('echo "exists=unknown" >> "$GITHUB_OUTPUT"', workflow)

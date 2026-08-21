@@ -1,5 +1,5 @@
 {
-  "originHash" : "11403115d8e598baff4aae3409a2eaf35860fdaa061e7f58fbca4dabc6fcadc9",
+  "originHash" : "76786ed4644a65e48eeeb19b65842523860884b4e7ccad2cd20fbf2f582eb04e",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7",
-        "version" : "2.9.4"
+        "revision" : "ac2def288cbff5cfc7df3ffef6abdf45b72bcb0a",
+        "version" : "2.9.6"
       }
     },
     {

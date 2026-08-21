@@ -167,11 +167,11 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             switch step {
             case .begin:
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionRekeyAttempt)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionRekeyAttempt, retryOnFailure: true)
             case .failure(let error):
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionRekeyFailure, error: error)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionRekeyFailure, error: error, retryOnFailure: true)
             case .success:
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionRekeyCompleted)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionRekeyCompleted, retryOnFailure: true)
             }
         case .tunnelStartAttempt(let step):
             switch step {
@@ -186,12 +186,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             switch step {
             case .begin:
                 if loopDetector.connectionLoopDetected { return }
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartAttempt)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartAttempt, retryOnFailure: true)
             case .failure(let error):
                 if loopDetector.connectionLoopDetected { return }
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartFailure, error: error)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartFailure, error: error, retryOnFailure: true)
             case .success:
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartSuccess)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartSuccess, retryOnFailure: true)
             }
         case .tunnelStopAttempt(let step):
             switch step {
@@ -223,11 +223,11 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             switch step {
             case .begin:
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelUpdateAttempt)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelUpdateAttempt, retryOnFailure: true)
             case .failure(let error):
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelUpdateFailure, error: error)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelUpdateFailure, error: error, retryOnFailure: true)
             case .success:
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelUpdateSuccess)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelUpdateSuccess, retryOnFailure: true)
             }
         case .tunnelWakeAttempt(let step):
             switch step {
@@ -281,11 +281,11 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             switch step {
             case .begin:
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionServerMigrationAttempt)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionServerMigrationAttempt, retryOnFailure: true)
             case .failure(let error):
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionServerMigrationAttemptFailure, error: error)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionServerMigrationAttemptFailure, error: error, retryOnFailure: true)
             case .success:
-                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionServerMigrationAttemptSuccess)
+                PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionServerMigrationAttemptSuccess, retryOnFailure: true)
             }
         case .tunnelStartOnDemandWithoutAccessToken(let error):
             Logger.networkProtection.error("🔴 Starting tunnel without an auth token")
@@ -298,7 +298,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         case .adapterEndTemporaryShutdownStateRecoveryFailure(let error):
             PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure, error: error)
         case .connectionFailureLoopDetected(let error):
-            PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionConnectionFailureLoopDetected, error: error)
+            PixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionConnectionFailureLoopDetected, error: error, retryOnFailure: true)
         }
     } }
 

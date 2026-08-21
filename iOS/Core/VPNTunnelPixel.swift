@@ -21,13 +21,14 @@ import Foundation
 import PixelKit
 
 /// Bridges an iOS `Pixel.Event` to a `PixelKitEvent` so VPN packet-tunnel pixels can be
-/// fired through `PixelKit` while keeping their existing wire names.
+/// fired through `PixelKit` while preserving their existing base names and frequency suffixes.
 ///
 /// iOS `Pixel.Event.name` values already carry their full prefix (e.g. `m_netp_…`). On iOS,
 /// `PixelKit` does not prepend a prefix (see `prefixedAndSuffixedName`), so delegating `name`
-/// to `Pixel.Event.name` produces the exact same base name the legacy `Pixel`/`DailyPixel`
-/// stack emitted — the frequency then appends the `_d`/`_c` suffixes as before. Using
-/// `Pixel.Event` as the single source of truth means names cannot drift during migration.
+/// to `Pixel.Event.name` preserves the base name, and the frequency appends the `_d`/`_c`
+/// suffixes as before. This intentionally removes the legacy `_ios_phone` / `_ios_tablet`
+/// form-factor suffix. Using `Pixel.Event` as the single source of truth means base names cannot
+/// drift during migration.
 ///
 /// The error, when present, is carried on the event and encoded by `PixelKit` into the
 /// standard `e`/`d`/`ue`/`ud` parameters — matching the legacy error parameters.
@@ -63,13 +64,15 @@ public extension PixelKit {
     /// Fires a VPN packet-tunnel pixel through `PixelKit` as a daily-and-count pixel,
     /// replacing `DailyPixel.fireDailyAndCount(…, pixelNameSuffixes: .legacyDailyPixelSuffixes)`
     /// and `persistentPixel.fireDailyAndCount(…)`. `.legacyDailyAndCount` reproduces the `_d`/`_c`
-    /// suffixes; persistence/retry on failure is handled internally by PixelKit's retry queue.
+    /// suffixes; callers can preserve persistence by opting into PixelKit's retry queue.
     static func fireVPNTunnel(dailyAndCount event: Pixel.Event,
                               error: Error? = nil,
+                              retryOnFailure: Bool = false,
                               withAdditionalParameters params: [String: String] = [:]) {
-        fire(VPNTunnelPixel(event, error: error),
-             frequency: .legacyDailyAndCount,
-             withAdditionalParameters: params)
+        shared?.fireVPNTunnel(dailyAndCount: event,
+                              error: error,
+                              retryOnFailure: retryOnFailure,
+                              withAdditionalParameters: params)
     }
 
     /// Fires a VPN packet-tunnel pixel through `PixelKit` as a once-per-day pixel with no added
@@ -89,5 +92,17 @@ public extension PixelKit {
         fire(VPNTunnelPixel(event, error: error),
              frequency: .standard,
              withAdditionalParameters: params)
+    }
+}
+
+extension PixelKit {
+
+    func fireVPNTunnel(dailyAndCount event: Pixel.Event,
+                       error: Error? = nil,
+                       retryOnFailure: Bool = false,
+                       withAdditionalParameters params: [String: String] = [:]) {
+        fire(VPNTunnelPixel(event, error: error),
+             frequency: .legacyDailyAndCount,
+             options: Options(additionalParameters: params, retryOnFailure: retryOnFailure))
     }
 }

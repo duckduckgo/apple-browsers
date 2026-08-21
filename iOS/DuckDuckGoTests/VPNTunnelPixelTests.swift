@@ -18,13 +18,13 @@
 //
 
 import XCTest
-import PixelKit
+@testable import PixelKit
 import PersistenceTestingUtils
 @testable import Core
 
 /// Validates that firing VPN packet-tunnel pixels through `PixelKit` (via `VPNTunnelPixel` and the
-/// `fireVPNTunnel(…)` helpers) produces exactly the same wire pixel names the legacy `Pixel` /
-/// `DailyPixel` stack produced — the migration must not fork any existing metric.
+/// `fireVPNTunnel(…)` helpers) preserves the base names and `_d` / `_c` frequency suffixes while
+/// intentionally removing the legacy `_ios_phone` / `_ios_tablet` form-factor suffix.
 ///
 /// The provider itself lives in the `PacketTunnelProvider` app-extension target, which has no unit
 /// test target, so the migration's correctness is validated here at the bridge/helper layer.
@@ -40,6 +40,70 @@ final class VPNTunnelPixelTests: XCTestCase {
         init(name: String, params: [String: String]) {
             self.name = name
             self.params = params
+        }
+    }
+
+    private final class RetryQueueStore: PixelRetryQueueStoring {
+        private let lock = NSLock()
+        private var stored = [PixelRetryQueueItem]()
+        var onRemove: ((Set<UUID>) -> Void)?
+
+        var items: [PixelRetryQueueItem] {
+            lock.lock()
+            defer { lock.unlock() }
+            return stored
+        }
+
+        func append(_ items: [PixelRetryQueueItem]) throws {
+            lock.lock()
+            defer { lock.unlock() }
+            stored.append(contentsOf: items)
+        }
+
+        func remove(itemsWithIDs ids: Set<UUID>) throws {
+            lock.lock()
+            stored.removeAll { ids.contains($0.id) }
+            let onRemove = onRemove
+            lock.unlock()
+            onRemove?(ids)
+        }
+
+        func storedItems() throws -> [PixelRetryQueueItem] {
+            items
+        }
+    }
+
+    private final class RetryFireRequest {
+        private let lock = NSLock()
+        private var succeeds = false
+        private var replayedNames = [String]()
+        var onReplay: ((String) -> Void)?
+
+        func startSucceeding() {
+            lock.lock()
+            defer { lock.unlock() }
+            succeeds = true
+        }
+
+        func replayedPixelNames() -> [String] {
+            lock.lock()
+            defer { lock.unlock() }
+            return replayedNames
+        }
+
+        lazy var fireRequest: PixelKit.FireRequest = { [self] name, _, parameters, _, _, completion in
+            lock.lock()
+            let succeeds = succeeds
+            if parameters["retriedPixel"] == "1" {
+                replayedNames.append(name)
+            }
+            let onReplay = onReplay
+            lock.unlock()
+
+            completion(succeeds, nil)
+            if parameters["retriedPixel"] == "1" {
+                onReplay?(name)
+            }
         }
     }
 
@@ -65,21 +129,22 @@ final class VPNTunnelPixelTests: XCTestCase {
         Set(capture(body).map(\.name))
     }
 
-    // MARK: - Wire-name parity per helper
+    // MARK: - Wire names per helper
 
-    func testDailyAndCountHelperMatchesLegacyWireNames() {
-        // Expected suffixes are read from the same constant the legacy `DailyPixel` stack used,
-        // so wire-name parity holds by construction even if that constant ever changes.
+    func testDailyAndCountHelperPreservesFrequencySuffixesWithoutFormFactorSuffix() {
+        // Expected suffixes are read from the same constant the legacy `DailyPixel` stack used.
+        // The migrated names intentionally omit the legacy `_ios_phone` / `_ios_tablet` suffix.
         let dailySuffix = DailyPixel.Constant.legacyDailyPixelSuffixes.dailySuffix
         let countSuffix = DailyPixel.Constant.legacyDailyPixelSuffixes.countSuffix
         for event in Self.dailyAndCountEvents {
             let names = firedNames { PixelKit.fireVPNTunnel(dailyAndCount: event) }
             XCTAssertEqual(names, [event.name + dailySuffix, event.name + countSuffix],
                            "Unexpected wire names for \(event.name)")
+            XCTAssertFalse(names.contains { $0.hasSuffix("_ios_phone") || $0.hasSuffix("_ios_tablet") })
         }
     }
 
-    func testDailyHelperMatchesLegacyWireNames() {
+    func testDailyHelperEmitsUnsuffixedFormFactorName() {
         for event in Self.dailyEvents {
             let names = firedNames { PixelKit.fireVPNTunnel(daily: event) }
             XCTAssertEqual(names, [event.name],
@@ -87,7 +152,7 @@ final class VPNTunnelPixelTests: XCTestCase {
         }
     }
 
-    func testStandardHelperMatchesLegacyWireNames() {
+    func testStandardHelperEmitsUnsuffixedFormFactorName() {
         for event in Self.standardEvents {
             let names = firedNames { PixelKit.fireVPNTunnel(standard: event) }
             XCTAssertEqual(names, [event.name],
@@ -129,6 +194,49 @@ final class VPNTunnelPixelTests: XCTestCase {
         for pixel in fired {
             XCTAssertEqual(pixel.params["source"], "test-source")
         }
+    }
+
+    /// Retry-enabled failed sends are queued and replayed with the original wire names and parameters.
+    func testRetryEnabledFailedSendIsQueuedAndReplayed() {
+        let store = RetryQueueStore()
+        let request = RetryFireRequest()
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: appVersion,
+                                source: PixelKit.Source.iOS.rawValue,
+                                session: UUID().uuidString,
+                                channel: nil,
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                dateGenerator: Date.init,
+                                defaults: InMemoryThrowingKeyValueStore(),
+                                retryQueueStore: store,
+                                fireRequest: request.fireRequest)
+        let replayed = expectation(description: "Expect queued pixels to replay")
+        replayed.expectedFulfillmentCount = 2
+        let removed = expectation(description: "Expect replayed pixels to be removed from the queue")
+        store.onRemove = { ids in
+            XCTAssertEqual(ids.count, 2)
+            removed.fulfill()
+        }
+        request.onReplay = { _ in replayed.fulfill() }
+
+        pixelKit.fireVPNTunnel(dailyAndCount: .networkProtectionTunnelStartAttempt,
+                               retryOnFailure: true,
+                               withAdditionalParameters: ["source": "test-source"])
+
+        XCTAssertEqual(store.items.map(\.pixelName).sorted(),
+                       [Pixel.Event.networkProtectionTunnelStartAttempt.name + "_c",
+                        Pixel.Event.networkProtectionTunnelStartAttempt.name + "_d"])
+        XCTAssertTrue(store.items.allSatisfy { $0.parameters["source"] == "test-source" })
+
+        request.startSucceeding()
+        pixelKit.fire(VPNTunnelPixel(.networkProtectionTunnelStopAttempt), frequency: .standard)
+
+        wait(for: [replayed, removed], timeout: 1.0)
+        XCTAssertEqual(request.replayedPixelNames().sorted(),
+                       [Pixel.Event.networkProtectionTunnelStartAttempt.name + "_c",
+                        Pixel.Event.networkProtectionTunnelStartAttempt.name + "_d"])
+        XCTAssertTrue(store.items.isEmpty)
     }
 
     // MARK: - Migrated event tables (audit surface)

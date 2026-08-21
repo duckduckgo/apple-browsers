@@ -41,16 +41,62 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
 
     private func makeSUT(
         initialAttachedContext: AIChatPageContext? = nil,
-        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered
+        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
+        showsAttachAffordance: @escaping () -> Bool = { false }
     ) {
         sut = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
             initialAttachedContext: initialAttachedContext,
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
-            isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false }
+            isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
+            showsAttachAffordance: showsAttachAffordance
         )
         sut.onAttachActionRequested = { [weak self] in self?.attachCalls += 1 }
         sut.onRemoveActionRequested = { [weak self] in self?.removeCalls += 1 }
+    }
+
+    // MARK: - Re-attach offer
+
+    /// The offer belongs to the pre-chat surface, where attaching the page is the whole point.
+    func test_removingTheChip_offersReattach_whenTheSurfaceStillWantsIt() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url),
+                initialAttachmentDeliveryState: .pendingSubmit,
+                showsAttachAffordance: { true })
+
+        sut.tapToRemove()
+
+        XCTAssertTrue(sut.isVisible, "the placeholder stands in for the chip the user just dismissed")
+        XCTAssertEqualState(sut.state, .placeholder)
+    }
+
+    /// Once a chat exists the attachment menu is the way back, so a removal is just a removal.
+    func test_removingTheChip_doesNotOfferReattach_onceTheSurfaceDeclines() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url),
+                initialAttachmentDeliveryState: .pendingSubmit,
+                showsAttachAffordance: { false })
+
+        sut.tapToRemove()
+
+        XCTAssertFalse(sut.isVisible)
+    }
+
+    /// Evaluated at removal time, not construction — the same view model spans both sides of the boundary.
+    func test_reattachOffer_readsTheSurfaceAtRemovalTime() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        var wantsAffordance = true
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url),
+                initialAttachmentDeliveryState: .pendingSubmit,
+                showsAttachAffordance: { wantsAffordance })
+
+        wantsAffordance = false
+        sut.tapToRemove()
+
+        XCTAssertFalse(sut.isVisible)
     }
 
     // MARK: - State transitions

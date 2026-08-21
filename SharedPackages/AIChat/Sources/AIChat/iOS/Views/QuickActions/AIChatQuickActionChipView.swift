@@ -135,6 +135,8 @@ private extension AIChatQuickActionChipView {
         case .translucent:
             glassBackgroundView?.removeFromSuperview()
             glassBackgroundView = nil
+            // The next `.glass` pass builds a bare effect view, so the remembered tint no longer applies.
+            appliedGlassTintAlpha = nil
             hostContent(in: self)
             backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
             layer.borderWidth = Constants.borderWidth

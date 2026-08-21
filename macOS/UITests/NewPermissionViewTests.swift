@@ -627,8 +627,8 @@ class NewPermissionViewTests: UITestCase {
         permissionsPopoverDenyButton.click()
 
         // Verify the popover is dismissed
-        XCTAssertFalse(
-            permissionsPopoverDenyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertTrue(
+            permissionsPopoverDenyButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "The permission popover should be dismissed after clicking Deny."
         )
 

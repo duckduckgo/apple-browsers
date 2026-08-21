@@ -549,8 +549,9 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.didRequestExpandURLs, [expandURL])
     }
 
+    /// The chat carries on in its own tab, so the tab it left starts over rather than keeping it.
     @MainActor
-    func testExpandRequestRetainsActiveChat() async {
+    func testExpandRequestResetsTheTabsContextualChat() async {
         // Given
         await sut.presentSheet(from: mockPresentingVC)
         XCTAssertNotNil(sut.sheetViewController)
@@ -560,7 +561,9 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL)
 
         // Then
-        XCTAssertNotNil(sut.sheetViewController)
+        XCTAssertNil(sut.sheetViewController)
+        XCTAssertFalse(sut.sessionState.hasActiveChat)
+        XCTAssertEqual(mockDelegate.contextualChatURLUpdates.last, .some(nil))
     }
 
     // MARK: - Page Context Handling Tests

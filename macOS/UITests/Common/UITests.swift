@@ -120,6 +120,10 @@ enum UITests {
 class TestFailureObserver: NSObject, XCTestObservation {
 
     func testCase(_ testCase: XCTestCase, didRecord issue: XCTIssue) {
+        guard !issue.description.hasPrefix("Runtime Issue:") else {
+            Logger.log("🟣 \(issue)")
+            return
+        }
         Logger.log("🔴 Issue recorded: \(issue)")
         if XCUIApplication.notificationCenter.buttons.firstMatch.exists {
             let descr = (try? XCUIApplication.notificationCenter.snapshot().toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar])) ??? "<nil>"
@@ -174,7 +178,7 @@ class UITestCase: XCTestCase {
         guard Self.systemPermissionPromptPollingTimer == nil else { return }
 
         let timer = Timer(timeInterval: 5, repeats: true) { _ in
-            Logger.log("Checking for TCC prompts")
+            Logger.log("⏰ Checking for TCC prompts")
             _ = XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -196,6 +200,7 @@ class UITestCase: XCTestCase {
 
         addUIInterruptionMonitor(withDescription: "Interruption Monitor") { element in
             Logger.log("🟠 Received interruption event: \((try? element.snapshot().toDictionary()) ??? "<nil>")")
+            return XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         }
 
         if !Self.didCallFirstRun {

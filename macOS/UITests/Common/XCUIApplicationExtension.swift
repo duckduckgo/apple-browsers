@@ -402,12 +402,24 @@ extension XCUIApplication {
     /// Tapping "Allow" lets the tests-server loopback traffic proceed unchanged.
     @discardableResult
     func dismissSystemPermissionPromptIfPresent(allow: Bool = true, logIfNotFound: Bool = true) -> Bool {
+        guard let snapshot = try? self.snapshot() else { return false }
         func descr() -> String {
-            (try? self.snapshot().toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar])) ??? "<nil>"
+            snapshot.toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar]) ??? "<nil>"
         }
-        guard self.buttons.firstMatch.exists else {
+        // Check if Notification Center has sheets with buttons
+        var children = snapshot.children
+        var buttonFound = false
+        while let child = children.popLast() {
+            if child.elementType == .button {
+                buttonFound = true
+                break
+            } else if ![.menu, .menuItem, .menuBar].contains(child.elementType) {
+                children.append(contentsOf: child.children)
+            }
+        }
+        guard buttonFound else {
             if logIfNotFound {
-                Logger.log("🔍 dismissSystemPermissionPromptIfPresent: no prompts found: \(descr())")
+                Logger.log("🔍 dismissSystemPermissionPromptIfPresent: no button found: \(descr())")
             }
             return false
         }

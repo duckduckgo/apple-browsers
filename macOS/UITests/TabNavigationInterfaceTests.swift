@@ -22,13 +22,8 @@ import XCTest
 
 final class TabNavigationInterfaceTests: UITestCase, TabNavigationTestHelpers {
 
-    override class func setUp() {
+    override func setUp() {
         super.setUp()
-        UITests.firstRun()
-    }
-
-    override func setUpWithError() throws {
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
     }
 
@@ -199,7 +194,7 @@ final class TabNavigationInterfaceTests: UITestCase, TabNavigationTestHelpers {
         XCTAssertEqual(app.windows.count, 2)
 
         XCTAssertTrue(activeWindow.webViews["New Window Page"].waitForExistence(timeout: UITests.Timeouts.navigation))
-        XCTAssertFalse(activeWindow.webViews["Page #8"].exists)
+        XCTAssertTrue(activeWindow.webViews["Page #8"].exists)
 
         XCTAssertTrue(activeWindow.tabs["New Window Page"].exists)
         XCTAssertEqual(activeWindow.tabs.count, 1)

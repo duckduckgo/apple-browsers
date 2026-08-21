@@ -38,7 +38,6 @@ class AutocompleteTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         addBookmarkButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]

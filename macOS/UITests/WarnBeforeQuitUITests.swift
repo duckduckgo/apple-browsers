@@ -42,7 +42,6 @@ class WarnBeforeQuitUITests: UITestCase {
 
     override func setUp() {
         super.setUp()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: featureFlags)
         while app.pinnedTabs.count > 0 {
             app.menuItems["Close Tab"].click()
@@ -485,7 +484,7 @@ class WarnBeforeQuitUITests: UITestCase {
         )
 
         // Restart app and verify checkbox stayed off, then re-enable and test
-        app = XCUIApplication.setUp(featureFlags: featureFlags)
+        app.restart()
 
         // Open settings and verify checkbox is still off
         app.openGeneralPreferences()

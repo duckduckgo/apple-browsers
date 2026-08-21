@@ -22,13 +22,8 @@ import XCTest
 
 final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
     }
 

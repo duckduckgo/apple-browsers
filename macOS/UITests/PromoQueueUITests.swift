@@ -22,7 +22,7 @@ import Utilities
 final class PromoQueueUITests: UITestCase {
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp(featureFlags: ["promoQueue": true])
         app.enforceSingleWindow()
         app.resetPromoState()
@@ -98,10 +98,9 @@ final class PromoQueueUITests: UITestCase {
         app.fireTestTrigger()
         XCTAssertTrue(app.alertA.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        app.terminate()
-        app.launch()
+        app.restart()
 
-        XCTAssertTrue(app.alertA.waitForExistence(timeout: UITests.Timeouts.elementExistence), "test-promo-a should restore on relaunch (lastShown > lastDismissed)")
+        XCTAssertTrue(app.alertA.waitForExistence(timeout: UITests.Timeouts.elementExistence), "test-promo-a should restore on restart (lastShown > lastDismissed)")
 
         app.alertA.dismissPermanentlyButton.click()
         XCTAssertTrue(app.alertA.waitForNonExistence(timeout: UITests.Timeouts.elementExistence))

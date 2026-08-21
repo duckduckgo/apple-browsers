@@ -25,7 +25,7 @@ class AddressBarSpoofingUITests: UITestCase {
     private var webView: XCUIElement!
 
     override func setUp() {
-        continueAfterFailure = false
+        super.setUp()
         app = XCUIApplication.setUp()
 
         // Use existing extension method instead of setupSingleWindow()

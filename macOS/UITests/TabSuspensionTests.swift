@@ -24,7 +24,6 @@ class TabSuspensionTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: [
             "tabSuspension": true,
             "tabSuspensionDebugging": true,

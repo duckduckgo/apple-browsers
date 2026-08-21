@@ -27,7 +27,6 @@ class StateRestorationPromptTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(arguments: ["CRASH_RESTORE_TEST"])
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
@@ -63,8 +62,7 @@ class StateRestorationPromptTests: UITestCase {
 
         waitForSessionFileToBeUpdated(since: lastSaved)
 
-        app.terminate()
-        app.launch()
+        app.restart()
         app.openNewWindow()
 
         app.acceptSessionRestore()
@@ -102,8 +100,7 @@ class StateRestorationPromptTests: UITestCase {
 
         waitForSessionFileToBeUpdated(since: lastSaved)
 
-        app.terminate()
-        app.launch()
+        app.restart()
         app.openNewWindow()
 
         app.rejectSessionRestore()

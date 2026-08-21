@@ -28,7 +28,6 @@ class BookmarkSortTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.resetBookmarks()
         app.enforceSingleWindow()
@@ -148,22 +147,21 @@ class BookmarkSortTests: UITestCase {
         app.openBookmarksPanel()
         selectSortByName(mode: .panel)
 
-        app.terminate()
-        let newApp = XCUIApplication.setUp()
-        newApp.enforceSingleWindow()
+        app.restart()
+        app.enforceSingleWindow()
 
         // Wait for new application to start
-        XCTAssertTrue(newApp.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        newApp.openBookmarksPanel()
+        app.openBookmarksPanel()
 
-        let sortBookmarksPanelButton = newApp.buttons[AccessibilityIdentifiers.sortBookmarksButtonPanel]
+        let sortBookmarksPanelButton = app.buttons[AccessibilityIdentifiers.sortBookmarksButtonPanel]
         sortBookmarksPanelButton.tap()
 
-        let sortByNameManual = newApp.menuItems["Manual"]
-        let sortByNameMenuItem = newApp.menuItems["Name"]
-        let sortByNameAscendingMenuItem = newApp.menuItems["Ascending"]
-        let sortByNameDescendingMenuItem = newApp.menuItems["Descending"]
+        let sortByNameManual = app.menuItems["Manual"]
+        let sortByNameMenuItem = app.menuItems["Name"]
+        let sortByNameAscendingMenuItem = app.menuItems["Ascending"]
+        let sortByNameDescendingMenuItem = app.menuItems["Descending"]
 
         XCTAssertTrue(sortByNameManual.isEnabled)
         XCTAssertTrue(sortByNameMenuItem.isEnabled)

@@ -23,7 +23,7 @@ class StalledResourceLoadUITests: UITestCase {
     private var webView: XCUIElement!
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         webView = app.webViews.firstMatch

@@ -136,6 +136,14 @@ extension XCUIApplication {
         return app
     }
 
+    /// Terminate the running app and launch it again, preserving environment and arguments from `setUp()`.
+    func restart() {
+        terminate()
+        launch()
+    }
+
+    static let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
+
     @nonobjc var path: String? {
         value(forKey: "path") as? String
     }
@@ -329,7 +337,7 @@ extension XCUIApplication {
             "The address bar text field didn't become available in a reasonable timeframe."
         )
         addressBar.pasteURL(url, pressingEnter: true)
-        Self.dismissLocalNetworkPromptIfPresent()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         XCTAssertTrue(
             windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
@@ -349,7 +357,7 @@ extension XCUIApplication {
             "The address bar text field didn't become available in a reasonable timeframe."
         )
         addressBar.pasteURL(url, pressingEnter: true)
-        Self.dismissLocalNetworkPromptIfPresent()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         if let expectedLabel {
             XCTAssertTrue(
                 windows.firstMatch.webViews[expectedLabel].waitForExistence(timeout: UITests.Timeouts.navigation),
@@ -389,18 +397,32 @@ extension XCUIApplication {
     /// fails at a nondeterministic point — a recurring source of flakiness on the macOS 15+ CI VMs.
     /// Tapping "Allow" lets the tests-server loopback traffic proceed unchanged.
     @discardableResult
-    static func dismissLocalNetworkPromptIfPresent() -> Bool {
-        let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
-        for label in ["Allow", "Don’t Allow", "Don't Allow"] {
-            // `.firstMatch`: UserNotificationCenter can surface the same label more than once
-            // (nested hierarchy / stacked notifications); a bare query would fail `.click()` with
-            // "multiple matching elements". Any match dismisses the prompt.
-            let button = notificationCenter.buttons[label].firstMatch
+    func dismissSystemPermissionPromptIfPresent(allow: Bool = true, logIfNotFound: Bool = true) -> Bool {
+        func descr() -> String {
+            (try? self.snapshot().toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar])) ??? "<nil>"
+        }
+        guard self.buttons.firstMatch.exists else {
+            if logIfNotFound {
+                Logger.log("🔍 dismissSystemPermissionPromptIfPresent: no prompts found: \(descr())")
+            }
+            return false
+        }
+
+        let allowLabels = ["Allow", "OK"]
+        let denyLabels = ["Don’t Allow", "Don't Allow", "Deny", "Cancel"]
+
+        let labels = allow ? allowLabels : denyLabels
+
+        for label in labels {
+            let button = self.buttons[label].firstMatch
             if button.exists {
+                Logger.log("🔍 dismissSystemPermissionPromptIfPresent: \(label)")
                 button.click()
                 return true
             }
         }
+
+        Logger.log("🔴 dismissSystemPermissionPromptIfPresent: Could not find \(allow ? "Allow" : "Deny") button in \(descr())")
         return false
     }
 

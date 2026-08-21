@@ -25,7 +25,6 @@ class FireWindowTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
 
         settingsGeneralButton = app.buttons["PreferencesSidebar.generalButton"]
@@ -52,8 +51,7 @@ class FireWindowTests: UITestCase {
         app.openFireWindow()
         openThreeSitesOnFireWindow()
 
-        app.terminate()
-        app.launch()
+        app.restart()
 
         assertSitesOpenedInNormalWindowAreRestored()
         assertSitesOpenedOnFireWindowAreNotRestored()

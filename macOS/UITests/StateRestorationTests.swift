@@ -29,7 +29,6 @@ class StateRestorationTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         firstPageTitle = UITests.randomPageTitle(length: titleStringLength)
         secondPageTitle = UITests.randomPageTitle(length: titleStringLength)
@@ -70,8 +69,7 @@ class StateRestorationTests: UITestCase {
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        app.restart()
 
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
@@ -106,8 +104,7 @@ class StateRestorationTests: UITestCase {
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        app.terminate()
-        app.launch()
+        app.restart()
 
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),

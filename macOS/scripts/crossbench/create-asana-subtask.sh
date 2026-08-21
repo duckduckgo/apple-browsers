@@ -5,7 +5,8 @@
 #
 # Usage:
 #   ASANA_ACCESS_TOKEN=... [ASANA_FOLLOWERS=a@b.com,123] ./create-asana-subtask.sh \
-#     <project-gid> <section-gid> <name> <notes-file> <start-date> <due-date>
+#     <project-gid> <section-gid> <name> <notes-file> <start-date> <due-date> \
+#     [attachment-file]
 #
 # ASANA_FOLLOWERS is an optional comma-separated list of collaborators to add to
 # the new task. Asana accepts an email or a user GID for each entry. Blank
@@ -19,8 +20,8 @@
 
 set -euo pipefail
 
-if [ "$#" -ne 6 ]; then
-  echo "Usage: $0 <project-gid> <section-gid> <name> <notes-file> <start-date> <due-date>" >&2
+if [ "$#" -lt 6 ] || [ "$#" -gt 7 ]; then
+  echo "Usage: $0 <project-gid> <section-gid> <name> <notes-file> <start-date> <due-date> [attachment-file]" >&2
   exit 2
 fi
 : "${ASANA_ACCESS_TOKEN:?ASANA_ACCESS_TOKEN is required}"
@@ -32,6 +33,7 @@ task_name="$3"
 notes_file="$4"
 start_date="$5"
 due_date="$6"
+attachment_file="${7:-}"
 
 if ! [[ "$project_gid" =~ ^[0-9]+$ ]]; then
   echo "ERROR: project GID must be numeric." >&2
@@ -102,4 +104,28 @@ task_gid="$(jq -er '.data.gid' "$response_file")"
 echo "created Asana task: https://app.asana.com/0/0/$task_gid"
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   echo "task-gid=$task_gid" >> "$GITHUB_OUTPUT"
+fi
+
+if [ -n "$attachment_file" ]; then
+  if [ ! -f "$attachment_file" ]; then
+    echo "WARNING: Asana attachment not found: $attachment_file" >&2
+  else
+    http_status="$(
+      curl --silent --show-error \
+        --retry 3 --retry-delay 5 --retry-all-errors \
+        --request POST \
+        --header "Authorization: Bearer $ASANA_ACCESS_TOKEN" \
+        --form "parent=$task_gid" \
+        --form "file=@$attachment_file" \
+        --output "$response_file" \
+        --write-out '%{http_code}' \
+        "https://app.asana.com/api/1.0/attachments"
+    )"
+    if [ "$http_status" = "200" ]; then
+      echo "attached diagnostics: $(basename "$attachment_file")"
+    else
+      echo "WARNING: Asana attachment upload returned HTTP $http_status." >&2
+      jq -r '.errors[]?.message // empty' "$response_file" >&2 || true
+    fi
+  fi
 fi

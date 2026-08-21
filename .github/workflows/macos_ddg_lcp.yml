@@ -614,6 +614,16 @@ jobs:
             echo
             cat "$report"
           } > "$notes_file"
+          diagnostics_zip=""
+          diagnostics_artifact_id="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=ddg-lcp-diagnostics" \
+              --jq '.artifacts[0].id // empty'
+          )"
+          if [ -n "$diagnostics_artifact_id" ]; then
+            diagnostics_zip="$RUNNER_TEMP/ddg-lcp-diagnostics.zip"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$diagnostics_artifact_id/zip" \
+              > "$diagnostics_zip"
+          fi
           run_started_at="$(
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
               --jq '.run_started_at'
@@ -634,7 +644,8 @@ jobs:
             "$TASK_NAME" \
             "$notes_file" \
             "$start_date" \
-            "$due_date"
+            "$due_date" \
+            "$diagnostics_zip"
           echo "created=true" >> "$GITHUB_OUTPUT"
           mkdir -p runtime-report
           echo "reported by run $GITHUB_RUN_ID" > runtime-report/alert-marker.txt

@@ -24,6 +24,7 @@ class CreateAsanaSubtaskTests(unittest.TestCase):
         self.bin.mkdir()
         self.captured_payload = self.root / "captured-payload.json"
         self.captured_url = self.root / "captured-url.txt"
+        self.captured_attachment = self.root / "captured-attachment.txt"
         self.response = self.root / "response.json"
         self.response.write_text(json.dumps({"data": {"gid": "999"}}))
         self._write_fake_curl()
@@ -47,10 +48,17 @@ class CreateAsanaSubtaskTests(unittest.TestCase):
                   if [ "$prev" = "--output" ]; then
                     cp "{self.response}" "$arg"
                   fi
+                  if [ "$prev" = "--form" ] && [[ "$arg" == file=@* ]]; then
+                    printf '%s' "$arg" > "{self.captured_attachment}"
+                  fi
                   prev="$arg"
                 done
                 printf '%s' "${{@: -1}}" > "{self.captured_url}"
-                printf '201'
+                if [ "${{@: -1}}" = "https://app.asana.com/api/1.0/attachments" ]; then
+                  printf '200'
+                else
+                  printf '201'
+                fi
                 """
             )
         )
@@ -78,7 +86,7 @@ class CreateAsanaSubtaskTests(unittest.TestCase):
         fake_curl.chmod(0o755)
 
     def run_script(self, followers=None, project_gid="1217628708169653",
-                    section_gid="1217628708169657"):
+                    section_gid="1217628708169657", attachment=None):
         env = dict(os.environ)
         env["PATH"] = f"{self.bin}:{env['PATH']}"
         env["ASANA_ACCESS_TOKEN"] = "test-token"
@@ -86,11 +94,14 @@ class CreateAsanaSubtaskTests(unittest.TestCase):
             env.pop("ASANA_FOLLOWERS", None)
         else:
             env["ASANA_FOLLOWERS"] = followers
+        arguments = [
+            str(SCRIPT), project_gid, section_gid, "task name",
+            str(self.notes), "2026-01-01", "2026-01-02",
+        ]
+        if attachment is not None:
+            arguments.append(str(attachment))
         result = subprocess.run(
-            [
-                str(SCRIPT), project_gid, section_gid, "task name",
-                str(self.notes), "2026-01-01", "2026-01-02",
-            ],
+            arguments,
             text=True, capture_output=True, env=env,
         )
         payload = (
@@ -127,6 +138,23 @@ class CreateAsanaSubtaskTests(unittest.TestCase):
             [{"project": "1217628708169653", "section": "1217628708169657"}],
         )
         self.assertNotIn("subtasks", self.captured_url.read_text())
+
+    def test_attaches_the_supplied_diagnostics_archive(self):
+        attachment = self.root / "diagnostics.zip"
+        attachment.write_bytes(b"zip data")
+
+        result, _ = self.run_script(attachment=attachment)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            self.captured_url.read_text(),
+            "https://app.asana.com/api/1.0/attachments",
+        )
+        self.assertEqual(
+            self.captured_attachment.read_text(),
+            f"file=@{attachment}",
+        )
+        self.assertIn("attached diagnostics: diagnostics.zip", result.stdout)
 
     def test_rejects_non_numeric_project_or_section_gid(self):
         result, _ = self.run_script(project_gid="not-a-gid")

@@ -20,7 +20,7 @@
 import Foundation
 import PixelKit
 
-/// Bridges an iOS `Pixel.Event` to a `PixelKitEvent` so VPN packet-tunnel pixels can be
+/// Bridges an iOS `Pixel.Event` to a `PixelKit.Event` so VPN packet-tunnel pixels can be
 /// fired through `PixelKit` while preserving their existing base names and frequency suffixes.
 ///
 /// iOS `Pixel.Event.name` values already carry their full prefix (e.g. `m_netp_…`). On iOS,
@@ -32,7 +32,7 @@ import PixelKit
 ///
 /// The error, when present, is carried on the event and encoded by `PixelKit` into the
 /// standard `e`/`d`/`ue`/`ud` parameters — matching the legacy error parameters.
-public struct VPNTunnelPixel: PixelKitEvent {
+public struct VPNTunnelPixel: PixelKit.Event {
 
     private let event: Pixel.Event
     private let underlyingError: Error?

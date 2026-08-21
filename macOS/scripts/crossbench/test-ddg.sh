@@ -885,7 +885,7 @@ measure_site() {
         ! [[ "${watchdog_code:-}" =~ ^[0-9]+$ ]]; then
       site_failed=1
       set_shared_failure control watchdog_status_invalid \
-        "repetition=$rep; lines=$watchdog_lines; state=${watchdog_state:--}; code=${watchdog_code:--}; cleanup=${watchdog_cleanup:--}; process_status=$command_status"
+        "repetition=$rep; lines=$watchdog_lines; state=${watchdog_state:--}; code=${watchdog_code:--}; cleanup=${watchdog_cleanup:--}; process_status=$command_status; output=${output:--}"
       finish_repetition_logs "$site" "$rep" 1
       break
     fi

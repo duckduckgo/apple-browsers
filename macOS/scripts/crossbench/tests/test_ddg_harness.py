@@ -626,7 +626,9 @@ class DDGHarnessTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 1)
         row = self.disposition_rows()[0]
-        self.assertEqual(row[9:11], ["automation", "watchdog_timeout"])
+        self.assertEqual(
+            row[9:11], ["automation", "watchdog_timeout"], row[11]
+        )
         self.assertEqual(row[12:17], ["1", "0", "0", "0", "0"])
 
     def test_wpr_start_failure_is_isolated_and_later_site_runs(self):

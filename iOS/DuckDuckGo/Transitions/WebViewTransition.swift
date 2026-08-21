@@ -201,6 +201,17 @@ class FromWebViewTransition: WebViewTransition {
         })
 
     }
+
+    private func prepareOutgoingTabChrome(at indexPath: IndexPath, cellSnapshot: UIView?) {
+        if tabSwitcherSettings.isGridViewEnabled,
+           cellSnapshot == nil,
+           let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
+            prepareGridChromeSnapshot(for: cell, initiallyVisible: false)
+        } else if !tabSwitcherSettings.isGridViewEnabled,
+                  let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewListCell {
+            prepareListChrome(for: cell, initiallyVisible: false)
+        }
+    }
 }
 
 class ToWebViewTransition: WebViewTransition {

@@ -22,16 +22,7 @@ import Foundation
 
 // MARK: - Delegate
 
-@MainActor
-protocol AIChatRecentChatsPopupViewModelDelegate: AnyObject {
-    func recentChatsPopupDidSelectNewChat()
-    func recentChatsPopupDidSelectOpenDuckAI()
-    func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion)
-    func recentChatsPopupDidSelectViewAll()
-    func recentChatsPopupDidDismiss()
-}
-
-/// View model for the recent chats popup, extracting presentation logic from the view controller.
+/// Backs the chats menu: the recent chats to offer, capped, plus whether New Chat applies.
 @MainActor
 final class AIChatRecentChatsPopupViewModel {
 
@@ -40,8 +31,6 @@ final class AIChatRecentChatsPopupViewModel {
     static let maxVisibleChats = 5
 
     // MARK: - Properties
-
-    weak var delegate: AIChatRecentChatsPopupViewModelDelegate?
 
     /// Whether the "New chat" row should be shown at the top.
     let showNewChat: Bool
@@ -60,35 +49,6 @@ final class AIChatRecentChatsPopupViewModel {
         self.showNewChat = showNewChat
     }
 
-    // MARK: - Actions
-
-    func didSelectNewChat() {
-        delegate?.recentChatsPopupDidSelectNewChat()
-    }
-
-    func didSelectOpenDuckAI() {
-        delegate?.recentChatsPopupDidSelectOpenDuckAI()
-    }
-
-    func didSelectChat(at index: Int) {
-        guard let suggestion = suggestion(at: index) else { return }
-        delegate?.recentChatsPopupDidSelectChat(suggestion)
-    }
-
-    func didSelectViewAll() {
-        delegate?.recentChatsPopupDidSelectViewAll()
-    }
-
-    func didDismiss() {
-        delegate?.recentChatsPopupDidDismiss()
-    }
-
-    // MARK: - Private
-
-    private func suggestion(at index: Int) -> AIChatSuggestion? {
-        guard index >= 0, index < suggestions.count else { return nil }
-        return suggestions[index]
-    }
 }
 
 // MARK: - Fetching

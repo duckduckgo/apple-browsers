@@ -33,7 +33,7 @@ final class DuckAISelectionJourneyWideEventData: WideEventData {
         featureName: "duckai-selection-journey",
         mobileMetaType: "ios-duckai-selection-journey",
         desktopMetaType: "macos-duckai-selection-journey",
-        version: "1.1.0"
+        version: "1.2.0"
     )
 
     enum SubmissionAction: String, Codable, CaseIterable {

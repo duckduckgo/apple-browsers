@@ -171,9 +171,6 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Glass capsules, the Duck.ai bubble icon, and close/hand-off swapped to opposite pills.
     private let usesRedesignedHeader: Bool
-    private var recentChatsPopup: AIChatRecentChatsPopupViewController?
-    private var popupWindow: UIWindow?
-    private var isFetchingRecentChats = false
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
@@ -263,9 +260,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         return button
     }()
 
-    /// Experiment: flip to compare the system menu against the custom popup.
-    private static let usesNativeChatsMenu = true
-
     private lazy var recentChatsButton: UIButton = {
         let button = MenuHostingButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.chats, for: .normal)
@@ -273,18 +267,19 @@ final class AIChatContextualSheetViewController: UIViewController {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.accessibilityLabel = UserText.aiChatRecentChatsButtonAccessibility
         button.accessibilityTraits = .button
-        if Self.usesNativeChatsMenu {
-            button.showsMenuAsPrimaryAction = true
-            button.onMenuWillDisplay = { [weak self] in self?.setHeaderPillShadowsDimmed(true, alongside: $0) }
-            button.onMenuWillEnd = { [weak self] in self?.setHeaderPillShadowsDimmed(false, alongside: $0) }
-            button.menu = UIMenu(children: [
-                UIDeferredMenuElement.uncached { [weak self] completion in
-                    self?.buildNativeChatsMenuElements(completion) ?? completion([])
-                }
-            ])
-        } else {
-            button.addTarget(self, action: #selector(recentChatsButtonTapped), for: .touchUpInside)
+        button.showsMenuAsPrimaryAction = true
+        button.onMenuWillDisplay = { [weak self] animator in
+            self?.pixelHandler.fireRecentChatsPopupDisplayed()
+            self?.setHeaderPillShadowsDimmed(true, alongside: animator)
         }
+        button.onMenuWillEnd = { [weak self] animator in
+            self?.setHeaderPillShadowsDimmed(false, alongside: animator)
+        }
+        button.menu = UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                self?.buildNativeChatsMenuElements(completion) ?? completion([])
+            }
+        ])
         return button
     }()
 
@@ -476,10 +471,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     deinit {
-        let window = popupWindow
         let reader = suggestionsReader
         DispatchQueue.main.async {
-            window?.isHidden = true
             reader?.tearDown()
         }
     }
@@ -548,7 +541,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         if isBeingDismissed {
             prepareForDismissal()
         }
-        dismissRecentChatsPopup()
         view.endEditing(true)
         removeKeyboardObserver()
         pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
@@ -641,24 +633,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         }
         guard let animator else { return applyShadows() }
         animator.addAnimations(applyShadows)
-    }
-
-    @objc private func recentChatsButtonTapped() {
-        if recentChatsPopup != nil {
-            dismissRecentChatsPopup()
-            return
-        }
-        guard !isFetchingRecentChats else { return }
-        isFetchingRecentChats = true
-        Task { @MainActor in
-            defer { isFetchingRecentChats = false }
-            guard let viewModel = await AIChatRecentChatsPopupViewModel.fetch(
-                using: suggestionsReader,
-                showNewChat: sessionState.hasActiveChat
-            ), view.window != nil, !isBeingDismissed else { return }
-
-            showRecentChatsPopup(with: viewModel)
-        }
     }
 
     func pushPageContext(_ context: AIChatPageContextData?) {
@@ -777,40 +751,6 @@ private extension AIChatContextualSheetViewController {
                 delegate?.aiChatContextualSheetViewControllerDidDetectActiveChatRemoved(self)
             }
         }
-    }
-
-    func showRecentChatsPopup(with viewModel: AIChatRecentChatsPopupViewModel) {
-        guard let windowScene = view.window?.windowScene else { return }
-
-        viewModel.delegate = self
-        let popup = AIChatRecentChatsPopupViewController(viewModel: viewModel)
-
-        // Present on a separate window so the popup is fully independent of the sheet
-        let overlay = UIWindow(windowScene: windowScene)
-        overlay.rootViewController = popup
-        overlay.windowLevel = .normal + 1
-        overlay.backgroundColor = .clear
-        overlay.isOpaque = false
-        overlay.overrideUserInterfaceStyle = traitCollection.userInterfaceStyle
-        // Visible but never key: taking key status resigns the input and takes the keyboard with it.
-        overlay.isHidden = false
-
-        // Convert pill position to screen coordinates for positioning
-        let pillFrameInScreen = leftButtonContainer.convert(leftButtonContainer.bounds, to: nil)
-        popup.anchorContentView(pillFrame: pillFrameInScreen)
-
-        popupWindow = overlay
-        recentChatsPopup = popup
-        popup.animateIn()
-        pixelHandler.fireRecentChatsPopupDisplayed()
-    }
-
-    func dismissRecentChatsPopup() {
-        guard let window = popupWindow, let popup = recentChatsPopup else { return }
-        popupWindow = nil
-        recentChatsPopup = nil
-        // The window is held by the closure so it outlives the fade rather than vanishing under it.
-        popup.animateOut { window.isHidden = true }
     }
 
     func updateChipUI(chipState: ChipState) {
@@ -1154,30 +1094,26 @@ extension AIChatContextualSheetViewController: ContextualDictationPresenting {
     }
 }
 
-// MARK: - AIChatRecentChatsPopupViewModelDelegate
+// MARK: - Chats menu actions
 
-extension AIChatContextualSheetViewController: AIChatRecentChatsPopupViewModelDelegate {
+extension AIChatContextualSheetViewController {
 
     func recentChatsPopupDidSelectNewChat() {
-        dismissRecentChatsPopup()
         pixelHandler.fireNewChatButtonTapped()
         delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
     }
 
     func recentChatsPopupDidSelectOpenDuckAI() {
-        dismissRecentChatsPopup()
         delegate?.aiChatContextualSheetViewControllerDidRequestOpenDuckAI(self)
     }
 
     func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
-        dismissRecentChatsPopup()
         pixelHandler.fireRecentChatSelected()
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
     }
 
     func recentChatsPopupDidSelectViewAll() {
-        dismissRecentChatsPopup()
         pixelHandler.fireViewAllChatsTapped()
         // The native chat history page is an iPhone-only experience; fall back to the duck.ai sidebar
         // when the flag is off or on iPad.
@@ -1189,9 +1125,6 @@ extension AIChatContextualSheetViewController: AIChatRecentChatsPopupViewModelDe
         }
     }
 
-    func recentChatsPopupDidDismiss() {
-        dismissRecentChatsPopup()
-    }
 }
 
 // MARK: - AIChatContextualWebViewControllerDelegate
@@ -1707,15 +1640,15 @@ private final class MenuHostingButton: UIButton {
     var onMenuWillEnd: ((UIContextMenuInteractionAnimating?) -> Void)?
 
     override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
-                                        willDisplayMenuFor configuration: UIContextMenuConfiguration,
-                                        animator: UIContextMenuInteractionAnimating?) {
+                                         willDisplayMenuFor configuration: UIContextMenuConfiguration,
+                                         animator: UIContextMenuInteractionAnimating?) {
         super.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: animator)
         onMenuWillDisplay?(animator)
     }
 
     override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
-                                        willEndFor configuration: UIContextMenuConfiguration,
-                                        animator: UIContextMenuInteractionAnimating?) {
+                                         willEndFor configuration: UIContextMenuConfiguration,
+                                         animator: UIContextMenuInteractionAnimating?) {
         super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
         onMenuWillEnd?(animator)
     }

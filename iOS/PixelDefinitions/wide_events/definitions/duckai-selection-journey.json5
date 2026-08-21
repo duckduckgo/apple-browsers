@@ -4,7 +4,7 @@
         "owners": ["pikorddg"],
         "meta": {
             "type": "ios-duckai-selection-journey",
-            "version": "1.0"
+            "version": "2.0"
         },
         "feature": {
             "name": "duckai-selection-journey",
@@ -18,7 +18,15 @@
                             "terminal_reason": {
                                 "type": "string",
                                 "description": "submitted maps to SUCCESS. Discarding the unsubmitted selections, and the inactivity session expiring with them still attached, map to FAILURE.",
-                                "enum": ["submitted", "selections_removed", "new_chat", "chat_cleared", "tab_closed", "session_expired"]
+                                "enum": [
+                                    "submitted",
+                                    "selections_removed",
+                                    "new_chat",
+                                    "chat_cleared",
+                                    "tab_closed",
+                                    "moved_to_tab",
+                                    "session_expired"
+                                ]
                             }
                         }
                     },

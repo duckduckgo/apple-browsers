@@ -42,34 +42,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
         func tearDown() {}
     }
 
-    private final class MockDelegate: AIChatRecentChatsPopupViewModelDelegate {
-        var newChatCallCount = 0
-        var openDuckAICallCount = 0
-        var selectedChats: [AIChatSuggestion] = []
-        var viewAllCallCount = 0
-        var dismissCallCount = 0
-
-        func recentChatsPopupDidSelectNewChat() {
-            newChatCallCount += 1
-        }
-
-        func recentChatsPopupDidSelectOpenDuckAI() {
-            openDuckAICallCount += 1
-        }
-
-        func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
-            selectedChats.append(chat)
-        }
-
-        func recentChatsPopupDidSelectViewAll() {
-            viewAllCallCount += 1
-        }
-
-        func recentChatsPopupDidDismiss() {
-            dismissCallCount += 1
-        }
-    }
-
     // MARK: - Initialization Tests
 
     func testInitWithEmptySuggestions() {
@@ -104,81 +76,6 @@ final class AIChatRecentChatsPopupViewModelTests: XCTestCase {
     }
 
     // MARK: - Action Tests
-
-    func testDidSelectNewChatCallsDelegate() {
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: makeSuggestions(count: 1), showNewChat: true)
-        let mockDelegate = MockDelegate()
-        vm.delegate = mockDelegate
-
-        vm.didSelectNewChat()
-
-        XCTAssertEqual(mockDelegate.newChatCallCount, 1)
-    }
-
-    func testDidSelectOpenDuckAICallsDelegate() {
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: makeSuggestions(count: 1), showNewChat: true)
-        let mockDelegate = MockDelegate()
-        vm.delegate = mockDelegate
-
-        vm.didSelectOpenDuckAI()
-
-        XCTAssertEqual(mockDelegate.openDuckAICallCount, 1)
-        XCTAssertEqual(mockDelegate.newChatCallCount, 0, "the two rows are distinct actions")
-    }
-
-    func testDidSelectChatCallsDelegateWithCorrectSuggestion() {
-        let suggestions = makeSuggestions(count: 3)
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions)
-        let mockDelegate = MockDelegate()
-        vm.delegate = mockDelegate
-
-        vm.didSelectChat(at: 1)
-
-        XCTAssertEqual(mockDelegate.selectedChats.count, 1)
-        XCTAssertEqual(mockDelegate.selectedChats.first?.chatId, "chat-1")
-    }
-
-    func testDidSelectChatOutOfBoundsDoesNotCallDelegate() {
-        let suggestions = makeSuggestions(count: 3)
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions)
-        let mockDelegate = MockDelegate()
-        vm.delegate = mockDelegate
-
-        vm.didSelectChat(at: 5)
-
-        XCTAssertTrue(mockDelegate.selectedChats.isEmpty)
-    }
-
-    func testDidSelectChatNegativeIndexDoesNotCallDelegate() {
-        let suggestions = makeSuggestions(count: 3)
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: suggestions)
-        let mockDelegate = MockDelegate()
-        vm.delegate = mockDelegate
-
-        vm.didSelectChat(at: -1)
-
-        XCTAssertTrue(mockDelegate.selectedChats.isEmpty)
-    }
-
-    func testDidSelectViewAllCallsDelegate() {
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: makeSuggestions(count: 5))
-        let mockDelegate = MockDelegate()
-        vm.delegate = mockDelegate
-
-        vm.didSelectViewAll()
-
-        XCTAssertEqual(mockDelegate.viewAllCallCount, 1)
-    }
-
-    func testDidDismissCallsDelegate() {
-        let vm = AIChatRecentChatsPopupViewModel(suggestions: makeSuggestions(count: 1))
-        let mockDelegate = MockDelegate()
-        vm.delegate = mockDelegate
-
-        vm.didDismiss()
-
-        XCTAssertEqual(mockDelegate.dismissCallCount, 1)
-    }
 
     // MARK: - fetch() Tests
 

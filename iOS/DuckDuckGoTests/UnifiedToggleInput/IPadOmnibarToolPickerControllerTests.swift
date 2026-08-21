@@ -37,7 +37,8 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
         store = UTIModelStore(
             modelsService: StubModelsService(),
             preferences: preferences,
-            subscriptionManager: SubscriptionManagerMock()
+            subscriptionManager: SubscriptionManagerMock(),
+            isUpdatedModelPickerEnabled: false
         )
         sut = IPadOmnibarToolPickerController(store: store)
     }

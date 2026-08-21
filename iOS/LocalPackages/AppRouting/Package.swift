@@ -15,14 +15,14 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Common"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions")
     ],
     targets: [
         .target(
             name: "AppRouting",
             dependencies: [
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions")
             ]
         ),

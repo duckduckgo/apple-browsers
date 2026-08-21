@@ -742,7 +742,8 @@ class TabViewController: UIViewController {
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            selectionJourneyScopeID: tabModel.uid
         )
         coordinator.delegate = self
         return coordinator
@@ -1206,6 +1207,10 @@ class TabViewController: UIViewController {
             self?.isSearchSelectionItemAvailable ?? false
         }
 
+        webView.isSelectionFrameAvailable = { [weak self] in
+            self?.userScripts?.selectionFrameScript.frameWithSelection != nil
+        }
+
         webView.askAIChatHandler = { [weak self] text in
             guard let self else { return }
             self.delegate?.tab(self, didRequestAIChatForSelectedText: text)
@@ -1214,6 +1219,10 @@ class TabViewController: UIViewController {
         webView.searchWithDuckDuckGoHandler = { [weak self] text in
             guard let self else { return }
             self.delegate?.tab(self, didRequestSearchForSelectedText: text)
+        }
+
+        webView.selectionFrameProvider = { [weak self] in
+            self?.userScripts?.selectionFrameScript.frameWithSelection
         }
     }
 
@@ -2208,6 +2217,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        userScripts?.selectionFrameScript.reset()
+
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
@@ -2218,13 +2229,26 @@ extension TabViewController: WKNavigationDelegate {
 
         url = webView.url
         let tld = storageCache.tld
-        let httpsForced = tld.domain(lastUpgradedURL?.host) == tld.domain(webView.url?.host)
+        let httpsForced = Self.isHTTPSForced(lastUpgradedURL: lastUpgradedURL, currentURL: webView.url, tld: tld)
         onWebpageDidStartLoading(httpsForced: httpsForced)
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
         
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
 
+    }
+
+    /// Whether the committed page was reached via an HTTPS upgrade.
+    ///
+    /// Needs both an upgrade on record and an HTTPS commit: `lastUpgradedURL` isn't reset across
+    /// same-domain navigations, so without the scheme check a later HTTP commit on the same domain
+    /// would be mis-flagged. Mirrors macOS's `connectionUpgradedTo != nil`.
+    static func isHTTPSForced(lastUpgradedURL: URL?, currentURL: URL?, tld: TLD) -> Bool {
+        guard let lastUpgradedURL, let currentURL, currentURL.isHttps else { return false }
+        guard let upgradedDomain = tld.domain(lastUpgradedURL.host) else {
+            return lastUpgradedURL.host == currentURL.host
+        }
+        return upgradedDomain == tld.domain(currentURL.host)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -3944,6 +3968,8 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        userScripts?.selectionFrameScript.reset()
+
         let isDuckAITab = webView.url?.isDuckAIURL == true
         if isDuckAITab {
             DailyPixel.fireDailyAndCount(.aiChatTabDidTerminate, error: nil, withAdditionalParameters: [:])

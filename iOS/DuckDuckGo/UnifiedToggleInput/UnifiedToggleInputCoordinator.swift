@@ -181,9 +181,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
-    private let isUpdatedModelPickerAvailable: Bool
-    private let modelPickerPresenter = UnifiedToggleInputModelPickerPresenter()
-    private let subscriptionUpsellPresenter = UnifiedToggleInputSubscriptionUpsellPresenter()
     private var attachmentController: UTIAttachmentController!
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
@@ -218,6 +215,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var isAITabExpanded: Bool { stateMachine.isAITabExpanded }
     var isAITabCollapsed: Bool { stateMachine.isAITabCollapsed }
     var isContextualChatState: Bool { stateMachine.isContextualChatState }
+    var isContextualChatCollapsed: Bool { stateMachine.isContextualChatCollapsed }
+
+    /// A picker this input put up — it takes the keyboard on the way in, which is not the user leaving.
+    var isPresentingAttachmentModal: Bool { attachmentPresentingViewController?.presentedViewController != nil }
+
+    /// The input is in a window, so a keyboard change is about a surface the user can actually see.
+    var isInputOnScreen: Bool { viewController.view.window != nil }
     var isOmnibarEditing: Bool { stateMachine.isOmnibarEditing }
     var omnibarState: UnifiedToggleInputDisplayState.OmnibarState? { stateMachine.omnibarState }
     var isSearchOnAITab: Bool { stateMachine.isSearchOnAITab(inputMode: inputMode) }
@@ -301,15 +305,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
         duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil,
         pixelFiring: UTIPixelFiring = .live,
-        contextualStartsPreSubmit: Bool = false,
+        contextualStart: ContextualInputStart = .expandedOnExistingChat,
         attachmentPasteEnabled: Bool = false,
         placesAttachmentsAboveInput: Bool = false,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
+        let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
-        self.isUpdatedModelPickerAvailable = updatedModelPickerFeature.isAvailable
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.aiChatSettings = aiChatSettings
         self.sessionMonitor = UTISessionMonitor(
@@ -328,7 +332,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 accessTokenProvider: subscriptionManager
             ),
             preferences: preferences,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
         )
         self.lastUsedModelProvider = lastUsedModelProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
@@ -414,14 +419,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onUserChoiceRecorded: { [weak self] in self?.recordUserChoiceToStore() },
                 clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
-            )
+            ),
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
         )
-        if isUpdatedModelPickerAvailable {
-            viewController.usesUpdatedModelPickerPresentation = true
-            viewController.onUpdatedModelPickerTapped = { [weak self] in
-                self?.presentUpdatedModelPicker()
-            }
-        }
         attachmentController = UTIAttachmentController(
             pixelReporter: pixelReporter,
             view: .init(
@@ -485,12 +485,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.modelName = cachedLabel
         }
 
-        // Contextual chat boots in expanded form; no collapsed/inactive states are reachable.
-        // The chat is already post-submit by the time the contextual UTI installs, so
-        // `hasSubmittedPrompt` should reflect that — drives follow-up placeholder + model chip hide.
+        viewController.handler.prefersDictationOverVoiceChat = stateMachine.prefersDictationOverVoiceChat
+
+        // Drives the follow-up placeholder and model chip, so an existing chat must say so.
         if host == .contextualChat {
-            displayState = .contextualChat
-            hasSubmittedPrompt = !contextualStartsPreSubmit
+            displayState = .contextualChat(contextualStart.startsCollapsed ? .collapsed : .expanded)
+            hasSubmittedPrompt = !contextualStart.isPreSubmit
             syncHasSubmittedPromptToHandler()
             modelSelector.updateModelChipVisibility()
         }
@@ -718,12 +718,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - AI Tab State
 
+    /// The display state carrying `expansion` on whichever Duck.ai surface hosts this UTI.
+    private func duckAISurfaceState(_ expansion: UnifiedToggleInputDisplayState.ExpansionState) -> UnifiedToggleInputDisplayState {
+        host == .contextualChat ? .contextualChat(expansion) : .aiTab(expansion)
+    }
+
     func showCollapsed() {
-        // Contextual chat has no AI tab collapsed mode; the host always renders expanded.
-        if host == .contextualChat { return }
         keyboardMonitor.disarm()
         let previousDisplayState = displayState
-        displayState = .aiTab(.collapsed)
+        displayState = duckAISurfaceState(.collapsed)
         setInitialInputMode(.aiChat)
         isInputVisibleForKeyboard = true
 
@@ -737,7 +740,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard !isOnboardingLocked else { return }
         keyboardMonitor.disarm()
         let previousDisplayState = displayState
-        displayState = host == .contextualChat ? .contextualChat : .aiTab(.expanded)
+        displayState = duckAISurfaceState(.expanded)
         // Pixels fire only on a real transition into expanded — header re-entries (Plus → New Chat) call this too but don't actually show either UI.
         if host == .omnibar, previousDisplayState != .aiTab(.expanded) {
             pixelReporter.reportOmnibarInputSurfaceShown()
@@ -1646,6 +1649,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             return
         }
 
+        if isContextualChatState {
+            // Ahead of the collapse below, which takes the keyboard and the surface with it.
+            delegate?.unifiedToggleInputDidSubmitPromptToBoundChat()
+        }
         clearAttachments()
         if isOmnibarNewAIChatPrompt {
             viewController.prepareToolbarSubmitStyleForDismissal()
@@ -1654,12 +1661,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         if isOmnibarSession {
             deactivateToOmnibar()
         } else {
-            // showCollapsed has no dismiss hook; clear synchronously.
+            // showCollapsed has no dismiss hook; it resigns the input, which takes the keyboard.
             setText("")
             showCollapsed()
-            if isContextualChatState {
-                dismissOmnibarKeyboard()
-            }
         }
         if let userScript {
             let didSendBridgeMessage = userScript.canDispatchBridgeMessages
@@ -1808,78 +1812,6 @@ private extension UnifiedToggleInputCoordinator {
         }
         guard let scene = viewController.view.window?.windowScene else { return nil }
         return scene.keyWindow?.rootViewController
-    }
-
-    func presentUpdatedModelPicker() {
-        guard isUpdatedModelPickerAvailable,
-              let presentingViewController = attachmentPresenterViewController,
-              viewController.modelPickerSourceView.window != nil else {
-            return
-        }
-
-        let content = UnifiedToggleInputModelPickerContent(
-            models: modelStore.models,
-            selectedModelID: modelStore.persistedModelId,
-            userTier: modelStore.subscriptionState.userTier
-        )
-        modelPickerPresenter.present(
-            content: content,
-            from: presentingViewController,
-            sourceView: viewController.modelPickerSourceView,
-            onSelect: { [weak self] modelID in
-                self?.handleUpdatedModelSelection(modelID)
-            },
-            onCallToAction: { [weak self] requiredTier in
-                self?.handleUpdatedModelPickerCallToAction(requiredTier: requiredTier)
-            }
-        )
-    }
-
-    func handleUpdatedModelPickerCallToAction(requiredTier: AIChatModelPublicAccessTier) {
-        switch modelStore.subscriptionState.userTier.upgradeFlow(for: requiredTier) {
-        case .purchase:
-            presentSubscriptionUpsell { [weak self] in
-                self?.modelSelector.handleModelPickerSubscriptionCallToAction(requiredTier: requiredTier)
-            }
-        case .upgrade, .none:
-            modelSelector.handleModelPickerSubscriptionCallToAction(requiredTier: requiredTier)
-        }
-    }
-
-    func handleUpdatedModelSelection(_ modelID: String) {
-        guard let model = modelStore.models.first(where: { $0.id == modelID }),
-              !model.entityHasAccess,
-              let requiredTier = model.lowestPublicAccessTier else {
-            modelSelector.handleModelSelection(modelID)
-            return
-        }
-
-        switch modelStore.subscriptionState.userTier.upgradeFlow(for: requiredTier) {
-        case .purchase, .upgrade:
-            presentSubscriptionUpsell { [weak self] in
-                self?.modelSelector.handleModelSelection(modelID)
-            }
-        case .none:
-            modelSelector.handleModelSelection(modelID)
-        }
-    }
-
-    func presentSubscriptionUpsell(onSubscribe: @escaping () -> Void) {
-        guard isUpdatedModelPickerAvailable,
-              let presentingViewController = attachmentPresenterViewController else {
-            return
-        }
-
-        subscriptionUpsellPresenter.present(
-            from: presentingViewController,
-            onSubscribe: onSubscribe,
-            onHaveSubscription: {
-                NotificationCenter.default.post(
-                    name: .settingsDeepLinkNotification,
-                    object: SettingsViewModel.SettingsDeepLinkSection.restoreFlow
-                )
-            }
-        )
     }
 
     func makeFloatingReturnKeyState() -> UnifiedToggleInputFloatingReturnKeyState {
@@ -2087,6 +2019,7 @@ private extension UnifiedToggleInputCoordinator {
                 let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
                     && viewController.inputMode == .aiChat
                     && !isInputPaneExpanded
+                    && !stateMachine.prefersDictationOverVoiceChat
                 if isCollapsedAIVoiceChatButton {
                     delegate?.unifiedToggleInputDidRequestAIVoiceChat()
                 } else {

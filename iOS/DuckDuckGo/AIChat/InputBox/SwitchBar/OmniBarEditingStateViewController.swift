@@ -216,6 +216,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        prepareHomePageMessagesForActivation()
+
         if aiChatHistoryManager == nil {
             installChatHistoryList()
         }
@@ -595,6 +597,18 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func observeRemoteMessagesChanges() {
+        guard let configuration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration else { return }
+
+        if configuration.mode == .coordinated {
+            notificationCancellable = configuration.contentDidChangePublisher
+                .sink { [weak self] _ in
+                    guard let self else { return }
+                    self.suggestionTrayManager?.showInitialSuggestions()
+                    self.updateDaxVisibility()
+                }
+            return
+        }
+
         notificationCancellable = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -602,6 +616,17 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 self.suggestionTrayManager?.showInitialSuggestions()
                 self.updateDaxVisibility()
             }
+    }
+
+    private func prepareHomePageMessagesForActivation() {
+        guard let dependencies = suggestionTrayDependencies else { return }
+
+        let homePageMessagesConfiguration = dependencies.newTabPageDependencies.homePageMessagesConfiguration
+        guard homePageMessagesConfiguration.mode == .coordinated else { return }
+
+        guard !switchBarHandler.isFireTab else { return }
+
+        homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil)
     }
 
     private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {

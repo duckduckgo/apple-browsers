@@ -14,20 +14,20 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../../SharedPackages/BrowserServicesKit")
+        .package(path: "../../../SharedPackages/PixelKit"),
     ],
     targets: [
         .target(
             name: "AddressBarPerformance",
             dependencies: [
-                .product(name: "PixelKit", package: "BrowserServicesKit")
+                .product(name: "PixelKit", package: "PixelKit")
             ]
         ),
         .testTarget(
             name: "AddressBarPerformanceTests",
             dependencies: [
                 "AddressBarPerformance",
-                .product(name: "PixelKit", package: "BrowserServicesKit")
+                .product(name: "PixelKit", package: "PixelKit")
             ]
         )
     ]

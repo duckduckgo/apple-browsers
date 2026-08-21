@@ -190,6 +190,7 @@ jobs:
           {"test-tag":"adClick","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
           {"test-tag":"duckplayer_native","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
           {"test-tag":"device_info","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
+          {"test-tag":"pir","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
           {"test-tag":"device_info","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
           {"test-tag":"duckplayer_classic","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
           {"test-tag":"duckai_chrome_shortcut","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},

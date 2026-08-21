@@ -801,7 +801,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
         case .aiChatContextualFloatingInput:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .freeTrialConversionWideEvent:

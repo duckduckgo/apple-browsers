@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import WebKit
 import os.log
 
 protocol AIChatContextualFloatingInputViewControllerDelegate: AnyObject {
@@ -34,8 +35,18 @@ protocol AIChatContextualFloatingInputHosting: AnyObject {
 
     func mount(in parent: UIViewController) -> UIView
     func unmount(from parent: UIViewController)
+    var isInputFirstResponder: Bool { get }
+
     func deactivateInput()
     func freezeInputPosition()
+    func applyDictatedQuery(_ query: String)
+}
+
+extension AIChatContextualFloatingInputViewController: ContextualDictationPresenting {
+
+    func applyDictatedQuery(_ query: String) {
+        utiHost.applyDictatedQuery(query)
+    }
 }
 
 /// Chip suggestions and the unified toggle input floating over the page, with no sheet chrome.
@@ -55,6 +66,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         static let assumedKeyboardSlideDuration: TimeInterval = 0.25
         /// Longer than this and the finger was resting or scrolling, not tapping.
         static let maximumTapDuration: CFTimeInterval = 0.4
+        static let chipsFadeDuration: TimeInterval = 0.2
     }
 
     /// The keyboard's own animation, taken from its notifications: moving with the keyboard means running
@@ -111,6 +123,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     weak var delegate: AIChatContextualFloatingInputViewControllerDelegate?
 
     private let utiHost: AIChatContextualFloatingInputHosting
+    private var isTransitioningSize = false
     let chipsViewController: AIChatContextualInputViewController
 
     /// Lets touches outside the input reach the page underneath, so it stays scrollable while the
@@ -152,12 +165,10 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         }
     }
 
-    /// Installed on the presenter and deliberately non-consuming: a tap dismisses this surface *and*
-    /// still activates whatever it hit, so a link opens on the same tap.
+    /// Any tap outside dismisses; page taps are consumed with it, chrome taps still act.
     private lazy var dismissOnPageTapRecognizer: UITapGestureRecognizer = {
         let recognizer = BriefTapGestureRecognizer(target: self, action: #selector(handlePageTap))
         recognizer.delegate = self
-        recognizer.cancelsTouchesInView = false
         recognizer.delaysTouchesBegan = false
         recognizer.delaysTouchesEnded = false
         return recognizer
@@ -215,6 +226,15 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         observeKeyboardAnimation()
     }
 
+    /// This surface pins the app to portrait, so leaving mid-rotation would reverse the rotation.
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        isTransitioningSize = true
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.isTransitioningSize = false
+        }
+    }
+
     /// Adds the floating input over `parent`'s content and mounts the shared input above the keyboard.
     func install(in parent: UIViewController) {
         guard self.parent !== parent else { return }
@@ -258,10 +278,36 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     /// rather than showing at install time. They sit above the input card, which is pinned to the keyboard
     /// guide, so they ride up with it rather than landing once it has stopped.
     func showChipsIfNeeded() {
-        guard !hasShownChips, chipsViewController.startActionCount > 0 else { return }
+        guard chipsViewController.startActionCount > 0 else { return }
+        // Content returning after `clearChipsFadingOut`, so fade back rather than re-enter.
+        guard !hasShownChips else {
+            fadeChipsContainer(to: 1)
+            return
+        }
         hasShownChips = true
         chipsContainerView.alpha = 1
         chipsViewController.showStartActions()
+    }
+
+    /// Clears only once invisible: removing them collapses the stack into the input's own animation.
+    func clearChipsFadingOut() {
+        fadeChipsContainer(to: 0) { [weak self] in
+            self?.chipsViewController.updateStartActions(suggestions: [], quickActions: [])
+        }
+    }
+
+    private func fadeChipsContainer(to alpha: CGFloat, completion: (() -> Void)? = nil) {
+        guard chipsContainerView.alpha != alpha else {
+            completion?()
+            return
+        }
+        UIView.animate(withDuration: Constants.chipsFadeDuration,
+                       animations: { self.chipsContainerView.alpha = alpha },
+                       // An interrupted fade was overtaken; its clear would empty the row coming back.
+                       completion: { finished in
+            guard finished else { return }
+            completion?()
+        })
     }
 
     /// The entrance in reverse: settles back down to where it rose from, fading out as it goes. One alpha for
@@ -294,6 +340,14 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
             self.resignInput()
             completion()
         })
+    }
+
+    /// Torn down by something other than the user, so it goes at once — whatever replaces it starts clean.
+    func removeWithoutAnimation() {
+        guard !isDismissing else { return }
+        isDismissing = true
+        resignInput()
+        remove()
     }
 
     func remove() {
@@ -459,10 +513,15 @@ private extension AIChatContextualFloatingInputViewController {
         // or the page blurring its own field — so the surface goes too.
         guard notification.name == UIResponder.keyboardWillHideNotification,
               hasKeyboardAppeared,
+              !isTransitioningSize,
               !isDismissing else { return }
         // Backgrounding and system interruptions take the keyboard too, and neither is the user leaving: the
         // surface and whatever has been typed into it should still be here on the way back.
         guard UIApplication.shared.applicationState == .active else { return }
+        // Its own attachment picker takes the keyboard on the way up.
+        guard presentedViewController == nil else { return }
+        // Still holding focus means the keyboard is only churning, not being claimed elsewhere.
+        guard !utiHost.isInputFirstResponder else { return }
         requestDismiss()
     }
 
@@ -507,7 +566,27 @@ extension AIChatContextualFloatingInputViewController: UIGestureRecognizerDelega
     /// hit test keeps one definition of which points this surface owns.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard gestureRecognizer === dismissOnPageTapRecognizer else { return true }
+        // Page only: the address bar dismisses this surface by taking focus, so its tap must land.
+        gestureRecognizer.cancelsTouchesInView = isWithinWebContent(touch.view)
         return view.hitTest(touch.location(in: view), with: nil) == nil
+    }
+
+    /// Taps only: a held finger never fails this recognizer, so a waiting long press would do nothing.
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer === dismissOnPageTapRecognizer,
+              !(otherGestureRecognizer is UIPanGestureRecognizer),
+              !(otherGestureRecognizer is UILongPressGestureRecognizer) else { return false }
+        return isWithinWebContent(otherGestureRecognizer.view)
+    }
+
+    private func isWithinWebContent(_ view: UIView?) -> Bool {
+        var candidate = view
+        while let current = candidate {
+            if current is WKWebView { return true }
+            candidate = current.superview
+        }
+        return false
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,

@@ -549,8 +549,9 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.didRequestExpandURLs, [expandURL])
     }
 
+    /// The chat carries on in its own tab, so the tab it left starts over rather than keeping it.
     @MainActor
-    func testExpandRequestRetainsActiveChat() async {
+    func testExpandRequestResetsTheTabsContextualChat() async {
         // Given
         await sut.presentSheet(from: mockPresentingVC)
         XCTAssertNotNil(sut.sheetViewController)
@@ -560,7 +561,9 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL)
 
         // Then
-        XCTAssertNotNil(sut.sheetViewController)
+        XCTAssertNil(sut.sheetViewController)
+        XCTAssertFalse(sut.sessionState.hasActiveChat)
+        XCTAssertEqual(mockDelegate.contextualChatURLUpdates.last, .some(nil))
     }
 
     // MARK: - Page Context Handling Tests
@@ -1293,6 +1296,56 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         // Then - the chip still gets the context, wrapped without a favicon
         XCTAssertEqual(host.chipViewModel.attachedContext?.contextData.title, "Tapped")
         XCTAssertNil(host.chipViewModel.attachedContext?.favicon)
+    }
+
+    // MARK: - Open Duck.ai
+
+    /// Rebuilt because the host snapshots availability, so it must be on before the coordinator exists.
+    @MainActor
+    private func makeCoordinatorWithFloatingInput() -> AIChatContextualSheetCoordinator {
+        let floatingInputFeature = MockFloatingInputFeature()
+        floatingInputFeature.isAvailable = true
+        let coordinator = AIChatContextualSheetCoordinator(
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            aiChatSettings: mockSettings,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            floatingInputFeature: floatingInputFeature,
+            pageContextHandler: mockPageContextHandler,
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
+            )
+        )
+        coordinator.delegate = mockDelegate
+        return coordinator
+    }
+
+    @MainActor
+    func testOpenDuckAIOpensATabCarryingNoChatID() async {
+        sut = makeCoordinatorWithFloatingInput()
+        await sut.presentSheet(from: mockPresentingVC)
+
+        sut.aiChatContextualSheetViewControllerDidRequestOpenDuckAI(sut.sheetViewController!)
+
+        XCTAssertEqual(mockDelegate.didRequestExpandURLs.count, 1)
+        XCTAssertNil(mockDelegate.didRequestExpandURLs.first?.duckAIChatID, "opens Duck.ai itself, not the chat being left")
+    }
+
+    /// Going to Duck.ai leaves this sheet's chat alone — only New Chat clears it.
+    @MainActor
+    func testOpenDuckAILeavesTheContextualChatIntact() async {
+        sut = makeCoordinatorWithFloatingInput()
+        await sut.presentSheet(from: mockPresentingVC)
+        mockDelegate.contextualChatURLUpdates = []
+
+        sut.aiChatContextualSheetViewControllerDidRequestOpenDuckAI(sut.sheetViewController!)
+
+        XCTAssertTrue(mockDelegate.contextualChatURLUpdates.isEmpty, "the tab keeps the chat it can still reopen")
+        XCTAssertTrue(mockDelegate.deletedChatIDs.isEmpty)
     }
 
     // MARK: - New Chat Reset Tests

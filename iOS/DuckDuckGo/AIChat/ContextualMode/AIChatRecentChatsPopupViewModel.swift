@@ -32,9 +32,6 @@ final class AIChatRecentChatsPopupViewModel {
 
     // MARK: - Properties
 
-    /// Whether the "New chat" row should be shown at the top.
-    let showNewChat: Bool
-
     /// The chat suggestions (up to maxVisibleChats).
     let suggestions: [AIChatSuggestion]
 
@@ -43,10 +40,8 @@ final class AIChatRecentChatsPopupViewModel {
     /// Creates a view model from raw fetched data.
     /// - Parameters:
     ///   - suggestions: The chat suggestions to display (will be capped at maxVisibleChats).
-    ///   - showNewChat: Whether the "New chat" row should be shown (true when there's an active chat).
-    init(suggestions: [AIChatSuggestion], showNewChat: Bool = false) {
+    init(suggestions: [AIChatSuggestion]) {
         self.suggestions = Array(suggestions.prefix(Self.maxVisibleChats))
-        self.showNewChat = showNewChat
     }
 
 }
@@ -57,11 +52,11 @@ extension AIChatRecentChatsPopupViewModel {
 
     /// Fetches recent chats from the reader and creates a view model.
     /// Returns nil only if the reader is nil; the popup still opens with no suggestions.
-    static func fetch(using reader: AIChatSuggestionsReading?, showNewChat: Bool = false) async -> AIChatRecentChatsPopupViewModel? {
+    static func fetch(using reader: AIChatSuggestionsReading?) async -> AIChatRecentChatsPopupViewModel? {
         guard let reader else { return nil }
         let result = await reader.fetchSuggestions(query: nil, maxChats: maxVisibleChats + 1)
         let all = result.pinned + result.recent
         let capped = Array(all.prefix(maxVisibleChats))
-        return AIChatRecentChatsPopupViewModel(suggestions: capped, showNewChat: showNewChat)
+        return AIChatRecentChatsPopupViewModel(suggestions: capped)
     }
 }

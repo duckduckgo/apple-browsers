@@ -188,6 +188,7 @@ public final class PixelKit {
     private let source: String?
     private let channel: String?
     private let pixelCalendar: Calendar
+    private let parameterProvider: PixelKitParameterProviding?
 
     /// Sets up PixelKit for the entire app.
     ///
@@ -196,6 +197,7 @@ public final class PixelKit {
     /// - `source`: if set, adds a `pixelSource` parameter to the pixel call; this can be used to specify which target is sending the pixel
     /// - `session`: a stable, non-telemetry identifier for this PixelKit instance, used to key its retry queue's storage and throttle so distinct instances never share or overwrite one queue
     /// - `channel`: if set, adds a `channel` parameter to pixel calls (e.g. "canary" for internal users, "dev" for alpha/review builds); omit for production builds
+    /// - `parameterProvider`: supplies values PixelKit cannot derive itself, currently the ATB cohort read by pixels that set `Options.includeATB`; omit when the host has no need for them
     /// - `fireRequest`: this is not triggered when `dryRun` is `true`
     public static func setUp(dryRun: Bool,
                              appVersion: String,
@@ -206,6 +208,7 @@ public final class PixelKit {
                              pixelCalendar: Calendar? = nil,
                              dateGenerator: @escaping () -> Date = Date.init,
                              defaults: ThrowingKeyValueStoring,
+                             parameterProvider: PixelKitParameterProviding? = nil,
                              fireRequest: @escaping FireRequest) {
         shared = PixelKit(dryRun: dryRun,
                           appVersion: appVersion,
@@ -216,6 +219,7 @@ public final class PixelKit {
                           pixelCalendar: pixelCalendar,
                           dateGenerator: dateGenerator,
                           defaults: defaults,
+                          parameterProvider: parameterProvider,
                           fireRequest: fireRequest)
     }
 
@@ -234,6 +238,7 @@ public final class PixelKit {
                             pixelCalendar: Calendar? = nil,
                             dateGenerator: @escaping () -> Date = Date.init,
                             defaults: ThrowingKeyValueStoring,
+                            parameterProvider: PixelKitParameterProviding? = nil,
                             fireRequest: @escaping FireRequest) {
         self.init(dryRun: dryRun,
                   appVersion: appVersion,
@@ -244,6 +249,7 @@ public final class PixelKit {
                   pixelCalendar: pixelCalendar,
                   dateGenerator: dateGenerator,
                   defaults: defaults,
+                  parameterProvider: parameterProvider,
                   retryQueueStore: nil,
                   fireRequest: fireRequest)
     }
@@ -259,6 +265,7 @@ public final class PixelKit {
          pixelCalendar: Calendar?,
          dateGenerator: @escaping () -> Date,
          defaults: ThrowingKeyValueStoring,
+         parameterProvider: PixelKitParameterProviding? = nil,
          retryQueueStore: PixelRetryQueueStoring?,
          fireRequest: @escaping FireRequest) {
 
@@ -271,6 +278,7 @@ public final class PixelKit {
         self.dateGenerator = dateGenerator
         self.defaults = defaults
         self.fireRequest = fireRequest
+        self.parameterProvider = parameterProvider
 
         if dryRun {
             self.retryQueue = nil
@@ -351,6 +359,7 @@ public final class PixelKit {
              withError: event.error,
              allowedQueryReservedCharacters: options.allowedQueryReservedCharacters,
              includeAppVersionParameter: options.includeAppVersionParameter,
+             includeATB: options.includeATB,
              standardParameters: event.standardParameters ?? [],
              retryOnFailure: options.retryOnFailure,
              onComplete: onComplete)
@@ -440,6 +449,7 @@ public final class PixelKit {
                       withError error: NSError?,
                       allowedQueryReservedCharacters: CharacterSet?,
                       includeAppVersionParameter: Bool,
+                      includeATB: Bool,
                       standardParameters: [PixelKitStandardParameter],
                       retryOnFailure: Bool,
                       onComplete: @escaping CompletionBlock) {
@@ -448,6 +458,16 @@ public final class PixelKit {
         if includeAppVersionParameter { newParams[Parameters.appVersion] = appVersion }
         if standardParameters.contains(.pixelSource), let source { newParams[Parameters.pixelSource] = source }
         if let channel { newParams[Parameters.channel] = channel }
+        if includeATB {
+            if let parameterProvider {
+                // Empty rather than absent when there is no ATB yet: legacy `Pixel` sent
+                // `statisticsStore.atbWithVariant ?? ""`, so parity means an empty value, not a
+                // missing parameter.
+                newParams[Parameters.atb] = parameterProvider.atb ?? ""
+            } else {
+                logger.fault("👾 \(pixelName, privacy: .public) asked for atb but no PixelKitParameterProviding was injected; omitting it")
+            }
+        }
         if let error { newParams.appendErrorPixelParams(error: error) }
 
         #if DEBUG

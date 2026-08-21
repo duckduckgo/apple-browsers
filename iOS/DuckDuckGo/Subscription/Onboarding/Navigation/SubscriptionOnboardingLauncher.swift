@@ -32,10 +32,25 @@ enum SubscriptionOnboardingEntryPoint {
 enum SubscriptionOnboardingLauncher {
 
     static func launch(flow: SubscriptionOnboardingFlowViewModel) -> AnyView {
+        launch(flow: flow, forcedTrialLengthDays: nil)
+    }
+
+    private static func launch(flow: SubscriptionOnboardingFlowViewModel, forcedTrialLengthDays: Int?) -> AnyView {
         AnyView(
             SubscriptionOnboardingFlowView(flow: flow,
-                                           factory: SubscriptionOnboardingViewFactory(flow: flow))
+                                           factory: SubscriptionOnboardingViewFactory(flow: flow,
+                                                                                       forcedTrialLengthDays: forcedTrialLengthDays))
                 .graphicLottieRenderer(.app))
+    }
+}
+
+// MARK: - Debug Menu
+
+extension SubscriptionOnboardingLauncher {
+    /// Debug-menu only: forces `.orderConfirmation`'s free-trial card to `forcedTrialLengthDays` instead of
+    /// the real subscription's.
+    static func launchForDebug(flow: SubscriptionOnboardingFlowViewModel, forcedTrialLengthDays: Int?) -> AnyView {
+        launch(flow: flow, forcedTrialLengthDays: forcedTrialLengthDays)
     }
 }
 

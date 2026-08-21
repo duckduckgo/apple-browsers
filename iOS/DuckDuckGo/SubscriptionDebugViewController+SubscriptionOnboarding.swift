@@ -31,11 +31,15 @@ extension SubscriptionDebugViewController {
         case expireSetupCard
     }
 
-    /// A fully in-memory (never touches the real on-device store) run of the flow, so entitlement and
-    /// completion can be set to any combination without needing a matching real subscription or history.
+    /// Launches the flow using whatever's currently set in "Onboarding — Configure Mock Flow" below
     enum OnboardingMockRows: Int, CaseIterable {
         case launchFullFlow
         case launchResumeFlow
+    }
+
+    /// Inputs for the Mock Flow launch above
+    enum OnboardingMockConfigRows: Int, CaseIterable {
+        case forcedTrialLength
         case completedVPN
         case completedWidget
         case completedIDTR
@@ -85,6 +89,17 @@ extension SubscriptionDebugViewController {
         case .launchResumeFlow:
             cell.textLabel?.text = "Launch Resume Flow"
             cell.accessoryType = .disclosureIndicator
+        case .none:
+            break
+        }
+    }
+
+    func configureOnboardingMockConfigCell(_ cell: UITableViewCell, at indexPath: IndexPath) {
+        switch OnboardingMockConfigRows(rawValue: indexPath.row) {
+        case .forcedTrialLength:
+            cell.textLabel?.text = "Force Trial Length"
+            cell.detailTextLabel?.text = "\(mockForcedTrialLengthDays.map { "\($0) days" } ?? "Off")"
+            cell.accessoryType = .none
         case .completedVPN:
             cell.textLabel?.text = "Completed: VPN"
             cell.accessoryType = mockCompletedItems.contains(.vpn) ? .checkmark : .none
@@ -174,6 +189,13 @@ extension SubscriptionDebugViewController {
         switch OnboardingMockRows(rawValue: indexPath.row) {
         case .launchFullFlow: showMockOnboardingFlow(entryPoint: .postCheckout)
         case .launchResumeFlow: showMockOnboardingFlow(entryPoint: .subscriptionSettings)
+        case .none: break
+        }
+    }
+
+    func didSelectOnboardingMockConfigRow(at indexPath: IndexPath) {
+        switch OnboardingMockConfigRows(rawValue: indexPath.row) {
+        case .forcedTrialLength: promptForcedTrialLength(at: indexPath)
         case .completedVPN: toggleMockCompleted(.vpn, at: indexPath)
         case .completedWidget: toggleMockCompleted(.vpnWidget, at: indexPath)
         case .completedIDTR: toggleMockCompleted(.idtr, at: indexPath)
@@ -325,7 +347,7 @@ extension SubscriptionDebugViewController {
             },
             // No Data Broker Protection provider here, so PIR falls back to the move-to-desktop screen.
             pirScreen: { SubscriptionPIRMoveToDesktopView() })
-        let root = SubscriptionOnboardingLauncher.launch(flow: flow)
+        let root = SubscriptionOnboardingLauncher.launchForDebug(flow: flow, forcedTrialLengthDays: mockForcedTrialLengthDays)
         present(UIHostingController(rootView: root), animated: true)
     }
 
@@ -336,6 +358,27 @@ extension SubscriptionDebugViewController {
             mockCompletedItems.insert(item)
         }
         tableView.reloadRows(at: [indexPath], with: .none)
+    }
+
+    private func promptForcedTrialLength(at indexPath: IndexPath) {
+        let alert = UIAlertController(title: "Force Trial Length",
+                                      message: "Days shown on the Order Confirmation free-trial card when using Launch Full Flow. Valid values between 1 and 10.",
+                                      preferredStyle: .alert)
+        weak var daysTextField: UITextField?
+        alert.addTextField { field in
+            field.keyboardType = .numberPad
+            field.placeholder = "Days"
+            field.text = self.mockForcedTrialLengthDays.map(String.init)
+            daysTextField = field
+        }
+        alert.addAction(UIAlertAction(title: "Set", style: .default) { [weak self] _ in
+            guard let self else { return }
+            let days = Int(daysTextField?.text ?? "")
+            self.mockForcedTrialLengthDays = (days ?? 0) > 0 ? days : nil
+            self.tableView.reloadRows(at: [indexPath], with: .none)
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
     }
 
     // MARK: - On-device progress utilities

@@ -1285,8 +1285,8 @@ struct OnboardingIntroContentProviderTests {
                         dependentItems: [
                             .init(
                                 type: .acceptOtherCookies,
-                                title: "Accept cookies that can’t be rejected",
-                                subtitle: "Hides even more pop-ups"
+                                title: "Accept some cookies",
+                                subtitle: "Hides more pop-ups by accepting cookies that can’t be rejected"
                             )
                         ]
                     )

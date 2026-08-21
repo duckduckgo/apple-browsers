@@ -18,7 +18,6 @@
 
 import FeatureFlags_macOS
 import Foundation
-import Persistence
 import PrivacyConfig
 import XCTest
 @_spi(Testing) import Persistence

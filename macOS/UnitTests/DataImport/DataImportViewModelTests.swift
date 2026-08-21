@@ -22,12 +22,11 @@ import Foundation
 import XCTest
 import BrowserServicesKit
 import FeatureFlags_macOS
-import Persistence
 import PrivacyConfig
 import UniformTypeIdentifiers
 import SharedTestUtilities
-@testable import DuckDuckGo_Privacy_Browser
 @_spi(Testing) import Persistence
+@testable import DuckDuckGo_Privacy_Browser
 
 final class DataImportViewModelTests: XCTestCase {
 

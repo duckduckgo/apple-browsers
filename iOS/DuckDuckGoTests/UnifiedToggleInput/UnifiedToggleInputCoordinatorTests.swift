@@ -879,6 +879,21 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    func testWhenCompletingOmnibarDeactivationThenStateResetsWithoutAnotherDismissIntent() {
+        sut.activateFromOmnibar(prefilledText: "test")
+
+        let exp = expectation(description: "no duplicate dismiss intent emitted")
+        exp.isInverted = true
+        sut.intentPublisher
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        XCTAssertTrue(sut.completeOmnibarDeactivation(resetView: false))
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.isOmnibarSession)
+        waitForExpectations(timeout: 0.1)
+    }
+
     func test_deactivateToOmnibar_guardsWhenNotActive() {
         let exp = expectation(description: "no intent emitted")
         exp.isInverted = true

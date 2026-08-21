@@ -23,7 +23,7 @@ enum FloatingOmnibarTransitionMetrics {
 
     static let legacyBottomDuration: TimeInterval = 0.35
     static let legacyTopDuration: TimeInterval = 0.25
-    static let floatingDurationScale: TimeInterval = 5.0 / 16.0
+    static let floatingDurationScale: TimeInterval = 3.0 / 4.0
 
     static func duration(isBottom: Bool, isFloatingUIEnabled: Bool) -> TimeInterval {
         let legacy = isBottom ? legacyBottomDuration : legacyTopDuration

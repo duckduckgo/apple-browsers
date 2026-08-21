@@ -260,11 +260,17 @@ private extension MainViewController {
         let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
         let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
+
+        viewCoordinator.focusedStateBackground.alpha = 0
+        unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
+        unifiedInputContentContainer.transform = isSeamlessHandoff || UIAccessibility.isReduceMotionEnabled
+            ? .identity
+            : CGAffineTransform(scaleX: 0.95, y: 0.95)
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
-        viewCoordinator.focusedStateBackground.alpha = isSeamlessHandoff ? 1 : 0
 
         // The container is now laid out at its editing-start frame; pin the collapsed card to the
         // measured pill so frame 0 of the focus animation matches the omnibar exactly (bottom only).
@@ -277,12 +283,6 @@ private extension MainViewController {
             // cross-dissolve against them (mirrors the defocus hide-reveal). Revealed again on dismiss.
             newTabPageViewController?.setFavoritesHidden(true)
         }
-        // Seamless handoffs (logo/favorites) show the content immediately; only other content fades in.
-        let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
-        unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
-        unifiedInputContentContainer.transform = isSeamlessHandoff || UIAccessibility.isReduceMotionEnabled
-            ? .identity
-            : CGAffineTransform(scaleX: 0.95, y: 0.95)
 
         if let omnibarPlaceholderWindowX {
             coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)

@@ -410,8 +410,7 @@ class MainViewCoordinator {
 
     @MainActor
     func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
-        omnibarDismissAnimator?.stopAnimation(true)
-        omnibarDismissAnimator = nil
+        stopOmnibarDismissAnimatorAtCurrentPosition()
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
@@ -507,7 +506,7 @@ class MainViewCoordinator {
     func hideUnifiedToggleInputOmnibar(reattachingOmnibar: Bool = true,
                                        additionalAnimations: (() -> Void)? = nil,
                                        completion: (() -> Void)? = nil) {
-        omnibarDismissAnimator?.stopAnimation(true)
+        stopOmnibarDismissAnimatorAtCurrentPosition()
 
         let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled), curve: .easeInOut) { [weak self] in
             self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
@@ -523,6 +522,14 @@ class MainViewCoordinator {
         }
         omnibarDismissAnimator = animator
         animator.startAnimation()
+    }
+
+    @MainActor
+    private func stopOmnibarDismissAnimatorAtCurrentPosition() {
+        guard let omnibarDismissAnimator else { return }
+        omnibarDismissAnimator.stopAnimation(false)
+        omnibarDismissAnimator.finishAnimation(at: .current)
+        self.omnibarDismissAnimator = nil
     }
 
     /// Hides chrome and puts the omnibar collection above UTI, but keeps it invisible until
@@ -606,9 +613,10 @@ class MainViewCoordinator {
     @MainActor
     func hideUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = true
+        unifiedInputContentContainer.alpha = 1
         unifiedInputContentContainer.transform = .identity
-        focusedStateBackground.alpha = 1
         hideFocusedStateBackground()
+        focusedStateBackground.alpha = 1
         superview.insertSubview(statusBackground, aboveSubview: topSlideContainer)
     }
 

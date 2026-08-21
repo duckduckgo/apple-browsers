@@ -66,7 +66,7 @@ struct UnifiedSuggestionsView: View {
     private var contentArea: some View {
         // The list stays mounted in every state so SwiftUI never recreates it (a fresh `List`
         // flashes its default background before `.scrollContentBackground(.hidden)` applies).
-        // Favorites renders on top; the list is hidden + non-interactive beneath it.
+        // Favorites renders on top; the list is inaccessible + non-interactive beneath it.
         ZStack {
             listLayer
             overlayLayer
@@ -86,18 +86,22 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var listLayer: some View {
-        SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
-                            isAddressBarAtBottom: isAddressBarAtBottom,
-                            escapeHatch: activeListKind == .recents ? escapeHatch : nil,
-                            syncPromo: activeListKind == .recents ? viewModel.syncPromo : nil)
-            .opacity(isShowingList ? 1 : 0)
-            // Fade *in* on a mode change, but snap *out* — otherwise the recents list lingers over the
-            // Search favorites/logo (which snap in instantly) when toggling away from Duck.ai.
+        // Pre-render the hatch behind the opaque NTP so Search↔Duck.ai reveals the same-positioned
+        // list hatch immediately while the promo and recent chats keep their existing animation.
+        let listEscapeHatch = isTypingList ? nil : escapeHatch
+        return SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
+                                   isAddressBarAtBottom: isAddressBarAtBottom,
+                                   escapeHatch: listEscapeHatch,
+                                   syncPromo: activeListKind == .recents ? viewModel.syncPromo : nil)
+            .opacity(isShowingList || listEscapeHatch != nil ? 1 : 0)
+            // Keep the incoming animation for the promo/rows, but snap outgoing changes. The
+            // pre-rendered hatch itself stays fully opaque across the mode switch.
             .animation(isShowingList ? .easeInOut(duration: 0.2) : nil, value: isShowingList)
             // Fade out with the collapse (like the logo) so a list→favorites dismiss hands off to the
             // NTP favorites instead of snapping away when the host is hidden.
             .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
             .allowsHitTesting(isShowingList)
+            .accessibilityHidden(!isShowingList)
     }
 
     private var isShowingFavorites: Bool {

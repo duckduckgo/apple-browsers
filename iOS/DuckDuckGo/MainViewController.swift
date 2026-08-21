@@ -2985,6 +2985,16 @@ class MainViewController: UIViewController {
             applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
         }
     }
+
+    /// Interrupts an in-flight morph at the currently rendered fraction so scroll-linked chrome
+    /// tracking can resume from what the user sees. Settled chrome is left untouched.
+    func pinFloatingChromeMorphIfNeeded() {
+        guard chromeMorphAnimator.isAnimating else { return }
+        let percent = chromeMorphAnimator.currentValue
+        lastChromeVisibilityPercent = percent
+        chromeMorphAnimator.cancel()
+        applyBarsVisibilityState(percent, postChromeVisibilityNotification: false)
+    }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)

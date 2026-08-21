@@ -277,6 +277,33 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertFalse(didClearSnapshots)
     }
 
+    func testWhenFeatureIsEnabledAndDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
+        var cleanupCallCount = 0
+        let executor = makeFireExecutor {
+            cleanupCallCount += 1
+        }
+
+        _ = await executor.burnChat(chatID: "chat", isFireMode: false)
+        _ = await executor.burnChats(chatIDs: ["chat-1", "chat-2"], isFireMode: false)
+        _ = await executor.burnAllChats(isFireMode: false)
+
+        XCTAssertEqual(cleanupCallCount, 3)
+    }
+
+    func testWhenDirectAIChatBurnFailsThenAppSwitcherSnapshotsAreNotCleared() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
+        mockHistoryCleaner.deleteAIChatResult = .failure(NSError(domain: "test", code: 1))
+        var didClearSnapshots = false
+        let executor = makeFireExecutor {
+            didClearSnapshots = true
+        }
+
+        _ = await executor.burnChat(chatID: "chat", isFireMode: false)
+
+        XCTAssertFalse(didClearSnapshots)
+    }
+
     private func makeTabViewModel(chatID: String, fireTab: Bool) -> TabViewModel {
         let tab = Tab(uid: "test-tab-\(fireTab ? "fire" : "normal")", fireTab: fireTab)
         let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!

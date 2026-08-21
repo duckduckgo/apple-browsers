@@ -297,10 +297,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Mirrors the custom popup's sections, fetched when the menu opens rather than on the tap.
     private func buildNativeChatsMenuElements(_ completion: @escaping ([UIMenuElement]) -> Void) {
         Task { @MainActor in
-            let viewModel = await AIChatRecentChatsPopupViewModel.fetch(
-                using: suggestionsReader,
-                showNewChat: sessionState.hasActiveChat
-            )
+            let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader)
             let openDuckAI = UIAction(title: UserText.duckAiContextualOpenDuckAi,
                                       image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
                 self?.recentChatsPopupDidSelectOpenDuckAI()

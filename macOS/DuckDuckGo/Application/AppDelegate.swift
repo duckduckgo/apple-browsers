@@ -883,7 +883,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
 
         if featureFlagger.isFeatureOn(.aiChatNativeStorage),
-           let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+           let appSupportURL = Self.duckAiNativeStorageBaseURL() {
             let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
             do {
                 duckAiNativeStorageHandler = try DuckAiNativeStorageHandler(
@@ -2159,6 +2159,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isProduction: !StandardApplicationBuildType().isDebugBuild
         )
     }
+
+    // MARK: - Duck.ai native storage
+
+    /// Base directory holding the Duck.ai native storage container.
+    ///
+    /// Unsandboxed (DMG) builds all resolve `.applicationSupportDirectory` to the same
+    /// `~/Library/Application Support`, so internal variants would open the production
+    /// app's chats. Production keeps that path — no migration needed — while every other
+    /// bundle gets the per-bundle container path the rest of the app already uses.
+    private static func duckAiNativeStorageBaseURL() -> URL? {
+        guard !NSApp.isSandboxed, Bundle.main.bundleIdentifier != productionBundleID else {
+            return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        }
+        return URL.sandboxApplicationSupportURL
+    }
+
+    private static let productionBundleID = "com.duckduckgo.macos.browser"
 
     // MARK: - PixelKit
 

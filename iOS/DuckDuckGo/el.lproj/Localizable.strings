@@ -1913,7 +1913,7 @@
 "duckai.context.chip.info" = "Αποστέλλεται με το μήνυμά σας στο Duck.ai";
 
 /* Row in the contextual chat's chats popup that opens Duck.ai in a new tab */
-"duckai.contextual.open.duckai" = "Ανοίξτε το Duck.ai";
+"duckai.contextual.open.duckai" = "Άνοιξε το Duck.ai";
 
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Πρόσφατες συνομιλίες";

@@ -586,6 +586,14 @@ final class UnifiedToggleInputView: UIView {
     /// pill has been removed from the toolbar by then).
     private var cachedOmnibarMatchedInsets: OmnibarMatchedInsets?
     private var omnibarMaterialTransitionBackgroundColor: UIColor?
+    /// Resting-grey stand-in revealed as the editing fill fades. Flat color (not live glass) so the
+    /// morph keeps the card's silhouette without adding glass self-shadowing on top of the toolbar.
+    private var omnibarMaterialBackdropView: UIView?
+    /// Opaque editing surface whose alpha crossfades over `omnibarMaterialBackdropView`.
+    private var omnibarMaterialEditingFillView: UIView?
+    private var omnibarMaterialTransitionDuration: TimeInterval = 0.25
+    private var materialTransitionSavedExpandedShadowHidden: Bool?
+    private var materialTransitionSavedCardShadowOpacity: Float?
 
     private struct OmnibarMatchedInsets {
         let leading: CGFloat
@@ -660,6 +668,7 @@ final class UnifiedToggleInputView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        syncOmnibarMaterialTransitionCorners()
         guard !expandedShadowView.isHidden else { return }
         // Runs inside UIView.animate via layoutIfNeeded so the shadow corners animate with cardView.
         expandedShadowView.layer.cornerRadius = cardView.layer.cornerRadius
@@ -737,6 +746,108 @@ final class UnifiedToggleInputView: UIView {
     private func applyCardBackgroundColor(_ color: UIColor) {
         cardView.backgroundColor = color
         expandedShadowView.backgroundColor = color
+    }
+
+    private func restingMaterialColor() -> UIColor {
+        UIColor(singleUseColor: .floatingAddressBarBackground)
+    }
+
+    private func ensureOmnibarMaterialTransitionViews() {
+        if omnibarMaterialBackdropView == nil {
+            let backdrop = UIView()
+            backdrop.translatesAutoresizingMaskIntoConstraints = false
+            backdrop.isUserInteractionEnabled = false
+            backdrop.backgroundColor = restingMaterialColor()
+            cardView.insertSubview(backdrop, at: 0)
+            NSLayoutConstraint.activate([
+                backdrop.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+                backdrop.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+                backdrop.topAnchor.constraint(equalTo: cardView.topAnchor),
+                backdrop.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
+            ])
+            omnibarMaterialBackdropView = backdrop
+        }
+
+        if omnibarMaterialEditingFillView == nil {
+            let fill = UIView()
+            fill.translatesAutoresizingMaskIntoConstraints = false
+            fill.isUserInteractionEnabled = false
+            if let backdrop = omnibarMaterialBackdropView {
+                cardView.insertSubview(fill, aboveSubview: backdrop)
+            } else {
+                cardView.insertSubview(fill, at: 0)
+            }
+            NSLayoutConstraint.activate([
+                fill.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+                fill.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+                fill.topAnchor.constraint(equalTo: cardView.topAnchor),
+                fill.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
+            ])
+            omnibarMaterialEditingFillView = fill
+        }
+
+        let solid = omnibarMaterialTransitionBackgroundColor ?? cardBackgroundColor(isFireTab: false)
+        omnibarMaterialEditingFillView?.backgroundColor = solid
+        omnibarMaterialBackdropView?.backgroundColor = restingMaterialColor()
+        syncOmnibarMaterialTransitionCorners()
+    }
+
+    private func syncOmnibarMaterialTransitionCorners() {
+        guard omnibarMaterialBackdropView != nil || omnibarMaterialEditingFillView != nil else { return }
+        let radius = cardView.layer.cornerRadius
+        let maskedCorners = cardView.layer.maskedCorners
+        for view in [omnibarMaterialBackdropView, omnibarMaterialEditingFillView].compactMap({ $0 }) {
+            view.layer.cornerCurve = cardView.layer.cornerCurve
+            view.layer.cornerRadius = radius
+            view.layer.maskedCorners = maskedCorners
+            view.clipsToBounds = true
+        }
+        if #available(iOS 26.0, *) {
+            let configuration = cardView.cornerConfiguration
+            omnibarMaterialBackdropView?.cornerConfiguration = configuration
+            omnibarMaterialEditingFillView?.cornerConfiguration = configuration
+        }
+    }
+
+    private func suppressShadowsForMaterialTransition() {
+        if materialTransitionSavedExpandedShadowHidden == nil {
+            materialTransitionSavedExpandedShadowHidden = expandedShadowView.isHidden
+            materialTransitionSavedCardShadowOpacity = cardView.layer.shadowOpacity
+        }
+        // Floating resting chrome draws its shadow on the toolbar capsule, not the search pill.
+        expandedShadowView.isHidden = true
+        cardView.layer.shadowOpacity = 0
+    }
+
+    private func restoreShadowsAfterMaterialTransition() {
+        if let hidden = materialTransitionSavedExpandedShadowHidden {
+            expandedShadowView.isHidden = hidden
+        }
+        if let opacity = materialTransitionSavedCardShadowOpacity {
+            cardView.layer.shadowOpacity = opacity
+        }
+        materialTransitionSavedExpandedShadowHidden = nil
+        materialTransitionSavedCardShadowOpacity = nil
+    }
+
+    private func scheduleOmnibarMaterialFill(alpha: CGFloat, delay: TimeInterval, duration: TimeInterval) {
+        guard let fill = omnibarMaterialEditingFillView else { return }
+        fill.layer.removeAllAnimations()
+        UIView.animate(
+            withDuration: max(duration, 0.01),
+            delay: max(delay, 0),
+            options: [.curveEaseInOut, .beginFromCurrentState, .allowUserInteraction],
+            animations: { fill.alpha = alpha }
+        )
+    }
+
+    private func tearDownOmnibarMaterialTransitionViews() {
+        omnibarMaterialEditingFillView?.layer.removeAllAnimations()
+        omnibarMaterialBackdropView?.removeFromSuperview()
+        omnibarMaterialEditingFillView?.removeFromSuperview()
+        omnibarMaterialBackdropView = nil
+        omnibarMaterialEditingFillView = nil
+        restoreShadowsAfterMaterialTransition()
     }
 
     private var fireModeContentSubviews: [UIView] {
@@ -1077,18 +1188,29 @@ final class UnifiedToggleInputView: UIView {
         alignWithOmnibarChrome()
     }
 
-    func prepareForOmnibarMaterialTransition() {
+    func prepareForOmnibarMaterialTransition(duration: TimeInterval) {
         guard cardPosition == .bottom else { return }
+        omnibarMaterialTransitionDuration = duration
         if omnibarMaterialTransitionBackgroundColor == nil {
-            omnibarMaterialTransitionBackgroundColor = cardView.backgroundColor
+            omnibarMaterialTransitionBackgroundColor = cardView.backgroundColor ?? cardBackgroundColor(isFireTab: false)
         }
+        ensureOmnibarMaterialTransitionViews()
+        // Start on resting grey; white fades in after the pill silhouette is established.
+        omnibarMaterialEditingFillView?.layer.removeAllAnimations()
+        omnibarMaterialEditingFillView?.alpha = 0
         applyCardBackgroundColor(.clear)
+        suppressShadowsForMaterialTransition()
     }
 
     /// Active editing pose. Call inside a UIView.animate block.
     func applyOmnibarEditingShowPose() {
-        if let omnibarMaterialTransitionBackgroundColor {
-            applyCardBackgroundColor(omnibarMaterialTransitionBackgroundColor)
+        if omnibarMaterialTransitionBackgroundColor != nil {
+            ensureOmnibarMaterialTransitionViews()
+            applyCardBackgroundColor(.clear)
+            // Fade white in over the first half so grey→white tracks the grow, without stretching
+            // a live glass effect across the expanded card.
+            let fadeDuration = omnibarMaterialTransitionDuration * 0.45
+            scheduleOmnibarMaterialFill(alpha: 1, delay: 0, duration: fadeDuration)
         }
         switch (cardPosition, isToggleEnabled) {
         case (.top, true):
@@ -1107,7 +1229,14 @@ final class UnifiedToggleInputView: UIView {
     /// stays visible during collapse instead of snapping off mid-animation.
     func applyOmnibarEditingDismissPose() {
         if omnibarMaterialTransitionBackgroundColor != nil {
+            ensureOmnibarMaterialTransitionViews()
             applyCardBackgroundColor(.clear)
+            suppressShadowsForMaterialTransition()
+            // Keep white through most of the shrink, then fade to resting grey once the card is
+            // nearly pill-shaped — matching silhouette and avoiding a large grey round-rect.
+            let fadeDuration = omnibarMaterialTransitionDuration * 0.4
+            let fadeDelay = omnibarMaterialTransitionDuration * 0.55
+            scheduleOmnibarMaterialFill(alpha: 0, delay: fadeDelay, duration: fadeDuration)
         }
         switch (cardPosition, isToggleEnabled) {
         case (.top, true):
@@ -1117,6 +1246,10 @@ final class UnifiedToggleInputView: UIView {
             applyCardLayout(.collapsed, animated: false)
         }
         alignWithOmnibarChrome()
+        if omnibarMaterialTransitionBackgroundColor != nil {
+            // `alignWithOmnibarChrome` re-shows composite shadows; floating resting chrome doesn't.
+            suppressShadowsForMaterialTransition()
+        }
     }
 
     /// Matches the UTI's chrome (margins, corner radius, composite shadow) to the standard omnibar
@@ -1196,6 +1329,7 @@ final class UnifiedToggleInputView: UIView {
     /// never alters the shadow during animation, so it doesn't need finalizing here.
     func finalizeOmnibarEditingDismiss() {
         if let omnibarMaterialTransitionBackgroundColor {
+            tearDownOmnibarMaterialTransitionViews()
             applyCardBackgroundColor(omnibarMaterialTransitionBackgroundColor)
             self.omnibarMaterialTransitionBackgroundColor = nil
         }

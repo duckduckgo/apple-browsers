@@ -410,7 +410,7 @@
 		4BC95EA32D74176D002FAB32 /* PixelExperimentKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EA22D74176D002FAB32 /* PixelExperimentKit */; };
 		4BC95EA52D741787002FAB32 /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EA42D741787002FAB32 /* Common */; };
 		4BC95EA72D74178C002FAB32 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EA62D74178C002FAB32 /* ContentBlocking */; };
-		4BC95EAB2D74179B002FAB32 /* PersistenceTestingUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EAA2D74179B002FAB32 /* PersistenceTestingUtils */; };
+		4BC95EAB2D74179B002FAB32 /* Persistence in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EAA2D74179B002FAB32 /* Persistence */; };
 		4BC95EAD2D7417A0002FAB32 /* Subscription in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EAC2D7417A0002FAB32 /* Subscription */; };
 		4BC95EAF2D7417A8002FAB32 /* SubscriptionTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EAE2D7417A8002FAB32 /* SubscriptionTestingUtilities */; };
 		4BC95EB12D7417BF002FAB32 /* Subscription in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EB02D7417BF002FAB32 /* Subscription */; };
@@ -420,7 +420,7 @@
 		4BC95EB92D7417E0002FAB32 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EB82D7417E0002FAB32 /* ContentBlocking */; };
 		4BC95EBB2D7417E9002FAB32 /* Subscription in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EBA2D7417E9002FAB32 /* Subscription */; };
 		4BC95EBD2D7417F0002FAB32 /* SubscriptionTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EBC2D7417F0002FAB32 /* SubscriptionTestingUtilities */; };
-		4BC95EBF2D7417FC002FAB32 /* PersistenceTestingUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EBE2D7417FC002FAB32 /* PersistenceTestingUtils */; };
+		4BC95EBF2D7417FC002FAB32 /* Persistence in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95EBE2D7417FC002FAB32 /* Persistence */; };
 		4BCBE45E2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4BCBE45D2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy */; };
 		4BCBE4602BA7E87100FC75A1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4BCBE45F2BA7E87100FC75A1 /* PrivacyInfo.xcprivacy */; };
 		4BCD14672B05B682000B1E4C /* NetworkProtectionTermsAndConditionsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCD14662B05B682000B1E4C /* NetworkProtectionTermsAndConditionsStore.swift */; };
@@ -1153,7 +1153,6 @@
 		986CD53E2DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD53C2DE8FA0500AFA98A /* ConfigurationMocks.swift */; };
 		986CD53F2DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD53C2DE8FA0500AFA98A /* ConfigurationMocks.swift */; };
 		986CD5402DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD53C2DE8FA0500AFA98A /* ConfigurationMocks.swift */; };
-		986CD5422DE8FBCA00AFA98A /* PersistenceTestingUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 986CD5412DE8FBCA00AFA98A /* PersistenceTestingUtils */; };
 		986CD5482DE9134700AFA98A /* ContextualDaxDialogsFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD5432DE9134700AFA98A /* ContextualDaxDialogsFactoryTests.swift */; };
 		986CD5492DE9134700AFA98A /* NewTabPageControllerDaxDialogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD5452DE9134700AFA98A /* NewTabPageControllerDaxDialogTests.swift */; };
 		986CD54A2DE9134700AFA98A /* ContextualOnboardingNewTabDialogFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD5442DE9134700AFA98A /* ContextualOnboardingNewTabDialogFactoryTests.swift */; };
@@ -2161,7 +2160,7 @@
 		C1B3BF472D8D99DA00EE1D43 /* AutofillCreditCardListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B3BF432D8D99DA00EE1D43 /* AutofillCreditCardListView.swift */; };
 		C1B3BF482D8D99DA00EE1D43 /* AutofillCreditCardListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B3BF442D8D99DA00EE1D43 /* AutofillCreditCardListViewModel.swift */; };
 		C1B3BF4F2D91805F00EE1D43 /* AutofillCreditCardListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B3BF4E2D91805F00EE1D43 /* AutofillCreditCardListViewController.swift */; };
-		C1B441E52E2990F7005E2BA9 /* PersistenceTestingUtils in Frameworks */ = {isa = PBXBuildFile; productRef = C1B441E42E2990F7005E2BA9 /* PersistenceTestingUtils */; };
+		C1B441E52E2990F7005E2BA9 /* Persistence in Frameworks */ = {isa = PBXBuildFile; productRef = C1B441E42E2990F7005E2BA9 /* Persistence */; };
 		C1B7B51C28941E980098FD6A /* HomeMessageViewModelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B7B51B28941E980098FD6A /* HomeMessageViewModelBuilder.swift */; };
 		C1B7B52528941F2A0098FD6A /* RemoteMessagingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B7B52128941F2A0098FD6A /* RemoteMessagingClient.swift */; };
 		C1B7B52D2894469D0098FD6A /* DefaultVariantManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B7B52C2894469D0098FD6A /* DefaultVariantManager.swift */; };
@@ -5835,7 +5834,7 @@
 				31C71A782E6F4F5B004D503F /* RemoteMessagingTestsUtils in Frameworks */,
 				A7B000012F6A000100000001 /* SnapshotTestingSupport in Frameworks */,
 				9F5412772E3998B000DBF008 /* SetDefaultBrowserTestSupport in Frameworks */,
-				4BC95EAB2D74179B002FAB32 /* PersistenceTestingUtils in Frameworks */,
+				4BC95EAB2D74179B002FAB32 /* Persistence in Frameworks */,
 				5654CF572E22A9820074E806 /* BrowserServicesKitTestsUtils in Frameworks */,
 				4BB88F3F2E5D701200DE539A /* PixelKit in Frameworks */,
 				9FA8A625300EF678000DF5DE /* WebExtensionsTestSupport in Frameworks */,
@@ -5880,7 +5879,7 @@
 				1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */,
 				9FA8A627300EF680000DF5DE /* WebExtensionsTestSupport in Frameworks */,
 				1E1D8B652995143200C96994 /* OHHTTPStubsSwift in Frameworks */,
-				C1B441E52E2990F7005E2BA9 /* PersistenceTestingUtils in Frameworks */,
+				C1B441E52E2990F7005E2BA9 /* Persistence in Frameworks */,
 				4BC95EB72D7417DC002FAB32 /* Common in Frameworks */,
 				CC55B2412E82CD860032E8BD /* BrowserServicesKitTestsUtils in Frameworks */,
 				4BC95EBD2D7417F0002FAB32 /* SubscriptionTestingUtilities in Frameworks */,
@@ -5927,7 +5926,7 @@
 				98424A982CED4F430071C7DB /* ContentBlocking in Frameworks */,
 				986CD5392DE8F50400AFA98A /* Configuration in Frameworks */,
 				98424A992CED4F430071C7DB /* SubscriptionTestingUtilities in Frameworks */,
-				4BC95EBF2D7417FC002FAB32 /* PersistenceTestingUtils in Frameworks */,
+				4BC95EBF2D7417FC002FAB32 /* Persistence in Frameworks */,
 				4BC95EB52D7417D2002FAB32 /* BrowserServicesKitTestsUtils in Frameworks */,
 				98424A9A2CED4F430071C7DB /* Subscription in Frameworks */,
 				98424A9D2CED4F430071C7DB /* Common in Frameworks */,
@@ -5947,7 +5946,6 @@
 				C118DACF2F0EF8A6004F403A /* AIChatTestingUtilities in Frameworks */,
 				98E564882DE8DE5A00E6E75F /* Bookmarks in Frameworks */,
 				F11595D92E8570B500CC0481 /* AttributedMetric in Frameworks */,
-				986CD5422DE8FBCA00AFA98A /* PersistenceTestingUtils in Frameworks */,
 				98E564962DE8DE8100E6E75F /* Subscription in Frameworks */,
 				98E564942DE8DE7D00E6E75F /* SubscriptionTestingUtilities in Frameworks */,
 				98E5648C2DE8DE6200E6E75F /* History in Frameworks */,
@@ -12560,7 +12558,7 @@
 				F486D3372506A225002D07D7 /* OHHTTPStubsSwift */,
 				4BC95EA42D741787002FAB32 /* Common */,
 				4BC95EA62D74178C002FAB32 /* ContentBlocking */,
-				4BC95EAA2D74179B002FAB32 /* PersistenceTestingUtils */,
+				4BC95EAA2D74179B002FAB32 /* Persistence */,
 				4BC95EAC2D7417A0002FAB32 /* Subscription */,
 				4BC95EAE2D7417A8002FAB32 /* SubscriptionTestingUtilities */,
 				A7B000032F6A000100000001 /* SnapshotTestingSupport */,
@@ -12646,7 +12644,7 @@
 				4BC95EBA2D7417E9002FAB32 /* Subscription */,
 				4BC95EBC2D7417F0002FAB32 /* SubscriptionTestingUtilities */,
 				986CD5342DE8F4FA00AFA98A /* RemoteMessaging */,
-				C1B441E42E2990F7005E2BA9 /* PersistenceTestingUtils */,
+				C1B441E42E2990F7005E2BA9 /* Persistence */,
 				CC55B2402E82CD860032E8BD /* BrowserServicesKitTestsUtils */,
 				374E760D2EF56D9100F8AADE /* PrivacyConfigTestsUtils */,
 				4B69239E2F28720300A816B9 /* AIChat */,
@@ -12724,7 +12722,7 @@
 				984249C92CED4F430071C7DB /* SubscriptionTestingUtilities */,
 				4BC95EB22D7417CC002FAB32 /* BrowserServicesKit */,
 				4BC95EB42D7417D2002FAB32 /* BrowserServicesKitTestsUtils */,
-				4BC95EBE2D7417FC002FAB32 /* PersistenceTestingUtils */,
+				4BC95EBE2D7417FC002FAB32 /* Persistence */,
 				986CD5362DE8F50100AFA98A /* RemoteMessaging */,
 				986CD5382DE8F50400AFA98A /* Configuration */,
 				7BC26CB52DFC156A00E52480 /* VPNTestUtils */,
@@ -12779,7 +12777,6 @@
 				98E564912DE8DE7500E6E75F /* Configuration */,
 				98E564932DE8DE7D00E6E75F /* SubscriptionTestingUtilities */,
 				98E564952DE8DE8100E6E75F /* Subscription */,
-				986CD5412DE8FBCA00AFA98A /* PersistenceTestingUtils */,
 				7BC26CB32DFC155E00E52480 /* VPNTestUtils */,
 				9FE59CD72E3097B200C4B65D /* SystemSettingsPiPTutorialTestSupport */,
 				F11595D82E8570B500CC0481 /* AttributedMetric */,
@@ -19490,9 +19487,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = ContentBlocking;
 		};
-		4BC95EAA2D74179B002FAB32 /* PersistenceTestingUtils */ = {
+		4BC95EAA2D74179B002FAB32 /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = PersistenceTestingUtils;
+			productName = Persistence;
 		};
 		4BC95EAC2D7417A0002FAB32 /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -19530,9 +19527,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = SubscriptionTestingUtilities;
 		};
-		4BC95EBE2D7417FC002FAB32 /* PersistenceTestingUtils */ = {
+		4BC95EBE2D7417FC002FAB32 /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = PersistenceTestingUtils;
+			productName = Persistence;
 		};
 		5654CF562E22A9820074E806 /* BrowserServicesKitTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -19640,10 +19637,6 @@
 		986CD5382DE8F50400AFA98A /* Configuration */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Configuration;
-		};
-		986CD5412DE8FBCA00AFA98A /* PersistenceTestingUtils */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = PersistenceTestingUtils;
 		};
 		98E564832DE8DE3F00E6E75F /* Common */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -19833,9 +19826,9 @@
 			package = C14882EB27F211A000D59F0C /* XCRemoteSwiftPackageReference "SwiftSoup" */;
 			productName = SwiftSoup;
 		};
-		C1B441E42E2990F7005E2BA9 /* PersistenceTestingUtils */ = {
+		C1B441E42E2990F7005E2BA9 /* Persistence */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = PersistenceTestingUtils;
+			productName = Persistence;
 		};
 		C1CAAA802CF8C8F400C37EE6 /* DuckUI */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -77,7 +77,7 @@ let package = Package(
                 "BrowserServicesKit",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 "Freemium",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),

@@ -28,7 +28,6 @@ let package = Package(
     ],
     products: [
         .library(name: "Persistence", targets: ["Persistence"]),
-        .library(name: "PersistenceTestingUtils", targets: ["PersistenceTestingUtils"]),
     ],
     dependencies: [
         .package(path: "../Common"),
@@ -47,19 +46,10 @@ let package = Package(
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
-        .target(
-            name: "PersistenceTestingUtils",
-            dependencies: [
-                "Persistence"
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
         .testTarget(
             name: "PersistenceTests",
             dependencies: [
-                "PersistenceTestingUtils",
+                "Persistence",
             ]
         ),
     ]

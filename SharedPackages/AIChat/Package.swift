@@ -98,7 +98,7 @@ let package = Package(
                 "AIChatTestingUtilities",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "NetworkingTestingUtils", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "WKAbstractions", package: "BrowserServicesKit")

@@ -36,7 +36,9 @@ struct AIChatDebugView: View {
         List {
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
+#if DEBUG || ALPHA
             AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+#endif
 
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
                 NavigationLink(destination: AIChatDebugHostnameEntryView(viewModel: viewModel)) {
@@ -305,6 +307,8 @@ private struct AIChatDebugSessionTimerEntryView: View {
     }
 }
 
+#if DEBUG || ALPHA
+// Matches the `debugOverride` gate in DuckAiUsageLimitsStore — Release must not carry the override.
 private struct AIChatUsageWarningsSection: View {
 
     private static let presets: [(label: String, weekly: Double?, daily: Double?, hoursUntilReset: Double)] = [
@@ -380,6 +384,7 @@ private struct AIChatUsageWarningsSection: View {
         }
     }
 }
+#endif
 
 private struct AIChatStorageServerSection: View {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?

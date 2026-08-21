@@ -1049,73 +1049,57 @@ extension MainViewController {
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
         applyUnifiedInputChromeBackground(.standardChrome)
-        // Resign up-front so the keyboard descent runs concurrent with the bar collapse.
         coordinator.viewController.deactivateInput()
-        // Bottom floating: the omnibar is no longer in the toolbar, so live measurement is nil —
-        // fall back to the X captured at focus so the text lands on the omnibar's leading edge.
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
 
-        // Pick the NTP handoff from the host's current content + the NTP's *resting* content (the NTP's
-        // `isShowing*` is unreliable here — the focus handoff hid one for the session). logo→logo morphs
-        // to the Dax mark, favorites→favorites hands the embedded copy over, everything else fades.
         let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
             && newTabPageViewController?.restingContentIsLogo == true
         let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsFavorites == true
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
 
         if isLogoToLogo {
-            newTabPageViewController?.setLogoHidden(true)
             coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
-        } else if isFavoritesToFavorites {
-            newTabPageViewController?.setFavoritesHidden(true)
-        } else {
+        } else if !isFavoritesToFavorites {
             coordinator.contentViewController.beginDismissFade()
         }
 
-        viewCoordinator.prepareOmnibarForInlineDismissReveal()
-        let revealBarView = viewCoordinator.omniBar?.barView
+        newTabPageViewController?.setLogoHidden(false)
+        newTabPageViewController?.setFavoritesHidden(false)
+        newTabPageViewController?.view.setNeedsLayout()
+        newTabPageViewController?.view.layoutIfNeeded()
 
-        UIView.animate(
-            withDuration: duration,
-            delay: 0,
-            options: .curveEaseOut,
-            animations: { [weak self] in
-                guard let self else { return }
+        viewCoordinator.prepareOmnibarForInlineDismissReveal()
+        viewCoordinator.hideUnifiedToggleInputOmnibar(
+            additionalAnimations: { [weak self, weak coordinator] in
+                guard let self, let coordinator else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
-                self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
-                // Mirror the focus path: settle the collapsed bar layout first so `pushContentInsets`
-                // reads the *target* (collapsed) height, then push insets so the favorites/hatch
-                // animate with the collapse instead of snapping.
                 self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
-                // (Favorites case no longer fades the container — the embedded favorites stay visible
-                // and animate; the real NTP favorites, hidden above, are revealed at completion.)
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
+                self.viewCoordinator.focusedStateBackground.alpha = 0
+                if !isSeamlessHandoff {
+                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
+                    self.viewCoordinator.unifiedInputContentContainer.transform = UIAccessibility.isReduceMotionEnabled
+                        ? .identity
+                        : CGAffineTransform(scaleX: 0.95, y: 0.95)
+                }
             },
-            completion: { [weak self] _ in
+            completion: { [weak self] in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
-                // Reveal the NTP Logo and force a layout pass before hiding the UTI
-                // content container, so the NTP Logo is rendered in the same frame
-                // and there's no one-frame gap where neither logo is visible.
-                self.newTabPageViewController?.setLogoHidden(false)
-                self.newTabPageViewController?.setFavoritesHidden(false)
-                self.newTabPageViewController?.view.setNeedsLayout()
-                self.newTabPageViewController?.view.layoutIfNeeded()
-                self.viewCoordinator.unifiedInputContentContainer.isHidden = true
-                self.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                coordinator.contentViewController.setActive(false)
+                self.viewCoordinator.hideUnifiedInputContent()
+                coordinator.contentViewController.setContentInset(top: 0, bottom: 0)
+                self.hideSuggestionTray()
                 coordinator.viewController.setTextHorizontalShift(0)
-                coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
+                coordinator.completeOmnibarDeactivation(resetView: false)
                 coordinator.viewController.finalizeOmnibarEditingDismiss()
-                self.viewCoordinator.finalizeInlineDismissOmnibarReveal()
-                // The user can land here on a non-AI tab (e.g. NTP via the after-idle escape
-                // hatch) while the toolbar is still hidden from a prior Duck.ai session.
-                // Reconcile against the *current* tab — idempotent and AI-tab paths re-hide
-                // the toolbar on their own.
+                coordinator.clearText()
                 self.reconcileToolbarVisibilityForCurrentTab()
                 self.reconcileFloatingLayoutAfterUTIExit()
                 completion?()
@@ -1129,19 +1113,6 @@ extension MainViewController {
                 duration: duration
             )
         }
-
-        // Snap alpha to 0 outside the surrounding dismiss animate so the fade animator captures
-        // `from = 0`. Without `performWithoutAnimation`, the alpha set would interpolate with
-        // the dismiss transaction and the icons would briefly become visible mid-collapse.
-        UIView.performWithoutAnimation {
-            revealBarView?.setIconContainersAlpha(0)
-        }
-        UIView.animate(
-            withDuration: duration * Constants.omnibarIconFadeInDurationMultiplier,
-            delay: 0,
-            options: [.curveEaseIn, .allowUserInteraction],
-            animations: { revealBarView?.setIconContainersAlpha(1) }
-        )
     }
 
     /// Routes a UTI omnibar-session dismiss to the matching chrome — Duck.ai header restore for
@@ -1164,7 +1135,7 @@ extension MainViewController {
         viewCoordinator.unifiedInputContentContainer.isHidden = true
         viewCoordinator.showAIChatTabChatHeader()
         viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: false)
-        coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
+        coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false, reattachingOmnibar: false)
         coordinator.showCollapsed()
         if let tab = currentTab {
             refreshUnifiedToggleInput(for: tab)

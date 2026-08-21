@@ -33,8 +33,8 @@ extension MainViewController {
             applyBottomOmnibarVisibility(.inactive)
         case .showOmnibarActive:
             applyBottomOmnibarVisibility(.active)
-        case .hideOmnibarEditing(let animated):
-            handleHideOmnibarEditingIntent(animated: animated)
+        case .hideOmnibarEditing(let animated, let reattachingOmnibar):
+            handleHideOmnibarEditingIntent(animated: animated, reattachingOmnibar: reattachingOmnibar)
         case .hide:
             handleHideIntent()
         }
@@ -200,12 +200,11 @@ private extension MainViewController {
                                            duration: TimeInterval,
                                            pendingHeight: CGFloat?,
                                            isSeamlessHandoff: Bool,
-                                           growsFromBottom: Bool,
                                            contentContainer: UIView) {
         UIView.animate(
             withDuration: duration,
             delay: 0,
-            options: .curveEaseOut,
+            options: [.curveEaseInOut, .allowUserInteraction],
             animations: { [weak self] in
                 guard let self else { return }
                 coordinator.viewController.applyOmnibarEditingShowPose()
@@ -218,20 +217,14 @@ private extension MainViewController {
                 if let pendingHeight {
                     self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
                 }
+                self.viewCoordinator.focusedStateBackground.alpha = 1
                 self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
                 if !isSeamlessHandoff {
                     contentContainer.alpha = 1
-                    if growsFromBottom {
-                        contentContainer.transform = .identity
-                    }
+                    contentContainer.transform = .identity
                 }
                 coordinator.viewController.setTextHorizontalShift(0)
-            },
-            completion: { _ in
-                if growsFromBottom {
-                    contentContainer.layer.shouldRasterize = false
-                }
             }
         )
     }
@@ -266,6 +259,14 @@ private extension MainViewController {
         // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
         let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
+
+        viewCoordinator.focusedStateBackground.alpha = 0
+        unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
+        unifiedInputContentContainer.transform = isSeamlessHandoff || UIAccessibility.isReduceMotionEnabled
+            ? .identity
+            : CGAffineTransform(scaleX: 0.95, y: 0.95)
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
@@ -281,18 +282,6 @@ private extension MainViewController {
             // Hide the real NTP favorites while focusing so the UTI's embedded favorites don't
             // cross-dissolve against them (mirrors the defocus hide-reveal). Revealed again on dismiss.
             newTabPageViewController?.setFavoritesHidden(true)
-        }
-        // Seamless handoffs (logo/favorites) show the content immediately; only other content fades in.
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
-        let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
-        unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
-
-        let growsFromBottom = isBottom && isFloatingUIEnabled && !isSeamlessHandoff
-        if growsFromBottom {
-            unifiedInputContentContainer.transform = FloatingOmnibarTransitionMetrics.bottomPinnedScaleTransform(
-                height: unifiedInputContentContainer.bounds.height)
-            unifiedInputContentContainer.layer.shouldRasterize = true
-            unifiedInputContentContainer.layer.rasterizationScale = UIScreen.main.scale
         }
 
         if let omnibarPlaceholderWindowX {
@@ -311,7 +300,6 @@ private extension MainViewController {
                                   duration: duration,
                                   pendingHeight: pendingHeight,
                                   isSeamlessHandoff: isSeamlessHandoff,
-                                  growsFromBottom: growsFromBottom,
                                   contentContainer: unifiedInputContentContainer)
 
         if let omnibarPlaceholderColor {
@@ -323,20 +311,22 @@ private extension MainViewController {
         }
     }
 
-    func handleHideOmnibarEditingIntent(animated: Bool) {
+    func handleHideOmnibarEditingIntent(animated: Bool, reattachingOmnibar: Bool) {
         let coordinator = unifiedToggleInputCoordinator
-        let shrinksToBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
+        let fadesForFloatingBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
+        if fadesForFloatingBottom {
+            newTabPageViewController?.setLogoHidden(false)
+            newTabPageViewController?.setFavoritesHidden(false)
+            newTabPageViewController?.view.setNeedsLayout()
+            newTabPageViewController?.view.layoutIfNeeded()
+        }
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
             coordinator?.clearText()
-            if shrinksToBottom {
+            if fadesForFloatingBottom {
                 self?.viewCoordinator.hideUnifiedInputContent()
-                unifiedInputContentContainer.transform = .identity
-                unifiedInputContentContainer.layer.shouldRasterize = false
-                self?.newTabPageViewController?.setLogoHidden(false)
-                self?.newTabPageViewController?.setFavoritesHidden(false)
             }
         }
         if animated {
@@ -346,21 +336,23 @@ private extension MainViewController {
             let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
-            if shrinksToBottom {
-                unifiedInputContentContainer.layer.shouldRasterize = true
-                unifiedInputContentContainer.layer.rasterizationScale = UIScreen.main.scale
-            }
             let additionalAnimations: () -> Void = {
+                coordinator?.viewController.applyOmnibarEditingDismissPose()
                 if let coordinator, let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
-                if shrinksToBottom {
+                if fadesForFloatingBottom {
                     unifiedInputContentContainer.alpha = 0
-                    unifiedInputContentContainer.transform = FloatingOmnibarTransitionMetrics.bottomPinnedScaleTransform(
-                        height: unifiedInputContentContainer.bounds.height)
+                    unifiedInputContentContainer.transform = UIAccessibility.isReduceMotionEnabled
+                        ? .identity
+                        : CGAffineTransform(scaleX: 0.95, y: 0.95)
+                    self.viewCoordinator.focusedStateBackground.alpha = 0
                 }
             }
-            viewCoordinator.hideUnifiedToggleInputOmnibar(additionalAnimations: additionalAnimations, completion: onDismissed)
+            viewCoordinator.hideUnifiedToggleInputOmnibar(
+                reattachingOmnibar: reattachingOmnibar,
+                additionalAnimations: additionalAnimations,
+                completion: onDismissed)
             if let coordinator, let omnibarPlaceholderColor, let utiPlaceholderColor {
                 coordinator.viewController.animatePlaceholderColorTransition(
                     from: utiPlaceholderColor,
@@ -370,11 +362,11 @@ private extension MainViewController {
             }
         } else {
             // Match the animated path: restore resting layout before cleanup, else the returning tab's content is stranded.
-            viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
+            viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
             onDismissed()
         }
-        resetUnifiedInputContentAfterHide(hidingContent: !shrinksToBottom, restoringNTPChrome: !shrinksToBottom)
+        resetUnifiedInputContentAfterHide(hidingContent: !fadesForFloatingBottom, restoringNTPChrome: !fadesForFloatingBottom)
         viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
     }
 

@@ -852,11 +852,46 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         let exp = expectation(description: "hideOmnibarEditing intent emitted")
         sut.intentPublisher
-            .sink { if $0 == .hideOmnibarEditing(animated: true) { exp.fulfill() } }
+            .sink {
+                if $0 == .hideOmnibarEditing(animated: true, reattachingOmnibar: true) {
+                    exp.fulfill()
+                }
+            }
             .store(in: &cancellables)
 
         sut.deactivateToOmnibar()
         waitForExpectations(timeout: 1)
+    }
+
+    func test_deactivateToOmnibar_whenKeepingOmnibarDetached_emitsIntentWithoutReattachment() {
+        sut.activateFromOmnibar()
+
+        let exp = expectation(description: "hideOmnibarEditing intent emitted without reattachment")
+        sut.intentPublisher
+            .sink {
+                if $0 == .hideOmnibarEditing(animated: false, reattachingOmnibar: false) {
+                    exp.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sut.deactivateToOmnibar(animateDismiss: false, reattachingOmnibar: false)
+        waitForExpectations(timeout: 1)
+    }
+
+    func testWhenCompletingOmnibarDeactivationThenStateResetsWithoutAnotherDismissIntent() {
+        sut.activateFromOmnibar(prefilledText: "test")
+
+        let exp = expectation(description: "no duplicate dismiss intent emitted")
+        exp.isInverted = true
+        sut.intentPublisher
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        XCTAssertTrue(sut.completeOmnibarDeactivation(resetView: false))
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.isOmnibarSession)
+        waitForExpectations(timeout: 0.1)
     }
 
     func test_deactivateToOmnibar_guardsWhenNotActive() {

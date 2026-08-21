@@ -1,5 +1,5 @@
 //
-//  Logger+UnifiedInputState.swift
+//  UTIFooterWarning.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -18,9 +18,19 @@
 //
 
 import Foundation
-import os.log
 
-extension Logger {
-    static let unifiedInputState = Logger(subsystem: "UnifiedInputState", category: "PerTab")
-    static let duckAIUsageWarnings = Logger(subsystem: "UsageWarnings", category: "UTIFooter")
+enum UTIFooterUsageWindow: Equatable, Hashable {
+    case daily
+    case weekly
+}
+
+enum UTIFooterUsageThreshold: Int, Equatable, Hashable, CaseIterable {
+    case fifty = 50
+    case seventyFive = 75
+    case ninety = 90
+}
+
+enum UTIFooterWarning: Equatable, Hashable {
+    case usageThreshold(window: UTIFooterUsageWindow, threshold: UTIFooterUsageThreshold, resetsAt: Date)
+    case limitReached(window: UTIFooterUsageWindow, resetsAt: Date)
 }

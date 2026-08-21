@@ -1851,6 +1851,20 @@
 		AABB00010001000100010003 /* UTIRenderStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010004 /* UTIRenderStateTests.swift */; };
 		AABB00010001000100010005 /* UTIViewConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010006 /* UTIViewConfig.swift */; };
 		AABB00010001000100010007 /* UTIAttachmentPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010008 /* UTIAttachmentPolicy.swift */; };
+		FC7EF0020000000000000001 /* UTIFooterWarning.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000001 /* UTIFooterWarning.swift */; };
+		FC7EF0020000000000000101 /* UTIFooterCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000101 /* UTIFooterCardView.swift */; };
+		FC7EF0020000000000000102 /* UTIFooterUsageRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000102 /* UTIFooterUsageRingView.swift */; };
+		FC7EF0020000000000000002 /* UTIFooterWarningResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000002 /* UTIFooterWarningResolver.swift */; };
+		FC7EF0020000000000000003 /* UTIFooterMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000003 /* UTIFooterMessage.swift */; };
+		FC7EF0020000000000000004 /* UTIFooterMessageMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000004 /* UTIFooterMessageMapper.swift */; };
+		FC7EF0020000000000000005 /* UTIFooterWarningProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000005 /* UTIFooterWarningProviding.swift */; };
+		FC7EF0020000000000000006 /* DuckAiUsageLimitsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000006 /* DuckAiUsageLimitsStore.swift */; };
+		FC7EF0020000000000000007 /* UTIFooterController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000007 /* UTIFooterController.swift */; };
+		FC7EF0040000000000000001 /* UTIFooterWarningResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000001 /* UTIFooterWarningResolverTests.swift */; };
+		FC7EF0040000000000000101 /* UTIFooterCardViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */; };
+		FC7EF0040000000000000002 /* UTIFooterMessageMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */; };
+		FC7EF0040000000000000003 /* UTIFooterControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */; };
+		FC7EF0040000000000000004 /* DuckAiUsageLimitsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000004 /* DuckAiUsageLimitsStoreTests.swift */; };
 		AABB00010001000100010009 /* UTIAttachmentPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB0001000100010001000A /* UTIAttachmentPolicyTests.swift */; };
 		AABB0001000100010001000B /* UTIModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB0001000100010001000C /* UTIModelStore.swift */; };
 		AABB0001000100010001000D /* UTIModelStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB0001000100010001000E /* UTIModelStoreTests.swift */; };
@@ -4728,6 +4742,20 @@
 		AABB00010001000100010004 /* UTIRenderStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIRenderStateTests.swift; sourceTree = "<group>"; };
 		AABB00010001000100010006 /* UTIViewConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIViewConfig.swift; sourceTree = "<group>"; };
 		AABB00010001000100010008 /* UTIAttachmentPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIAttachmentPolicy.swift; sourceTree = "<group>"; };
+		FC7EF0010000000000000001 /* UTIFooterWarning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterWarning.swift; sourceTree = "<group>"; };
+		FC7EF0010000000000000101 /* UTIFooterCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterCardView.swift; sourceTree = "<group>"; };
+		FC7EF0010000000000000102 /* UTIFooterUsageRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterUsageRingView.swift; sourceTree = "<group>"; };
+		FC7EF0010000000000000002 /* UTIFooterWarningResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterWarningResolver.swift; sourceTree = "<group>"; };
+		FC7EF0010000000000000003 /* UTIFooterMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterMessage.swift; sourceTree = "<group>"; };
+		FC7EF0010000000000000004 /* UTIFooterMessageMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterMessageMapper.swift; sourceTree = "<group>"; };
+		FC7EF0010000000000000005 /* UTIFooterWarningProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterWarningProviding.swift; sourceTree = "<group>"; };
+		FC7EF0010000000000000006 /* DuckAiUsageLimitsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiUsageLimitsStore.swift; sourceTree = "<group>"; };
+		FC7EF0010000000000000007 /* UTIFooterController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterController.swift; sourceTree = "<group>"; };
+		FC7EF0030000000000000001 /* UTIFooterWarningResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterWarningResolverTests.swift; sourceTree = "<group>"; };
+		FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterCardViewTests.swift; sourceTree = "<group>"; };
+		FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterMessageMapperTests.swift; sourceTree = "<group>"; };
+		FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterControllerTests.swift; sourceTree = "<group>"; };
+		FC7EF0030000000000000004 /* DuckAiUsageLimitsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiUsageLimitsStoreTests.swift; sourceTree = "<group>"; };
 		AABB0001000100010001000A /* UTIAttachmentPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIAttachmentPolicyTests.swift; sourceTree = "<group>"; };
 		AABB0001000100010001000C /* UTIModelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIModelStore.swift; sourceTree = "<group>"; };
 		AABB0001000100010001000E /* UTIModelStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIModelStoreTests.swift; sourceTree = "<group>"; };
@@ -10280,6 +10308,7 @@
 				CB27DAF430063B4A00EEEADB /* AITabChromeDecision.swift */,
 				CB27DAFA30064B5100EEEADB /* UnifiedInputTextChangeGate.swift */,
 				CB781CD0301130BC008DCD60 /* Coordinator */,
+				FC7EF0050000000000000001 /* Footer */,
 				CB781CE33013BA7A008DCD60 /* UnifiedToggleInputDisplayState.swift */,
 			);
 			path = UnifiedToggleInput;
@@ -10312,6 +10341,7 @@
 				CB6D17A12FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift */,
 				CB22D7A12FC603EB00128979 /* MainViewControllerRefreshActionTests.swift */,
 				CBE77C732FD2F39800CB7C6D /* Suggestions */,
+				FC7EF0050000000000000002 /* Footer */,
 				2D09A21E8CF1A9B32BC45E19 /* UnifiedToggleInputReasoningMenuFactoryTests.swift */,
 				E71D2723FF8B5622E2904F40 /* DuckAISubscriptionUpsellPresenterTests.swift */,
 				8E7EE5FF3B14EBB6C0AAB71A /* IPadOmnibarReasoningPickerControllerTests.swift */,
@@ -10840,6 +10870,34 @@
 				CB6D17C12FB000000ECD5AE /* AIChatSyncPromoViewTests.swift */,
 			);
 			path = Suggestions;
+			sourceTree = "<group>";
+		};
+		FC7EF0050000000000000001 /* Footer */ = {
+			isa = PBXGroup;
+			children = (
+				FC7EF0010000000000000001 /* UTIFooterWarning.swift */,
+				FC7EF0010000000000000101 /* UTIFooterCardView.swift */,
+				FC7EF0010000000000000102 /* UTIFooterUsageRingView.swift */,
+				FC7EF0010000000000000002 /* UTIFooterWarningResolver.swift */,
+				FC7EF0010000000000000003 /* UTIFooterMessage.swift */,
+				FC7EF0010000000000000004 /* UTIFooterMessageMapper.swift */,
+				FC7EF0010000000000000005 /* UTIFooterWarningProviding.swift */,
+				FC7EF0010000000000000006 /* DuckAiUsageLimitsStore.swift */,
+				FC7EF0010000000000000007 /* UTIFooterController.swift */,
+			);
+			path = Footer;
+			sourceTree = "<group>";
+		};
+		FC7EF0050000000000000002 /* Footer */ = {
+			isa = PBXGroup;
+			children = (
+				FC7EF0030000000000000001 /* UTIFooterWarningResolverTests.swift */,
+				FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */,
+				FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */,
+				FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */,
+				FC7EF0030000000000000004 /* DuckAiUsageLimitsStoreTests.swift */,
+			);
+			path = Footer;
 			sourceTree = "<group>";
 		};
 		CB781CD0301130BC008DCD60 /* Coordinator */ = {
@@ -14243,6 +14301,15 @@
 				FA57E0030003000300030003 /* UnifiedToggleInputPasteHandler.swift in Sources */,
 				F2B8A10736AA100000C0DE01 /* UnifiedToggleInputAttachment.swift in Sources */,
 				AABB00010001000100010007 /* UTIAttachmentPolicy.swift in Sources */,
+				FC7EF0020000000000000001 /* UTIFooterWarning.swift in Sources */,
+				FC7EF0020000000000000101 /* UTIFooterCardView.swift in Sources */,
+				FC7EF0020000000000000102 /* UTIFooterUsageRingView.swift in Sources */,
+				FC7EF0020000000000000002 /* UTIFooterWarningResolver.swift in Sources */,
+				FC7EF0020000000000000003 /* UTIFooterMessage.swift in Sources */,
+				FC7EF0020000000000000004 /* UTIFooterMessageMapper.swift in Sources */,
+				FC7EF0020000000000000005 /* UTIFooterWarningProviding.swift in Sources */,
+				FC7EF0020000000000000006 /* DuckAiUsageLimitsStore.swift in Sources */,
+				FC7EF0020000000000000007 /* UTIFooterController.swift in Sources */,
 				CB27DAE72FFFE65200EEEADB /* WebViewTransitionGeometry.swift in Sources */,
 				AABB0001000100010001000B /* UTIModelStore.swift in Sources */,
 				AABB0001000100010001000F /* UTIToolsController.swift in Sources */,
@@ -15243,6 +15310,11 @@
 				A1B2C3D4E5F60014A1B2C3D4 /* UnifiedToggleInputReasoningTests.swift in Sources */,
 				F101D53CD31E95F9C9FE2AC1 /* UnifiedToggleInputCoordinatorAttachmentLimitsTests.swift in Sources */,
 				AABB00010001000100010009 /* UTIAttachmentPolicyTests.swift in Sources */,
+				FC7EF0040000000000000001 /* UTIFooterWarningResolverTests.swift in Sources */,
+				FC7EF0040000000000000101 /* UTIFooterCardViewTests.swift in Sources */,
+				FC7EF0040000000000000002 /* UTIFooterMessageMapperTests.swift in Sources */,
+				FC7EF0040000000000000003 /* UTIFooterControllerTests.swift in Sources */,
+				FC7EF0040000000000000004 /* DuckAiUsageLimitsStoreTests.swift in Sources */,
 				AABB00010001000100010101 /* UnifiedToggleInputViewTests.swift in Sources */,
 				AABB00010001000100010201 /* UnifiedToggleInputToggleViewTests.swift in Sources */,
 				6F6446202FDBEE2A00D699B9 /* SuggestionListKeyboardSelectionTests.swift in Sources */,

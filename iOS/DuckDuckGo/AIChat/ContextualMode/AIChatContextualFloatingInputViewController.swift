@@ -55,8 +55,8 @@ extension AIChatContextualFloatingInputViewController: ContextualDictationPresen
 final class AIChatContextualFloatingInputViewController: UIViewController {
 
     private enum Constants {
-        /// Matches the design's system overlay scrim, `rgba(0, 0, 0, 0.2)`.
-        static let dimmingAlpha: CGFloat = 0.2
+        /// Deeper than the system overlay scrim, per design review, and matched to the contextual sheet's.
+        static let dimmingAlpha: CGFloat = 0.3
         /// Drag distance that maps to a fully faded dim, and the point past which release dismisses.
         static let dragFadeDistance: CGFloat = 200
         static let dragDismissDistance: CGFloat = 80

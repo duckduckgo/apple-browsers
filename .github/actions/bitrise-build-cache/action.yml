@@ -20,6 +20,7 @@ runs:
       run: |
         if [[ "${{ runner.environment }}" != "self-hosted" ]]; then
           echo "Not a self-hosted runner, Bitrise Build Cache won't be enabled"
+          exit 0
         fi
         if [[ "${{ inputs.enabled }}" != "1" ]]; then
           echo "::warning::Bitrise Build Cache is disabled. Pass 'enabled: 1' to enabled it."

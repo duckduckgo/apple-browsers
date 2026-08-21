@@ -119,7 +119,6 @@ struct UnifiedSuggestionsView: View {
             SuggestionsFavoritesView(controller: controller)
                 .ignoresSafeArea(.container, edges: .top)
                 .opacity(isShowingFavorites ? 1 : 0)
-                .animation(nil, value: isShowingFavorites)
                 .allowsHitTesting(isShowingFavorites)
         }
     }

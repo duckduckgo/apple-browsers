@@ -736,24 +736,13 @@ final class NewPermissionViewPopupTests: UITestCase {
         beyondTimeoutButton.click()
 
         // The popup blocked popover should appear AUTOMATICALLY with the SwiftUI view
-        let popover = app.popovers.firstMatch
+        let popover = app.popovers
+            .containing(.staticText, where: .keyPath(\.value, contains: "Pop-Up Blocked"))
+            .containing(.button, identifier: "Open")
+            .firstMatch
         XCTAssertTrue(
             popover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Popup blocked popover should appear automatically when popup is blocked."
-        )
-
-        // Verify the popover contains the "Pop-Up Blocked" text
-        let blockedText = popover.staticTexts.containing(\.value, containing: "Pop-Up Blocked").firstMatch
-        XCTAssertTrue(
-            blockedText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Pop-Up Blocked text should appear in the popover."
-        )
-
-        // Verify the "Open" button exists in the SwiftUI popover
-        let openButton = popover.buttons["Open"]
-        XCTAssertTrue(
-            openButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Open button should appear in the popup blocked popover."
         )
     }
 

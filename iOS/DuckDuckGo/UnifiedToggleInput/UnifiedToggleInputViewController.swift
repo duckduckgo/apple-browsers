@@ -338,8 +338,8 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.prepareForOmnibarEditingShow()
     }
 
-    func prepareForOmnibarMaterialTransition() {
-        inputBarView.prepareForOmnibarMaterialTransition()
+    func prepareForOmnibarMaterialTransition(duration: TimeInterval) {
+        inputBarView.prepareForOmnibarMaterialTransition(duration: duration)
     }
 
     func applyOmnibarEditingShowPose() {

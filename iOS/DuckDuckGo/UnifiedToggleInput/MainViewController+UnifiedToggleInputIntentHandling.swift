@@ -271,8 +271,9 @@ private extension MainViewController {
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
+        let duration = Constants.omnibarTransitionDuration(isBottom: isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
-            coordinator.viewController.prepareForOmnibarMaterialTransition()
+            coordinator.viewController.prepareForOmnibarMaterialTransition(duration: duration)
         }
 
         // The container is now laid out at its editing-start frame; pin the collapsed card to the
@@ -298,7 +299,6 @@ private extension MainViewController {
             newTabPageViewController?.setLogoHidden(true)
         }
 
-        let duration = Constants.omnibarTransitionDuration(isBottom: isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         animateOmnibarEditingShow(coordinator: coordinator,
                                   duration: duration,
                                   pendingHeight: pendingHeight,

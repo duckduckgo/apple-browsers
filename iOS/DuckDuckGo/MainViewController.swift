@@ -257,7 +257,31 @@ class MainViewController: UIViewController {
 
     func endTabSwitcherToolbarOwnership() {
         isTabSwitcherTransitionOwningToolbar = false
+        guard isFloatingUIEnabled else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !isTabSwitcherTransitionOwningToolbar else { return }
+            refreshSettledFloatingGlassAppearance()
+        }
     }
+
+    private func refreshSettledFloatingGlassAppearance() {
+        guard isFloatingUIEnabled else { return }
+        let interfaceStyle = settledFloatingGlassInterfaceStyle
+        viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        (viewCoordinator.omniBar.barView as? DefaultOmniBarView)?.refreshFloatingGlassAppearance(interfaceStyle: interfaceStyle)
+    }
+
+    private var settledFloatingGlassInterfaceStyle: UIUserInterfaceStyle {
+        if traitCollection.userInterfaceStyle == .dark {
+            return .dark
+        }
+        guard let pageBackgroundColor = currentTab?.webView?.underPageBackgroundColor else {
+            return .light
+        }
+        let resolvedColor = pageBackgroundColor.resolvedColor(with: traitCollection)
+        return resolvedColor.brightnessPercentage < 50 ? .dark : .light
+    }
+
     private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool, topInset: CGFloat) = (false, false, -1)
     private lazy var isWindowControlsRowEnabled = WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
     private var lastForegroundEntryDate = Date.distantPast
@@ -7646,6 +7670,7 @@ extension MainViewController {
         if !themeColorManager.updateThemeColor() {
             updateStatusBarBackgroundColor()
         }
+        refreshSettledFloatingGlassAppearance()
         updateFindInPage()
 
         revealChromeIfPinned()

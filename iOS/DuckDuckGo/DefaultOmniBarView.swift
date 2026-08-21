@@ -882,6 +882,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         makeOpaque()
     }
 
+    func refreshFloatingGlassAppearance(interfaceStyle: UIUserInterfaceStyle) {
+        guard shouldUseFloatingTopGlass else { return }
+        UIView.performWithoutAnimation {
+            glassEffect.removeFromSuperview()
+            glassEffectFireMode = nil
+            makeGlass()
+            glassEffect.overrideUserInterfaceStyle = interfaceStyle
+        }
+    }
+
     func setFloatingMinimalChromeBar(_ enabled: Bool) {
         guard isFloatingUIEnabled, isFloatingMinimalChromeBar != enabled else { return }
         isFloatingMinimalChromeBar = enabled

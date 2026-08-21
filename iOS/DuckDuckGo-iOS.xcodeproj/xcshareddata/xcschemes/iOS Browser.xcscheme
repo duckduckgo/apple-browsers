@@ -282,6 +282,16 @@
                ReferencedContainer = "container:LocalPackages/FeatureFlags-iOS">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtection-iOSTests"
+               BuildableName = "DataBrokerProtection-iOSTests"
+               BlueprintName = "DataBrokerProtection-iOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-iOS">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <EnvironmentVariables>
          <EnvironmentVariable

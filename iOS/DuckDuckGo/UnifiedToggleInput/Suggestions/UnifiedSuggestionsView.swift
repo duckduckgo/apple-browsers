@@ -122,8 +122,7 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var isShowingLogo: Bool {
-        if case .logo = viewModel.content { return true }
-        return false
+        viewModel.content == .logo && !isShowingFavorites
     }
 
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact

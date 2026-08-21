@@ -23,6 +23,20 @@ on:
       - 'scripts/translation-pr-checks/**'
   schedule:
     - cron: '10,40 4,5 * * *'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch name"
+        required: false
+        type: string
+      skip-asana:
+        description: "Skip Asana task creation on tests failure"
+        type: boolean
+        default: true
+      skip-release-build:
+        description: "Skip release build"
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       branch:
@@ -161,9 +175,9 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
-          - runs-on: [image:osx-tahoe-26, size:large]
+          - runs-on: [bitrise-runner-macos26-m4pro]
             flavor: Non-Sandbox
-          - runs-on: [image:osx-tahoe-26, size:xlarge]
+          - runs-on: [bitrise-runner-macos26-m4pro]
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
@@ -547,11 +561,10 @@ jobs:
     # workflow_call is used by bump_internal_release and is followed by a proper release job
     if: >
       github.actor != 'dependabot[bot]' &&
-      (github.event_name == 'push' || github.event_name == 'pull_request') &&
       inputs.skip-release-build != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: [image:osx-tahoe-26, size:large]
+    runs-on: bitrise-runner-macos26-m4pro
     timeout-minutes: 60
     env:
       RUNS_ON: bitrise:macos26-m4 # keep this in sync with runs-on above

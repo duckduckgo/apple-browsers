@@ -111,7 +111,7 @@ final class DuckAISuggestionsSource: SuggestionsSource {
     static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String, viewAllChatsEnabled: Bool = false) -> [SuggestionSection] {
         var sections: [SuggestionSection] = []
         if !snapshot.chats.isEmpty {
-            var chatRows = snapshot.chats.map { SuggestionRowMapper.row(for: $0, includesFireDelete: true) }
+            var chatRows = snapshot.chats.map { SuggestionRowMapper.row(for: $0) }
             // Append the "View all chats" entry when browsing recents; hide it while the user is searching.
             if viewAllChatsEnabled && query.isEmpty {
                 chatRows.append(SuggestionRowMapper.viewAllChatsRow(id: RowID.viewAllChats))

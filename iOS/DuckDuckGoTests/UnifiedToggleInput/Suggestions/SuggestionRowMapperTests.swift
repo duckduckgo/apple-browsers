@@ -75,7 +75,7 @@ final class SuggestionRowMapperTests: XCTestCase {
         XCTAssertEqual(row.id, "chat-abc")
         XCTAssertEqual(row.title, "Hello")
         XCTAssertNil(row.subtitle)
-        XCTAssertEqual(row.accessory, .none)
+        XCTAssertEqual(row.accessory, .fire)
         XCTAssertEqual(row.icon, .aiChatPinned)
     }
 

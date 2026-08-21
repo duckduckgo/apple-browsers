@@ -526,15 +526,18 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         let coexisting = promo.coexistingPromoIDs
 
         for otherId in visibleIds where otherId != promoId {
-            guard let other = promos.first(where: { $0.id == otherId }) else { continue }
+            // Global rules only apply between medium+ promos. A visible low-severity promo must not
+            // block anything; the early return above covers a low-severity promo being blocked.
+            guard let other = promos.first(where: { $0.id == otherId }),
+                  other.promoType.severity >= .medium else { continue }
+
+            // Coexistence has to be declared by both promos, and is deliberately non-transitive:
+            // it's evaluated per pair, so A<->B plus B<->C still leaves A and C blocking each other.
             let mutuallyCoexisting = coexisting.contains(otherId) && other.coexistingPromoIDs.contains(promoId)
+            guard !mutuallyCoexisting else { continue }
 
-            let contextConflict = !mutuallyCoexisting && (
-                context == .global || other.context == .global || context == other.context
-            )
-            if contextConflict { return false }
-
-            if severity >= .medium && other.promoType.severity >= .medium && !mutuallyCoexisting {
+            // One medium+ promo per context, and `.global` is exclusive with every other context.
+            if context == .global || other.context == .global || context == other.context {
                 return false
             }
         }

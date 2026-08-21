@@ -406,6 +406,100 @@ final class PromoServiceTests: XCTestCase {
         await fulfillment(of: [showCExpectation], timeout: 0.5) // Short timeout for inverted expectation
     }
 
+    // MARK: - Global rules: context scoping and low-severity participation
+
+    func testWhenTwoMediumPromosInDifferentContexts_ThenBothCanBeVisible() async {
+        // Given: two medium promos in different, non-global contexts and no declared coexistence.
+        // "One medium+ promo per context" is per context, so these do not compete.
+        let ntpDelegate = MockPromoDelegate(isEligible: true)
+        let webDelegate = MockPromoDelegate(isEligible: true)
+        let ntpPromo = PromoTestHelpers.makePromo(id: "ntp-medium", context: .newTabPage, delegate: ntpDelegate)
+        let webPromo = PromoTestHelpers.makePromo(id: "web-medium", context: .webPage, delegate: webDelegate)
+        let promoService = makeService(promos: [ntpPromo, webPromo])
+
+        let bothShownExpectation = XCTestExpectation(description: "both promos shown")
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                let ids = Set(promos.map(\.id))
+                if ids.isSuperset(of: ["ntp-medium", "web-medium"]) {
+                    bothShownExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+
+        // Then
+        await fulfillment(of: [bothShownExpectation], timeout: timeout)
+    }
+
+    func testWhenTwoMediumPromosInSameNonGlobalContext_ThenSecondIsBlocked() async {
+        // Given: two medium promos sharing a non-global context. Per-context exclusivity must still apply
+        // when neither promo is `.global`.
+        let delegate1 = MockPromoDelegate(isEligible: true)
+        let delegate2 = MockPromoDelegate(isEligible: true)
+        let promo1 = PromoTestHelpers.makePromo(id: "web-first", context: .webPage, delegate: delegate1)
+        let promo2 = PromoTestHelpers.makePromo(id: "web-second", context: .webPage, delegate: delegate2)
+        let promoService = makeService(promos: [promo1, promo2])
+
+        let firstShownExpectation = XCTestExpectation(description: "first promo shown")
+        let secondShownExpectation = XCTestExpectation(description: "second promo shown")
+        secondShownExpectation.isInverted = true // Same context, so the second promo must be skipped
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.contains(where: { $0.id == "web-first" }) {
+                    firstShownExpectation.fulfill()
+                }
+                if promos.contains(where: { $0.id == "web-second" }) {
+                    secondShownExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+
+        // Then
+        await fulfillment(of: [firstShownExpectation], timeout: timeout)
+        await fulfillment(of: [secondShownExpectation], timeout: 0.5) // Short timeout for inverted expectation
+    }
+
+    func testWhenLowSeverityPromoVisible_ThenDoesNotBlockMediumPromoInSameContext() async {
+        // Given: a visible low-severity promo and a medium promo sharing `.global`. Low-severity promos sit outside
+        // the global rules in both directions, so the medium promo must still show.
+        let lowDelegate = MockPromoDelegate(isEligible: true)
+        let mediumDelegate = MockPromoDelegate(isEligible: true)
+        let lowPromo = PromoTestHelpers.makePromo(id: "low-visible",
+                                                 promoType: PromoType(.inlineMessage),
+                                                 context: .global,
+                                                 delegate: lowDelegate)
+        let mediumPromo = PromoTestHelpers.makePromo(id: "medium-blocked", context: .global, delegate: mediumDelegate)
+        let promoService = makeService(promos: [lowPromo, mediumPromo])
+
+        let bothShownExpectation = XCTestExpectation(description: "low and medium promos both shown")
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                let ids = Set(promos.map(\.id))
+                if ids.isSuperset(of: ["low-visible", "medium-blocked"]) {
+                    bothShownExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+
+        // Then
+        await fulfillment(of: [bothShownExpectation], timeout: timeout)
+    }
+
     func testWhenAppInitiatedPromoDismissedRecently_ThenGlobalCooldownBlocksNextAppPromo() async {
         // Given: promo-1 was dismissed 1 hour ago, cooldown is 24h
         let oneHourAgo = Date().addingTimeInterval(-3600)

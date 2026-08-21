@@ -1145,8 +1145,8 @@ class MainViewController: UIViewController {
             return
         }
 
-        // Every runtime input to `duckAIAddressBarEntry` and `hasContextualSession`, so neither the
-        // tap nor the glyph can go stale. `isHomeTab` only changes with navigation, which refreshes the omnibar.
+        // The inputs that change mid-tab, so neither the tap nor the glyph goes stale. `isHomeTab` and
+        // the tab's persisted chat URL only move with navigation, which refreshes the omnibar anyway.
         let sessionState = coordinator.sessionState
         let hasActiveChat = sessionState.$viewState
             .map { _ in sessionState.hasActiveChat }

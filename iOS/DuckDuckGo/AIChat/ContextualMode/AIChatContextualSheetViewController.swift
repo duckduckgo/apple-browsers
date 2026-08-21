@@ -117,7 +117,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let titleSpacing: CGFloat = 4
         static let titleTapHorizontalPadding: CGFloat = 8
         static let contentTopPadding: CGFloat = 8
-        static let dimmingAlpha: CGFloat = 0.3
+        static let dimmingAlpha = ContextualSurfaceScrim.alpha
         static let iPadPopoverWidth: CGFloat = 375
         static let iPadPopoverDefaultHeight: CGFloat = 520
         static let maxHeightRatio: CGFloat = 0.9
@@ -294,13 +294,10 @@ final class AIChatContextualSheetViewController: UIViewController {
         return menu.replacingChildren(menu.children.reversed())
     }
 
-    /// Mirrors the custom popup's sections, fetched when the menu opens rather than on the tap.
+    /// Sections are fetched when the menu opens rather than on the tap.
     private func buildNativeChatsMenuElements(_ completion: @escaping ([UIMenuElement]) -> Void) {
         Task { @MainActor in
-            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(
-                using: suggestionsReader,
-                showNewChat: sessionState.hasActiveChat
-            )
+            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: suggestionsReader)
             let openDuckAI = UIAction(title: UserText.duckAiContextualOpenDuckAi,
                                       image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
                 self?.recentChatsMenuDidSelectOpenDuckAI()

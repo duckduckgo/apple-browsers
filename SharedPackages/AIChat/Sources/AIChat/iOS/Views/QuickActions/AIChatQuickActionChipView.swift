@@ -42,7 +42,8 @@ public final class AIChatQuickActionChipView: UIView {
         static let glassShadowOpacity: Float = 0.02
         static let glassShadowRadius: CGFloat = 15
         static let glassShadowOffsetY: CGFloat = 8
-        /// Darkens the glass so the pills separate from light page content behind them.
+        /// Darkens the glass so the pills separate from the page behind them. iOS 26 only — the
+        /// earlier blur fallback has no tint to carry it.
         static let glassTintAlphaLight: CGFloat = 0.06
         static let glassTintAlphaDark: CGFloat = 0.14
         /// Outer 8 plus the label group's inner 6, per the design.
@@ -71,6 +72,8 @@ public final class AIChatQuickActionChipView: UIView {
     private var iconLabelSpacingConstraint: NSLayoutConstraint?
     private var labelTrailingConstraint: NSLayoutConstraint?
     private var glassBackgroundView: UIVisualEffectView?
+    /// Tint the live glass effect was built for, so an unchanged appearance skips the rebuild.
+    private var appliedGlassTintAlpha: CGFloat?
 
     // MARK: - UI Components
 
@@ -150,9 +153,9 @@ private extension AIChatQuickActionChipView {
             // No border: it lives on this layer, so it can't scale with the glass's interactive
             // expansion and would sit inside the enlarged pill on touch.
             layer.borderWidth = 0
-            installGlassBackgroundIfNeeded()
-            applyGlassEffect()
-            hostContent(in: glassBackgroundView?.contentView ?? self)
+            let glass = installGlassBackgroundIfNeeded()
+            applyGlassTint(on: glass)
+            hostContent(in: glass.contentView)
             applyGlassShadow()
             applyCornerRadius(Constants.height / 2)
             heightConstraint?.constant = Constants.height
@@ -179,13 +182,15 @@ private extension AIChatQuickActionChipView {
     }
 
     /// Shaped via `cornerConfiguration` — a layer `cornerRadius` leaves the effect rectangular behind it.
-    func installGlassBackgroundIfNeeded() {
-        guard glassBackgroundView == nil else { return }
+    @discardableResult
+    func installGlassBackgroundIfNeeded() -> UIVisualEffectView {
+        if let glassBackgroundView { return glassBackgroundView }
 
         let effectView = UIVisualEffectView()
         if #available(iOS 26.0, *) {
             effectView.cornerConfiguration = .capsule()
         } else {
+            effectView.effect = UIBlurEffect(style: .systemThinMaterial)
             effectView.clipsToBounds = true
             effectView.layer.cornerCurve = .continuous
         }
@@ -199,21 +204,23 @@ private extension AIChatQuickActionChipView {
             effectView.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
         glassBackgroundView = effectView
+        return effectView
     }
 
     /// Re-made rather than mutated: `UIGlassEffect`'s tint is fixed at init, so a light/dark flip
-    /// needs a fresh effect for the new tint to take.
-    func applyGlassEffect() {
-        guard let glassBackgroundView else { return }
+    /// needs a fresh effect for the new tint to take. Skipped when the tint has not moved, since
+    /// assigning `effect` rebuilds the backdrop chain.
+    func applyGlassTint(on glass: UIVisualEffectView) {
+        guard #available(iOS 26.0, *) else { return }
 
-        if #available(iOS 26.0, *) {
-            let effect = UIGlassEffect(style: .regular)
-            effect.isInteractive = true
-            effect.tintColor = UIColor.black.withAlphaComponent(glassTintAlpha)
-            glassBackgroundView.effect = effect
-        } else {
-            glassBackgroundView.effect = UIBlurEffect(style: .systemMaterial)
-        }
+        let alpha = glassTintAlpha
+        guard appliedGlassTintAlpha != alpha else { return }
+        appliedGlassTintAlpha = alpha
+
+        let effect = UIGlassEffect(style: .regular)
+        effect.isInteractive = true
+        effect.tintColor = UIColor.black.withAlphaComponent(alpha)
+        glass.effect = effect
     }
 
     /// Dark glass carries more tint: it sits over darker content, so the same value would barely read.

@@ -39,11 +39,15 @@ extension MainViewController {
         return coordinator?.isSheetPresented == true || coordinator?.isFloatingInputPresented == true
     }
 
-    /// Whether the address-bar Duck.ai button shows its contextual glyph: a surface is open, or this
-    /// tab has a chat to come back to. A surface dismissed without a prompt leaves neither.
+    /// Whether the address-bar Duck.ai button shows its contextual glyph. A surface dismissed without
+    /// a prompt leaves no chat, so it reverts.
     var hasContextualSession: Bool {
-        guard aiChatContextualModeFeature.isAvailable else { return false }
-        return currentTab?.hasContextualChatToReopen == true || isContextualSurfacePresented
+        DuckAIAddressBarEntry.showsContextualGlyph(
+            isContextualModeAvailable: aiChatContextualModeFeature.isAvailable,
+            isHomeTab: currentTab?.tabModel.isHomeTab ?? true,
+            hasChatToReopen: currentTab?.hasContextualChatToReopen ?? false,
+            isContextualSurfacePresented: isContextualSurfacePresented
+        )
     }
 
     /// Attaches the Duck.ai menu to the address-bar button, or detaches it so a tap acts directly.

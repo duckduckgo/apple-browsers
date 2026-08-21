@@ -120,7 +120,7 @@ enum UITests {
 class TestFailureObserver: NSObject, XCTestObservation {
 
     func testCase(_ testCase: XCTestCase, didRecord issue: XCTIssue) {
-        Logger.log("🔴Failed test with name: \(testCase.name)")
+        Logger.log("🔴 Issue recorded: \(issue)")
         if XCUIApplication.notificationCenter.buttons.firstMatch.exists {
             let descr = (try? XCUIApplication.notificationCenter.snapshot().toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar])) ??? "<nil>"
             Logger.log("⚠️ TCC prompt shown: \(descr)")
@@ -174,7 +174,7 @@ class UITestCase: XCTestCase {
         guard Self.systemPermissionPromptPollingTimer == nil else { return }
 
         let timer = Timer(timeInterval: 5, repeats: true) { _ in
-            _ = XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: true)
+            _ = XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         }
         RunLoop.main.add(timer, forMode: .common)
         Self.systemPermissionPromptPollingTimer = timer

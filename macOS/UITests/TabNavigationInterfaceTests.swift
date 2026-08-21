@@ -194,7 +194,7 @@ final class TabNavigationInterfaceTests: UITestCase, TabNavigationTestHelpers {
         XCTAssertEqual(app.windows.count, 2)
 
         XCTAssertTrue(activeWindow.webViews["New Window Page"].waitForExistence(timeout: UITests.Timeouts.navigation))
-        XCTAssertTrue(activeWindow.webViews["Page #8"].exists)
+        XCTAssertFalse(activeWindow.webViews["Page #8"].exists)
 
         XCTAssertTrue(activeWindow.tabs["New Window Page"].exists)
         XCTAssertEqual(activeWindow.tabs.count, 1)

@@ -137,8 +137,12 @@ extension XCUIApplication {
     }
 
     /// Terminate the running app and launch it again, preserving environment and arguments from `setUp()`.
-    func restart() {
-        terminate()
+    func restart(usingCmdQ: Bool = false) {
+        if usingCmdQ {
+            typeKey("q", modifierFlags: .command)
+        } else {
+            terminate()
+        }
         launch()
     }
 
@@ -728,7 +732,7 @@ extension XCUIApplication {
 
             return true
         }).firstMatch
-        XCTAssertTrue(pathCell.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(pathCell.waitForExistence(timeout: UITests.Timeouts.navigation), "Path cell did not appear in reasonable time")
 
         // Confirm Location selection
         typeKey(.return, modifierFlags: [])

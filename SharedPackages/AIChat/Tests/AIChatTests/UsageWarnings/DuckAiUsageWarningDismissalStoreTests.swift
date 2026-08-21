@@ -16,19 +16,19 @@
 //  limitations under the License.
 //
 
-import PersistenceTestingUtils
+import Persistence
 import XCTest
 @testable import AIChat
 
 final class DuckAiUsageWarningDismissalStoreTests: XCTestCase {
 
     private let resetsAt = Date(timeIntervalSince1970: 1_755_018_000)
-    private var keyValueStore: MockThrowingKeyValueStore!
+    private var keyValueStore: InMemoryThrowingStore!
     private var sut: DuckAiUsageWarningDismissalStore!
 
     override func setUp() {
         super.setUp()
-        keyValueStore = MockThrowingKeyValueStore()
+        keyValueStore = InMemoryThrowingStore()
         sut = DuckAiUsageWarningDismissalStore(keyValueStore: keyValueStore)
     }
 
@@ -82,4 +82,15 @@ final class DuckAiUsageWarningDismissalStoreTests: XCTestCase {
 
         XCTAssertTrue(sut.dismissal(for: .daily)?.applies(to: fractional) ?? false)
     }
+}
+
+/// A local stub rather than `PersistenceTestingUtils`: only this file needs one, and keeping the
+/// dependency out of the test target matches `DuckAiUsageLimitsTests`.
+private final class InMemoryThrowingStore: ThrowingKeyValueStoring {
+
+    private var values: [String: Any] = [:]
+
+    func object(forKey key: String) throws -> Any? { values[key] }
+    func set(_ value: Any?, forKey key: String) throws { values[key] = value }
+    func removeObject(forKey key: String) throws { values.removeValue(forKey: key) }
 }

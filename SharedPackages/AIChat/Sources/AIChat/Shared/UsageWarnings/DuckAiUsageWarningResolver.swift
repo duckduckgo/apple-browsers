@@ -132,7 +132,10 @@ public struct DuckAiUsageWarningResolver {
             return .rejected(.belowVisibilityFloor)
         }
 
-        let canSeeApproachingWarnings = isInternalUser || Self.tiersThatSeeApproachingWarnings.contains(tier)
+        // Internal users see approaching warnings without a subscription, so visibility and paid-ness
+        // are separate: an internal free-tier user still gets the upsell rather than a paid CTA.
+        let hasPaidTier = Self.tiersThatSeeApproachingWarnings.contains(tier)
+        let canSeeApproachingWarnings = isInternalUser || hasPaidTier
         guard isBlocked || canSeeApproachingWarnings else { return .rejected(.tierNotEligible) }
 
         let isDismissible = !isBlocked && canSeeApproachingWarnings
@@ -144,7 +147,7 @@ public struct DuckAiUsageWarningResolver {
         let suggestion = modelSuggestion(for: message)
         let action = self.action(for: message,
                                  suggestion: suggestion,
-                                 isPaid: canSeeApproachingWarnings,
+                                 isPaid: hasPaidTier,
                                  isTrialEligible: isTrialEligible,
                                  weeklyHasRoom: Self.hasRoom(limits.weekly))
 

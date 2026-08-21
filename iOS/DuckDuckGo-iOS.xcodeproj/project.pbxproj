@@ -378,6 +378,7 @@
 		4B97357B2F704924002E4A54 /* CreditCardsCleanupErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C54A22E7472A5003451F5 /* CreditCardsCleanupErrorHandling.swift */; };
 		4BA2C1752FC1232500D7C62E /* DuckAIWideEventInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA2C1742FC1232500D7C62E /* DuckAIWideEventInstrumentationTests.swift */; };
 		4BABF9183022746600B46B44 /* AppRouting in Frameworks */ = {isa = PBXBuildFile; productRef = 4BABF9173022746600B46B44 /* AppRouting */; };
+		4BACF9183022746600B46B44 /* InstallStatistics in Frameworks */ = {isa = PBXBuildFile; productRef = 4BACF9173022746600B46B44 /* InstallStatistics */; };
 		4BB7CBB02AF59C310014A35F /* VPNWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */; };
 		4BB88F3F2E5D701200DE539A /* PixelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB88F3E2E5D701200DE539A /* PixelKit */; };
 		4BBBBA922B03291700D965DA /* VPNWaitlistUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */; };
@@ -2667,7 +2668,7 @@
 		F10B39EE2F5B23EB00C74351 /* BottomRoundedRectangle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10B39ED2F5B23D900C74351 /* BottomRoundedRectangle.swift */; };
 		F10E522D1E946F8800CE1253 /* NSAttributedStringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10E522C1E946F8800CE1253 /* NSAttributedStringExtension.swift */; };
 		F1134EA61F3E2AF400B73467 /* StatisticsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1134EA51F3E2AF400B73467 /* StatisticsStore.swift */; };
-		F1134EAB1F3E2C6A00B73467 /* StatisticsUserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1134EAA1F3E2C6A00B73467 /* StatisticsUserDefaults.swift */; };
+		F1134EAB1F3E2C6A00B73467 /* InstallStatisticsCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1134EAA1F3E2C6A00B73467 /* InstallStatisticsCompatibility.swift */; };
 		F1134EB01F40AC6300B73467 /* AtbParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1134EAF1F40AC6300B73467 /* AtbParser.swift */; };
 		F1134EB51F40AEEA00B73467 /* StatisticsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1134EB41F40AEEA00B73467 /* StatisticsLoader.swift */; };
 		F1134ECE1F40EA9C00B73467 /* AtbParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1134ECC1F40EA2000B73467 /* AtbParserTests.swift */; };
@@ -3326,6 +3327,7 @@
 		4B94B79C2D4831700014AAB8 /* SyncUI-iOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "SyncUI-iOS"; sourceTree = "<group>"; };
 		4BA2C1742FC1232500D7C62E /* DuckAIWideEventInstrumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIWideEventInstrumentationTests.swift; sourceTree = "<group>"; };
 		4BABF9153022746600B46B44 /* AppRouting */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppRouting; sourceTree = "<group>"; };
+		4BACF9153022746600B46B44 /* InstallStatistics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = InstallStatistics; sourceTree = "<group>"; };
 		4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWidget.swift; sourceTree = "<group>"; };
 		4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWaitlistUserText.swift; sourceTree = "<group>"; };
 		4BC21A2C272388BD00229F0E /* RunLoopExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLoopExtensionTests.swift; sourceTree = "<group>"; };
@@ -5631,7 +5633,7 @@
 		F10D86342FB4887D0029EAEC /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		F10E522C1E946F8800CE1253 /* NSAttributedStringExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSAttributedStringExtension.swift; sourceTree = "<group>"; };
 		F1134EA51F3E2AF400B73467 /* StatisticsStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatisticsStore.swift; sourceTree = "<group>"; };
-		F1134EAA1F3E2C6A00B73467 /* StatisticsUserDefaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatisticsUserDefaults.swift; sourceTree = "<group>"; };
+		F1134EAA1F3E2C6A00B73467 /* InstallStatisticsCompatibility.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InstallStatisticsCompatibility.swift; sourceTree = "<group>"; };
 		F1134EAF1F40AC6300B73467 /* AtbParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AtbParser.swift; sourceTree = "<group>"; };
 		F1134EB41F40AEEA00B73467 /* StatisticsLoader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatisticsLoader.swift; sourceTree = "<group>"; };
 		F1134ECC1F40EA2000B73467 /* AtbParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AtbParserTests.swift; sourceTree = "<group>"; };
@@ -6036,6 +6038,7 @@
 				4BC95E8F2D741706002FAB32 /* History in Frameworks */,
 				4BC95E992D74174F002FAB32 /* Suggestions in Frameworks */,
 				4BABF9183022746600B46B44 /* AppRouting in Frameworks */,
+				4BACF9183022746600B46B44 /* InstallStatistics in Frameworks */,
 				4BC95E8D2D741700002FAB32 /* DuckPlayer in Frameworks */,
 				C14882ED27F211A000D59F0C /* SwiftSoup in Frameworks */,
 				4BC95E892D7416F2002FAB32 /* ContentBlocking in Frameworks */,
@@ -6824,6 +6827,7 @@
 				31794BFF2821DFB600F18633 /* DuckUI */,
 				EE7B00000000000000000001 /* EventHub */,
 				A64F1A010000000000000001 /* FeatureFlags-iOS */,
+				4BACF9153022746600B46B44 /* InstallStatistics */,
 				9F292C522F342B1200441F7A /* MetricBuilder */,
 				85B6ABB62DE5E4CC009C85C7 /* Onboarding */,
 				8518F12C2F742F7600B53C75 /* ScreenTimeDataCleaner */,
@@ -11527,7 +11531,7 @@
 			children = (
 				9F371805302DB47A0071F761 /* OnboardingDownloadReasonStore.swift */,
 				F1134EA51F3E2AF400B73467 /* StatisticsStore.swift */,
-				F1134EAA1F3E2C6A00B73467 /* StatisticsUserDefaults.swift */,
+				F1134EAA1F3E2C6A00B73467 /* InstallStatisticsCompatibility.swift */,
 			);
 			name = Store;
 			sourceTree = "<group>";
@@ -12922,6 +12926,7 @@
 				857074D12E2A57F800099511 /* WKAbstractions */,
 				37EACB1F2EF55006002C06F9 /* PrivacyConfig */,
 				4BABF9173022746600B46B44 /* AppRouting */,
+				4BACF9173022746600B46B44 /* InstallStatistics */,
 			);
 			productName = Core;
 			productReference = F143C2E41E4A4CD400CFDE3A /* Core.framework */;
@@ -13056,6 +13061,7 @@
 				315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */,
 				A7B000022F6A000100000001 /* XCLocalSwiftPackageReference "../SharedPackages/SnapshotTestingSupport" */,
 				4BABF9163022746600B46B44 /* XCLocalSwiftPackageReference "LocalPackages/AppRouting" */,
+				4BACF9163022746600B46B44 /* XCLocalSwiftPackageReference "LocalPackages/InstallStatistics" */,
 			);
 			productRefGroup = 84E341931E2F7EFB00BDBA6F /* Products */;
 			projectDirPath = "";
@@ -16004,7 +16010,7 @@
 			files = (
 				858479C92B8792D800D156C1 /* HistoryManager.swift in Sources */,
 				C1CAAAA32CFCBBBD00C37EE6 /* UserAuthenticator.swift in Sources */,
-				F1134EAB1F3E2C6A00B73467 /* StatisticsUserDefaults.swift in Sources */,
+				F1134EAB1F3E2C6A00B73467 /* InstallStatisticsCompatibility.swift in Sources */,
 				4B27FBB32C926E51007E21A7 /* PersistentPixel.swift in Sources */,
 				CB258D1E29A52AF900DEBA24 /* FileStore.swift in Sources */,
 				F1075C921E9EF827006BE8A8 /* UserDefaultsExtension.swift in Sources */,
@@ -19219,6 +19225,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/AppRouting;
 		};
+		4BACF9163022746600B46B44 /* XCLocalSwiftPackageReference "LocalPackages/InstallStatistics" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/InstallStatistics;
+		};
 		7B0752DA2F21BFDB00ACA559 /* XCLocalSwiftPackageReference "../SharedPackages/AutomationServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/AutomationServer;
@@ -19465,6 +19475,10 @@
 		4BABF9173022746600B46B44 /* AppRouting */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppRouting;
+		};
+		4BACF9173022746600B46B44 /* InstallStatistics */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = InstallStatistics;
 		};
 		4BB88F3E2E5D701200DE539A /* PixelKit */ = {
 			isa = XCSwiftPackageProductDependency;

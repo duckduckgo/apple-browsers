@@ -159,7 +159,7 @@ final class UTIFooterControllerTests: XCTestCase {
 
     // MARK: - Pose changes
 
-    func test_resetForPoseChange_leavesTheViewAlone() {
+    func test_resetForPoseChange_neverAppliesOrAnimatesAMessage() {
         provider.warning = fiftyPercent
         sut.refresh()
 
@@ -167,6 +167,29 @@ final class UTIFooterControllerTests: XCTestCase {
 
         XCTAssertEqual(presenter.appliedMessages.count, 1)
         XCTAssertEqual(animationCount, 1)
+    }
+
+    func test_resetForPoseChange_dropsTheViewsPendingMessage() {
+        provider.warning = fiftyPercent
+        sut.refresh()
+
+        sut.resetForPoseChange()
+
+        XCTAssertEqual(presenter.pendingClearCount, 1)
+    }
+
+    func test_refresh_afterAPoseResetWithTheWarningGone_hasNothingLeftToResurrect() {
+        provider.warning = fiftyPercent
+        sut.refresh()
+        sut.resetForPoseChange()
+
+        provider.warning = nil
+        sut.refresh()
+
+        // No second apply is needed precisely because the reset already dropped the view's pending copy.
+        XCTAssertEqual(presenter.appliedMessages.count, 1)
+        XCTAssertEqual(presenter.pendingClearCount, 1)
+        XCTAssertNil(sut.currentMessage)
     }
 
     func test_resetForPoseChange_reappliesTheWarningOnTheNextRefresh() {
@@ -218,8 +241,13 @@ private final class FakeUTIFooterWarningProvider: UTIFooterWarningProviding {
 @MainActor
 private final class SpyUTIFooterPresenter: UTIFooterPresenting {
     private(set) var appliedMessages: [UTIFooterMessage?] = []
+    private(set) var pendingClearCount = 0
 
     func applyFooterMessage(_ message: UTIFooterMessage?) {
         appliedMessages.append(message)
+    }
+
+    func clearPendingFooterMessage() {
+        pendingClearCount += 1
     }
 }

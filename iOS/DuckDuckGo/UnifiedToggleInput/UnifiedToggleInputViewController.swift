@@ -483,6 +483,10 @@ extension UnifiedToggleInputViewController: UTIFooterPresenting {
         delegate?.unifiedToggleInputVCDidChangeHeight(self)
         view.superview?.layoutIfNeeded()
     }
+
+    func clearPendingFooterMessage() {
+        inputBarView.clearPendingFooterMessage()
+    }
 }
 
 // MARK: - UnifiedToggleInputViewDelegate

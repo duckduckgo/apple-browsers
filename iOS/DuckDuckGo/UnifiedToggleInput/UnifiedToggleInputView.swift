@@ -404,6 +404,11 @@ final class UnifiedToggleInputView: UIView {
         return true
     }
 
+    /// State-only: the visual slot release stays inside the pose animation.
+    func clearPendingFooterMessage() {
+        pendingFooterMessage = nil
+    }
+
     private func applyFooterForCardLayout(expanded: Bool) {
         guard expanded else {
             if bottomCardSlot == .footer {

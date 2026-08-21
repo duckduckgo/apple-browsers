@@ -24,6 +24,8 @@ import UIKit
 @MainActor
 protocol UTIFooterPresenting: AnyObject {
     func applyFooterMessage(_ message: UTIFooterMessage?)
+    /// State-only drop of a stored-but-unapplied message; must not touch layout or animate.
+    func clearPendingFooterMessage()
 }
 
 @MainActor
@@ -71,6 +73,9 @@ final class UTIFooterController {
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller reset for pose change")
         lastWarning = nil
         currentMessage = nil
+        // Keeps the view's copy in lockstep — otherwise a later refresh that resolves to no
+        // warning no-ops (nil == nil) and the view resurrects the stale card on the next expand.
+        presenter?.clearPendingFooterMessage()
     }
 
     func setSuppressed(_ suppressed: Bool) {

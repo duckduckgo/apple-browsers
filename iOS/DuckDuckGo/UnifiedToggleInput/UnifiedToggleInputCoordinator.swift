@@ -291,6 +291,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isFireTab: Bool = false,
         hidesToggleOnDuckAITab: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+        duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
         duckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter(),
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
         lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding? = nil,
@@ -345,14 +346,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.duckAIWideEventFlowScope = duckAIWideEventFlowScope
-        let resolvedFooterProvider = footerWarningProvider ?? duckAiNativeStorageHandler.map { handler in
-            UTIFooterWarningProvider(limitsStore: DuckAiUsageLimitsStore(storageHandler: handler,
-                                                                        featureFlagger: featureFlagger))
-        }
-        self.footerController = resolvedFooterProvider.map { UTIFooterController(provider: $0) }
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
                                                          isFireTab: isFireTab,
                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
+        let resolvedFooterProvider = footerWarningProvider ?? Self.makeStorageBackedFooterProvider(
+            normalTabStorageHandler: duckAiNativeStorageHandler,
+            fireTabStorageHandler: duckAiFireModeStorageHandler,
+            featureFlagger: featureFlagger,
+            isFireTab: { [handler = viewController.handler] in handler.isFireTab }
+        )
+        self.footerController = resolvedFooterProvider.map { UTIFooterController(provider: $0) }
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
@@ -880,6 +883,26 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     // MARK: - Footer Warning
+
+    /// One coordinator serves normal and fire tabs, so the usage snapshot source is
+    /// picked per read rather than bound at init (a fire tab must never read the normal one).
+    private static func makeStorageBackedFooterProvider(normalTabStorageHandler: DuckAiNativeStorageHandling?,
+                                                        fireTabStorageHandler: DuckAiNativeStorageHandling?,
+                                                        featureFlagger: FeatureFlagger,
+                                                        isFireTab: @escaping () -> Bool) -> UTIFooterWarningProviding? {
+        func makeProvider(_ storageHandler: DuckAiNativeStorageHandling?) -> UTIFooterWarningProviding? {
+            storageHandler.map {
+                UTIFooterWarningProvider(limitsStore: DuckAiUsageLimitsStore(storageHandler: $0,
+                                                                             featureFlagger: featureFlagger))
+            }
+        }
+        let normalTabProvider = makeProvider(normalTabStorageHandler)
+        let fireTabProvider = makeProvider(fireTabStorageHandler)
+        guard normalTabProvider != nil || fireTabProvider != nil else { return nil }
+        return UTIFireTabAwareFooterWarningProvider(normalTabProvider: normalTabProvider,
+                                                    fireTabProvider: fireTabProvider,
+                                                    isFireTab: isFireTab)
+    }
 
     private func refreshFooterSuppression() {
         let suppressed = isEditing || inputMode != .aiChat

@@ -41,3 +41,16 @@ struct UTIFooterWarningProvider: UTIFooterWarningProviding {
         return warning
     }
 }
+
+/// Picks the burner or persistent snapshot per read: one omnibar coordinator serves both
+/// normal and fire tabs, so a fire tab must never surface normal-session usage (or vice versa).
+struct UTIFireTabAwareFooterWarningProvider: UTIFooterWarningProviding {
+
+    let normalTabProvider: UTIFooterWarningProviding?
+    let fireTabProvider: UTIFooterWarningProviding?
+    let isFireTab: () -> Bool
+
+    func currentWarning() -> UTIFooterWarning? {
+        (isFireTab() ? fireTabProvider : normalTabProvider)?.currentWarning()
+    }
+}

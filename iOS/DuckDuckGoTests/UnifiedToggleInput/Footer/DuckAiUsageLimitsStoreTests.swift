@@ -128,3 +128,54 @@ final class UTIFooterWarningProviderTests: XCTestCase {
         return UTIFooterWarningProvider(limitsStore: store)
     }
 }
+
+final class UTIFireTabAwareFooterWarningProviderTests: XCTestCase {
+
+    private let normalWarning = UTIFooterWarning.usageThreshold(window: .weekly,
+                                                                threshold: .ninety,
+                                                                resetsAt: Date(timeIntervalSince1970: 1_800_172_800))
+    private let fireWarning = UTIFooterWarning.usageThreshold(window: .daily,
+                                                              threshold: .fifty,
+                                                              resetsAt: Date(timeIntervalSince1970: 1_800_086_400))
+
+    func test_currentWarning_readsTheNormalTabSourceOutsideAFireTab() {
+        let sut = makeProvider(isFireTab: { false })
+
+        XCTAssertEqual(sut.currentWarning(), normalWarning)
+    }
+
+    func test_currentWarning_readsTheFireTabSourceOnAFireTab() {
+        let sut = makeProvider(isFireTab: { true })
+
+        XCTAssertEqual(sut.currentWarning(), fireWarning)
+    }
+
+    func test_currentWarning_isNilOnAFireTabWithNoFireTabSource() {
+        let sut = UTIFireTabAwareFooterWarningProvider(normalTabProvider: StubUTIFooterWarningProvider(warning: normalWarning),
+                                                       fireTabProvider: nil,
+                                                       isFireTab: { true })
+
+        XCTAssertNil(sut.currentWarning())
+    }
+
+    func test_currentWarning_followsTheFireTabStateAcrossReads() {
+        var isFireTab = false
+        let sut = makeProvider(isFireTab: { isFireTab })
+
+        XCTAssertEqual(sut.currentWarning(), normalWarning)
+        isFireTab = true
+        XCTAssertEqual(sut.currentWarning(), fireWarning)
+    }
+
+    private func makeProvider(isFireTab: @escaping () -> Bool) -> UTIFireTabAwareFooterWarningProvider {
+        UTIFireTabAwareFooterWarningProvider(normalTabProvider: StubUTIFooterWarningProvider(warning: normalWarning),
+                                             fireTabProvider: StubUTIFooterWarningProvider(warning: fireWarning),
+                                             isFireTab: isFireTab)
+    }
+}
+
+private struct StubUTIFooterWarningProvider: UTIFooterWarningProviding {
+    let warning: UTIFooterWarning?
+
+    func currentWarning() -> UTIFooterWarning? { warning }
+}

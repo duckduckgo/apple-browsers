@@ -48,13 +48,17 @@ class HomeScreenTransition: TabSwitcherTransition {
             imageContainer.addSubview(snapshot)
             homeScreenSnapshotSourceSize = frameToSnapshot.size
             snapshot.frame = HomeScreenTransitionGeometry.snapshotFrame(for: frameToSnapshot.size,
-                                                                        in: imageContainer.bounds)
+                                                                        in: imageContainer.bounds,
+                                                                        isGridViewEnabled: tabSwitcherSettings.isGridViewEnabled)
             homeScreenSnapshot = snapshot
         }
     }
 
     fileprivate func homeScreenSnapshotFrame(in containerBounds: CGRect) -> CGRect {
-        HomeScreenTransitionGeometry.snapshotFrame(for: homeScreenSnapshotSourceSize ?? .zero, in: containerBounds)
+        HomeScreenTransitionGeometry.snapshotFrame(
+            for: homeScreenSnapshotSourceSize ?? .zero,
+            in: containerBounds,
+            isGridViewEnabled: tabSwitcherSettings.isGridViewEnabled)
     }
 
     fileprivate func tabSwitcherCellFrame(for attributes: UICollectionViewLayoutAttributes) -> CGRect {

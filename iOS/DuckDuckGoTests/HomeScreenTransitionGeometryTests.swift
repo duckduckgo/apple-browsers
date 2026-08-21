@@ -23,16 +23,16 @@ import UIKit
 
 final class HomeScreenTransitionGeometryTests: XCTestCase {
 
-    func testWhenListRowIsWiderThanThePageThenSnapshotScalesUniformlyAndStaysCentred() {
+    func testWhenListViewIsEnabledThenSnapshotFillsTheWidthAndCropsVertically() {
         let sourceSize = CGSize(width: 390, height: 800)
         let container = CGRect(x: 0, y: 0, width: 390, height: 68)
 
-        let frame = HomeScreenTransitionGeometry.snapshotFrame(for: sourceSize, in: container)
+        let frame = HomeScreenTransitionGeometry.snapshotFrame(
+            for: sourceSize,
+            in: container,
+            isGridViewEnabled: false)
 
-        XCTAssertEqual(frame.height, 68)
-        XCTAssertEqual(frame.width, 390 * (68 / 800), accuracy: 0.001)
-        XCTAssertEqual(frame.midX, container.midX, accuracy: 0.001)
-        XCTAssertEqual(frame.midY, container.midY, accuracy: 0.001)
+        XCTAssertEqual(frame, CGRect(x: 0, y: 0, width: 390, height: 800))
         XCTAssertEqual(frame.width / frame.height, sourceSize.width / sourceSize.height, accuracy: 0.001)
     }
 
@@ -40,7 +40,10 @@ final class HomeScreenTransitionGeometryTests: XCTestCase {
         let sourceSize = CGSize(width: 390, height: 800)
         let container = CGRect(x: 10, y: 20, width: 180, height: 240)
 
-        let frame = HomeScreenTransitionGeometry.snapshotFrame(for: sourceSize, in: container)
+        let frame = HomeScreenTransitionGeometry.snapshotFrame(
+            for: sourceSize,
+            in: container,
+            isGridViewEnabled: true)
 
         XCTAssertEqual(frame.width, 180 * (240 / 800), accuracy: 0.001)
         XCTAssertEqual(frame.height, 240)
@@ -51,12 +54,22 @@ final class HomeScreenTransitionGeometryTests: XCTestCase {
 
     func testWhenSourceSizeIsZeroThenFrameFillsTheContainer() {
         let container = CGRect(x: 4, y: 8, width: 180, height: 68)
-        XCTAssertEqual(HomeScreenTransitionGeometry.snapshotFrame(for: .zero, in: container), container)
+        XCTAssertEqual(
+            HomeScreenTransitionGeometry.snapshotFrame(
+                for: .zero,
+                in: container,
+                isGridViewEnabled: false),
+            container)
     }
 
     func testWhenSourceSizeIsNonFiniteThenFrameFillsTheContainer() {
         let container = CGRect(x: 0, y: 0, width: 180, height: 68)
         let infinite = CGSize(width: CGFloat.infinity, height: 800)
-        XCTAssertEqual(HomeScreenTransitionGeometry.snapshotFrame(for: infinite, in: container), container)
+        XCTAssertEqual(
+            HomeScreenTransitionGeometry.snapshotFrame(
+                for: infinite,
+                in: container,
+                isGridViewEnabled: false),
+            container)
     }
 }

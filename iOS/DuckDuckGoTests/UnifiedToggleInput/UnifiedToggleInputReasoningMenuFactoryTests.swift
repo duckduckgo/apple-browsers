@@ -75,17 +75,14 @@ final class UnifiedToggleInputReasoningMenuFactoryTests: XCTestCase {
 
     func testWhenUpdatedModelPickerIsEnabledThenMenuGroupsGatedModes() throws {
         sut = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: true)
-        let model = makeReasoningModel(
-            id: "gpt-5.2",
-            supportedReasoningEffort: [.none, .low, .medium],
-            reasoningEffortAccess: [
-                AIChatReasoningEffortAccess(effort: .none, accessTier: ["free"], entityHasAccess: true),
-                AIChatReasoningEffortAccess(effort: .low, accessTier: ["free"], entityHasAccess: true),
-                AIChatReasoningEffortAccess(effort: .medium, accessTier: ["plus"], entityHasAccess: false)
-            ]
-        )
+        let model = makeModelWithGatedExtendedReasoning()
 
-        let menu = try XCTUnwrap(sut.makeMenu(model: model, selectedMode: .fast, userTier: .free) { _ in })
+        let menu = try XCTUnwrap(sut.makeMenu(
+            model: model,
+            selectedMode: .fast,
+            userTier: .free,
+            freeTrialEligibility: .unknown,
+            onSelect: { _ in }))
         let availableActions = menu.children.compactMap { $0 as? UIAction }
         let gatedSection = try XCTUnwrap(menu.children.compactMap { $0 as? UIMenu }.first)
 
@@ -94,7 +91,34 @@ final class UnifiedToggleInputReasoningMenuFactoryTests: XCTestCase {
         XCTAssertEqual(gatedSection.children.compactMap { ($0 as? UIAction)?.title }, ["Extended Reasoning…"])
     }
 
+    func testWhenUpdatedMenuFreeUserIsIneligibleForTrialThenUsesSubscriberExclusiveTitle() throws {
+        sut = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: true)
+        let model = makeModelWithGatedExtendedReasoning()
+
+        let menu = try XCTUnwrap(sut.makeMenu(
+            model: model,
+            selectedMode: .fast,
+            userTier: .free,
+            freeTrialEligibility: .ineligible,
+            onSelect: { _ in }))
+        let gatedSection = try XCTUnwrap(menu.children.compactMap { $0 as? UIMenu }.first)
+
+        XCTAssertEqual(gatedSection.title, UserText.aiChatModelPickerSubscriberExclusive)
+    }
+
     // MARK: - Helpers
+
+    private func makeModelWithGatedExtendedReasoning() -> AIChatModel {
+        makeReasoningModel(
+            id: "gpt-5.2",
+            supportedReasoningEffort: [.none, .low, .medium],
+            reasoningEffortAccess: [
+                AIChatReasoningEffortAccess(effort: .none, accessTier: ["free"], entityHasAccess: true),
+                AIChatReasoningEffortAccess(effort: .low, accessTier: ["free"], entityHasAccess: true),
+                AIChatReasoningEffortAccess(effort: .medium, accessTier: ["plus"], entityHasAccess: false)
+            ]
+        )
+    }
 
     private func makeReasoningModel(
         id: String,

@@ -128,7 +128,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertEqual(gatedSection?.title, UserText.aiChatModelPickerTryFree)
     }
 
-    func testWhenUpdatedModelPickerIsEnabledForPlusUserThenGatedSectionUsesProTitle() throws {
+    func testWhenUpdatedModelPickerIsEnabledForPlusUserThenGatedSectionUsesProPlanExclusiveTitle() throws {
         sut = makeSUTWithUpdatedModelPickerEnabled(userTier: .plus)
         sut.modelStore.models = [
             makeModel(id: "pro", shortName: "Pro", entityHasAccess: false, accessTier: ["pro"])
@@ -137,7 +137,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         let menu = try XCTUnwrap(sut.makeMenu { _ in })
         let gatedSection = menu.children.compactMap { $0 as? UIMenu }.first
 
-        XCTAssertEqual(gatedSection?.title, UserText.aiChatModelPickerAvailableWithPro)
+        XCTAssertEqual(gatedSection?.title, UserText.aiChatModelPickerProPlanExclusive)
     }
 
     @available(iOS 16.0, *)

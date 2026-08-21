@@ -50,10 +50,6 @@ struct NetworkProtectionVPNSettingsView: View {
 
     private let strictRoutingRowID = "strictRoutingRow"
 
-    private var showsCopyDiagnosticsButton: Bool {
-        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnShowCopyDiagnosticsButton)
-    }
-
     var body: some View {
         VStack {
             ScrollViewReader { proxy in
@@ -71,11 +67,9 @@ struct NetworkProtectionVPNSettingsView: View {
                               footerText: UserText.netPExcludeLocalNetworksSettingFooter,
                               isOn: $viewModel.excludeLocalNetworks)
 
-                if viewModel.isExcludeCGNATAvailable {
-                    toggleSection(text: UserText.netPExcludeCGNATSettingTitle,
-                                  footerText: UserText.netPExcludeCGNATSettingFooter,
-                                  isOn: $viewModel.excludeCGNAT)
-                }
+                toggleSection(text: UserText.netPExcludeCGNATSettingTitle,
+                              footerText: UserText.netPExcludeCGNATSettingFooter,
+                              isOn: $viewModel.excludeCGNAT)
 
                 if viewModel.isStrictRoutingAvailable {
                     toggleSection(text: UserText.netPStrictRoutingSettingTitle,
@@ -86,9 +80,7 @@ struct NetworkProtectionVPNSettingsView: View {
 
                 dnsSection()
 
-                if showsCopyDiagnosticsButton {
-                    diagnostics()
-                }
+                diagnostics()
             }
             .onAppear {
                 Task {

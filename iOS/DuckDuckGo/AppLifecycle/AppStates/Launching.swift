@@ -340,6 +340,7 @@ struct Launching: LaunchingHandling {
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               customConfigurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                               didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
+                                              isAppLaunchedInBackground: isAppLaunchedInBackground,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
                                               daxDialogsManager: daxDialogs,

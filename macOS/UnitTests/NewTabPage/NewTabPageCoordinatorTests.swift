@@ -23,9 +23,8 @@ import FoundationExtensions
 import History
 import HistoryView
 import NewTabPage
-import PersistenceTestingUtils
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyStats

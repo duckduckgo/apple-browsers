@@ -22,7 +22,7 @@ import PrivacyConfig
 @testable import Core
 @testable import DuckDuckGo
 import Combine
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 final class SwitchBarHandlerTests: XCTestCase {
 

@@ -19,8 +19,7 @@
 
 import XCTest
 @testable import DuckDuckGo
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 final class SwitchBarFunnelTests: XCTestCase {
     

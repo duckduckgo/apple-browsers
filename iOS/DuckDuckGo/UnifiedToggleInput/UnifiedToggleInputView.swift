@@ -22,6 +22,7 @@ import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
+import os.log
 import UIKit
 
 // MARK: - Delegate Protocol
@@ -131,6 +132,9 @@ final class UnifiedToggleInputView: UIView {
         /// Spacing between the inline dismiss button and the field's leading content when the
         /// dismiss shares the field row (toggle disabled, top position).
         static let fieldRowInlineDismissSpacing: CGFloat = 4
+
+        static let footerContentFadeDelay: TimeInterval = 0.06
+        static let footerContentFadeDuration: TimeInterval = 0.15
 
         static let editDisclaimerOverlap: CGFloat = 44
         static let editDisclaimerTopGap: CGFloat = 12
@@ -347,6 +351,8 @@ final class UnifiedToggleInputView: UIView {
     var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
+    var onFooterPrimaryTapped: (() -> Void)?
+    var onFooterDismissTapped: (() -> Void)?
 
     // MARK: - Attachment API
 
@@ -362,10 +368,87 @@ final class UnifiedToggleInputView: UIView {
 
     private func setEditReplaceDisclaimerCardVisible(_ visible: Bool) {
         editReplaceDisclaimerCard.isHidden = !visible
-        cardBottomConstraint.isActive = !visible
-        cardEditBottomConstraint.isActive = visible
-        expandedShadowBottomConstraint.isActive = !visible
-        expandedShadowEditBottomConstraint.isActive = visible
+        applyBottomSlot(visible ? .editDisclaimer : .none)
+    }
+
+    // MARK: - Footer Warning Card
+
+    private enum BottomCardSlot {
+        case none
+        case editDisclaimer
+        case footer
+    }
+
+    private var bottomCardSlot: BottomCardSlot = .none
+
+    private var pendingFooterMessage: UTIFooterMessage?
+
+    @discardableResult
+    func setFooterMessage(_ message: UTIFooterMessage?) -> Bool {
+        pendingFooterMessage = message
+        guard let message else {
+            let wasShowingFooter = bottomCardSlot == .footer
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] view clearing footer (wasShowing=\(wasShowingFooter, privacy: .public))")
+            applyBottomSlot(editReplaceDisclaimerCard.isHidden ? .none : .editDisclaimer)
+            return wasShowingFooter
+        }
+        guard editReplaceDisclaimerCard.isHidden else {
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] view rejected: edit disclaimer owns the slot")
+            return false
+        }
+        guard isExpanded else {
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] view deferred: card not expanded yet (layout=\(String(describing: self.currentLayout), privacy: .public)) — the pose animation will pick it up")
+            return false
+        }
+        applyPendingFooterMessage(message)
+        return true
+    }
+
+    /// State-only: the visual slot release stays inside the pose animation.
+    func clearPendingFooterMessage() {
+        pendingFooterMessage = nil
+    }
+
+    private func applyFooterForCardLayout(expanded: Bool) {
+        guard expanded else {
+            if bottomCardSlot == .footer {
+                Logger.duckAIUsageWarnings.debug("[UsageWarnings] view releasing slot: card no longer expanded")
+                applyBottomSlot(.none)
+            }
+            return
+        }
+        guard let pending = pendingFooterMessage,
+              bottomCardSlot != .footer,
+              editReplaceDisclaimerCard.isHidden else { return }
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] view joining expand animation with pending message")
+        applyPendingFooterMessage(pending)
+        onNeedsHierarchyLayout?()
+    }
+
+    private func applyPendingFooterMessage(_ message: UTIFooterMessage) {
+        let wasVisible = bottomCardSlot == .footer
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] view showing footer '\(message.title, privacy: .public)' (wasVisible=\(wasVisible, privacy: .public))")
+        footerCard.configure(with: message, animateIcon: wasVisible)
+        applyBottomSlot(.footer)
+        guard !wasVisible else { return }
+        footerCard.contentView.alpha = 0
+        UIView.animate(withDuration: Constants.footerContentFadeDuration,
+                       delay: Constants.footerContentFadeDelay,
+                       options: [.curveLinear, .beginFromCurrentState]) {
+            self.footerCard.contentView.alpha = 1
+        }
+    }
+
+    private func applyBottomSlot(_ slot: BottomCardSlot) {
+        bottomCardSlot = slot
+        cardBottomConstraint.isActive = slot == .none
+        cardEditBottomConstraint.isActive = slot == .editDisclaimer
+        cardFooterBottomConstraint.isActive = slot == .footer
+        expandedShadowBottomConstraint.isActive = slot == .none
+        expandedShadowEditBottomConstraint.isActive = slot == .editDisclaimer
+        expandedShadowFooterBottomConstraint.isActive = slot == .footer
+        footerCollapsedHeightConstraint.isActive = slot != .footer
+        footerCard.alpha = slot == .footer ? 1 : 0
     }
 
     private static func makeEditReplaceDisclaimerCard() -> UIView {
@@ -481,6 +564,7 @@ final class UnifiedToggleInputView: UIView {
     private let toolsToolbar = UnifiedToggleInputToolbarView()
 
     private lazy var editReplaceDisclaimerCard = Self.makeEditReplaceDisclaimerCard()
+    private let footerCard = UTIFooterCardView()
     private var pageContextChipCancellables = Set<AnyCancellable>()
 
     private lazy var aiTabCollapsedFireButton: UIButton = {
@@ -614,8 +698,11 @@ final class UnifiedToggleInputView: UIView {
     private var cardTrailingFlankedConstraint: NSLayoutConstraint!
     private var cardBottomConstraint: NSLayoutConstraint!
     private var cardEditBottomConstraint: NSLayoutConstraint!
+    private var cardFooterBottomConstraint: NSLayoutConstraint!
     private var expandedShadowBottomConstraint: NSLayoutConstraint!
     private var expandedShadowEditBottomConstraint: NSLayoutConstraint!
+    private var expandedShadowFooterBottomConstraint: NSLayoutConstraint!
+    private var footerCollapsedHeightConstraint: NSLayoutConstraint!
     private var cardPinnedHeightConstraint: NSLayoutConstraint!
     private var toggleTopConstraint: NSLayoutConstraint!
     private var toggleLeadingConstraint: NSLayoutConstraint!
@@ -911,7 +998,8 @@ final class UnifiedToggleInputView: UIView {
         cardTopConstraint.priority = .required
         // Flanked: hide the in-pill voice icon (external accessories flank the pill, voice is in the Plus menu).
         // Snap synchronously so the focus animation drives the transition — animating here would snapshot at the old layout and drift.
-        textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : .aiVoicePlain), animated: false)
+        let collapsedVoice: SwitchBarTextEntryView.VoiceButtonAppearance = handler.prefersDictationOverVoiceChat ? .microphone : .aiVoicePlain
+        textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : collapsedVoice), animated: false)
         if layout != .flanked {
             // Non-flanked: card spans full width, so external fire/menu must hide. The reverse is `setAITabCollapsedFooterPoseActive` (fades in).
             aiTabCollapsedFireButton.isHidden = true
@@ -1022,6 +1110,7 @@ final class UnifiedToggleInputView: UIView {
             self.toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
             self.updateAttachmentsStripLayout()
+            self.applyFooterForCardLayout(expanded: expanded)
         }
 
         if animated {
@@ -1487,12 +1576,19 @@ private extension UnifiedToggleInputView {
         cardView.isUserInteractionEnabled = false
         addSubview(cardView)
         insertSubview(editReplaceDisclaimerCard, belowSubview: cardView)
+        footerCard.translatesAutoresizingMaskIntoConstraints = false
+        footerCard.alpha = 0
+        footerCard.onPrimaryTap = { [weak self] in self?.onFooterPrimaryTapped?() }
+        footerCard.onDismissTap = { [weak self] in self?.onFooterDismissTapped?() }
+        insertSubview(footerCard, belowSubview: cardView)
         addSubview(aiTabCollapsedFireButton)
         addSubview(aiTabCollapsedMenuButton)
 
         expandedShadowBottomConstraint = expandedShadowView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
         expandedShadowEditBottomConstraint = expandedShadowView.bottomAnchor.constraint(equalTo: editReplaceDisclaimerCard.bottomAnchor)
         expandedShadowEditBottomConstraint.isActive = false
+        expandedShadowFooterBottomConstraint = expandedShadowView.bottomAnchor.constraint(equalTo: footerCard.bottomAnchor)
+        expandedShadowFooterBottomConstraint.isActive = false
         NSLayoutConstraint.activate([
             expandedShadowView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             expandedShadowView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
@@ -1606,6 +1702,10 @@ private extension UnifiedToggleInputView {
         cardBottomConstraint = cardView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.collapsedCardBottomMargin)
         cardEditBottomConstraint = cardView.bottomAnchor.constraint(equalTo: editReplaceDisclaimerCard.topAnchor, constant: Constants.editDisclaimerOverlap)
         cardEditBottomConstraint.isActive = false
+        cardFooterBottomConstraint = cardView.bottomAnchor.constraint(equalTo: footerCard.topAnchor, constant: UTIFooterCardView.overlap)
+        cardFooterBottomConstraint.isActive = false
+        footerCollapsedHeightConstraint = footerCard.heightAnchor.constraint(equalToConstant: UTIFooterCardView.overlap)
+        footerCollapsedHeightConstraint.isActive = true
         cardPinnedHeightConstraint = cardView.heightAnchor.constraint(equalToConstant: Constants.collapsedCardHeight)
         cardPinnedHeightConstraint.priority = .defaultHigh
         cardPinnedHeightConstraint.isActive = true
@@ -1636,6 +1736,10 @@ private extension UnifiedToggleInputView {
             cardLeadingConstraint,
             cardTrailingConstraint,
             cardBottomConstraint,
+
+            footerCard.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            footerCard.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            footerCard.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.cardVerticalMarginBottom),
 
             editReplaceDisclaimerCard.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             editReplaceDisclaimerCard.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),

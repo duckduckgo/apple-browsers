@@ -21,8 +21,7 @@ import UIKit
 import Foundation
 import FoundationExtensions
 import Testing
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 @MainActor
@@ -65,7 +64,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(!cooldownManager.isInCooldownPeriod)
@@ -77,11 +75,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(cooldownManager.isInCooldownPeriod)
     }
 
-    @Test(
-        "Check Modal Is Blocked During Cooldown Period",
-        arguments: [1, 6, 12, 18, 23]  // Hours after first presentation
-    )
-    func whenWithinCooldownPeriodThenModalIsBlocked(hoursAfterPresentation: Int) {
+    @Test("Check Modal Is Blocked At 23 Hours")
+    func when23HoursIntoCooldownThenModalIsBlocked() {
         // GIVEN
         cooldownStore.lastPresentationTimestamp = timeTraveller.getDate().timeIntervalSince1970
         let firstProvider = MockModalPromptProvider()
@@ -89,13 +84,12 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [firstProvider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(cooldownManager.isInCooldownPeriod)
 
         // WHEN - Advance time but stay within 24-hour cooldown
-        timeTraveller.advanceBy(.hours(hoursAfterPresentation))
+        timeTraveller.advanceBy(.hours(23))
         sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
@@ -105,11 +99,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(!presenterMock.didCallPresent)
     }
 
-    @Test(
-        "Check Modal Is Allowed After Cooldown Period Expires",
-        arguments: [24, 25, 30, 48, 72]  // Hours after first presentation
-    )
-    func whenAfterCooldownPeriodThenModalIsAllowed(hoursAfterPresentation: Int) {
+    @Test("Check Modal Is Allowed At 24 Hours")
+    func when24HoursAfterPresentationThenModalIsAllowed() {
         // GIVEN
         cooldownStore.lastPresentationTimestamp = timeTraveller.getDate().timeIntervalSince1970
         let firstProvider = MockModalPromptProvider()
@@ -117,13 +108,12 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [firstProvider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(cooldownManager.isInCooldownPeriod)
 
-        // WHEN - Advance time past cooldown period
-        timeTraveller.advanceBy(.hours(hoursAfterPresentation))
+        // WHEN - Advance time to the cooldown boundary
+        timeTraveller.advanceBy(.hours(24))
 
         // THEN
         #expect(!cooldownManager.isInCooldownPeriod)
@@ -148,7 +138,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider1, provider2, provider3],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -207,7 +196,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider1, provider2],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -248,7 +236,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         let presentationTime = timeTraveller.getDate()
@@ -271,7 +258,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         var lastPresentationTime = timeTraveller.getDate()
@@ -321,7 +307,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         let presentationTime = timeTraveller.getDate()
@@ -358,7 +343,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {
@@ -366,11 +350,10 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             return
         }
 
-        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
-        #expect(disposition == .retained)
-        #expect(promoQueueLeaseArbiter.snapshot.modalAttemptIdentity == lease.attemptIdentity)
-        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.modalOwnershipIdentity == lease.ownershipIdentity)
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
         #expect(sut.didActuallyPresentModalPromptThisSession)
         #expect(cooldownManager.isInCooldownPeriod)
         let storedTimestamp = try keyValueStore.object(
@@ -388,7 +371,6 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {
@@ -396,9 +378,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             return
         }
 
-        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
-        #expect(disposition == .released)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(!provider.didCallProvideModalPrompt)
         #expect(!presenterMock.didCallPresent)

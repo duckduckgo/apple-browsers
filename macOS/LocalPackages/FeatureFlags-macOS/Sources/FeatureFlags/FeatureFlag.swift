@@ -65,14 +65,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates the "Strict routing" VPN toggle.
     case vpnStrictRoutingToggle
 
-    /// Gates the "Exclude Carrier-Grade NAT" VPN toggle.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
-    case vpnExcludeCGNATToggle
-
-    /// Toggle for the Copy VPN Diagnostics button in VPN settings.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
-    case vpnShowCopyDiagnosticsButton
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
@@ -113,6 +105,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614764239
     case tabCrashDebugging
+
+    /// Gates the `debug://` custom URL scheme handler and Debug menu entries for UI test / debug pages.
+    case debugURLScheme
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
@@ -232,6 +227,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477623612
     case dataImportNewExperience
+
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1217589459874947
+    case dataImportDataDirectoryAccess
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
@@ -564,7 +562,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                    cohortType: OnboardingSubscriptionUpsellCohort.self,
                    category: .subscription)
         case .fireDialogSimplified:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
         case .unknownUsernameCategorization:
             Config(source: .remoteReleasable(AutofillSubfeature.unknownUsernameCategorization), supportsLocalOverriding: false)
         case .credentialsImportPromotionForExistingUsers:
@@ -575,10 +573,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtensionMessage), category: .vpn)
         case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle), category: .vpn)
-        case .vpnExcludeCGNATToggle:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT), category: .vpn)
-        case .vpnShowCopyDiagnosticsButton:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.showCopyDiagnosticsButton), category: .vpn)
         case .autoUpdateInDEBUG:
             Config(source: .disabled, category: .updates)
         case .autoUpdateInREVIEW:
@@ -602,6 +596,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncSeamlessAccountSwitching:
             Config(source: .remoteReleasable(SyncSubfeature.seamlessAccountSwitching), category: .sync)
         case .tabCrashDebugging:
+            Config(source: .disabled)
+        case .debugURLScheme:
             Config(source: .disabled)
         case .delayedWebviewPresentation:
             Config(defaultValue: .enabled, source: .remoteReleasable(DelayedWebviewPresentationSubfeature.featureEnabled))
@@ -677,6 +673,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.addressBarIMEConfirmFix))
         case .dataImportNewExperience:
             Config(source: .remoteReleasable(DataImportSubfeature.newDataImportExperience))
+        case .dataImportDataDirectoryAccess:
+            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.dataDirectoryAccess))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .standaloneMigration:

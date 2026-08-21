@@ -161,7 +161,7 @@ private extension AutocompleteTests {
 
         addressBarTextField.typeURL(urlForBookmarks)
         XCTAssertTrue(
-            app.windows.webViews[siteTitleForBookmarkedSite].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[siteTitleForBookmarkedSite].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
@@ -191,8 +191,14 @@ private extension AutocompleteTests {
             "Fire dialog didn't appear in a reasonable timeframe."
         )
 
-        // Select "Everything" scope to clear all history
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        // Select "All data" scope to clear all history
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        let detailsDisclosureButton = app.fireDialogDetailsDisclosureButton
+        if (detailsDisclosureButton.value as? String) != "expanded" {
+            detailsDisclosureButton.click()
+        }
 
         // Ensure history, cookies, and tabs toggles are enabled
         let fireDialogHistoryToggle = app.fireDialogHistoryToggle
@@ -221,7 +227,7 @@ private extension AutocompleteTests {
 
         addressBarTextField.typeURL(urlForHistory)
         XCTAssertTrue(
-            app.windows.webViews[siteTitleForHistorySite].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[siteTitleForHistorySite].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         app.enforceSingleWindow()

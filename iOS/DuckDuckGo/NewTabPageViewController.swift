@@ -101,7 +101,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
-         promoCoordinator: NewTabPagePromoCoordinating,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
@@ -136,7 +135,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
-                                                promoCoordinator: promoCoordinator,
                                                 isOpenedAfterIdle: { [weak viewModel] in viewModel?.openedAfterIdle ?? false })
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
@@ -666,7 +664,7 @@ extension NewTabPageViewController {
         // false on the duck.ai suggestion path (openAIChatFromOnboarding never sets it).
         if spec == .final, UnifiedToggleInputFeature().isAvailable,
            !daxDialogsManager.tryAnonymousSearchMessageSeen {
-            chromeDelegate?.omniBar.beginEditing(animated: false)
+            chromeDelegate?.omniBar.beginEditing(animated: false, forTextEntryMode: .aiChat)
         }
 
         let onDismiss: (_ activateSearch: Bool) -> Void = { [weak self] activateSearch in

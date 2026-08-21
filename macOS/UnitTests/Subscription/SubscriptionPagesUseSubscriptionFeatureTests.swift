@@ -25,8 +25,7 @@ import SubscriptionTestingUtilities
 import WebKit
 import XCTest
 import UserScript
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription

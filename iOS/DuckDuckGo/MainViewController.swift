@@ -89,6 +89,22 @@ struct StartupOnboardingDecision {
     }
 }
 
+enum FloatingGlassAppearancePolicy {
+
+    static func interfaceStyle(isFireMode: Bool,
+                               traitCollection: UITraitCollection,
+                               pageBackgroundColor: UIColor?) -> UIUserInterfaceStyle {
+        if isFireMode || traitCollection.userInterfaceStyle == .dark {
+            return .dark
+        }
+        guard let pageBackgroundColor else {
+            return .light
+        }
+        let resolvedColor = pageBackgroundColor.resolvedColor(with: traitCollection)
+        return resolvedColor.brightnessPercentage < 50 ? .dark : .light
+    }
+}
+
 class MainViewController: UIViewController {
 
     /// iOS may deliver buffered accelerometer data as a spurious shake when returning from background.
@@ -272,14 +288,10 @@ class MainViewController: UIViewController {
     }
 
     private var settledFloatingGlassInterfaceStyle: UIUserInterfaceStyle {
-        if traitCollection.userInterfaceStyle == .dark {
-            return .dark
-        }
-        guard let pageBackgroundColor = currentTab?.webView?.underPageBackgroundColor else {
-            return .light
-        }
-        let resolvedColor = pageBackgroundColor.resolvedColor(with: traitCollection)
-        return resolvedColor.brightnessPercentage < 50 ? .dark : .light
+        FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: tabManager.currentBrowsingMode == .fire,
+            traitCollection: traitCollection,
+            pageBackgroundColor: currentTab?.webView?.underPageBackgroundColor)
     }
 
     private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool, topInset: CGFloat) = (false, false, -1)

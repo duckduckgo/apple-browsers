@@ -124,6 +124,49 @@ final class FloatingUIManagerTests: XCTestCase {
 
 }
 
+final class FloatingGlassAppearancePolicyTests: XCTestCase {
+
+    func testWhenFireModeIsActiveThenInterfaceStyleIsDarkRegardlessOfDeviceAndPageAppearance() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: true,
+            traitCollection: UITraitCollection(userInterfaceStyle: .light),
+            pageBackgroundColor: .white)
+
+        XCTAssertEqual(interfaceStyle, .dark)
+    }
+
+    func testWhenNormalModeUsesDarkDeviceAppearanceThenInterfaceStyleIsDark() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: false,
+            traitCollection: UITraitCollection(userInterfaceStyle: .dark),
+            pageBackgroundColor: .white)
+
+        XCTAssertEqual(interfaceStyle, .dark)
+    }
+
+    func testWhenNormalModeUsesLightDeviceAppearanceThenInterfaceStyleFollowsPageAppearance() {
+        let traitCollection = UITraitCollection(userInterfaceStyle: .light)
+
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .black),
+                       .dark)
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .white),
+                       .light)
+    }
+
+    func testWhenNormalModeHasNoPageColorThenInterfaceStyleIsLight() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: false,
+            traitCollection: UITraitCollection(userInterfaceStyle: .light),
+            pageBackgroundColor: nil)
+
+        XCTAssertEqual(interfaceStyle, .light)
+    }
+}
+
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
     func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {

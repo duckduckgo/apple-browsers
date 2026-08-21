@@ -465,8 +465,8 @@ class FireExecutor: FireExecuting {
         await dataStoreWarmupWorker.setApplicationState(applicationState)
         await dataStoreWarmupWorker.execute(scope: scope, domains: domains, fireModeCapability: fireModeCapability)
         
-        let pixel = dataClearingTimedPixel(for: scope)
-        
+        let measurement = pixelsReporter.beginMeasurement()
+
         await withTaskGroup(of: Void.self) { group in
             for worker in fireWorkers {
                 group.addTask {
@@ -474,43 +474,32 @@ class FireExecutor: FireExecuting {
                 }
             }
         }
-        let params = dataClearingPixelParams(for: scope, domains: domains)
-        pixel?.fire(withAdditionalParameters: params)
+        let duration = pixelsReporter.duration(of: measurement)
+        pixelsReporter.fireDataClearingCompletionPixel(dataClearingCompletionPixel(for: scope,
+                                                                                  domains: domains,
+                                                                                  duration: duration))
     }
-    
-    private func dataClearingTimedPixel(for scope: FireRequest.Scope) -> TimedPixel? {
-        switch scope {
-        case .tab:
-            return TimedPixel(.singleTabDataCleared)
-        case .fireMode:
-            return TimedPixel(.fireModeDataCleared)
-        case .normalMode:
-            return TimedPixel(.normalModeDataCleared)
-        case .all:
-            return TimedPixel(.forgetAllDataCleared)
-        }
-    }
-    
+
     @MainActor
-    private func dataClearingPixelParams(for scope: FireRequest.Scope, domains: [String]?) -> [String: String] {
-        let tabsModel: TabsModelReading?
+    private func dataClearingCompletionPixel(for scope: FireRequest.Scope,
+                                             domains: [String]?,
+                                             duration: TimeInterval) -> DataClearingCompletionPixels {
         switch scope {
         case .tab(let viewModel):
-            let tabType = viewModel.tab.isAITab ? "ai" : "web"
-            return [
-                PixelParameters.tabType: tabType,
-                PixelParameters.domainsCount: "\(domains?.count ?? 0)",
-                PixelParameters.browsingMode: viewModel.tab.pixelParamValue
-            ]
+            return .singleTabDataCleared(duration: duration,
+                                         tabType: viewModel.tab.isAITab ? "ai" : "web",
+                                         browsingMode: viewModel.tab.pixelParamValue,
+                                         domainsCount: domains?.count ?? 0)
         case .fireMode:
-            tabsModel = self.tabManager.tabsModel(for: .fire)
+            return .fireModeDataCleared(duration: duration,
+                                        tabCount: self.tabManager.tabsModel(for: .fire).count)
         case .normalMode:
-            tabsModel = self.tabManager.tabsModel(for: .normal)
+            return .normalModeDataCleared(duration: duration,
+                                          tabCount: self.tabManager.tabsModel(for: .normal).count)
         case .all:
-            tabsModel = self.tabManager.allTabsModel
+            return .allDataCleared(duration: duration,
+                                   tabCount: self.tabManager.allTabsModel.count)
         }
-        return [PixelParameters.tabCount: "\(tabsModel?.count ?? 0)"]
-
     }
     
     // MARK: - Clear AI History

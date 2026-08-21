@@ -10,7 +10,7 @@
             "type": "object",
             "required": ["type", "version"],
             "additionalProperties": false,
-            "properties": { "type": { "const": "ios-duckai-selection-journey" }, "version": { "const": "1.1.0" } }
+            "properties": { "type": { "const": "ios-duckai-selection-journey" }, "version": { "const": "1.2.0" } }
         },
         "app": {
             "type": "object",
@@ -69,6 +69,7 @@
                                                 "new_chat",
                                                 "chat_cleared",
                                                 "tab_closed",
+                                                "moved_to_tab",
                                                 "session_expired"
                                             ]
                                         }

@@ -38,19 +38,30 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     private let featureFlagger: FeatureFlagger
 
     /// NTP reuses one webview per window rather than creating a fresh one per "new tab", so an
-    /// already-open tab has no other way to notice a purchase completing mid-session.
+    /// already-open tab has no other way to notice its tier changing mid-session. The address bar
+    /// gets this for free by rebuilding its menu on every open.
+    ///
+    /// All four signals matter: a purchase or renewal posts `subscriptionDidChange`, losing or
+    /// gaining a plan posts `entitlementsDidChange`, and signing out or in posts the account
+    /// notifications without either of the other two.
+    private static let modelsDidChangeNotifications: [Notification.Name] = [
+        .subscriptionDidChange, .entitlementsDidChange, .accountDidSignIn, .accountDidSignOut
+    ]
+
     var modelsDidChangePublisher: AnyPublisher<Void, Never> {
-        NotificationCenter.default.publisher(for: .subscriptionDidChange)
+        Publishers.MergeMany(Self.modelsDidChangeNotifications.map { NotificationCenter.default.publisher(for: $0) })
             .map { _ in () }
+            // Sign-out posts two of these back to back; one refetch is enough.
+            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
 
     init(
-        modelsService: AIChatModelsProviding = AIChatModelsService(),
+        modelsService: AIChatModelsProviding? = nil,
         subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
-        self.modelsService = modelsService
+        self.modelsService = modelsService ?? AIChatModelsService(accessTokenProvider: subscriptionManager)
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
     }
@@ -63,10 +74,10 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             isEligibleForFreeTrial = userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
             let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
 
-            // Flat, ordered accessible list mirrors the address bar's `modelPickerItems` — the old
-            // Basic/Advanced split left a stray empty section for tiers with both kinds (e.g. Pro).
+            // Recommended = backend-labelled models, shown first with the label as a subtitle.
             let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
-            let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(accessible, userTier: userTier)
+            let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
+            let ordered = recommended + rest
 
             var result: [NewTabPageDataModel.AIModelSection] = []
             if !ordered.isEmpty {
@@ -79,10 +90,9 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             }
 
             if !gated.isEmpty {
-                // Mirrors the address bar: a free user's gated section mixes Plus+Pro models
-                // ("Subscriber Exclusive"), while a Plus user's is Pro-only ("Pro Exclusive").
-                let header = userTier == .free ? UserText.aiChatModelPickerSubscriberExclusive
-                                                : UserText.aiChatModelPickerProExclusive
+                let header = isSubscriptionUpsellEnabled
+                    ? AIChatPickerSectionCopy.gatedModelsHeader(userTier: userTier, isEligibleForFreeTrial: isEligibleForFreeTrial)
+                    : nil
                 result.append(
                     NewTabPageDataModel.AIModelSection(
                         header: header,
@@ -106,13 +116,15 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             id: model.id,
             name: model.name,
             shortName: model.shortName,
+            // Gated rows never show a subtitle, matching the address bar's `gatedModel` (no subtitle param).
+            description: requiredTier == nil ? AIChatPickerSectionCopy.subtitle(for: model.label) : nil,
             isAvailable: model.entityHasAccess,
             supportsImageUpload: model.supportsImageUpload,
             supportedTools: model.supportedTools.map(\.rawValue),
             accessTier: accessTierString(for: model),
             reasoningEfforts: reasoningEfforts(for: model, userTier: userTier),
             supportedFileTypes: model.supportedFileTypes,
-            upsell: requiredTier.flatMap { upsellString(for: userTier.upgradeFlow(for: $0)) }
+            upsell: upsellString(forRequiredTier: requiredTier, userTier: userTier)
         )
     }
 
@@ -124,18 +136,41 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     }
 
     private func reasoningEfforts(for model: AIChatModel, userTier: AIChatUserTier) -> [NewTabPageDataModel.AIModelReasoningEffort] {
-        model.availableReasoningModes.compactMap { mode in
+        var titledGatedSection = false
+        return model.availableReasoningModes.compactMap { mode in
             guard let effort = model.reasoningEffort(for: mode) else { return nil }
             let isAvailable = model.isAccessible(effort)
-            let upsell = isAvailable ? nil : model.lowestPublicAccessTier(for: effort).flatMap { upsellString(for: userTier.upgradeFlow(for: $0)) }
+            let requiredTier = isAvailable ? nil : model.lowestPublicAccessTier(for: effort)
+            let upsell = upsellString(forRequiredTier: requiredTier, userTier: userTier)
+            // Only the first gated effort heads the section.
+            let sectionHeader = isAvailable || titledGatedSection || !isSubscriptionUpsellEnabled
+                ? nil
+                : AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier,
+                                                            userTier: userTier,
+                                                            isEligibleForFreeTrial: isEligibleForFreeTrial)
+            titledGatedSection = titledGatedSection || sectionHeader != nil
             return NewTabPageDataModel.AIModelReasoningEffort(
                 id: effort.rawValue,
                 name: effort.title,
                 description: effort.subtitle,
                 isAvailable: isAvailable,
-                upsell: upsell
+                upsell: upsell,
+                gatedSectionHeader: sectionHeader
             )
         }
+    }
+
+    // NTP has no `DuckAIPromptSurface` (only addressBar/promptBar model that), so unlike
+    // `AIChatOmnibarController` this can't also check `surface.supportsSubscriptionUpsell` — the flag alone gates it here.
+    private var isSubscriptionUpsellEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarSubscriptionUpsell)
+    }
+
+    /// `nil` with the kill switch off, so the web leaves gated rows inert instead of opening the
+    /// purchase dialog — the address bar's `routesToUpsell: false` in the same state.
+    private func upsellString(forRequiredTier requiredTier: AIChatModelPublicAccessTier?, userTier: AIChatUserTier) -> String? {
+        guard isSubscriptionUpsellEnabled else { return nil }
+        return requiredTier.flatMap { upsellString(for: userTier.upgradeFlow(for: $0)) }
     }
 
     private func upsellString(for flow: DuckAISubscriptionUpsellingFlow) -> String? {

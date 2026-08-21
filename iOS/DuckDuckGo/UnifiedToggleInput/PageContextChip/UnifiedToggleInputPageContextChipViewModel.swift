@@ -53,8 +53,8 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     var onRemoveActionRequested: (() -> Void)?
 
     private let isAutoAttachEnabled: () -> Bool
-    /// Whether removing the page context leaves a re-attach button in place of the pill.
-    private let showsAttachAffordance: Bool
+    /// Evaluated at removal time: the re-attach offer belongs to the pre-chat surface only.
+    private let showsAttachAffordance: () -> Bool
     private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?
     private var originatingURL: URL?
@@ -70,7 +70,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         initialAttachedContext: AIChatPageContext?,
         initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
         isAutoAttachEnabled: @escaping () -> Bool,
-        showsAttachAffordance: Bool = false
+        showsAttachAffordance: @escaping () -> Bool = { false }
     ) {
         self.isAutoAttachEnabled = isAutoAttachEnabled
         self.showsAttachAffordance = showsAttachAffordance
@@ -136,7 +136,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         Logger.contextualUTI.info("PageContextChip remove tapped — detaching")
         // Set before clearing so `clearAttached`'s recompute lands the final state in one pass —
         // publishing twice makes the strip drop the chip and re-add it.
-        isOfferingReattach = showsAttachAffordance
+        isOfferingReattach = showsAttachAffordance()
         clearAttached()
         onRemoveActionRequested?()
     }

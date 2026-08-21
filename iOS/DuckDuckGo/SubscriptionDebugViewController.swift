@@ -73,6 +73,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.expirationReminder: "Expiration Reminder Notification",
         Sections.onboarding: "Onboarding — On-Device Progress",
         Sections.onboardingMock: "Onboarding — Mock Flow",
+        Sections.onboardingMockConfig: "Onboarding — Configure Mock Flow",
         Sections.onboardingSubflows: "Onboarding Subflows",
     ]
 
@@ -88,6 +89,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case expirationReminder
         case onboarding
         case onboardingMock
+        case onboardingMockConfig
         case onboardingSubflows
     }
 
@@ -137,8 +139,9 @@ final class SubscriptionDebugViewController: UITableViewController {
         case triggerMockNotification
     }
 
-    // Onboarding row enums (OnboardingRows, OnboardingMockRows, OnboardingSubflowRows) and their cell/
-    // selection handling live in SubscriptionDebugViewController+SubscriptionOnboarding.swift.
+    // Onboarding row enums (OnboardingRows, OnboardingMockRows, OnboardingMockConfigRows,
+    // OnboardingSubflowRows) and their cell/selection handling live in
+    // SubscriptionDebugViewController+SubscriptionOnboarding.swift.
 
     private var notificationAuthStatusText: String = "Loading"
     private var subscriptionStatusText: String = "Loading"
@@ -157,6 +160,8 @@ final class SubscriptionDebugViewController: UITableViewController {
     var mockPaidAIChat = true
     var mockDataBrokerProtection = true
     var mockIsPIRAvailable = true
+
+    var mockForcedTrialLengthDays: Int?
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         return Sections.allCases.count
@@ -351,6 +356,9 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .onboardingMock:
             configureOnboardingMockCell(cell, at: indexPath)
 
+        case .onboardingMockConfig:
+            configureOnboardingMockConfigCell(cell, at: indexPath)
+
         case .onboardingSubflows:
             configureOnboardingSubflowCell(cell, at: indexPath)
 
@@ -374,6 +382,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .expirationReminder: return ExpirationReminderRows.allCases.count
         case .onboarding: return OnboardingRows.allCases.count
         case .onboardingMock: return OnboardingMockRows.allCases.count
+        case .onboardingMockConfig: return OnboardingMockConfigRows.allCases.count
         case .onboardingSubflows: return OnboardingSubflowRows.allCases.count
         case .none: return 0
         }
@@ -427,6 +436,8 @@ final class SubscriptionDebugViewController: UITableViewController {
             didSelectOnboardingRow(at: indexPath)
         case .onboardingMock:
             didSelectOnboardingMockRow(at: indexPath)
+        case .onboardingMockConfig:
+            didSelectOnboardingMockConfigRow(at: indexPath)
         case .onboardingSubflows:
             didSelectOnboardingSubflowRow(at: indexPath)
         case .none:

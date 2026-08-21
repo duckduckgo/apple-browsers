@@ -24,10 +24,15 @@ struct SubscriptionOnboardingViewFactory {
 
     private let flow: SubscriptionOnboardingFlowViewModel
 
+    /// Debug-menu ONLY: forces `.orderConfirmation`'s free-trial card to this length, bypassing the real
+    /// subscription fetch, so the Mock Flow can show any trial length without a matching real purchase.
+    private let forcedTrialLengthDays: Int?
+
     private var prefetcher: SubscriptionOnboardingPrefetcher { flow.prefetcher }
 
     init(flow: SubscriptionOnboardingFlowViewModel) {
         self.flow = flow
+        self.forcedTrialLengthDays = nil
     }
 
     /// The PIR screen launched from the summary's checklist row.
@@ -59,9 +64,15 @@ struct SubscriptionOnboardingViewFactory {
 
         switch section {
         case .orderConfirmation:
+            let onNext = { flow.sectionDidRequestAdvance() }
+            let viewModel: SubscriptionOnboardingOrderConfirmationViewModel
+            if let forcedTrialLengthDays {
+                viewModel = .forcingFreeTrial(lengthInDays: forcedTrialLengthDays, onNext: onNext)
+            } else {
+                viewModel = SubscriptionOnboardingOrderConfirmationViewModel(onNext: onNext)
+            }
             return AnyView(SubscriptionOnboardingOrderConfirmationView(
-                viewModel: SubscriptionOnboardingOrderConfirmationViewModel(
-                    onNext: { flow.sectionDidRequestAdvance() }),
+                viewModel: viewModel,
                 navigationButton: navigationButton))
 
         case .welcome:
@@ -133,5 +144,14 @@ struct SubscriptionOnboardingViewFactory {
             assertionFailure("`.pir` should not be pushed as a navigable section")
             return AnyView(EmptyView())
         }
+    }
+}
+
+// MARK: - Debug Menu
+
+extension SubscriptionOnboardingViewFactory {
+    init(flow: SubscriptionOnboardingFlowViewModel, forcedTrialLengthDays: Int?) {
+        self.flow = flow
+        self.forcedTrialLengthDays = forcedTrialLengthDays
     }
 }

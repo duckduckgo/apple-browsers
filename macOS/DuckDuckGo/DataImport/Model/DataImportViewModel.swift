@@ -1034,22 +1034,32 @@ extension DataImportViewModel {
         self.dismiss(using: dismiss)
     }
 
-    /// Returns `true` when we successfully acquired Read Permissions
+    /// Outcome of asking the user for read access to a browser data directory
+    enum DirectoryAccessResult {
+        case granted
+        case denied
+        case cancelled
+    }
+
     @MainActor
-    private func requestDirectoryAccess(for directoryURL: URL) -> Bool {
+    private func requestDirectoryAccess(for directoryURL: URL) -> DirectoryAccessResult {
         let openPanel = NSOpenPanel.directoryAccessPanel(directoryURL: directoryURL,
                                                          message: UserText.importBrowserDataAccessPanelMessage(for: importSource),
                                                          prompt: UserText.importBrowserDataAccessPanelPrompt)
 
-        guard case .OK = openPanel.runModal(),
-              let selectedURL = openPanel.url,
-              // access is granted for what the user actually picked, so it only covers the directory
-              // we need when that's the selection itself or one of its ancestors
-              directoryURL.isContained(in: selectedURL) else {
-            return false
+        guard case .OK = openPanel.runModal() else {
+            return .cancelled
         }
 
-        return FileManager.default.isDirectoryReadable(atPath: directoryURL.path)
+        guard let selectedURL = openPanel.url,
+              // access is granted for what the user actually picked, so it only covers the directory
+              // we need when that's the selection itself or one of its ancestors
+              directoryURL.isContained(in: selectedURL),
+              FileManager.default.isDirectoryReadable(atPath: directoryURL.path) else {
+            return .denied
+        }
+
+        return .granted
     }
 
     private var requiresDirectoryAccessPermission: Bool {
@@ -1073,13 +1083,19 @@ extension DataImportViewModel {
     mutating func grantAccessButtonPressed() {
         guard let selectedProfile else { return }
 
-        guard requestDirectoryAccess(for: selectedProfile.profileURL) else {
-            screen = .directoryReadPermissionDenied(selectedProfile.profileURL)
-            return
-        }
+        switch requestDirectoryAccess(for: selectedProfile.profileURL) {
+        case .granted:
+            reloadProfilesAfterGrantingAccess()
+            importButtonPressed()
 
-        reloadProfilesAfterGrantingAccess()
-        importButtonPressed()
+        case .denied, .cancelled:
+            showDirectoryReadPermissionDeniedScreen(for: selectedProfile)
+        }
+    }
+
+    @MainActor
+    private mutating func showDirectoryReadPermissionDeniedScreen(for profile: BrowserProfile) {
+        screen = .directoryReadPermissionDenied(profile.profileURL)
     }
 
     @MainActor

@@ -27,8 +27,7 @@ import PrivacyConfigTestsUtils
 @testable import Core
 import BrowserServicesKit
 @testable import Common
-@testable import PersistenceTestingUtils
-import Persistence
+@_spi(Testing) import Persistence
 import PrivacyDashboard
 
 class AutofillLoginListViewModelTests: XCTestCase {

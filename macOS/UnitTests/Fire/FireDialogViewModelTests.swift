@@ -21,8 +21,7 @@ import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import HistoryView
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 import SharedTestUtilities

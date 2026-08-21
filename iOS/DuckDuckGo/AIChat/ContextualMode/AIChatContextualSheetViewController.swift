@@ -117,7 +117,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let titleSpacing: CGFloat = 4
         static let titleTapHorizontalPadding: CGFloat = 8
         static let contentTopPadding: CGFloat = 8
-        static let dimmingAlpha: CGFloat = 0.3
+        static let dimmingAlpha = ContextualSurfaceScrim.alpha
         static let iPadPopoverWidth: CGFloat = 375
         static let iPadPopoverDefaultHeight: CGFloat = 520
         static let maxHeightRatio: CGFloat = 0.9
@@ -269,7 +269,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         button.accessibilityTraits = .button
         button.showsMenuAsPrimaryAction = true
         button.onMenuWillDisplay = { [weak self] animator in
-            self?.pixelHandler.fireRecentChatsPopupDisplayed()
+            self?.pixelHandler.fireRecentChatsMenuDisplayed()
             self?.setHeaderPillShadowsDimmed(true, alongside: animator)
         }
         button.onMenuWillEnd = { [weak self] animator in
@@ -294,23 +294,20 @@ final class AIChatContextualSheetViewController: UIViewController {
         return menu.replacingChildren(menu.children.reversed())
     }
 
-    /// Mirrors the custom popup's sections, fetched when the menu opens rather than on the tap.
+    /// Sections are fetched when the menu opens rather than on the tap.
     private func buildNativeChatsMenuElements(_ completion: @escaping ([UIMenuElement]) -> Void) {
         Task { @MainActor in
-            let viewModel = await AIChatRecentChatsPopupViewModel.fetch(
-                using: suggestionsReader,
-                showNewChat: sessionState.hasActiveChat
-            )
+            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: suggestionsReader)
             let openDuckAI = UIAction(title: UserText.duckAiContextualOpenDuckAi,
                                       image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
-                self?.recentChatsPopupDidSelectOpenDuckAI()
+                self?.recentChatsMenuDidSelectOpenDuckAI()
             }
             var sections: [UIMenuElement] = [UIMenu(options: .displayInline, children: [openDuckAI])]
 
             if sessionState.hasActiveChat {
                 let newChat = UIAction(title: UserText.actionNewAIChat,
                                        image: DesignSystemImages.Glyphs.Size16.compose) { [weak self] _ in
-                    self?.recentChatsPopupDidSelectNewChat()
+                    self?.recentChatsMenuDidSelectNewChat()
                 }
                 sections.append(UIMenu(options: .displayInline, children: [newChat]))
             }
@@ -318,7 +315,7 @@ final class AIChatContextualSheetViewController: UIViewController {
             let chats = (viewModel?.suggestions ?? []).map { suggestion in
                 UIAction(title: suggestion.title,
                          image: suggestion.isPinned ? DesignSystemImages.Glyphs.Size16.pin : DesignSystemImages.Glyphs.Size16.chat) { [weak self] _ in
-                    self?.recentChatsPopupDidSelectChat(suggestion)
+                    self?.recentChatsMenuDidSelectChat(suggestion)
                 }
             }
             if !chats.isEmpty {
@@ -329,7 +326,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
             let viewAll = UIAction(title: UserText.aiChatViewAllChats,
                                    image: DesignSystemImages.Glyphs.Size16.openIn) { [weak self] _ in
-                self?.recentChatsPopupDidSelectViewAll()
+                self?.recentChatsMenuDidSelectViewAll()
             }
             sections.append(UIMenu(options: .displayInline, children: [viewAll]))
             completion(menuOpensUpward ? sections.reversed().map(Self.reversingChildren) : sections)
@@ -734,12 +731,12 @@ private extension AIChatContextualSheetViewController {
         delegate?.aiChatContextualSheetViewControllerDidRequestRemoveChip(self)
     }
 
-    // MARK: - Recent Chats Popup
+    // MARK: - Recent Chats Menu
 
     func prefetchRecentChatsVisibility() {
         guard suggestionsReader != nil else { return }
         Task { @MainActor in
-            let viewModel = await AIChatRecentChatsPopupViewModel.fetch(using: suggestionsReader)
+            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: suggestionsReader)
             guard view.window != nil, !isBeingDismissed else { return }
 
             // If we have an active chat, check if it still exists in the suggestions
@@ -1098,22 +1095,22 @@ extension AIChatContextualSheetViewController: ContextualDictationPresenting {
 
 extension AIChatContextualSheetViewController {
 
-    func recentChatsPopupDidSelectNewChat() {
+    func recentChatsMenuDidSelectNewChat() {
         pixelHandler.fireNewChatButtonTapped()
         delegate?.aiChatContextualSheetViewControllerDidRequestNewChat(self)
     }
 
-    func recentChatsPopupDidSelectOpenDuckAI() {
+    func recentChatsMenuDidSelectOpenDuckAI() {
         delegate?.aiChatContextualSheetViewControllerDidRequestOpenDuckAI(self)
     }
 
-    func recentChatsPopupDidSelectChat(_ chat: AIChatSuggestion) {
+    func recentChatsMenuDidSelectChat(_ chat: AIChatSuggestion) {
         pixelHandler.fireRecentChatSelected()
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
     }
 
-    func recentChatsPopupDidSelectViewAll() {
+    func recentChatsMenuDidSelectViewAll() {
         pixelHandler.fireViewAllChatsTapped()
         // The native chat history page is an iPhone-only experience; fall back to the duck.ai sidebar
         // when the flag is off or on iPad.

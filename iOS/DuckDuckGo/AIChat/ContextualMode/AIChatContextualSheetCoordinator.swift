@@ -1035,8 +1035,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
         switch action {
         case .askAboutPage:
-            // Only offered while the strip isn't showing its own re-attach button, so this is the sole
-            // affordance when it appears rather than a duplicate of it.
+            // Only offered before an explicit removal, so it never competes with the attachment menu.
             requestManualPageContextAttach()
         case .summarize, .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()

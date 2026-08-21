@@ -19,7 +19,7 @@
 import Combine
 import PrivacyStats
 import AutoconsentStats
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import TrackerRadarKit
 import XCTest
 @testable import NewTabPage

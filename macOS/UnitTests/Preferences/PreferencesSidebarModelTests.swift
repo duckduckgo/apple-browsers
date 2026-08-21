@@ -21,7 +21,7 @@ import Common
 import ConcurrencyExtensions
 import FoundationExtensions
 import NetworkingTestingUtils
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import PreferencesUI_macOS
 import PrivacyConfig

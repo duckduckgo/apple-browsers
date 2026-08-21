@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import XCTest
 

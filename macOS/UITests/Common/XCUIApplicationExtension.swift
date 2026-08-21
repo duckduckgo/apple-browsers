@@ -113,6 +113,8 @@ extension XCUIApplication {
 
         static let fireDialogMoreOptionsMenuButton = "FireDialogView.toolbarMoreButton"
         static let fireDialogManageFireproofSites = "FireDialogView.moreOptions.manageFireproofSites"
+
+        static let quitMenuItem = "Quit DuckDuckGo"
     }
 
     static func setUp(environment: [String: String]? = nil,
@@ -137,12 +139,8 @@ extension XCUIApplication {
     }
 
     /// Terminate the running app and launch it again, preserving environment and arguments from `setUp()`.
-    func restart(usingCmdQ: Bool = false) {
-        if usingCmdQ {
-            typeKey("q", modifierFlags: .command)
-        } else {
-            terminate()
-        }
+    func restart() {
+        menuItems[AccessibilityIdentifiers.quitMenuItem].tap()
         launch()
     }
 

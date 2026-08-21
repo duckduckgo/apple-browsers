@@ -42,6 +42,9 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
+            exclude: [
+                "TestingSupport/README.md"
+            ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

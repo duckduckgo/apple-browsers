@@ -18,11 +18,34 @@
 //
 
 import UIKit
+import os.log
 import ObjectiveC
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
 class BrowserChromeButton: UIButton {
+
+    /// UIKit reparents this into the menu platter, so callers inside a glass group pass a throwaway.
+    var menuHighlightTarget: (() -> UIView?)?
+
+    @available(iOS 16.0, *)
+    override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                         configuration: UIContextMenuConfiguration,
+                                         highlightPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
+        targetedMenuPreview()
+    }
+
+    @available(iOS 16.0, *)
+    override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                         configuration: UIContextMenuConfiguration,
+                                         dismissalPreviewForItemWithIdentifier identifier: any NSCopying) -> UITargetedPreview? {
+        targetedMenuPreview()
+    }
+
+    private func targetedMenuPreview() -> UITargetedPreview? {
+        guard let target = menuHighlightTarget?() else { return nil }
+        return UITargetedPreview(view: target)
+    }
 
     enum ButtonType {
         case primary

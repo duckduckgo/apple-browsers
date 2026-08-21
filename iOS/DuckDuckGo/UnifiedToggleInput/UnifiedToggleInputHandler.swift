@@ -90,6 +90,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
+    /// Where the button dictates, voice-chat availability must not keep a dead microphone on screen.
+    var prefersDictationOverVoiceChat: Bool = false {
+        didSet {
+            guard prefersDictationOverVoiceChat != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
     var isAIVoiceChatEnabled: Bool = false {
         didSet {
             guard isAIVoiceChatEnabled != oldValue else { return }
@@ -254,6 +262,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     private func updateButtonState() {
         let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
+            && !prefersDictationOverVoiceChat
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 

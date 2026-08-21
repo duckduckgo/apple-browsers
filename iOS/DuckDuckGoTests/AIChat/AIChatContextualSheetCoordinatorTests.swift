@@ -1295,6 +1295,56 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNil(host.chipViewModel.attachedContext?.favicon)
     }
 
+    // MARK: - Open Duck.ai
+
+    /// Rebuilt because the host snapshots availability, so it must be on before the coordinator exists.
+    @MainActor
+    private func makeCoordinatorWithFloatingInput() -> AIChatContextualSheetCoordinator {
+        let floatingInputFeature = MockFloatingInputFeature()
+        floatingInputFeature.isAvailable = true
+        let coordinator = AIChatContextualSheetCoordinator(
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            aiChatSettings: mockSettings,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            floatingInputFeature: floatingInputFeature,
+            pageContextHandler: mockPageContextHandler,
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
+            )
+        )
+        coordinator.delegate = mockDelegate
+        return coordinator
+    }
+
+    @MainActor
+    func testOpenDuckAIOpensATabCarryingNoChatID() async {
+        sut = makeCoordinatorWithFloatingInput()
+        await sut.presentSheet(from: mockPresentingVC)
+
+        sut.aiChatContextualSheetViewControllerDidRequestOpenDuckAI(sut.sheetViewController!)
+
+        XCTAssertEqual(mockDelegate.didRequestExpandURLs.count, 1)
+        XCTAssertNil(mockDelegate.didRequestExpandURLs.first?.duckAIChatID, "opens Duck.ai itself, not the chat being left")
+    }
+
+    /// Going to Duck.ai leaves this sheet's chat alone — only New Chat clears it.
+    @MainActor
+    func testOpenDuckAILeavesTheContextualChatIntact() async {
+        sut = makeCoordinatorWithFloatingInput()
+        await sut.presentSheet(from: mockPresentingVC)
+        mockDelegate.contextualChatURLUpdates = []
+
+        sut.aiChatContextualSheetViewControllerDidRequestOpenDuckAI(sut.sheetViewController!)
+
+        XCTAssertTrue(mockDelegate.contextualChatURLUpdates.isEmpty, "the tab keeps the chat it can still reopen")
+        XCTAssertTrue(mockDelegate.deletedChatIDs.isEmpty)
+    }
+
     // MARK: - New Chat Reset Tests
 
     @MainActor

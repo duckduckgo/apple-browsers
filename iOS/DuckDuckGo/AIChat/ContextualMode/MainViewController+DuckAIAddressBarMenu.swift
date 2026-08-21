@@ -34,6 +34,13 @@ extension MainViewController {
         )
     }
 
+    /// Whether the address-bar Duck.ai button shows its return-to-chat glyph. Keyed to the chat
+    /// existing rather than its surface being on screen, so it survives dismiss and reopen.
+    var hasContextualChatToReturnTo: Bool {
+        guard aiChatContextualModeFeature.isAvailable else { return false }
+        return currentTab?.hasContextualChatToReopen ?? false
+    }
+
     /// Attaches the Duck.ai menu to the address-bar button, or detaches it so a tap acts directly.
     func refreshDuckAIAddressBarMenu() {
         let button = omniBar.barView.aiChatButton

@@ -38,8 +38,6 @@ class BarsAnimator {
 
         static let flickFastestCollapseDuration: CFTimeInterval = 0.08
         static let flickFastestExpandDuration: CFTimeInterval = 0.14
-
-        static let floatingSnapCommitDistance: CGFloat = 16
     }
 
     weak var delegate: BrowserChromeDelegate?
@@ -54,14 +52,6 @@ class BarsAnimator {
     private var transitionStartProgress: CGFloat = 0
 
     private var lastProgressTimestamp: CFTimeInterval?
-
-    private enum SnapDirection {
-        case collapsing
-        case revealing
-    }
-
-    private var floatingCommittedDirection: SnapDirection?
-    private var floatingCommitOffsetY: CGFloat?
 
     private let currentTime: () -> CFTimeInterval
 
@@ -99,8 +89,6 @@ class BarsAnimator {
             transitionStartPosY = scrollView.contentOffset.y
             transitionStartProgress = transitionProgress
             lastProgressTimestamp = nil
-            floatingCommittedDirection = nil
-            floatingCommitOffsetY = nil
         }
     }
 
@@ -134,25 +122,12 @@ class BarsAnimator {
         }
         guard bottomRevealGestureState != .triggered else { return }
 
-        if let committed = floatingCommittedDirection, let commitOffsetY = floatingCommitOffsetY {
-            let reversal = scrollView.contentOffset.y - commitOffsetY
-            switch committed {
-            case .collapsing where reversal <= -Metrics.floatingSnapCommitDistance:
-                commitFloatingTransition(.revealing, at: scrollView.contentOffset.y)
-            case .revealing where reversal >= Metrics.floatingSnapCommitDistance && scrollView.contentOffset.y > 0:
-                commitFloatingTransition(.collapsing, at: scrollView.contentOffset.y)
-            default:
-                break
+        if draggingStartPosY <= 0, scrollView.contentOffset.y <= 0 {
+            if barsState != .revealed || transitionProgress != 0 {
+                barsState = .revealed
+                transitionProgress = 0
+                delegate?.setBarsVisibility(1, animated: false, animationDuration: nil)
             }
-            return
-        }
-
-        let distanceFromAnchor = scrollView.contentOffset.y - transitionStartPosY
-        if distanceFromAnchor >= Metrics.floatingSnapCommitDistance, scrollView.contentOffset.y > 0 {
-            commitFloatingTransition(.collapsing, at: scrollView.contentOffset.y)
-            return
-        } else if distanceFromAnchor <= -Metrics.floatingSnapCommitDistance, barsState != .revealed {
-            commitFloatingTransition(.revealing, at: scrollView.contentOffset.y)
             return
         }
 
@@ -166,17 +141,6 @@ class BarsAnimator {
         }
         transitionProgress = ratio
         delegate?.setBarsVisibility(1.0 - ratio, animated: false, animationDuration: nil)
-    }
-
-    private func commitFloatingTransition(_ direction: SnapDirection, at offsetY: CGFloat) {
-        floatingCommittedDirection = direction
-        floatingCommitOffsetY = offsetY
-        switch direction {
-        case .collapsing:
-            hideBars(animated: true)
-        case .revealing:
-            revealBars(animated: true)
-        }
     }
 
     private func revealedAndScrolling(in scrollView: UIScrollView) {

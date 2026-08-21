@@ -357,12 +357,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String, textEntryMode: TextEntryMode? = nil) {
-        // Note: the editing-state Dax suppression and NTP `view.alpha = 0` are pre-armed
-        // synchronously in `MainViewController.tabDidRequestNewTab` /
-        // `presentChatPathOnboardingCompletionIfNeeded` BEFORE this async hop runs, so
-        // we don't repeat them here — re-setting the pending flag at this point would
-        // leak past the EOJ flow and incorrectly suppress the Dax in the next-created
-        // editing state (e.g. after the subscription promo's "No, Thanks").
         setLogoHidden(true)
         chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
 

@@ -382,6 +382,7 @@ class MainViewController: UIViewController {
     let mobileCustomization: MobileCustomization
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
+    private let devicePlatform: DevicePlatformProviding.Type
     let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
     lazy var aiChatContextualFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature()
     let duckAIAddressBarPixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()
@@ -525,6 +526,7 @@ class MainViewController: UIViewController {
         fireExecutor: FireExecuting,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
+        devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
         whatsNewRepository: WhatsNewMessageRepository,
         darkReaderFeatureSettings: DarkReaderFeatureSettings,
@@ -621,6 +623,7 @@ class MainViewController: UIViewController {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.privacyStats = privacyStats
         self.fireExecutor = fireExecutor
+        self.devicePlatform = devicePlatform
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
         self.whatsNewRepository = whatsNewRepository
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
@@ -2842,7 +2845,6 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
         if tab.isAITab {
-            // AI tabs use branding UI rather than the standard toggle setup.
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
@@ -4118,10 +4120,6 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters)
     }
 
-    func reportDuckAIEntryForUpcomingNavigation(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
-        fireAIChatEntryPointPixel(source: source, opensNewTab: opensNewTab, hasPrompt: hasPrompt)
-    }
-
     /// `source` has no default on purpose: the compiler enumerates every entry
     /// path, so a new Duck.ai entry point can't ship without attribution.
     func openAIChat(source: AIChatEntryPointSource,
@@ -4864,7 +4862,7 @@ extension MainViewController: OmniBarDelegate {
             targetIsAI: true,
             unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
         ) == .openInNewTab
-        reportDuckAIEntryForUpcomingNavigation(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
+        fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
         // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
         loadUrlRespectingAIBoundary(url)
     }
@@ -5029,7 +5027,7 @@ extension MainViewController: OmniBarDelegate {
         let context: BrowsingMenuContext
         if newTabPageViewController != nil {
             context = .newTabPage
-        } else if DevicePlatform.isIphone && tab.isAITab {
+        } else if devicePlatform.isIphone && tab.isAITab {
             context = .aiChatTab
         } else {
             context = .website
@@ -5662,8 +5660,6 @@ extension MainViewController: OmniBarDelegate {
 
     func onDidEndEditing() {
         // Restore the tab's committed mode — the user may have toggled without submitting.
-        // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
-        // firing (text field never becomes first responder during that flow).
         if let tab = tabManager.currentTabsModel.currentTab {
             viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab))
         }
@@ -5785,19 +5781,6 @@ extension MainViewController: OmniBarDelegate {
                                  aiChat: .addressBarClearPressedOnAIChat)
     }
 
-    func onExperimentalAddressBarCancelPressed() {
-        fireControllerAwarePixel(ntp: .addressBarCancelPressedOnNTP,
-                                 serp: .addressBarCancelPressedOnSERP,
-                                 website: .addressBarCancelPressedOnWebsite,
-                                 aiChat: .addressBarCancelPressedOnAIChat)
-        newTabPageViewController?.dismissDuckAICompletionDialogIfNeededOnEditingEnd()
-        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
-            ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
-        }
-        postIdleSessionInstrumentation.backPressed()
-        recordNewTabPageSessionAction { $0.utiBackArrow() }
-    }
-
     func escapeHatchForEditingState() -> EscapeHatchModel? {
         guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle(),
               tabManager.currentTabsModel.currentTab?.link == nil,
@@ -5821,10 +5804,6 @@ extension MainViewController: OmniBarDelegate {
         newTabPageViewController?.setEscapeHatch(nil)
         currentNTPEscapeHatch = nil
         unifiedToggleInputCoordinator?.clearEscapeHatch()
-    }
-
-    func useNewOmnibarTransitionBehaviour() -> Bool {
-        escapeHatchForEditingState() != nil
     }
 
     func onSwitchToTab(_ tab: Tab) {
@@ -5872,7 +5851,7 @@ extension MainViewController: OmniBarDelegate {
         tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) }
     }
 
-    /// Shared commit logic for all toggle paths (iPad, iPhone editing state, unified toggle input).
+    /// Shared commit logic for iPad and unified toggle input paths.
     func commitToggleMode(_ mode: TextEntryMode) {
         toggleModeStorage.save(mode)
     }
@@ -6570,9 +6549,9 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewAIChatTab(tab: TabViewController) {
-        reportDuckAIEntryForUpcomingNavigation(source: tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage,
-                                               opensNewTab: true,
-                                               hasPrompt: false)
+        fireAIChatEntryPointPixel(source: tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage,
+                                  opensNewTab: true,
+                                  hasPrompt: false)
         tab.openNewChatInNewTab()
     }
 
@@ -7008,13 +6987,6 @@ extension MainViewController: TabSwitcherDelegate {
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
     }
 
-    func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
-        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
-        // Bypasses `openAIChat` (presents on the switcher), so fire the entry pixel directly.
-        fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: false, hasPrompt: false)
-        self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
-    }
-
     func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         // The tab is created here, so `openAIChatInTab` would see it blank and report no new tab.
@@ -7068,11 +7040,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
         requestTabSwitcher()
     }
 
-    /// Single entry point for every tab-switcher request — toolbar button, all five pill
-    /// surfaces (regular NTP, UTI Search/Duck.ai, legacy editing-state Search/Duck.ai).
-    /// Fires the same counted/daily pixels and runs `performCancel()` which handles all
-    /// possible modal states (legacy editing state via `endEditing()`, UTI via
-    /// `deactivateToOmnibar()`), so every entry produces identical behaviour.
+    /// Single entry point for every tab-switcher request.
+    /// Fires the same counted/daily pixels and dismisses the active input state.
     /// Not `private` because the UTI extension in `MainViewController+UnifiedToggleInput`
     /// calls it from another file.
     func requestTabSwitcher() {
@@ -7644,6 +7613,10 @@ extension MainViewController: OnboardingDelegate {
         if duckAIFireOnboardingFlow.state == .awaitingFirstResponse {
             onboardingCompletedWithDuckAITransition(controller: controller)
             return
+        }
+
+        if onboardingManager.currentOnboardingFlow == .duckAI && !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         }
 
         controller.modalTransitionStyle = .crossDissolve

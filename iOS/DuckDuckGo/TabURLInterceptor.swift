@@ -23,15 +23,6 @@ import Common
 import FoundationExtensions
 import Subscription
 
-enum InterceptedURLType: String {
-    case subscription
-}
-
-struct InterceptedURLInfo {
-    let id: InterceptedURLType
-    let path: String
-}
-
 protocol TabURLInterceptor {
     func allowsNavigatingTo(url: URL) -> Bool
 }
@@ -49,28 +40,21 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
         self.featureFlagger = featureFlagger
     }
 
-    static let interceptedURLs: [InterceptedURLInfo] = SubscriptionPurchaseFlowPath.allCases.map {
-        InterceptedURLInfo(id: .subscription, path: $0.rawValue)
-    }
+    static let interceptedURLs = SubscriptionPurchaseFlowPath.allCases.map(\.rawValue)
     
     func allowsNavigatingTo(url: URL) -> Bool {
         guard url.isPart(ofDomain: "duckduckgo.com") || (url.isPart(ofDomain: "duck.co") && featureFlagger.internalUserDecider.isInternalUser),
               let components = normalizeScheme(url.absoluteString),
-              let matchingURL = urlToIntercept(path: components.path) else {
+              Self.interceptedURLs.contains(components.path) else {
             return true
         }
 
-        return handleURLInterception(interceptedURLType: matchingURL.id, interceptedURLComponents: components)
+        return interceptSubscriptionURL(components)
     }
 
 }
 
 extension TabURLInterceptorDefault {
-    
-    private func urlToIntercept(path: String) -> InterceptedURLInfo? {
-        let results = Self.interceptedURLs.filter { $0.path == path }
-        return results.first
-    }
     
     private func normalizeScheme(_ rawUrl: String) -> URLComponents? {
         if !rawUrl.starts(with: URL.NavigationalScheme.https.separated()) &&
@@ -83,28 +67,17 @@ extension TabURLInterceptorDefault {
         return URLComponents(string: "\(URL.NavigationalScheme.https.separated())\(noScheme)")
     }
 
-    private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil) -> Bool {
-        switch interceptedURLType {
-            // Opens the DuckDuckGo Subscription Purchase page (if user can purchase)
-        case .subscription:
-            if canPurchase() {
-                // We pass `interceptedURLComponents` to properly resolve final purchase URL
-                // and to capture `origin` query parameter as it is needed for the Pixel to track subscription attributions
-                var userInfo: [AnyHashable: Any]?
-
-                if let components = interceptedURLComponents {
-                    userInfo = [TabURLInterceptorParameter.interceptedURLComponents: components as Any]
-                }
-
-                NotificationCenter.default.post(
-                    name: .urlInterceptSubscription,
-                    object: nil,
-                    userInfo: userInfo
-                )
-                return false
-            }
+    private func interceptSubscriptionURL(_ components: URLComponents) -> Bool {
+        guard canPurchase() else {
+            return true
         }
-        return true
+
+        NotificationCenter.default.post(
+            name: .urlInterceptSubscription,
+            object: nil,
+            userInfo: [TabURLInterceptorParameter.interceptedURLComponents: components]
+        )
+        return false
     }
 }
 

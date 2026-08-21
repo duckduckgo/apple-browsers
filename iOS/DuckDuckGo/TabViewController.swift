@@ -706,6 +706,7 @@ class TabViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
     let aiChatSettings: AIChatSettingsProvider
+    let devicePlatform: DevicePlatformProviding.Type
     let sharedSecureVault: (any AutofillSecureVault)?
     let privacyStats: PrivacyStatsProviding
     private let pixelFiring: (any PixelKitFiring)?
@@ -778,6 +779,7 @@ class TabViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          privacyStats: PrivacyStatsProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -829,6 +831,7 @@ class TabViewController: UIViewController {
         
         self.aiChatSettings = aiChatSettings
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.devicePlatform = devicePlatform
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,

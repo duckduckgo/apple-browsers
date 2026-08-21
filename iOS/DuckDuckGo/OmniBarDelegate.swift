@@ -124,7 +124,6 @@ protocol OmniBarDelegate: AnyObject {
     // MARK: - Experimental Address Bar
     func onExperimentalAddressBarTapped()
     func onExperimentalAddressBarClearPressed()
-    func onExperimentalAddressBarCancelPressed()
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void)
 
     // MARK: - Escape Hatch
@@ -137,9 +136,6 @@ protocol OmniBarDelegate: AnyObject {
     func onTextEntryModeDidChange(_ mode: TextEntryMode)
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode?
 
-    /// When true, the omnibar editing-state transition uses the new behaviour (opaque from frame 0, single logo). Gated by showNTPAfterIdleReturn.
-    func useNewOmnibarTransitionBehaviour() -> Bool
-    
     // MARK: - Voice Mode
     func onDuckAIVoiceModeRequested()
 
@@ -257,7 +253,6 @@ extension OmniBarDelegate {
     // Default no-op implementations for experimental address bar pixel hooks
     func onExperimentalAddressBarTapped() {}
     func onExperimentalAddressBarClearPressed() {}
-    func onExperimentalAddressBarCancelPressed() {}
 
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
         completion()
@@ -275,10 +270,6 @@ extension OmniBarDelegate {
 
     func escapeHatchForEditingState() -> EscapeHatchModel? {
         nil
-    }
-
-    func useNewOmnibarTransitionBehaviour() -> Bool {
-        false
     }
 
     func onDuckAIVoiceModeRequested() {}

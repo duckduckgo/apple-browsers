@@ -303,7 +303,7 @@ struct SmallOmniBarState {
     }
     
     /// OmniBarState used when displaying AI Chat in a tab on iPad at small width.
-    /// Unlike `AIChatModeState` (which hides everything for iPhone full-mode branding),
+    /// Unlike `AIChatModeState` (which hides the omnibar for iPhone AI tabs),
     /// this state presents a normal browsing-style address bar with `showAIChatButton = false`.
     struct AIChatTabModeState: OmniBarState, OmniBarLoadingBearerStateCreating {
         let hasLargeWidth = false
@@ -348,7 +348,7 @@ struct SmallOmniBarState {
         let isLoading: Bool
     }
 
-    /// OmniBarState used when a displaying AI Chat in 'full mode' (i.e in a tab)
+    /// OmniBarState used when displaying AI Chat in a tab on iPhone.
     struct AIChatModeState: OmniBarState, OmniBarLoadingBearerStateCreating {
         var hasLargeWidth = false
         let showBackButton = false

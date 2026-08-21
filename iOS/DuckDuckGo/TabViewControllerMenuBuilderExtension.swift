@@ -55,7 +55,7 @@ extension TabViewController {
 
         if shouldShowAIChatInMenu {
             
-            let chatEntry = DevicePlatform.isIphone ? buildNewAIChatEntry() : buildChatEntry(withSmallIcon: false)
+            let chatEntry = devicePlatform.isIphone ? buildNewAIChatEntry() : buildChatEntry(withSmallIcon: false)
 
             entries.append(newTabEntry)
             entries.append(chatEntry)
@@ -287,7 +287,7 @@ extension TabViewController {
             }))
 
             if shouldShowAIChatInMenu {
-                let chatEntry = DevicePlatform.isIphone ? buildNewAIChatEntry(withSmallIcon: true) : buildChatEntry(withSmallIcon: true)
+                let chatEntry = devicePlatform.isIphone ? buildNewAIChatEntry(withSmallIcon: true) : buildChatEntry(withSmallIcon: true)
                 entries.append(chatEntry)
             }
 
@@ -1056,7 +1056,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             return buildDuckAIHeaderTile()
         }
 
-        if DevicePlatform.isIphone {
+        if devicePlatform.isIphone {
             return buildNewAIChatEntry(withSmallIcon: false)
         } else {
             return buildChatEntry(withSmallIcon: false)

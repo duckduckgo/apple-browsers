@@ -28,6 +28,9 @@ enum DataClearingPixels {
 
     /// User performed action before data clearing completed
     case userActionBeforeCompletion
+
+    /// App switcher snapshot directory enumeration failed
+    case appSwitcherSnapshotEnumerationFailed(Error)
 }
 
 // MARK: - PixelKit.Event Protocol
@@ -40,6 +43,8 @@ extension DataClearingPixels: PixelKit.Event {
             return "m_fire_retrigger_in_20s"
         case .userActionBeforeCompletion:
             return "m_fire_user_action_before_completion"
+        case .appSwitcherSnapshotEnumerationFailed:
+            return "m_app-switcher_snapshot_enumeration_failed"
         }
     }
 
@@ -48,7 +53,12 @@ extension DataClearingPixels: PixelKit.Event {
     }
 
     var error: NSError? {
-        return nil
+        switch self {
+        case .appSwitcherSnapshotEnumerationFailed(let error):
+            return error as NSError
+        default:
+            return nil
+        }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {

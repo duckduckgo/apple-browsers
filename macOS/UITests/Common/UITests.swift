@@ -174,6 +174,7 @@ class UITestCase: XCTestCase {
         guard Self.systemPermissionPromptPollingTimer == nil else { return }
 
         let timer = Timer(timeInterval: 5, repeats: true) { _ in
+            Logger.log("Checking for TCC prompts")
             _ = XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         }
         RunLoop.main.add(timer, forMode: .common)

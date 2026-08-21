@@ -59,8 +59,8 @@ enum DBPIOSManagerTestUtils {
         featureFlagger: MockDBPFeatureFlagger = MockDBPFeatureFlagger(),
         continuedProcessingCoordinator: MockContinuedProcessingCoordinator = MockContinuedProcessingCoordinator(),
         freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil
-    ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
-        return IOSManagerTestDependenciesStore().makeTestIOSManager(
+    ) async throws -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
+        return try await IOSManagerTestDependenciesStore().makeTestIOSManager(
             featureFlagger: featureFlagger,
             continuedProcessingCoordinator: continuedProcessingCoordinator,
             freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride
@@ -88,7 +88,10 @@ enum DBPIOSManagerTestUtils {
         optOutJobData: [OptOutJobData] = []
     ) -> BrokerProfileQueryData {
         BrokerProfileQueryData(
-            dataBroker: .mock(withId: brokerId),
+            dataBroker: .mockWithDefaults(
+                id: brokerId,
+                steps: DataBroker.mock.steps
+            ),
             profileQuery: ProfileQuery(id: profileQueryId, firstName: "A", lastName: "B", city: "C", state: "D", birthYear: 1980),
             scanJobData: .init(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: scanPreferredRunDate, historyEvents: []),
             optOutJobData: optOutJobData
@@ -132,13 +135,15 @@ enum DBPIOSManagerTestUtils {
             featureFlagger: MockDBPFeatureFlagger,
             continuedProcessingCoordinator: MockContinuedProcessingCoordinator,
             freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil
-        ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
-            let manager = makeManager(
+        ) async throws -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
+            let manager = makeDeferredManager(
                 featureFlagger: featureFlagger,
                 continuedProcessingCoordinator: continuedProcessingCoordinator,
-                freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride
+                freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride,
+                provider: { vaultResources in { vaultResources } }
             )
             reset(manager: manager)
+            try await manager.prepareDatabaseAccess()
 
             return (
                 manager,
@@ -181,34 +186,6 @@ enum DBPIOSManagerTestUtils {
                     freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                     profileStateManager: profileStateManager
                 )
-            )
-        }
-
-        private func makeManager(
-            featureFlagger: MockDBPFeatureFlagger,
-            continuedProcessingCoordinator: MockContinuedProcessingCoordinator,
-            freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil
-        ) -> DataBrokerProtectionIOSManager {
-            let vaultResources = makeVaultResources()
-
-            return DataBrokerProtectionIOSManager.withVaultResources(
-                vaultResources,
-                authenticationManager: authenticationManager,
-                userNotificationService: MockDataBrokerProtectionUserNotificationService(),
-                sharedPixelsHandler: MockDataBrokerProtectionPixelsHandler(),
-                iOSPixelsHandler: EventMapping<IOSPixels> { _, _, _, _ in },
-                privacyConfigManager: PrivacyConfigurationManagingMock(),
-                quickLinkOpenURLHandler: { _ in },
-                feedbackViewCreator: { EmptyView() },
-                featureFlagger: featureFlagger,
-                settings: DataBrokerProtectionSettings(defaults: UserDefaults(suiteName: UUID().uuidString)!),
-                subscriptionManager: MockDataBrokerProtectionSubscriptionManaging(),
-                wideEvent: nil,
-                eventsHandler: eventsHandler,
-                freemiumDBPUserStateManager: (freemiumDBPUserStateManagerOverride ?? freemiumDBPUserStateManager),
-                profileStateManager: profileStateManager,
-                continuedProcessingCoordinator: continuedProcessingCoordinator,
-                shouldRegisterBackgroundTaskHandler: false
             )
         }
 

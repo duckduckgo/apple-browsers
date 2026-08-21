@@ -71,9 +71,9 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         hasMatches: Bool,
         authenticated: Bool,
         hasMatchesError: Error? = nil
-    ) async -> IOSManagerTestDependencies {
+    ) async throws -> IOSManagerTestDependencies {
         isAuthenticated = authenticated
-        let (sut, deps) = DBPIOSManagerTestUtils.makeTestIOSManager(
+        let (sut, deps) = try await DBPIOSManagerTestUtils.makeTestIOSManager(
             freemiumDBPUserStateManagerOverride: stateManager
         )
         deps.database.hasMatchesToReturn = hasMatches
@@ -92,22 +92,22 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         return deps
     }
 
-    func test_pathA_unauthenticated_hasMatchesTrue_persistsMatchesFound() async {
-        let deps = await runPathA(hasMatches: true, authenticated: false)
+    func test_pathA_unauthenticated_hasMatchesTrue_persistsMatchesFound() async throws {
+        let deps = try await runPathA(hasMatches: true, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .matchesFound)
         XCTAssertTrue(deps.eventsHandler.firstScanCompletedFired)
         XCTAssertTrue(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
     }
 
-    func test_pathA_unauthenticated_hasMatchesFalse_persistsNoMatches() async {
-        let deps = await runPathA(hasMatches: false, authenticated: false)
+    func test_pathA_unauthenticated_hasMatchesFalse_persistsNoMatches() async throws {
+        let deps = try await runPathA(hasMatches: false, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .noMatches)
         XCTAssertTrue(deps.eventsHandler.firstScanCompletedFired)
         XCTAssertFalse(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
     }
 
-    func test_pathA_authenticated_persistsNothing() async {
-        let deps = await runPathA(hasMatches: true, authenticated: true)
+    func test_pathA_authenticated_persistsNothing() async throws {
+        let deps = try await runPathA(hasMatches: true, authenticated: true)
         // firstScanCompletedAndMatchesFoundFired proves the completion handler actually ran;
         // without it, a no-op callback could silently pass the "stays nil" assertion.
         XCTAssertTrue(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
@@ -121,9 +121,9 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         hasMatches: Bool,
         authenticated: Bool,
         hasMatchesError: Error? = nil
-    ) async -> IOSManagerTestDependencies {
+    ) async throws -> IOSManagerTestDependencies {
         isAuthenticated = authenticated
-        let (sut, deps) = DBPIOSManagerTestUtils.makeTestIOSManager(
+        let (sut, deps) = try await DBPIOSManagerTestUtils.makeTestIOSManager(
             freemiumDBPUserStateManagerOverride: stateManager
         )
         deps.database.hasMatchesToReturn = hasMatches
@@ -139,47 +139,47 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         return deps
     }
 
-    func test_pathB_unauthenticated_hasMatchesTrue_persistsMatchesFound() async {
-        let deps = await runPathB(hasMatches: true, authenticated: false)
+    func test_pathB_unauthenticated_hasMatchesTrue_persistsMatchesFound() async throws {
+        let deps = try await runPathB(hasMatches: true, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .matchesFound)
         XCTAssertTrue(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
     }
 
-    func test_pathB_unauthenticated_hasMatchesFalse_persistsNoMatches() async {
-        let deps = await runPathB(hasMatches: false, authenticated: false)
+    func test_pathB_unauthenticated_hasMatchesFalse_persistsNoMatches() async throws {
+        let deps = try await runPathB(hasMatches: false, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .noMatches)
         XCTAssertFalse(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
     }
 
-    func test_pathB_authenticated_persistsNothing() async {
-        let deps = await runPathB(hasMatches: true, authenticated: true)
+    func test_pathB_authenticated_persistsNothing() async throws {
+        let deps = try await runPathB(hasMatches: true, authenticated: true)
         XCTAssertTrue(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
         XCTAssertNil(stateManager.firstScanResult)
     }
 
     // MARK: - Cross-path first-scan-wins
 
-    func test_pathA_thenPathB_firstScanWins() async {
-        await runPathA(hasMatches: false, authenticated: false)
+    func test_pathA_thenPathB_firstScanWins() async throws {
+        try await runPathA(hasMatches: false, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .noMatches)
 
-        await runPathB(hasMatches: true, authenticated: false)
+        try await runPathB(hasMatches: true, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .noMatches)
     }
 
-    func test_pathB_thenPathA_firstScanWins() async {
-        await runPathB(hasMatches: true, authenticated: false)
+    func test_pathB_thenPathA_firstScanWins() async throws {
+        try await runPathB(hasMatches: true, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .matchesFound)
 
-        await runPathA(hasMatches: false, authenticated: false)
+        try await runPathA(hasMatches: false, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .matchesFound)
     }
 
     // MARK: - Transient DB error leaves firstScanResult unset
 
-    func test_pathA_unauthenticated_hasMatchesThrows_leavesFirstScanResultNil() async {
+    func test_pathA_unauthenticated_hasMatchesThrows_leavesFirstScanResultNil() async throws {
         isAuthenticated = false
-        let (sut, deps) = DBPIOSManagerTestUtils.makeTestIOSManager(
+        let (sut, deps) = try await DBPIOSManagerTestUtils.makeTestIOSManager(
             freemiumDBPUserStateManagerOverride: stateManager
         )
         deps.database.hasMatchesError = ScanCompletionTestError.hasMatchesFailed
@@ -194,15 +194,15 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         XCTAssertFalse(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
 
         // A later successful scan must still be able to record the correct outcome.
-        await runPathA(hasMatches: true, authenticated: false)
+        try await runPathA(hasMatches: true, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .matchesFound)
     }
 
     // MARK: - Interrupted runs: freemium write is gated, pre-existing event fire is preserved
 
-    func test_pathA_unauthenticated_interruptedRun_doesNotWriteFirstScanResult_butStillFiresMatchesFound() async {
+    func test_pathA_unauthenticated_interruptedRun_doesNotWriteFirstScanResult_butStillFiresMatchesFound() async throws {
         isAuthenticated = false
-        let (sut, deps) = DBPIOSManagerTestUtils.makeTestIOSManager(
+        let (sut, deps) = try await DBPIOSManagerTestUtils.makeTestIOSManager(
             freemiumDBPUserStateManagerOverride: stateManager
         )
         deps.database.hasMatchesToReturn = true
@@ -222,13 +222,13 @@ final class DataBrokerProtectionIOSManagerScanCompletionTests: XCTestCase {
         XCTAssertTrue(deps.eventsHandler.firstScanCompletedAndMatchesFoundFired)
 
         // A later non-interrupted run still records correctly.
-        await runPathA(hasMatches: true, authenticated: false)
+        try await runPathA(hasMatches: true, authenticated: false)
         XCTAssertEqual(stateManager.firstScanResult, .matchesFound)
     }
 
-    func test_pathB_unauthenticated_interruptedRun_doesNotWriteFirstScanResult_butStillFiresMatchesFound() async {
+    func test_pathB_unauthenticated_interruptedRun_doesNotWriteFirstScanResult_butStillFiresMatchesFound() async throws {
         isAuthenticated = false
-        let (sut, deps) = DBPIOSManagerTestUtils.makeTestIOSManager(
+        let (sut, deps) = try await DBPIOSManagerTestUtils.makeTestIOSManager(
             freemiumDBPUserStateManagerOverride: stateManager
         )
         deps.database.hasMatchesToReturn = true

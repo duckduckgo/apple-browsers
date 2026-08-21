@@ -135,7 +135,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
     private var escapeHatchModel: EscapeHatchModel?
-    /// Pins the hatch when there is no scrollable content; favorites or recents own it otherwise.
+    private var appliedEscapeHatchPlacement: EscapeHatchPlacement = .none
+    /// Pins the hatch only for empty Search; scrollable content owns it otherwise.
     private var chromeHostingController: UIHostingController<FocusedChromeView>?
     private var chromeTopConstraint: NSLayoutConstraint?
     private var chromeHeightConstraint: NSLayoutConstraint?
@@ -407,13 +408,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                             isFireTab: Bool,
                             isTyping: Bool,
                             inputMode: TextEntryMode,
-                            hasFavorites: Bool,
-                            hasRecents: Bool) -> EscapeHatchPlacement {
+                            hasFavorites: Bool) -> EscapeHatchPlacement {
             guard hasEscapeHatch, !isFireTab, !isTyping else {
                 return .none
             }
-            let hasScrollableContent = inputMode == .search ? hasFavorites : hasRecents
-            return hasScrollableContent ? .embedded : .pinned
+            return inputMode == .aiChat || hasFavorites ? .embedded : .pinned
         }
     }
 
@@ -424,8 +423,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             isTyping: UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
                                                                hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText),
             inputMode: switchBarHandler.currentToggleState,
-            hasFavorites: suggestionTrayDependencies?.favoritesViewModel.favorites.isEmpty == false,
-            hasRecents: duckAIStateRelay.value?.hasRecents == true)
+            hasFavorites: suggestionTrayDependencies?.favoritesViewModel.favorites.isEmpty == false)
     }
 
     private var embeddedEscapeHatchModel: EscapeHatchModel? {
@@ -445,6 +443,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func applyEscapeHatchPlacement() {
         unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
         updatePinnedChrome()
+        appliedEscapeHatchPlacement = escapeHatchPlacement
     }
 
     /// Sets the host's content inset so content starts below the bar and any active pinned chrome.
@@ -986,7 +985,8 @@ private extension UnifiedInputContentContainerViewController {
             self.view.layoutIfNeeded()
         }
 
-        if animateContentUpdates {
+        // SwiftUI changes hatch ownership immediately, so its UIKit insets must update in the same pass.
+        if animateContentUpdates && appliedEscapeHatchPlacement == escapeHatchPlacement {
             scheduleAnimation(applyContentUpdates)
         } else {
             applyContentUpdates()

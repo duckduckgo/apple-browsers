@@ -40,8 +40,9 @@ final class UnifiedSuggestionsHost {
     private var syncPromo: AnyView?
     private var escapeHatchTopInset: CGFloat = 0
     private var contentInsets: UIEdgeInsets = .zero
+    private var showsFavorites = true
     private var cancellables = Set<AnyCancellable>()
-    /// Built once on first `.favorites` render; NTP has a heavy init, so don't rebuild per body pass.
+    /// Built once for favorites or an empty scrollable hatch state; NTP has a heavy init.
     private var cachedFavoritesController: NewTabPageViewController?
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
@@ -51,7 +52,14 @@ final class UnifiedSuggestionsHost {
     private func memoizedFavoritesController() -> NewTabPageViewController? {
         if let cachedFavoritesController { return cachedFavoritesController }
         cachedFavoritesController = config.favoritesProvider()
+        cachedFavoritesController?.setShowsFavorites(showsFavorites)
         return cachedFavoritesController
+    }
+
+    func setShowsFavorites(_ showsFavorites: Bool) {
+        guard self.showsFavorites != showsFavorites else { return }
+        self.showsFavorites = showsFavorites
+        cachedFavoritesController?.setShowsFavorites(showsFavorites)
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?, openedAfterIdle: Bool) {

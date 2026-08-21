@@ -27,11 +27,11 @@ struct UnifiedSuggestionsView: View {
     let isAddressBarAtBottom: Bool
     let escapeHatch: EscapeHatchModel?
     let syncPromo: AnyView?
-    /// Built lazily by the host for the `.favorites` state; nil when favorites aren't supported (Duck.ai).
+    /// Built lazily by the host for favorites and empty scrollable hatch states.
     let favoritesProvider: () -> NewTabPageViewController?
 
     var body: some View {
-        // The escape hatch is pinned when content is empty and scrolls with favorites or recents otherwise.
+        // Empty states reuse the NTP scroll surface so the escape hatch and remote messages scroll together.
         // The logo overlays the content, anchored to the keyboard (the host's fixed bottom) so neither the
         // bar-driven top inset nor a Search↔Duck.ai toggle moves it.
         ZStack(alignment: .bottom) {
@@ -103,13 +103,11 @@ struct UnifiedSuggestionsView: View {
 
     private var isShowingFavorites: Bool {
         if case .favorites = viewModel.content { return true }
-        return false
+        return viewModel.content == .logo && escapeHatch != nil
     }
 
-    /// Favorites stays mounted like the list and toggles a plain `.opacity` — NOT an insert/remove
-    /// `.transition` (which snaps when interrupted by rapid Search↔Duck.ai toggling). Its opacity is
-    /// instant (`.animation(nil)`): the incoming list fades in, but favorites must not linger visibly
-    /// over Duck.ai while the crossfade runs.
+    /// The NTP stays mounted like the list and toggles a plain `.opacity` — NOT an insert/remove
+    /// `.transition` (which snaps when interrupted by rapid Search↔Duck.ai toggling).
     @ViewBuilder
     private var overlayLayer: some View {
         if let controller = favoritesProvider() {

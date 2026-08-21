@@ -42,7 +42,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     /// `isLogoHidden`/`isFavoritesHidden` flags the focus/dismiss handoff toggles. The dismiss path
     /// uses these to pick the right handoff while those flags are still mid-transition.
     var restingContentIsLogo: Bool {
-        guard favoritesModel.isEmpty else { return false }
+        guard !newTabPageViewModel.showsFavorites || favoritesModel.isEmpty else { return false }
         if newTabPageViewModel.escapeHatch != nil {
             return view.bounds.width <= view.bounds.height
         }
@@ -50,7 +50,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     var restingContentIsFavorites: Bool {
-        !favoritesModel.isEmpty
+        newTabPageViewModel.showsFavorites && !favoritesModel.isEmpty
     }
 
     func setLogoHidden(_ hidden: Bool) {
@@ -59,6 +59,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     func setFavoritesHidden(_ hidden: Bool) {
         newTabPageViewModel.isFavoritesHidden = hidden
+    }
+
+    func setShowsFavorites(_ showsFavorites: Bool) {
+        newTabPageViewModel.showsFavorites = showsFavorites
     }
 
     private lazy var borderView = StyledTopBottomBorderView()

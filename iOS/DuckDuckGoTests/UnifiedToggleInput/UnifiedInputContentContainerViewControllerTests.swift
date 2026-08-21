@@ -28,27 +28,21 @@ import XCTest
 @MainActor
 final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
-    func testWhenResolvingEscapeHatchPlacementThenUsesCurrentInputs() {
+    func testWhenResolvingEscapeHatchPlacementThenEligibleHatchIsAlwaysEmbedded() {
         typealias Placement = UnifiedInputContentContainerViewController.EscapeHatchPlacement
 
         func resolve(hasEscapeHatch: Bool = true,
                      isFireTab: Bool = false,
-                     isTyping: Bool = false,
-                     inputMode: TextEntryMode = .search,
-                     hasFavorites: Bool = true) -> Placement {
+                     isTyping: Bool = false) -> Placement {
             Placement.resolve(hasEscapeHatch: hasEscapeHatch,
                               isFireTab: isFireTab,
-                              isTyping: isTyping,
-                              inputMode: inputMode,
-                              hasFavorites: hasFavorites)
+                              isTyping: isTyping)
         }
 
         XCTAssertEqual(resolve(hasEscapeHatch: false), .none)
         XCTAssertEqual(resolve(isFireTab: true), .none)
         XCTAssertEqual(resolve(isTyping: true), .none)
         XCTAssertEqual(resolve(), .embedded)
-        XCTAssertEqual(resolve(hasFavorites: false), .pinned)
-        XCTAssertEqual(resolve(inputMode: .aiChat), .embedded)
     }
 
     func testDuckAISuggestionsDidRequestSyncSetup_RequestsSyncSetupOnDelegate() {

@@ -54,7 +54,7 @@ struct NewTabPageView: View {
     }
 
     private var isShowingSections: Bool {
-        !favoritesViewModel.allFavorites.isEmpty && !viewModel.fireTab
+        viewModel.showsFavorites && !favoritesViewModel.allFavorites.isEmpty && !viewModel.fireTab
     }
 
     var body: some View {
@@ -90,12 +90,10 @@ struct NewTabPageLayoutConfiguration {
     /// grid sits at the same top inset as the escape hatch. The unified toggle input needs this so the
     /// focused embedded NTP (favorites only) and the unfocused NTP (hatch + favorites) compose alike.
     let favoritesShareHatchTopInset: Bool
-    /// Fixed top inset for the content (nil = the width-based default). The unified toggle input pins it
-    /// to the focused hatch's distance from the bar so the NTP hatch lands exactly on the focused hatch.
+    /// Fixed top inset for the content (nil = the width-based default). The unified toggle input uses it
+    /// to keep the focused and unfocused scrollable content aligned.
     let contentTopInsetOverride: CGFloat?
-    /// Spacing between sections (hatch → favorites). The unified toggle input matches the focused chrome's
-    /// reserved hatch-to-content spacing so the NTP favorites land exactly on the focused favorites
-    /// (= chrome top inset 6 + bottom inset 16, plus ~4 for the pill-vs-hatch-height difference).
+    /// Spacing between sections (hatch → favorites).
     let interSectionSpacing: CGFloat
 
     static let standard = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: false,
@@ -104,7 +102,7 @@ struct NewTabPageLayoutConfiguration {
                                                         contentTopInsetOverride: nil,
                                                         interSectionSpacing: Metrics.sectionSpacing)
     static let unifiedToggleInput = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: true,
-                                                                  // Aligns the resting hatch with the focused `FocusedChromeView` hatch so it doesn't resize on dismiss.
+                                                                  // Keeps the focused and unfocused scrollable hatches the same width.
                                                                   escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding,
                                                                   favoritesShareHatchTopInset: true,
                                                                   contentTopInsetOverride: 10,

@@ -135,11 +135,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var needsVisibleRefresh = true
     private var requestedContentInset: (top: CGFloat, bottom: CGFloat) = (0, 0)
     private var escapeHatchModel: EscapeHatchModel?
-    private var appliedEscapeHatchPlacement: EscapeHatchPlacement = .none
-    /// Pins the hatch only for empty Search; scrollable content owns it otherwise.
-    private var chromeHostingController: UIHostingController<FocusedChromeView>?
-    private var chromeTopConstraint: NSLayoutConstraint?
-    private var chromeHeightConstraint: NSLayoutConstraint?
 
     private var notificationCancellable: AnyCancellable?
 
@@ -348,71 +343,19 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
-    private func updatePinnedChrome() {
-        let hatchModel = shouldShowPinnedHatch ? escapeHatchModel : nil
-        guard hatchModel != nil || chromeHostingController != nil else { return }
-
-        let rootView = FocusedChromeView(
-            hatchModel: hatchModel,
-            topInset: chromeTopInsetForPosition)
-
-        if let hostingController = chromeHostingController {
-            hostingController.rootView = rootView
-        } else {
-            installPinnedChrome(rootView: rootView)
-        }
-    }
-
-    private func installPinnedChrome(rootView: FocusedChromeView) {
-        let hostingController = UIHostingController(rootView: rootView)
-        hostingController.view.backgroundColor = .clear
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        addChild(hostingController)
-        contentContainerView.addSubview(hostingController.view)
-        // In floating UI, pin chrome to the safe-area guide for the top inset; otherwise it adds no inset.
-        let chromeTopAnchor = isFloatingUIEnabled ? contentContainerView.safeAreaLayoutGuide.topAnchor : contentContainerView.topAnchor
-        let top = hostingController.view.topAnchor.constraint(equalTo: chromeTopAnchor, constant: pinnedChromeTopConstant)
-        chromeTopConstraint = top
-        let height = hostingController.view.heightAnchor.constraint(equalToConstant: currentChromeReservedHeight)
-        chromeHeightConstraint = height
-        NSLayoutConstraint.activate([
-            top,
-            height,
-            hostingController.view.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor)
-        ])
-        hostingController.didMove(toParent: self)
-        contentContainerView.bringSubviewToFront(hostingController.view)
-        chromeHostingController = hostingController
-    }
-
-    private var chromeTopInsetForPosition: CGFloat {
-        isUsingTopBarPosition ? Metrics.hatchTopInsetTopBar : Metrics.hatchTopInsetBottomBar
-    }
-
-    /// Pins the chrome at the bar's edge. `requestedContentInset.top` is the bar height on a top bar
-    /// (so the chrome tracks it) and 0 on a bottom bar (chrome sits at the content top).
-    private var pinnedChromeTopConstant: CGFloat {
-        topBarContentGap + requestedContentInset.top
-    }
-
     enum EscapeHatchPlacement: Equatable {
         /// Does not display the Escape Hatch.
         case none
-        /// Pins the Escape Hatch above the focused content.
-        case pinned
         /// Embeds the Escape Hatch in the current scrollable content.
         case embedded
 
         static func resolve(hasEscapeHatch: Bool,
                             isFireTab: Bool,
-                            isTyping: Bool,
-                            inputMode: TextEntryMode,
-                            hasFavorites: Bool) -> EscapeHatchPlacement {
+                            isTyping: Bool) -> EscapeHatchPlacement {
             guard hasEscapeHatch, !isFireTab, !isTyping else {
                 return .none
             }
-            return inputMode == .aiChat || hasFavorites ? .embedded : .pinned
+            return .embedded
         }
     }
 
@@ -421,34 +364,21 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             hasEscapeHatch: escapeHatchModel != nil,
             isFireTab: switchBarHandler.isFireTab,
             isTyping: UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
-                                                               hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText),
-            inputMode: switchBarHandler.currentToggleState,
-            hasFavorites: suggestionTrayDependencies?.favoritesViewModel.favorites.isEmpty == false)
+                                                               hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText))
     }
 
     private var embeddedEscapeHatchModel: EscapeHatchModel? {
         escapeHatchPlacement == .embedded ? escapeHatchModel : nil
     }
 
-    private var shouldShowPinnedHatch: Bool {
-        escapeHatchPlacement == .pinned
-    }
-
-    private var currentChromeReservedHeight: CGFloat {
-        shouldShowPinnedHatch
-            ? chromeTopInsetForPosition + TabSwitcherPill.compactSize + FocusedChromeView.Metrics.bottomInset
-            : 0
-    }
-
     private func applyEscapeHatchPlacement() {
+        unifiedSuggestionsHost?.setShowsFavorites(switchBarHandler.currentToggleState == .search)
         unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
-        updatePinnedChrome()
-        appliedEscapeHatchPlacement = escapeHatchPlacement
     }
 
-    /// Sets the host's content inset so content starts below the bar and any active pinned chrome.
+    /// Sets the host's content inset so content starts below the bar.
     private func applyHostContentInsets() {
-        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: requestedContentInset.top + currentChromeReservedHeight,
+        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: requestedContentInset.top,
                                                               left: 0,
                                                               bottom: requestedContentInset.bottom,
                                                               right: 0))
@@ -622,7 +552,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             source: source,
             inputsPublisher: inputsPublisher,
             isAddressBarAtBottom: !isUsingTopBarPosition,
-            favoritesProvider: { [weak self] in self?.makeSearchFavoritesController() },
+            favoritesProvider: { [weak self] in self?.makeScrollableNTPController() },
             onSelectRow: { [weak self] id in
                 guard let self, let suggestion = source.suggestion(forRowID: id) else { return }
                 self.fireSearchSuggestionClickPixel(for: suggestion)
@@ -702,7 +632,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsTopConstraint?.constant = topBarContentGap
     }
 
-    /// Scrollable content owns its hatch spacing, so the container-level gap only applies to pinned content.
+    /// Scrollable content owns its hatch spacing, so the container-level gap only applies when the hatch is absent.
     private var topBarContentGap: CGFloat {
         isUsingTopBarPosition && escapeHatchPlacement != .embedded ? Metrics.topBarContentClearance : 0
     }
@@ -768,7 +698,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         duckAISurface = nil
     }
 
-    private func makeSearchFavoritesController() -> NewTabPageViewController? {
+    private func makeScrollableNTPController() -> NewTabPageViewController? {
         guard let dependencies = suggestionTrayDependencies else { return nil }
         let ntpDeps = dependencies.newTabPageDependencies
         let controller = NewTabPageViewController(
@@ -895,11 +825,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // in lockstep with the bar.
         updateSingleHostTopOffset()
 
-        // Pinned chrome: track the bar (the constant updates inside the bar's animation here, so it
-        // glides in the same pass), rebind its content for the current state, and reserve the hatch height.
-        chromeTopConstraint?.constant = pinnedChromeTopConstant
-        updatePinnedChrome()
-        chromeHeightConstraint?.constant = currentChromeReservedHeight
         applyHostContentInsets()
         contentContainerView.layoutIfNeeded()
     }
@@ -945,12 +870,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .panel)
         static let topBarContentClearance: CGFloat = 4
-        /// Gap between the bar's edge and the pinned chrome (Figma). The chrome owns its other metrics.
-        static let hatchTopInsetTopBar: CGFloat = 6
-        /// Bottom bar: the focused content top coincides with the NTP content top, so this must equal the
-        /// NTP's `contentTopInset` (`NewTabPageLayoutConfiguration.unifiedToggleInput.contentTopInsetOverride`)
-        /// for the focused and NTP hatches to land on the same line. Keep the two in sync.
-        static let hatchTopInsetBottomBar: CGFloat = 10
     }
 }
 
@@ -985,8 +904,7 @@ private extension UnifiedInputContentContainerViewController {
             self.view.layoutIfNeeded()
         }
 
-        // SwiftUI changes hatch ownership immediately, so its UIKit insets must update in the same pass.
-        if animateContentUpdates && appliedEscapeHatchPlacement == escapeHatchPlacement {
+        if animateContentUpdates {
             scheduleAnimation(applyContentUpdates)
         } else {
             applyContentUpdates()

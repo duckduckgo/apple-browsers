@@ -24,20 +24,9 @@ class BarsAnimator {
     struct Metrics {
         static let floatingTransitionTravel: CGFloat = 80
 
-        static let maxCollapseProgressPerSecond: CGFloat = 7.0
-
-        static let maxRateLimitTimeStep: CFTimeInterval = 1.0 / 30.0
-
-        static let nominalFrameDuration: CFTimeInterval = 1.0 / 60.0
-
         static let legacyTransitionSpeed: CGFloat = 0.5
 
         static let floatingVelocityCommitThreshold: CGFloat = 0.15
-
-        static let flickReferenceVelocity: CGFloat = 1.2
-
-        static let flickFastestCollapseDuration: CFTimeInterval = 0.08
-        static let flickFastestExpandDuration: CFTimeInterval = 0.14
     }
 
     weak var delegate: BrowserChromeDelegate?
@@ -50,10 +39,6 @@ class BarsAnimator {
     var transitionStartPosY: CGFloat = 0
 
     private var transitionStartProgress: CGFloat = 0
-
-    private var lastProgressTimestamp: CFTimeInterval?
-
-    private let currentTime: () -> CFTimeInterval
 
     private var bottomRevealGestureState: BottomBounceRevealing = .possible
 
@@ -78,17 +63,20 @@ class BarsAnimator {
         case cancelled
     }
 
-    init(currentTime: @escaping () -> CFTimeInterval = CACurrentMediaTime) {
-        self.currentTime = currentTime
-    }
-
     func didStartScrolling(in scrollView: UIScrollView) {
         draggingStartPosY = scrollView.contentOffset.y
 
         if delegate?.isFloatingChromeEnabled == true {
+            transitionProgress = 1 - (delegate?.currentBarsVisibility ?? 1)
+            if transitionProgress <= 0 {
+                barsState = .revealed
+            } else if transitionProgress >= 1 {
+                barsState = .hidden
+            } else {
+                barsState = .transitioning
+            }
             transitionStartPosY = scrollView.contentOffset.y
             transitionStartProgress = transitionProgress
-            lastProgressTimestamp = nil
         }
     }
 
@@ -223,19 +211,7 @@ class BarsAnimator {
         }
 
         let target = transitionStartProgress + distance / Metrics.floatingTransitionTravel
-        return rateLimitedProgress(towards: target)
-    }
-
-    private func rateLimitedProgress(towards target: CGFloat) -> CGFloat {
-        let now = currentTime()
-        let elapsed = lastProgressTimestamp.map { now - $0 } ?? Metrics.nominalFrameDuration
-        lastProgressTimestamp = now
-
-        guard target > transitionProgress else { return min(max(target, 0), 1.0) }
-
-        let timeStep = min(max(elapsed, 0), Metrics.maxRateLimitTimeStep)
-        let maxStep = Metrics.maxCollapseProgressPerSecond * CGFloat(timeStep)
-        return min(max(min(target, transitionProgress + maxStep), 0), 1.0)
+        return target.clamped(to: 0...1)
     }
 
     func didFinishScrolling(in scrollView: UIScrollView, velocity: CGFloat) {
@@ -286,21 +262,11 @@ class BarsAnimator {
         let isFastFlick = abs(velocity) >= Metrics.floatingVelocityCommitThreshold
         if isFastFlick {
             if velocity < 0 {
-                let duration = flickAnimationDuration(
-                    base: delegate?.floatingMorphExpandDuration ?? 0.34,
-                    fastest: Metrics.flickFastestExpandDuration,
-                    velocity: velocity
-                )
-                revealBars(animated: true, animationDuration: duration)
+                revealBars(animated: true)
             } else {
                 let isAboveExtendedBottomBounceArea = scrollView.contentOffset.y < scrollView.contentOffsetYAtBottom - combinedBarsHeight
                 if barsState == .transitioning || isAboveExtendedBottomBounceArea {
-                    let duration = flickAnimationDuration(
-                        base: delegate?.floatingMorphCollapseDuration ?? 0.20,
-                        fastest: Metrics.flickFastestCollapseDuration,
-                        velocity: velocity
-                    )
-                    hideBars(animated: true, animationDuration: duration)
+                    hideBars(animated: true)
                 }
             }
             return
@@ -337,14 +303,6 @@ class BarsAnimator {
         delegate?.setBarsVisibility(0, animated: animated, animationDuration: animationDuration)
     }
 
-    private func flickAnimationDuration(base: CFTimeInterval, fastest: CFTimeInterval, velocity: CGFloat) -> CGFloat {
-        let threshold = Metrics.floatingVelocityCommitThreshold
-        let reference = Metrics.flickReferenceVelocity
-        guard reference > threshold else { return CGFloat(fastest) }
-
-        let speedFactor = ((abs(velocity) - threshold) / (reference - threshold)).clamped(to: 0...1)
-        return CGFloat(base - (base - fastest) * Double(speedFactor))
-    }
 }
 
 private extension UIScrollView {

@@ -293,7 +293,7 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertLessThan(percent, 0.1, "1pt of overscroll must not reveal a large slice of the chrome")
     }
 
-    func testWhenFlickIsFasterThanTheRateCapThenProgressIsLimited() throws {
+    func testWhenScrollOffsetAdvancesFullTravelInOneUpdateThenBarsTrackItImmediately() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
 
@@ -304,8 +304,25 @@ class BarsAnimatorFloatingTests: XCTestCase {
         clock.advance(by: 1.0 / 60.0)
         sut.didScroll(in: scrollView)
 
+        XCTAssertEqual(sut.barsState, .hidden)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0))
+    }
+
+    func testWhenNewDragInterruptsSettlingThenProgressStartsFromRenderedVisibility() throws {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+        advanceOffset(sut, scrollView, clock, to: travel * 0.2)
+        sut.didFinishScrolling(in: scrollView, velocity: BarsAnimator.Metrics.floatingVelocityCommitThreshold + 0.1)
+
+        delegate.currentBarsVisibility = 0.6
+        sut.didStartScrolling(in: scrollView)
+        advanceOffset(sut, scrollView, clock, to: scrollView.contentOffset.y + travel * 0.1)
+
+        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0.5, accuracy: 0.001)
         XCTAssertEqual(sut.barsState, .transitioning)
-        XCTAssertGreaterThan(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0)
     }
 
     func testWhenReversingDirectionMultipleTimesWithinOneDragThenTrackingNeverStalls() throws {
@@ -351,7 +368,7 @@ class BarsAnimatorFloatingTests: XCTestCase {
 
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
-        sut.didScroll(in: scrollView) // primes lastProgressTimestamp
+        sut.didScroll(in: scrollView)
         scrollView.contentOffset.y = initialProgress
         clock.advance(by: 1.0)
         sut.didScroll(in: scrollView)
@@ -363,84 +380,21 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
     }
 
-    func testWhenFlickVelocityIsAtTheCommitThresholdThenDurationMatchesTheBase() {
+    func testWhenFastReleaseThenSettlingDoesNotOverrideTheMorphDuration() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
         let initialProgress = travel * 0.2
 
         scrollView.contentOffset.y = 0
         sut.didStartScrolling(in: scrollView)
-        sut.didScroll(in: scrollView) // primes lastProgressTimestamp
+        sut.didScroll(in: scrollView)
         scrollView.contentOffset.y = initialProgress
         clock.advance(by: 1.0)
         sut.didScroll(in: scrollView)
 
-        sut.didFinishScrolling(in: scrollView, velocity: BarsAnimator.Metrics.floatingVelocityCommitThreshold)
+        sut.didFinishScrolling(in: scrollView, velocity: BarsAnimator.Metrics.floatingVelocityCommitThreshold + 5)
 
-        XCTAssertEqual(delegate.lastAnimationDuration ?? -1, CGFloat(delegate.floatingMorphCollapseDuration), accuracy: 0.001)
-    }
-
-    func testWhenFlickVelocityIsAtOrAboveTheReferenceThenDurationIsTheFastestFloor() {
-        let (sut, delegate, clock) = makeFloatingSUT()
-        let scrollView = mockTallScrollView()
-        let initialProgress = travel * 0.2
-
-        scrollView.contentOffset.y = 0
-        sut.didStartScrolling(in: scrollView)
-        sut.didScroll(in: scrollView) // primes lastProgressTimestamp
-        scrollView.contentOffset.y = initialProgress
-        clock.advance(by: 1.0)
-        sut.didScroll(in: scrollView)
-
-        sut.didFinishScrolling(in: scrollView, velocity: BarsAnimator.Metrics.flickReferenceVelocity + 5)
-
-        XCTAssertEqual(delegate.lastAnimationDuration ?? -1, CGFloat(BarsAnimator.Metrics.flickFastestCollapseDuration), accuracy: 0.001)
-    }
-
-    func testWhenFlickVelocityIsBetweenTheThresholdsThenDurationIsBetweenBaseAndFastest() {
-        let (sut, delegate, clock) = makeFloatingSUT()
-        let scrollView = mockTallScrollView()
-        let initialProgress = travel * 0.2
-
-        scrollView.contentOffset.y = 0
-        sut.didStartScrolling(in: scrollView)
-        sut.didScroll(in: scrollView) // primes lastProgressTimestamp
-        scrollView.contentOffset.y = initialProgress
-        clock.advance(by: 1.0)
-        sut.didScroll(in: scrollView)
-
-        let midVelocity = (BarsAnimator.Metrics.floatingVelocityCommitThreshold + BarsAnimator.Metrics.flickReferenceVelocity) / 2
-        sut.didFinishScrolling(in: scrollView, velocity: midVelocity)
-
-        let duration = try? XCTUnwrap(delegate.lastAnimationDuration)
-        XCTAssertNotNil(duration)
-        if let duration {
-            XCTAssertLessThan(duration, CGFloat(delegate.floatingMorphCollapseDuration))
-            XCTAssertGreaterThan(duration, CGFloat(BarsAnimator.Metrics.flickFastestCollapseDuration))
-        }
-    }
-
-    func testWhenFasterFlickThenDurationIsShorter() throws {
-        func finishDrag(withVelocity velocity: CGFloat) -> CGFloat? {
-            let (sut, delegate, clock) = makeFloatingSUT()
-            let scrollView = mockTallScrollView()
-            let initialProgress = travel * 0.2
-
-            scrollView.contentOffset.y = 0
-            sut.didStartScrolling(in: scrollView)
-            sut.didScroll(in: scrollView) // primes lastProgressTimestamp
-            scrollView.contentOffset.y = initialProgress
-            clock.advance(by: 1.0)
-            sut.didScroll(in: scrollView)
-
-            sut.didFinishScrolling(in: scrollView, velocity: velocity)
-            return delegate.lastAnimationDuration
-        }
-
-        let slowDuration = try XCTUnwrap(finishDrag(withVelocity: BarsAnimator.Metrics.floatingVelocityCommitThreshold + 0.05))
-        let fastDuration = try XCTUnwrap(finishDrag(withVelocity: BarsAnimator.Metrics.flickReferenceVelocity))
-
-        XCTAssertLessThan(fastDuration, slowDuration, "A firmer flick should settle faster, matching how fast the content was already moving")
+        XCTAssertNil(delegate.lastAnimationDuration)
     }
 
     func testWhenDraggingUpFromHiddenThenChromeStartsRevealingImmediately() throws {
@@ -537,7 +491,7 @@ class BarsAnimatorFloatingTests: XCTestCase {
                                            to offsets: Offsets) where Offsets.Element == CGFloat {
         for offset in offsets {
             scrollView.contentOffset.y = offset
-            clock.advance(by: BarsAnimator.Metrics.maxRateLimitTimeStep)
+            clock.advance(by: 1.0 / 30.0)
             sut.didScroll(in: scrollView)
         }
     }
@@ -550,7 +504,7 @@ class BarsAnimatorFloatingTests: XCTestCase {
         let start = scrollView.contentOffset.y
         for step in 1...steps {
             scrollView.contentOffset.y = start + (targetOffset - start) * CGFloat(step) / CGFloat(steps)
-            clock.advance(by: BarsAnimator.Metrics.maxRateLimitTimeStep)
+            clock.advance(by: 1.0 / 30.0)
             sut.didScroll(in: scrollView)
         }
     }
@@ -576,7 +530,7 @@ private final class TestClock {
 
 private func makeFloatingSUT() -> (sut: BarsAnimator, delegate: BrowserChromeDelegateMock, clock: TestClock) {
     let clock = TestClock()
-    let sut = BarsAnimator(currentTime: { clock.now })
+    let sut = BarsAnimator()
     let delegate = BrowserChromeDelegateMock()
     delegate.isFloatingChromeEnabled = true
     delegate.toolbarHeight = 128
@@ -646,6 +600,9 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     func setBarsVisibility(_ percent: CGFloat, animated: Bool) {
         receivedMessages.append(.setBarsVisibility(percent))
+        if !animated {
+            currentBarsVisibility = percent
+        }
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
@@ -661,6 +618,8 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
     var isChromeScrollInteractionDisabled: Bool = false
 
     var isToolbarHidden: Bool = false
+
+    var currentBarsVisibility: CGFloat = 1
 
     var toolbarHeight: CGFloat = 0
 

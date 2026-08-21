@@ -4784,7 +4784,7 @@ extension MainViewController: BrowserChromeDelegate {
     /// band and only fades it in over `[handoffStart, 1]`, so container alpha no longer reflects the
     /// real fraction mid-transition. Call sites that reapply visibility need the true fraction.
     var currentBarsVisibility: CGFloat {
-        lastChromeVisibilityPercent
+        chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
     }
 
     func restoreCurrentBarsVisibilityAfterLayoutRefresh() {

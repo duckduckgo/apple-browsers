@@ -26,10 +26,10 @@ WPR_US_BROADBAND_IN_KBPS="${WPR_US_BROADBAND_IN_KBPS:-50000}"
 WPR_US_BROADBAND_OUT_KBPS="${WPR_US_BROADBAND_OUT_KBPS:-10000}"
 WPR_US_BROADBAND_WINDOW="${WPR_US_BROADBAND_WINDOW:-10}"
 
-# Keep the outer browser window identical across Chrome, Safari, and DuckDuckGo.
+# Default outer browser window size. Workflows may override it for constrained displays.
 # Browser chrome may still produce different content viewport dimensions.
-BROWSER_WINDOW_WIDTH=1366
-BROWSER_WINDOW_HEIGHT=768
+BROWSER_WINDOW_WIDTH="${BROWSER_WINDOW_WIDTH:-1366}"
+BROWSER_WINDOW_HEIGHT="${BROWSER_WINDOW_HEIGHT:-768}"
 
 normalize_wpr_site() {
   local value="$1"

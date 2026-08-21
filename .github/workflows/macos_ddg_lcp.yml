@@ -194,6 +194,8 @@ jobs:
           WPR_ARCHIVES_PREPARED: "1"
           DIAGNOSTICS_DIR: ${{ github.workspace }}/macOS/scripts/crossbench/ddg-diagnostics
           RUNNER_IMAGE: ${{ vars.MACOS_PERFORMANCE_RUNNER_IMAGE || runner.name }}
+          BROWSER_WINDOW_WIDTH: "800"
+          BROWSER_WINDOW_HEIGHT: "600"
           CAPTURE_SCREENSHOTS: ${{ inputs.capture-screenshots && '1' || '0' }}
           YOUTUBE_THEME_REFRESH: ${{ inputs.youtube-theme-refresh && '1' || '0' }}
         run: |

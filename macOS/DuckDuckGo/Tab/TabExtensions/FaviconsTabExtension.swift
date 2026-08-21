@@ -129,7 +129,10 @@ final class FaviconsTabExtension {
 
         guard faviconManagement.isCacheLoaded else { return }
 
-        if let cachedFavicon = faviconManagement.getCachedFavicon(forUrlOrAnySubdomain: url, sizeCategory: .small, fallBackToSmaller: false)?.image {
+        // Only this URL's own favicon, never a sibling subdomain's. A tab icon identifies the site the
+        // tab shows, so borrowing `meet.google.com`'s icon for `messages.google.com` states something
+        // false about the page. The placeholder is the correct answer until this site's favicon loads.
+        if let cachedFavicon = faviconManagement.getCachedFavicon(for: url, sizeCategory: .small, fallBackToSmaller: false)?.image {
             if cachedFavicon != favicon {
                 favicon = cachedFavicon
             }

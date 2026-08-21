@@ -43,7 +43,6 @@ let package = Package(
                 "SERPSettings",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "Persistence"),
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 .product(name: "AIChat", package: "AIChat")
             ]

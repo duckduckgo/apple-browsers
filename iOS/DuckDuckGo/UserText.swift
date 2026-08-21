@@ -2343,17 +2343,9 @@ public struct UserText {
     public static let aiChatBasicModelsSectionHeader = NotLocalizedString("aichat.model-picker.subscribed-basic-section-header", value: "Basic Models", comment: "Section header in the model picker menu for basic/free models when the user has an active subscription")
     public static let aiChatPlusModelsSectionHeader = NotLocalizedString("aichat.model-picker.plus-section-header", value: "Plus", comment: "Section header in the model picker menu for models available from the DuckDuckGo Plus tier")
     public static let aiChatProModelsSectionHeader = NotLocalizedString("aichat.model-picker.pro-section-header", value: "Pro", comment: "Section header in the model picker menu for models available from the DuckDuckGo Pro tier")
-    public static let aiChatModelPickerTryFree = NotLocalizedString("aichat.model-picker.try-free", value: "Try for free", comment: "Section header for subscription models shown to free users")
-    public static let aiChatModelPickerSubscriberExclusive = NotLocalizedString("aichat.model-picker.subscriber-exclusive", value: "Subscriber Exclusive", comment: "Section header for subscription models shown to users who are not eligible for a free trial")
-    public static let aiChatModelPickerProPlanExclusive = NotLocalizedString("aichat.model-picker.pro-plan-exclusive", value: "Pro Plan Exclusive", comment: "Section header for Pro-only models shown to DuckDuckGo Plus subscribers")
-    public static let aiChatModelPickerEffortTitle = NotLocalizedString(
-        "aichat.model-picker.effort-title",
-        value: "Effort",
-        comment: "Title of the reasoning effort submenu in the model picker")
-    public static let aiChatModelPickerModelsSectionHeader = NotLocalizedString(
-        "aichat.model-picker.models-section-header",
-        value: "Models",
-        comment: "Section header above models in the model picker")
+    public static let aiChatModelPickerTryFree = NSLocalizedString("aichat.model-picker.try-free", value: "Try for Free", comment: "Section header for subscription models shown to free users")
+    public static let aiChatModelPickerSubscriberExclusive = NSLocalizedString("aichat.model-picker.subscriber-exclusive", value: "Subscriber Exclusive", comment: "Section header for subscription models shown to users who are not eligible for a free trial")
+    public static let aiChatModelPickerProPlanExclusive = NSLocalizedString("aichat.model-picker.pro-plan-exclusive", value: "Pro Plan Exclusive", comment: "Section header for Pro-only models shown to DuckDuckGo Plus subscribers")
 
     public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")
     public static let settingsAIChatExperimentalSection = NotLocalizedString("settings.aichat.experimental.section.title", value: "Experimental Duck.ai (internal only) ", comment: "")
@@ -2485,7 +2477,7 @@ public struct UserText {
     public static let aiChatQuickActionSummarizePage = NSLocalizedString("duckai.quick.action.summarize.page", value: "Summarize page", comment: "Title for the summarize page quick action chip in the improved Duck.ai contextual sheet")
     public static let aiChatQuickActionAttach = NSLocalizedString("duckai.quick.action.attach", value: "Attach Page Content", comment: "Title for the attach page content quick action chip in Duck.ai contextual sheet")
 
-    // MARK: - AI Chat Recent Chats Popup
+    // MARK: - AI Chat Recent Chats Menu
     public static let aiChatRecentChatsButtonAccessibility = NSLocalizedString("duckai.contextual.recent.chats.button", value: "Recent Chats", comment: "Accessibility label for the recent chats button in the Duck.ai contextual sheet header")
     public static let aiChatRecentChatsSectionTitle = NSLocalizedString("duckai.contextual.recent.chats.section", value: "Recent Chats", comment: "Section header in the recent chats popup")
     public static let duckAiContextualOpenDuckAi = NSLocalizedString("duckai.contextual.open.duckai", value: "Open Duck.ai", comment: "Row in the contextual chat's chats popup that opens Duck.ai in a new tab")

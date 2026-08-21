@@ -19,11 +19,10 @@
 import Bookmarks
 import Combine
 import Foundation
-import Persistence
+@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 @testable import SyncUI_macOS
 import XCTest
-import PersistenceTestingUtils
 @testable import BrowserServicesKit
 @testable import DDGSync
 @testable import DuckDuckGo_Privacy_Browser

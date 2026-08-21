@@ -20,7 +20,7 @@
 import XCTest
 @testable import Subscription
 import Core
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 

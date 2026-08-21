@@ -680,6 +680,8 @@ start_app() {
     AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
       "$DDG_LAUNCHER" "$DDG_APP" "$DDG_EXECUTABLE" "$DDG_LOG" -- \
       -automationPort "$AUTOMATION_PORT" \
+      -automationWindowWidth "$BROWSER_WINDOW_WIDTH" \
+      -automationWindowHeight "$BROWSER_WINDOW_HEIGHT" \
       -isOnboardingCompleted true \
       -webViewProxy "socks5://127.0.0.1:$TSPROXY_PORT" \
       -acceptInsecureCerts true \

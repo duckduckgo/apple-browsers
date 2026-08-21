@@ -646,6 +646,7 @@ run_chrome() {
         --repetitions="$MEASURED_REPS" \
         --url="$site,$LOAD_WINDOW" \
         --about-blank-duration=2s \
+        --viewport="${BROWSER_WINDOW_WIDTH}x${BROWSER_WINDOW_HEIGHT}" \
         --bin-override "wpr=$WPR_BIN" \
         --out-dir="$ACTIVE_SITE_WORK_DIR" \
         "$network_arg" \

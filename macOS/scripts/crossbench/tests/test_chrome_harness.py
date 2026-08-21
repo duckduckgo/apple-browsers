@@ -16,6 +16,9 @@ MANIFEST_HEADER = (
 
 
 class ChromeHarnessTests(unittest.TestCase):
+    def test_uses_standard_outer_window_size(self) -> None:
+        self.assertIn('--viewport="${BROWSER_WINDOW_WIDTH}x${BROWSER_WINDOW_HEIGHT}"', SCRIPT.read_text())
+
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)

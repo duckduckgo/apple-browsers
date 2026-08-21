@@ -46,6 +46,25 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
         activeTabCollectionViewModel?.selectedTab
     }
 
+    private var requestedWindowSize: NSSize? {
+        let defaults = UserDefaults.standard
+        let width = defaults.integer(forKey: "automationWindowWidth")
+        let height = defaults.integer(forKey: "automationWindowHeight")
+        guard width > 0, height > 0 else { return nil }
+        return NSSize(width: width, height: height)
+    }
+
+    private func applyRequestedWindowSize() -> Bool {
+        guard let requestedWindowSize else { return true }
+        guard let window = activeMainViewController?.view.window else { return false }
+        window.setFrame(
+            NSRect(origin: window.frame.origin, size: requestedWindowSize),
+            display: true
+        )
+        return abs(window.frame.width - requestedWindowSize.width) < 0.5
+            && abs(window.frame.height - requestedWindowSize.height) < 0.5
+    }
+
     var currentTabHandle: String? {
         currentTab?.uuid
     }
@@ -108,6 +127,9 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
 
     func navigate(to url: URL) -> Bool {
         guard let tab = currentTab else {
+            return false
+        }
+        guard applyRequestedWindowSize() else {
             return false
         }
         activeMainViewController?.view.window?.makeKeyAndOrderFront(nil)

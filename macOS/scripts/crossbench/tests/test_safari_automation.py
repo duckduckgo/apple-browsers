@@ -52,18 +52,43 @@ class LandingTests(unittest.TestCase):
         with mock.patch.object(
             SAFARI_AUTOMATION,
             "request",
-            return_value={"value": {"sessionId": "session"}},
+            side_effect=[
+                {"value": {"sessionId": "session"}},
+                {"value": {"width": 1366, "height": 768}},
+            ],
         ) as request:
             self.assertEqual(
                 SAFARI_AUTOMATION.new_session("8790"), "session"
             )
-        body = request.call_args.args[3]
+        body = request.call_args_list[0].args[3]
         self.assertIs(
             body["capabilities"]["alwaysMatch"]["acceptInsecureCerts"], True
         )
         self.assertEqual(
             body["capabilities"]["alwaysMatch"]["pageLoadStrategy"], "none"
         )
+
+    def test_set_window_size_requires_exact_outer_dimensions(self):
+        with mock.patch.object(
+            SAFARI_AUTOMATION,
+            "request",
+            return_value={"value": {"width": 1366, "height": 768}},
+        ) as request:
+            SAFARI_AUTOMATION.set_window_size("8790", "session", 1366, 768)
+        self.assertEqual(
+            request.call_args.args[3], {"width": 1366, "height": 768}
+        )
+
+    def test_set_window_size_rejects_clamped_dimensions(self):
+        with mock.patch.object(
+            SAFARI_AUTOMATION,
+            "request",
+            return_value={"value": {"width": 1024, "height": 768}},
+        ):
+            with self.assertRaisesRegex(RuntimeError, "window size mismatch"):
+                SAFARI_AUTOMATION.set_window_size(
+                    "8790", "session", 1366, 768
+                )
 
     def test_measurement_transport_failure_is_nonzero_with_parseable_output(self):
         stdout = io.StringIO()

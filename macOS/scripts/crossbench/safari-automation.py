@@ -46,7 +46,7 @@ def request(port, method, path, body=None, timeout=60):
         ) from error
 
 
-def new_session(port):
+def new_session(port, window_width=1366, window_height=768):
     response = request(
         port,
         "POST",
@@ -67,6 +67,7 @@ def new_session(port):
         raise RuntimeError(
             "new-session response has no sessionId: {}".format(response)
         )
+    set_window_size(port, session_id, window_width, window_height)
     return session_id
 
 
@@ -80,6 +81,23 @@ def delete_session(port, session_id):
             file=sys.stderr,
         )
         return False
+
+
+def set_window_size(port, session_id, width, height):
+    response = request(
+        port,
+        "POST",
+        "/session/{}/window/rect".format(session_id),
+        {"width": int(width), "height": int(height)},
+        timeout=15,
+    )
+    rect = response.get("value", response)
+    if rect.get("width") != int(width) or rect.get("height") != int(height):
+        raise RuntimeError(
+            "Safari window size mismatch: requested {}x{}, got {}x{}".format(
+                width, height, rect.get("width"), rect.get("height")
+            )
+        )
 
 
 def lcp_probe(settle_ms, load_window_ms):
@@ -142,12 +160,19 @@ def check(port):
     return status
 
 
-def measure(port, url, settle_ms, load_window_seconds):
+def measure(
+    port,
+    url,
+    settle_ms,
+    load_window_seconds,
+    window_width=1366,
+    window_height=768,
+):
     session_id = None
     detail = -1
     failed = False
     try:
-        session_id = new_session(port)
+        session_id = new_session(port, window_width, window_height)
         request(
             port,
             "POST",
@@ -236,7 +261,8 @@ def measure(port, url, settle_ms, load_window_seconds):
 USAGE = (
     "usage:\n"
     "  safari-automation.py DRIVER_PORT check\n"
-    "  safari-automation.py DRIVER_PORT measure URL [SETTLE_MS] [WINDOW_SECONDS]"
+    "  safari-automation.py DRIVER_PORT measure URL [SETTLE_MS] [WINDOW_SECONDS] "
+    "[WINDOW_WIDTH] [WINDOW_HEIGHT]"
 )
 
 
@@ -251,7 +277,16 @@ def main(argv):
     if command == "measure" and arguments:
         settle_ms = float(arguments[1]) if len(arguments) > 1 else 600
         window = float(arguments[2]) if len(arguments) > 2 else 12
-        return measure(port, arguments[0], settle_ms, window)
+        window_width = int(arguments[3]) if len(arguments) > 3 else 1366
+        window_height = int(arguments[4]) if len(arguments) > 4 else 768
+        return measure(
+            port,
+            arguments[0],
+            settle_ms,
+            window,
+            window_width,
+            window_height,
+        )
     print(USAGE, file=sys.stderr)
     return 2
 

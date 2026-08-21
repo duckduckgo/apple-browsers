@@ -425,6 +425,14 @@ class DDGHarnessTests(unittest.TestCase):
             )
             self.assertIn("-isOnboardingCompleted", launch["args"])
             self.assertIn("-acceptInsecureCerts", launch["args"])
+            self.assertEqual(
+                launch["args"][launch["args"].index("-automationWindowWidth") + 1],
+                "1366",
+            )
+            self.assertEqual(
+                launch["args"][launch["args"].index("-automationWindowHeight") + 1],
+                "768",
+            )
             # A normal launch arms Sparkle, which must not reach the network
             # mid-measurement.
             self.assertEqual(

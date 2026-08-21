@@ -907,7 +907,8 @@ measure_site() {
     before="$(proxy_log_line_count)"
     if output="$("$PYTHON_BIN" "$SAFARI_AUTOMATION_PY" \
         "$SAFARIDRIVER_PORT" measure "https://$site" \
-        "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" 2>&1)"; then
+        "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" \
+        "$BROWSER_WINDOW_WIDTH" "$BROWSER_WINDOW_HEIGHT" 2>&1)"; then
       automation_status=0
     else
       automation_status=$?

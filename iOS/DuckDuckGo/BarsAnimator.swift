@@ -67,8 +67,10 @@ class BarsAnimator {
         draggingStartPosY = scrollView.contentOffset.y
 
         if delegate?.isFloatingChromeEnabled == true {
+            // Capture rendered visibility first, then pin any in-flight morph so tracking
+            // starts from that value without re-applying settled 0/1 chrome side effects.
             let currentBarsVisibility = delegate?.currentBarsVisibility ?? 1
-            delegate?.setBarsVisibility(currentBarsVisibility, animated: false, animationDuration: nil)
+            delegate?.pinFloatingChromeMorphIfNeeded()
             transitionProgress = 1 - currentBarsVisibility
             if transitionProgress <= 0 {
                 barsState = .revealed
@@ -112,7 +114,9 @@ class BarsAnimator {
         }
         guard bottomRevealGestureState != .triggered else { return }
 
-        if draggingStartPosY <= 0, scrollView.contentOffset.y <= 0 {
+        // Page top is at `-adjustedContentInset.top` (not 0) when the scroll view has a top inset.
+        let pageTopY = -scrollView.adjustedContentInset.top
+        if draggingStartPosY <= pageTopY, scrollView.contentOffset.y <= pageTopY {
             if barsState != .revealed || transitionProgress != 0 {
                 barsState = .revealed
                 transitionProgress = 0

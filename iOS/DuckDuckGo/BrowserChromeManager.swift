@@ -42,6 +42,10 @@ protocol BrowserChromeDelegate: AnyObject {
 
     var isFloatingChromeEnabled: Bool { get }
 
+    /// Pins any in-flight floating chrome morph to its currently rendered visibility so scroll
+    /// tracking can take over. No-op when not morphing; must not re-fire settled chrome side effects.
+    func pinFloatingChromeMorphIfNeeded()
+
     /// Height (from the screen bottom) obscured by the visible bottom chrome at the given chrome
     /// visibility fraction, used to resize the floating web view so page-fixed footers pin to the top
     /// of whatever is on screen (toolbar -> capsule -> safe area).
@@ -60,6 +64,8 @@ extension BrowserChromeDelegate {
     var isFloatingChromeEnabled: Bool { false }
 
     var currentBarsVisibility: CGFloat { isToolbarHidden ? 0 : 1 }
+
+    func pinFloatingChromeMorphIfNeeded() {}
 }
 
 class BrowserChromeManager: NSObject, UIScrollViewDelegate {

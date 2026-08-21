@@ -39,7 +39,7 @@ struct UserText {
     static let fireDialogHistoryTitle = NSLocalizedString("fire.dialog.history.title", value: "History", comment: "Section title. Toggle that controls whether browsing history entries are deleted.")
     static let cookiesAndSiteDataTitle = NSLocalizedString("fire.dialog.cookies.title", value: "Cookies and site data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCookiesAndOtherData = NSLocalizedString("fire.dialog.cookies.and.other.data.title", value: "Cookies & other data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
-    static let fireDialogIncludeCookiesAndOtherData = NSLocalizedString("fire.dialog.include.cookies.and.other.data.title", value: "Include cookies & other data?", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
+    static let fireDialogIncludeCookiesAndOtherData = NSLocalizedString("fire.dialog.include.cookies.and.other.data.title", value: "Include cookies & other data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCloseThisTab = NSLocalizedString("fire.dialog.close.this.tab", value: "Close this tab.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.")
     static let fireDialogCloseThisWindow = NSLocalizedString("fire.dialog.close.this.window", value: "Close this window.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Window’. Means: the current browser window (all tabs inside it) will be closed.")
     static let fireDialogCloseAllTabsWindows = NSLocalizedString("fire.dialog.close.all.tabs.windows", value: "Close all tabs and windows.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
@@ -556,7 +556,7 @@ struct UserText {
     static func fireDialogSitesOverlayTitle(_ count: Int) -> String {
         let template = NSLocalizedString(
             "fire.dialog.sites.overlay.title2",
-            value: "**Cookies & other data from %#@sites@** will be deleted:",
+            value: "**Cookies & other data from %#@sites@** will be deleted",
             comment: "Simplified Fire dialog's sites overlay title, stating the number of sites affected."
         )
         return String.localizedStringWithFormat(template, count)
@@ -566,7 +566,7 @@ struct UserText {
     static func fireDialogChatsOverlayTitle(_ count: Int) -> String {
         let template = NSLocalizedString(
             "fire.dialog.chats.overlay.title2",
-            value: "**%#@chats@** will be deleted:",
+            value: "**%#@chats@** will be deleted",
             comment: "Simplified Fire dialog's chats overlay title, stating the number of chats affected."
         )
         return String.localizedStringWithFormat(template, count)
@@ -576,7 +576,7 @@ struct UserText {
     static func fireDialogHistoryOverlayTitle(_ count: Int) -> String {
         let template = NSLocalizedString(
             "fire.dialog.history.overlay.title",
-            value: "**%#@items@** will be deleted:",
+            value: "**%#@items@** will be deleted",
             comment: "Simplified Fire dialog's history overlay title, stating the number of history items affected."
         )
         return String.localizedStringWithFormat(template, count)
@@ -930,12 +930,11 @@ struct UserText {
 
     static let aiChatModelPickerButtonTooltip = NSLocalizedString("aichat.model-picker-button.tooltip", value: "Choose model", comment: "Tooltip for the model picker button in AI chat omnibar")
     static let aiChatModelPickerAdvancedModelsSectionHeader = NSLocalizedString("aichat.model-picker.advanced-models-section-header", value: "Advanced Models", comment: "Section header in the model picker menu for advanced models when user has an active subscription")
-    static let aiChatModelPickerSubscriberExclusive = NSLocalizedString("aichat.model-picker.subscriber-exclusive", value: "Subscriber Exclusive", comment: "Label above the gated (subscriber-only) models in the model picker menu, shown to free users where the gated models are a mix of Plus and Pro")
-    static let aiChatModelPickerProExclusive = NSLocalizedString("aichat.model-picker.pro-exclusive", value: "Pro Exclusive", comment: "Label above the gated models in the model picker menu, shown to Plus subscribers — they're already a subscriber, so the gated models (all Pro-only) are called out specifically rather than reusing the generic 'Subscriber Exclusive' label")
-    static let aiChatModelPickerTryForFree = NSLocalizedString("aichat.model-picker.try-for-free", value: "TRY FOR FREE", comment: "Text of the yellow badge in the model picker and reasoning-effort picker that opens the subscription purchase flow, shown to free users")
-    static let aiChatModelPickerUpgrade = NSLocalizedString("aichat.model-picker.upgrade", value: "UPGRADE", comment: "Text of the yellow badge in the model picker and reasoning-effort picker that opens the subscription upgrade flow, shown to Plus subscribers")
-    static let aiChatModelPickerTierBadgePlus = NSLocalizedString("aichat.model-picker.tier-badge.plus", value: "PLUS", comment: "Trailing badge on a model picker row for a model that requires a Plus subscription")
-    static let aiChatModelPickerTierBadgePro = NSLocalizedString("aichat.model-picker.tier-badge.pro", value: "PRO", comment: "Trailing badge on a model picker row for a model that requires a Pro subscription")
+    static let aiChatModelPickerLabelEverydayUse = NSLocalizedString("aichat.model-picker.label.everyday-use", value: "Best for everyday use", comment: "Subtitle beneath a recommended model in the model picker")
+    static let aiChatModelPickerLabelUsesLimitsFaster = NSLocalizedString("aichat.model-picker.label.uses-limits-faster", value: "Solid but hits limits sooner", comment: "Subtitle beneath a recommended model in the model picker that consumes usage limits faster")
+    static let aiChatModelPickerTryFreeSectionHeader = NSLocalizedString("aichat.model-picker.section.try-free", value: "Try for Free", comment: "Section header above gated models in the model picker, shown when a free trial is available")
+    static let aiChatModelPickerAvailableWithProSectionHeader = NSLocalizedString("aichat.model-picker.section.available-with-pro", value: "Pro Plan Exclusive", comment: "Section header above Pro-only models in the model picker, shown to a Plus subscriber")
+    static let aiChatModelPickerAvailableWithPaidPlansSectionHeader = NSLocalizedString("aichat.model-picker.section.available-with-paid-plans", value: "Subscriber Exclusive", comment: "Section header above gated models in the model picker, shown to a non-subscriber who is no longer eligible for the free trial — the models below span both paid plans")
 
     static let aiChatSubscriptionUpsellDialogTitle = NSLocalizedString("aichat.subscription-upsell-dialog.title", value: "Upgrade Duck.ai with a DuckDuckGo subscription", comment: "Title of the dialog shown when the user taps a gated reasoning effort")
     static let aiChatSubscriptionUpsellDialogMessage = NSLocalizedString("aichat.subscription-upsell-dialog.message", value: "Get access to advanced AI models in Duck.ai, our VPN, and other premium protections by subscribing to DuckDuckGo.", comment: "Body text of the dialog shown when the user taps a gated reasoning effort")

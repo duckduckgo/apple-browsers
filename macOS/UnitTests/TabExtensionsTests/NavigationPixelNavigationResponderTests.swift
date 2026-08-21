@@ -17,9 +17,9 @@
 //
 
 import Navigation
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import PrivacyConfig
+@_spi(Testing) import SharedTestUtilities
 import WebKit
 import XCTest
 

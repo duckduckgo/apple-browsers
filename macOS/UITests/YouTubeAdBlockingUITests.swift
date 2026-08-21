@@ -149,9 +149,10 @@ final class YouTubeAdBlockingUITests: UITestCase {
         ])
         app.enforceSingleWindow()
         XCTAssertTrue(app.addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        app.addressBar.typeURL(URL(string: "https://example.com")!)
-        XCTAssertTrue(app.windows.webViews["Example Domain"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "example.com page did not load")
+        app.addressBar.typeURL(URL(string: "https://github.com")!)
+        let githubContent = app.windows.webViews.firstMatch.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(githubContent.waitForExistence(timeout: UITests.Timeouts.navigation),
+                      "github.com page did not load")
         XCTAssertFalse(app.buttons[youTubeAdBlockButtonIdentifier].exists,
                        "YouTube ad block button should not appear on non-YouTube URLs")
     }

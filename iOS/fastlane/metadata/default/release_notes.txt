@@ -1,1 +1,1 @@
-• Added more shortcut options to the address bar and toolbar, to make it easier to add bookmarks and favorites, fill passwords, and access other actions.
+• You can now ask Duck.ai about any text you see while browsing, without having to copy/paste it into a Duck.ai chat. Just select text on any website and tap "Ask Duck.ai" in the context menu.

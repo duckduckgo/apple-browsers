@@ -129,6 +129,40 @@ extension AppDelegate {
         }
     }
 
+    /// Opens `debug://failure` in the **current tab** (or fills a lone New Tab), or creates a window if none.
+    /// Uses `show(url:newTab:false)` so **Debug → Open demo** does not always append a tab (e.g. pinned-tab UI tests).
+    /// Menu targets `AppDelegate` when there is no key window (all closed).
+    @objc func openFailureURLSchemeDemoDebugPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return }
+        DispatchQueue.main.async {
+            self.windowControllersManager.show(url: URL.debugURL(.failure), source: .ui, newTab: false)
+        }
+    }
+
+    @objc func openFailureURLSchemeAlternatingFailuresDebugPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return }
+        DispatchQueue.main.async {
+            let url = URL.debugURL(.failure, parameters: [.alternatingFailures: URL.DebugURLQueryParameter.enabledValue])
+            self.windowControllersManager.show(url: url, source: .ui, newTab: false)
+        }
+    }
+
+    @objc func openFailureURLSchemeNotConnectedQueryDebugPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return }
+        DispatchQueue.main.async {
+            let url = URL.debugURL(.failure, parameters: [.simulatedError: URL.DebugURLSimulatedError.notConnected.rawValue])
+            self.windowControllersManager.show(url: url, source: .ui, newTab: false)
+        }
+    }
+
+    @objc func openFailureURLSchemeHostNotFoundQueryDebugPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return }
+        DispatchQueue.main.async {
+            let url = URL.debugURL(.failure, parameters: [.simulatedError: URL.DebugURLSimulatedError.hostNotFound.rawValue])
+            self.windowControllersManager.show(url: url, source: .ui, newTab: false)
+        }
+    }
+
     @objc func closeAllWindows(_ sender: Any?) {
         DispatchQueue.main.async {
             WindowsManager.closeWindows()
@@ -1989,6 +2023,13 @@ extension AppDelegate: NSMenuItemValidation {
             return isDisplayingOneOrMoreWindows
 
         case #selector(AppDelegate.newWindow(_:)):
+            return isUserInteractionAllowed || !isDisplayingOneOrMoreWindows
+
+        case #selector(AppDelegate.openFailureURLSchemeDemoDebugPage(_:)),
+            #selector(AppDelegate.openFailureURLSchemeAlternatingFailuresDebugPage(_:)),
+            #selector(AppDelegate.openFailureURLSchemeNotConnectedQueryDebugPage(_:)),
+            #selector(AppDelegate.openFailureURLSchemeHostNotFoundQueryDebugPage(_:)):
+            guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
             return isUserInteractionAllowed || !isDisplayingOneOrMoreWindows
 
         case #selector(AppDelegate.newBurnerWindow(_:)),

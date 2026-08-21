@@ -911,7 +911,8 @@ final class UnifiedToggleInputView: UIView {
         cardTopConstraint.priority = .required
         // Flanked: hide the in-pill voice icon (external accessories flank the pill, voice is in the Plus menu).
         // Snap synchronously so the focus animation drives the transition — animating here would snapshot at the old layout and drift.
-        textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : .aiVoicePlain), animated: false)
+        let collapsedVoice: SwitchBarTextEntryView.VoiceButtonAppearance = handler.prefersDictationOverVoiceChat ? .microphone : .aiVoicePlain
+        textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : collapsedVoice), animated: false)
         if layout != .flanked {
             // Non-flanked: card spans full width, so external fire/menu must hide. The reverse is `setAITabCollapsedFooterPoseActive` (fades in).
             aiTabCollapsedFireButton.isHidden = true

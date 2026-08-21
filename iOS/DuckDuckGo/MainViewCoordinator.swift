@@ -426,6 +426,9 @@ class MainViewCoordinator {
         navigationBarContainer.backgroundColor = .clear
 
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
+        if isFloatingUIEnabled, addressBarPosition.isBottom {
+            superview.bringSubviewToFront(navigationBarContainer)
+        }
 
         if addressBarPosition == .top {
             setAddressBarBottomActive(false)
@@ -555,11 +558,11 @@ class MainViewCoordinator {
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1
         } else if isFloatingUIEnabled, addressBarPosition.isBottom {
-            unifiedToggleInputContainer.isHidden = true
-            unifiedToggleInputContainer.alpha = 1
-            ensureBottomOmnibarAttachedToToolbarIfNeeded()
             omniBar?.barView.restoreBarChrome()
             omniBar?.barView.setIconContainersAlpha(0)
+            ensureBottomOmnibarAttachedToToolbarIfNeeded()
+            unifiedToggleInputContainer.isHidden = true
+            unifiedToggleInputContainer.alpha = 1
             UIView.animate(
                 withDuration: MainViewController.Constants.omnibarTransitionDuration(isBottom: true, isFloatingUIEnabled: true)
                     * MainViewController.Constants.omnibarIconFadeInDurationMultiplier,

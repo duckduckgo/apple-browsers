@@ -24,16 +24,10 @@ enum FloatingOmnibarTransitionMetrics {
     static let legacyBottomDuration: TimeInterval = 0.35
     static let legacyTopDuration: TimeInterval = 0.25
     static let floatingDurationScale: TimeInterval = 5.0 / 16.0
-    static let contentScale: CGFloat = 0.85
 
     static func duration(isBottom: Bool, isFloatingUIEnabled: Bool) -> TimeInterval {
         let legacy = isBottom ? legacyBottomDuration : legacyTopDuration
         return isFloatingUIEnabled ? legacy * floatingDurationScale : legacy
     }
 
-    static func bottomPinnedScaleTransform(height: CGFloat, scale: CGFloat = contentScale) -> CGAffineTransform {
-        let heightLost = height * (1 - scale) / 2
-        return CGAffineTransform(scaleX: scale, y: scale)
-            .concatenating(CGAffineTransform(translationX: 0, y: heightLost))
-    }
 }

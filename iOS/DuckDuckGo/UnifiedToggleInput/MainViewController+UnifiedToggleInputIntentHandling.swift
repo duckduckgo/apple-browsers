@@ -200,12 +200,11 @@ private extension MainViewController {
                                            duration: TimeInterval,
                                            pendingHeight: CGFloat?,
                                            isSeamlessHandoff: Bool,
-                                           growsFromBottom: Bool,
                                            contentContainer: UIView) {
         UIView.animate(
             withDuration: duration,
             delay: 0,
-            options: .curveEaseOut,
+            options: [.curveEaseInOut, .allowUserInteraction],
             animations: { [weak self] in
                 guard let self else { return }
                 coordinator.viewController.applyOmnibarEditingShowPose()
@@ -222,16 +221,8 @@ private extension MainViewController {
                 coordinator.pushContentInsets()
                 if !isSeamlessHandoff {
                     contentContainer.alpha = 1
-                    if growsFromBottom {
-                        contentContainer.transform = .identity
-                    }
                 }
                 coordinator.viewController.setTextHorizontalShift(0)
-            },
-            completion: { _ in
-                if growsFromBottom {
-                    contentContainer.layer.shouldRasterize = false
-                }
             }
         )
     }
@@ -287,14 +278,6 @@ private extension MainViewController {
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
 
-        let growsFromBottom = isBottom && isFloatingUIEnabled && !isSeamlessHandoff
-        if growsFromBottom {
-            unifiedInputContentContainer.transform = FloatingOmnibarTransitionMetrics.bottomPinnedScaleTransform(
-                height: unifiedInputContentContainer.bounds.height)
-            unifiedInputContentContainer.layer.shouldRasterize = true
-            unifiedInputContentContainer.layer.rasterizationScale = UIScreen.main.scale
-        }
-
         if let omnibarPlaceholderWindowX {
             coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
         }
@@ -311,7 +294,6 @@ private extension MainViewController {
                                   duration: duration,
                                   pendingHeight: pendingHeight,
                                   isSeamlessHandoff: isSeamlessHandoff,
-                                  growsFromBottom: growsFromBottom,
                                   contentContainer: unifiedInputContentContainer)
 
         if let omnibarPlaceholderColor {
@@ -325,16 +307,14 @@ private extension MainViewController {
 
     func handleHideOmnibarEditingIntent(animated: Bool) {
         let coordinator = unifiedToggleInputCoordinator
-        let shrinksToBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
+        let fadesForFloatingBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
             coordinator?.clearText()
-            if shrinksToBottom {
+            if fadesForFloatingBottom {
                 self?.viewCoordinator.hideUnifiedInputContent()
-                unifiedInputContentContainer.transform = .identity
-                unifiedInputContentContainer.layer.shouldRasterize = false
                 self?.newTabPageViewController?.setLogoHidden(false)
                 self?.newTabPageViewController?.setFavoritesHidden(false)
             }
@@ -346,18 +326,13 @@ private extension MainViewController {
             let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
-            if shrinksToBottom {
-                unifiedInputContentContainer.layer.shouldRasterize = true
-                unifiedInputContentContainer.layer.rasterizationScale = UIScreen.main.scale
-            }
             let additionalAnimations: () -> Void = {
+                coordinator?.viewController.applyOmnibarEditingDismissPose()
                 if let coordinator, let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
-                if shrinksToBottom {
+                if fadesForFloatingBottom {
                     unifiedInputContentContainer.alpha = 0
-                    unifiedInputContentContainer.transform = FloatingOmnibarTransitionMetrics.bottomPinnedScaleTransform(
-                        height: unifiedInputContentContainer.bounds.height)
                 }
             }
             viewCoordinator.hideUnifiedToggleInputOmnibar(additionalAnimations: additionalAnimations, completion: onDismissed)
@@ -374,7 +349,7 @@ private extension MainViewController {
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
             onDismissed()
         }
-        resetUnifiedInputContentAfterHide(hidingContent: !shrinksToBottom, restoringNTPChrome: !shrinksToBottom)
+        resetUnifiedInputContentAfterHide(hidingContent: !fadesForFloatingBottom, restoringNTPChrome: !fadesForFloatingBottom)
         viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
     }
 

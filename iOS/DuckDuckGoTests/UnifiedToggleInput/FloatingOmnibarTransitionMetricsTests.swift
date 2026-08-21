@@ -40,16 +40,6 @@ final class FloatingOmnibarTransitionMetricsTests: XCTestCase {
             accuracy: 0.0001)
     }
 
-    func testWhenScaledFromTheBottomThenTransformPinsTheBottomEdge() {
-        let height: CGFloat = 200
-        let transform = FloatingOmnibarTransitionMetrics.bottomPinnedScaleTransform(height: height)
-
-        XCTAssertEqual(transform.a, FloatingOmnibarTransitionMetrics.contentScale, accuracy: 0.0001)
-        XCTAssertEqual(transform.d, FloatingOmnibarTransitionMetrics.contentScale, accuracy: 0.0001)
-        let heightLost = height * (1 - FloatingOmnibarTransitionMetrics.contentScale) / 2
-        XCTAssertEqual(transform.ty, heightLost, accuracy: 0.0001)
-    }
-
     func testWhenOmnibarDetachesThenToolbarHeightShrinksBelowTheCombinedSlot() {
         let detached = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: true)
         let attached = BrowserToolbarView.totalHeight(withOmnibarHeight: 48, isFloating: true)

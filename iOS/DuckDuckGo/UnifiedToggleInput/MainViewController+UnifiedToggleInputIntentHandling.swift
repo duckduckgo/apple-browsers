@@ -328,11 +328,13 @@ private extension MainViewController {
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
             coordinator?.clearText()
             if fadesForFloatingBottom {
+                // Hide UTI before revealing NTP chrome so logo/favorites don't flash under the
+                // still-visible focused content (especially seamless logo/favorites handoff).
+                self?.viewCoordinator.hideUnifiedInputContent()
                 self?.newTabPageViewController?.setLogoHidden(false)
                 self?.newTabPageViewController?.setFavoritesHidden(false)
                 self?.newTabPageViewController?.view.setNeedsLayout()
                 self?.newTabPageViewController?.view.layoutIfNeeded()
-                self?.viewCoordinator.hideUnifiedInputContent()
             }
         }
         let restoreNTPChromeIfNeeded: () -> Void = { [weak self] in
@@ -380,9 +382,10 @@ private extension MainViewController {
         } else {
             // Match the animated path: restore resting layout before cleanup, else the returning tab's content is stranded.
             viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
-            viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
+            viewCoordinator.finishUnifiedToggleInputOmnibarDismiss(reattachingOmnibar: reattachingOmnibar)
             onDismissed()
         }
+        // Floating-bottom keeps NTP chrome hidden until dismiss completion / interrupt cleanup.
         resetUnifiedInputContentAfterHide(hidingContent: !fadesForFloatingBottom, restoringNTPChrome: !fadesForFloatingBottom)
         viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
     }

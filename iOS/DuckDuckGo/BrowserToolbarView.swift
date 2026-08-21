@@ -620,24 +620,19 @@ final class BrowserToolbarView: UIView {
             return
         }
 
-        if isOmnibarMorphing {
-            let cornerRadius = Self.floatingButtonsHeight / 2
-            if #available(iOS 26, *) {
-                materialBackgroundView.cornerConfiguration = .corners(radius: .fixed(Double(cornerRadius)))
-            } else {
-                materialBackgroundView.contentView.layer.cornerRadius = cornerRadius
-            }
-            return
-        }
+        // During focus/defocus morph the shell is still tall, so `.capsule()` would read as an
+        // oversized pill. Keep the same concentric corners as the resting combined floating UI
+        // so the round-rect lands without a radius pop.
+        let usesConcentricCorners = isOmnibarMorphing || hasEmbeddedOmnibar || hasExpandedContent
 
         if #available(iOS 26, *) {
-            materialBackgroundView.cornerConfiguration = hasEmbeddedOmnibar || hasExpandedContent
+            materialBackgroundView.cornerConfiguration = usesConcentricCorners
                 ? .corners(radius: UICornerRadius.containerConcentric(minimum: Self.floatingUICornerRadius))
                 : .capsule()
             return
         }
 
-        materialBackgroundView.contentView.layer.cornerRadius = hasEmbeddedOmnibar || hasExpandedContent
+        materialBackgroundView.contentView.layer.cornerRadius = usesConcentricCorners
             ? Self.floatingUICornerRadius
             : materialBackgroundView.contentView.bounds.height / 2
     }

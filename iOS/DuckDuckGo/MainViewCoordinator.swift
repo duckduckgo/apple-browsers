@@ -367,6 +367,9 @@ class MainViewCoordinator {
     func ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded() {
         guard isFloatingUIEnabled, addressBarPosition.isBottom else { return }
         returnOmnibarToNavigationContainerIfNeeded()
+        // A prior UTI focus may have deferred the buttons-only height; non-focus callers still
+        // need the toolbar shrunk immediately once ownership is in the nav container.
+        applyDetachedToolbarHeight()
     }
 
     /// Detaches the bottom omnibar from the toolbar back into the nav container (used by minimal
@@ -535,7 +538,7 @@ class MainViewCoordinator {
             }
             self.omnibarDismissInterruptCleanup = nil
             self.removeOmnibarDismissContentSnapshot()
-            self.finishUnifiedToggleInputOmnibarDismiss()
+            self.finishUnifiedToggleInputOmnibarDismiss(reattachingOmnibar: reattachingOmnibar)
             completion?()
         }
         omnibarDismissAnimator = animator
@@ -599,14 +602,16 @@ class MainViewCoordinator {
         superview.layoutIfNeeded()
     }
 
-    func finishUnifiedToggleInputOmnibarDismiss() {
+    func finishUnifiedToggleInputOmnibarDismiss(reattachingOmnibar: Bool = true) {
         endOmnibarStatusBackgroundPresentation()
         navigationBarContainer.backgroundColor = nil
         suggestionTrayContainer.backgroundColor = .clear
         hideFocusedStateBackground()
         navigationBarCollectionView.isUserInteractionEnabled = true
 
-        if isNavigationChromeHidden {
+        if isNavigationChromeHidden || !reattachingOmnibar {
+            // AI chrome (and any non-reattach dismiss): keep UTI in the nav container; do not
+            // grow/rehost the floating toolbar around an omnibar that isn't coming back.
             navigationBarCollectionView.alpha = 0
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1

@@ -104,6 +104,8 @@ jobs:
           REPS: ${{ inputs.reps }}
           WPR_DIR: ${{ runner.temp }}/wpr-archives
           WPR_ARCHIVES_PREPARED: "1"
+          BROWSER_WINDOW_WIDTH: "800"
+          BROWSER_WINDOW_HEIGHT: "600"
           PRESERVE_DIAGNOSTICS: ${{ inputs.upload-diagnostics && '1' || '0' }}
           DIAGNOSTICS_DIR: ${{ github.workspace }}/macOS/scripts/crossbench/chrome-diagnostics
         run: |

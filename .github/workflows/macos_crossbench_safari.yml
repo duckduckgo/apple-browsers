@@ -201,6 +201,8 @@ jobs:
           REPS: ${{ inputs.reps }}
           WPR_DIR: ${{ runner.temp }}/wpr-archives
           WPR_ARCHIVES_PREPARED: "1"
+          BROWSER_WINDOW_WIDTH: "800"
+          BROWSER_WINDOW_HEIGHT: "600"
           # Off by default on purpose: it writes driver logs while the page is
           # loading, inside the window being timed. For investigating a site,
           # not for producing numbers.

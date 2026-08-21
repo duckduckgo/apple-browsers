@@ -262,7 +262,7 @@ private extension MainViewController {
         let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
 
-        viewCoordinator.focusedStateBackground.alpha = 0
+        viewCoordinator.focusedStateBackground.alpha = isSeamlessHandoff ? 1 : 0
         unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
         unifiedInputContentContainer.transform = isSeamlessHandoff || UIAccessibility.isReduceMotionEnabled
             ? .identity
@@ -335,6 +335,11 @@ private extension MainViewController {
                 self?.viewCoordinator.hideUnifiedInputContent()
             }
         }
+        let restoreNTPChromeIfNeeded: () -> Void = { [weak self] in
+            guard fadesForFloatingBottom else { return }
+            self?.newTabPageViewController?.setLogoHidden(false)
+            self?.newTabPageViewController?.setFavoritesHidden(false)
+        }
         if animated {
             // Bottom floating: the omnibar is detached from the toolbar by now, so fall back to the
             // placeholder X captured at focus (live read is nil).
@@ -342,6 +347,11 @@ private extension MainViewController {
             let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
+            if isLogoToLogo {
+                coordinator?.contentViewController.morphLogoHomeForDismiss(matching: duration)
+            } else if !isFavoritesToFavorites {
+                coordinator?.contentViewController.beginDismissFade()
+            }
             let additionalAnimations: () -> Void = {
                 coordinator?.viewController.applyOmnibarEditingDismissPose()
                 if let coordinator, let omnibarPlaceholderWindowX {
@@ -358,6 +368,7 @@ private extension MainViewController {
             viewCoordinator.hideUnifiedToggleInputOmnibar(
                 reattachingOmnibar: reattachingOmnibar,
                 additionalAnimations: additionalAnimations,
+                interruptCleanup: restoreNTPChromeIfNeeded,
                 completion: onDismissed)
             if let coordinator, let omnibarPlaceholderColor, let utiPlaceholderColor {
                 coordinator.viewController.animatePlaceholderColorTransition(

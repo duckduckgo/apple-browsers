@@ -29,6 +29,7 @@ struct SuggestionsListView: View {
     let isAddressBarAtBottom: Bool
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
+    var isEscapeHatchHidden = false
     var isFloatingPopover: Bool = false
 
     private enum Metrics {
@@ -58,6 +59,10 @@ struct SuggestionsListView: View {
                     VStack(spacing: Metrics.scrollableChromeSpacing) {
                         if let escapeHatch {
                             EscapeHatchView(model: escapeHatch)
+                                .opacity(isEscapeHatchHidden ? 0 : 1)
+                                .animation(nil, value: isEscapeHatchHidden)
+                                .allowsHitTesting(!isEscapeHatchHidden)
+                                .accessibilityHidden(isEscapeHatchHidden)
                         }
                         if let syncPromo {
                             syncPromo

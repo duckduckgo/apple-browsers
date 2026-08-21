@@ -58,6 +58,21 @@ final class UnifiedSuggestionsViewModelTests: XCTestCase {
         XCTAssertNil(sut.syncPromo)
         XCTAssertEqual(sut.content, content)
     }
+
+    func test_setEscapeHatchTransitioning_updatesPresentationStateWithoutChangingContent() {
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
+                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
+        let content = sut.content
+
+        sut.setEscapeHatchTransitioning(true)
+
+        XCTAssertTrue(sut.isEscapeHatchTransitioning)
+        sut.setEscapeHatchTransitioning(false)
+        XCTAssertFalse(sut.isEscapeHatchTransitioning)
+        XCTAssertEqual(sut.content, content)
+    }
 }
 
 private final class EmptySuggestionsSource: SuggestionsSource {

@@ -52,6 +52,7 @@ final class UnifiedSuggestionsHost {
         if let cachedFavoritesController { return cachedFavoritesController }
         cachedFavoritesController = config.favoritesProvider()
         cachedFavoritesController?.setShowsFavorites(showsFavorites)
+        cachedFavoritesController?.setEscapeHatchHidden(viewModel.isEscapeHatchTransitioning)
         return cachedFavoritesController
     }
 
@@ -70,6 +71,13 @@ final class UnifiedSuggestionsHost {
 
     func setSyncPromo(_ promo: AnyView?) {
         viewModel.setSyncPromo(promo)
+    }
+
+    func setEscapeHatchTransitioning(_ transitioning: Bool) {
+        let isTransitioning = transitioning && escapeHatch != nil
+        viewModel.setEscapeHatchTransitioning(isTransitioning)
+        cachedFavoritesController?.setEscapeHatchHidden(isTransitioning)
+        hostingController?.view.layoutIfNeeded()
     }
 
     init(config: UnifiedSuggestionsHostConfig) {

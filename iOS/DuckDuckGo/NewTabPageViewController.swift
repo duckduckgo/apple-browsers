@@ -183,6 +183,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         updateBorderView()
     }
 
+    func setEscapeHatchHidden(_ hidden: Bool) {
+        newTabPageViewModel.isEscapeHatchHidden = hidden
+    }
+
     func setChromeLayoutContext(isBorderSuppressed: Bool) {
         isBorderSuppressedForChromeLayout = isBorderSuppressed
         updateBorderView()

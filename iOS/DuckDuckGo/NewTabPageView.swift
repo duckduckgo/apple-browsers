@@ -222,6 +222,10 @@ private extension NewTabPageView {
                 .frame(maxWidth: escapeHatchMaxWidth)
                 .padding(.top, sectionTopNudge)
                 .padding(.horizontal, layoutConfiguration.escapeHatchHorizontalPadding)
+                .opacity(viewModel.isEscapeHatchHidden ? 0 : 1)
+                .animation(nil, value: viewModel.isEscapeHatchHidden)
+                .allowsHitTesting(!viewModel.isEscapeHatchHidden)
+                .accessibilityHidden(viewModel.isEscapeHatchHidden)
         }
     }
 

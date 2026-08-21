@@ -37,6 +37,24 @@ struct UnifiedSuggestionsView: View {
             contentArea
             logoLayer
             fireLayer
+            transitionHatchLayer
+        }
+    }
+
+    /// A single non-interactive hatch bridges the mode animation while both scroll surfaces retain
+    /// an invisible hatch placeholder. Because this layer respects the host safe area, UIKit moves
+    /// it with UTI's animated edge instead of crossfading between two different vertical positions.
+    @ViewBuilder
+    private var transitionHatchLayer: some View {
+        if let escapeHatch {
+            EscapeHatchView(model: escapeHatch)
+                .padding(.horizontal, Metrics.hatchHorizontalMargin)
+                .padding(.top, Metrics.hatchTopInset)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .opacity(viewModel.isEscapeHatchTransitioning ? 1 : 0)
+                .animation(nil, value: viewModel.isEscapeHatchTransitioning)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
     }
 
@@ -86,16 +104,16 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var listLayer: some View {
-        // Pre-render the hatch behind the opaque NTP so Search↔Duck.ai reveals the same-positioned
-        // list hatch immediately while the promo and recent chats keep their existing animation.
+        // Pre-render the hatch behind the opaque NTP so the destination list reserves its space
+        // before the promo and recent chats animate in.
         let listEscapeHatch = isTypingList ? nil : escapeHatch
         return SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
                                    isAddressBarAtBottom: isAddressBarAtBottom,
                                    escapeHatch: listEscapeHatch,
-                                   syncPromo: activeListKind == .recents ? viewModel.syncPromo : nil)
+                                   syncPromo: activeListKind == .recents ? viewModel.syncPromo : nil,
+                                   isEscapeHatchHidden: viewModel.isEscapeHatchTransitioning)
             .opacity(isShowingList || listEscapeHatch != nil ? 1 : 0)
-            // Keep the incoming animation for the promo/rows, but snap outgoing changes. The
-            // pre-rendered hatch itself stays fully opaque across the mode switch.
+            // Keep the incoming animation for the promo/rows; the transition hatch moves separately.
             .animation(isShowingList ? .easeInOut(duration: 0.2) : nil, value: isShowingList)
             // Fade out with the collapse (like the logo) so a list→favorites dismiss hands off to the
             // NTP favorites instead of snapping away when the host is hidden.
@@ -114,8 +132,11 @@ struct UnifiedSuggestionsView: View {
     @ViewBuilder
     private var overlayLayer: some View {
         if let controller = favoritesProvider() {
+            // Keep the nested NTP's frame stable while the temporary hatch follows the host safe area.
             SuggestionsFavoritesView(controller: controller)
+                .ignoresSafeArea(.container, edges: .top)
                 .opacity(isShowingFavorites ? 1 : 0)
+                .animation(nil, value: isShowingFavorites)
                 .allowsHitTesting(isShowingFavorites)
         }
     }
@@ -182,6 +203,10 @@ struct UnifiedSuggestionsView: View {
     }
 
     private enum Metrics {
+        /// Matches the list's 16pt content margin and 10pt total top inset (6+4 on a top bar,
+        /// 0+10 on a bottom bar), so the temporary hatch exactly covers either embedded copy.
+        static let hatchHorizontalMargin: CGFloat = 16
+        static let hatchTopInset: CGFloat = 10
         /// Mirrors `NewTabPageDaxLogoView`'s screen-center offset so the focused Search logo lands exactly
         /// where the NTP logo sits — keep in sync with that view.
         static let logoScreenCenterOffset: CGFloat = 55

@@ -253,6 +253,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         refreshVisibleContent(animateContentUpdates: false)
     }
 
+    func setEscapeHatchTransitioning(_ transitioning: Bool) {
+        unifiedSuggestionsHost?.setEscapeHatchTransitioning(transitioning)
+    }
+
     func setActive(_ active: Bool) {
         guard active != isContentActive else { return }
         isContentActive = active
@@ -272,6 +276,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
         } else {
+            unifiedSuggestionsHost?.setEscapeHatchTransitioning(false)
             fireSearchSuggestionsDisplayPixels()
         }
     }

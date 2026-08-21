@@ -201,7 +201,6 @@ struct OnboardingPersonalizationContent: Equatable {
     let items: [Item]
     let primaryCTA: String
     let daxAnimation: DaxAnimation
-    /// Optional reassurance shown above the primary CTA.
     let footer: String?
 
     init(title: String, message: String?, items: [Item], primaryCTA: String, daxAnimation: DaxAnimation, footer: String? = nil) {

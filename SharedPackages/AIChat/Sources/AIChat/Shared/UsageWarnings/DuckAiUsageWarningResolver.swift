@@ -159,7 +159,7 @@ public struct DuckAiUsageWarningResolver {
             resetsIn: .from(now: now, resetsAt: data.resetsAt),
             isDismissible: isDismissible,
             action: action,
-            offersModelPicker: message == .approaching && action != nil
+            offersModelPicker: action?.offersModelPicker ?? false
         )
 
         return .candidate(Candidate(warning: warning, percentUsed: percentUsed, modelSuggestion: suggestion))
@@ -187,12 +187,16 @@ public struct DuckAiUsageWarningResolver {
                         isPaid: Bool,
                         isTrialEligible: Bool,
                         weeklyHasRoom: Bool) -> DuckAiUsageAction? {
-        // Free tier only ever sees a reached message, and the only thing to offer is the upsell.
+        // Approaching is a tester-only state without a subscription, and a cheaper model still helps
+        // there; the upsell belongs to the reached messages, where there is nothing else to offer.
+        if case .approaching = message {
+            return suggestion.suggestion.map(DuckAiUsageAction.switchToModel)
+        }
         guard isPaid else { return .tryForFree(isTrialEligible: isTrialEligible) }
 
         switch message {
         case .approaching:
-            return suggestion.suggestion.map(DuckAiUsageAction.switchToModel)
+            return nil
         case .advancedModelsLimitReached:
             return suggestion.suggestion.map(DuckAiUsageAction.switchToFreeModel)
         case .dailyLimitReached:

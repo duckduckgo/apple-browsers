@@ -127,6 +127,31 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertEqual(performed.count, 1)
     }
 
+    /// Internal testers on the free tier see approaching warnings, but the upsell belongs to the reached
+    /// messages — and the `>` picker only ever modifies a model switch.
+    func testInternalFreeTierApproachingOffersTheModelSwitchNotTheUpsell() {
+        limitsProvider.limits = limits(daily: 75)
+        let sut = makeSUT(tier: .free, isInternalUser: true, modelSuggester: StubModelSuggester(
+            cheaper: .suggestion(DuckAiModelSuggestion(modelId: "gpt-5.6-luna", modelShortName: "5.6 Luna"))
+        ))
+
+        sut.refresh()
+
+        XCTAssertEqual(sut.warning?.action, .switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.6-luna",
+                                                                                modelShortName: "5.6 Luna")))
+        XCTAssertTrue(sut.warning?.offersModelPicker ?? false)
+    }
+
+    func testInternalFreeTierReachedStillOffersTheUpsellWithoutThePicker() {
+        limitsProvider.limits = limits(daily: 100, weekly: 40)
+        let sut = makeSUT(tier: .free, isInternalUser: true, isTrialEligible: true)
+
+        sut.refresh()
+
+        XCTAssertEqual(sut.warning?.action, .tryForFree(isTrialEligible: true))
+        XCTAssertFalse(sut.warning?.offersModelPicker ?? true)
+    }
+
     /// The free tier's only reached CTA is the upsell, and its copy follows trial eligibility.
     func testFreeTierReachedOffersTheUpsellAndCannotBeDismissed() {
         limitsProvider.limits = limits(daily: 100)
@@ -204,13 +229,14 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
     /// represents "flag off, or no storage bridge".
     private func makeSUT(isFeatureActive: Bool = true,
                          tier: AIChatUserTier = .pro,
+                         isInternalUser: Bool = false,
                          modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
                          isTrialEligible: Bool = false
     ) -> DuckAiUsageWarningViewModel {
         DuckAiUsageWarningViewModel(
             limitsProvider: isFeatureActive ? limitsProvider : nil,
             tierProvider: { tier },
-            isInternalUser: { false },
+            isInternalUser: { isInternalUser },
             dismissalStore: dismissalStore,
             modelSuggester: modelSuggester,
             isTrialEligible: { isTrialEligible },

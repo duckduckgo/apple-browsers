@@ -281,13 +281,6 @@ jobs:
         restore-keys: |
           xcode-compilation-cache-${{ matrix.flavor }}-
 
-    - name: Setup Bitrise Build Cache
-      if: runner.environment == 'self-hosted'
-      uses: ./.github/actions/bitrise-build-cache
-      with:
-        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
-
     - name: Build for testing
       id: build-for-testing
       env:
@@ -661,13 +654,6 @@ jobs:
         key: xcode-compilation-cache-release
         restore-keys: |
           xcode-compilation-cache-release-
-
-    - name: Setup Bitrise Build Cache
-      if: runner.environment == 'self-hosted'
-      uses: ./.github/actions/bitrise-build-cache
-      with:
-        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
     - name: Build the app
       run: |

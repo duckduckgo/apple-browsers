@@ -91,7 +91,7 @@ extension MainViewController {
         )
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
-        coordinator.duckAIEntrySourceProvider = { [weak self] in self?.lastDuckAIEntrySource }
+        coordinator.duckAIEntrySourceProvider = { [weak self] in self?.tabManager.currentTabsModel.currentTab?.duckAIEntrySource }
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
         coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
@@ -1235,6 +1235,10 @@ extension MainViewController {
         fireAIChatEntryPointPixel(source: .directURL,
                                   opensNewTab: decision == .openInNewTab,
                                   hasPrompt: false)
+        // The new-tab case can't be stamped here: `loadQuery` creates that tab later.
+        if decision == .loadInPlace {
+            stampDuckAIEntrySourceOnCurrentTab(.directURL)
+        }
     }
 
 }

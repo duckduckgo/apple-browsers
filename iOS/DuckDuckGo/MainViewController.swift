@@ -209,8 +209,6 @@ class MainViewController: UIViewController {
     /// VPN connection state as the user left the New Tab Page for the VPN screen, so a toggle made
     /// there can be told apart from a reconnect that happened on its own.
     var vpnConnectedWhenLeavingNewTabPage: Bool?
-    /// The most recent Duck.ai entry, consumed as the `origin` of prompts sent on the opened surface.
-    private(set) var lastDuckAIEntrySource: AIChatEntryPointSource?
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
@@ -4179,12 +4177,17 @@ class MainViewController: UIViewController {
     }
 
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
-        lastDuckAIEntrySource = source
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: opensNewTab,
                                    hasPrompt: hasPrompt)
+    }
+
+    /// Stamps the entry on the tab hosting the chat, where it persists as the `origin` of
+    /// follow-up prompts — surviving restarts and Duck.ai entries made from other tabs.
+    func stampDuckAIEntrySourceOnCurrentTab(_ source: AIChatEntryPointSource) {
+        tabManager.currentTabsModel.currentTab?.duckAIEntrySource = source
     }
 
     /// Reads the tab model, not `currentTab`: home tabs have no `TabViewController`, so
@@ -4233,7 +4236,9 @@ class MainViewController: UIViewController {
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
-            loadUrlInNewTab(voiceURL, inheritedAttribution: nil, voiceMode: true)
+            loadUrlInNewTab(voiceURL, inheritedAttribution: nil, voiceMode: true) { [weak self] in
+                self?.stampDuckAIEntrySourceOnCurrentTab(source)
+            }
             if fromDeepLink {
                 // Collapse the input that was auto-expanded for the restored tab.
                 // This cancels any pending async activateInput because showCollapsed
@@ -4244,6 +4249,7 @@ class MainViewController: UIViewController {
             return
         }
 
+        stampDuckAIEntrySourceOnCurrentTab(source)
         prepareTabForRequest {
             currentTab.loadVoiceMode()
         }
@@ -4316,6 +4322,7 @@ class MainViewController: UIViewController {
                 AIChatPromptHandler.shared.setData(prompt)
             }
             loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] in
+                self?.stampDuckAIEntrySourceOnCurrentTab(source)
                 if let modelId {
                     self?.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
                 }
@@ -4326,6 +4333,7 @@ class MainViewController: UIViewController {
             return
         }
 
+        stampDuckAIEntrySourceOnCurrentTab(source)
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
         if let modelId {
             unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
@@ -6572,10 +6580,11 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewAIChatTab(tab: TabViewController) {
-        fireAIChatEntryPointPixel(source: tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage,
-                                  opensNewTab: true,
-                                  hasPrompt: false)
+        let source: AIChatEntryPointSource = tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage
+        fireAIChatEntryPointPixel(source: source, opensNewTab: true, hasPrompt: false)
         tab.openNewChatInNewTab()
+        // `openNewChatInNewTab` selects the new chat tab synchronously via `loadUrlInNewTab`.
+        stampDuckAIEntrySourceOnCurrentTab(source)
     }
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {

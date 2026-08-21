@@ -1013,6 +1013,8 @@ extension MainViewController: TabsBarDelegate {
             // Bypasses `openAIChat`, so fire the entry pixel directly.
             fireAIChatEntryPointPixel(source: .tabsBarButton, opensNewTab: true, hasPrompt: false)
             currentTab.openNewChatInNewTab()
+            // `openNewChatInNewTab` selects the new chat tab synchronously via `loadUrlInNewTab`.
+            stampDuckAIEntrySourceOnCurrentTab(.tabsBarButton)
         } else {
             openAIChat(source: .tabsBarButton)
         }

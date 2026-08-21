@@ -39,6 +39,7 @@ import PrivacyConfig
 
 final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
+    private static let persistentPixel: PersistentPixelFiring = PersistentPixel()
     private var cancellables = Set<AnyCancellable>()
     private let subscriptionManager: (any SubscriptionManager)?
     private let configurationStore = ConfigurationStore()
@@ -54,6 +55,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         case .userBecameActive:
             PixelKit.fireVPNTunnel(daily: .networkProtectionActiveUser,
                                    withAdditionalParameters: [PixelParameters.vpnCohort: UniquePixel.cohort(from: defaults.vpnFirstEnabled)])
+
+            persistentPixel.sendQueuedPixels { error in
+                Logger.networkProtection.error("Failed to send queued pixels, with error: \(error)")
+            }
         case .connectionTesterStatusChange(let status, let server):
             switch status {
             case .failed(let duration):

@@ -673,6 +673,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
             record.timesDismissed += 1
             record.lastDismissed = currentDate
             record.nextEligibleDate = currentDate.addingTimeInterval(interval)
+        case .retired:
+            record.nextEligibleDate = .distantFuture
+            record.lastShown = nil // Ensure promo is not restored if it was retired before app restart
         case .noChange:
             record.lastShown = nil // Ensure promo is not restored if it was retracted before app restart
         }

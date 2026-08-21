@@ -772,6 +772,36 @@ final class PromoServiceTests: XCTestCase {
         XCTAssertFalse(record.actioned)
     }
 
+    func testWhenRetiredResult_ThenPermanentlyDismissedWithoutRecordingDismissal() async {
+        // Given
+        let delegate = MockPromoDelegate(isEligible: true)
+        delegate.setShowResult(.retired)
+        let promo = PromoTestHelpers.makePromo(id: "retired-promo", delegate: delegate)
+        let promoService = makeService(promos: [promo])
+        let expectation = XCTestExpectation(description: "promo is hidden")
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.isEmpty {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [expectation], timeout: timeout)
+
+        // Then: retired permanently, but no dismissal recorded and nothing left to restore
+        let record = historyStore.record(for: "retired-promo")
+        XCTAssertEqual(record.nextEligibleDate, .distantFuture)
+        XCTAssertEqual(record.timesDismissed, 0)
+        XCTAssertNil(record.lastDismissed)
+        XCTAssertNil(record.lastShown)
+        XCTAssertFalse(record.actioned)
+    }
+
     func testWhenNoneResult_ThenNoStateChange() async {
         // Given
         let delegate = MockPromoDelegate(isEligible: true)
@@ -1257,6 +1287,42 @@ final class PromoServiceTests: XCTestCase {
         XCTAssertEqual(recordA.timesDismissed, 1)
         XCTAssertEqual(recordB.timesDismissed, 1)
         XCTAssertTrue(recordB.actioned)
+    }
+
+    func testWhenRetiredResult_ThenDoesNotContributeToGlobalCooldown() async {
+        // Given: promo A retires without displaying, promo B has default cooldown options
+        let delegateA = MockPromoDelegate(isEligible: true)
+        delegateA.setShowResult(.retired)
+        let delegateB = MockPromoDelegate(isEligible: true)
+        delegateB.setShowResult(.actioned)
+        let promoA = PromoTestHelpers.makePromo(id: "retired-a", delegate: delegateA)
+        let promoB = PromoTestHelpers.makePromo(id: "cooldown-b", delegate: delegateB)
+        let promoService = makeService(promos: [promoA, promoB])
+
+        let hideExpectation = XCTestExpectation(description: "promo a hidden")
+        let showExpectation = XCTestExpectation(description: "promo b shown")
+        promoService.visiblePromosPublisher
+            .dropFirst()
+            .sink { promos in
+                if promos.isEmpty {
+                    hideExpectation.fulfill()
+                } else if promos.contains(where: { $0.id == "cooldown-b" }) {
+                    showExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When: A retires, then trigger again - B should show (A's retirement didn't set cooldown)
+        promoService.applicationDidBecomeActive()
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [hideExpectation], timeout: timeout)
+        triggerSubject.send(.appLaunched)
+        await fulfillment(of: [showExpectation], timeout: timeout)
+
+        // Then
+        let recordA = historyStore.record(for: "retired-a")
+        XCTAssertNil(recordA.lastDismissed)
+        XCTAssertEqual(recordA.timesDismissed, 0)
     }
 
     func testWhenDefaultCooldownOptions_ThenStandardCooldownBehavior() async {

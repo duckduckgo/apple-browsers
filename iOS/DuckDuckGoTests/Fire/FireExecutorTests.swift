@@ -25,8 +25,7 @@ import AIChatTestingUtilities
 import BrowserServicesKit
 import WebKit
 import Bookmarks
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import DDGSync
 import WKAbstractions
 import BrowserServicesKitTestsUtils

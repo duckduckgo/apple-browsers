@@ -25,12 +25,11 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import EventHub
 import PrivacyDashboard
-import Persistence
+@_spi(Testing) import Persistence
 import Subscription
 import SubscriptionTestingUtilities
 import SpecialErrorPages
 import MaliciousSiteProtection
-import PersistenceTestingUtils
 @testable import DuckDuckGo
 import Combine
 @testable import Core

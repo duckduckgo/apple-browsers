@@ -18,12 +18,11 @@
 //
 
 import BrowserServicesKit
-import Persistence
+@_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 import Combine
 import ConcurrencyExtensions
 import Core
-import PersistenceTestingUtils
 import PrivacyConfig
 import SubscriptionTestingUtilities
 import XCTest

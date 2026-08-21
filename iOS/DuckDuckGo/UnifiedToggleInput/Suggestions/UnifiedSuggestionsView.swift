@@ -114,10 +114,7 @@ struct UnifiedSuggestionsView: View {
     @ViewBuilder
     private var overlayLayer: some View {
         if let controller = favoritesProvider() {
-            // Extend under the top safe area so the frame stays static; the top inset is delivered to
-            // the nested NTP's own scroll view as a content inset (animatable), not as a frame move.
             SuggestionsFavoritesView(controller: controller)
-                .ignoresSafeArea(.container, edges: .top)
                 .opacity(isShowingFavorites ? 1 : 0)
                 .allowsHitTesting(isShowingFavorites)
         }

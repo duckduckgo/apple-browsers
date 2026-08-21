@@ -99,18 +99,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     private var hasResignedInput = false
     private var hasShownChips = false
 
-    /// Where the keyboard goes while this surface leaves. The slide is the same either way; this only decides
-    /// when the input resigns.
-    private enum KeyboardHandling {
-        /// Nothing else is claiming focus, so resigning now sends the keyboard down alongside the slide.
-        case leavesWithSurface
-        /// The dismissing tap is handing focus to the page, so the page's own focus decides the keyboard — an
-        /// editable element keeps it exactly where it is. Resigning first is what makes it dip and return.
-        case staysWithPage
-    }
-
-    private var keyboardHandling: KeyboardHandling = .leavesWithSurface
-
     /// The view the page-tap recognizer is installed on, so it can be detached even if this controller
     /// has already lost its parent.
     private weak var presenterView: UIView?
@@ -319,12 +307,10 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         // drag can already have carried the surface past where this lands.
         let target = max(entranceTravel, contentTranslation)
         // Pinned first, so the slide is the only thing that moves the surface and nothing the keyboard does —
-        // leaving, staying, or the page's field raising a taller one — can disturb it.
+        // leaving, or the page's field raising a taller one — can disturb it.
         utiHost.freezeInputPosition()
 
-        if keyboardHandling == .leavesWithSurface {
-            resignInput()
-        }
+        resignInput()
 
         // Resigning above is what reports the dismissal's own duration and curve, so this reads them after it.
         UIView.animate(withDuration: keyboardAnimation.duration,
@@ -334,9 +320,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
             self.translateContent(by: target)
             self.view.alpha = 0
         }, completion: { _ in
-            // Already done when the keyboard left with the surface. Otherwise the page was offered the
-            // keyboard and, if it declined, it is still ours to put away now the surface has gone.
-            self.resignInput()
             completion()
         })
     }
@@ -436,8 +419,9 @@ private extension AIChatContextualFloatingInputViewController {
     }
 
 
+    /// Resigns with the slide like every other dismissal. Deferring it to the end left the keyboard standing
+    /// through the whole exit — the surface slid down behind it and only then did it drop.
     @objc func handlePageTap() {
-        keyboardHandling = .staysWithPage
         requestDismiss()
     }
 
@@ -483,8 +467,12 @@ private extension AIChatContextualFloatingInputViewController {
 
     /// How far the surface rose from the bottom on the way in, and so how far it settles back down on the way
     /// out: the keyboard guide's travel, from where its top rests with the keyboard down to where it is now.
+    ///
+    /// Measured to the view's bottom edge, not the safe area's — a dismissing keyboard travels until its top
+    /// reaches the screen bottom, so anchoring to the safe area leaves the surface short by the bottom inset
+    /// and it drifts behind the keyboard it is meant to ride down with.
     var entranceTravel: CGFloat {
-        max(0, view.safeAreaLayoutGuide.layoutFrame.maxY - view.keyboardLayoutGuide.layoutFrame.minY)
+        max(0, view.bounds.maxY - view.keyboardLayoutGuide.layoutFrame.minY)
     }
 
     func observeKeyboardAnimation() {

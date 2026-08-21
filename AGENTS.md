@@ -19,17 +19,7 @@ Detailed rules live in `.cursor/rules/`. Read from the list below when the reque
 | `anti-patterns.mdc` | What NOT to do: singletons, async mistakes, SwiftUI pitfalls, testing mistakes |
 | `user-defaults-storage.mdc` | Storing settings or preferences via `KeyValueStore` |
 | `pixels.mdc` | Defining, naming, or firing pixel events |
-
-## iOS: buildable folders
-
-The iOS Xcode project (`iOS/DuckDuckGo-iOS.xcodeproj`) is migrating from ordinary Xcode groups to buildable folders (`PBXFileSystemSynchronizedRootGroup`), which mirror the file system — Xcode picks up their contents automatically, with no per-file entries in `project.pbxproj`. This applies to iOS only; macOS still uses groups.
-
-When adding, renaming, moving, or deleting an iOS file, check the destination directory's type in `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj`:
-
-- **Buildable folder** (`PBXFileSystemSynchronizedRootGroup`): touch the file system only. Do NOT add `PBXFileReference`/`PBXBuildFile`/group entries — a pbxproj diff for a simple file addition means you did it wrong. New subdirectories are picked up automatically too.
-- **Ordinary group** (`PBXGroup`, not yet migrated): register the file in `project.pbxproj` as before.
-
-Files in a buildable folder inherit the folder's target membership; per-file overrides live in a `PBXFileSystemSynchronizedBuildFileExceptionSet` and are configured through Xcode's File Inspector, never by hand-editing the pbxproj. Never run scripts that rewrite `project.pbxproj`, and don't convert groups to folders as part of an unrelated change — conversions happen only via Xcode's native *Convert to Folder* action in dedicated migration PRs.
+| `project-structure.mdc` | Adding files or directories to the iOS project; buildable folders and Xcode groups |
 
 ## Opening a PR with snapshot changes
 

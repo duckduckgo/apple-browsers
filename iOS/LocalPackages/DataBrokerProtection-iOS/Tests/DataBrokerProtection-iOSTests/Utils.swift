@@ -133,11 +133,10 @@ enum DBPIOSManagerTestUtils {
             continuedProcessingCoordinator: MockContinuedProcessingCoordinator,
             freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil
         ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
-            let manager = makeDeferredManager(
+            let manager = makeManager(
                 featureFlagger: featureFlagger,
                 continuedProcessingCoordinator: continuedProcessingCoordinator,
-                freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride,
-                provider: { vaultResources in { vaultResources } }
+                freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride
             )
             reset(manager: manager)
 
@@ -182,6 +181,34 @@ enum DBPIOSManagerTestUtils {
                     freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                     profileStateManager: profileStateManager
                 )
+            )
+        }
+
+        private func makeManager(
+            featureFlagger: MockDBPFeatureFlagger,
+            continuedProcessingCoordinator: MockContinuedProcessingCoordinator,
+            freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil
+        ) -> DataBrokerProtectionIOSManager {
+            let vaultResources = makeVaultResources()
+
+            return DataBrokerProtectionIOSManager.withVaultResources(
+                vaultResources,
+                authenticationManager: authenticationManager,
+                userNotificationService: MockDataBrokerProtectionUserNotificationService(),
+                sharedPixelsHandler: MockDataBrokerProtectionPixelsHandler(),
+                iOSPixelsHandler: EventMapping<IOSPixels> { _, _, _, _ in },
+                privacyConfigManager: PrivacyConfigurationManagingMock(),
+                quickLinkOpenURLHandler: { _ in },
+                feedbackViewCreator: { EmptyView() },
+                featureFlagger: featureFlagger,
+                settings: DataBrokerProtectionSettings(defaults: UserDefaults(suiteName: UUID().uuidString)!),
+                subscriptionManager: MockDataBrokerProtectionSubscriptionManaging(),
+                wideEvent: nil,
+                eventsHandler: eventsHandler,
+                freemiumDBPUserStateManager: (freemiumDBPUserStateManagerOverride ?? freemiumDBPUserStateManager),
+                profileStateManager: profileStateManager,
+                continuedProcessingCoordinator: continuedProcessingCoordinator,
+                shouldRegisterBackgroundTaskHandler: false
             )
         }
 

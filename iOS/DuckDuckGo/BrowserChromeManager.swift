@@ -42,9 +42,6 @@ protocol BrowserChromeDelegate: AnyObject {
 
     var isFloatingChromeEnabled: Bool { get }
 
-    var floatingMorphCollapseDuration: CFTimeInterval { get }
-    var floatingMorphExpandDuration: CFTimeInterval { get }
-
     /// Height (from the screen bottom) obscured by the visible bottom chrome at the given chrome
     /// visibility fraction, used to resize the floating web view so page-fixed footers pin to the top
     /// of whatever is on screen (toolbar -> capsule -> safe area).
@@ -63,9 +60,6 @@ extension BrowserChromeDelegate {
     var isFloatingChromeEnabled: Bool { false }
 
     var currentBarsVisibility: CGFloat { isToolbarHidden ? 0 : 1 }
-
-    var floatingMorphCollapseDuration: CFTimeInterval { 0.20 }
-    var floatingMorphExpandDuration: CFTimeInterval { 0.34 }
 }
 
 class BrowserChromeManager: NSObject, UIScrollViewDelegate {

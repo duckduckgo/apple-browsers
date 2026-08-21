@@ -318,7 +318,12 @@ class BarsAnimatorFloatingTests: XCTestCase {
         sut.didFinishScrolling(in: scrollView, velocity: BarsAnimator.Metrics.floatingVelocityCommitThreshold + 0.1)
 
         delegate.currentBarsVisibility = 0.6
+        delegate.receivedMessages.removeAll()
         sut.didStartScrolling(in: scrollView)
+
+        XCTAssertEqual(delegate.receivedMessages, [.setBarsVisibility(0.6)])
+        XCTAssertEqual(sut.transitionProgressForTesting, 0.4, accuracy: 0.001)
+
         advanceOffset(sut, scrollView, clock, to: scrollView.contentOffset.y + travel * 0.1)
 
         XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0.5, accuracy: 0.001)

@@ -4665,14 +4665,6 @@ extension MainViewController: BrowserChromeDelegate {
         isFloatingUIEnabled
     }
 
-    var floatingMorphCollapseDuration: CFTimeInterval {
-        ChromeAnimationConstants.morphCollapseDuration
-    }
-
-    var floatingMorphExpandDuration: CFTimeInterval {
-        ChromeAnimationConstants.morphExpandDuration
-    }
-
     var barsMaxHeight: CGFloat {
         let height = max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
         if isInMinimalChromeLayout && viewCoordinator.addressBarPosition.isBottom {

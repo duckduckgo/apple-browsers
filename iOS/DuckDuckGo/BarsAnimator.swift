@@ -67,7 +67,9 @@ class BarsAnimator {
         draggingStartPosY = scrollView.contentOffset.y
 
         if delegate?.isFloatingChromeEnabled == true {
-            transitionProgress = 1 - (delegate?.currentBarsVisibility ?? 1)
+            let currentBarsVisibility = delegate?.currentBarsVisibility ?? 1
+            delegate?.setBarsVisibility(currentBarsVisibility, animated: false, animationDuration: nil)
+            transitionProgress = 1 - currentBarsVisibility
             if transitionProgress <= 0 {
                 barsState = .revealed
             } else if transitionProgress >= 1 {

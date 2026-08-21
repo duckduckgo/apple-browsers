@@ -137,8 +137,7 @@ final class DBPService: NSObject {
                 profileStateManager: profileStateManager,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService,
-                contentBlocking: dbpContentBlocking,
-                shouldDeferSecureVaultInitialization: appDependencies.featureFlagger.isFeatureOn(.dbpDeferredSecureVaultInit))
+                contentBlocking: dbpContentBlocking)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil

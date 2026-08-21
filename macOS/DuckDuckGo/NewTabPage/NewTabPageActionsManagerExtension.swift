@@ -140,7 +140,8 @@ extension NewTabPageActionsManager {
             // Reuses whatever the model picker last resolved, rather than repeating the subscription
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },
-            availableModelsProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastFetchedModels ?? [] }
+            availableModelsProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastFetchedModels ?? [] },
+            isTrialEligibleProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.isEligibleForFreeTrial ?? false }
         )
         omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
             omnibarConfigProvider?.notifyCustomizeResponsesChanged()

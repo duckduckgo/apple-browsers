@@ -144,6 +144,19 @@ final class AIChatOmnibarController {
     /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
+    private func performUsageWarningAction(_ action: DuckAiUsageAction) {
+        switch action {
+        case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
+            updateSelectedModel(suggestion.modelId)
+        case .tryForFree:
+            // The funnel origin is surface-specific and belongs to the view layer, so this waits for UI.
+            Logger.aiChat.debug("Duck.ai usage warning: try-for-free tapped, no native route yet")
+        case .startUsingWeeklyLimit:
+            // Awaiting the native-storage value web will set; logged so the tap is observable meanwhile.
+            Logger.aiChat.debug("Duck.ai usage warning: start-using-weekly-limit tapped, no native action yet")
+        }
+    }
+
     /// Stops the cheaper-model CTA suggesting something that can't handle the current draft.
     private var chatCapabilityRequirements: DuckAiChatCapabilityRequirements {
         DuckAiChatCapabilityRequirements(
@@ -345,15 +358,17 @@ final class AIChatOmnibarController {
         usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
             dismissalStore: dismissalStore,
             tierProvider: { [weak self] in self?.userTier ?? .free },
-            cheaperModelSuggester: DuckAiCheaperModelSuggester(
+            modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
                 currentModelIdProvider: { [weak self] in self?.currentModelId },
                 requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
-            )
+            ),
+            isTrialEligible: { [weak self] in self?.subscriptionManager.isUserEligibleForFreeTrial() ?? false }
         )
-        usageWarningViewModel?.onSwitchToSuggestedModel = { [weak self] suggestion in
-            self?.updateSelectedModel(suggestion.modelId)
+        usageWarningViewModel?.onAction = { [weak self] action in
+            self?.performUsageWarningAction(action)
         }
+        // macOS has no programmatic model-picker entry point yet; `>` is wired when the UI lands.
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;

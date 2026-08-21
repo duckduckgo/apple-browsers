@@ -42,7 +42,7 @@ public struct DuckAiUsageWarningResolver {
     }
 
     public enum Outcome {
-        case warning(DuckAiUsageWarning, cheaperModel: DuckAiCheaperModelOutcome)
+        case warning(DuckAiUsageWarning, modelSuggestion: DuckAiModelSuggestionOutcome)
         case none(reason: NoWarningReason)
     }
 
@@ -53,23 +53,33 @@ public struct DuckAiUsageWarningResolver {
     private static let tiersThatSeeApproachingWarnings: Set<AIChatUserTier> = [.plus, .pro, .internal]
 
     private let dismissalStore: DuckAiUsageWarningDismissalStoring
-    private let cheaperModelSuggester: DuckAiCheaperModelSuggesting
+    private let modelSuggester: DuckAiModelSuggesting
 
     public init(dismissalStore: DuckAiUsageWarningDismissalStoring,
-                cheaperModelSuggester: DuckAiCheaperModelSuggesting = NullDuckAiCheaperModelSuggester()) {
+                modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester()) {
         self.dismissalStore = dismissalStore
-        self.cheaperModelSuggester = cheaperModelSuggester
+        self.modelSuggester = modelSuggester
     }
 
+    /// `advancedModelsWindow` names the window carrying the advanced-model allowance, which distinguishes
+    /// "Advanced AI models limit reached" from "Weekly usage limit reached". Absent from the payload today.
     public func resolve(limits: DuckAiUsageLimits,
                         tier: AIChatUserTier,
                         isInternalUser: Bool,
+                        isTrialEligible: Bool,
+                        advancedModelsWindow: DuckAiUsageWindow? = nil,
                         now: Date) -> Outcome {
         var candidates: [Candidate] = []
         var rejection = NoWarningReason.noData
 
         for window in DuckAiUsageWindow.allCases {
-            switch candidate(for: window, limits: limits, tier: tier, isInternalUser: isInternalUser, now: now) {
+            switch candidate(for: window,
+                             limits: limits,
+                             tier: tier,
+                             isInternalUser: isInternalUser,
+                             isTrialEligible: isTrialEligible,
+                             advancedModelsWindow: advancedModelsWindow,
+                             now: now) {
             case .candidate(let candidate):
                 candidates.append(candidate)
             case .rejected(let reason):
@@ -79,7 +89,7 @@ public struct DuckAiUsageWarningResolver {
 
         // Filtering before the pick is what lets a live weekly through a dismissed daily.
         guard let winner = candidates.max(by: Self.isLowerPriority) else { return .none(reason: rejection) }
-        return .warning(winner.warning, cheaperModel: winner.cheaperModel)
+        return .warning(winner.warning, modelSuggestion: winner.modelSuggestion)
     }
 
     private enum CandidateResult {
@@ -91,12 +101,16 @@ public struct DuckAiUsageWarningResolver {
         let warning: DuckAiUsageWarning
         /// Uncapped, because the rounded one in `warning` can't break a 99.4 / 99.6 tie.
         let percentUsed: Double
-        let cheaperModel: DuckAiCheaperModelOutcome
+        let modelSuggestion: DuckAiModelSuggestionOutcome
     }
 
-    /// Whichever limit is closest to biting wins; on a tie, daily.
+    /// Whichever limit is closest to biting wins. When both are blocked, weekly: a daily reset won't
+    /// unblock anything. Otherwise daily breaks the tie.
     private static func isLowerPriority(_ lhs: Candidate, _ rhs: Candidate) -> Bool {
         if lhs.warning.severity != rhs.warning.severity { return lhs.warning.severity < rhs.warning.severity }
+        if lhs.warning.message.isReached && rhs.warning.message.isReached {
+            return lhs.warning.window == .daily && rhs.warning.window == .weekly
+        }
         if lhs.percentUsed != rhs.percentUsed { return lhs.percentUsed < rhs.percentUsed }
         return lhs.warning.window == .weekly && rhs.warning.window == .daily
     }
@@ -105,6 +119,8 @@ public struct DuckAiUsageWarningResolver {
                            limits: DuckAiUsageLimits,
                            tier: AIChatUserTier,
                            isInternalUser: Bool,
+                           isTrialEligible: Bool,
+                           advancedModelsWindow: DuckAiUsageWindow?,
                            now: Date) -> CandidateResult {
         guard let data = limits.window(window) else { return .rejected(.noData) }
 
@@ -124,20 +140,69 @@ public struct DuckAiUsageWarningResolver {
             return .rejected(.dismissedUntilReset)
         }
 
-        // Nothing left to head off once blocked.
-        let cheaperModel = isBlocked ? .none(reason: .notApplicable) : cheaperModelSuggester.suggestion()
+        let message = Self.message(for: window, isBlocked: isBlocked, advancedModelsWindow: advancedModelsWindow)
+        let suggestion = modelSuggestion(for: message)
+        let action = self.action(for: message,
+                                 suggestion: suggestion,
+                                 isPaid: canSeeApproachingWarnings,
+                                 isTrialEligible: isTrialEligible,
+                                 weeklyHasRoom: Self.hasRoom(limits.weekly))
 
         let warning = DuckAiUsageWarning(
             window: window,
-            kind: isBlocked ? .reached : .approaching,
+            message: message,
             severity: isBlocked ? .reached : (window.severity(forPercentUsed: percentUsed) ?? .info),
             percent: isBlocked ? 100 : min(99, Int(percentUsed.rounded())),
             resetsIn: .from(now: now, resetsAt: data.resetsAt),
             isDismissible: isDismissible,
-            cheaperModelSuggestion: cheaperModel.suggestion
+            action: action,
+            offersModelPicker: message == .approaching && action != nil
         )
 
-        return .candidate(Candidate(warning: warning, percentUsed: percentUsed, cheaperModel: cheaperModel))
+        return .candidate(Candidate(warning: warning, percentUsed: percentUsed, modelSuggestion: suggestion))
+    }
+
+    private static func message(for window: DuckAiUsageWindow,
+                                isBlocked: Bool,
+                                advancedModelsWindow: DuckAiUsageWindow?) -> DuckAiUsageMessage {
+        guard isBlocked else { return .approaching }
+        if window == .daily { return .dailyLimitReached }
+        // Defaults to the plain weekly copy until the payload says which allowance was spent.
+        return advancedModelsWindow == window ? .advancedModelsLimitReached : .weeklyLimitReached
+    }
+
+    private func modelSuggestion(for message: DuckAiUsageMessage) -> DuckAiModelSuggestionOutcome {
+        switch message {
+        case .approaching: return modelSuggester.cheaperModel()
+        case .advancedModelsLimitReached: return modelSuggester.freeModel()
+        case .dailyLimitReached, .weeklyLimitReached: return .none(reason: .notApplicable)
+        }
+    }
+
+    private func action(for message: DuckAiUsageMessage,
+                        suggestion: DuckAiModelSuggestionOutcome,
+                        isPaid: Bool,
+                        isTrialEligible: Bool,
+                        weeklyHasRoom: Bool) -> DuckAiUsageAction? {
+        // Free tier only ever sees a reached message, and the only thing to offer is the upsell.
+        guard isPaid else { return .tryForFree(isTrialEligible: isTrialEligible) }
+
+        switch message {
+        case .approaching:
+            return suggestion.suggestion.map(DuckAiUsageAction.switchToModel)
+        case .advancedModelsLimitReached:
+            return suggestion.suggestion.map(DuckAiUsageAction.switchToFreeModel)
+        case .dailyLimitReached:
+            // Only worth offering when the weekly allowance can actually absorb more.
+            return weeklyHasRoom ? .startUsingWeeklyLimit : nil
+        case .weeklyLimitReached:
+            return nil
+        }
+    }
+
+    private static func hasRoom(_ window: DuckAiUsageLimitWindow?) -> Bool {
+        guard let window else { return false }
+        return window.percentUsed < blockedPercent
     }
 
     private func isSuppressedByDismissal(window: DuckAiUsageWindow, percentUsed: Double, resetsAt: Date) -> Bool {

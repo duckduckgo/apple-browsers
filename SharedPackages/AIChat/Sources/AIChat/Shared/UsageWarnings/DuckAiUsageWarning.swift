@@ -70,38 +70,67 @@ public enum DuckAiUsageResetInterval: Equatable {
     private static let secondsPerDay: TimeInterval = 24 * 60 * 60
 }
 
+/// Which of the specified messages this is. Selects the headline; the action is resolved separately.
+public enum DuckAiUsageMessage: String {
+    case approaching
+    case dailyLimitReached
+    case weeklyLimitReached
+    /// The weekly allowance for advanced models, as opposed to overall weekly usage.
+    case advancedModelsLimitReached
+
+    var isReached: Bool { self != .approaching }
+}
+
+public enum DuckAiUsageAction: Equatable {
+    case switchToModel(DuckAiModelSuggestion)
+    case switchToFreeModel(DuckAiModelSuggestion)
+    /// `isTrialEligible` picks the copy; both route to the same upsell.
+    case tryForFree(isTrialEligible: Bool)
+    case startUsingWeeklyLimit
+
+    var buttonTitle: String {
+        switch self {
+        case .switchToModel(let suggestion):
+            return suggestion.modelShortName.map { "Switch to \($0)" } ?? "Switch Model"
+        case .switchToFreeModel:
+            return "Switch to a Free Model"
+        case .tryForFree(let isTrialEligible):
+            return isTrialEligible ? "Try for free" : "Subscribe"
+        case .startUsingWeeklyLimit:
+            return "Start using weekly limit"
+        }
+    }
+}
+
 public struct DuckAiUsageWarning: Equatable {
 
-    public enum Kind: String {
-        /// Dismissible by paid and internal users.
-        case approaching
-        /// Sticky, shown to every tier, clears only when the window resets.
-        case reached
-    }
-
     public let window: DuckAiUsageWindow
-    public let kind: Kind
+    public let message: DuckAiUsageMessage
     public let severity: DuckAiUsageSeverity
     /// Capped at 99 until the window is blocked, then 100.
     public let percent: Int
     public let resetsIn: DuckAiUsageResetInterval
     public let isDismissible: Bool
-    public let cheaperModelSuggestion: DuckAiCheaperModelSuggestion?
+    public let action: DuckAiUsageAction?
+    /// The `>` beside the primary action, opening the native model picker.
+    public let offersModelPicker: Bool
 
     public init(window: DuckAiUsageWindow,
-                kind: Kind,
+                message: DuckAiUsageMessage,
                 severity: DuckAiUsageSeverity,
                 percent: Int,
                 resetsIn: DuckAiUsageResetInterval,
                 isDismissible: Bool,
-                cheaperModelSuggestion: DuckAiCheaperModelSuggestion? = nil) {
+                action: DuckAiUsageAction? = nil,
+                offersModelPicker: Bool = false) {
         self.window = window
-        self.kind = kind
+        self.message = message
         self.severity = severity
         self.percent = percent
         self.resetsIn = resetsIn
         self.isDismissible = isDismissible
-        self.cheaperModelSuggestion = cheaperModelSuggestion
+        self.action = action
+        self.offersModelPicker = offersModelPicker
     }
 }
 
@@ -110,17 +139,14 @@ extension DuckAiUsageWarning {
     /// For the debug log only, so a decision reads straight across against the web banner. iOS and
     /// macOS deliberately drop web's "Reduce usage with a more efficient model" subtitle.
     var messagePreview: (title: String, button: String?) {
-        switch kind {
-        case .reached:
-            return ("\(window.rawValue.capitalized) limit reached", nil)
-
-        case .approaching:
-            let title = "\(percent)% of \(window.rawValue) limit · Resets in \(resetsIn.shortDescription)"
-            let button = cheaperModelSuggestion.map { suggestion in
-                suggestion.modelShortName.map { "Switch to \($0)" } ?? "Switch Model"
-            }
-            return (title, button)
+        let headline: String
+        switch message {
+        case .approaching: headline = "\(percent)% of \(window.rawValue) limit"
+        case .dailyLimitReached: headline = "Daily limit reached"
+        case .weeklyLimitReached: headline = "Weekly usage limit reached"
+        case .advancedModelsLimitReached: headline = "Advanced AI models limit reached"
         }
+        return ("\(headline) · Resets in \(resetsIn.shortDescription)", action?.buttonTitle)
     }
 }
 

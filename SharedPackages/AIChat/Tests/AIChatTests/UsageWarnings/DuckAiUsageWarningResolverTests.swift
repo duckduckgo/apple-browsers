@@ -75,16 +75,16 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
     func testWhenBlockedThenPercentageIsOneHundred() {
         let warning = resolve(limits(daily: 100))
         XCTAssertEqual(warning?.percent, 100)
-        XCTAssertEqual(warning?.kind, .reached)
+        XCTAssertEqual(warning?.message.isReached, true)
     }
 
     // MARK: - Audience
 
     func testWhenTierIsPaidOrInternalThenApproachingIsShown() {
         for tier in [AIChatUserTier.plus, .pro] {
-            XCTAssertEqual(resolve(limits(daily: 75), tier: tier)?.kind, .approaching, "\(tier)")
+            XCTAssertEqual(resolve(limits(daily: 75), tier: tier)?.message, .approaching, "\(tier)")
         }
-        XCTAssertEqual(resolve(limits(daily: 75), tier: .free, isInternalUser: true)?.kind, .approaching)
+        XCTAssertEqual(resolve(limits(daily: 75), tier: .free, isInternalUser: true)?.message, .approaching)
     }
 
     func testWhenTierIsFreeThenApproachingIsHidden() {
@@ -95,7 +95,7 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
     /// The reached message is the one thing every tier sees.
     func testWhenTierIsFreeThenReachedIsStillShownAndCannotBeDismissed() {
         let warning = resolve(limits(daily: 100), tier: .free)
-        XCTAssertEqual(warning?.kind, .reached)
+        XCTAssertEqual(warning?.message.isReached, true)
         XCTAssertFalse(warning?.isDismissible ?? true)
     }
 
@@ -127,7 +127,26 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
     func testWhenOneWindowIsBlockedThenItOutranksAnApproachingOne() {
         let warning = resolve(limits(daily: 60, weekly: 100))
         XCTAssertEqual(warning?.window, .weekly)
-        XCTAssertEqual(warning?.kind, .reached)
+        XCTAssertEqual(warning?.message.isReached, true)
+    }
+
+    // MARK: - Advanced-models weekly variant
+
+    /// The discriminator isn't in the payload yet, so weekly-blocked defaults to the plain copy.
+    func testWeeklyBlockedDefaultsToPlainWeeklyCopy() {
+        XCTAssertEqual(resolve(limits(weekly: 100))?.message, .weeklyLimitReached)
+    }
+
+    func testWeeklyBlockedUsesAdvancedCopyWhenTheWindowIsNamed() {
+        let outcome = sut.resolve(limits: limits(weekly: 100),
+                                  tier: .pro,
+                                  isInternalUser: false,
+                                  isTrialEligible: false,
+                                  advancedModelsWindow: .weekly,
+                                  now: now)
+        guard case .warning(let warning, _) = outcome else { return XCTFail("expected a warning") }
+
+        XCTAssertEqual(warning.message, .advancedModelsLimitReached)
     }
 
     // MARK: - Reset copy
@@ -150,6 +169,7 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
         guard case .warning(let warning, _) = sut.resolve(limits: limits,
                                                           tier: tier,
                                                           isInternalUser: isInternalUser,
+                                                          isTrialEligible: false,
                                                           now: now) else { return nil }
         return warning
     }

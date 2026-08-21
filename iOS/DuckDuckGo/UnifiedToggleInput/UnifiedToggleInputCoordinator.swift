@@ -1353,15 +1353,32 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             dismissalStore: dismissalStore,
             tierProvider: { [weak self] in self?.modelStore.subscriptionState.userTier ?? .free },
             isInternalUser: { [weak featureFlagger] in featureFlagger?.internalUserDecider.isInternalUser ?? false },
-            cheaperModelSuggester: DuckAiCheaperModelSuggester(
+            modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.modelStore.models ?? [] },
                 currentModelIdProvider: { [weak self] in self?.persistedModelId },
                 requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
             ),
+            isTrialEligible: { [weak self] in self?.modelStore.freeTrialEligibility == .eligible },
             pixelFiring: pixelFiring
         )
-        usageWarningViewModel?.onSwitchToSuggestedModel = { [weak self] suggestion in
-            self?.updateSelectedModel(suggestion.modelId)
+        usageWarningViewModel?.onAction = { [weak self] action in
+            self?.performUsageWarningAction(action)
+        }
+        usageWarningViewModel?.onOpenModelPicker = { [weak self] in
+            self?.presentModelPickerForActiveChat()
+        }
+    }
+
+    private func performUsageWarningAction(_ action: DuckAiUsageAction) {
+        switch action {
+        case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
+            updateSelectedModel(suggestion.modelId)
+        case .tryForFree:
+            // The upsell source is attribution the view layer owns, so this waits for UI.
+            Logger.aiChat.debug("Duck.ai usage warning: try-for-free tapped, no native route yet")
+        case .startUsingWeeklyLimit:
+            // Awaiting the native-storage value web will set; logged so the tap is observable meanwhile.
+            Logger.aiChat.debug("Duck.ai usage warning: start-using-weekly-limit tapped, no native action yet")
         }
     }
 

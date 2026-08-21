@@ -91,7 +91,7 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
 
         sut.dismiss()
 
-        XCTAssertEqual(sut.warning?.kind, .reached)
+        XCTAssertEqual(sut.warning?.message, .dailyLimitReached)
         XCTAssertNil(dismissalStore.dismissal(for: .daily))
     }
 
@@ -108,45 +108,94 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertNil(dismissalStore.dismissal(for: .daily))
     }
 
-    // MARK: - Cheaper-model CTA
+    // MARK: - Actions
 
-    func testApproachingWarningCarriesTheSuggestionAndSwitchingInvokesTheHandler() {
+    func testApproachingCarriesTheSwitchActionAndPerformingItInvokesTheHandler() {
         limitsProvider.limits = limits(daily: 75)
-        let sut = makeSUT(cheaperModelSuggester: StubCheaperModelSuggester(
-            outcome: .suggestion(DuckAiCheaperModelSuggestion(modelId: "claude-sonnet-4.6", modelShortName: "Sonnet 4.6"))
+        let sut = makeSUT(modelSuggester: StubModelSuggester(
+            cheaper: .suggestion(DuckAiModelSuggestion(modelId: "gpt-5.6-luna", modelShortName: "5.6 Luna"))
         ))
-        var switched: [String] = []
-        sut.onSwitchToSuggestedModel = { switched.append($0.modelId) }
+        var performed: [DuckAiUsageAction] = []
+        sut.onAction = { performed.append($0) }
         sut.refresh()
 
-        XCTAssertEqual(sut.warning?.cheaperModelSuggestion?.modelShortName, "Sonnet 4.6")
+        XCTAssertEqual(sut.warning?.action?.buttonTitle, "Switch to 5.6 Luna")
+        XCTAssertTrue(sut.warning?.offersModelPicker ?? false)
 
-        sut.switchToSuggestedModel()
+        sut.performAction()
 
-        XCTAssertEqual(switched, ["claude-sonnet-4.6"])
+        XCTAssertEqual(performed.count, 1)
     }
 
-    /// A reached message has nothing left to head off, so it never carries a CTA.
-    func testReachedWarningCarriesNoSuggestion() {
+    /// The free tier's only reached CTA is the upsell, and its copy follows trial eligibility.
+    func testFreeTierReachedOffersTheUpsellAndCannotBeDismissed() {
         limitsProvider.limits = limits(daily: 100)
-        let sut = makeSUT(cheaperModelSuggester: StubCheaperModelSuggester(
-            outcome: .suggestion(DuckAiCheaperModelSuggestion(modelId: "claude-sonnet-4.6", modelShortName: "Sonnet 4.6"))
-        ))
+        let sut = makeSUT(tier: .free, isTrialEligible: true)
+
         sut.refresh()
 
-        XCTAssertNil(sut.warning?.cheaperModelSuggestion)
+        XCTAssertEqual(sut.warning?.action, .tryForFree(isTrialEligible: true))
+        XCTAssertFalse(sut.warning?.isDismissible ?? true)
     }
 
-    func testSwitchingDoesNothingWhenThereIsNoSuggestion() {
+    /// Only worth offering when the weekly allowance can actually absorb more.
+    func testPaidDailyReachedOffersTheWeeklyLimitOnlyWhenWeeklyHasRoom() {
+        limitsProvider.limits = limits(daily: 100, weekly: 40)
+        let withRoom = makeSUT()
+        withRoom.refresh()
+        XCTAssertEqual(withRoom.warning?.action, .startUsingWeeklyLimit)
+
+        limitsProvider.limits = limits(daily: 100)
+        let withoutWeeklyData = makeSUT()
+        withoutWeeklyData.refresh()
+        XCTAssertNil(withoutWeeklyData.warning?.action)
+    }
+
+    /// A daily reset can't unblock a spent weekly allowance, so weekly is the one worth showing.
+    func testWhenBothWindowsAreBlockedThenWeeklyIsShown() {
+        limitsProvider.limits = limits(daily: 100, weekly: 100)
+        let sut = makeSUT()
+
+        sut.refresh()
+
+        XCTAssertEqual(sut.warning?.window, .weekly)
+        XCTAssertEqual(sut.warning?.message, .weeklyLimitReached)
+    }
+
+    func testReachedNeverOffersACheaperModelOrThePicker() {
+        limitsProvider.limits = limits(daily: 100, weekly: 40)
+        let sut = makeSUT(modelSuggester: StubModelSuggester(
+            cheaper: .suggestion(DuckAiModelSuggestion(modelId: "gpt-5.6-luna", modelShortName: "5.6 Luna"))
+        ))
+
+        sut.refresh()
+
+        XCTAssertEqual(sut.warning?.action, .startUsingWeeklyLimit)
+        XCTAssertFalse(sut.warning?.offersModelPicker ?? true)
+    }
+
+    func testPerformingAnActionDoesNothingWhenThereIsNone() {
         limitsProvider.limits = limits(daily: 75)
         let sut = makeSUT()
-        var switchCount = 0
-        sut.onSwitchToSuggestedModel = { _ in switchCount += 1 }
+        var actionCount = 0
+        sut.onAction = { _ in actionCount += 1 }
         sut.refresh()
 
-        sut.switchToSuggestedModel()
+        sut.performAction()
 
-        XCTAssertEqual(switchCount, 0)
+        XCTAssertEqual(actionCount, 0)
+    }
+
+    func testOpeningTheModelPickerDoesNothingWhenItIsNotOffered() {
+        limitsProvider.limits = limits(daily: 75)
+        let sut = makeSUT()
+        var openCount = 0
+        sut.onOpenModelPicker = { openCount += 1 }
+        sut.refresh()
+
+        sut.openModelPicker()
+
+        XCTAssertEqual(openCount, 0)
     }
 
     // MARK: - Helpers
@@ -155,14 +204,16 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
     /// represents "flag off, or no storage bridge".
     private func makeSUT(isFeatureActive: Bool = true,
                          tier: AIChatUserTier = .pro,
-                         cheaperModelSuggester: DuckAiCheaperModelSuggesting = NullDuckAiCheaperModelSuggester()
+                         modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
+                         isTrialEligible: Bool = false
     ) -> DuckAiUsageWarningViewModel {
         DuckAiUsageWarningViewModel(
             limitsProvider: isFeatureActive ? limitsProvider : nil,
             tierProvider: { tier },
             isInternalUser: { false },
             dismissalStore: dismissalStore,
-            cheaperModelSuggester: cheaperModelSuggester,
+            modelSuggester: modelSuggester,
+            isTrialEligible: { isTrialEligible },
             dateProvider: { self.now }
         )
     }
@@ -185,7 +236,9 @@ private final class StubUsageLimitsProvider: DuckAiUsageLimitsProviding {
     }
 }
 
-private struct StubCheaperModelSuggester: DuckAiCheaperModelSuggesting {
-    let outcome: DuckAiCheaperModelOutcome
-    func suggestion() -> DuckAiCheaperModelOutcome { outcome }
+private struct StubModelSuggester: DuckAiModelSuggesting {
+    var cheaper: DuckAiModelSuggestionOutcome = .none(reason: .notApplicable)
+    var free: DuckAiModelSuggestionOutcome = .none(reason: .notApplicable)
+    func cheaperModel() -> DuckAiModelSuggestionOutcome { cheaper }
+    func freeModel() -> DuckAiModelSuggestionOutcome { free }
 }

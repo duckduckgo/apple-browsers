@@ -1,5 +1,5 @@
 //
-//  DuckAiCheaperModelSuggester.swift
+//  DuckAiModelSuggester.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import Foundation
 import os.log
 
-public struct DuckAiCheaperModelSuggestion: Equatable {
+public struct DuckAiModelSuggestion: Equatable {
 
     public let modelId: String
     /// `nil` → the UI falls back to "Switch Model" instead of "Switch to {model}".
@@ -50,37 +50,43 @@ public struct DuckAiChatCapabilityRequirements: Equatable {
 }
 
 /// Carried so the rule chain stays observable in the log while there is no UI.
-public enum DuckAiCheaperModelUnavailableReason: String {
+public enum DuckAiModelSuggestionUnavailableReason: String {
     case recentlySteppedDown
     case unknownCurrentModel
     case currentModelIsNotCostly
     case noEverydayUseModelAvailable
     case everydayUseModelMissingCapability
+    case noFreeModelAvailable
+    case freeModelMissingCapability
     case notApplicable
 }
 
-public enum DuckAiCheaperModelOutcome: Equatable {
-    case suggestion(DuckAiCheaperModelSuggestion)
-    case none(reason: DuckAiCheaperModelUnavailableReason)
+public enum DuckAiModelSuggestionOutcome: Equatable {
+    case suggestion(DuckAiModelSuggestion)
+    case none(reason: DuckAiModelSuggestionUnavailableReason)
 
-    public var suggestion: DuckAiCheaperModelSuggestion? {
+    public var suggestion: DuckAiModelSuggestion? {
         guard case .suggestion(let suggestion) = self else { return nil }
         return suggestion
     }
 }
 
-public protocol DuckAiCheaperModelSuggesting {
-    func suggestion() -> DuckAiCheaperModelOutcome
+public protocol DuckAiModelSuggesting {
+    /// A lower-cost model to head off an approaching limit.
+    func cheaperModel() -> DuckAiModelSuggestionOutcome
+    /// A free-tier model to fall back to once an advanced-model allowance is spent.
+    func freeModel() -> DuckAiModelSuggestionOutcome
 }
 
-public struct NullDuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
+public struct NullDuckAiModelSuggester: DuckAiModelSuggesting {
     public init() {}
-    public func suggestion() -> DuckAiCheaperModelOutcome { .none(reason: .notApplicable) }
+    public func cheaperModel() -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
+    public func freeModel() -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
 }
 
 /// Driven by `AIChatModelLabel` rather than a hardcoded ladder: a name-matched ladder got it actively
 /// wrong, stepping `gpt-5.4` down to `gpt-5.4-mini`, which is itself `usesLimitsFaster`.
-public struct DuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
+public struct DuckAiModelSuggester: DuckAiModelSuggesting {
 
     private let modelsProvider: () -> [AIChatModel]
     private let currentModelIdProvider: () -> String?
@@ -97,10 +103,10 @@ public struct DuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
         self.didRecentlyStepDown = didRecentlyStepDown
     }
 
-    public func suggestion() -> DuckAiCheaperModelOutcome {
+    public func cheaperModel() -> DuckAiModelSuggestionOutcome {
         let models = modelsProvider()
         let current = models.first { $0.id == currentModelIdProvider() }
-        let outcome = resolve(current: current, in: models)
+        let outcome = resolveCheaper(current: current, in: models)
 
         // Labels are believed to be per-tier; the anonymous payload only shows the free-tier split, so
         // logging the current one is how that gets confirmed against a real account.
@@ -112,7 +118,23 @@ public struct DuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
         return outcome
     }
 
-    private func resolve(current: AIChatModel?, in models: [AIChatModel]) -> DuckAiCheaperModelOutcome {
+    /// `isAdvanced` is `!accessTier.contains("free")`, so a non-advanced model is one the free tier gets.
+    public func freeModel() -> DuckAiModelSuggestionOutcome {
+        let models = modelsProvider()
+        let current = models.first { $0.id == currentModelIdProvider() }
+        let candidates = models.filter { $0.entityHasAccess && $0.id != current?.id && !$0.isAdvanced }
+        guard !candidates.isEmpty else { return .none(reason: .noFreeModelAvailable) }
+
+        let capable = candidates.filter { Self.model($0, covers: requirementsProvider()) }
+        guard let target = capable.first else { return .none(reason: .freeModelMissingCapability) }
+
+        return .suggestion(DuckAiModelSuggestion(
+            modelId: target.id,
+            modelShortName: target.shortName.isEmpty ? nil : target.shortName
+        ))
+    }
+
+    private func resolveCheaper(current: AIChatModel?, in models: [AIChatModel]) -> DuckAiModelSuggestionOutcome {
         guard !didRecentlyStepDown() else { return .none(reason: .recentlySteppedDown) }
         guard let current else { return .none(reason: .unknownCurrentModel) }
 
@@ -128,13 +150,13 @@ public struct DuckAiCheaperModelSuggester: DuckAiCheaperModelSuggesting {
         // Staying with the same provider makes for a smaller change than crossing to another.
         let target = capable.first { $0.provider == current.provider } ?? capable[0]
 
-        return .suggestion(DuckAiCheaperModelSuggestion(
+        return .suggestion(DuckAiModelSuggestion(
             modelId: target.id,
             modelShortName: target.shortName.isEmpty ? nil : target.shortName
         ))
     }
 
-    private static func describe(_ outcome: DuckAiCheaperModelOutcome) -> String {
+    private static func describe(_ outcome: DuckAiModelSuggestionOutcome) -> String {
         switch outcome {
         case .suggestion(let suggestion): return "switch-to:\(suggestion.modelId)"
         case .none(let reason): return reason.rawValue

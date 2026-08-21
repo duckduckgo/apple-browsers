@@ -62,7 +62,7 @@ final class DuckAiUsageWarningDismissalTests: XCTestCase {
         dismiss(.daily, atThreshold: 90)
 
         XCTAssertNil(resolve(daily: 95))
-        XCTAssertEqual(resolve(daily: 100)?.kind, .reached)
+        XCTAssertEqual(resolve(daily: 100)?.message.isReached, true)
     }
 
     // MARK: - Weekly ladder: 50 → 75 → 90 → 100
@@ -106,7 +106,7 @@ final class DuckAiUsageWarningDismissalTests: XCTestCase {
     func testWhenBlockedThenAnEarlierDismissalDoesNotSuppressIt() {
         dismiss(.daily, atThreshold: 50)
 
-        XCTAssertEqual(resolve(daily: 100)?.kind, .reached)
+        XCTAssertEqual(resolve(daily: 100)?.message.isReached, true)
     }
 
     // MARK: - Helpers
@@ -129,6 +129,7 @@ final class DuckAiUsageWarningDismissalTests: XCTestCase {
         guard case .warning(let warning, _) = sut.resolve(limits: limits,
                                                           tier: .pro,
                                                           isInternalUser: false,
+                                                          isTrialEligible: false,
                                                           now: now) else { return nil }
         return warning
     }

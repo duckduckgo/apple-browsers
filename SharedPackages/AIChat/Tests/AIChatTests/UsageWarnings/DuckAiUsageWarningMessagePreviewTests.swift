@@ -19,73 +19,88 @@
 import XCTest
 @testable import AIChat
 
-/// The preview is what the debug log is read from while there is no UI, so its wording is pinned against
-/// the web banner it has to be comparable with.
+/// The preview is what the debug log is read from while there is no UI, so the wording of all five
+/// specified messages is pinned here.
 final class DuckAiUsageWarningMessagePreviewTests: XCTestCase {
 
-    func testApproachingMatchesTheWebBannerWording() {
-        let preview = warning(kind: .approaching, window: .weekly, percent: 75).messagePreview
+    private let suggestion = DuckAiModelSuggestion(modelId: "gpt-5.6-luna", modelShortName: "5.6 Luna")
+
+    func testApproaching() {
+        let preview = warning(.approaching, window: .weekly, percent: 75).messagePreview
 
         XCTAssertEqual(preview.title, "75% of weekly limit · Resets in 4d")
         XCTAssertNil(preview.button)
     }
 
-    func testApproachingWithACheaperModelCarriesTheButton() {
-        let preview = warning(
-            kind: .approaching,
-            window: .weekly,
-            percent: 75,
-            suggestion: DuckAiCheaperModelSuggestion(modelId: "gpt-5.6-luna", modelShortName: "5.6 Luna")
-        ).messagePreview
+    func testApproachingWithACheaperModel() {
+        let preview = warning(.approaching, window: .weekly, percent: 75,
+                              action: .switchToModel(suggestion)).messagePreview
 
         XCTAssertEqual(preview.title, "75% of weekly limit · Resets in 4d")
         XCTAssertEqual(preview.button, "Switch to 5.6 Luna")
     }
 
-    /// Web pairs the CTA with a "Reduce usage with a more efficient model" subtitle. iOS and macOS
-    /// deliberately don't, so the preview is title plus button and nothing else.
-    func testThereIsNoSubtitleAlongsideTheCTA() {
-        let preview = warning(
-            kind: .approaching,
-            window: .weekly,
-            percent: 75,
-            suggestion: DuckAiCheaperModelSuggestion(modelId: "gpt-5.6-luna", modelShortName: "5.6 Luna")
-        ).messagePreview
-
-        XCTAssertFalse(preview.title.localizedCaseInsensitiveContains("efficient model"))
-    }
-
     func testButtonFallsBackWhenTheModelHasNoShortName() {
-        let preview = warning(
-            kind: .approaching,
-            window: .daily,
-            percent: 60,
-            suggestion: DuckAiCheaperModelSuggestion(modelId: "gpt-5.6-luna", modelShortName: nil)
-        ).messagePreview
+        let unnamed = DuckAiModelSuggestion(modelId: "gpt-5.6-luna", modelShortName: nil)
+        let preview = warning(.approaching, window: .daily, percent: 60,
+                              action: .switchToModel(unnamed)).messagePreview
 
         XCTAssertEqual(preview.button, "Switch Model")
     }
 
-    /// Reached is sticky and has nothing left to head off, so it carries neither reset copy nor a CTA.
-    func testReachedIsJustTheHeadline() {
-        let preview = warning(kind: .reached, window: .daily, percent: 100).messagePreview
+    /// Every reached message shows reset copy, unlike the earlier spec where it was headline-only.
+    func testDailyLimitReached() {
+        let preview = warning(.dailyLimitReached, window: .daily, percent: 100,
+                              action: .startUsingWeeklyLimit).messagePreview
 
-        XCTAssertEqual(preview.title, "Daily limit reached")
+        XCTAssertEqual(preview.title, "Daily limit reached · Resets in 4d")
+        XCTAssertEqual(preview.button, "Start using weekly limit")
+    }
+
+    func testWeeklyLimitReachedCarriesNoCTA() {
+        let preview = warning(.weeklyLimitReached, window: .weekly, percent: 100).messagePreview
+
+        XCTAssertEqual(preview.title, "Weekly usage limit reached · Resets in 4d")
         XCTAssertNil(preview.button)
     }
 
-    private func warning(kind: DuckAiUsageWarning.Kind,
+    func testAdvancedModelsLimitReached() {
+        let preview = warning(.advancedModelsLimitReached, window: .weekly, percent: 100,
+                              action: .switchToFreeModel(suggestion)).messagePreview
+
+        XCTAssertEqual(preview.title, "Advanced AI models limit reached · Resets in 4d")
+        XCTAssertEqual(preview.button, "Switch to a Free Model")
+    }
+
+    func testTryForFreeCopyFollowsTrialEligibility() {
+        XCTAssertEqual(warning(.dailyLimitReached, window: .daily, percent: 100,
+                               action: .tryForFree(isTrialEligible: true)).messagePreview.button,
+                       "Try for free")
+        XCTAssertEqual(warning(.dailyLimitReached, window: .daily, percent: 100,
+                               action: .tryForFree(isTrialEligible: false)).messagePreview.button,
+                       "Subscribe")
+    }
+
+    /// Web pairs the CTA with a "Reduce usage with a more efficient model" subtitle; native doesn't.
+    func testThereIsNoSubtitle() {
+        let preview = warning(.approaching, window: .weekly, percent: 75,
+                              action: .switchToModel(suggestion)).messagePreview
+
+        XCTAssertFalse(preview.title.localizedCaseInsensitiveContains("efficient model"))
+    }
+
+    private func warning(_ message: DuckAiUsageMessage,
                          window: DuckAiUsageWindow,
                          percent: Int,
-                         suggestion: DuckAiCheaperModelSuggestion? = nil) -> DuckAiUsageWarning {
+                         action: DuckAiUsageAction? = nil) -> DuckAiUsageWarning {
         DuckAiUsageWarning(
             window: window,
-            kind: kind,
-            severity: kind == .reached ? .reached : .warning,
+            message: message,
+            severity: message.isReached ? .reached : .warning,
             percent: percent,
             resetsIn: .days(4),
-            isDismissible: kind == .approaching,
-            cheaperModelSuggestion: suggestion
+            isDismissible: !message.isReached,
+            action: action
         )
     }
 }

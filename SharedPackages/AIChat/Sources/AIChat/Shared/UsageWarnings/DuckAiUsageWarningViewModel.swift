@@ -26,8 +26,10 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
 
     @Published public private(set) var warning: DuckAiUsageWarning?
 
-    /// Wired to the platform's model-selection path; this type decides what to suggest, never applies it.
-    public var onSwitchToSuggestedModel: ((DuckAiCheaperModelSuggestion) -> Void)?
+    /// Wired to the platform's model selection and upsell; this type decides what to offer, never applies it.
+    public var onAction: ((DuckAiUsageAction) -> Void)?
+    /// The `>` beside the primary action.
+    public var onOpenModelPicker: (() -> Void)?
 
     /// `nil` means inactive (flag off, or no storage bridge), which differs from having nothing to show.
     private let limitsProvider: DuckAiUsageLimitsProviding?
@@ -35,6 +37,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
     private let isInternalUser: () -> Bool
     private let dismissalStore: DuckAiUsageWarningDismissalStoring
     private let resolver: DuckAiUsageWarningResolver
+    private let isTrialEligible: () -> Bool
     private let dateProvider: () -> Date
 
     /// Kept so `dismiss()` can recover the window's `resetsAt` without a second storage read.
@@ -44,14 +47,16 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
                 tierProvider: @escaping () -> AIChatUserTier,
                 isInternalUser: @escaping () -> Bool,
                 dismissalStore: DuckAiUsageWarningDismissalStoring,
-                cheaperModelSuggester: DuckAiCheaperModelSuggesting = NullDuckAiCheaperModelSuggester(),
+                modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
+                isTrialEligible: @escaping () -> Bool = { false },
                 dateProvider: @escaping () -> Date = Date.init) {
         self.limitsProvider = limitsProvider
         self.tierProvider = tierProvider
         self.isInternalUser = isInternalUser
         self.dismissalStore = dismissalStore
         self.resolver = DuckAiUsageWarningResolver(dismissalStore: dismissalStore,
-                                                   cheaperModelSuggester: cheaperModelSuggester)
+                                                   modelSuggester: modelSuggester)
+        self.isTrialEligible = isTrialEligible
         self.dateProvider = dateProvider
     }
 
@@ -81,12 +86,19 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         resolveAndPublish()
     }
 
-    public func switchToSuggestedModel() {
-        guard let suggestion = warning?.cheaperModelSuggestion else { return }
+    public func performAction() {
+        guard let action = warning?.action else { return }
 
-        Logger.aiChat.debug("Duck.ai usage warning CTA taken: model=\(suggestion.modelId, privacy: .public)")
-        onSwitchToSuggestedModel?(suggestion)
+        Logger.aiChat.debug("Duck.ai usage warning CTA taken: \(action.buttonTitle, privacy: .public)")
+        onAction?(action)
         resolveAndPublish()
+    }
+
+    public func openModelPicker() {
+        guard warning?.offersModelPicker == true else { return }
+
+        Logger.aiChat.debug("Duck.ai usage warning model picker opened")
+        onOpenModelPicker?()
     }
 
     /// Teardown: drops the message without recording a dismissal.
@@ -99,11 +111,12 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         let outcome = resolver.resolve(limits: lastReadLimits,
                                        tier: tierProvider(),
                                        isInternalUser: isInternalUser(),
+                                       isTrialEligible: isTrialEligible(),
                                        now: dateProvider())
         switch outcome {
-        case .warning(let warning, let cheaperModel):
+        case .warning(let warning, let modelSuggestion):
             self.warning = warning
-            log(warning, cheaperModel: cheaperModel)
+            log(warning, modelSuggestion: modelSuggestion)
         case .none(let reason):
             self.warning = nil
             Logger.aiChat.debug("Duck.ai usage warning: none — reason=\(reason.rawValue, privacy: .public)")
@@ -112,10 +125,10 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
 
     /// The title carries the percentage and goes out `.public`: this is debug-level behind an
     /// internal-only flag, and redacting the line the message is read from would defeat logging it.
-    private func log(_ warning: DuckAiUsageWarning, cheaperModel: DuckAiCheaperModelOutcome) {
+    private func log(_ warning: DuckAiUsageWarning, modelSuggestion: DuckAiModelSuggestionOutcome) {
         let message = warning.messagePreview
         let ctaDiagnosis: String
-        switch cheaperModel {
+        switch modelSuggestion {
         case .suggestion(let suggestion): ctaDiagnosis = "model=\(suggestion.modelId)"
         case .none(let reason): ctaDiagnosis = "none reason=\(reason.rawValue)"
         }
@@ -123,9 +136,10 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         Logger.aiChat.debug("""
             Duck.ai usage warning: title="\(message.title, privacy: .public)" \
             button="\(message.button ?? "—", privacy: .public)" \
+            picker=\(warning.offersModelPicker, privacy: .public) \
             dismissible=\(warning.isDismissible, privacy: .public) \
             [window=\(warning.window.rawValue, privacy: .public) \
-            kind=\(warning.kind.rawValue, privacy: .public) \
+            message=\(warning.message.rawValue, privacy: .public) \
             severity=\(warning.severity.loggingName, privacy: .public) \
             tier=\(self.tierProvider().rawValue, privacy: .public) \
             cta=\(ctaDiagnosis, privacy: .public)]

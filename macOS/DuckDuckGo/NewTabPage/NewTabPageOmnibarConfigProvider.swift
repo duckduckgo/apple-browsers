@@ -101,6 +101,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
+    private let isTrialEligibleProvider: () -> Bool
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
@@ -117,6 +118,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
+         isTrialEligibleProvider: @escaping () -> Bool = { false },
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
@@ -127,6 +129,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
+        self.isTrialEligibleProvider = isTrialEligibleProvider
         self.firePixel = firePixel
 
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
@@ -300,13 +303,20 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         usageWarningViewModel = store.makeWarningViewModel(
             dismissalStore: burnerMode.isBurner ? burnerUsageDismissalStore : usageDismissalStore,
             tierProvider: userTierProvider,
-            cheaperModelSuggester: DuckAiCheaperModelSuggester(
+            modelSuggester: DuckAiModelSuggester(
                 modelsProvider: availableModelsProvider,
                 currentModelIdProvider: { [aiChatPreferencesPersistor] in aiChatPreferencesPersistor.selectedModelId }
-            )
+            ),
+            isTrialEligible: isTrialEligibleProvider
         )
-        usageWarningViewModel?.onSwitchToSuggestedModel = { [weak self] suggestion in
-            self?.aiChatPreferencesPersistor.selectedModelId = suggestion.modelId
+        usageWarningViewModel?.onAction = { [weak self] action in
+            switch action {
+            case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
+                self?.aiChatPreferencesPersistor.selectedModelId = suggestion.modelId
+            case .tryForFree, .startUsingWeeklyLimit:
+                // Both need a UI to route from; logged by the view model meanwhile.
+                break
+            }
         }
         usageWarningViewModel?.refresh()
     }

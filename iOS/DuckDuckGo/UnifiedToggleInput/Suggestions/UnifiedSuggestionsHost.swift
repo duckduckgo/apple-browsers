@@ -37,7 +37,6 @@ final class UnifiedSuggestionsHost {
     private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
     private var escapeHatch: EscapeHatchModel?
-    private var syncPromo: AnyView?
     private var escapeHatchTopInset: CGFloat = 0
     private var contentInsets: UIEdgeInsets = .zero
     private var showsFavorites = true
@@ -70,9 +69,7 @@ final class UnifiedSuggestionsHost {
     }
 
     func setSyncPromo(_ promo: AnyView?) {
-        guard (syncPromo == nil) != (promo == nil) else { return }
-        syncPromo = promo
-        rebuildRootView()
+        viewModel.setSyncPromo(promo)
     }
 
     init(config: UnifiedSuggestionsHostConfig) {
@@ -108,7 +105,6 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             escapeHatch: escapeHatch,
-            syncPromo: syncPromo,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
         let hosting = UIHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
@@ -238,7 +234,6 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             escapeHatch: escapeHatch,
-            syncPromo: syncPromo,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
     }
 }

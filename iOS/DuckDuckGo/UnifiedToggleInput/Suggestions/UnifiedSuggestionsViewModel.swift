@@ -50,6 +50,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     @Published private(set) var isFireTab = false
     /// iPhone landscape suppresses the empty state entirely because there is not enough room.
     @Published private(set) var isLandscape = false
+    @Published private(set) var syncPromo: AnyView?
     /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo
     /// moves in the same pass, and only when the chrome is actually close (never in Search).
@@ -152,6 +153,11 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     func setLandscape(_ value: Bool) {
         guard isLandscape != value else { return }
         isLandscape = value
+    }
+
+    func setSyncPromo(_ promo: AnyView?) {
+        guard (syncPromo == nil) != (promo == nil) else { return }
+        syncPromo = promo
     }
 
     func setDuckAIListViewModel(_ viewModel: SuggestionsListViewModel?) {

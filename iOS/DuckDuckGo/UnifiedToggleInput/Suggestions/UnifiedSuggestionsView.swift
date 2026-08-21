@@ -26,7 +26,6 @@ struct UnifiedSuggestionsView: View {
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
     let escapeHatch: EscapeHatchModel?
-    let syncPromo: AnyView?
     /// Built lazily by the host for favorites and empty scrollable hatch states.
     let favoritesProvider: () -> NewTabPageViewController?
 
@@ -90,7 +89,7 @@ struct UnifiedSuggestionsView: View {
         SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
                             isAddressBarAtBottom: isAddressBarAtBottom,
                             escapeHatch: activeListKind == .recents ? escapeHatch : nil,
-                            syncPromo: activeListKind == .recents ? syncPromo : nil)
+                            syncPromo: activeListKind == .recents ? viewModel.syncPromo : nil)
             .opacity(isShowingList ? 1 : 0)
             // Fade *in* on a mode change, but snap *out* — otherwise the recents list lingers over the
             // Search favorites/logo (which snap in instantly) when toggling away from Duck.ai.

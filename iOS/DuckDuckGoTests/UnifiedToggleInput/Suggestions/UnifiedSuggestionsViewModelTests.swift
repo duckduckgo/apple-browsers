@@ -18,6 +18,7 @@
 //
 
 import Combine
+import SwiftUI
 import XCTest
 @testable import DuckDuckGo
 
@@ -41,6 +42,21 @@ final class UnifiedSuggestionsViewModelTests: XCTestCase {
         let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
                                               listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
         XCTAssertEqual(sut.content, .list(.search))
+    }
+
+    func test_setSyncPromo_updatesPromoWithoutChangingContent() {
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
+                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
+        let content = sut.content
+
+        sut.setSyncPromo(AnyView(EmptyView()))
+
+        XCTAssertNotNil(sut.syncPromo)
+        sut.setSyncPromo(nil)
+        XCTAssertNil(sut.syncPromo)
+        XCTAssertEqual(sut.content, content)
     }
 }
 

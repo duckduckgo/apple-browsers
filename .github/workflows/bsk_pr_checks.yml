@@ -9,6 +9,10 @@ on:
     branches: [ main ]
     paths:
       - 'SharedPackages/BrowserServicesKit/**'
+      - 'SharedPackages/Common/**'
+      - 'SharedPackages/DDGError/**'
+      - 'SharedPackages/Persistence/**'
+      - 'SharedPackages/PixelKit/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
@@ -17,6 +21,10 @@ on:
       - '.github/**'
       - '.xcode-version'
       - 'SharedPackages/BrowserServicesKit/**'
+      - 'SharedPackages/Common/**'
+      - 'SharedPackages/DDGError/**'
+      - 'SharedPackages/Persistence/**'
+      - 'SharedPackages/PixelKit/**'
   schedule:
     - cron: '10,30,50 4,5,6 * * *'
 
@@ -421,9 +429,133 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  shared-package-unit-tests:
+
+      # Common, DDGError, Persistence and PixelKit were BSK targets until #6405 split them into
+      # their own packages. Their tests ran under this workflow as part of the BSK suite and had no
+      # home afterwards, so they run here, one job per package.
+      name: Run unit tests (${{ matrix.package }}, macOS)
+
+      needs: should-run-checks
+      if: needs.should-run-checks.outputs.should_run == 'true'
+
+      runs-on: [image:osx-tahoe-26, size:large]
+      timeout-minutes: 20
+
+      strategy:
+        fail-fast: false
+        matrix:
+          package: [Common, DDGError, Persistence, PixelKit]
+
+      defaults:
+        run:
+          working-directory: SharedPackages/${{ matrix.package }}
+
+      env:
+        WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+
+      steps:
+
+      - name: Register SSH keys for private repos
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Print macOS version
+        run: sw_vers
+
+      - name: Select Xcode
+        uses: ./.github/actions/select-xcode-version
+
+      - name: Setup Bitrise Build Cache
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/bitrise-build-cache
+        with:
+          token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+          workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+
+      - name: Run tests
+        id: run-unit-tests
+        run: |
+          set -o pipefail && xcodebuild test \
+            -scheme ${{ matrix.package }} \
+            -destination 'platform=macOS' \
+            -derivedDataPath DerivedData \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            -test-iterations 3 \
+            -retry-tests-on-failure \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build-log.txt \
+            | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
+            | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+
+      - name: Process test results
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/${{ matrix.package }}
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: ${{ matrix.package }} (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+      - name: Upload JUnit XML as artifact
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: ${{ matrix.package }}-macos-unittests.xml
+          path: |
+            SharedPackages/${{ matrix.package }}/package-tests.xml
+            SharedPackages/${{ matrix.package }}/package-tests-crash-details.json
+          retention-days: 7
+
+      - name: Publish Unit Tests Report
+        uses: mikepenz/action-junit-report@v6
+        if: always()
+        with:
+          check_name: ${{ matrix.package }} Test Report (macOS)
+          report_paths: SharedPackages/${{ matrix.package }}/package-tests.xml
+          require_tests: true
+          check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+          job_summary: 'false'
+
+      - name: Update Asana with failed unit tests
+        if: always() && steps.run-unit-tests.outcome == 'failure'
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        run: |
+          # Extract failed tests from the junit report
+          # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
+          yq < package-tests.xml -p xml -o json -r \
+            $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
+            | sort -u -k 1,2 \
+            | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: ${{ matrix.package }}-build-log.txt
+          path: SharedPackages/${{ matrix.package }}/build-log.txt
+
+      - name: Upload xcresult bundle
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: ${{ matrix.package }}-macos-xcresult
+          path: SharedPackages/${{ matrix.package }}/DerivedData/Logs/Test/*.xcresult
+          retention-days: 7
+          if-no-files-found: ignore
+
   create-asana-task:
     name: Create Asana Task
-    needs: [unit-tests, unit-tests-ios]
+    needs: [unit-tests, unit-tests-ios, shared-package-unit-tests]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1
 
@@ -444,7 +576,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [unit-tests, unit-tests-ios]
+    needs: [unit-tests, unit-tests-ios, shared-package-unit-tests]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1
 

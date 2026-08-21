@@ -22,9 +22,8 @@ import Common
 import ConcurrencyExtensions
 import FoundationExtensions
 import OSLog
-import PixelKit
-import PixelKitTestingUtilities
-import SharedTestUtilities
+@_spi(Testing) import PixelKit
+@_spi(Testing) import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

@@ -17,8 +17,7 @@
 //
 
 import History
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import XCTest
 import PrivacyConfig
 

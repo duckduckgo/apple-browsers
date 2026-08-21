@@ -21,7 +21,7 @@ import XCTest
 @testable import Networking
 import SubscriptionTestingUtilities
 import NetworkingTestingUtils
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 
 @available(iOS 15.0, *)
 final class AppStorePurchaseFlowTests: XCTestCase {

@@ -114,6 +114,9 @@ class FromWebViewTransition: WebViewTransition {
            cellSnapshot == nil,
            let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
             prepareGridChromeSnapshot(for: cell, initiallyVisible: false)
+        } else if !tabSwitcherSettings.isGridViewEnabled,
+                  let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewListCell {
+            prepareListChrome(for: cell, initiallyVisible: false)
         }
 
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
@@ -126,6 +129,9 @@ class FromWebViewTransition: WebViewTransition {
                 self.imageView.frame = WebViewTransitionGeometry.previewFrame(for: containerFrame.size,
                                                                               previewSize: preview.size,
                                                                               isGridViewEnabled: self.tabSwitcherSettings.isGridViewEnabled)
+                if !self.tabSwitcherSettings.isGridViewEnabled {
+                    self.applyListChromePose(isVisible: true)
+                }
             }
 
             if self.tabSwitcherSettings.isGridViewEnabled {
@@ -211,6 +217,9 @@ class ToWebViewTransition: WebViewTransition {
         if tabSwitcherSettings.isGridViewEnabled,
            let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewGridCell {
             prepareGridChromeSnapshot(for: cell, initiallyVisible: true)
+        } else if !tabSwitcherSettings.isGridViewEnabled,
+                  let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewListCell {
+            prepareListChrome(for: cell, initiallyVisible: true)
         }
         
         if !tabSwitcherSettings.isGridViewEnabled {
@@ -228,6 +237,9 @@ class ToWebViewTransition: WebViewTransition {
                 self.imageView.alpha = 1
                 self.solidBackground.alpha = 1
                 self.tabSwitcherViewController.view.alpha = 0
+                if !self.tabSwitcherSettings.isGridViewEnabled {
+                    self.applyListChromePose(isVisible: false)
+                }
             }
 
             if self.tabSwitcherSettings.isGridViewEnabled {

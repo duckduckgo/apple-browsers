@@ -30,7 +30,7 @@ final class SearchURLBuilderTests: XCTestCase {
         atbWithVariant = nil
     }
 
-    func testWhenMobileStatsParamsAreAppliedThenTheyReturnAnUpdatedUrl() throws {
+    func testWhenMobileStatsParamsAreAppliedThenTheyReturnAnUpdatedUrl() {
         atbWithVariant = "x"
         let actual = makeSearchURLBuilder()
             .applyingStatsParams(to: URL(string: "http://duckduckgo.com?atb=wrong&t=wrong")!)
@@ -73,52 +73,58 @@ final class SearchURLBuilderTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testSearchUrlCreatesUrlWithQueryParam() throws {
-        let url = makeSearchURLBuilder().makeSearchURL(text: "query")!
-        XCTAssertEqual(url.getParameter(named: "q"), "query")
+    func testWhenSearchURLIsBuiltThenQueryEncodingAndSourceArePreserved() {
+        let url = makeSearchURLBuilder().makeSearchURL(query: "a+b / c&d", forceSearchQuery: true)
+
+        XCTAssertEqual(url.absoluteString, "https://duckduckgo.com/?q=a%2Bb+%2F+c%26d&t=ddg_ios")
     }
 
     func testSearchUrlCreatesSearchUrlWhenFloatingPointNumberIsPassed() {
         let url = makeSearchURLBuilder().makeSearchURL(query: "1.4")
-        XCTAssertEqual(url?.getParameter(named: "q"), "1.4")
+        XCTAssertEqual(url.getParameter(named: "q"), "1.4")
     }
 
     func testSearchUrlCreatesSearchUrlWhenFloatingPointNumbersDivisionIsPassed() {
         let url = makeSearchURLBuilder().makeSearchURL(query: "1.4/3.4")
-        XCTAssertEqual(url?.getParameter(named: "q"), "1.4/3.4")
+        XCTAssertEqual(url.getParameter(named: "q"), "1.4/3.4")
 
         let url2 = makeSearchURLBuilder().makeSearchURL(query: "4/3.4")
-        XCTAssertEqual(url2?.getParameter(named: "q"), "4/3.4")
+        XCTAssertEqual(url2.getParameter(named: "q"), "4/3.4")
     }
 
     func testSearchUrlCreatesWebUrlWhenIPv4WithFourOctetsIsPassed() {
         let url = makeSearchURLBuilder().makeSearchURL(query: "1.0.0.4/3.4")
-        XCTAssertEqual(url?.absoluteString, "http://1.0.0.4/3.4")
+        XCTAssertEqual(url.absoluteString, "http://1.0.0.4/3.4")
     }
 
-    func testSearchUrlCreatesUrlWithSourceParam() throws {
-        let url = makeSearchURLBuilder().makeSearchURL(text: "query")!
-        XCTAssertEqual(url.getParameter(named: "t"), "ddg_ios")
+    func testWhenDomainLikeInputIsUsedThenForceSearchControlsTheResult() {
+        let builder = makeSearchURLBuilder()
+        let navigationURL = builder.makeSearchURL(query: "example.com")
+        atbWithVariant = "v123-4ru"
+        let searchURL = builder.makeSearchURL(query: "example.com", forceSearchQuery: true)
+
+        XCTAssertEqual(navigationURL.absoluteString, "http://example.com")
+        XCTAssertEqual(searchURL.absoluteString, "https://duckduckgo.com/?q=example.com&t=ddg_ios&atb=v123-4ru")
     }
 
-    func testSearchUrlCreatesUrlWithSourceParamForiPad() throws {
-        let url = makeSearchURLBuilder(isPad: true).makeSearchURL(text: "query")!
+    func testSearchUrlCreatesUrlWithSourceParamForiPad() {
+        let url = makeSearchURLBuilder(isPad: true).makeSearchURL(query: "query", forceSearchQuery: true)
         XCTAssertEqual(url.getParameter(named: "t"), "ddg_ios_tablet")
     }
 
-    func testWhenExistingQueryUsesVerticalThenItIsAppliedToNewOne() throws {
+    func testWhenExistingQueryUsesVerticalThenItIsAppliedToNewOne() {
         let contextURL = URL(string: "https://duckduckgo.com/?q=query&iar=images&ko=-1&ia=images")!
         let url = makeSearchURLBuilder()
-            .makeSearchURL(query: "query", queryContext: contextURL)!
+            .makeSearchURL(query: "query", queryContext: contextURL)
 
         XCTAssertEqual(url.getParameter(named: "t"), "ddg_ios")
         XCTAssertEqual(url.getParameter(named: "iar"), "images")
     }
 
-    func testWhenExistingQueryUsesVerticalWithMapsThenTheseAreIgnored() throws {
+    func testWhenExistingQueryUsesVerticalWithMapsThenTheseAreIgnored() {
         let contextURL = URL(string: "https://duckduckgo.com/?q=query&iar=images&ko=-1&ia=images&iaxm=maps")!
         let url = makeSearchURLBuilder()
-            .makeSearchURL(query: "query", queryContext: contextURL)!
+            .makeSearchURL(query: "query", queryContext: contextURL)
 
         XCTAssertEqual(url.getParameter(named: "t"), "ddg_ios")
         XCTAssertNil(url.getParameter(named: "ia"))
@@ -126,24 +132,13 @@ final class SearchURLBuilderTests: XCTestCase {
         XCTAssertNil(url.getParameter(named: "iar"))
     }
 
-    func testWhenExistingQueryHasNoVerticalThenItIsAbsentInNewOne() throws {
+    func testWhenExistingQueryHasNoVerticalThenItIsAbsentInNewOne() {
         let contextURL = URL(string: "https://example.com")!
         let url = makeSearchURLBuilder()
-            .makeSearchURL(query: "query", queryContext: contextURL)!
+            .makeSearchURL(query: "query", queryContext: contextURL)
 
         XCTAssertEqual(url.getParameter(named: "t"), "ddg_ios")
         XCTAssertNil(url.getParameter(named: "iar"))
-    }
-
-    func testWhenAtbValuesExistInStatisticsStoreThenSearchUrlCreatesUrlWithAtb() throws {
-        atbWithVariant = "x"
-        let urlWithAtb = makeSearchURLBuilder().makeSearchURL(text: "query")!
-        XCTAssertEqual(urlWithAtb.getParameter(named: "atb"), "x")
-    }
-
-    func testWhenAtbIsAbsentFromStatisticsStoreThenSearchUrlCreatesUrlWithoutAtb() throws {
-        let url = makeSearchURLBuilder().makeSearchURL(text: "query")!
-        XCTAssertNil(url.getParameter(named: "atb"))
     }
 
     private func makeSearchURLBuilder(isPad: Bool = false) -> SearchURLBuilder {

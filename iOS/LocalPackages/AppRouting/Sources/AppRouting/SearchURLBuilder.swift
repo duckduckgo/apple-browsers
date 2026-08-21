@@ -46,23 +46,15 @@ public struct SearchURLBuilder {
         isPad ? ParamValue.iPadSource : ParamValue.phoneSource
     }
 
-    public init(
-        searchBaseURL: URL,
-        isPad: Bool,
-        atbWithVariant: @escaping () -> String? = { nil }
-    ) {
+    public init(searchBaseURL: URL,
+                isPad: Bool,
+                atbWithVariant: @escaping () -> String? = { nil }) {
         self.searchBaseURL = searchBaseURL
         self.isPad = isPad
         self.atbWithVariant = atbWithVariant
     }
 
-    // MARK: Search
-
-    public func makeSearchURL(text: String) -> URL? {
-        makeSearchURL(text: text, additionalParameters: [])
-    }
-
-    public func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
+    public func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL {
         if !forceSearchQuery, let url = URLInputClassifier.webUrl(from: query) {
             return url
         }
@@ -75,21 +67,19 @@ public struct SearchURLBuilder {
            queryContext.getParameter(named: Param.verticalMaps) == nil,
            let vertical = queryContext.getParameter(named: Param.vertical),
            ParamValue.majorVerticals.contains(vertical) {
-
             parameters[Param.verticalRewrite] = vertical
         }
 
-        return makeSearchURL(text: query, additionalParameters: parameters)
+        return makeSearchURL(query: query, additionalParameters: parameters)
     }
 
     /**
      Generates a search url with the source (t) https://duck.co/help/privacy/t
      and cohort (atb) https://duck.co/help/privacy/atb
      */
-    private func makeSearchURL<C: Collection>(text: String, additionalParameters: C) -> URL
-    where C.Element == (key: String, value: String) {
+    private func makeSearchURL(query: String, additionalParameters: [String: String]) -> URL {
         // encode spaces as "+"
-        var queryItem = URLQueryItem(percentEncodingName: Param.search, value: text, withAllowedCharacters: .init(charactersIn: " "))
+        var queryItem = URLQueryItem(percentEncodingName: Param.search, value: query, withAllowedCharacters: .init(charactersIn: " "))
         queryItem.value = queryItem.value?.replacingOccurrences(of: " ", with: "+")
 
         let searchURL = URL(string: searchBaseURL.absoluteString.dropping(suffix: "/") + "/")!
@@ -100,8 +90,7 @@ public struct SearchURLBuilder {
 
     public func applyingStatsParams(to url: URL) -> URL {
         var searchURL = url.removingParameters(named: [Param.source, Param.atb])
-            .appendingParameter(name: Param.source,
-                                value: source)
+            .appendingParameter(name: Param.source, value: source)
 
         if let atbWithVariant = atbWithVariant() {
             searchURL = searchURL.appendingParameter(name: Param.atb, value: atbWithVariant)
@@ -110,9 +99,7 @@ public struct SearchURLBuilder {
     }
 
     public func hasCorrectMobileStatsParams(url: URL) -> Bool {
-        guard let source = url.getParameter(named: Param.source),
-              source == self.source
-        else { return false }
+        guard url.getParameter(named: Param.source) == source else { return false }
         if let atbWithVariant = atbWithVariant() {
             return atbWithVariant == url.getParameter(named: Param.atb)
         }

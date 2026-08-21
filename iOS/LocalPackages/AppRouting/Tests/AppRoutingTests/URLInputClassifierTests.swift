@@ -20,14 +20,15 @@
 import XCTest
 @testable import AppRouting
 
-class URLInputClassifierTests: XCTestCase {
+final class URLInputClassifierTests: XCTestCase {
 
     func testWhenURLHasLongTLDItStillIsConsideredValid() {
         XCTAssertTrue(URLInputClassifier.isWebUrl("https://blah.accountants"))
     }
 
     func testWhenGivenLongWellFormedUrlThenIsWebUrlIsTrue() {
-        XCTAssertTrue(URLInputClassifier.isWebUrl("http://www.veganchic.com/products/Camo-High-Top-Sneaker-by-The-Critical-Slide-Societ+80758-0180.html"))
+        let url = "http://www.veganchic.com/products/Camo-High-Top-Sneaker-by-The-Critical-Slide-Societ+80758-0180.html"
+        XCTAssertTrue(URLInputClassifier.isWebUrl(url))
     }
 
     func testWhenHostIsValidThenIsWebUrlIsTrue() {
@@ -131,7 +132,7 @@ class URLInputClassifierTests: XCTestCase {
     }
 }
 
-extension URLInputClassifier {
+private extension URLInputClassifier {
 
     static func isWebUrl(_ text: String) -> Bool {
         webUrl(from: text) != nil

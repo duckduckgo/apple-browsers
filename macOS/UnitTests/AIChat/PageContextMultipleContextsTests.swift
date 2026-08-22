@@ -638,6 +638,10 @@ struct PageContextCollectionResultDeliveryTests {
         AIChatPageContextData(title: "Title", favicon: [], url: "https://example.com", content: content, truncated: false, fullContentLength: content.count)
     }
 
+    private var document: AIChatPageContextData {
+        AIChatPageContextData.document(title: "Spec", url: "https://example.com/spec.pdf", mimeType: AIChatPageContextData.pdfMIMEType, data: "JVBERi0=")
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("A result with content is always delivered", .timeLimit(.minutes(1)))
     func resultWithContentIsDelivered() {
@@ -665,5 +669,13 @@ struct PageContextCollectionResultDeliveryTests {
     func forcedEmptyResultKeepsAttachedContent() {
         #expect(!PageContextTabExtension.shouldDeliverCollectionResult(context(content: ""), wasForced: true, cached: context(content: "attached")))
         #expect(!PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: true, cached: context(content: "attached")))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A document result counts as an attached page even though its content is empty", .timeLimit(.minutes(1)))
+    func documentResultIsDelivered() {
+        #expect(PageContextTabExtension.shouldDeliverCollectionResult(document, wasForced: false, cached: nil))
+        #expect(!PageContextTabExtension.shouldDeliverCollectionResult(context(content: ""), wasForced: true, cached: document),
+                "An empty markdown result must not replace an attached document")
     }
 }

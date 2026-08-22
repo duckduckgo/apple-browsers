@@ -309,12 +309,12 @@ final class PageContextTabExtension {
             .store(in: &sidebarCancellables)
     }
 
-    /// Results with content always deliver. Empty/nil results deliver only for a forced
-    /// (user-requested) collect — the FE awaits the `getAIChatPageContext` response, so dropping
-    /// them would leave it hanging — and never when they'd replace attached content.
+    /// Results carrying a page — markdown or document bytes — always deliver. Empty/nil results
+    /// deliver only for a forced (user-requested) collect — the FE awaits the `getAIChatPageContext`
+    /// response, so dropping them would leave it hanging — and never when they'd replace attached content.
     static func shouldDeliverCollectionResult(_ result: AIChatPageContextData?, wasForced: Bool, cached: AIChatPageContextData?) -> Bool {
-        if result?.content.isEmpty == false { return true }
-        return wasForced && cached?.content.isEmpty != false
+        if result?.hasAttachedPage == true { return true }
+        return wasForced && cached?.hasAttachedPage != true
     }
 
     /// This is the main place where page context handling happens.
@@ -347,18 +347,7 @@ final class PageContextTabExtension {
               pageContext.attachable != false else {
             return pageContext
         }
-        return AIChatPageContextData(
-            title: pageContext.title,
-            favicon: pageContext.favicon,
-            url: pageContext.url,
-            content: pageContext.content,
-            truncated: pageContext.truncated,
-            fullContentLength: pageContext.fullContentLength,
-            attachable: false,
-            tabId: pageContext.tabId,
-            pageTypeSignals: pageContext.pageTypeSignals,
-            attached: pageContext.attached
-        )
+        return pageContext.withAttachable(false)
     }
 
     private func deliverContextToCurrentSidebar() {
@@ -414,6 +403,9 @@ final class PageContextTabExtension {
     }
 
     private func preventedAttachReason(for url: URL) -> String? {
+        // A document tab is handed over as bytes, so the blocklist category that used to prevent it
+        // (`pdf`) is exactly what this feature replaces. Keeps the gate in one place for every caller.
+        if isDocumentTab(url) { return nil }
         guard let policy = currentAttachabilityPolicy() else { return nil }
         let verdict = policy.verdict(url: url, mimeType: mainFrameMIMECache[url])
         return verdict.isAttachable ? nil : (verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory)
@@ -427,7 +419,8 @@ final class PageContextTabExtension {
             content: "",
             truncated: false,
             fullContentLength: 0,
-            attachable: false
+            attachable: false,
+            mimeType: mainFrameMIMECache[url] ?? AIChatPageContextData.htmlMIMEType
         )
         Task { await handle(context) }
         fireExtractionPixel(.prevented(reason), trigger: trigger, latency: nil)
@@ -475,6 +468,12 @@ final class PageContextTabExtension {
         guard case .url(let url, _, _) = content, isContextCollectionEnabled else {
             return
         }
+        // A document tab (PDF) is handed over as bytes: the page-context user script doesn't run
+        // inside WebKit's PDF viewer, so a `collect()` here would never resolve.
+        if isDocumentTab(url) {
+            collectDocumentContext(for: url, trigger: trigger)
+            return
+        }
         if let reason = preventedAttachReason(for: url) {
             Logger.aiChat.debug("🚫 PageContext gate: prevented attach (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
             deliverPreventedContext(for: url, reason: reason, trigger: trigger)
@@ -496,6 +495,48 @@ final class PageContextTabExtension {
         Logger.aiChat.debug("✅ PageContext gate: attachable, collecting host=\(url.host ?? "nil", privacy: .public) trigger=\(trigger.rawValue, privacy: .public)")
         pageContextUserScript.collect()
         scheduleCollectionTimeout()
+    }
+
+    // MARK: - Document Context (PDF)
+
+    /// Whether this tab's page goes to Duck.ai as document bytes rather than markdown.
+    private func isDocumentTab(_ url: URL) -> Bool {
+        featureFlagger.isFeatureOn(.aiChatPdfPageContext)
+            && DocumentPageContextProvider.isSupportedDocument(mimeType: mainFrameMIMECache[url], url: url)
+    }
+
+    /// Reads the document out of the web view and delivers it as page context. Doesn't go through
+    /// `extractionResolver` — that pairs requests with the user script's `collectionResult`, which a
+    /// document never produces — so the outcome is measured here instead.
+    private func collectDocumentContext(for url: URL, trigger: PageContextExtractionTrigger) {
+        guard let webView else {
+            Logger.aiChat.debug("⚠️ PageContext gate: no webview, cannot read document host=\(url.host ?? "nil", privacy: .public)")
+            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
+            return
+        }
+
+        let startedAt = Date()
+        let title = content.title ?? ""
+        Task { @MainActor [weak self] in
+            let result = await DocumentPageContextProvider.makeDocumentContext(webView: webView, url: url, title: title)
+            guard let self else { return }
+            let latency = PageContextExtractionLatencyBucket(seconds: Date().timeIntervalSince(startedAt))
+            self.shouldForceContextCollection = false
+
+            switch result {
+            case .document(let pageContext):
+                Logger.aiChat.debug("📎 PageContext: document attached host=\(url.host ?? "nil", privacy: .public)")
+                await self.handle(pageContext)
+                self.fireExtractionPixel(.success, trigger: trigger, latency: latency)
+            case .tooLarge(let pageContext):
+                Logger.aiChat.debug("🚫 PageContext: document over size ceiling host=\(url.host ?? "nil", privacy: .public)")
+                await self.handle(pageContext)
+                self.fireExtractionPixel(.prevented(PageContextExtractionOutcome.documentTooLargeCategory), trigger: trigger, latency: latency)
+            case .unavailable:
+                Logger.aiChat.debug("⚠️ PageContext: document bytes unavailable host=\(url.host ?? "nil", privacy: .public)")
+                self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency)
+            }
+        }
     }
 
     // MARK: - Selection Context ("Attach to Duck.ai")
@@ -671,18 +712,7 @@ final class PageContextTabExtension {
         }
 
         let faviconEntry = AIChatPageContextData.PageContextFavicon(href: base64Favicon, rel: "icon")
-        return AIChatPageContextData(
-            title: pageContext.title,
-            favicon: [faviconEntry],
-            url: pageContext.url,
-            content: pageContext.content,
-            truncated: pageContext.truncated,
-            fullContentLength: pageContext.fullContentLength,
-            attachable: pageContext.attachable,
-            tabId: pageContext.tabId,
-            pageTypeSignals: pageContext.pageTypeSignals,
-            attached: pageContext.attached
-        )
+        return pageContext.withFavicon([faviconEntry])
     }
 
     // MARK: - Page Type Signals (duck.ai page shortcuts)
@@ -698,6 +728,16 @@ final class PageContextTabExtension {
               !isContextCollectionEnabled,
               aiChatSessionStore.sessions[tabID]?.chatViewController != nil,
               let pageContextUserScript else {
+            return
+        }
+        // A document tab has no markup to harvest signals from. Push metadata only — the chip shows,
+        // and the bytes follow when the user asks for them (`getAIChatPageContext` / "Ask About Page").
+        if isDocumentTab(url) {
+            let metadata = DocumentPageContextProvider.metadataContext(url: url,
+                                                                      title: content.title ?? "",
+                                                                      attachable: true,
+                                                                      attached: false)
+            Task { @MainActor in await self.handle(metadata) }
             return
         }
         if let reason = preventedAttachReason(for: url) {

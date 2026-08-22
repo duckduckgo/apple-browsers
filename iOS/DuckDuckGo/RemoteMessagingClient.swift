@@ -60,6 +60,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         database: CoreDataDatabase,
         notificationCenter: NotificationCenter = .default,
         errorEvents: EventMapping<RemoteMessagingStoreError>?,
+        autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent>? = nil,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
         remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         duckPlayerStorage: DuckPlayerStorage,
@@ -93,6 +94,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             database: database,
             notificationCenter: notificationCenter,
             errorEvents: errorEvents,
+            autoDismissEvents: autoDismissEvents,
             remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider
         )
         self.init(

@@ -75,6 +75,7 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
             configurationStore: configurationStore,
             database: database,
             errorEvents: RemoteMessagingStoreErrorHandling(),
+            autoDismissEvents: RemoteMessageAutoDismissEventHandling(),
             remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                 privacyConfigurationManager: privacyConfigurationManager
             ),

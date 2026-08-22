@@ -40,6 +40,7 @@ struct DefaultRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {
             database: database,
             notificationCenter: .default,
             errorEvents: RemoteMessagingStoreErrorHandling(),
+            autoDismissEvents: RemoteMessageAutoDismissEventHandling(),
             remoteMessagingAvailabilityProvider: availabilityProvider
         )
     }

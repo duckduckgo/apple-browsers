@@ -378,7 +378,11 @@
 		4B97357B2F704924002E4A54 /* CreditCardsCleanupErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C54A22E7472A5003451F5 /* CreditCardsCleanupErrorHandling.swift */; };
 		4BA2C1752FC1232500D7C62E /* DuckAIWideEventInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA2C1742FC1232500D7C62E /* DuckAIWideEventInstrumentationTests.swift */; };
 		4BABF9183022746600B46B44 /* AppRouting in Frameworks */ = {isa = PBXBuildFile; productRef = 4BABF9173022746600B46B44 /* AppRouting */; };
+		4BABF91A3022746600B46B44 /* AppRouting in Frameworks */ = {isa = PBXBuildFile; productRef = 4BABF9193022746600B46B44 /* AppRouting */; };
+		4BABF91C3022746600B46B44 /* AppRouting in Frameworks */ = {isa = PBXBuildFile; productRef = 4BABF91B3022746600B46B44 /* AppRouting */; };
 		4BACF9183022746600B46B44 /* InstallStatistics in Frameworks */ = {isa = PBXBuildFile; productRef = 4BACF9173022746600B46B44 /* InstallStatistics */; };
+		4BACF91A3022746600B46B44 /* InstallStatistics in Frameworks */ = {isa = PBXBuildFile; productRef = 4BACF9193022746600B46B44 /* InstallStatistics */; };
+		4BACF91C3022746600B46B44 /* InstallStatistics in Frameworks */ = {isa = PBXBuildFile; productRef = 4BACF91B3022746600B46B44 /* InstallStatistics */; };
 		4BB7CBB02AF59C310014A35F /* VPNWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */; };
 		4BB88F3F2E5D701200DE539A /* PixelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB88F3E2E5D701200DE539A /* PixelKit */; };
 		4BBBBA922B03291700D965DA /* VPNWaitlistUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */; };
@@ -794,7 +798,6 @@
 		83134D7D20E2D725006CE65D /* FeedbackSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83134D7C20E2D725006CE65D /* FeedbackSender.swift */; };
 		8341D807212D5E8D000514C2 /* HashExtensionTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8341D804212D5DFB000514C2 /* HashExtensionTest.swift */; };
 		836A941D247F23C600BF8EF5 /* UserAgentManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836A941C247F23C600BF8EF5 /* UserAgentManaging.swift */; };
-		838306B320C704050045E854 /* Core.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; };
 		838306E320C733010045E854 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 838306E120C733010045E854 /* InfoPlist.strings */; };
 		8390446F20BDCE10006461CD /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8390446E20BDCE10006461CD /* ShareViewController.swift */; };
 		8390447620BDCE10006461CD /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 8390446C20BDCE10006461CD /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -941,7 +944,6 @@
 		858650D32469BFAD00C36F8A /* DaxDialogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858650D22469BFAD00C36F8A /* DaxDialogTests.swift */; };
 		858650DB246B111900C36F8A /* Onboarding.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 858650DA246B111900C36F8A /* Onboarding.xcassets */; };
 		8586A10D24CBA7070049720E /* FindInPageActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8586A10C24CBA7070049720E /* FindInPageActivity.swift */; };
-		8586A10E24CBAF5B0049720E /* Core.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; };
 		8586A11024CCCD040049720E /* TabsBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8586A10F24CCCD040049720E /* TabsBarViewController.swift */; };
 		8588026624E420BD00C24AB6 /* LargeOmniBarStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588026424E4209900C24AB6 /* LargeOmniBarStateTests.swift */; };
 		8588026A24E424EE00C24AB6 /* AppWidthObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588026824E424AF00C24AB6 /* AppWidthObserverTests.swift */; };
@@ -5799,7 +5801,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				838306B320C704050045E854 /* Core.framework in Frameworks */,
+				4BABF91C3022746600B46B44 /* AppRouting in Frameworks */,
+				4BACF91C3022746600B46B44 /* InstallStatistics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5904,7 +5907,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8586A10E24CBAF5B0049720E /* Core.framework in Frameworks */,
+				4BABF91A3022746600B46B44 /* AppRouting in Frameworks */,
+				4BACF91A3022746600B46B44 /* InstallStatistics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -12535,6 +12539,10 @@
 			dependencies = (
 			);
 			name = ShareExtension;
+			packageProductDependencies = (
+				4BABF91B3022746600B46B44 /* AppRouting */,
+				4BACF91B3022746600B46B44 /* InstallStatistics */,
+			);
 			productName = ShareExtension;
 			productReference = 8390446C20BDCE10006461CD /* ShareExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -12694,6 +12702,10 @@
 			dependencies = (
 			);
 			name = OpenAction;
+			packageProductDependencies = (
+				4BABF9193022746600B46B44 /* AppRouting */,
+				4BACF9193022746600B46B44 /* InstallStatistics */,
+			);
 			productName = OpenAction;
 			productReference = 85482D882462DCD100EDEDD1 /* OpenAction.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -19476,7 +19488,23 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = AppRouting;
 		};
+		4BABF9193022746600B46B44 /* AppRouting */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppRouting;
+		};
+		4BABF91B3022746600B46B44 /* AppRouting */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppRouting;
+		};
 		4BACF9173022746600B46B44 /* InstallStatistics */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = InstallStatistics;
+		};
+		4BACF9193022746600B46B44 /* InstallStatistics */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = InstallStatistics;
+		};
+		4BACF91B3022746600B46B44 /* InstallStatistics */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = InstallStatistics;
 		};

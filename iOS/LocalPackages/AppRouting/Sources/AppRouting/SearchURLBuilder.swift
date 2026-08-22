@@ -23,6 +23,8 @@ import FoundationExtensions
 
 public struct SearchURLBuilder {
 
+    public static let defaultSearchBaseURL = URL(string: "https://duckduckgo.com")!
+
     private enum Param {
         static let search = "q"
         static let source = "t"
@@ -46,7 +48,7 @@ public struct SearchURLBuilder {
         isPad ? ParamValue.iPadSource : ParamValue.phoneSource
     }
 
-    public init(searchBaseURL: URL,
+    public init(searchBaseURL: URL = Self.defaultSearchBaseURL,
                 isPad: Bool,
                 atbWithVariant: @escaping () -> String? = { nil }) {
         self.searchBaseURL = searchBaseURL

@@ -30,6 +30,12 @@ final class SearchURLBuilderTests: XCTestCase {
         atbWithVariant = nil
     }
 
+    func testWhenSearchBaseURLIsNotProvidedThenProductionURLIsUsed() {
+        let url = SearchURLBuilder(isPad: false).makeSearchURL(query: "query", forceSearchQuery: true)
+
+        XCTAssertEqual(url.absoluteString, "https://duckduckgo.com/?q=query&t=ddg_ios")
+    }
+
     func testWhenMobileStatsParamsAreAppliedThenTheyReturnAnUpdatedUrl() {
         atbWithVariant = "x"
         let actual = makeSearchURLBuilder()

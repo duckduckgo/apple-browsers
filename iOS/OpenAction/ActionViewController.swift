@@ -17,14 +17,16 @@
 //  limitations under the License.
 //
 
-import Common
+import AppRouting
+import InstallStatistics
 import UIKit
-import MobileCoreServices
-import Core
 import UniformTypeIdentifiers
-import os.log
 
 class ActionViewController: UIViewController {
+
+    private let searchURLBuilder = SearchURLBuilder(isPad: UIDevice.current.userInterfaceIdiom == .pad) {
+        StatisticsUserDefaults().atbWithVariant
+    }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -35,10 +37,7 @@ class ActionViewController: UIViewController {
                 if provider.hasItemConformingToTypeIdentifier(UTType.text.identifier) {
                     provider.loadItem(forTypeIdentifier: UTType.text.identifier, options: nil) { text, _ in
                         guard let text = text as? String else { return }
-                        guard let url = URL.makeSearchURL(text: text) else {
-                            Logger.lifecycle.error("Couldn‘t form URL for query “\(text, privacy: .public)”")
-                            return
-                        }
+                        let url = self.searchURLBuilder.makeSearchURL(query: text)
                         self.launchBrowser(withUrl: url)
                     }
                     break

@@ -17,14 +17,16 @@
 //  limitations under the License.
 //
 
-import Common
-import FoundationExtensions
+import AppRouting
+import InstallStatistics
 import UIKit
 import Social
-import Core
-import os.log
 
 class ShareViewController: SLComposeServiceViewController {
+
+    private let searchURLBuilder = SearchURLBuilder(isPad: UIDevice.current.userInterfaceIdiom == .pad) {
+        StatisticsUserDefaults().atbWithVariant
+    }
 
     struct Identifier {
         static let url = "public.url"
@@ -71,12 +73,9 @@ class ShareViewController: SLComposeServiceViewController {
 
     private func loadText(fromTextProvider textProvider: NSItemProvider) {
         textProvider.loadItem(forTypeIdentifier: Identifier.text, options: nil) { [weak self] (item, _) in
-            guard let query = item as? String else { return }
-            guard let url = URL.makeSearchURL(query: query) else {
-                Logger.lifecycle.error("Couldn‘t form URL for query “\(query, privacy: .public)”")
-                return
-            }
-            self?.open(url: url)
+            guard let self, let query = item as? String else { return }
+            let url = searchURLBuilder.makeSearchURL(query: query)
+            open(url: url)
         }
     }
 

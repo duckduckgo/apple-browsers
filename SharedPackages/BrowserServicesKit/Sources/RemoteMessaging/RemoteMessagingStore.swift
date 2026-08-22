@@ -30,6 +30,10 @@ public enum RemoteMessagingStoreError: Error {
     case updateMessageStatusFailed
 }
 
+public enum RemoteMessageAutoDismissEvent: Equatable {
+    case messageAutoDismissed(messageID: String)
+}
+
 public final class RemoteMessagingStore: RemoteMessagingStoring {
 
     public struct Notifications {
@@ -67,11 +71,13 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
         database: CoreDataDatabase,
         notificationCenter: NotificationCenter = .default,
         errorEvents: EventMapping<RemoteMessagingStoreError>?,
+        autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent>? = nil,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding
     ) {
         self.database = database
         self.notificationCenter = notificationCenter
         self.errorEvents = errorEvents
+        self.autoDismissEvents = autoDismissEvents
         self.remoteMessagingAvailabilityProvider = remoteMessagingAvailabilityProvider
         self.context = database.makeContext(concurrencyType: .privateQueueConcurrencyType, name: Constants.privateContextName)
 
@@ -149,6 +155,7 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
     }
 
     private let errorEvents: EventMapping<RemoteMessagingStoreError>?
+    private let autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent>?
     private var featureFlagDisabledCancellable: AnyCancellable?
 
     private enum PendingTask: Hashable {
@@ -279,12 +286,25 @@ extension RemoteMessagingStore {
                     continue
                 }
 
-                if let dismissAfterDays = remoteMessage.displayConditions?.dismissAfterDaysShown,
-                   dismissAfterDays > 0,
-                   let firstShown = remoteMessageManagedObject.firstShownDate,
-                   let daysSinceFirstShown = Calendar.current.dateComponents([.day], from: firstShown, to: Date()).day,
-                   daysSinceFirstShown >= dismissAfterDays {
-                    self.dismissExpiredMessage(withID: id)
+                let hasExpired: Bool = {
+                    guard let dismissAfterDays = remoteMessage.displayConditions?.dismissAfterDaysShown,
+                          dismissAfterDays > 0,
+                          let firstShown = remoteMessageManagedObject.firstShownDate,
+                          let daysSinceFirstShown = Calendar.current.dateComponents([.day], from: firstShown, to: Date()).day else {
+                        return false
+                    }
+                    return daysSinceFirstShown >= dismissAfterDays
+                }()
+                let hasReachedImpressionCap: Bool = {
+                    guard let maxImpressions = remoteMessage.displayConditions?.maxImpressions,
+                          maxImpressions > 0 else {
+                        return false
+                    }
+                    return remoteMessageManagedObject.impressionCount >= Int64(maxImpressions)
+                }()
+
+                if hasExpired || hasReachedImpressionCap {
+                    self.autoDismiss(remoteMessage)
                     continue
                 }
 
@@ -409,11 +429,7 @@ extension RemoteMessagingStore {
                 }
 
                 let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
-                fetchRequest.predicate = NSPredicate(
-                    format: "%K == %@ AND %K == %d",
-                    #keyPath(RemoteMessageManagedObject.id), id,
-                    #keyPath(RemoteMessageManagedObject.shown), !shown
-                )
+                fetchRequest.predicate = NSPredicate(format: "%K == %@", #keyPath(RemoteMessageManagedObject.id), id)
 
                 do {
                     guard let message = try context.fetch(fetchRequest).first else {
@@ -421,8 +437,9 @@ extension RemoteMessagingStore {
                         return
                     }
                     message.shown = shown
-                    if shown && message.firstShownDate == nil {
-                        message.firstShownDate = Date()
+                    if shown {
+                        message.firstShownDate = message.firstShownDate ?? Date()
+                        message.impressionCount += 1
                     }
                     try context.save()
                 } catch {
@@ -487,9 +504,12 @@ extension RemoteMessagingStore {
         }
     }
 
-    private func dismissExpiredMessage(withID id: String) {
-        startTrackedTask(.dismissal(messageID: id)) {
-            await self.dismissRemoteMessage(withID: id)
+    private func autoDismiss(_ remoteMessage: RemoteMessageModel) {
+        startTrackedTask(.dismissal(messageID: remoteMessage.id)) {
+            await self.dismissRemoteMessage(withID: remoteMessage.id)
+            if remoteMessage.isMetricsEnabled {
+                self.autoDismissEvents?.fire(.messageAutoDismissed(messageID: remoteMessage.id))
+            }
         }
     }
 

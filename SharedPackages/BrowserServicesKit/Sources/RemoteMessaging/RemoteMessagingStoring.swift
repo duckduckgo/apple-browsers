@@ -31,6 +31,8 @@ public protocol RemoteMessagingStoring: RemoteMessagingStoringDebuggingSupport {
     func fetchShownRemoteMessageIDs() -> [String]
     func dismissRemoteMessage(withID id: String) async
     func fetchDismissedRemoteMessageIDs() -> [String]
+    /// Passing `true` records a countable impression while preserving the first-shown timestamp.
+    /// Call this only after the surface confirms the message appeared, at the same point as its shown pixel.
     func updateRemoteMessage(withID id: String, asShown shown: Bool) async
 
 }

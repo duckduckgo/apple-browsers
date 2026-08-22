@@ -473,6 +473,7 @@ jobs:
         if: runner.environment == 'self-hosted'
         uses: ./.github/actions/bitrise-build-cache
         with:
+          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
           token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
           workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 

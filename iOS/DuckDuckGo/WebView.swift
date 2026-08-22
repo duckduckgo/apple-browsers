@@ -35,12 +35,16 @@ final class WebView: WKWebView {
     /// Re-evaluated on every menu build, so flag and setting changes take effect immediately.
     var isAskAIChatItemAvailable: (() -> Bool)?
     var isSearchWithDuckDuckGoItemAvailable: (() -> Bool)?
+    var isSelectionFrameAvailable: (() -> Bool)?
 
     /// Receives the trimmed selection when the user picks Ask Duck.ai.
     var askAIChatHandler: ((String) -> Void)?
 
     /// Receives the trimmed selection when the user picks Search with DuckDuckGo.
     var searchWithDuckDuckGoHandler: ((String) -> Void)?
+
+    /// The frame holding the selection.
+    var selectionFrameProvider: (() -> SelectionFrame?)?
 
     // Remembers the last find-in-page query so the system find navigator can be prepopulated per tab.
     var lastFindInPageQuery: String?
@@ -120,7 +124,7 @@ final class WebView: WKWebView {
     /// The items to offer, in display order. Selection menu only; the main menu system drives the iPad
     /// menu bar, which has no selection to act on.
     func selectionMenuItems(forSystem system: UIMenuSystem) -> [TextSelectionMenuItem] {
-        guard system != .main else { return [] }
+        guard system != .main, isSelectionFrameAvailable?() == true else { return [] }
 
         var items: [TextSelectionMenuItem] = []
         if isAskAIChatItemAvailable?() == true { items.append(.askAIChat) }
@@ -153,29 +157,33 @@ final class WebView: WKWebView {
         return trimmed
     }
 
-    /// The page's current selection, trimmed, or nil when nothing usable is selected. Lets an entry
-    /// point other than the edit menu pick a selection up. Same content world as `withCurrentSelection`.
-    func currentSelection() async -> String? {
-        await withCheckedContinuation { continuation in
-            readSelection { continuation.resume(returning: $0) }
-        }
-    }
-
-    /// Read in the isolated content world so a page that overrides `window.getSelection` cannot substitute
-    /// text the user never selected. macOS moved its equivalent off the page world for the same reason.
+    /// Reads in the isolated content world so page-world overrides cannot replace the selection reader.
+    ///
+    /// Returns the stored snapshot rather than reading live, so text-node mutation that fires no
+    /// selectionchange cannot change what is read. A page that replaces the selection outright does fire
+    /// selectionchange and so updates the snapshot; that substitution is a known residual.
     ///
     /// Deliberately the completion-handler overload: `evaluateJavaScript`'s `async` twin bridges the result
     /// back as `()` in this content world, so the selection never arrives.
-    ///
-    /// Main frame only: a selection inside an iframe yields nothing and the action silently does nothing.
     private func readSelection(_ completion: @escaping (String?) -> Void) {
-        evaluateJavaScript("window.getSelection().toString()", in: nil, in: .defaultClient) { result in
-            guard case .success(let value) = result, let text = value as? String else {
+        guard let frame = selectionFrameProvider?() else {
+            completion(nil)
+            return
+        }
+
+        let handler: (Result<Any, Error>) -> Void = { result in
+            guard case .success(let value) = result,
+                  let text = frame.selectedText(from: value) else {
                 completion(nil)
                 return
             }
             completion(Self.normalizedSelection(text))
         }
+
+        frame.evaluateJavaScript(SelectionFrameUserScript.readSelectionScript,
+                                 in: self,
+                                 contentWorld: .defaultClient,
+                                 completionHandler: handler)
     }
 
     private func withCurrentSelection(_ handler: @escaping (String) -> Void) {

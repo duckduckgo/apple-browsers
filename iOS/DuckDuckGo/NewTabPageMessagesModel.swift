@@ -17,15 +17,18 @@
 //  limitations under the License.
 //
 
+import Combine
 import Core
 import Foundation
 import RemoteMessaging
 
+@MainActor
 final class NewTabPageMessagesModel: ObservableObject {
 
     @Published private(set) var homeMessageViewModels: [HomeMessageViewModel] = []
 
-    private var observable: NSObjectProtocol?
+    private var messagesCancellable: AnyCancellable?
+    private var legacyNotificationObserver: NSObjectProtocol?
 
     private let homePageMessagesConfiguration: HomePageMessagesConfiguration
     private let notificationCenter: NotificationCenter
@@ -34,7 +37,6 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let messageActionHandler: RemoteMessagingActionHandling
     private let imageLoader: RemoteMessagingImageLoading
     private let pixelReporter: RemoteMessagingPixelReporting?
-    private let promoCoordinator: NewTabPagePromoCoordinating
     private let isOpenedAfterIdle: () -> Bool
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
@@ -44,7 +46,6 @@ final class NewTabPageMessagesModel: ObservableObject {
          messageActionHandler: RemoteMessagingActionHandling,
          imageLoader: RemoteMessagingImageLoading,
          pixelReporter: RemoteMessagingPixelReporting? = nil,
-         promoCoordinator: NewTabPagePromoCoordinating,
          isOpenedAfterIdle: @escaping () -> Bool = { false }) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
@@ -53,29 +54,43 @@ final class NewTabPageMessagesModel: ObservableObject {
         self.messageActionHandler = messageActionHandler
         self.imageLoader = imageLoader
         self.pixelReporter = pixelReporter
-        self.promoCoordinator = promoCoordinator
         self.isOpenedAfterIdle = isOpenedAfterIdle
     }
 
     func load() {
-        observable = notificationCenter.addObserver(
-            forName: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
-            object: nil,
-            queue: .main) { [weak self] _ in
-                self?.refresh()
+        switch homePageMessagesConfiguration.mode {
+        case .legacy:
+            legacyNotificationObserver = notificationCenter.addObserver(
+                forName: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.refresh()
+                }
+            }
+            refresh()
+        case .coordinated:
+            messagesCancellable = homePageMessagesConfiguration.contentDidChangePublisher
+                .sink { [weak self] _ in
+                    self?.updateHomeMessageViewModel()
+                }
+            updateHomeMessageViewModel()
         }
-
-        refresh()
     }
 
-    @MainActor
     func dismissHomeMessage(_ homeMessage: HomeMessage) async {
-        await homePageMessagesConfiguration.dismissHomeMessage(homeMessage)
-        updateHomeMessageViewModel()
+        await dismissHomeMessage(
+            homeMessage,
+            presentationContext: homePageMessagesConfiguration.presentationContext(for: homeMessage)
+        )
     }
 
     func didAppear(_ homeMessage: HomeMessage) {
-        homePageMessagesConfiguration.didAppear(homeMessage)
+        homePageMessagesConfiguration.didAppear(
+            homeMessage,
+            presentationContext: homePageMessagesConfiguration.presentationContext(for: homeMessage)
+        )
     }
 
     // MARK: - Private
@@ -85,8 +100,23 @@ final class NewTabPageMessagesModel: ObservableObject {
     var onMessageInteraction: ((NewTabPageMessageInteraction) -> Void)?
 
     func refresh() {
-        homePageMessagesConfiguration.refresh(openedAfterIdle: isOpenedAfterIdle())
+        if homePageMessagesConfiguration.mode == .legacy {
+            homePageMessagesConfiguration.refresh(openedAfterIdle: isOpenedAfterIdle())
+        }
         updateHomeMessageViewModel()
+    }
+
+    private func dismissHomeMessage(
+        _ homeMessage: HomeMessage,
+        presentationContext: HomeMessagePresentationContext?
+    ) async {
+        await homePageMessagesConfiguration.dismissHomeMessage(
+            homeMessage,
+            presentationContext: presentationContext
+        )
+        if homePageMessagesConfiguration.mode == .legacy {
+            updateHomeMessageViewModel()
+        }
     }
 
     private func updateHomeMessageViewModel() {
@@ -100,6 +130,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         switch message {
         case .placeholder:
             return HomeMessageViewModel(messageId: "",
+                                        acquisitionIdentity: nil,
                                         modelType: .small(titleText: "", descriptionText: ""),
                                         messageActionHandler: messageActionHandler,
                                         preloadedImage: nil,
@@ -112,16 +143,19 @@ final class NewTabPageMessagesModel: ObservableObject {
             }
 
         case .remoteMessage(let remoteMessage):
+            let presentationContext = homePageMessagesConfiguration.presentationContext(for: message)
 
-            // call didAppear here to support marking messages as shown when they appear on the new tab page
-            // as a result of refreshing a config while the user was on a new tab page already.
-            didAppear(message)
+            if homePageMessagesConfiguration.mode == .legacy {
+                // Preserve legacy map-time accounting. Coordinated mode confirms only from actual appearance.
+                homePageMessagesConfiguration.didAppear(message)
+            }
 
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
                                                      with: subscriptionDataReporter,
                                                      messageActionHandler: messageActionHandler,
                                                      imageLoader: imageLoader,
-                                                     pixelReporter: pixelReporter) { @MainActor [weak self] action in
+                                                     pixelReporter: pixelReporter,
+                                                     acquisitionIdentity: presentationContext?.acquisitionIdentity) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
 
@@ -131,7 +165,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
                 case .action(let isSharing):
                     if !isSharing {
-                        await self.dismissHomeMessage(message)
+                        await self.dismissHomeMessage(message, presentationContext: presentationContext)
                     }
                     if remoteMessage.isMetricsEnabled {
                         pixelFiring.fire(.remoteMessageActionClicked,
@@ -140,7 +174,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
                 case .primaryAction(let isSharing):
                     if !isSharing {
-                        await self.dismissHomeMessage(message)
+                        await self.dismissHomeMessage(message, presentationContext: presentationContext)
                     }
                     if remoteMessage.isMetricsEnabled {
                         pixelFiring.fire(.remoteMessagePrimaryActionClicked,
@@ -149,7 +183,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
                 case .secondaryAction(let isSharing):
                     if !isSharing {
-                        await self.dismissHomeMessage(message)
+                        await self.dismissHomeMessage(message, presentationContext: presentationContext)
                     }
                     if remoteMessage.isMetricsEnabled {
                         pixelFiring.fire(.remoteMessageSecondaryActionClicked,
@@ -157,7 +191,7 @@ final class NewTabPageMessagesModel: ObservableObject {
                     }
 
                 case .close:
-                    await self.dismissHomeMessage(message)
+                    await self.dismissHomeMessage(message, presentationContext: presentationContext)
                     if remoteMessage.isMetricsEnabled {
                         pixelFiring.fire(.remoteMessageDismissed,
                                          withAdditionalParameters: self.additionalParameters(for: remoteMessage.id))
@@ -165,7 +199,10 @@ final class NewTabPageMessagesModel: ObservableObject {
 
                 }
             } onDidAppear: { [weak self] in
-                self?.didAppear(message)
+                self?.homePageMessagesConfiguration.didAppear(
+                    message,
+                    presentationContext: presentationContext
+                )
             }
         }
     }

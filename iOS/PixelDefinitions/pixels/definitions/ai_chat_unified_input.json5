@@ -398,11 +398,7 @@
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
-            {
-                "key": "page_type",
-                "description": "The page the user was on when submitting: ntp, serp, website, duck_ai, contextual, or unknown",
-                "type": "string"
-            },
+            "unified_input_page_type",
             {
                 "key": "default_mode",
                 "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch. Absent on iPad's address-bar toggle path, which has no Search-side counterpart — filter on it being present for any Search-vs-Duck.ai ratio.",
@@ -411,8 +407,35 @@
             },
             {
                 "key": "origin",
-                "description": "How the user reached the surface the prompt was typed on, as an m_aichat_entry_point source value. Absent when the entry is unknown.",
-                "type": "string"
+                "description": "How the user reached the surface the prompt was typed on, as an m_aichat_entry_point source value — same value set as that pixel's source param and the duckai-prompt wide event's feature.data.ext.prompt.origin. Not a subscription-funnel origin. Absent when the entry is unknown.",
+                "type": "string",
+                "enum": [
+                    "address_bar_prompt",
+                    "address_bar_icon",
+                    "address_bar_shortcut_chip",
+                    "address_bar_editing_state",
+                    "suggestion_ask_ai",
+                    "ipad_toggle_prompt",
+                    "browsing_menu_ntp",
+                    "browsing_menu_webpage",
+                    "tab_switcher",
+                    "tabs_bar_button",
+                    "chat_history_new_chat",
+                    "chat_history_open_chat",
+                    "voice",
+                    "onboarding",
+                    "direct_url",
+                    "serp",
+                    "icon_shortcut",
+                    "contextual_chat",
+                    "widget_quick_actions",
+                    "widget_quick_actions_medium",
+                    "widget_favorite",
+                    "widget_lock_screen",
+                    "widget_control_center",
+                    "siri",
+                    "deep_link_other"
+                ]
             },
             "unified_input_surface",
             {
@@ -456,11 +479,7 @@
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
-            {
-                "key": "page_type",
-                "description": "The page the user was on when submitting: ntp, serp, website, duck_ai, contextual, or unknown",
-                "type": "string"
-            },
+            "unified_input_page_type",
             {
                 "key": "default_mode",
                 "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch.",

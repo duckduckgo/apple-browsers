@@ -117,6 +117,12 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
     var attachedPageContextProvider: (() -> AIChatPageContextData?)?
 
+    /// Text selections to send on the prompt's `selections` key, alongside `pageContext` rather than in place of it.
+    var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
+
+    /// Fired with the IDs of selections that have been dispatched.
+    var onAttachedSelectionsConsumed: (([String]) -> Void)?
+
     /// Fires after a prompt is submitted via the multi-modal `submitPrompt(...)` path (used by
     /// the native UTI). Set by the host so the chip can flip to its post-submit silent state.
     var onPromptSubmitted: (() -> Void)?
@@ -284,6 +290,14 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.handler.setPageContextProvider(provider)
     }
 
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?) {
+        attachedSelectionsProvider = provider
+    }
+
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?) {
+        onAttachedSelectionsConsumed = handler
+    }
+
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {
         self.handler.setChatStatusHandler(handler)
     }
@@ -338,8 +352,8 @@ final class AIChatUserScript: NSObject, Subfeature {
         // `AIChatNativePrompt.pageContext` accepts either a single `PageContext` or an array
         // (omnibar's multi-tab case on macOS). iOS today always sends the single form, which
         // matches the duck.ai sidebar's existing current-page semantics.
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext.map(AIChatPageContextPayload.single), reasoningEffort: reasoningEffort)
-        push(.submitPrompt(promptPayload))
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext.map(AIChatPageContextPayload.single), selections: attachedSelectionsPayload, reasoningEffort: reasoningEffort)
+        pushPrompt(promptPayload)
     }
 
     func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
@@ -363,10 +377,33 @@ final class AIChatUserScript: NSObject, Subfeature {
             files: files,
             modelId: modelId,
             pageContext: (pageContext ?? attachedPageContextProvider?()).map(AIChatPageContextPayload.single),
+            selections: attachedSelectionsPayload,
             reasoningEffort: reasoningEffort
         )
-        push(.submitPrompt(promptPayload))
+        pushPrompt(promptPayload)
         onPromptSubmitted?()
+    }
+
+    /// Nil rather than empty when nothing is attached, so the key is omitted from the payload.
+    private var attachedSelectionsPayload: [AIChatSelectionContextData]? {
+        guard let attachedSelectionsProvider else {
+            return nil
+        }
+        let selections = attachedSelectionsProvider()
+        guard !selections.isEmpty else {
+            return nil
+        }
+
+        return selections
+    }
+
+    /// Consumes the payload's selections only once it has been dispatched, so a dropped push does not
+    /// destroy them. Dispatch is not acknowledgement — the frontend can still fail to receive it.
+    private func pushPrompt(_ payload: AIChatNativePrompt) {
+        guard push(.submitPrompt(payload)) else { return }
+        guard let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty else { return }
+
+        onAttachedSelectionsConsumed?(selectionIDs)
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
@@ -415,10 +452,19 @@ final class AIChatUserScript: NSObject, Subfeature {
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
     }
 
-    private func push(_ message: AIChatPushMessage) {
-        guard let webView = webView else { return }
+    /// - Returns: whether the message was dispatched. It is dropped when the web view or broker has gone.
+    @discardableResult
+    private func push(_ message: AIChatPushMessage) -> Bool {
+        guard let webView = webView else {
+            return false
+        }
+        guard let broker else {
+            return false
+        }
+
         let params: Encodable? = message.params
-        broker?.push(method: message.methodName, params: params, for: self, into: webView)
+        broker.push(method: message.methodName, params: params, for: self, into: webView)
+        return true
     }
 }
 

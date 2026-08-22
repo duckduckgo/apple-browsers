@@ -139,19 +139,19 @@ class SearchNonexistentDomainUITests: UITestCase {
 
     func testWhenValidDomainEntered_NavigatesWithoutSearchRedirect() throws {
         // Test navigation to a valid domain
-        let validDomain = "example.com"
+        let validDomain = "github.com"
         addressBarTextField.typeText(validDomain)
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for navigation to complete by checking for page content
-        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.navigation))
 
-        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should navigate to example.com and show page content")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Should navigate to github.com and show page content")
 
         // Verify browser navigated and remains functional - address bar should still be accessible
         let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertEqual(addressBarValue, "https://example.com/")
+        XCTAssertEqual(addressBarValue, "https://github.com/")
     }
 
     func testWhenHttpSingleSlashEntered_NormalizesToDoubleSlash() throws {

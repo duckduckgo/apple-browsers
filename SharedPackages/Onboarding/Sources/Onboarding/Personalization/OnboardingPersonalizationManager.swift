@@ -48,11 +48,15 @@ extension OnboardingPersonalizationManager {
     public func applyDefaults(for reason: OnboardingDownloadReason) {
         switch reason {
         case .noAI:
-            // The only reason whose presented toggles diverge from the app's existing defaults:
-            // both Search AI features start off.
+            // Disable AI features, Search Assist, Duck.ai and AI generated images when user select no AI.
             setSearchAssist(false)
             setAIGeneratedImagesHidden(true)
-        case .browserPrivately, .privateAIChat, .blockAds:
+            setDuckAIEnabled(false)
+        case .blockAds:
+            // Chose "block ads and pop-ups" → default the cookie step to maximum protection (both toggles on).
+            setCookiePopUpProtection(true)
+            setPopUpsWithoutOptOuts(true)
+        case .browserPrivately, .privateAIChat:
             // Presented toggles already match the app's existing defaults; nothing to override.
             break
         }
@@ -154,16 +158,24 @@ extension OnboardingPersonalizationManager {
         youTubeAdBlocking.isYouTubeAdBlockingEnabled
     }
 
-    public var isDuckPlayerEnabled: Bool {
-        appSettings.isDuckPlayerEnabled
+    public var isCookiePopUpProtectionEnabled: Bool {
+        appSettings.isCookiePopUpProtectionEnabled
+    }
+
+    public var isPopUpsWithoutOptOutsEnabled: Bool {
+        appSettings.isPopUpsWithoutOptOutsEnabled
     }
 
     public func setYouTubeAdBlocking(_ enabled: Bool) {
         youTubeAdBlocking.isYouTubeAdBlockingEnabled = enabled
     }
 
-    public func setDuckPlayer(_ enabled: Bool) {
-        appSettings.isDuckPlayerEnabled = enabled
+    public func setCookiePopUpProtection(_ enabled: Bool) {
+        appSettings.isCookiePopUpProtectionEnabled = enabled
+    }
+
+    public func setPopUpsWithoutOptOuts(_ enabled: Bool) {
+        appSettings.isPopUpsWithoutOptOutsEnabled = enabled
     }
 
 }

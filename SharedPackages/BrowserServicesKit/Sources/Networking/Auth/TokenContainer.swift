@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DDGError
 import JWTKit
 import Common
 import FoundationExtensions
@@ -150,6 +151,10 @@ public struct JWTRefreshToken: JWTPayload, Equatable {
 
     public var expirationDate: Date {
         exp.value
+    }
+
+    public var issuedAtDate: Date {
+        iat.value
     }
 }
 

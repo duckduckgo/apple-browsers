@@ -273,6 +273,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemiumPIR
     case optOutRetryError96Hours
     case deferredSecureVaultInit
+    case performanceMetrics
     case extractedProfileRefresh
 }
 
@@ -523,6 +524,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Supports Duck.ai edit prompt from the native input field.
     case nativePromptEditing
+
+    /// Warns users as they approach their daily/weekly Duck.ai limits, using the usage snapshot the
+    /// web app writes into the reserved `usageLimits` native-storage entry.
+    case usageWarnings
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -767,6 +772,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
+    case dataDirectoryAccess
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {

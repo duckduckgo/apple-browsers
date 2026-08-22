@@ -687,8 +687,13 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var pageContextCollectionUnavailableCount = 0
 
     func fireSheetOpened() {}
-    func fireSheetDismissed() {}
+    func fireSheetDismissed(hadUnsubmittedSelections: Bool) {}
     func fireSessionRestored() {}
+    func fireSelectionAttached() {}
+    func fireSelectionLimitReached() {}
+    func fireSelectionRemoved() {}
+    func firePromptSubmittedWithSelections(count: Int) {}
+    func fireSelectionToolDeliveryTimedOut() {}
     func fireExpandButtonTapped() {}
     func fireHeaderTitleTapped() {}
     func fireNewChatButtonTapped() {}
@@ -697,9 +702,12 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireQuickActionAskAboutPageSelected() {}
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
     func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType) {}
+    func fireSuggestionsViewed(isSmart: Bool,
+                               pageType: SuggestionsPageType,
+                               scope: ResolvePageSuggestionsInput.Scope,
+                               surface: AIChatContextualSuggestionsSurface) {}
     func fireSuggestionsContextCollectionTimedOut() {}
-    func fireRecentChatsPopupDisplayed() {}
+    func fireRecentChatsMenuDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() {}
@@ -707,7 +715,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireAddressBarMenuShown() {}
     func fireAddressBarMenuNewChatSelected() {}
     func fireAddressBarMenuAskAboutPageSelected() {}
-    func fireFloatingInputDismissedWithoutSubmission() {}
+    func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() {}
     func firePageContextUpdatedOnNavigation(url: String) {}

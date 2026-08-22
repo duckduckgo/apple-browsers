@@ -61,6 +61,7 @@ extension SuggestionTrayManagerDelegate {
 }
 
 /// Manages the suggestion tray functionality including favorites and autocomplete
+@MainActor
 final class SuggestionTrayManager: NSObject {
     
     // MARK: - Properties

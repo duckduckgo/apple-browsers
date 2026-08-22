@@ -18,8 +18,7 @@
 
 import Combine
 import Foundation
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import Testing
 
 // MARK: - Test Keys
@@ -139,6 +138,7 @@ struct ThrowingInjectionKeys: StoringKeys {
 public final class AppUserDefaults: UserDefaults {}
 
 // Custom file store wrapping InMemoryKeyValueStore  
+@_spi(Testing)
 public final class AppFileStore: InMemoryKeyValueStore {}
 
 // Service classes that depend on storage

@@ -22,7 +22,7 @@ import Combine
 import Common
 import FoundationExtensions
 import FeatureFlags_macOS
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils

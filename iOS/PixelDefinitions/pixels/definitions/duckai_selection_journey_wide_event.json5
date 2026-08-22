@@ -31,7 +31,7 @@
                 "key": "feature.data.ext.outcome.terminal_reason",
                 "type": "string",
                 "description": "The action that definitively ended the selection interaction. Dismissal alone is not terminal.",
-                "enum": ["submitted", "selections_removed", "new_chat", "chat_cleared", "tab_closed", "session_expired"]
+                "enum": ["submitted", "selections_removed", "new_chat", "chat_cleared", "tab_closed", "moved_to_tab", "session_expired"]
             },
             {
                 "key": "feature.data.ext.submission.action",

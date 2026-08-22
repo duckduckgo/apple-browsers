@@ -49,6 +49,7 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                 PixelKit.fire(DebugEvent(event, error: error))
             case .backgroundAgentStarted,
                     .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
+                    .resourceUsageRun,
                     .dataBrokerProtectionNotificationSentFirstScanComplete,
                     .dataBrokerProtectionNotificationOpenedFirstScanComplete,
                     .dataBrokerProtectionNotificationSentFirstRemoval,
@@ -63,6 +64,9 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                     .invalidPayload:
 
                 PixelKit.fire(event)
+
+            case .criticalMemoryPressure:
+                PixelKit.fire(event, frequency: .dailyAndCount)
 
             case .homeViewShowNoPermissionError,
                     .homeViewShowWebUI,

@@ -2331,6 +2331,19 @@ public struct UserText {
     public static let aiChatHeaderCloseTabAccessibilityLabel = NotLocalizedString("aichat.header.closeTab.a11y", value: "Close tab", comment: "Accessibility label for the close-tab button in the Duck.ai tab header")
     public static let aiChatHeaderNewChatAccessibilityLabel = NotLocalizedString("aichat.header.newChat.a11y", value: "New chat", comment: "Accessibility label for the new-chat button in the Duck.ai tab header")
     public static let aiChatHeaderPlusMenuAccessibilityLabel = NSLocalizedString("aichat.header.plusMenu.a11y", value: "New", comment: "Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions")
+
+    // MARK: - Duck.ai usage warnings (unified toggle input footer)
+    // NotLocalizedString while the copy is being finalised behind `utiDuckAIWarnings`; these must
+    // become NSLocalizedString with .xcstrings entries before the feature ships externally.
+
+    public static let utiDuckAIWarningsWeeklyUsageTitle = NotLocalizedString("aichat.usageWarnings.weeklyUsage.title", value: "%d%% of weekly limit", comment: "Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage")
+    public static let utiDuckAIWarningsDailyUsageTitle = NotLocalizedString("aichat.usageWarnings.dailyUsage.title", value: "%d%% of daily limit", comment: "Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage")
+    public static let utiDuckAIWarningsWeeklyLimitReached = NotLocalizedString("aichat.usageWarnings.weeklyLimitReached.title", value: "Weekly limit reached", comment: "Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up")
+    public static let utiDuckAIWarningsDailyLimitReached = NotLocalizedString("aichat.usageWarnings.dailyLimitReached.title", value: "Daily limit reached", comment: "Title of the Duck.ai input footer warning shown once the user's daily message limit is used up")
+    public static let utiDuckAIWarningsResetsIn = NotLocalizedString("aichat.usageWarnings.resetsIn", value: "Resets in %@", comment: "Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days'")
+    public static let utiDuckAIWarningsReduceUsage = NotLocalizedString("aichat.usageWarnings.action.reduceUsage", value: "Reduce Usage", comment: "Button in the Duck.ai input footer warning that shows the user how to use fewer messages")
+    public static let utiDuckAIWarningsSwitch = NotLocalizedString("aichat.usageWarnings.action.switch", value: "Switch", comment: "Button in the Duck.ai input footer warning that switches the user to a model they still have messages for")
+    public static let utiDuckAIWarningsDismissAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.dismiss.a11y", value: "Dismiss", comment: "Accessibility label for the button that dismisses the Duck.ai input footer warning")
     public static let aiChatHeaderNewVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newVoiceChat", value: "New Voice Chat", comment: "Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu")
     public static let aiChatHeaderNewImageTitle = NSLocalizedString("aichat.header.plusMenu.newImage", value: "New Image", comment: "Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode")
     public static let aiChatHeaderNewTabTitle = NSLocalizedString("aichat.header.plusMenu.newTab", value: "New Tab", comment: "Title for the New Tab row in the Duck.ai tab header Plus (+) menu")

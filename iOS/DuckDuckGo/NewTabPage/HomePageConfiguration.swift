@@ -363,15 +363,18 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
                           options: .parameters(additionalParameters(for: remoteMessage.id)))
         }
 
-        if !remoteMessagingStore.hasShownRemoteMessage(withID: remoteMessage.id) {
+        let isFirstImpression = !remoteMessagingStore.hasShownRemoteMessage(withID: remoteMessage.id)
+        if isFirstImpression {
             Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
                 PixelKit.fire(Pixel.Event.remoteMessageShownUnique,
                               options: .parameters(additionalParameters(for: remoteMessage.id)))
             }
-            Task {
-                await remoteMessagingStore.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
-            }
+        }
+
+        // A countable iOS NTP impression is each confirmed appearance, matching the shown pixel above.
+        Task {
+            await remoteMessagingStore.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
         }
     }
 

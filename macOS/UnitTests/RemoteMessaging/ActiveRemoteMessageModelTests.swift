@@ -103,6 +103,23 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         XCTAssertTrue(store.hasShownRemoteMessage(withID: message.id))
     }
 
+    func testWhenMessageAppearsAgainThenAnotherImpressionIsRecorded() async throws {
+        store.scheduledRemoteMessage = message
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+
+        await model.markRemoteMessageAsShown()
+        await model.markRemoteMessageAsShown()
+
+        XCTAssertEqual(store.updateRemoteMessageCalls, 2)
+    }
+
     func testWhenMessageIsForTabBar_thenCorrectPublisherIsSet() {
         store.scheduledRemoteMessage = RemoteMessageModel(
             id: "tab_bar_message",

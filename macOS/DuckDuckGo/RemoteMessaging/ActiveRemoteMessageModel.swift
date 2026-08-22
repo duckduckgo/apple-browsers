@@ -210,13 +210,16 @@ final class ActiveRemoteMessageModel: ObservableObject {
         if remoteMessage.isMetricsEnabled {
             PixelKit.fire(GeneralPixel.remoteMessageShown, withAdditionalParameters: ["message": remoteMessage.id])
         }
-        if !store.hasShownRemoteMessage(withID: remoteMessage.id) {
+        let isFirstImpression = !store.hasShownRemoteMessage(withID: remoteMessage.id)
+        if isFirstImpression {
             Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
                 PixelKit.fire(GeneralPixel.remoteMessageShownUnique, withAdditionalParameters: ["message": remoteMessage.id])
             }
-            await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
         }
+
+        // Count each confirmed NTP or tab bar appearance, matching the shown pixel above.
+        await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
     }
 
     var shouldShowRemoteMessage: Bool {

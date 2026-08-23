@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import PixelKit
 
@@ -421,10 +422,13 @@ enum AIChatPixel: PixelKit.Event {
     // MARK: - Prompt Metrics
 
     /// Event Trigger: User submits their first prompt in a new Duck.ai conversation.
-    case aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: Bool, hasPageContext: Bool)
+    /// `source` is the surface that opened the chat, or `.other` when nothing was recorded for it:
+    /// a session restored at startup, a direct navigation to duck.ai, or an uninstrumented surface.
+    case aiChatMetricStartNewConversation(source: AIChatConversationSource, hasPageContext: Bool)
 
     /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation.
-    case aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: Bool, hasPageContext: Bool)
+    /// `source` describes how that conversation was originally opened, not this prompt's surface.
+    case aiChatMetricSentPromptOngoingChat(source: AIChatConversationSource, hasPageContext: Bool)
 
     /// Event Trigger: User taps a sidebar page-suggestion chip (a tailored prompt or "Ask about this page").
     /// `suggestionId` is the FE's fixed catalog key; `pageType` is the FE's coarse page classification.
@@ -960,10 +964,12 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return nil
-        case .aiChatMetricStartNewConversation(let isOpenedFromAskDuckAiButton, let hasPageContext),
-                .aiChatMetricSentPromptOngoingChat(let isOpenedFromAskDuckAiButton, let hasPageContext):
+        case .aiChatMetricStartNewConversation(let source, let hasPageContext),
+                .aiChatMetricSentPromptOngoingChat(let source, let hasPageContext):
             return [
-                "isOpenedFromAskDuckAiButton": isOpenedFromAskDuckAiButton ? "true" : "false",
+                "source": source.rawValue,
+                // Derived from `source`; kept for continuity with dashboards that predate it.
+                "isOpenedFromAskDuckAiButton": source.isAskDuckAiButton ? "true" : "false",
                 "hasPageContext": hasPageContext ? "true" : "false"
             ]
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):

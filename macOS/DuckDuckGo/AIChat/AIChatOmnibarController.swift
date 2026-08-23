@@ -315,7 +315,7 @@ final class AIChatOmnibarController {
         // Defer the tab open: synchronously it tears the panel down mid-click, so the click falls through to the bookmarks bar behind.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.aiChatConversationSourceHandler.setData(.voice)
+            self.aiChatConversationSourceHandler.setData(.omnibarVoice)
             self.aiChatTabOpener.openVoiceSession(
                 inSourceCollection: self.origin?.originTabCollectionViewModel,
                 behavior: .newTab(selected: true)

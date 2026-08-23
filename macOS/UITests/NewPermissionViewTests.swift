@@ -53,7 +53,7 @@ class NewPermissionViewTests: UITestCase {
         app.resetAuthorizationStatus(for: .microphone)
 
         // Now set up and launch the app
-        app = XCUIApplication.setUp(featureFlags: ["fireDialogSimplified": false])
+        app = XCUIApplication.setUp()
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
 
@@ -77,7 +77,12 @@ class NewPermissionViewTests: UITestCase {
         )
 
         // Select "Everything" scope to clear all history
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        if (app.fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            app.fireDialogDetailsDisclosureButton.click()
+        }
 
         // Ensure toggles are enabled
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
@@ -740,7 +745,6 @@ final class NewPermissionViewPopupTests: UITestCase {
             ],
             featureFlags: [
                 "popupBlocking": true,
-                "fireDialogSimplified": false,
             ]
         )
 
@@ -752,7 +756,13 @@ final class NewPermissionViewPopupTests: UITestCase {
     override func tearDown() {
         // Burn all data to clear permissions between tests
         app.fireButton.click()
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        if (app.fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            app.fireDialogDetailsDisclosureButton.click()
+        }
+
         app.fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         app.fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         app.fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
@@ -837,8 +847,8 @@ final class NewPermissionViewPopupTests: UITestCase {
         )
         openButton.click()
 
-        // Verify popup window opened
-        let popupWindow = app.windows["Example Domain"]
+        // Verify popup window opened (popup-delayed.html opens github.com)
+        let popupWindow = app.windows.containing(\.title, containing: "GitHub").firstMatch
         XCTAssertTrue(
             popupWindow.waitForExistence(timeout: UITests.Timeouts.navigation),
             "Popup should open after clicking 'Open' button."

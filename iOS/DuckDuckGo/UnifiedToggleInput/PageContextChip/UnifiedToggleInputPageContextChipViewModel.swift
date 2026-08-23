@@ -53,27 +53,21 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     var onRemoveActionRequested: (() -> Void)?
 
     private let isAutoAttachEnabled: () -> Bool
-    /// Whether removing the page context leaves a re-attach button in place of the pill.
-    private let showsAttachAffordance: Bool
     private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?
     private var originatingURL: URL?
     /// Presentation-only pending/delivered flag; set solely by `setAttached`, never decided by the chip.
     private var attachmentDeliveryState: PageContextAttachmentDeliveryState = .pendingSubmit
     private var isShowingAttachAffordance = false
-    /// Set only by an explicit removal, so the button appears in place of the pill the user dismissed.
-    private var isOfferingReattach = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
         originatingURLPublisher: AnyPublisher<URL?, Never>,
         initialAttachedContext: AIChatPageContext?,
         initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
-        isAutoAttachEnabled: @escaping () -> Bool,
-        showsAttachAffordance: Bool = false
+        isAutoAttachEnabled: @escaping () -> Bool
     ) {
         self.isAutoAttachEnabled = isAutoAttachEnabled
-        self.showsAttachAffordance = showsAttachAffordance
         self.attachedContext = initialAttachedContext
         self.attachedURL = Self.url(of: initialAttachedContext)
         self.attachmentDeliveryState = initialAttachedContext == nil ? .pendingSubmit : initialAttachmentDeliveryState
@@ -91,25 +85,15 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     func setAttached(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
         isShowingAttachAffordance = false
-        isOfferingReattach = false
         updateAttachment(context, deliveryState: deliveryState)
         Logger.contextualUTI.debug("PageContextChip attached")
         recompute()
     }
 
-    /// Deliberately leaves `isOfferingReattach` alone: removal feeds a nil context straight back here,
-    /// so resetting the offer would cancel the button a frame after the removal that asked for it.
     func clearAttached() {
         isShowingAttachAffordance = false
         clearAttachmentState()
         Logger.contextualUTI.debug("PageContextChip detached")
-        recompute()
-    }
-
-    /// Cancels a pending re-attach offer, for session boundaries such as starting a new chat.
-    func clearReattachOffer() {
-        guard isOfferingReattach else { return }
-        isOfferingReattach = false
         recompute()
     }
 
@@ -134,9 +118,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     func tapToRemove() {
         Logger.contextualUTI.info("PageContextChip remove tapped — detaching")
-        // Set before clearing so `clearAttached`'s recompute lands the final state in one pass —
-        // publishing twice makes the strip drop the chip and re-add it.
-        isOfferingReattach = showsAttachAffordance
         clearAttached()
         onRemoveActionRequested?()
     }
@@ -166,12 +147,10 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         let isMatching = attachedURL != nil && attachedURL == originatingURL
         let branch: String
 
-        if isShowingAttachAffordance || isOfferingReattach {
+        if isShowingAttachAffordance {
             state = .placeholder
-            // Only an explicit removal shows the button: the attach-affordance command is a separate,
-            // pre-existing signal whose contract is a hidden placeholder.
-            isVisible = isOfferingReattach
-            branch = "attachAffordance(reattachOffer=\(isOfferingReattach))"
+            isVisible = false
+            branch = "attachAffordance"
         } else if let ctx = attachedContext {
             state = .attached(title: ctx.title, favicon: ctx.favicon)
             isVisible = attachmentDeliveryState == .pendingSubmit

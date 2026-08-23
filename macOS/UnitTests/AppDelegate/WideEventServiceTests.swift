@@ -19,8 +19,7 @@
 import Common
 import FoundationExtensions
 import Foundation
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import SubscriptionTestingUtilities
 import XCTest
 

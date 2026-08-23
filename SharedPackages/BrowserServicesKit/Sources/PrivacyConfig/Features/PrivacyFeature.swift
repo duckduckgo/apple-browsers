@@ -273,6 +273,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemiumPIR
     case optOutRetryError96Hours
     case deferredSecureVaultInit
+    case performanceMetrics
     case extractedProfileRefresh
 }
 
@@ -771,6 +772,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
+    case dataDirectoryAccess
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {

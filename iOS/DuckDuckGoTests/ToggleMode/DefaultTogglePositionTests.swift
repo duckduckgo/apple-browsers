@@ -19,7 +19,7 @@
 
 import XCTest
 import AIChat
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import Core
 @testable import DuckDuckGo
 

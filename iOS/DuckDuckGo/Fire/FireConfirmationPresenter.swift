@@ -87,7 +87,10 @@ struct FireConfirmationPresenter {
                                                             }
                                                         })
 
+        // Capture the presenting context's true size class; it's reset to `.compact` inside the popover container.
+        let presentationSizeClass = UserInterfaceSizeClass(viewController.traitCollection.horizontalSizeClass)
         let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
+            .environment(\.presentationHorizontalSizeClass, presentationSizeClass)
         let hostingController = makeHostingController(with: confirmationView)
         // Prevent swipe-to-dismiss for the experiment flow: the user must make an
         // explicit choice (fire or cancel) to keep the locked-controls state consistent.

@@ -18,7 +18,7 @@
 
 import XCTest
 @testable import PrivacyDashboard
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 final class BrokenSiteReporterTests: XCTestCase {
 

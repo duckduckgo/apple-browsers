@@ -56,6 +56,18 @@
         "description": "The channel the user is on",
         "enum": ["phone", "tablet"]
     },
+    "subscriptionAuthSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The legacy app component identifier for the process that encountered the subscription authentication event",
+        "enum": ["MainApp", "SysExt"]
+    },
+    "subscriptionAuthTokenCachePolicy": {
+        "key": "policycache",
+        "type": "string",
+        "description": "The token cache policy used by the failed token request",
+        "enum": ["Local", "Local valid", "Local force refresh", "Create if needed"]
+    },
     "errorDomain": {
         "key": "d",
         "type": "string",
@@ -325,6 +337,17 @@
         "description": "Source of the burn action",
         "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear", "escapeHatch"]
     },
+    "aiChatSelectionCount": {
+        "key": "selection_count",
+        "type": "string",
+        "description": "Bucketed number of text selections attached to a submitted Duck.ai prompt. Bounded by the 5-selection cap",
+        "enum": ["1", "2", "3-5"]
+    },
+    "aiChatHadUnsubmittedSelections": {
+        "key": "had_unsubmitted_selections",
+        "type": "boolean",
+        "description": "Whether text selections were still attached, and so never asked about, when the Duck.ai contextual sheet was dismissed"
+    },
     "tabType": {
         "key": "tabType",
         "type": "string",
@@ -404,13 +427,20 @@
         "key": "flow",
         "type": "string",
         "description": "Version of the onboarding flow the user entered",
-        "enum": ["default", "duckai"]
+        "enum": ["default", "duckai", "tailored_by_download_reason"]
     },
     "onboardingFlowVariant": {
         "key": "variant",
         "type": "string",
-        "description": "Variant of the onboarding flow the user selected after branching on the 'Try a search or AI chat' step",
-        "enum": ["search_plus_duckai-search", "search_plus_duckai-chat"]
+        "description": "Variant of the onboarding flow the user selected after branching (the 'Try a search or AI chat' step, or the download-reason screen)",
+        "enum": [
+            "search_plus_duckai-search",
+            "search_plus_duckai-chat",
+            "download_reason_search",
+            "download_reason_ai-chat",
+            "download_reason_no-ai",
+            "download_reason_ad-blocking"
+        ]
     },
     "tabCount": {
         "key": "tab_count",

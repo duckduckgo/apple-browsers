@@ -42,6 +42,8 @@ extension PixelKit {
         static let enrollmentDateKey = "enrollmentDate"
         static let searchMetricValue = "search"
         static let appUseMetricValue = "app_use"
+        static let aiChatMetricValue = "duck_ai_prompt_sent"
+        static let aiChatNewChatMetricValue = "duck_ai_new_chat"
     }
 
     // Static property to hold shared dependencies
@@ -183,6 +185,54 @@ extension PixelKit {
                 for: experiment.key,
                 experimentData: experiment.value,
                 metric: Constants.appUseMetricValue,
+                valueConversionDictionary: valueConversionDictionary
+            )
+        }
+    }
+
+    /// Fires AI chat prompt experiment pixels for all active experiments.
+    ///
+    /// This function iterates through all active experiments and triggers
+    /// pixel firing based on predefined AI chat value and conversion window mappings.
+    /// - The value and conversion windows define when and how many AI prompt sent actions
+    ///   must occur before the pixel is fired.
+    public static func fireNewAIPromptExperimentPixels() {
+        let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
+            1: [0...0, 1...1, 5...7, 8...14]
+        ]
+        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+            assertionFailure("PixelKit is not configured for experiments")
+            return
+        }
+        featureFlagger.allActiveExperiments.forEach { experiment in
+            fireExperimentPixels(
+                for: experiment.key,
+                experimentData: experiment.value,
+                metric: Constants.aiChatMetricValue,
+                valueConversionDictionary: valueConversionDictionary
+            )
+        }
+    }
+
+    /// Fires new AI chat experiment pixels for all active experiments.
+    ///
+    /// This function iterates through all active experiments and triggers
+    /// pixel firing based on predefined AI chat value and conversion window mappings.
+    /// - The value and conversion windows define when and how many new AI chat sent actions
+    ///   must occur before the pixel is fired.
+    public static func fireNewAIChatExperimentPixels() {
+        let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
+            1: [0...0, 1...1, 5...7, 8...14]
+        ]
+        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+            assertionFailure("PixelKit is not configured for experiments")
+            return
+        }
+        featureFlagger.allActiveExperiments.forEach { experiment in
+            fireExperimentPixels(
+                for: experiment.key,
+                experimentData: experiment.value,
+                metric: Constants.aiChatNewChatMetricValue,
                 valueConversionDictionary: valueConversionDictionary
             )
         }

@@ -30,6 +30,7 @@ public enum DuckAiUsageWarningViewModelFactory {
                             isInternalUser: @escaping () -> Bool,
                             modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
                             isTrialEligible: @escaping () -> Bool = { false },
+                            isFireMode: @escaping () -> Bool = { false },
                             pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
     ) -> DuckAiUsageWarningViewModel? {
         guard isFeatureEnabled, let storage else { return nil }
@@ -40,7 +41,8 @@ public enum DuckAiUsageWarningViewModelFactory {
             isInternalUser: isInternalUser,
             dismissalStore: dismissalStore,
             modelSuggester: modelSuggester,
-            isTrialEligible: isTrialEligible
+            isTrialEligible: isTrialEligible,
+            isFireMode: isFireMode
         )
     }
 }

@@ -35,18 +35,19 @@ final class DuckAiUsageLimitsStore {
     }
 
     /// `nil` means inactive (flag off, or no storage bridge), which differs from having nothing to show.
-    func makeWarningViewModel(dismissalStore: DuckAiUsageWarningDismissalStoring,
-                              tierProvider: @escaping () -> AIChatUserTier,
+    func makeWarningViewModel(tierProvider: @escaping () -> AIChatUserTier,
                               modelSuggester: DuckAiModelSuggesting,
-                              isTrialEligible: @escaping () -> Bool) -> DuckAiUsageWarningViewModel? {
+                              isTrialEligible: @escaping () -> Bool,
+                              isFireMode: @escaping () -> Bool) -> DuckAiUsageWarningViewModel? {
         DuckAiUsageWarningViewModelFactory.make(
             isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatUsageWarnings),
             storage: storageHandler,
-            dismissalStore: dismissalStore,
+            dismissalStore: DuckAiUsageWarningDismissalStore(),
             tierProvider: tierProvider,
             isInternalUser: { [featureFlagger] in featureFlagger.internalUserDecider.isInternalUser },
             modelSuggester: modelSuggester,
             isTrialEligible: isTrialEligible,
+            isFireMode: isFireMode,
             pixelFiring: DuckAiNativeStoragePixelAdapter()
         )
     }

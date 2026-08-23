@@ -38,6 +38,8 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
     private let dismissalStore: DuckAiUsageWarningDismissalStoring
     private let resolver: DuckAiUsageWarningResolver
     private let isTrialEligible: () -> Bool
+    /// Re-read on every refresh, so a surface whose fire state changes at runtime can't go stale.
+    private let isFireMode: () -> Bool
     private let dateProvider: () -> Date
 
     /// Kept so `dismiss()` can recover the window's `resetsAt` without a second storage read.
@@ -49,6 +51,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
                 dismissalStore: DuckAiUsageWarningDismissalStoring,
                 modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
                 isTrialEligible: @escaping () -> Bool = { false },
+                isFireMode: @escaping () -> Bool = { false },
                 dateProvider: @escaping () -> Date = Date.init) {
         self.limitsProvider = limitsProvider
         self.tierProvider = tierProvider
@@ -57,11 +60,19 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         self.resolver = DuckAiUsageWarningResolver(dismissalStore: dismissalStore,
                                                    modelSuggester: modelSuggester)
         self.isTrialEligible = isTrialEligible
+        self.isFireMode = isFireMode
         self.dateProvider = dateProvider
     }
 
     /// Synchronous: a lookup in the already-loaded entries blob.
     public func refresh() {
+        // Fire windows and fire tabs are out of scope: an isolated session must not surface the
+        // regular session's usage, and has no usage of its own worth warning about.
+        guard !isFireMode() else {
+            warning = nil
+            Logger.aiChat.debug("Duck.ai usage warning: none — reason=fireMode")
+            return
+        }
         guard let limitsProvider else {
             warning = nil
             Logger.aiChat.debug("Duck.ai usage warning: none — reason=featureInactive")

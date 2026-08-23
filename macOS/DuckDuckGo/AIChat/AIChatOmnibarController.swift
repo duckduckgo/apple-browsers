@@ -351,19 +351,15 @@ final class AIChatOmnibarController {
     }
 
     private func setUpUsageWarnings() {
-        // A burner dismissal must not outlive the session it was made in.
-        let dismissalStore: DuckAiUsageWarningDismissalStoring = isBurner
-            ? InMemoryDuckAiUsageWarningDismissalStore()
-            : DuckAiUsageWarningDismissalStore()
         usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
-            dismissalStore: dismissalStore,
             tierProvider: { [weak self] in self?.userTier ?? .free },
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
                 currentModelIdProvider: { [weak self] in self?.currentModelId },
                 requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
             ),
-            isTrialEligible: { [weak self] in self?.subscriptionManager.isUserEligibleForFreeTrial() ?? false }
+            isTrialEligible: { [weak self] in self?.subscriptionManager.isUserEligibleForFreeTrial() ?? false },
+            isFireMode: { [weak self] in self?.isBurner ?? false }
         )
         usageWarningViewModel?.onAction = { [weak self] action in
             self?.performUsageWarningAction(action)

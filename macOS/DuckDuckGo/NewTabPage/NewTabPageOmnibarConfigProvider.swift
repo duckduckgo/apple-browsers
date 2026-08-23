@@ -290,9 +290,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     /// Rebuilt per refresh because the burner mode depends on the requesting webview.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
-    /// Retained across those rebuilds, or a dismissal would be forgotten on the next activation.
-    private let usageDismissalStore = DuckAiUsageWarningDismissalStore()
-    private lazy var burnerUsageDismissalStore = InMemoryDuckAiUsageWarningDismissalStore()
 
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?) {
@@ -301,13 +298,13 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         let store = DuckAiUsageLimitsStore(storageHandler: duckAiStorageHandlerProvider(burnerMode),
                                            featureFlagger: featureFlagger)
         usageWarningViewModel = store.makeWarningViewModel(
-            dismissalStore: burnerMode.isBurner ? burnerUsageDismissalStore : usageDismissalStore,
             tierProvider: userTierProvider,
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: availableModelsProvider,
                 currentModelIdProvider: { [aiChatPreferencesPersistor] in aiChatPreferencesPersistor.selectedModelId }
             ),
-            isTrialEligible: isTrialEligibleProvider
+            isTrialEligible: isTrialEligibleProvider,
+            isFireMode: { burnerMode.isBurner }
         )
         usageWarningViewModel?.onAction = { [weak self] action in
             switch action {

@@ -49,6 +49,37 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertEqual(limitsProvider.readCount, 0)
     }
 
+    // MARK: - Fire mode
+
+    /// Fire windows and fire tabs are out of scope, and must never surface the regular session's usage.
+    func testFireModeShowsNothingAndDoesNotReadStorage() {
+        limitsProvider.limits = limits(daily: 75)
+        let sut = makeSUT(isFireMode: true)
+
+        sut.refresh()
+
+        XCTAssertNil(sut.warning)
+        XCTAssertEqual(limitsProvider.readCount, 0)
+    }
+
+    /// The predicate is re-read per refresh, so a surface that flips fire state at runtime can't go stale.
+    func testFireStateIsReReadOnEveryRefresh() {
+        limitsProvider.limits = limits(daily: 75)
+        var isFireMode = false
+        let sut = makeSUT(isFireMode: { isFireMode })
+
+        sut.refresh()
+        XCTAssertNotNil(sut.warning, "regular tab shows the warning")
+
+        isFireMode = true
+        sut.refresh()
+        XCTAssertNil(sut.warning, "switching to a fire tab clears it")
+
+        isFireMode = false
+        sut.refresh()
+        XCTAssertNotNil(sut.warning, "switching back restores it")
+    }
+
     func testRefreshPublishesTheResolvedWarning() {
         limitsProvider.limits = limits(daily: 75)
         let sut = makeSUT()
@@ -231,7 +262,23 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
                          tier: AIChatUserTier = .pro,
                          isInternalUser: Bool = false,
                          modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
-                         isTrialEligible: Bool = false
+                         isTrialEligible: Bool = false,
+                         isFireMode: Bool = false
+    ) -> DuckAiUsageWarningViewModel {
+        makeSUT(isFeatureActive: isFeatureActive,
+                tier: tier,
+                isInternalUser: isInternalUser,
+                modelSuggester: modelSuggester,
+                isTrialEligible: isTrialEligible,
+                isFireMode: { isFireMode })
+    }
+
+    private func makeSUT(isFeatureActive: Bool = true,
+                         tier: AIChatUserTier = .pro,
+                         isInternalUser: Bool = false,
+                         modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
+                         isTrialEligible: Bool = false,
+                         isFireMode: @escaping () -> Bool
     ) -> DuckAiUsageWarningViewModel {
         DuckAiUsageWarningViewModel(
             limitsProvider: isFeatureActive ? limitsProvider : nil,
@@ -240,6 +287,7 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
             dismissalStore: dismissalStore,
             modelSuggester: modelSuggester,
             isTrialEligible: { isTrialEligible },
+            isFireMode: isFireMode,
             dateProvider: { self.now }
         )
     }

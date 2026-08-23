@@ -84,7 +84,7 @@ public struct DuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStori
     }
 }
 
-/// Burner surfaces: a dismissal must not outlive the session it was made in.
+/// For tests and any caller that wants dismissals to die with the session.
 public final class InMemoryDuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStoring {
 
     private var dismissals: [DuckAiUsageWindow: DuckAiUsageWarningDismissal] = [:]

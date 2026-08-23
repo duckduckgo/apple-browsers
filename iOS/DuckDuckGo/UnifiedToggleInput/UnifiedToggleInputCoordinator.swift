@@ -467,8 +467,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             self?.handleModelsUpdated()
         }
         setUpUsageWarnings(featureFlagger: featureFlagger,
-                           storageHandler: isFireTab ? nil : duckAiNativeStorageHandler,
-                           isFireTab: isFireTab,
+                           storageHandler: duckAiNativeStorageHandler,
                            keyValueStore: usageWarningKeyValueStore,
                            pixelFiring: duckAiNativeStoragePixelFiring)
         subscribeToGeneratingState()
@@ -1340,17 +1339,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func setUpUsageWarnings(featureFlagger: any FeatureFlagger,
                                     storageHandler: DuckAiNativeStorageHandling?,
-                                    isFireTab: Bool,
                                     keyValueStore: ThrowingKeyValueStoring,
                                     pixelFiring: DuckAiNativeStoragePixelFiring) {
-        // A fire-tab dismissal must not outlive the session it was made in.
-        let dismissalStore: DuckAiUsageWarningDismissalStoring = isFireTab
-            ? InMemoryDuckAiUsageWarningDismissalStore()
-            : DuckAiUsageWarningDismissalStore(keyValueStore: keyValueStore)
         usageWarningViewModel = DuckAiUsageWarningViewModelFactory.make(
             isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatUsageWarnings),
             storage: storageHandler,
-            dismissalStore: dismissalStore,
+            dismissalStore: DuckAiUsageWarningDismissalStore(keyValueStore: keyValueStore),
             tierProvider: { [weak self] in self?.modelStore.subscriptionState.userTier ?? .free },
             isInternalUser: { [weak featureFlagger] in featureFlagger?.internalUserDecider.isInternalUser ?? false },
             modelSuggester: DuckAiModelSuggester(
@@ -1359,6 +1353,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
             ),
             isTrialEligible: { [weak self] in self?.modelStore.freeTrialEligibility == .eligible },
+            // Live, not the init-time value: `updateIsFireTab` flips this on every tab switch.
+            isFireMode: { [weak self] in self?.viewController.handler.isFireTab ?? false },
             pixelFiring: pixelFiring
         )
         usageWarningViewModel?.onAction = { [weak self] action in

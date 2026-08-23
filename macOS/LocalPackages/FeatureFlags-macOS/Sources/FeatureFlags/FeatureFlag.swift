@@ -728,7 +728,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatMultiplePageContexts:
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts), category: .duckAI)
         case .aiChatPdfPageContext:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
         case .aiChatOmnibarImageGeneration:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarImageGeneration), category: .duckAI)
         case .aiChatOmnibarWebSearch:

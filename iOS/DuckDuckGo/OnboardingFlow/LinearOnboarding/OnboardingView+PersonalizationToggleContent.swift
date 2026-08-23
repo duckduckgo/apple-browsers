@@ -21,6 +21,7 @@ import DuckUI
 import Onboarding
 import SwiftUI
 import UIComponents
+import DesignResourcesKit
 import DesignResourcesKitIcons
 
 // MARK: - Helpers
@@ -167,7 +168,17 @@ extension OnboardingView {
                 ),
                 message: message,
                 content: AnyView(
-                    OnboardingPersonalizationToggleItemsList(items: items)
+                    VStack(alignment: .leading, spacing: 12) {
+                        OnboardingPersonalizationToggleItemsList(items: items)
+
+                        if let footer = content.footer {
+                            Text(footer)
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                                .font(onboardingTheme.typography.progressIndicator)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
                 ),
                 showContent: $showContent,
                 title: {

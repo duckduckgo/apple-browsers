@@ -152,6 +152,13 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712841283
     case privacyProOnboardingPromotion
 
+    /// Gates the server-rendered first paywall: `/subscriptions/new/mobile/<emphasis>` in place of
+    /// `/subscriptions` with a `featurePage` query item.
+    ///
+    /// Wired only. Nothing reads this yet — see `SubscriptionURLTests` for the URLs it has to
+    /// produce once something does.
+    case performanceOptimizedPaywalls
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
     case subscriptionPromoForReinstallers
 
@@ -683,6 +690,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.experimentalAddressBar), supportsLocalOverriding: false)
         case .privacyProOnboardingPromotion:
             Config(source: .remoteReleasable(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .performanceOptimizedPaywalls:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.performanceOptimizedPaywalls))
         case .subscriptionPromoForReinstallers:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForReinstallers))
         case .subscriptionExpirationReminderNotification:

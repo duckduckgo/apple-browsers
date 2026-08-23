@@ -652,6 +652,9 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForExistingUsers
     case monthlyFreeTrialExperiment2
     case onboardingSubscriptionUpsellExperiment
+
+    /// Gates the server-rendered first paywall. Wired only — nothing reads it yet.
+    case performanceOptimizedPaywalls
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

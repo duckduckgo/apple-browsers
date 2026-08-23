@@ -62,131 +62,62 @@ public final class AIChatPromptHandler: AIChatConsumableDataHandling {
     }
 }
 
-/// The user-facing surface that opened a Duck.ai conversation, sent verbatim as the `source`
-/// parameter of the conversation pixels. Raw values must stay in sync with the `enum` list of
-/// `aiChatConversationSource` in `macOS/PixelDefinitions/pixels/params_dictionary.json5` — adding a
-/// case without updating it fails `testConversationSourceRawValuesMatchPixelDefinition`.
+/// Sent verbatim as the conversation pixels' `source`. Raw values must match the
+/// `aiChatConversationSource` enum in `macOS/PixelDefinitions/pixels/params_dictionary.json5`.
 public enum AIChatConversationSource: String, CaseIterable {
-
-    // MARK: - Tab-bar Ask Duck.ai button
-
-    /// Duck.ai tab-bar button — new chat (direct click, ⌘/middle-click, or the menu's "New Chat").
     case tabBarButton = "tab-bar-button"
-    /// Tab-bar / Duck.ai-menu "Ask About Page" — opens the sidebar and attaches the current page.
     case askAboutPage = "ask-about-page"
-    /// Tab-bar Duck.ai sidebar toggle (the "chrome" sidebar button).
     case tabBarSidebar = "tab-bar-sidebar"
 
-    // MARK: - Address bar
-
-    /// Address-bar Duck.ai button, whether it opens the sidebar or a full tab.
     case addressBar = "address-bar"
-    /// The address bar's "Ask Duck.ai" suggestion row, and the ⇧/⌃-Enter shortcut that submits it.
     case addressBarSuggestion = "address-bar-suggestion"
-    /// Right-click menu on the address-bar Duck.ai button — the entry that forces the opposite of
-    /// the sidebar/tab preference. Unrelated to the `contextual*` page actions below.
     case addressBarContextMenu = "address-bar-context-menu"
 
-    // MARK: - New Tab Page
-
-    /// New Tab Page omnibar — a submitted prompt, or "View all chats".
     case newTabPage = "new-tab-page"
-    /// New Tab Page omnibar voice button.
     case newTabPageVoice = "new-tab-page-voice"
-    /// A saved chat picked from the New Tab Page.
     case newTabPageRecentChat = "new-tab-page-recent-chat"
 
-    // MARK: - Duck.ai omnibar panel
-
-    /// Duck.ai omnibar panel — a submitted prompt, "View all chats", or the customize-responses fallback.
     case omnibar = "omnibar"
-    /// Duck.ai omnibar panel voice button.
     case omnibarVoice = "omnibar-voice"
-    /// A saved chat picked from the omnibar's suggestions.
     case omnibarRecentChat = "omnibar-recent-chat"
 
-    // MARK: - Floating prompt bar
-
-    /// Floating prompt bar — a submitted prompt.
     case promptBar = "prompt-bar"
-    /// Floating prompt bar voice button.
     case promptBarVoice = "prompt-bar-voice"
 
-    // MARK: - Main menu
-    //
-    // The standalone File item and the sidebar toggle live directly in the menu bar; the rest are
-    // items of the top-level Duck.ai menu. Note the File item and the Duck.ai menu are mutually
-    // exclusive — which one a user sees depends on `shouldDisplayApplicationMenuShortcut`.
-
-    /// File → "New AI Chat".
     case mainMenuFileNewChat = "main-menu-file-new-chat"
-    /// Main menu → the Duck.ai sidebar toggle item.
     case mainMenuSidebar = "main-menu-sidebar"
-    /// Duck.ai menu → "Open Duck.ai".
     case mainMenuOpenDuckAI = "main-menu-open-duck-ai"
-    /// Duck.ai menu → "New Chat".
     case mainMenuNewChat = "main-menu-new-chat"
-    /// Duck.ai menu → "View all chats".
     case mainMenuViewAllChats = "main-menu-view-all-chats"
-    /// Duck.ai menu → "New Voice Chat".
     case mainMenuVoice = "main-menu-voice"
-    /// Duck.ai menu → "New Image Chat".
     case mainMenuImage = "main-menu-image"
-    /// Duck.ai menu → a recent chat.
     case mainMenuRecentChat = "main-menu-recent-chat"
 
-    // MARK: - More-options (hamburger) menu
-    //
-    // Mirrors the main menu, minus the sidebar toggle, which only the main menu offers.
-
-    /// More-options menu → its standalone "New Duck.ai chat" item.
     case moreOptionsMenuNewDuckAIChat = "more-options-menu-new-duck-ai-chat"
-    /// More-options Duck.ai submenu → "Open Duck.ai".
     case moreOptionsMenuOpenDuckAI = "more-options-menu-open-duck-ai"
-    /// More-options Duck.ai submenu → "New Chat".
     case moreOptionsMenuNewChat = "more-options-menu-new-chat"
-    /// More-options Duck.ai submenu → "View all chats".
     case moreOptionsMenuViewAllChats = "more-options-menu-view-all-chats"
-    /// More-options Duck.ai submenu → "New Voice Chat".
     case moreOptionsMenuVoice = "more-options-menu-voice"
-    /// More-options Duck.ai submenu → "New Image Chat".
     case moreOptionsMenuImage = "more-options-menu-image"
-    /// More-options Duck.ai submenu → a recent chat.
     case moreOptionsMenuRecentChat = "more-options-menu-recent-chat"
 
-    // MARK: - Contextual page actions
-
-    /// Contextual "Summarize" action on the current page or selection.
     case contextualSummarize = "contextual-summarize"
-    /// Contextual "Translate" action on the current page.
     case contextualTranslate = "contextual-translate"
-    /// Contextual "Attach selection to Duck.ai" action.
     case contextualAttachSelection = "contextual-attach-selection"
 
-    // MARK: - Handoff
-
-    /// SERP handoff.
     case serp = "serp"
-    /// Sidebar → "Open in new tab" / handoff to a full tab.
     case sidebarHandoff = "sidebar-handoff"
 
-    // MARK: - Settings
-
-    /// Settings → AI Features links.
     case settings = "settings"
 
-    // MARK: - Fallback
 
-    /// No surface was recorded for the chat. Covers direct navigation to duck.ai, a session restored
-    /// at startup, bookmarks and external links, and any entry point not yet instrumented — so this
-    /// is the attribution gap, not a real entry point. Deliberately not called "direct": the code
-    /// cannot tell deliberate direct navigation from missing coverage.
+
+    /// Named for the attribution gap it measures, not "direct": the app cannot tell deliberate
+    /// direct navigation from an entry point nobody has instrumented yet.
     case unattributed = "unattributed"
 
-    /// Whether this surface is a gesture on the title-bar Ask Duck.ai button — its "New Chat"
-    /// (dropdown or middle-click), its "Ask About Page" sidebar entry, or the sidebar toggle.
-    /// Backs the conversation pixels' `isOpenedFromAskDuckAiButton`, which is now redundant with
-    /// `source` and kept only for continuity with dashboards that predate it.
+    /// Backs the pixels' `isOpenedFromAskDuckAiButton`, now redundant with `source` and kept
+    /// only for continuity with dashboards that predate it.
     public var isAskDuckAiButton: Bool {
         switch self {
         case .tabBarButton, .askAboutPage, .tabBarSidebar:

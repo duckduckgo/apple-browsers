@@ -539,8 +539,8 @@ struct AIChatUserScriptHandlerTests {
         #expect(testPixelFiring.expectedFireCalls == testPixelFiring.actualFireCalls)
     }
 
-    /// `PixelKitMock` compares expected and actual through the same `parameters` implementation, so a
-    /// wrong `source` value can't be caught that way — these read the fired parameters directly.
+    /// `PixelKitMock` runs both sides through the same `parameters` code, so it can't catch a wrong
+    /// value — these read the fired parameters directly.
     @MainActor
     private func firedConversationParameters(source: AIChatConversationSource?,
                                              metric: AIChatMetricName) async -> [String: String]? {
@@ -563,7 +563,7 @@ struct AIChatUserScriptHandlerTests {
             conversationSourceHandler: sourceHandler
         )
 
-        // The chat's first native-config fetch (load) consumes the pending source.
+        // The first native-config fetch is what consumes the pending source.
         _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
 
         await withCheckedContinuation { continuation in
@@ -1472,14 +1472,10 @@ struct AIChatMessageHandlerInstallInfoTests {
     }
 }
 
-/// Covers the `source` parameter the Duck.ai conversation pixels report. Asserted on the pixel
-/// directly, because `PixelKitMock`'s equality runs both sides through the same `parameters`
-/// implementation and so can't catch a wrong raw value or a swapped key.
 struct AIChatConversationSourcePixelTests {
 
-    /// Pinned against the `enum` list of `aiChatConversationSource` in
-    /// `macOS/PixelDefinitions/pixels/params_dictionary.json5`. Adding a case here without adding it
-    /// there would send a value the pixel definition rejects, so the two lists move together.
+    /// Pinned so a new case can't ship without the matching `aiChatConversationSource` value in
+    /// `params_dictionary.json5` — the app would send a value the definition rejects.
     private static let expectedRawValues = [
         "tab-bar-button",
         "ask-about-page",
@@ -1545,8 +1541,6 @@ struct AIChatConversationSourcePixelTests {
         ])
     }
 
-    /// Every Duck.ai menu item stamps its own source, so an item-level breakdown survives all the
-    /// way to the conversation pixel — including the three items that share one `openNewChat` action.
     @available(iOS 16, macOS 13, *)
     @Test("Each Duck.ai menu item maps to a source scoped to its own menu", .timeLimit(.minutes(1)), arguments: [
         (AIChatMenuConversationSources.mainMenu, "main-menu"),
@@ -1561,7 +1555,6 @@ struct AIChatConversationSourcePixelTests {
         #expect(sources.recentChat.rawValue == "\(prefix)-recent-chat")
     }
 
-    /// The three menu items that share `openNewChat` must not collapse back into one value.
     @available(iOS 16, macOS 13, *)
     @Test("The shared new-chat menu items resolve to distinct sources", .timeLimit(.minutes(1)))
     func testSharedNewChatItemsAreDistinct() {
@@ -1571,8 +1564,6 @@ struct AIChatConversationSourcePixelTests {
         #expect(resolved == ["main-menu-open-duck-ai", "main-menu-new-chat", "main-menu-view-all-chats"])
     }
 
-    /// The fallback is named for the gap it measures, not for direct navigation — the app can't tell
-    /// deliberate direct navigation from an uninstrumented surface.
     @available(iOS 16, macOS 13, *)
     @Test("The no-stamp fallback reports 'unattributed'", .timeLimit(.minutes(1)))
     func testFallbackIsNamedUnattributed() {
@@ -1580,7 +1571,6 @@ struct AIChatConversationSourcePixelTests {
         #expect(!AIChatConversationSource.unattributed.isAskDuckAiButton)
     }
 
-    /// The address-bar button and the "Ask Duck.ai" suggestion row are distinct surfaces.
     @available(iOS 16, macOS 13, *)
     @Test("The address-bar button and its suggestion row report different sources", .timeLimit(.minutes(1)))
     func testAddressBarButtonAndSuggestionAreDistinct() {

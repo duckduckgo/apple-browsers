@@ -206,9 +206,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// (whose underlying page is attachable) can report true.
     private var hasAttachedPageContext = false
 
-    /// The opening surface reported by the conversation pixels. A chat nothing was recorded for — a
-    /// session restored at startup, a direct navigation to duck.ai, an uninstrumented surface — is
-    /// reported as `.other` rather than dropped, so the pixel's `source` is always attributable.
+    /// An unstamped chat reports `.unattributed` rather than dropping the parameter.
     private var pixelConversationSource: AIChatConversationSource { conversationSource ?? .unattributed }
 
     init(

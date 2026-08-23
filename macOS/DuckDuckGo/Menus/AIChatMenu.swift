@@ -316,16 +316,16 @@ final class AIChatMenu: NSMenu {
 
 // MARK: - Default actions factory
 
-/// Which of the Duck.ai menu's three "opens a new chat" items was clicked. They share one action,
-/// so the item has to travel with the call for the conversation source to stay distinguishable.
+/// These three items share one action, so the item has to travel with the call to stay
+/// distinguishable in the conversation pixel.
 enum AIChatMenuNewChatItem {
     case openDuckAI
     case newChat
     case viewAllChats
 }
 
-/// The conversation source each Duck.ai menu entry stamps. Bundled per menu so a menu declares its
-/// own set once, rather than deriving a compound source from a bare surface at the point of use.
+/// Bundled per menu so each menu declares its own sources once, instead of deriving them from a
+/// bare surface at the point of use.
 struct AIChatMenuConversationSources {
     let openDuckAI: AIChatConversationSource
     let newChat: AIChatConversationSource

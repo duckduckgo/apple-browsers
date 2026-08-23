@@ -459,9 +459,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
 
-    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1217578255373544
-    case aiChatUsageWarnings
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214777651593367?focus=true
     case omniBarLongPressMenu
 
@@ -890,8 +887,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeStorageMigrationLockedLaunchFix))
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess))
-        case .aiChatUsageWarnings:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings))
         case .omniBarLongPressMenu:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.omniBarLongPressMenu))
         case .customProductPageDuckAiChat:

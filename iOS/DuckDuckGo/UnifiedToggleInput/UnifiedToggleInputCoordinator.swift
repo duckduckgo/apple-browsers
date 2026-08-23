@@ -23,7 +23,6 @@ import Combine
 import Core
 import DDGSync
 import os.log
-import Persistence
 import PrivacyConfig
 import Subscription
 import UIKit
@@ -254,9 +253,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var boundUserScriptIdentifier: ObjectIdentifier?
     private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
     private let lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding?
-
-    /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
-    private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
     private let lastUsedModelCache: NSCache<NSString, NSString> = {
         let cache = NSCache<NSString, NSString>()
         cache.countLimit = 64
@@ -318,8 +314,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         placesAttachmentsAboveInput: Bool = false,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
         footerWarningProvider: UTIFooterWarningProviding? = nil,
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-        usageWarningKeyValueStore: ThrowingKeyValueStoring = UserDefaults.standard
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.host = host
@@ -488,10 +483,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         modelStore.onModelsUpdated = { [weak self] in
             self?.handleModelsUpdated()
         }
-        setUpUsageWarnings(featureFlagger: featureFlagger,
-                           storageHandler: duckAiNativeStorageHandler,
-                           keyValueStore: usageWarningKeyValueStore,
-                           pixelFiring: duckAiNativeStoragePixelFiring)
         subscribeToGeneratingState()
         subscribeToStopGeneratingTap()
         subscribeToCustomizeResponsesTap()
@@ -1390,7 +1381,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var models: [AIChatModel] { modelStore.models }
     var subscriptionState: SubscriptionState { modelStore.subscriptionState }
     var persistedModelId: String? { modelStore.persistedModelId }
-
     var currentModelId: String? { modelStore.currentModelId }
     var persistedReasoningMode: AIChatReasoningMode? { modelStore.selectedReasoningMode }
     var selectedModel: AIChatModel? { modelStore.selectedModel }
@@ -1398,62 +1388,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var selectedModelSupportsFileUpload: Bool { modelStore.selectedModelSupportsFileUpload }
     var selectedModelSupportedFileTypes: [String] { modelStore.selectedModelSupportedFileTypes }
     var selectedTool: AIChatRAGTool? { toolsController.selectedTool }
-
-    /// Bound to the same path that restores the last-used model: the closest "about to prompt" signal.
-    func refreshUsageWarnings() {
-        usageWarningViewModel?.refresh()
-    }
-
-    private func setUpUsageWarnings(featureFlagger: any FeatureFlagger,
-                                    storageHandler: DuckAiNativeStorageHandling?,
-                                    keyValueStore: ThrowingKeyValueStoring,
-                                    pixelFiring: DuckAiNativeStoragePixelFiring) {
-        usageWarningViewModel = DuckAiUsageWarningViewModelFactory.make(
-            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatUsageWarnings),
-            storage: storageHandler,
-            dismissalStore: DuckAiUsageWarningDismissalStore(keyValueStore: keyValueStore),
-            tierProvider: { [weak self] in self?.modelStore.subscriptionState.userTier ?? .free },
-            isInternalUser: { [weak featureFlagger] in featureFlagger?.internalUserDecider.isInternalUser ?? false },
-            modelSuggester: DuckAiModelSuggester(
-                modelsProvider: { [weak self] in self?.modelStore.models ?? [] },
-                currentModelIdProvider: { [weak self] in self?.persistedModelId },
-                requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
-            ),
-            isTrialEligible: { [weak self] in self?.modelStore.freeTrialEligibility == .eligible },
-            // Live, not the init-time value: `updateIsFireTab` flips this on every tab switch.
-            isFireMode: { [weak self] in self?.viewController.handler.isFireTab ?? false },
-            pixelFiring: pixelFiring
-        )
-        usageWarningViewModel?.onAction = { [weak self] action in
-            self?.performUsageWarningAction(action)
-        }
-        usageWarningViewModel?.onOpenModelPicker = { [weak self] in
-            self?.presentModelPickerForActiveChat()
-        }
-    }
-
-    private func performUsageWarningAction(_ action: DuckAiUsageAction) {
-        switch action {
-        case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
-            updateSelectedModel(suggestion.modelId)
-        case .tryForFree:
-            // The upsell source is attribution the view layer owns, so this waits for UI.
-            Logger.aiChat.debug("Duck.ai usage warning: try-for-free tapped, no native route yet")
-        case .startUsingWeeklyLimit:
-            // Awaiting the native-storage value web will set; logged so the tap is observable meanwhile.
-            Logger.aiChat.debug("Duck.ai usage warning: start-using-weekly-limit tapped, no native action yet")
-        }
-    }
-
-    /// Stops the cheaper-model CTA suggesting something that can't handle the current draft.
-    private var chatCapabilityRequirements: DuckAiChatCapabilityRequirements {
-        let attachments = viewController.currentAttachments
-        return DuckAiChatCapabilityRequirements(
-            needsImageUpload: attachments.contains(where: \.isImage),
-            requiredMimeTypes: attachments.filter(\.isFile).compactMap(\.mimeType),
-            requiredTools: toolsController.selectedTool.map { [$0] } ?? []
-        )
-    }
 
     func fetchModels() {
         modelStore.fetchModels()
@@ -2028,9 +1962,6 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Tools
 
     func handleModelsUpdated() {
-        // Tier and models land after the bind that resolved the warning. Deferred, so the CTA resolves
-        // against reconciled tool, attachment and selection state on either exit path.
-        defer { refreshUsageWarnings() }
         toolsController.clearSelectionIfUnsupported(for: modelStore)
         attachmentController.removeUnsupportedAttachmentsForSelectedModel()
         modelSelector.updateModelChipLabel()

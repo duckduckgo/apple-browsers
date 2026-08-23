@@ -46,6 +46,10 @@ struct SuggestionsListView: View {
         static let syncPromoBottomBarTopInset: CGFloat = 4
         static let scrollableChromeBottomInset: CGFloat = 16
         static let scrollableChromeSpacing: CGFloat = 20
+        static let favoritesAfterMessageTopInset: CGFloat = 10
+        static let modeSpecificAfterStableTopInset: CGFloat = 4
+        /// The unified list starts at 16pt; favorites use the NTP's 24pt grid margin.
+        static let favoritesHorizontalInset: CGFloat = 8
         /// Per Figma: single-line rows use 15pt top/bottom padding; rows with a subtitle use 14pt
         static let rowVerticalPaddingSingleLine: CGFloat = 15
         static let rowVerticalPaddingWithSubtitle: CGFloat = 14
@@ -59,20 +63,13 @@ struct SuggestionsListView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                if hasRestingHeader {
+                if hasStableRestingContent {
                     VStack(spacing: Metrics.scrollableChromeSpacing) {
                         if let escapeHatch {
                             EscapeHatchView(model: escapeHatch)
                         }
-                        if showsFocusedNewTabPageContent,
-                           let favoritesViewModel,
-                           let messagesModel {
-                            FocusedNewTabPageContentView(messagesModel: messagesModel,
-                                                        favoritesViewModel: favoritesViewModel,
-                                                        showsFavorites: showsFavorites)
-                        }
-                        if let syncPromo {
-                            syncPromo
+                        if hasMessages, let messagesModel {
+                            FocusedNewTabPageMessagesView(messagesModel: messagesModel)
                         }
                     }
                     .frame(height: showsRestingContent ? nil : 0)
@@ -85,6 +82,27 @@ struct SuggestionsListView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                }
+                if showsRestingContent,
+                   showsFavorites,
+                   let favoritesViewModel,
+                   !favoritesViewModel.allFavorites.isEmpty {
+                    FavoritesView(model: favoritesViewModel)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, Metrics.favoritesHorizontalInset)
+                        .padding(.top, favoritesTopInset)
+                        .padding(.bottom, Metrics.scrollableChromeBottomInset)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+                if showsRestingContent, let syncPromo {
+                    syncPromo
+                        .padding(.top, syncPromoTopInset)
+                        .padding(.bottom, Metrics.scrollableChromeBottomInset)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                 }
                 if showsSuggestionRows {
                     ForEach(viewModel.sections) { section in
@@ -120,19 +138,26 @@ struct SuggestionsListView: View {
         }
     }
 
-    private var showsFocusedNewTabPageContent: Bool {
-        showsFavorites || !(messagesModel?.homeMessageViewModels.isEmpty ?? true)
+    private var hasMessages: Bool {
+        !(messagesModel?.homeMessageViewModels.isEmpty ?? true)
     }
 
-    private var hasRestingHeader: Bool {
-        escapeHatch != nil || syncPromo != nil || showsFocusedNewTabPageContent
+    private var hasStableRestingContent: Bool {
+        escapeHatch != nil || hasMessages
     }
 
     private var scrollableChromeTopInset: CGFloat {
-        if escapeHatch != nil || showsFocusedNewTabPageContent {
-            return isAddressBarAtBottom ? Metrics.embeddedHatchBottomBarTopInset : Metrics.embeddedHatchTopBarTopInset
-        }
-        return isAddressBarAtBottom ? Metrics.syncPromoBottomBarTopInset : 0
+        isAddressBarAtBottom ? Metrics.embeddedHatchBottomBarTopInset : Metrics.embeddedHatchTopBarTopInset
+    }
+
+    private var favoritesTopInset: CGFloat {
+        guard hasStableRestingContent else { return scrollableChromeTopInset }
+        return hasMessages ? Metrics.favoritesAfterMessageTopInset : Metrics.modeSpecificAfterStableTopInset
+    }
+
+    private var syncPromoTopInset: CGFloat {
+        guard hasStableRestingContent else { return isAddressBarAtBottom ? Metrics.syncPromoBottomBarTopInset : 0 }
+        return Metrics.modeSpecificAfterStableTopInset
     }
 
     @ViewBuilder

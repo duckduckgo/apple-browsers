@@ -19,15 +19,13 @@
 
 import SwiftUI
 
-/// The focused New Tab Page sections rendered inside the unified suggestions list. The list owns
-/// scrolling and the Escape Hatch; this view contributes only RMF messages and Search favorites.
-struct FocusedNewTabPageContentView: View {
+/// RMF messages shared by the focused Search and Duck.ai surfaces. Favorites live in a separate
+/// list row so mode-specific changes cannot animate this common content.
+struct FocusedNewTabPageMessagesView: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @ObservedObject var messagesModel: NewTabPageMessagesModel
-    @ObservedObject var favoritesViewModel: FavoritesViewModel
-    let showsFavorites: Bool
 
     var body: some View {
         VStack(spacing: Metrics.sectionSpacing) {
@@ -36,19 +34,11 @@ struct FocusedNewTabPageContentView: View {
                     .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
                     .transition(.scale.combined(with: .opacity))
             }
-
-            if showsFavorites, !favoritesViewModel.allFavorites.isEmpty {
-                FavoritesView(model: favoritesViewModel)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, Metrics.favoritesHorizontalInset)
-            }
         }
     }
 
     private enum Metrics {
         static let sectionSpacing: CGFloat = 26
-        /// The unified list starts at 16pt; favorites use the NTP's 24pt grid margin.
-        static let favoritesHorizontalInset: CGFloat = 8
         static let messageMaximumWidth: CGFloat = 380
         static let messageMaximumWidthPad: CGFloat = 455
     }

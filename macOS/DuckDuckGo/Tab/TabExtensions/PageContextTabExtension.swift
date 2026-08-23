@@ -557,9 +557,10 @@ final class PageContextTabExtension {
             case .unavailable:
                 Logger.aiChat.debug("⚠️ PageContext: document bytes unavailable host=\(url.host ?? "nil", privacy: .public)")
                 // A forced collect has the FE awaiting the `getAIChatPageContext` response. Answer it
-                // with a non-attachable context rather than letting it sit out the timeout — the same
-                // reason `shouldDeliverCollectionResult` delivers empty forced markdown results.
-                if wasForced {
+                // with a non-attachable context rather than letting it sit out the timeout — but go
+                // through the same gate as markdown, so a failed read can't wipe a page that's
+                // already attached (a re-triggered "Ask About Page" on an attached PDF).
+                if Self.shouldDeliverCollectionResult(nil, wasForced: wasForced, cached: self.cachedPageContext) {
                     await self.handle(DocumentPageContextProvider.metadataContext(url: url, title: title, attachable: false))
                 }
                 self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency)

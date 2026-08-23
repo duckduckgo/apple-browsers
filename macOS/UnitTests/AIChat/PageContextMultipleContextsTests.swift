@@ -698,4 +698,14 @@ struct PageContextCollectionResultDeliveryTests {
         #expect(!PageContextTabExtension.shouldDeliverCollectionResult(context(content: ""), wasForced: true, cached: document),
                 "An empty markdown result must not replace an attached document")
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A document read that fails resolves the awaiting request, but never wipes an attached page", .timeLimit(.minutes(1)))
+    func failedDocumentReadRespectsAttachedContent() {
+        // The `.unavailable` branch asks this with a nil result: nothing came back to deliver.
+        #expect(PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: true, cached: nil))
+        #expect(!PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: true, cached: document))
+        #expect(!PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: false, cached: nil),
+                "An unforced failure has nobody waiting on it")
+    }
 }

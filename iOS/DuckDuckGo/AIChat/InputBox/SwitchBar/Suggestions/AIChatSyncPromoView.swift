@@ -59,6 +59,7 @@ struct AIChatSyncPromoView: View {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                     .foregroundColor(Color(designSystemColor: .icons))
             }
+            .buttonStyle(.plain)
             .frame(width: 36, height: 36)
             .padding(4)
             .accessibilityLabel(UserText.aiChatSyncPromoCloseAccessibilityLabel)

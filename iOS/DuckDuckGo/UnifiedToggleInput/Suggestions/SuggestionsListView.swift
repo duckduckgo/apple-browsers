@@ -50,7 +50,7 @@ struct SuggestionsListView: View {
         static let duckAIAfterHatchTopInset: CGFloat = 4
         /// Keeps the 48pt shadow with its 16pt downward offset inside the List row.
         static let messageShadowBottomInset: CGFloat = 64
-        /// The unified list starts at 16pt; favorites use the NTP's 24pt grid margin.
+        /// Search content starts at 16pt; favorites use the NTP's 24pt grid margin.
         static let favoritesHorizontalInset: CGFloat = 8
         /// Per Figma: single-line rows use 15pt top/bottom padding; rows with a subtitle use 14pt
         static let rowVerticalPaddingSingleLine: CGFloat = 15
@@ -67,6 +67,7 @@ struct SuggestionsListView: View {
             List {
                 if let escapeHatch {
                     EscapeHatchView(model: escapeHatch)
+                    .padding(.horizontal, searchContentHorizontalPadding)
                     .frame(height: showsRestingContent ? nil : 0)
                     .clipped()
                     .opacity(showsRestingContent ? 1 : 0)
@@ -89,6 +90,7 @@ struct SuggestionsListView: View {
                                 .padding(.horizontal, Metrics.favoritesHorizontalInset)
                         }
                     }
+                    .padding(.horizontal, searchContentHorizontalPadding)
                     .frame(height: isSearchContentVisible ? nil : 0)
                     .opacity(isSearchContentVisible ? 1 : 0)
                     .allowsHitTesting(isSearchContentVisible)
@@ -126,7 +128,7 @@ struct SuggestionsListView: View {
             // input on the top bar; 0 on the bottom bar, where the input sits below the list).
             .modifier(ListContentMarginsModifier(top: isFloatingPopover ? Metrics.popoverVerticalInset : (isAddressBarAtBottom ? 0 : Metrics.listTopInset),
                                                  bottom: isFloatingPopover ? Metrics.popoverVerticalInset : nil,
-                                                 horizontal: Metrics.listHorizontalContentMargin))
+                                                 horizontal: isSearchContentVisible ? 0 : Metrics.listHorizontalContentMargin))
             .hideScrollContentBackground()
             .background(Color(designSystemColor: .background))
             .scrollDismissesKeyboardIfAvailable()
@@ -139,6 +141,14 @@ struct SuggestionsListView: View {
                 guard let id else { return }
                 withAnimation { proxy.scrollTo(id) }
             }
+        }
+    }
+
+    private var searchContentHorizontalPadding: CGFloat {
+        if #available(iOS 17.0, *) {
+            isSearchContentVisible ? Metrics.listHorizontalContentMargin : 0
+        } else {
+            0
         }
     }
 

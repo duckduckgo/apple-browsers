@@ -65,10 +65,20 @@ final class ModeSwitchSwipeGestureController: NSObject {
 }
 
 extension ModeSwitchSwipeGestureController: UIGestureRecognizerDelegate {
-    /// Coexist with every other recognizer (scroll pans AND the SwiftUI/favorites content gesture)
-    /// so a horizontal flick is always recognized; `cancelsTouchesInView` then stops it co-firing a tap.
+    /// A scroll pan must wait for the horizontal flick to fail; otherwise its small vertical component
+    /// changes the shared List offset while the UTI height is animating.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
-        true
+        !isScrollViewPan(other)
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+        isScrollViewPan(other)
+    }
+
+    private func isScrollViewPan(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let scrollView = gestureRecognizer.view as? UIScrollView else { return false }
+        return gestureRecognizer === scrollView.panGestureRecognizer
     }
 }

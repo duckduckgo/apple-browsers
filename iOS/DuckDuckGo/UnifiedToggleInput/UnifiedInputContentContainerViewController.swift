@@ -665,9 +665,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         isUsingTopBarPosition && embeddedEscapeHatchModel == nil && unifiedSuggestionsHost?.isShowingLogo == true
     }
 
-    /// Scrollable content owns its hatch spacing, so the container-level gap only applies when the hatch is absent.
+    /// The fixed logo host keeps the clearance; scrollable content owns its complete top spacing.
     private var topBarContentGap: CGFloat {
-        isUsingTopBarPosition && escapeHatchPlacement != .embedded ? Metrics.topBarContentClearance : 0
+        keepsLogoHostFrameFixed ? Metrics.topBarContentClearance : 0
     }
 
     /// One merged inputs stream feeding the single host: mode + text + search facts (always) +

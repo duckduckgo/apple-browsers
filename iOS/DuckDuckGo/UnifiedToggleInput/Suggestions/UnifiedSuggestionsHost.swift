@@ -36,6 +36,7 @@ final class UnifiedSuggestionsHost {
     /// config's install-time value, which is stale once the bar position is finalized).
     private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
+    private var logoHostingController: UIHostingController<UnifiedSuggestionsLogoView>?
     private var escapeHatch: EscapeHatchModel?
     private var contentInsets: UIEdgeInsets = .zero
     private var openedAfterIdle = false
@@ -72,6 +73,7 @@ final class UnifiedSuggestionsHost {
     // MARK: - Container-facing surface
 
     func start<P: Publisher>(in containerView: UIView,
+                             logoContainerView: UIView,
                              parentViewController: UIViewController,
                              textPublisher: P) where P.Output == String, P.Failure == Never {
         guard hostingController == nil else { return }
@@ -110,6 +112,22 @@ final class UnifiedSuggestionsHost {
         ])
         hosting.didMove(toParent: parentViewController)
         hostingController = hosting
+
+        let logo = UIHostingController(rootView: UnifiedSuggestionsLogoView(viewModel: viewModel,
+                                                                            escapeHatch: escapeHatch))
+        logo.view.backgroundColor = .clear
+        logo.view.isUserInteractionEnabled = false
+        logo.view.translatesAutoresizingMaskIntoConstraints = false
+        parentViewController.addChild(logo)
+        logoContainerView.addSubview(logo.view)
+        NSLayoutConstraint.activate([
+            logo.view.leadingAnchor.constraint(equalTo: logoContainerView.leadingAnchor),
+            logo.view.trailingAnchor.constraint(equalTo: logoContainerView.trailingAnchor),
+            logo.view.topAnchor.constraint(equalTo: logoContainerView.topAnchor),
+            logo.view.bottomAnchor.constraint(equalTo: logoContainerView.keyboardLayoutGuide.topAnchor)
+        ])
+        logo.didMove(toParent: parentViewController)
+        logoHostingController = logo
     }
 
     var isShowingLogo: Bool {
@@ -160,10 +178,14 @@ final class UnifiedSuggestionsHost {
     }
 
     private func applyCombinedInsets() {
-        let top = contentInsets.top
-        viewModel.chromeInsetTop = top
         hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
-            top: top,
+            top: contentInsets.top,
+            left: contentInsets.left,
+            bottom: contentInsets.bottom,
+            right: contentInsets.right
+        )
+        logoHostingController?.additionalSafeAreaInsets = UIEdgeInsets(
+            top: 0,
             left: contentInsets.left,
             bottom: contentInsets.bottom,
             right: contentInsets.right
@@ -171,6 +193,11 @@ final class UnifiedSuggestionsHost {
         // Flush the safe-area change on the controller whose insets changed (mirrors the legacy
         // container's layoutIfNeeded) so the content glides inside the UTI's height animation.
         hostingController?.view.layoutIfNeeded()
+        logoHostingController?.view.layoutIfNeeded()
+    }
+
+    func setLogoChromeInsetTop(_ top: CGFloat) {
+        viewModel.chromeInsetTop = top
     }
 
     // MARK: - Duck.ai surface (single-host path)
@@ -211,6 +238,10 @@ final class UnifiedSuggestionsHost {
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
         hostingController = nil
+        logoHostingController?.willMove(toParent: nil)
+        logoHostingController?.view.removeFromSuperview()
+        logoHostingController?.removeFromParent()
+        logoHostingController = nil
     }
 
     // MARK: - Private
@@ -223,5 +254,7 @@ final class UnifiedSuggestionsHost {
             escapeHatch: escapeHatch,
             favoritesViewModel: config.favoritesViewModel,
             messagesModel: config.messagesModel)
+        logoHostingController?.rootView = UnifiedSuggestionsLogoView(viewModel: viewModel,
+                                                                     escapeHatch: escapeHatch)
     }
 }

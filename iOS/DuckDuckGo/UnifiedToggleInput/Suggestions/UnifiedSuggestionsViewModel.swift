@@ -95,11 +95,13 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
             }
     }
 
-    /// Animates a mode switch that changes the content type, plus the first asynchronous Duck.ai
-    /// recents arrival. List↔list keeps the mounted list, and typing/deletions stay snappy.
+    /// Mode switches snap the shared state so persistent geometry is never implicitly animated.
+    /// The view animates new Duck.ai tail content explicitly; asynchronous recents still animate here.
     private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool) {
         guard newContent != content else { return }
-        if (modeChanged && !Self.sameCategory(content, newContent)) || Self.isIdleDuckAITailChange(content, newContent) {
+        if modeChanged && !Self.sameCategory(content, newContent) {
+            withTransaction(Transaction(animation: nil)) { content = newContent }
+        } else if Self.isIdleDuckAITailChange(content, newContent) {
             withAnimation(.easeInOut(duration: 0.2)) { content = newContent }
         } else {
             content = newContent

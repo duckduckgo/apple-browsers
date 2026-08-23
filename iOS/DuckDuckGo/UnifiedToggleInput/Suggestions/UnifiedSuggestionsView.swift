@@ -20,7 +20,7 @@
 import SwiftUI
 
 /// The single unified suggestions surface for both Search and Duck.ai. Switches on the
-/// resolver's content state: list rows / favorites / logo. One view, model decides the rest.
+/// resolver's content state: list rows / favorites. The logo uses a separate stable sibling host.
 struct UnifiedSuggestionsView: View {
 
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
@@ -34,7 +34,6 @@ struct UnifiedSuggestionsView: View {
         // Search favorites/RMF and Duck.ai promo/recents change beneath it.
         ZStack(alignment: .bottom) {
             listLayer
-            logoLayer
             fireLayer
         }
     }
@@ -89,16 +88,15 @@ struct UnifiedSuggestionsView: View {
             .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
             .accessibilityHidden(viewModel.isFireTab && !isTypingList)
     }
+}
 
-    private var isShowingLogo: Bool {
-        viewModel.isShowingLogo
-    }
+/// Keeps the empty-state logo in a stable hosting tree while the scrollable host follows the UTI.
+struct UnifiedSuggestionsLogoView: View {
 
-    /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact
-    /// screen-relative anchor `NewTabPageDaxLogoView` uses, so the focused and NTP logos share one
-    /// resting position+size — focus/defocus is a pixel-identical crossfade (no slide), and it's stable
-    /// across Search↔Duck.ai toggles and the keyboard (screen-relative, not bar/keyboard-relative).
-    private var logoLayer: some View {
+    @ObservedObject var viewModel: UnifiedSuggestionsViewModel
+    let escapeHatch: EscapeHatchModel?
+
+    var body: some View {
         GeometryReader { proxy in
             // Rests at the NTP logo's exact screen anchor (so focus/defocus is a crossfade from the NTP
             // position, and the morph happens in place on a toggle), but kept a minimum gap from the
@@ -125,8 +123,8 @@ struct UnifiedSuggestionsView: View {
                 // favorites/lists during a toggle. Logo→logo keeps it shown, so this never cuts a morph.
                 // Suppressed on fire tabs (fire screen takes the slot) and in landscape (no room — matches
                 // the unfocused NTP / legacy gate).
-                .opacity(isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape ? 1 : 0)
-                .animation(nil, value: isShowingLogo)
+                .opacity(viewModel.isShowingLogo && !viewModel.isFireTab && !viewModel.isLandscape ? 1 : 0)
+                .animation(nil, value: viewModel.isShowingLogo)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.
                 .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))

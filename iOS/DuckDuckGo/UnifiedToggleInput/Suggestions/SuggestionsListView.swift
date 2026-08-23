@@ -26,6 +26,7 @@ import SwiftUI
 struct SuggestionsListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
+    @State private var restingTailOpacity = 0.0
     let isAddressBarAtBottom: Bool
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
@@ -109,6 +110,7 @@ struct SuggestionsListView: View {
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
+                        .opacity(restingTailOpacity)
                 }
                 if showsSuggestionRows {
                     ForEach(viewModel.sections) { section in
@@ -118,12 +120,14 @@ struct SuggestionsListView: View {
                             sectionHeader(section.title)
                         }
                     }
+                    .opacity(restingTailOpacity)
                 }
             }
             .environment(\.defaultMinListRowHeight, 0)
             .listStyle(.insetGrouped)
             .modifier(SectionSpacingModifier(isFloatingPopover: isFloatingPopover,
-                                             popoverSpacing: Metrics.popoverSectionSpacing))
+                                             popoverSpacing: Metrics.popoverSectionSpacing,
+                                             restingSpacing: restingSectionSpacing))
             // Replace insetGrouped's variable top margin with the design's list top inset (6pt below the
             // input on the top bar; 0 on the bottom bar, where the input sits below the list).
             .modifier(ListContentMarginsModifier(top: isFloatingPopover ? Metrics.popoverVerticalInset : (isAddressBarAtBottom ? 0 : Metrics.listTopInset),
@@ -141,6 +145,18 @@ struct SuggestionsListView: View {
                 guard let id else { return }
                 withAnimation { proxy.scrollTo(id) }
             }
+            .onAppear {
+                restingTailOpacity = showsSuggestionRows ? 1 : 0
+            }
+            .onChange(of: showsSuggestionRows) { showsSuggestionRows in
+                guard showsSuggestionRows else {
+                    restingTailOpacity = 0
+                    return
+                }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    restingTailOpacity = 1
+                }
+            }
         }
     }
 
@@ -150,6 +166,11 @@ struct SuggestionsListView: View {
         } else {
             0
         }
+    }
+
+    private var restingSectionSpacing: CGFloat? {
+        guard showsRestingContent && showsSuggestionRows else { return nil }
+        return isAddressBarAtBottom ? 0 : Metrics.listTopInset
     }
 
     private var hasMessages: Bool {
@@ -273,12 +294,15 @@ private struct ListContentMarginsModifier: ViewModifier {
 private struct SectionSpacingModifier: ViewModifier {
     let isFloatingPopover: Bool
     let popoverSpacing: CGFloat
+    let restingSpacing: CGFloat?
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
             if isFloatingPopover {
                 content.listSectionSpacing(popoverSpacing)
+            } else if let restingSpacing {
+                content.listSectionSpacing(restingSpacing)
             } else {
                 content.listSectionSpacing(.compact)
             }

@@ -60,14 +60,7 @@ final class ModeSwitchSwipeGestureController: NSObject {
     @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
         let targetMode: TextEntryMode = gesture.direction == .left ? .aiChat : .search
         Logger.unifiedInputState.debug("[UTITransition] source=swipe recognized target=\(String(describing: targetMode), privacy: .public)")
-
-        // The swipe recognizes alongside the list's pan gesture. Let that pan finish before changing
-        // the UTI height/safe-area inset, otherwise UIScrollView preserves its in-flight content offset
-        // against the old inset and shifts the embedded Escape Hatch by the bar-height delta.
-        DispatchQueue.main.async { [weak self] in
-            Logger.unifiedInputState.debug("[UTITransition] source=swipe dispatch target=\(String(describing: targetMode), privacy: .public)")
-            self?.onSwitch(targetMode)
-        }
+        onSwitch(targetMode)
     }
 }
 

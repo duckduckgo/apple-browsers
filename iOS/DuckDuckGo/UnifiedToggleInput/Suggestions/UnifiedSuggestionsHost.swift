@@ -105,7 +105,6 @@ final class UnifiedSuggestionsHost {
 
     var isShowingLogo: Bool {
         viewModel.isShowingLogo
-            && escapeHatch == nil
             && !viewModel.isFireTab
             && !viewModel.isLandscape
     }
@@ -144,8 +143,8 @@ final class UnifiedSuggestionsHost {
         rebuildRootView()
     }
 
-    /// Single-host path: the content inset the container would otherwise set on the swipe-container
-    /// parent VC.
+    /// Single-host path: only the bottom bar remains a safe-area inset; top-bar movement is owned by
+    /// the container's host constraint so List scroll offsets remain stable.
     func setContentInsets(_ insets: UIEdgeInsets) {
         contentInsets = insets
         applyCombinedInsets()

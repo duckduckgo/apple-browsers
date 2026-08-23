@@ -79,7 +79,6 @@ struct SuggestionsListView: View {
                 if hasMessages, let messagesModel {
                     FocusedNewTabPageMessagesView(messagesModel: messagesModel)
                         .frame(height: isMessagesVisible ? nil : 0)
-                        .clipped()
                         .opacity(isMessagesVisible ? 1 : 0)
                         .allowsHitTesting(isMessagesVisible)
                         .accessibilityHidden(!isMessagesVisible)

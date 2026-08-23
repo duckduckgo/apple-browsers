@@ -35,6 +35,7 @@ struct FocusedNewTabPageMessagesView: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private enum Metrics {

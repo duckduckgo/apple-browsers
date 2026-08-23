@@ -92,7 +92,7 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var isShowingLogo: Bool {
-        viewModel.content == .logo && escapeHatch == nil
+        viewModel.isShowingLogo
     }
 
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact
@@ -113,7 +113,7 @@ struct UnifiedSuggestionsView: View {
             let frame = proxy.frame(in: .global)
             let targetCenterY = Self.logoCenterY(
                 restingAt: UIScreen.main.bounds.midY - Metrics.logoScreenCenterOffset,
-                topChromeBottom: frame.minY + viewModel.chromeInsetTop,
+                topChromeBottom: frame.minY + viewModel.chromeInsetTop + escapeHatchLogoZoneHeight,
                 barTop: frame.maxY)
             FocusedDaxLogoView(progress: viewModel.logoModel.progress,
                                morph: viewModel.logoModel.morphs,
@@ -163,6 +163,12 @@ struct UnifiedSuggestionsView: View {
         static let bottomBarGap: CGFloat = 56
         /// Mirrors `FocusedDaxLogoView`'s height — used to find the logo's top for the overlap check.
         static let logoHeight: CGFloat = 162
+        /// Mirrors the legacy focused-logo offset, keeping the logo below a scrollable Escape Hatch.
+        static let escapeHatchLogoZoneHeight: CGFloat = 70
+    }
+
+    private var escapeHatchLogoZoneHeight: CGFloat {
+        escapeHatch == nil ? 0 : Metrics.escapeHatchLogoZoneHeight
     }
 }
 

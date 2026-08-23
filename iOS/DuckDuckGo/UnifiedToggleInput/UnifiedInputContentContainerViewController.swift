@@ -103,7 +103,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// `contentContainerView`.
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
     private var unifiedSuggestionsContainerView: UIView?
-    /// Single-host path: the suggestions container's top offset (input height + hatch) lives on this
+    /// Single-host path: the suggestions container's top offset (input height + content gap) lives on this
     /// constraint, not the hosting view's safe-area inset — so the whole content (incl. the escape
     /// hatch) glides natively with the input instead of SwiftUI snapping the safe-area reposition.
     private var unifiedSuggestionsTopConstraint: NSLayoutConstraint?
@@ -377,9 +377,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
     }
 
-    /// Sets the host's content inset so content starts below the bar.
+    /// Keeps the List's top inset stable; the top bar is carried by the host constraint instead.
     private func applyHostContentInsets() {
-        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: requestedContentInset.top,
+        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: 0,
                                                               left: 0,
                                                               bottom: requestedContentInset.bottom,
                                                               right: 0))
@@ -402,9 +402,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         coordinator.animate { _ in
             self.adjustLayoutForViewSize(size)
-            // Orientation changes the bar position, hatch suppression and chrome insets, but only a
-            // bar push or mode toggle re-runs the inset pipeline — so rotation left the host's
-            // safe-area insets stale. Re-apply it here for the new orientation.
+            // Orientation changes the bar position, hatch suppression, host offset and bottom inset,
+            // but only a bar push or mode toggle re-runs the pipeline. Re-apply it for the new orientation.
             if self.isContentActive {
                 self.applyRequestedContentInset()
             }
@@ -651,10 +650,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// The unified list owns the focused New Tab Page and Duck.ai content, so one top constraint
     /// moves the entire scroll hierarchy with the input.
     private func updateSingleHostTopOffset() {
-        // EXPERIMENT (uti-host-stable-frame): the host FRAME stays fixed; the bar-height top inset is
-        // applied as the host's safe-area top inset instead (see `applyRequestedContentInset`). This
-        // keeps the frame from moving when the bar height changes on a Search↔Duck.ai toggle.
-        unifiedSuggestionsTopConstraint?.constant = topBarContentGap
+        let inputOffset = isUsingTopBarPosition ? requestedContentInset.top : 0
+        unifiedSuggestionsTopConstraint?.constant = inputOffset + topBarContentGap
     }
 
     /// Scrollable content owns its hatch spacing, so the container-level gap only applies when the hatch is absent.
@@ -788,7 +785,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     func setContentInset(top: CGFloat, bottom: CGFloat) {
         guard requestedContentInset.top != top || requestedContentInset.bottom != bottom else { return }
-        Logger.unifiedInputState.debug("[UTITransition] contentInset mode=\(String(describing: self.switchBarHandler.currentToggleState), privacy: .public) oldTop=\(self.requestedContentInset.top, privacy: .public) oldBottom=\(self.requestedContentInset.bottom, privacy: .public) newTop=\(top, privacy: .public) newBottom=\(bottom, privacy: .public) active=\(self.isContentActive, privacy: .public)")
+        let hostTop = (isUsingTopBarPosition ? top : 0) + topBarContentGap
+        Logger.unifiedInputState.debug("[UTITransition] contentInset mode=\(String(describing: self.switchBarHandler.currentToggleState), privacy: .public) oldTop=\(self.requestedContentInset.top, privacy: .public) oldBottom=\(self.requestedContentInset.bottom, privacy: .public) newTop=\(top, privacy: .public) newBottom=\(bottom, privacy: .public) hostTop=\(hostTop, privacy: .public) active=\(self.isContentActive, privacy: .public)")
         requestedContentInset = (top, bottom)
         guard isContentActive else {
             markNeedsVisibleRefresh()
@@ -798,9 +796,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func applyRequestedContentInset() {
-        // The host frame stays fixed (uti-host-stable-frame); the bar-height offset rides the host's
-        // safe-area inset (top for a top bar, bottom for a bottom bar) so the scroll view animates it
-        // in lockstep with the bar.
+        // Move top-bar content with the host frame so a simultaneous List pan never has its adjusted
+        // top inset changed mid-gesture. Bottom-bar content still uses the host's bottom safe-area inset.
         updateSingleHostTopOffset()
 
         applyHostContentInsets()

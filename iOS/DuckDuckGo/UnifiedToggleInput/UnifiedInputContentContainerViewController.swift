@@ -622,7 +622,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
         contentContainerView.addSubview(containerView)
-        let topConstraint = containerView.topAnchor.constraint(equalTo: contentContainerView.topAnchor)
+        // Floating UI's content container starts at the screen edge, so compose its system safe area
+        // with the UTI-height offset. The standard layout already starts at the safe-area edge.
+        let topAnchor = isFloatingUIEnabled
+            ? contentContainerView.safeAreaLayoutGuide.topAnchor
+            : contentContainerView.topAnchor
+        let topConstraint = containerView.topAnchor.constraint(equalTo: topAnchor)
         unifiedSuggestionsTopConstraint = topConstraint
         NSLayoutConstraint.activate([
             topConstraint,

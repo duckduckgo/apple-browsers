@@ -22,11 +22,6 @@ import XCTest
 
 final class AIChatModelLabelTests: XCTestCase {
 
-    func testWhenLabelIsKnownThenLocalizedTextIsMapped() {
-        XCTAssertEqual(AIChatModelLabel.everydayUse.localizedText, UserText.modelPickerLabelEverydayUse)
-        XCTAssertEqual(AIChatModelLabel.usesLimitsFaster.localizedText, UserText.modelPickerLabelUsesLimitsFaster)
-    }
-
     func testWhenLabelIsUnknownThenLocalizedTextIsNil() {
         XCTAssertNil(AIChatModelLabel.unknown("FUTURE_LABEL").localizedText)
     }

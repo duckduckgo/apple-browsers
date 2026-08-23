@@ -69,7 +69,6 @@ let package = Package(
                 "WebExtensions",
                 "WebExtensionsTestSupport",
                 .product(name: "Persistence", package: "Persistence"),
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
             ]
         ),

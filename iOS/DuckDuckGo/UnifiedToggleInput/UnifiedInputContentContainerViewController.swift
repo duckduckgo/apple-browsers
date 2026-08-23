@@ -138,8 +138,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private var notificationCancellable: AnyCancellable?
 
-    private weak var contentAnimator: UIViewPropertyAnimator?
-
     // MARK: - Initialization
 
     init(switchBarHandler: SwitchBarHandling,
@@ -228,7 +226,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func refreshFireMode(fireMode: Bool) {
         // The fire empty state is a SwiftUI host content state now — just flip the flag; no manager rebuild.
         unifiedSuggestionsHost?.setIsFireTab(fireMode)
-        refreshVisibleContent(animateContentUpdates: false)
+        refreshVisibleContent()
         rebuildDuckAISuggestionsCoordinator()
 
         guard isContentActive,
@@ -248,13 +246,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
         let didModeChange = switchBarHandler.currentToggleState != mode
         if didModeChange {
+            // Publish the destination promo before the mode changes the list content, so SwiftUI
+            // animates the promo and recents in one pass beneath the persistent Escape Hatch.
+            updateSyncPromo(for: mode)
             switchBarHandler.setToggleState(mode)
         }
-        refreshVisibleContent(animateContentUpdates: false)
-    }
-
-    func setEscapeHatchTransitioning(_ transitioning: Bool) {
-        unifiedSuggestionsHost?.setEscapeHatchTransitioning(transitioning)
+        refreshVisibleContent()
     }
 
     func setActive(_ active: Bool) {
@@ -276,7 +273,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
         } else {
-            unifiedSuggestionsHost?.setEscapeHatchTransitioning(false)
             fireSearchSuggestionsDisplayPixels()
         }
     }
@@ -332,7 +328,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         guard isContentActive else { return }
         guard needsVisibleRefresh else { return }
 
-        refreshVisibleContent(animateContentUpdates: false)
+        refreshVisibleContent()
     }
 
     private var sessionOpenedAfterIdle: Bool {
@@ -377,7 +373,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func applyEscapeHatchPlacement() {
-        unifiedSuggestionsHost?.setShowsFavorites(switchBarHandler.currentToggleState == .search)
         unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
     }
 
@@ -553,11 +548,41 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                                                         hasMessages: hasMessages,
                                                         searchStateChanged: searchStateChanged)
 
+        let ntpDependencies = dependencies.newTabPageDependencies
+        let favoritesViewModel = FavoritesViewModel(
+            isFocussedState: true,
+            favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: ntpDependencies.favoritesModel,
+                                                                appSettings: ntpDependencies.appSettings),
+            faviconLoader: ntpDependencies.faviconLoader,
+            faviconsCache: ntpDependencies.faviconsCache)
+        favoritesViewModel.onFavoriteURLSelected = { [weak self] favorite in
+            guard let self else { return }
+            if let favoriteURL = favorite.url,
+               let url = URL(string: favoriteURL),
+               ntpDependencies.internalUserCommands.handle(url: url) {
+                return
+            }
+            self.delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
+        }
+        favoritesViewModel.onFavoriteEdit = { [weak self] favorite in
+            self?.delegate?.unifiedInputEditingStateDidEditFavorite(favorite)
+        }
+
+        let messagesModel = NewTabPageMessagesModel(
+            homePageMessagesConfiguration: ntpDependencies.homePageMessagesConfiguration,
+            subscriptionDataReporter: ntpDependencies.subscriptionDataReporting,
+            messageActionHandler: ntpDependencies.remoteMessagingActionHandler,
+            imageLoader: ntpDependencies.remoteMessagingImageLoader,
+            pixelReporter: ntpDependencies.remoteMessagingPixelReporter,
+            isOpenedAfterIdle: { [weak self] in self?.sessionOpenedAfterIdle ?? false })
+        messagesModel.load()
+
         let config = UnifiedSuggestionsHostConfig(
             source: source,
             inputsPublisher: inputsPublisher,
             isAddressBarAtBottom: !isUsingTopBarPosition,
-            favoritesProvider: { [weak self] in self?.makeScrollableNTPController() },
+            favoritesViewModel: favoritesViewModel,
+            messagesModel: messagesModel,
             onSelectRow: { [weak self] id in
                 guard let self, let suggestion = source.suggestion(forRowID: id) else { return }
                 self.fireSearchSuggestionClickPixel(for: suggestion)
@@ -585,9 +610,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         )
 
         let host = UnifiedSuggestionsHost(config: config)
-        host.onContentChanged = { [weak self] in
-            self?.refreshVisibleContent(animateContentUpdates: true)
-        }
 
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -617,9 +639,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.start(in: containerView,
                    parentViewController: self,
                    textPublisher: searchTextPublisher)
-        // The top offset rides the container constraint (UIKit glide); the hosting view keeps no
-        // top safe-area inset of its own.
-        host.setAdditionalTopInset(0)
         host.setIsFireTab(switchBarHandler.isFireTab)
         host.setLandscape(isLandscapeOrientation)
         updateSingleHostTopOffset()
@@ -627,9 +646,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         applyEscapeHatchPlacement()
     }
 
-    /// Single-host path: the suggestions container aligns with the new-tab page (the favorites
-    /// surface IS the NTP, and the hatch lines up with the NTP hatch), so it rides the requested
-    /// inset directly. The constant animates natively, so the hatch glides with the input.
+    /// The unified list owns the focused New Tab Page and Duck.ai content, so one top constraint
+    /// moves the entire scroll hierarchy with the input.
     private func updateSingleHostTopOffset() {
         // EXPERIMENT (uti-host-stable-frame): the host FRAME stays fixed; the bar-height top inset is
         // applied as the host's safe-area top inset instead (see `applyRequestedContentInset`). This
@@ -703,38 +721,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         duckAISurface = nil
     }
 
-    private func makeScrollableNTPController() -> NewTabPageViewController? {
-        guard let dependencies = suggestionTrayDependencies else { return nil }
-        let ntpDeps = dependencies.newTabPageDependencies
-        let controller = NewTabPageViewController(
-            isFocussedState: true,
-            initialEscapeHatch: embeddedEscapeHatchModel,
-            openedAfterIdle: sessionOpenedAfterIdle,
-            dismissKeyboardOnScroll: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-            tab: Tab(fireTab: dependencies.tabsModelProvider().shouldCreateFireTabs),
-            interactionModel: ntpDeps.favoritesModel,
-            homePageMessagesConfiguration: ntpDeps.homePageMessagesConfiguration,
-            subscriptionDataReporting: ntpDeps.subscriptionDataReporting,
-            newTabDialogFactory: ntpDeps.newTabDialogFactory,
-            daxDialogsManager: ntpDeps.newTabDaxDialogManager,
-            onboardingFlowProvider: ntpDeps.onboardingFlowProvider,
-            faviconLoader: ntpDeps.faviconLoader,
-            remoteMessagingActionHandler: ntpDeps.remoteMessagingActionHandler,
-            remoteMessagingImageLoader: ntpDeps.remoteMessagingImageLoader,
-            remoteMessagingPixelReporter: ntpDeps.remoteMessagingPixelReporter,
-            appSettings: ntpDeps.appSettings,
-            faviconsCache: ntpDeps.faviconsCache,
-            subscriptionManager: ntpDeps.subscriptionManager,
-            internalUserCommands: ntpDeps.internalUserCommands
-        )
-        controller.hideBorderView()
-        // Route favorite taps / edits / tab actions to the host's delegate so they open like the
-        // standalone NTP (the embedded controller has no owner to set this otherwise).
-        controller.delegate = self
-        controller.setLogoHidden(true)
-        return controller
-    }
-
     private func rebuildDuckAISuggestionsCoordinator() {
         guard duckAISurface != nil else { return }
         detachDuckAISurfaceFromSingleHost()
@@ -751,7 +737,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.refreshVisibleContent(animateContentUpdates: true)
+                self.refreshVisibleContent()
             }
             .store(in: &cancellables)
 
@@ -784,28 +770,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.refreshVisibleContent(animateContentUpdates: false)
+                self.refreshVisibleContent()
             }
     }
 
     private func markNeedsVisibleRefresh() {
         needsVisibleRefresh = true
-    }
-
-    private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {
-        if contentAnimator?.state == .stopped {
-            contentAnimator = nil
-        }
-
-        let animator = self.contentAnimator ?? UIViewPropertyAnimator(duration: 0.4, dampingRatio: 0.73)
-        contentAnimator = animator
-
-        animator.addAnimations(animation)
-        if let completion {
-            animator.addCompletion(completion)
-        }
-
-        animator.startAnimation()
     }
 
     // MARK: - Action Handlers
@@ -845,12 +815,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     /// Shows the Duck.ai sync-promo card above recent chats in their scrollable list. Gated by the
     /// sync-promo manager + recents count.
-    private func updateSyncPromo() {
+    private func updateSyncPromo(for mode: TextEntryMode? = nil) {
         guard let promoViewModel = aiChatSyncPromoViewModel else { return }
 
         let isTyping = UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
                                                               hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText)
-        let shouldShow = switchBarHandler.currentToggleState == .aiChat
+        let shouldShow = (mode ?? switchBarHandler.currentToggleState) == .aiChat
             && !switchBarHandler.isFireTab
             && (duckAISurface?.isAttached ?? false)
             && promoViewModel.shouldShowPromo(isQueryActive: isTyping, chatCount: duckAISurface?.recentsCount ?? 0)
@@ -888,12 +858,12 @@ private extension UnifiedInputContentContainerViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
-                self.refreshVisibleContent(animateContentUpdates: false)
+                self.refreshVisibleContent()
             }
             .store(in: &cancellables)
     }
 
-    private func refreshVisibleContent(animateContentUpdates: Bool) {
+    private func refreshVisibleContent() {
         guard isContentActive else {
             markNeedsVisibleRefresh()
             return
@@ -901,19 +871,11 @@ private extension UnifiedInputContentContainerViewController {
 
         needsVisibleRefresh = false
 
-        let applyContentUpdates = {
-            self.applyEscapeHatchPlacement()
-            self.refreshSyncPromoIfActive()
-            self.updateSingleHostTopOffset()
-            self.applyRequestedContentInset()
-            self.view.layoutIfNeeded()
-        }
-
-        if animateContentUpdates {
-            scheduleAnimation(applyContentUpdates)
-        } else {
-            applyContentUpdates()
-        }
+        applyEscapeHatchPlacement()
+        refreshSyncPromoIfActive()
+        updateSingleHostTopOffset()
+        applyRequestedContentInset()
+        view.layoutIfNeeded()
     }
 }
 
@@ -1006,31 +968,4 @@ extension UnifiedInputContentContainerViewController {
             break
         }
     }
-}
-
-// MARK: - NewTabPageControllerDelegate
-
-/// Forwards the embedded favorites NTP's actions to the host's delegate so favorites open / edit /
-/// switch-tab exactly like the standalone NTP.
-extension UnifiedInputContentContainerViewController: NewTabPageControllerDelegate {
-
-    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
-        delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
-    }
-
-    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
-        delegate?.unifiedInputEditingStateDidEditFavorite(favorite)
-    }
-
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
-        delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
-    }
-
-    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
-        delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
-    }
-
-    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {}
-
-    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {}
 }

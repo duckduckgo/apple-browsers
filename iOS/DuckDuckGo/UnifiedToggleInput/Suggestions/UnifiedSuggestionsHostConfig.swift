@@ -18,7 +18,6 @@
 //
 
 import Combine
-import UIKit
 
 /// Per-surface configuration for `UnifiedSuggestionsHost`.
 @MainActor
@@ -26,8 +25,8 @@ struct UnifiedSuggestionsHostConfig {
     let source: SuggestionsSource
     let inputsPublisher: AnyPublisher<UnifiedSuggestionsInputs, Never>
     let isAddressBarAtBottom: Bool
-    /// Builds the favorites controller on demand; nil for surfaces without a favorites state (Duck.ai).
-    let favoritesProvider: () -> NewTabPageViewController?
+    let favoritesViewModel: FavoritesViewModel
+    let messagesModel: NewTabPageMessagesModel
     let onSelectRow: (String) -> Void
     let onDeleteRow: (String) -> Void
     let onTapAheadRow: (String) -> Void

@@ -29,7 +29,11 @@ struct SuggestionsListView: View {
     let isAddressBarAtBottom: Bool
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
-    var isEscapeHatchHidden = false
+    var favoritesViewModel: FavoritesViewModel? = nil
+    var messagesModel: NewTabPageMessagesModel? = nil
+    var showsRestingContent = false
+    var showsFavorites = false
+    var showsSuggestionRows = true
     var isFloatingPopover: Bool = false
 
     private enum Metrics {
@@ -55,33 +59,44 @@ struct SuggestionsListView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                if escapeHatch != nil || syncPromo != nil {
+                if hasRestingHeader {
                     VStack(spacing: Metrics.scrollableChromeSpacing) {
                         if let escapeHatch {
                             EscapeHatchView(model: escapeHatch)
-                                .opacity(isEscapeHatchHidden ? 0 : 1)
-                                .animation(nil, value: isEscapeHatchHidden)
-                                .allowsHitTesting(!isEscapeHatchHidden)
-                                .accessibilityHidden(isEscapeHatchHidden)
+                        }
+                        if showsFocusedNewTabPageContent,
+                           let favoritesViewModel,
+                           let messagesModel {
+                            FocusedNewTabPageContentView(messagesModel: messagesModel,
+                                                        favoritesViewModel: favoritesViewModel,
+                                                        showsFavorites: showsFavorites)
                         }
                         if let syncPromo {
                             syncPromo
                         }
                     }
-                    .padding(.top, scrollableChromeTopInset)
-                    .padding(.bottom, Metrics.scrollableChromeBottomInset)
+                    .frame(height: showsRestingContent ? nil : 0)
+                    .clipped()
+                    .opacity(showsRestingContent ? 1 : 0)
+                    .allowsHitTesting(showsRestingContent)
+                    .accessibilityHidden(!showsRestingContent)
+                    .padding(.top, showsRestingContent ? scrollableChromeTopInset : 0)
+                    .padding(.bottom, showsRestingContent ? Metrics.scrollableChromeBottomInset : 0)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }
-                ForEach(viewModel.sections) { section in
-                    Section {
-                        rows(for: section)
-                    } header: {
-                        sectionHeader(section.title)
+                if showsSuggestionRows {
+                    ForEach(viewModel.sections) { section in
+                        Section {
+                            rows(for: section)
+                        } header: {
+                            sectionHeader(section.title)
+                        }
                     }
                 }
             }
+            .environment(\.defaultMinListRowHeight, 0)
             .listStyle(.insetGrouped)
             .modifier(SectionSpacingModifier(isFloatingPopover: isFloatingPopover,
                                              popoverSpacing: Metrics.popoverSectionSpacing))
@@ -105,8 +120,16 @@ struct SuggestionsListView: View {
         }
     }
 
+    private var showsFocusedNewTabPageContent: Bool {
+        showsFavorites || !(messagesModel?.homeMessageViewModels.isEmpty ?? true)
+    }
+
+    private var hasRestingHeader: Bool {
+        escapeHatch != nil || syncPromo != nil || showsFocusedNewTabPageContent
+    }
+
     private var scrollableChromeTopInset: CGFloat {
-        if escapeHatch != nil {
+        if escapeHatch != nil || showsFocusedNewTabPageContent {
             return isAddressBarAtBottom ? Metrics.embeddedHatchBottomBarTopInset : Metrics.embeddedHatchTopBarTopInset
         }
         return isAddressBarAtBottom ? Metrics.syncPromoBottomBarTopInset : 0

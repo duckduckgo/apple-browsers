@@ -27,8 +27,6 @@ import UIKit
 @MainActor
 final class UnifiedSuggestionsHost {
 
-    var onContentChanged: (() -> Void)?
-
     private let config: UnifiedSuggestionsHostConfig
     private let listViewModel: SuggestionsListViewModel
     private let viewModel: UnifiedSuggestionsViewModel
@@ -37,33 +35,18 @@ final class UnifiedSuggestionsHost {
     private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
     private var escapeHatch: EscapeHatchModel?
-    private var escapeHatchTopInset: CGFloat = 0
     private var contentInsets: UIEdgeInsets = .zero
-    private var showsFavorites = true
-    private var cancellables = Set<AnyCancellable>()
-    /// Built once for favorites or an empty scrollable hatch state; NTP has a heavy init.
-    private var cachedFavoritesController: NewTabPageViewController?
+    private var openedAfterIdle = false
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
 
-    private func memoizedFavoritesController() -> NewTabPageViewController? {
-        if let cachedFavoritesController { return cachedFavoritesController }
-        cachedFavoritesController = config.favoritesProvider()
-        cachedFavoritesController?.setShowsFavorites(showsFavorites)
-        cachedFavoritesController?.setEscapeHatchHidden(viewModel.isEscapeHatchTransitioning)
-        return cachedFavoritesController
-    }
-
-    func setShowsFavorites(_ showsFavorites: Bool) {
-        guard self.showsFavorites != showsFavorites else { return }
-        self.showsFavorites = showsFavorites
-        cachedFavoritesController?.setShowsFavorites(showsFavorites)
-    }
-
     func setEscapeHatch(_ model: EscapeHatchModel?, openedAfterIdle: Bool) {
-        cachedFavoritesController?.setEscapeHatch(model, openedAfterIdle: openedAfterIdle)
+        if self.openedAfterIdle != openedAfterIdle {
+            self.openedAfterIdle = openedAfterIdle
+            config.messagesModel.refresh()
+        }
         guard escapeHatch !== model else { return }
         escapeHatch = model
         rebuildRootView()
@@ -71,13 +54,6 @@ final class UnifiedSuggestionsHost {
 
     func setSyncPromo(_ promo: AnyView?) {
         viewModel.setSyncPromo(promo)
-    }
-
-    func setEscapeHatchTransitioning(_ transitioning: Bool) {
-        let isTransitioning = transitioning && escapeHatch != nil
-        viewModel.setEscapeHatchTransitioning(isTransitioning)
-        cachedFavoritesController?.setEscapeHatchHidden(isTransitioning)
-        hostingController?.view.layoutIfNeeded()
     }
 
     init(config: UnifiedSuggestionsHostConfig) {
@@ -103,17 +79,12 @@ final class UnifiedSuggestionsHost {
         listViewModel.onTapAhead = { [weak self] id in self?.config.onTapAheadRow(id) }
         listViewModel.onDelete = { [weak self] id in self?.config.onDeleteRow(id) }
 
-        viewModel.$content
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.onContentChanged?() }
-            .store(in: &cancellables)
-
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             escapeHatch: escapeHatch,
-            favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
+            favoritesViewModel: config.favoritesViewModel,
+            messagesModel: config.messagesModel)
         let hosting = UIHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
@@ -132,7 +103,13 @@ final class UnifiedSuggestionsHost {
         hostingController = hosting
     }
 
-    var isShowingLogo: Bool { viewModel.isShowingLogo }
+    var isShowingLogo: Bool {
+        viewModel.isShowingLogo
+            && escapeHatch == nil
+            && config.messagesModel.homeMessageViewModels.isEmpty
+            && !viewModel.isFireTab
+            && !viewModel.isLandscape
+    }
     var isShowingFavorites: Bool { viewModel.isShowingFavorites }
 
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
@@ -161,11 +138,6 @@ final class UnifiedSuggestionsHost {
         viewModel.prepareForActivation()
     }
 
-    func setAdditionalTopInset(_ inset: CGFloat) {
-        escapeHatchTopInset = inset
-        applyCombinedInsets()
-    }
-
     /// Updates the tap-ahead arrow direction to match the UTI's current position.
     func setIsAddressBarAtBottom(_ value: Bool) {
         guard isAddressBarAtBottom != value else { return }
@@ -174,14 +146,14 @@ final class UnifiedSuggestionsHost {
     }
 
     /// Single-host path: the content inset the container would otherwise set on the swipe-container
-    /// parent VC. Combined with the escape-hatch inset since there's no intermediate container here.
+    /// parent VC.
     func setContentInsets(_ insets: UIEdgeInsets) {
         contentInsets = insets
         applyCombinedInsets()
     }
 
     private func applyCombinedInsets() {
-        let top = escapeHatchTopInset + contentInsets.top
+        let top = contentInsets.top
         viewModel.chromeInsetTop = top
         hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
             top: top,
@@ -223,8 +195,6 @@ final class UnifiedSuggestionsHost {
     }
 
     func tearDown() {
-        cancellables.removeAll()
-        onContentChanged = nil
         config.source.tearDown()
         duckAISurface?.source.tearDown()
         duckAISurface = nil
@@ -242,6 +212,7 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             escapeHatch: escapeHatch,
-            favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
+            favoritesViewModel: config.favoritesViewModel,
+            messagesModel: config.messagesModel)
     }
 }

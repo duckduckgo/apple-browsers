@@ -158,10 +158,12 @@ final class DuckAISuggestionsSurfaceProvider {
             chatSuggestionsEnabled: { [weak self] in self?.aiChatSettings.isChatSuggestionsEnabled ?? true }
         )
         chatManager.onFetchCompleted = { [weak self] query, hasSuggestions in
+            // Prepare promo visibility before the recents fact changes the visible idle tail, so SwiftUI
+            // reveals promo + rows together below the persistent Escape Hatch.
+            self?.delegate?.duckAISurfaceStateDidChange()
             // Only an unfiltered (empty-query) fetch defines "has any recent chats". Filtered fetches
             // (while typing) leave it unchanged, so clearing the query keeps the stable `true`.
             if query.isEmpty { self?.hasAnyRecentsSubject.send(hasSuggestions) }
-            self?.delegate?.duckAISurfaceStateDidChange()
         }
 
         // `filteredSuggestions` / `topURLs` are triggers only (they move `settled`); the recents fact

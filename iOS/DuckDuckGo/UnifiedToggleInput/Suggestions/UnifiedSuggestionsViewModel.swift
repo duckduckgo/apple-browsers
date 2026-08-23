@@ -51,8 +51,6 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// iPhone landscape suppresses the empty state entirely because there is not enough room.
     @Published private(set) var isLandscape = false
     @Published private(set) var syncPromo: AnyView?
-    /// True only while one temporary hatch bridges the Search↔Duck.ai mode animation.
-    @Published private(set) var isEscapeHatchTransitioning = false
     /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo
     /// moves in the same pass, and only when the chrome is actually close (never in Search).
@@ -97,15 +95,22 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
             }
     }
 
-    /// Crossfades only when a mode switch changes the content *type* (e.g. favorites↔recents,
-    /// list↔logo). List↔list keeps the mounted list, and same-mode changes (typing, deletions)
-    /// stay snappy.
+    /// Animates a mode switch that changes the content type, plus the first asynchronous Duck.ai
+    /// recents arrival. List↔list keeps the mounted list, and typing/deletions stay snappy.
     private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool) {
         guard newContent != content else { return }
-        if modeChanged && !Self.sameCategory(content, newContent) {
+        if (modeChanged && !Self.sameCategory(content, newContent)) || Self.isIdleDuckAITailChange(content, newContent) {
             withAnimation(.easeInOut(duration: 0.2)) { content = newContent }
         } else {
             content = newContent
+        }
+    }
+
+    private static func isIdleDuckAITailChange(_ lhs: UnifiedSuggestionsContentKind,
+                                               _ rhs: UnifiedSuggestionsContentKind) -> Bool {
+        switch (lhs, rhs) {
+        case (.logo, .list(.recents)), (.list(.recents), .logo): return true
+        default: return false
         }
     }
 
@@ -159,12 +164,9 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
 
     func setSyncPromo(_ promo: AnyView?) {
         guard (syncPromo == nil) != (promo == nil) else { return }
-        syncPromo = promo
-    }
-
-    func setEscapeHatchTransitioning(_ transitioning: Bool) {
-        guard isEscapeHatchTransitioning != transitioning else { return }
-        isEscapeHatchTransitioning = transitioning
+        withAnimation(.easeInOut(duration: 0.2)) {
+            syncPromo = promo
+        }
     }
 
     func setDuckAIListViewModel(_ viewModel: SuggestionsListViewModel?) {

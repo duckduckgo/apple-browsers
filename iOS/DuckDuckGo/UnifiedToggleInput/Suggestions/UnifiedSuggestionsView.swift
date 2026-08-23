@@ -26,35 +26,16 @@ struct UnifiedSuggestionsView: View {
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
     let escapeHatch: EscapeHatchModel?
-    /// Built lazily by the host for favorites and empty scrollable hatch states.
-    let favoritesProvider: () -> NewTabPageViewController?
+    let favoritesViewModel: FavoritesViewModel
+    @ObservedObject var messagesModel: NewTabPageMessagesModel
 
     var body: some View {
-        // Empty states reuse the NTP scroll surface so the escape hatch and remote messages scroll together.
-        // The logo overlays the content, anchored to the keyboard (the host's fixed bottom) so neither the
-        // bar-driven top inset nor a Search↔Duck.ai toggle moves it.
+        // One mounted list owns every focused state. Its first row keeps the Escape Hatch alive while
+        // Search favorites/RMF and Duck.ai promo/recents change beneath it.
         ZStack(alignment: .bottom) {
-            contentArea
+            listLayer
             logoLayer
             fireLayer
-            transitionHatchLayer
-        }
-    }
-
-    /// A single non-interactive hatch bridges the mode animation while both scroll surfaces retain
-    /// an invisible hatch placeholder. Because this layer respects the host safe area, UIKit moves
-    /// it with UTI's animated edge instead of crossfading between two different vertical positions.
-    @ViewBuilder
-    private var transitionHatchLayer: some View {
-        if let escapeHatch {
-            EscapeHatchView(model: escapeHatch)
-                .padding(.horizontal, Metrics.hatchHorizontalMargin)
-                .padding(.top, Metrics.hatchTopInset)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .opacity(viewModel.isEscapeHatchTransitioning ? 1 : 0)
-                .animation(nil, value: viewModel.isEscapeHatchTransitioning)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
         }
     }
 
@@ -81,16 +62,6 @@ struct UnifiedSuggestionsView: View {
         return false
     }
 
-    private var contentArea: some View {
-        // The list stays mounted in every state so SwiftUI never recreates it (a fresh `List`
-        // flashes its default background before `.scrollContentBackground(.hidden)` applies).
-        // Favorites renders on top; the list is inaccessible + non-interactive beneath it.
-        ZStack {
-            listLayer
-            overlayLayer
-        }
-    }
-
     private var isShowingList: Bool {
         if case .list = viewModel.content { return true }
         return false
@@ -104,45 +75,23 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var listLayer: some View {
-        // Pre-render the hatch behind the opaque NTP so the destination list reserves its space
-        // before the promo and recent chats animate in.
-        let listEscapeHatch = isTypingList ? nil : escapeHatch
-        return SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
-                                   isAddressBarAtBottom: isAddressBarAtBottom,
-                                   escapeHatch: listEscapeHatch,
-                                   syncPromo: activeListKind == .recents ? viewModel.syncPromo : nil,
-                                   isEscapeHatchHidden: viewModel.isEscapeHatchTransitioning)
-            .opacity(isShowingList || listEscapeHatch != nil ? 1 : 0)
-            // Keep the incoming animation for the promo/rows; the transition hatch moves separately.
-            .animation(isShowingList ? .easeInOut(duration: 0.2) : nil, value: isShowingList)
+        SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
+                            isAddressBarAtBottom: isAddressBarAtBottom,
+                            escapeHatch: escapeHatch,
+                            syncPromo: activeListKind == .recents ? viewModel.syncPromo : nil,
+                            favoritesViewModel: favoritesViewModel,
+                            messagesModel: messagesModel,
+                            showsRestingContent: !isTypingList,
+                            showsFavorites: viewModel.isShowingFavorites,
+                            showsSuggestionRows: isShowingList)
             // Fade out with the collapse (like the logo) so a list→favorites dismiss hands off to the
             // NTP favorites instead of snapping away when the host is hidden.
             .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
-            .allowsHitTesting(isShowingList)
-            .accessibilityHidden(!isShowingList)
-    }
-
-    private var isShowingFavorites: Bool {
-        if case .favorites = viewModel.content { return true }
-        return viewModel.content == .logo && escapeHatch != nil
-    }
-
-    /// The NTP stays mounted like the list and toggles a plain `.opacity` — NOT an insert/remove
-    /// `.transition` (which snaps when interrupted by rapid Search↔Duck.ai toggling).
-    @ViewBuilder
-    private var overlayLayer: some View {
-        if let controller = favoritesProvider() {
-            // Keep the nested NTP's frame stable while the temporary hatch follows the host safe area.
-            SuggestionsFavoritesView(controller: controller)
-                .ignoresSafeArea(.container, edges: .top)
-                .opacity(isShowingFavorites ? 1 : 0)
-                .animation(nil, value: isShowingFavorites)
-                .allowsHitTesting(isShowingFavorites)
-        }
+            .accessibilityHidden(viewModel.isFireTab && !isTypingList)
     }
 
     private var isShowingLogo: Bool {
-        viewModel.content == .logo && !isShowingFavorites
+        viewModel.content == .logo && escapeHatch == nil && messagesModel.homeMessageViewModels.isEmpty
     }
 
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact
@@ -203,10 +152,6 @@ struct UnifiedSuggestionsView: View {
     }
 
     private enum Metrics {
-        /// Matches the list's 16pt content margin and 10pt total top inset (6+4 on a top bar,
-        /// 0+10 on a bottom bar), so the temporary hatch exactly covers either embedded copy.
-        static let hatchHorizontalMargin: CGFloat = 16
-        static let hatchTopInset: CGFloat = 10
         /// Mirrors `NewTabPageDaxLogoView`'s screen-center offset so the focused Search logo lands exactly
         /// where the NTP logo sits — keep in sync with that view.
         static let logoScreenCenterOffset: CGFloat = 55
@@ -220,9 +165,7 @@ struct UnifiedSuggestionsView: View {
     }
 }
 
-/// Fades transient content (logo, suggestion list) out as the host collapses back to the NTP, so it
-/// hands off to the NTP content instead of snapping away. Favorites are excluded — they hand off via
-/// the embedded-copy reveal, not a fade.
+/// Fades focused content out as the host collapses back to the NTP, so it hands off instead of snapping away.
 ///
 /// One-directional: only the fade-*out* (false→true) animates. The reset (true→false, on the next
 /// focus) snaps, so the logo reappears instantly instead of replaying a fade-in.

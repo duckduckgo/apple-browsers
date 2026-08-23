@@ -18,13 +18,38 @@
 //
 
 import SwiftUI
-import UIKit
 
-/// Hosts an already-built `NewTabPageViewController` (favorites/NTP) inside the unified view's
-/// `.favorites` state. The controller is constructed by the host with full NTP dependencies.
-struct SuggestionsFavoritesView: UIViewControllerRepresentable {
-    let controller: NewTabPageViewController
+/// The focused New Tab Page sections rendered inside the unified suggestions list. The list owns
+/// scrolling and the Escape Hatch; this view contributes only RMF messages and Search favorites.
+struct FocusedNewTabPageContentView: View {
 
-    func makeUIViewController(context: Context) -> NewTabPageViewController { controller }
-    func updateUIViewController(_ uiViewController: NewTabPageViewController, context: Context) {}
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    @ObservedObject var messagesModel: NewTabPageMessagesModel
+    @ObservedObject var favoritesViewModel: FavoritesViewModel
+    let showsFavorites: Bool
+
+    var body: some View {
+        VStack(spacing: Metrics.sectionSpacing) {
+            ForEach(messagesModel.homeMessageViewModels, id: \.viewIdentity) { messageModel in
+                HomeMessageView(viewModel: messageModel)
+                    .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+                    .transition(.scale.combined(with: .opacity))
+            }
+
+            if showsFavorites, !favoritesViewModel.allFavorites.isEmpty {
+                FavoritesView(model: favoritesViewModel)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, Metrics.favoritesHorizontalInset)
+            }
+        }
+    }
+
+    private enum Metrics {
+        static let sectionSpacing: CGFloat = 26
+        /// The unified list starts at 16pt; favorites use the NTP's 24pt grid margin.
+        static let favoritesHorizontalInset: CGFloat = 8
+        static let messageMaximumWidth: CGFloat = 380
+        static let messageMaximumWidthPad: CGFloat = 455
+    }
 }

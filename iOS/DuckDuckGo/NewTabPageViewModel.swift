@@ -27,9 +27,6 @@ final class NewTabPageViewModel: ObservableObject {
     @Published var canEditFavorites = true
     @Published private(set) var isOnboarding: Bool
     @Published var escapeHatch: EscapeHatchModel?
-    /// Keeps the embedded hatch's layout space while a focused UTI mode transition renders one
-    /// temporary hatch above both content surfaces.
-    @Published var isEscapeHatchHidden = false
     var openedAfterIdle: Bool = false
     @Published var sectionTitle: String?
     @Published var isLogoHidden: Bool = false

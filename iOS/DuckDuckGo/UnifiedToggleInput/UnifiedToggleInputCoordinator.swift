@@ -279,9 +279,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var textChangePublisher: AnyPublisher<String, Never> { textModel.textChangePublisher }
 
     private let modeChangeSubject = PassthroughSubject<TextEntryMode, Never>()
-    /// Identifies the currently running mode animation so an interrupted completion cannot remove
-    /// the replacement transition hatch owned by a newer toggle.
-    private var escapeHatchTransitionID: UUID?
     var modeChangePublisher: AnyPublisher<TextEntryMode, Never> {
         modeChangeSubject.eraseToAnyPublisher()
     }
@@ -1189,20 +1186,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         syncInputBehaviorToHandler()
         updateFloatingReturnKeyState()
 
-        let transitionID: UUID?
-        if animated && didModeChange {
-            let id = UUID()
-            escapeHatchTransitionID = id
-            transitionID = id
-            contentViewController.setEscapeHatchTransitioning(true)
-            // Establish the temporary hatch at the source geometry before UTI starts resizing.
-            contentViewController.view.layoutIfNeeded()
-        } else {
-            escapeHatchTransitionID = nil
-            transitionID = nil
-            contentViewController.setEscapeHatchTransitioning(false)
-        }
-
         // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
         // together; otherwise the content snaps while the toolbar is still growing.
         let applyModeChange = { [self] in
@@ -1220,10 +1203,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 // Push the new mode's content inset here (target height) so the suggestions content and
                 // the logo move in the same pass as the bar — not reactively after the height callback.
                 if didModeChange { self.pushContentInsets() }
-            } completion: { [weak self] _ in
-                guard let self, let transitionID, escapeHatchTransitionID == transitionID else { return }
-                escapeHatchTransitionID = nil
-                contentViewController.setEscapeHatchTransitioning(false)
             }
         } else {
             applyModeChange()

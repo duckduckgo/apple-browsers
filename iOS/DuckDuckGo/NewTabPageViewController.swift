@@ -34,14 +34,16 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         return restingContentIsLogo
     }
 
-    var isShowingFavorites: Bool {
-        restingContentIsFavorites && !newTabPageViewModel.isFavoritesHidden
+    var isShowingSearchContent: Bool {
+        !messagesModel.homeMessageViewModels.isEmpty
+            || (newTabPageViewModel.showsFavorites && !favoritesModel.isEmpty && !newTabPageViewModel.isFavoritesHidden)
     }
 
-    /// What the NTP shows at rest (logo vs favorites), independent of the transient
+    /// What the NTP shows at rest (logo vs Search content), independent of the transient
     /// `isLogoHidden`/`isFavoritesHidden` flags the focus/dismiss handoff toggles. The dismiss path
     /// uses these to pick the right handoff while those flags are still mid-transition.
     var restingContentIsLogo: Bool {
+        guard messagesModel.homeMessageViewModels.isEmpty else { return false }
         guard !newTabPageViewModel.showsFavorites || favoritesModel.isEmpty else { return false }
         if newTabPageViewModel.escapeHatch != nil {
             return view.bounds.width <= view.bounds.height
@@ -49,8 +51,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         return true
     }
 
-    var restingContentIsFavorites: Bool {
-        newTabPageViewModel.showsFavorites && !favoritesModel.isEmpty
+    var restingContentIsSearchContent: Bool {
+        !messagesModel.homeMessageViewModels.isEmpty || (newTabPageViewModel.showsFavorites && !favoritesModel.isEmpty)
     }
 
     func setLogoHidden(_ hidden: Bool) {

@@ -82,7 +82,6 @@ struct UnifiedSuggestionsView: View {
                             favoritesViewModel: favoritesViewModel,
                             messagesModel: messagesModel,
                             showsRestingContent: !isTypingList,
-                            showsMessages: viewModel.isShowingFavorites,
                             showsFavorites: viewModel.isShowingFavorites,
                             showsSuggestionRows: isShowingList)
             // Fade out with the collapse (like the logo) so a list→favorites dismiss hands off to the

@@ -27,6 +27,8 @@ import UIKit
 @MainActor
 final class UnifiedSuggestionsHost {
 
+    var onContentChanged: (() -> Void)?
+
     private let config: UnifiedSuggestionsHostConfig
     private let listViewModel: SuggestionsListViewModel
     private let viewModel: UnifiedSuggestionsViewModel
@@ -37,6 +39,7 @@ final class UnifiedSuggestionsHost {
     private var escapeHatch: EscapeHatchModel?
     private var contentInsets: UIEdgeInsets = .zero
     private var openedAfterIdle = false
+    private var cancellables = Set<AnyCancellable>()
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
@@ -78,6 +81,12 @@ final class UnifiedSuggestionsHost {
         listViewModel.onSelect = { [weak self] id in self?.config.onSelectRow(id) }
         listViewModel.onTapAhead = { [weak self] id in self?.config.onTapAheadRow(id) }
         listViewModel.onDelete = { [weak self] id in self?.config.onDeleteRow(id) }
+
+        viewModel.$content
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.onContentChanged?() }
+            .store(in: &cancellables)
 
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
@@ -193,6 +202,8 @@ final class UnifiedSuggestionsHost {
     }
 
     func tearDown() {
+        cancellables.removeAll()
+        onContentChanged = nil
         config.source.tearDown()
         duckAISurface?.source.tearDown()
         duckAISurface = nil

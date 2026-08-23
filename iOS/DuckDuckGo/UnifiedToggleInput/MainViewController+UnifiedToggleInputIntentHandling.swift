@@ -265,11 +265,11 @@ private extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
 
         let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
-        // Favorites hand off seamlessly too: the embedded grid is already laid out where the NTP grid is,
-        // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
-        let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
+        // Search content hands off seamlessly too: the embedded RMF/favorites are laid out where the
+        // NTP content is, so they slide in without the container fade that would otherwise flash.
+        let isSearchContentToSearchContent = newTabPageViewController?.isShowingSearchContent == true
         let isBottom = coordinator.cardPosition.isBottom
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
 
         viewCoordinator.focusedStateBackground.alpha = isSeamlessHandoff ? 1 : 0
@@ -297,7 +297,6 @@ private extension MainViewController {
             // cross-dissolve against them (mirrors the defocus hide-reveal). Revealed again on dismiss.
             newTabPageViewController?.setFavoritesHidden(true)
         }
-
         if let omnibarPlaceholderWindowX {
             coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
         }

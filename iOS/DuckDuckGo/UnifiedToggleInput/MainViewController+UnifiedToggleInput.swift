@@ -1077,9 +1077,9 @@ extension MainViewController {
 
         let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
             && newTabPageViewController?.restingContentIsLogo == true
-        let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
-            && newTabPageViewController?.restingContentIsFavorites == true
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSearchContentToSearchContent = coordinator.contentViewController.isShowingFavoritesContent
+            && newTabPageViewController?.restingContentIsSearchContent == true
+        let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
         let contentContainer = viewCoordinator.unifiedInputContentContainer
@@ -1087,10 +1087,9 @@ extension MainViewController {
             keepsFocusedContentStationary: keepsFocusedContentStationary,
             contentContainer: contentContainer
         )
-
         if isLogoToLogo {
             coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
-        } else if !isFavoritesToFavorites {
+        } else if !isSearchContentToSearchContent {
             coordinator.contentViewController.beginDismissFade()
         }
 

@@ -32,7 +32,6 @@ struct SuggestionsListView: View {
     var favoritesViewModel: FavoritesViewModel? = nil
     var messagesModel: NewTabPageMessagesModel? = nil
     var showsRestingContent = false
-    var showsMessages = false
     var showsFavorites = false
     var showsSuggestionRows = true
     var isFloatingPopover: Bool = false
@@ -46,8 +45,11 @@ struct SuggestionsListView: View {
         static let embeddedHatchBottomBarTopInset: CGFloat = 10
         static let syncPromoBottomBarTopInset: CGFloat = 4
         static let scrollableChromeBottomInset: CGFloat = 16
-        static let favoritesAfterMessageTopInset: CGFloat = 10
-        static let modeSpecificAfterStableTopInset: CGFloat = 4
+        static let searchSectionSpacing: CGFloat = 26
+        static let searchAfterHatchTopInset: CGFloat = searchSectionSpacing - scrollableChromeBottomInset
+        static let duckAIAfterHatchTopInset: CGFloat = 4
+        /// Keeps the 48pt shadow with its 16pt downward offset inside the List row.
+        static let messageShadowBottomInset: CGFloat = 64
         /// The unified list starts at 16pt; favorites use the NTP's 24pt grid margin.
         static let favoritesHorizontalInset: CGFloat = 8
         /// Per Figma: single-line rows use 15pt top/bottom padding; rows with a subtitle use 14pt
@@ -76,31 +78,27 @@ struct SuggestionsListView: View {
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }
-                if hasMessages, let messagesModel {
-                    FocusedNewTabPageMessagesView(messagesModel: messagesModel)
-                        .frame(height: isMessagesVisible ? nil : 0)
-                        .opacity(isMessagesVisible ? 1 : 0)
-                        .allowsHitTesting(isMessagesVisible)
-                        .accessibilityHidden(!isMessagesVisible)
-                        .padding(.top, isMessagesVisible ? messagesTopInset : 0)
-                        .padding(.bottom, isMessagesVisible ? Metrics.scrollableChromeBottomInset : 0)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color(designSystemColor: .background))
-                        .listRowSeparator(.hidden)
-                        .animation(nil, value: isMessagesVisible)
-                }
-                if showsRestingContent,
-                   showsFavorites,
-                   let favoritesViewModel,
-                   !favoritesViewModel.allFavorites.isEmpty {
-                    FavoritesView(model: favoritesViewModel)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, Metrics.favoritesHorizontalInset)
-                        .padding(.top, favoritesTopInset)
-                        .padding(.bottom, Metrics.scrollableChromeBottomInset)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                if hasSearchContent {
+                    VStack(spacing: Metrics.searchSectionSpacing) {
+                        if hasMessages, let messagesModel {
+                            FocusedNewTabPageMessagesView(messagesModel: messagesModel)
+                        }
+                        if hasFavorites, let favoritesViewModel {
+                            FavoritesView(model: favoritesViewModel)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.horizontal, Metrics.favoritesHorizontalInset)
+                        }
+                    }
+                    .frame(height: isSearchContentVisible ? nil : 0)
+                    .opacity(isSearchContentVisible ? 1 : 0)
+                    .allowsHitTesting(isSearchContentVisible)
+                    .accessibilityHidden(!isSearchContentVisible)
+                    .padding(.top, isSearchContentVisible ? searchContentTopInset : 0)
+                    .padding(.bottom, isSearchContentVisible ? searchContentBottomInset : 0)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .animation(nil, value: isSearchContentVisible)
                 }
                 if showsRestingContent, let syncPromo {
                     syncPromo
@@ -148,26 +146,33 @@ struct SuggestionsListView: View {
         !(messagesModel?.homeMessageViewModels.isEmpty ?? true)
     }
 
-    private var isMessagesVisible: Bool {
-        showsRestingContent && showsMessages && hasMessages
+    private var hasFavorites: Bool {
+        !(favoritesViewModel?.allFavorites.isEmpty ?? true)
+    }
+
+    private var hasSearchContent: Bool {
+        hasMessages || hasFavorites
+    }
+
+    private var isSearchContentVisible: Bool {
+        showsRestingContent && showsFavorites && hasSearchContent
     }
 
     private var scrollableChromeTopInset: CGFloat {
         isAddressBarAtBottom ? Metrics.embeddedHatchBottomBarTopInset : Metrics.embeddedHatchTopBarTopInset
     }
 
-    private var messagesTopInset: CGFloat {
-        escapeHatch == nil ? scrollableChromeTopInset : Metrics.modeSpecificAfterStableTopInset
+    private var searchContentTopInset: CGFloat {
+        escapeHatch == nil ? scrollableChromeTopInset : Metrics.searchAfterHatchTopInset
     }
 
-    private var favoritesTopInset: CGFloat {
-        if isMessagesVisible { return Metrics.favoritesAfterMessageTopInset }
-        return escapeHatch == nil ? scrollableChromeTopInset : Metrics.modeSpecificAfterStableTopInset
+    private var searchContentBottomInset: CGFloat {
+        hasMessages && !hasFavorites ? Metrics.messageShadowBottomInset : Metrics.scrollableChromeBottomInset
     }
 
     private var syncPromoTopInset: CGFloat {
         guard escapeHatch != nil else { return isAddressBarAtBottom ? Metrics.syncPromoBottomBarTopInset : 0 }
-        return Metrics.modeSpecificAfterStableTopInset
+        return Metrics.duckAIAfterHatchTopInset
     }
 
     @ViewBuilder

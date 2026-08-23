@@ -379,7 +379,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     /// Keeps the List's top inset stable; the top bar is carried by the host constraint instead.
     private func applyHostContentInsets() {
-        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: 0,
+        let top = keepsLogoHostFrameFixed ? requestedContentInset.top : 0
+        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: top,
                                                               left: 0,
                                                               bottom: requestedContentInset.bottom,
                                                               right: 0))
@@ -611,6 +612,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         )
 
         let host = UnifiedSuggestionsHost(config: config)
+        host.onContentChanged = { [weak self] in
+            guard let self, isContentActive else { return }
+            applyRequestedContentInset()
+        }
 
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -640,18 +645,24 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.start(in: containerView,
                    parentViewController: self,
                    textPublisher: searchTextPublisher)
+        unifiedSuggestionsHost = host
         host.setIsFireTab(switchBarHandler.isFireTab)
         host.setLandscape(isLandscapeOrientation)
         updateSingleHostTopOffset()
-        unifiedSuggestionsHost = host
         applyEscapeHatchPlacement()
     }
 
     /// The unified list owns the focused New Tab Page and Duck.ai content, so one top constraint
     /// moves the entire scroll hierarchy with the input.
     private func updateSingleHostTopOffset() {
-        let inputOffset = isUsingTopBarPosition ? requestedContentInset.top : 0
+        let inputOffset = isUsingTopBarPosition && !keepsLogoHostFrameFixed ? requestedContentInset.top : 0
         unifiedSuggestionsTopConstraint?.constant = inputOffset + topBarContentGap
+    }
+
+    /// The logo ignores the top safe area, so a fixed host frame keeps its screen position stable while
+    /// Search and Duck.ai morph. Scrollable states move the host instead to preserve their List offset.
+    private var keepsLogoHostFrameFixed: Bool {
+        isUsingTopBarPosition && embeddedEscapeHatchModel == nil && unifiedSuggestionsHost?.isShowingLogo == true
     }
 
     /// Scrollable content owns its hatch spacing, so the container-level gap only applies when the hatch is absent.

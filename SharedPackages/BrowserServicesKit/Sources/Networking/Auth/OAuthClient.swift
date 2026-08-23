@@ -77,7 +77,7 @@ public protocol AuthTokenStoring {
     func saveTokenContainer(_ tokenContainer: TokenContainer?) throws
 }
 
-public enum AuthTokensCachePolicy: CustomStringConvertible {
+public enum AuthTokensCachePolicy: CustomStringConvertible, Equatable {
     /// The token container from the local storage
     case local
     /// The token container from the local storage, refreshed if needed

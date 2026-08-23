@@ -56,6 +56,18 @@
         "description": "The channel the user is on",
         "enum": ["phone", "tablet"]
     },
+    "subscriptionAuthSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The legacy app component identifier for the process that encountered the subscription authentication event",
+        "enum": ["MainApp", "SysExt"]
+    },
+    "subscriptionAuthTokenCachePolicy": {
+        "key": "policycache",
+        "type": "string",
+        "description": "The token cache policy used by the failed token request",
+        "enum": ["Local", "Local valid", "Local force refresh", "Create if needed"]
+    },
     "errorDomain": {
         "key": "d",
         "type": "string",

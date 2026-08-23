@@ -26,7 +26,6 @@ import SwiftUI
 struct SuggestionsListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
-    @State private var restingTailOpacity = 0.0
     let isAddressBarAtBottom: Bool
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
@@ -80,7 +79,7 @@ struct SuggestionsListView: View {
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }
-                if hasSearchContent {
+                if isSearchContentVisible {
                     VStack(spacing: Metrics.searchSectionSpacing) {
                         if hasMessages, let messagesModel {
                             FocusedNewTabPageMessagesView(messagesModel: messagesModel)
@@ -92,16 +91,11 @@ struct SuggestionsListView: View {
                         }
                     }
                     .padding(.horizontal, searchContentHorizontalPadding)
-                    .frame(height: isSearchContentVisible ? nil : 0)
-                    .opacity(isSearchContentVisible ? 1 : 0)
-                    .allowsHitTesting(isSearchContentVisible)
-                    .accessibilityHidden(!isSearchContentVisible)
-                    .padding(.top, isSearchContentVisible ? searchContentTopInset : 0)
-                    .padding(.bottom, isSearchContentVisible ? searchContentBottomInset : 0)
+                    .padding(.top, searchContentTopInset)
+                    .padding(.bottom, searchContentBottomInset)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .animation(nil, value: isSearchContentVisible)
                 }
                 if showsRestingContent, let syncPromo {
                     syncPromo
@@ -110,7 +104,6 @@ struct SuggestionsListView: View {
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
-                        .opacity(restingTailOpacity)
                 }
                 if showsSuggestionRows {
                     ForEach(viewModel.sections) { section in
@@ -120,7 +113,6 @@ struct SuggestionsListView: View {
                             sectionHeader(section.title)
                         }
                     }
-                    .opacity(restingTailOpacity)
                 }
             }
             .environment(\.defaultMinListRowHeight, 0)
@@ -144,18 +136,6 @@ struct SuggestionsListView: View {
             .onReceive(viewModel.$selectedRowID) { id in
                 guard let id else { return }
                 withAnimation { proxy.scrollTo(id) }
-            }
-            .onAppear {
-                restingTailOpacity = showsSuggestionRows ? 1 : 0
-            }
-            .onChange(of: showsSuggestionRows) { showsSuggestionRows in
-                guard showsSuggestionRows else {
-                    restingTailOpacity = 0
-                    return
-                }
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    restingTailOpacity = 1
-                }
             }
         }
     }

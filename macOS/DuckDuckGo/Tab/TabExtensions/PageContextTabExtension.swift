@@ -505,6 +505,16 @@ final class PageContextTabExtension {
             && DocumentPageContextProvider.isSupportedDocument(mimeType: mainFrameMIMECache[url], url: url)
     }
 
+    /// Automatic collects must not read a document the webview hasn't swapped to yet — the debounced
+    /// `Tab.$content` races the swap on back/forward, and reading then would hand over the *previous*
+    /// document's bytes under the new page's URL. The settled-navigation re-collect covers the skip.
+    /// User-initiated collects always proceed. Mirrors the markdown guard in `collectPageContextIfNeeded`.
+    static func shouldRunDocumentCollect(trigger: PageContextExtractionTrigger, webViewURL: URL?, contentURL: URL) -> Bool {
+        guard trigger == .navigation || trigger == .tabContent else { return true }
+        guard let webViewURL else { return true }
+        return webViewURL == contentURL
+    }
+
     /// Reads the document out of the web view and delivers it as page context. Doesn't go through
     /// `extractionResolver` — that pairs requests with the user script's `collectionResult`, which a
     /// document never produces — so the outcome is measured here instead.
@@ -514,14 +524,26 @@ final class PageContextTabExtension {
             fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
             return
         }
+        guard Self.shouldRunDocumentCollect(trigger: trigger, webViewURL: webView.url, contentURL: url) else {
+            Logger.aiChat.debug("⏭️ PageContext gate: document mismatch (webView=\(webView.url?.host ?? "nil", privacy: .public) content=\(url.host ?? "nil", privacy: .public)), skipping read")
+            return
+        }
 
         let startedAt = Date()
         let title = content.title ?? ""
+        let wasForced = shouldForceContextCollection
         Task { @MainActor [weak self] in
             let result = await DocumentPageContextProvider.makeDocumentContext(webView: webView, url: url, title: title)
             guard let self else { return }
             let latency = PageContextExtractionLatencyBucket(seconds: Date().timeIntervalSince(startedAt))
             self.shouldForceContextCollection = false
+
+            // The read is async: the tab may have navigated while it was in flight. Delivering now
+            // would attach this document to whatever page the user is on instead.
+            guard case .url(let settledURL, _, _) = self.content, settledURL == url else {
+                Logger.aiChat.debug("⏭️ PageContext: navigated away while reading document, dropping host=\(url.host ?? "nil", privacy: .public)")
+                return
+            }
 
             switch result {
             case .document(let pageContext):
@@ -534,6 +556,12 @@ final class PageContextTabExtension {
                 self.fireExtractionPixel(.prevented(PageContextExtractionOutcome.documentTooLargeCategory), trigger: trigger, latency: latency)
             case .unavailable:
                 Logger.aiChat.debug("⚠️ PageContext: document bytes unavailable host=\(url.host ?? "nil", privacy: .public)")
+                // A forced collect has the FE awaiting the `getAIChatPageContext` response. Answer it
+                // with a non-attachable context rather than letting it sit out the timeout — the same
+                // reason `shouldDeliverCollectionResult` delivers empty forced markdown results.
+                if wasForced {
+                    await self.handle(DocumentPageContextProvider.metadataContext(url: url, title: title, attachable: false))
+                }
                 self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency)
             }
         }

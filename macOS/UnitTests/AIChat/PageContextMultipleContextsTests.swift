@@ -672,6 +672,26 @@ struct PageContextCollectionResultDeliveryTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("An automatic document collect is skipped while the webview still displays the previous document", .timeLimit(.minutes(1)))
+    func documentCollectSkippedOnDocumentMismatch() {
+        let old = URL(string: "https://old.com/a.pdf")!
+        let new = URL(string: "https://new.com/b.pdf")!
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .navigation, webViewURL: old, contentURL: new) == false)
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .tabContent, webViewURL: old, contentURL: new) == false)
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .navigation, webViewURL: new, contentURL: new) == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A user-initiated document collect proceeds regardless of document mismatch", .timeLimit(.minutes(1)))
+    func userDocumentCollectAlwaysProceeds() {
+        let old = URL(string: "https://old.com/a.pdf")!
+        let new = URL(string: "https://new.com/b.pdf")!
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .userRequest, webViewURL: old, contentURL: new) == true)
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .auto, webViewURL: old, contentURL: new) == true)
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .navigation, webViewURL: nil, contentURL: new) == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A document result counts as an attached page even though its content is empty", .timeLimit(.minutes(1)))
     func documentResultIsDelivered() {
         #expect(PageContextTabExtension.shouldDeliverCollectionResult(document, wasForced: false, cached: nil))

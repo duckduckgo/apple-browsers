@@ -20,6 +20,7 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import FeatureFlags_iOS
 import UIKit
 
 extension TabViewController {
@@ -160,7 +161,7 @@ extension TabViewController {
         showBarsTapGestureRecogniser.delegate = self
         // This sits above the web view, so holding touch-end back would stall every tap on every
         // page while waiting for a recognizer that only fires on a bottom-of-screen tap.
-        showBarsTapGestureRecogniser.delaysTouchesEnded = false
+        showBarsTapGestureRecogniser.delaysTouchesEnded = !featureFlagger.isFeatureOn(.suppressShowBarsGestureRecogniserDelay)
         rootView.addGestureRecognizer(showBarsTapGestureRecogniser)
     }
 

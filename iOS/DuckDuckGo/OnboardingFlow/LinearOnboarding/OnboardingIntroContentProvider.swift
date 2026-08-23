@@ -201,6 +201,16 @@ struct OnboardingPersonalizationContent: Equatable {
     let items: [Item]
     let primaryCTA: String
     let daxAnimation: DaxAnimation
+    let footer: String?
+
+    init(title: String, message: String?, items: [Item], primaryCTA: String, daxAnimation: DaxAnimation, footer: String? = nil) {
+        self.title = title
+        self.message = message
+        self.items = items
+        self.primaryCTA = primaryCTA
+        self.daxAnimation = daxAnimation
+        self.footer = footer
+    }
 }
 
 extension OnboardingPersonalizationContent {
@@ -340,7 +350,8 @@ extension OnboardingIntroContentProvider {
                 )
             ],
             primaryCTA: UserText.Onboarding.Personalization.AdBlocking.cta,
-            daxAnimation: .wingLeft
+            daxAnimation: .wingLeft,
+            footer: UserText.Onboarding.Personalization.AdBlocking.footer
         )
     }
 

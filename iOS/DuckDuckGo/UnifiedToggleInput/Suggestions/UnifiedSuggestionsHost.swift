@@ -106,7 +106,6 @@ final class UnifiedSuggestionsHost {
     var isShowingLogo: Bool {
         viewModel.isShowingLogo
             && escapeHatch == nil
-            && config.messagesModel.homeMessageViewModels.isEmpty
             && !viewModel.isFireTab
             && !viewModel.isLandscape
     }

@@ -19,8 +19,8 @@
 
 import SwiftUI
 
-/// RMF messages shared by the focused Search and Duck.ai surfaces. Favorites live in a separate
-/// list row so mode-specific changes cannot animate this common content.
+/// Search-only RMF messages. Favorites live in a separate list row so message changes don't move
+/// the persistent Escape Hatch row.
 struct FocusedNewTabPageMessagesView: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass

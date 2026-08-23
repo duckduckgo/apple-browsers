@@ -72,6 +72,12 @@ final class UnifiedSuggestionsContentResolverTests: XCTestCase {
         XCTAssertEqual(kind, .logo)
     }
 
+    func test_duckAIEmpty_withSearchMessagesButNoRecents_isLogo() {
+        let kind = UnifiedSuggestionsContentResolver.resolve(
+            inputs(mode: .aiChat, hasMessages: true, hasRecents: false), previous: nil)
+        XCTAssertEqual(kind, .logo)
+    }
+
     func test_duckAITyping_settled_isDuckAIList() {
         let kind = UnifiedSuggestionsContentResolver.resolve(
             inputs(mode: .aiChat, isTyping: true, resultsPending: false), previous: nil)

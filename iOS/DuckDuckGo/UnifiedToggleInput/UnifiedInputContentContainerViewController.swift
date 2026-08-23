@@ -32,6 +32,7 @@ import Suggestions
 import AIChat
 import RemoteMessaging
 import FeatureFlags_iOS
+import os.log
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -481,6 +482,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// the Dax morph all update — a raw `setToggleState` doesn't propagate the switch at all.
     private lazy var modeSwitchSwipeController = ModeSwitchSwipeGestureController { [weak self] targetMode in
         guard let self, switchBarHandler.currentToggleState != targetMode else { return }
+        Logger.unifiedInputState.debug("[UTITransition] source=swipe current=\(String(describing: self.switchBarHandler.currentToggleState), privacy: .public) target=\(String(describing: targetMode), privacy: .public) insetTop=\(self.requestedContentInset.top, privacy: .public) insetBottom=\(self.requestedContentInset.bottom, privacy: .public)")
         delegate?.unifiedInputEditingStateDidChangeMode(targetMode)
     }
 
@@ -786,6 +788,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     func setContentInset(top: CGFloat, bottom: CGFloat) {
         guard requestedContentInset.top != top || requestedContentInset.bottom != bottom else { return }
+        Logger.unifiedInputState.debug("[UTITransition] contentInset mode=\(String(describing: self.switchBarHandler.currentToggleState), privacy: .public) oldTop=\(self.requestedContentInset.top, privacy: .public) oldBottom=\(self.requestedContentInset.bottom, privacy: .public) newTop=\(top, privacy: .public) newBottom=\(bottom, privacy: .public) active=\(self.isContentActive, privacy: .public)")
         requestedContentInset = (top, bottom)
         guard isContentActive else {
             markNeedsVisibleRefresh()

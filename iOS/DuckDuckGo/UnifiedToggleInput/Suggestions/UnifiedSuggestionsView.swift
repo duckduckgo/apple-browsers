@@ -82,6 +82,7 @@ struct UnifiedSuggestionsView: View {
                             favoritesViewModel: favoritesViewModel,
                             messagesModel: messagesModel,
                             showsRestingContent: !isTypingList,
+                            showsMessages: viewModel.isShowingFavorites,
                             showsFavorites: viewModel.isShowingFavorites,
                             showsSuggestionRows: isShowingList)
             // Fade out with the collapse (like the logo) so a list→favorites dismiss hands off to the
@@ -91,7 +92,7 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var isShowingLogo: Bool {
-        viewModel.content == .logo && escapeHatch == nil && messagesModel.homeMessageViewModels.isEmpty
+        viewModel.content == .logo && escapeHatch == nil
     }
 
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact

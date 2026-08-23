@@ -32,6 +32,7 @@ struct SuggestionsListView: View {
     var favoritesViewModel: FavoritesViewModel? = nil
     var messagesModel: NewTabPageMessagesModel? = nil
     var showsRestingContent = false
+    var showsMessages = false
     var showsFavorites = false
     var showsSuggestionRows = true
     var isFloatingPopover: Bool = false
@@ -45,7 +46,6 @@ struct SuggestionsListView: View {
         static let embeddedHatchBottomBarTopInset: CGFloat = 10
         static let syncPromoBottomBarTopInset: CGFloat = 4
         static let scrollableChromeBottomInset: CGFloat = 16
-        static let scrollableChromeSpacing: CGFloat = 20
         static let favoritesAfterMessageTopInset: CGFloat = 10
         static let modeSpecificAfterStableTopInset: CGFloat = 4
         /// The unified list starts at 16pt; favorites use the NTP's 24pt grid margin.
@@ -63,15 +63,8 @@ struct SuggestionsListView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                if hasStableRestingContent {
-                    VStack(spacing: Metrics.scrollableChromeSpacing) {
-                        if let escapeHatch {
-                            EscapeHatchView(model: escapeHatch)
-                        }
-                        if hasMessages, let messagesModel {
-                            FocusedNewTabPageMessagesView(messagesModel: messagesModel)
-                        }
-                    }
+                if let escapeHatch {
+                    EscapeHatchView(model: escapeHatch)
                     .frame(height: showsRestingContent ? nil : 0)
                     .clipped()
                     .opacity(showsRestingContent ? 1 : 0)
@@ -82,6 +75,20 @@ struct SuggestionsListView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                }
+                if hasMessages, let messagesModel {
+                    FocusedNewTabPageMessagesView(messagesModel: messagesModel)
+                        .frame(height: isMessagesVisible ? nil : 0)
+                        .clipped()
+                        .opacity(isMessagesVisible ? 1 : 0)
+                        .allowsHitTesting(isMessagesVisible)
+                        .accessibilityHidden(!isMessagesVisible)
+                        .padding(.top, isMessagesVisible ? messagesTopInset : 0)
+                        .padding(.bottom, isMessagesVisible ? Metrics.scrollableChromeBottomInset : 0)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color(designSystemColor: .background))
+                        .listRowSeparator(.hidden)
+                        .animation(nil, value: isMessagesVisible)
                 }
                 if showsRestingContent,
                    showsFavorites,
@@ -142,21 +149,25 @@ struct SuggestionsListView: View {
         !(messagesModel?.homeMessageViewModels.isEmpty ?? true)
     }
 
-    private var hasStableRestingContent: Bool {
-        escapeHatch != nil || hasMessages
+    private var isMessagesVisible: Bool {
+        showsRestingContent && showsMessages && hasMessages
     }
 
     private var scrollableChromeTopInset: CGFloat {
         isAddressBarAtBottom ? Metrics.embeddedHatchBottomBarTopInset : Metrics.embeddedHatchTopBarTopInset
     }
 
+    private var messagesTopInset: CGFloat {
+        escapeHatch == nil ? scrollableChromeTopInset : Metrics.modeSpecificAfterStableTopInset
+    }
+
     private var favoritesTopInset: CGFloat {
-        guard hasStableRestingContent else { return scrollableChromeTopInset }
-        return hasMessages ? Metrics.favoritesAfterMessageTopInset : Metrics.modeSpecificAfterStableTopInset
+        if isMessagesVisible { return Metrics.favoritesAfterMessageTopInset }
+        return escapeHatch == nil ? scrollableChromeTopInset : Metrics.modeSpecificAfterStableTopInset
     }
 
     private var syncPromoTopInset: CGFloat {
-        guard hasStableRestingContent else { return isAddressBarAtBottom ? Metrics.syncPromoBottomBarTopInset : 0 }
+        guard escapeHatch != nil else { return isAddressBarAtBottom ? Metrics.syncPromoBottomBarTopInset : 0 }
         return Metrics.modeSpecificAfterStableTopInset
     }
 

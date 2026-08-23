@@ -261,7 +261,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPage)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageViewAllChats)
         tabOpener.openNewAIChat(in: behavior)
     }
 

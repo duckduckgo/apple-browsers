@@ -1164,7 +1164,7 @@ final class AIChatOmnibarController {
 
     func viewAllChats() {
         PixelKit.fire(AIChatPixel.aiChatViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
-        aiChatConversationSourceHandler.setData(.omnibar)
+        aiChatConversationSourceHandler.setData(.omnibarViewAllChats)
         aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
     }
 

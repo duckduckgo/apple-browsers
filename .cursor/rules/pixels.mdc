@@ -17,6 +17,8 @@ Pixels have the following requirements:
 - Do not use values that are overly precise, e.g. if using an integer value in a parameter, bucket it into ranges rather than including the value verbatim
 - Never include PII, URLs, or other forms of user-identifiable information in pixel names or parameters
 
+For new production iOS code, use PixelKit instead of the legacy iOS `Pixel`, `DailyPixel`, `UniquePixel`, `TimedPixel`, or `PersistentPixel` APIs. Danger exempts only the legacy infrastructure files named by its check, plus test and mock files; these exemptions do not apply to other production code.
+
 ## Types of Pixels
 
 ### Standard Pixels
@@ -24,85 +26,98 @@ Pixels have the following requirements:
 Sent every time the event occurs.
 
 ```swift
-pixelKit.fire(SubscriptionPixel.subscriptionRestoreAfterPurchaseAttempt)
+pixelKit.fire(event)
 
-pixelKit.fire(AutofillPixel.loginsSavePromptDisplayed,
-              options: .parameters([PixelParameters.autofillPromptTrigger: "manual"]))
+pixelKit.fire(event, options: .parameters(["source": "manual"]))
 ```
 
 ### Daily Pixels
 
-Sent once per day per event. Used to determine the number of users affected by a particular error 
+Sent once per day per event. PixelKit appends `_daily` to the event name. Used to determine the number of users affected by a particular error.
 
 ```swift
-pixelKit.fire(SubscriptionPixel.purchaseAttempt, frequency: .daily)
+pixelKit.fire(event, frequency: .daily)
 ```
 
 ### Unique Pixels
 
-Sent once per install for the lifetime of the install.
+Sent once per install for the lifetime of the install. The event name must end with `_u`.
 
 ```swift
-pixelKit.fire(SubscriptionPixel.activated, frequency: .uniqueByName)
+pixelKit.fire(uniqueEvent, frequency: .uniqueByName)
 ```
 
 ## Pixel Definition Patterns
 
-### iOS and macOS pixels (PixelKit)
+### Legacy iOS Pixels
 
-Define new pixels as cases on a feature-specific enum that conforms to `PixelKit.Event`. The legacy
-iOS `Pixel`, `DailyPixel`, `UniquePixel`, `TimedPixel`, and `PersistentPixel` APIs remain for existing
-code only. Danger warns when new production code uses them.
+Existing legacy iOS pixels are defined as cases on `Pixel.Event` in `iOS/Core/PixelEvent.swift`. Each enum case maps to an HTTP pixel name string via a computed `name` property. This section is reference material for that existing system only.
 
-#### Add a pixel
+#### Existing Legacy Structure
 
-1. Add a case to the feature's `PixelKit.Event` enum.
-2. Map the case to its HTTP name in the enum's `name` property.
-3. Fire the event with `PixelKit` and the appropriate `PixelKit.Frequency`.
-4. Add the matching definition under the platform's `PixelDefinitions/pixels/definitions` directory.
-   For details, see [Pixel validation](#pixel-validation).
+1. Enum cases are declared in `iOS/Core/PixelEvent.swift`.
+2. The `name` computed property in the same file maps cases to pixel name strings.
+3. Existing callers use `Pixel.fire`, `DailyPixel.fireDailyAndCount`, or `UniquePixel.fire`.
+4. Matching definitions live in `iOS/PixelDefinitions/pixels/definitions/*.json5` - see the `Pixel Validation` section below for more.
 
-Example:
+#### Enum Case Definition
 
 ```swift
-enum AppSwitcherPixel: PixelKit.Event {
-    case snapshotEnumerationFailed
+extension Pixel {
+    public enum Event {
+        case appInstall
+        case appLaunch
+        case subscriptionPurchaseAttempt
+        case subscriptionPurchaseSuccess
+        case subscriptionActivated
+        // ...
+    }
+}
+```
 
-    var name: String {
+#### Enum-to-String Mapping
+
+The `Pixel.Event` enum has a computed `name` property that maps each case to its HTTP pixel name string:
+
+```swift
+extension Pixel.Event {
+    public var name: String {
         switch self {
-        case .snapshotEnumerationFailed:
-            return "app-switcher_snapshot_enumeration_failed"
+        case .appInstall: return "m_install"
+        case .appLaunch: return "ml"
+        case .subscriptionPurchaseAttempt: return "m_privacy-pro_terms-conditions_subscribe_click"
+        // ...
         }
     }
 }
 ```
 
-#### Naming Convention
+### Naming New Pixels
 
 New iOS and macOS pixel names follow these conventions:
 
-- **Feature grouping**: Start with the app feature name.
+- **Feature grouping**: Group pixels by app feature name.
+- **Prefix**: The `m_` and `m-` prefixes are no longer recommended.
 - **Separators**: Use underscores (`_`) or hyphens (`-`) between words.
 - **Format**: Use `feature_action` or `feature-sub-feature_action`.
+- **iOS platform context**: You do not need to include `ios` in the event name. For a new unprefixed event, conform to `PixelKitEventWithCustomPrefix` with an empty `namePrefix`; PixelKit then appends `_ios_phone` or `_ios_tablet`. A plain `PixelKit.Event` name is otherwise unchanged on iOS.
+- **macOS platform context**: The feature-grouped naming convention also applies to macOS. Plain event names can still receive PixelKit's legacy `m_mac_` prefix at firing time; use `.unenforcedPrefix` only when the event name is already fully qualified and must be sent unchanged.
 - **Clarity**: Names should be clear and self-documenting. Anyone reading the pixel name should understand what it represents without needing additional context.
-- **Platform context**: Do not add `ios`, `mac`, `m_`, or `m-` to new names. Use the platform context supplied by the pixel pipeline.
 
-Danger warns when a new Swift pixel definition starts with `m_` or `m-`. Existing names that use these
-prefixes or legacy shorthand such as `ml`, `mp`, `mf`, and `m_r` remain unchanged, but do not use them
-as templates.
+**Avoid legacy shorthand naming.** The codebase contains legacy pixels with cryptic names like `ml`, `mp`, `mf`, `m_r`. These are difficult to understand and should not be used as a template for new pixels. New pixels should use descriptive names.
 
 Examples:
 
 | Style | Enum Case | String Name | Notes |
 |-------|-----------|-------------|-------|
-| Good | `.snapshotEnumerationFailed` | `"app-switcher_snapshot_enumeration_failed"` | Grouped by the app-switcher feature |
-| Good | `.purchaseAttempt` | `"privacy-pro_purchase_attempt"` | Grouped by the Privacy Pro feature |
-| Legacy | `.appLaunch` | `"m_app_launch"` | Do not add the `m_` prefix to new pixels |
-| Legacy | `.privacyDashboardOpened` | `"mp"` | Do not copy legacy shorthand |
+| Good | `.serpAttach` | `"search-token_serp-attach"` | Grouped by the Search Token feature |
+| Good | `.fetch` | `"search-token_fetch"` | Grouped by the Search Token feature |
+| Legacy | `.appLaunch` | `"ml"` | Avoid this style for new pixels |
+| Legacy | `.privacyDashboardOpened` | `"mp"` | Avoid this style for new pixels |
 
-#### Parameterized Pixel Cases
+### Existing Legacy Parameterized iOS Cases
 
-Enum cases can have associated values that are interpolated into the pixel name:
+Some existing legacy enum cases have associated values that are interpolated into the pixel name:
 
 ```swift
 // Enum definition with associated value
@@ -111,9 +126,59 @@ case syncLocalTimestampResolutionTriggered(Feature)
 
 // In the name property
 case .networkProtectionLatency(let quality):
-    return "network-protection_\(quality)_latency"
+    return "m_netp_ev_\(quality)_latency"
 case .syncLocalTimestampResolutionTriggered(let feature):
-    return "sync_\(feature.name)_local_timestamp_resolution_triggered"
+    return "m_sync_\(feature.name)_local_timestamp_resolution_triggered"
+```
+
+### macOS Pixels (PixelKit)
+
+macOS uses the `PixelKit.Event` protocol, typically in feature-specific files. The protocol is declared like this:
+
+```swift
+// SharedPackages/PixelKit/Sources/PixelKit/PixelKit+Event.swift
+extension PixelKit {
+    public protocol Event {
+        var name: String { get }
+        var standardParameters: [PixelKitStandardParameter]? { get }
+        var parameters: [String: String]? { get }
+        var error: NSError? { get }
+    }
+}
+```
+
+An abridged example of an existing implementation is:
+
+The names in this existing implementation retain their legacy prefixes; for new cases, follow the feature-grouped convention above.
+
+```swift
+// macOS/DuckDuckGo/Statistics/SubscriptionPixel.swift
+private let appDistribution = AppVersion.isAppStoreBuild ? "store" : "direct"
+
+enum SubscriptionPixel: PixelKit.Event {
+    case subscriptionActive(AuthVersion)
+    case subscriptionPurchaseSuccess
+    case subscriptionActivated
+
+    var name: String {
+        switch self {
+        case .subscriptionActive: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_active"
+        case .subscriptionPurchaseSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_success"
+        case .subscriptionActivated: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_activated_u"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .subscriptionActive(let authVersion):
+            return [AuthVersion.key: authVersion.rawValue]
+        default:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+}
 ```
 
 ## Pixel Parameters
@@ -121,18 +186,22 @@ case .syncLocalTimestampResolutionTriggered(let feature):
 Use structured parameter keys when reusing them across multiple pixels:
 
 ```swift
-extension PixelParameters {
+private enum Parameter {
     static let source = "source"
 }
 
-pixelKit.fire(FeaturePixel.used,
-              options: .parameters([PixelParameters.source: "keyboard_shortcut"]))
+pixelKit.fire(event, options: .parameters([Parameter.source: "keyboard_shortcut"]))
 ```
 
 ## PixelFiring Protocol
 
-Use the PixelKit `PixelFiring` protocol for dependency injection and testing. The unrelated legacy iOS
-protocol remains for existing infrastructure only.
+There are two unrelated protocols with this name. Use the PixelKit protocol for new production code. The legacy iOS protocol below documents existing infrastructure and testing support.
+
+### Legacy iOS (`iOS/Core/Pixel`)
+
+Existing legacy iOS code uses the deprecated `PixelFiring` protocol in `iOS/Core/PixelFiring.swift` for dependency injection and testing.
+
+### PixelKit (iOS, macOS, and shared packages)
 
 ```swift
 // SharedPackages/PixelKit/Sources/PixelKit/PixelFiring.swift
@@ -185,7 +254,7 @@ both, and must declare them in its JSON5 definition, before opting in. See
 2. **Use structured parameters**: Define parameter keys as constants to avoid typos and enable refactoring.
 3. **Include error context**: When firing error pixels, include the error object as part of its error parameters.
 4. **Consider using EventMapping**: When sending pixels from inside a shared Swift package, define pixels as new enum and emit them using `EventMapping`, then implement the event mapper on the client side.
-5. **Consider using instrumentation facades**: For features with multiple related pixels, consider defining an instrumentation protocol to centralize pixel firing logic. See `instrumentation-facade.mdc`.
+5. **Consider using instrumentation facades**: For features with multiple related pixels, consider defining an instrumentation protocol to centralize pixel firing logic. See `instrumentation-facades.mdc`.
 
 ## Pixel Validation
 
@@ -215,7 +284,6 @@ Each JSON5 file defines a map of `pixel_name` to metadata. Use `TEMPLATE.json5` 
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform"],
         "parameters": ["appVersion"],
-        "expires": "2025-01-30"
     }
 }
 ```
@@ -230,9 +298,12 @@ Key fields:
 
 Prefer referencing shared suffix/parameter keys where possible to keep definitions consistent and validatable.
 
-Pixels have some default values, please check the Pixel implementation in the respective platform to determine what those are.
+Check the applicable PixelKit configuration and implementation for default values.
 
 ## Related Files
 
+- `iOS/Core/Pixel.swift` - Legacy iOS pixel firing implementation
+- `iOS/Core/DailyPixel.swift` - Legacy daily pixel implementation
+- `iOS/Core/UniquePixel.swift` - Legacy unique pixel implementation
+- `iOS/Core/PixelEvent.swift` - Legacy iOS pixel event definitions
 - `SharedPackages/PixelKit/Sources/PixelKit/` - Shared PixelKit implementation
-- `iOS/Core/Pixel*.swift` - Legacy iOS pixel implementation; do not use it for new pixels

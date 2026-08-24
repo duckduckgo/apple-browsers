@@ -24,8 +24,8 @@ import UIKit
 /// mirroring a toggle tap. A quick flick triggers it; slow horizontal drags (e.g. row
 /// swipe-to-delete) don't. The recognizers don't retain this controller — the owner must.
 ///
-/// Recognizes simultaneously with descendant scroll views (favorites collection view, suggestion
-/// list) so a horizontal flick still switches mode even when it lands on scrollable content.
+/// Takes precedence over descendant scroll views (favorites collection view, suggestion list) so a
+/// horizontal flick still switches mode without changing their content offset.
 @MainActor
 final class ModeSwitchSwipeGestureController: NSObject {
 
@@ -60,7 +60,12 @@ final class ModeSwitchSwipeGestureController: NSObject {
     @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
         let targetMode: TextEntryMode = gesture.direction == .left ? .aiChat : .search
         Logger.unifiedInputState.debug("[UTITransition] source=swipe recognized target=\(String(describing: targetMode), privacy: .public)")
-        onSwitch(targetMode)
+        // Let the List's pan recognizer finish before changing its safe-area inset. Updating it from
+        // inside the swipe callback can preserve an offset based on the previous UTI height.
+        DispatchQueue.main.async { [weak self] in
+            Logger.unifiedInputState.debug("[UTITransition] source=swipe dispatch target=\(String(describing: targetMode), privacy: .public)")
+            self?.onSwitch(targetMode)
+        }
     }
 }
 

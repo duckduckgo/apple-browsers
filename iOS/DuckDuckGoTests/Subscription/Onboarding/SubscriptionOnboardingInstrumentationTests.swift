@@ -113,9 +113,9 @@ private final class MockPixelFiring: PixelFiring {
     private(set) var firedEvents: [PixelKit.Event] = []
 
     func fire(event: PixelKit.Event,
-             frequency: PixelKit.Frequency,
-             options: PixelKit.Options,
-             onComplete: @escaping PixelKit.CompletionBlock) {
+              frequency: PixelKit.Frequency,
+              options: PixelKit.Options,
+              onComplete: @escaping PixelKit.CompletionBlock) {
         firedEvents.append(event)
         onComplete(true, nil)
     }

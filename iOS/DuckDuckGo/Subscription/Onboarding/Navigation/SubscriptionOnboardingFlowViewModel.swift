@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import PrivacyConfig
 
 // (TODO|Post-iOS15-Drop): fold back into the flow view model
 /// The PIR launch's presentation
@@ -83,6 +84,8 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 
     let instrumentation: SubscriptionOnboardingInstrumenting
 
+    private let featureFlagger: FeatureFlagger
+
     private let onFinish: () -> Void
     private let onRequestDuckAIChat: (String?) -> Bool
 
@@ -96,11 +99,13 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
                           prefetcher: SubscriptionOnboardingPrefetcher? = nil,
                           onRequestDuckAIChat: ((String?) -> Bool)? = nil,
                           instrumentation: SubscriptionOnboardingInstrumenting? = nil,
+                          featureFlagger: FeatureFlagger? = nil,
                           @ViewBuilder pirScreen: @escaping () -> PIRScreen) {
         self.progress = progress
         self.onFinish = onFinish
         self.prefetcher = prefetcher ?? SubscriptionOnboardingPrefetcher()
         self.instrumentation = instrumentation ?? SubscriptionOnboardingInstrumentation(entryPoint: entryPoint)
+        self.featureFlagger = featureFlagger ?? AppDependencyProvider.shared.featureFlagger
         self.pirScreen = { AnyView(pirScreen()) }
         if let onRequestDuckAIChat {
             self.onRequestDuckAIChat = onRequestDuckAIChat
@@ -122,6 +127,7 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
     /// Kicked off when the flow appears.
     func startPrefetching() {
         instrumentation.flowStarted()
+        SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger)
         prefetcher.prefetch(Self.prefetchTargets(for: sequence))
     }
 

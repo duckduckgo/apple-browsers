@@ -64,6 +64,7 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "WebKitExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "DDGSync", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),

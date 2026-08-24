@@ -29,14 +29,15 @@ struct ScopedFireConfirmationView: View {
     
     @ObservedObject var viewModel: ScopedFireConfirmationViewModel
     @State private var isAnimating = false
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    
+    /// Presenting context's size class; the built-in one reports `.compact` inside a popover even on a wide iPad.
+    @Environment(\.presentationHorizontalSizeClass) private var presentationSizeClass
+
     init(viewModel: ScopedFireConfirmationViewModel) {
         self.viewModel = viewModel
     }
-    
+
     private var contentPadding: EdgeInsets {
-        horizontalSizeClass == .compact ? Constants.sheetViewPadding : Constants.popoverViewPadding
+        presentationSizeClass == .compact ? Constants.sheetViewPadding : Constants.popoverViewPadding
     }
     
     var body: some View {
@@ -135,6 +136,22 @@ private struct DestructiveButtonModifier: ViewModifier {
     }
 }
 
+/// Carries the presenting context's size class across the UIKit presentation boundary. Injected by `FireConfirmationPresenter`.
+private struct PresentationHorizontalSizeClassKey: EnvironmentKey {
+    static let defaultValue: UserInterfaceSizeClass? = nil
+}
+
+extension EnvironmentValues {
+    var presentationHorizontalSizeClass: UserInterfaceSizeClass? {
+        get {
+            self[PresentationHorizontalSizeClassKey.self]
+        }
+        set {
+            self[PresentationHorizontalSizeClassKey.self] = newValue
+        }
+    }
+}
+
 private extension ScopedFireConfirmationView {
     enum Constants {
         static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
@@ -151,7 +168,6 @@ private extension ScopedFireConfirmationView {
 #if DEBUG
 private struct PreviewDataClearingCapability: DataClearingCapable {
     var isFireButtonRefinementsEnabled: Bool { false }
-    var isSingleTabDeleteAllEnabled: Bool { false }
 }
 
 private final class PreviewDownloadManager: DownloadManaging {

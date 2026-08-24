@@ -1875,49 +1875,60 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // The controller decides what the menu shows; this only maps each item to an NSMenuItem.
         for item in items {
             switch item {
-            case .model(let model, let badge, let isSelected):
-                menu.addItem(modelRow(for: model, trailingText: badge, isSelected: isSelected,
-                                      isDimmed: false, isInteractive: true, in: menu))
+            case .model(let model, let subtitle, let isSelected):
+                menu.addItem(modelRow(for: model, subtitle: subtitle, isSelected: isSelected,
+                                      action: #selector(modelSelected(_:))))
             case .separator:
                 menu.addItem(.separator())
-            case .gatedHeader(let title, let badge, let isMuted, let representativeModel):
-                let headerItem = NSMenuItem.createSubscriberExclusiveHeader(
-                    title: title,
-                    badgeText: badge,
-                    isBadgeMuted: isMuted,
-                    action: #selector(gatedModelSelected(_:)),
-                    target: self,
-                    menu: menu
-                )
-                headerItem.representedObject = representativeModel
-                menu.addItem(headerItem)
-            case .gatedModel(let model, let badge):
-                menu.addItem(modelRow(for: model, trailingText: badge, isSelected: false,
-                                      isDimmed: true, isInteractive: false, in: menu))
+            case .sectionHeader(let title):
+                menu.addItem(.createMutedSectionHeader(title: title))
+            case .gatedModel(let model, let routesToUpsell):
+                let row = modelRow(for: model, isSelected: false, isGated: true,
+                                   action: #selector(gatedModelSelected(_:)))
+                // With no upsell to route to, the row is inert rather than a dead-end tap.
+                row.isEnabled = routesToUpsell
+                menu.addItem(row)
             }
         }
 
-        menu.minimumWidth = max(menu.minimumWidth, 320)
+        menu.minimumWidth = max(menu.minimumWidth, 250)
         return menu
     }
 
-    private func modelRow(for model: AIChatModel, trailingText: String?, isSelected: Bool, isDimmed: Bool, isInteractive: Bool, in menu: NSMenu) -> NSMenuItem {
+    /// Stock `NSMenuItem`: native checkmark gutter, icon and highlight; the rest is the attributed title.
+    /// A gated row's name trails off, marking it as a locked preview rather than a choice.
+    private func modelRow(for model: AIChatModel, subtitle: String? = nil, isSelected: Bool, isGated: Bool = false, action: Selector) -> NSMenuItem {
         let title = model.titleComponents
-        let item = NSMenuItem.createModelRow(
-            icon: model.menuIcon,
-            boldTitle: title.bold,
-            regularTitle: title.regular,
-            subtitle: nil,
-            trailingText: trailingText,
-            isSelected: isSelected,
-            isDimmed: isDimmed,
-            isInteractive: isInteractive,
-            action: isInteractive ? #selector(modelSelected(_:)) : #selector(gatedModelSelected(_:)),
-            target: self,
-            menu: menu
-        )
+        let name = title.regular.isEmpty ? title.bold : "\(title.bold) \(title.regular)"
+        let item = NSMenuItem(title: model.name, action: action, keyEquivalent: "")
+        item.target = self
+        item.image = model.menuIcon
+        item.state = isSelected ? .on : .off
+        item.attributedTitle = Self.menuRowTitle(title: isGated ? name + "…" : name, subtitle: subtitle)
         item.representedObject = model
         return item
+    }
+
+    /// Two-line row title: name plus an optional grey subtitle. Shared by the model and
+    /// reasoning-effort pickers so their rows match.
+    private static func menuRowTitle(title: String, subtitle: String?) -> NSAttributedString {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineSpacing = 2
+
+        // System semantic colors, so AppKit inverts them under the menu highlight.
+        let result = NSMutableAttributedString(string: title, attributes: [
+            .font: NSFont.systemFont(ofSize: 13),
+            .foregroundColor: NSColor.labelColor,
+            .paragraphStyle: paragraph
+        ])
+        if let subtitle {
+            result.append(NSAttributedString(string: "\n\(subtitle)", attributes: [
+                .font: NSFont.systemFont(ofSize: 12),
+                .foregroundColor: NSColor.secondaryLabelColor,
+                .paragraphStyle: paragraph
+            ]))
+        }
+        return result
     }
 
     @objc private func gatedModelSelected(_ sender: NSMenuItem) {
@@ -1941,11 +1952,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     // MARK: - Reasoning Picker
 
-    /// A floor for the reasoning-effort menu's width, set explicitly because the menu mixes plain
-    /// `NSMenuItem`s (sized by AppKit from their attributed title) with the gated row's custom view
-    /// (sized from its own `fittingSize`) — relying on whichever happens to come out wider left the
-    /// custom row's badge short of the menu's actual rendered width, with a gap after it.
-    private static let reasoningPickerMinimumWidth: CGFloat = 300
+    /// Width floor, so a two-line row's subtitle isn't cramped.
+    private static let reasoningPickerMinimumWidth: CGFloat = 250
 
     @objc private func reasoningPickerButtonClicked() {
         let menu = NSMenu()
@@ -1957,43 +1965,34 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if items.contains(where: \.isGated) {
             omnibarController.pixelHandler.fire(.reasoningPickerShown)
         }
+        var addedSeparator = false
         for item in items {
-            menu.addItem(reasoningEffortRow(for: item, in: menu))
+            // Gated efforts sit below a divider and their section heading, like the model picker's.
+            if item.isGated && !addedSeparator {
+                menu.addItem(.separator())
+                addedSeparator = true
+            }
+            if let title = item.gatedSectionTitle {
+                menu.addItem(.createMutedSectionHeader(title: title))
+            }
+            menu.addItem(reasoningEffortRow(for: item))
         }
 
         popUp(menu, at: NSPoint(x: 0, y: -5), in: reasoningPickerButton)
     }
 
-    /// Maps a resolved item to a row via `ModelMenuRowView` (shared with the model picker so gated
-    /// rows stay aligned with their siblings). A gated row is interactive only when it shows a badge.
-    private func reasoningEffortRow(for item: AIChatReasoningPickerItem, in menu: NSMenu) -> NSMenuItem {
-        let hasUpsellBadge = item.upsellBadge != nil
-        let menuItem = NSMenuItem.createModelRow(
-            icon: item.effort.icon,
-            boldTitle: item.effort.title,
-            regularTitle: "",
-            subtitle: item.effort.subtitle,
-            subtitleFontSize: 11,
-            trailingText: item.trailingText,
-            trailingBadgeText: item.upsellBadge,
-            isBadgeMuted: item.isBadgeMuted,
-            emphasizesTitle: false,
-            isSelected: item.isSelected,
-            isDimmed: item.isGated && !hasUpsellBadge,
-            isInteractive: !item.isGated || hasUpsellBadge,
-            action: #selector(reasoningEffortSelected(_:)),
-            badgeAction: hasUpsellBadge ? #selector(reasoningEffortBadgeSelected(_:)) : nil,
-            target: self,
-            menu: menu
-        )
+    /// Stock `NSMenuItem`, matching the model picker's rows. A gated effort stays selectable so
+    /// `reasoningEffortSelected` can route it to the upsell dialog.
+    private func reasoningEffortRow(for item: AIChatReasoningPickerItem) -> NSMenuItem {
+        let menuItem = NSMenuItem(title: item.effort.title, action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
+        menuItem.target = self
+        menuItem.image = item.effort.icon
+        menuItem.state = item.isSelected ? .on : .off
+        menuItem.attributedTitle = Self.menuRowTitle(title: item.effort.title,
+                                                     subtitle: item.effort.subtitle)
+        menuItem.isEnabled = !item.isGated || item.routesToUpsell
         menuItem.representedObject = item.effort
         return menuItem
-    }
-
-    @objc private func reasoningEffortBadgeSelected(_ sender: NSMenuItem) {
-        guard let effort = sender.representedObject as? AIChatReasoningEffort,
-              let requiredTier = omnibarController.requiredTier(for: effort) else { return }
-        presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningDropdown)
     }
 
     @objc private func reasoningEffortSelected(_ sender: NSMenuItem) {

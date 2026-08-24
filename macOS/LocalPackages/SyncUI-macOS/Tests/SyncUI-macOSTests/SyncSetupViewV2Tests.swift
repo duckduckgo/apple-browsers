@@ -21,9 +21,8 @@ import SnapshotTestingSupport
 import Testing
 @testable import SyncUI_macOS
 
-#if DEBUG
 @MainActor
-@Suite("Sync Setup View V2 Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))
+@Suite("Sync Setup View V2 Tests")
 final class SyncSetupViewV2Tests {
 
     @available(macOS 13, *)
@@ -35,4 +34,3 @@ final class SyncSetupViewV2Tests {
         )
     }
 }
-#endif

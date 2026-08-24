@@ -63,6 +63,9 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Start measuring duration
       id: start-duration
       uses: ./.github/actions/measure-duration
@@ -163,9 +166,9 @@ jobs:
           xcode-compilation-cache-pir-e2e-
 
     - name: Setup Bitrise Build Cache
-      if: runner.environment == 'self-hosted'
       uses: ./.github/actions/bitrise-build-cache
       with:
+        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
         token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
         workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 

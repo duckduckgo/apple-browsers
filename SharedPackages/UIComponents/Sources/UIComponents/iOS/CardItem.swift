@@ -169,6 +169,8 @@ public struct CardItem: View {
     /// text in from a top-leading icon's edge.
     private let textBlockLeadingInset: CGFloat
     private let trailing: CardItemAccessory?
+    /// The horizontal gap between the content block and the trailing accessory.
+    private let trailingAccessorySpacing: CGFloat
     private let accessibilityValue: String?
 
     public init(icon: CardItemIcon? = nil,
@@ -179,6 +181,7 @@ public struct CardItem: View {
                 titleTextSpacing: CGFloat = 0,
                 textBlockLeadingInset: CGFloat = 0,
                 trailing: CardItemAccessory? = nil,
+                trailingAccessorySpacing: CGFloat = 8,
                 accessibilityValue: String? = nil) {
         self.icon = icon
         self.overline = overline
@@ -188,6 +191,7 @@ public struct CardItem: View {
         self.titleTextSpacing = titleTextSpacing
         self.textBlockLeadingInset = textBlockLeadingInset
         self.trailing = trailing
+        self.trailingAccessorySpacing = trailingAccessorySpacing
         self.accessibilityValue = accessibilityValue
     }
 
@@ -230,7 +234,7 @@ private extension CardItem {
 
             if let trailing {
                 trailingView(for: trailing)
-                    .padding(.leading, 8)
+                    .padding(.leading, trailingAccessorySpacing)
                     .accessibilityHidden(trailing.isInteractive ? false : true)
             }
         }

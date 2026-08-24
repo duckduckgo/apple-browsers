@@ -79,16 +79,19 @@ extension MainViewController {
             isFireTab: isCurrentTabFireTab(),
             hidesToggleOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage,
             stateStore: stateStore,
             syncService: syncService,
             aiChatSyncCleaner: aiChatSyncCleaner,
-            recentModalPromptStatusProvider: recentModalPromptStatusProvider,
+            recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
         )
         coordinator.delegate = self
+        coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
+        coordinator.duckAIEntrySourceProvider = { [weak self] in self?.lastDuckAIEntrySource }
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
         coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
@@ -498,6 +501,12 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
+        coordinator.textChangePublisher
+            .sink { [weak self] text in
+                self?.recordNewTabPageSessionTextEntry(text)
+            }
+            .store(in: &unifiedToggleInputCancellables)
+
         // AI-tab search mode swaps suggestions in/out at the empty↔non-empty text boundary.
         coordinator.textChangePublisher
             .map { $0.isEmpty }
@@ -527,6 +536,7 @@ private extension MainViewController {
             ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.toggleUsed()
+        recordNewTabPageSessionToggleSwitch(to: mode)
 
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
@@ -632,22 +642,38 @@ private extension MainViewController {
         NotificationCenter.default.publisher(for: .aiChatShowModelPicker)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] webView in
-                self?.handleShowModelPicker(for: webView)
-            }
+            .sink { [weak self] in self?.handleShowPicker(.model, for: $0) }
+            .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatShowReasoningPicker)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.handleShowPicker(.reasoning, for: $0) }
+            .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatOpenFilePicker)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.handleShowPicker(.attachment, for: $0) }
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    /// Routes the FE's `showModelPicker` to the foreground Duck.ai tab's UTI so the user can pick a
-    /// supported model for the active chat (recovery-card "Switch Model" CTA). No-op when there's no
-    /// foreground Duck.ai UTI.
-    private func handleShowModelPicker(for webView: WKWebView) {
+    private enum AIChatPickerRequest {
+        case model, reasoning, attachment
+    }
+
+    /// Routes an FE picker CTA to the foreground Duck.ai tab's UTI.
+    private func handleShowPicker(_ picker: AIChatPickerRequest, for webView: WKWebView) {
         let isCurrent = tabManager.controller(forWebView: webView) === currentTab
         let isAITab = currentTab?.isAITab == true
         guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
             return
         }
-        coordinator.presentModelPickerForActiveChat()
+        switch picker {
+        case .model: coordinator.presentModelPickerForActiveChat()
+        case .reasoning: coordinator.presentReasoningPickerForActiveChat()
+        case .attachment: coordinator.presentFilePickerForActiveChat()
+        }
     }
 
     /// Updates the foreground tab's UTI to reflect an FE-initiated image-generation chat.
@@ -958,6 +984,7 @@ extension MainViewController {
                     self.ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
                 }
                 self.postIdleSessionInstrumentation.backPressed()
+                self.recordNewTabPageSessionAction { $0.utiBackArrow() }
                 self.dismissUnifiedToggleInputOmnibarSession(coordinator: coordinator)
             } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
@@ -965,6 +992,7 @@ extension MainViewController {
         }
         contentVC.onSwipeDownRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.recordNewTabPageSessionAction { $0.dismissKeyboard() }
             coordinator.dismissOmnibarKeyboard()
         }
 
@@ -1175,21 +1203,41 @@ extension MainViewController {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
+        recordNewTabPageSessionAction { $0.hitSubmit() }
         loadQuery(query)
     }
 
-    /// Fires when Duck.ai is disabled under AI Features settings yet the user still reaches Duck.ai by
-    /// typing its address into the UTI. Counts those direct navigations to gauge residual Duck.ai
-    /// demand among users who have turned it off. (Disabling Duck.ai also forces the Search↔Duck.ai
-    /// toggle off, so the `isAIChatEnabled` check is sufficient.) Mirrors `loadQuery`'s URL resolution
-    /// so detection matches what actually gets navigated.
+    /// The only place a typed duck.ai address can be told apart from an in-page or deep link.
+    /// Mirrors `loadQuery`'s URL resolution so detection matches what gets navigated.
     private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) {
-        guard !aiChatSettings.isAIChatEnabled,
-              let url = URL.makeSearchURL(query: query,
+        guard let url = URL.makeSearchURL(query: query,
                                           useUnifiedLogic: isUnifiedURLPredictionEnabled,
                                           queryContext: currentTab?.url),
               url.isDuckAIURL else { return }
-        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
+
+        DailyPixel.fireDailyAndCount(pixel: .aiChatDuckAIDirectNavigation, withAdditionalParameters: [
+            "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
+            "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+        ])
+
+        if !aiChatSettings.isAIChatEnabled {
+            DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
+        }
+
+        // Skipped when `TabURLInterceptor` cancels the navigation and reports the entry from there,
+        // which would otherwise attribute one submission twice.
+        guard !duckAINavigationIsIntercepted else { return }
+        // `loadQuery` loads duck.ai in-tab without going through `openAIChat`, so this is the
+        // only place the `direct_url` entry can be reported when the interceptor does not run.
+        let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
+            currentIsAI: currentTab?.isAITab == true,
+            currentHasContent: currentTab?.tabModel.link != nil,
+            targetIsAI: true,
+            unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+        )
+        fireAIChatEntryPointPixel(source: .directURL,
+                                  opensNewTab: decision == .openInNewTab,
+                                  hasPrompt: false)
     }
 
 }
@@ -1239,6 +1287,9 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+        // Recorded before the branches below, which end the visit on their own terminals.
+        recordNewTabPageSessionAction { $0.hitSubmit() }
+
         // Match omnibar toggle: URL-shaped submissions from non-Duck.ai origin load the URL even when toggle is Duck.ai. Attachments suppress (no sensible URL-load with attachments).
         // On a Duck.ai tab, keep prompt semantics so users can ask the model about a URL by name.
         if currentTab?.isAITab != true,
@@ -1246,10 +1297,13 @@ extension MainViewController: UnifiedToggleInputDelegate {
            let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
            url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
             unifiedToggleInputCoordinator?.recordDuckAIPromptInterpretedAsURL()
+            // `loadUrlRespectingAIBoundary` carries no terminal of its own, so without this the visit
+            // would stay open and later report a timeout despite the user having navigated.
+            endNewTabPageSessionWithLoad(of: url)
             loadUrlRespectingAIBoundary(url)
             return
         }
-        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -1285,13 +1339,13 @@ extension MainViewController: UnifiedToggleInputDelegate {
         // This opens the chip handoff in a fresh chat tab and avoids the contextual-sheet branch in onAIChatPressed.
         if currentTab?.isAITab == true {
             if prompt.isEmpty {
-                openAIChat()
+                openAIChat(source: .addressBarShortcutChip)
             } else {
-                openAIChat(prompt, autoSend: true)
+                openAIChat(source: .addressBarShortcutChip, prompt, autoSend: true)
             }
             return
         }
-        onAIChatPressed(prefilledText: prompt)
+        onAIChatPressed(prefilledText: prompt, source: .addressBarShortcutChip)
     }
 
     func unifiedToggleInputDidChangeHeight() {
@@ -1339,6 +1393,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
         openAIChat(
+            source: .addressBarEditingState,
             query,
             autoSend: true,
             tools: tools,
@@ -1376,6 +1431,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidRequestTabSwitcher() {
+        recordNewTabPageSessionAction { $0.tapTabViewerEscapeHatch() }
         requestTabSwitcher()
     }
 

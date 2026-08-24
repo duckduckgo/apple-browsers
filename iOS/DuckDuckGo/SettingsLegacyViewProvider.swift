@@ -63,6 +63,8 @@ class SettingsLegacyViewProvider: ObservableObject {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+    let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
+    let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -85,7 +87,9 @@ class SettingsLegacyViewProvider: ObservableObject {
          syncAutoRestoreHandler: SyncAutoRestoreHandling,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
+         promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -108,6 +112,8 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
+        self.promoCoordinationCooldownResetter = promoCoordinationCooldownResetter
     }
     
     enum LegacyView {
@@ -164,7 +170,9 @@ class SettingsLegacyViewProvider: ObservableObject {
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
-            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
+            promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

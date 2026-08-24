@@ -333,6 +333,11 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
     public var wasLoadCalledWithURL: URL?
     public var wasWaitForWebViewLoadCalled = false
     public var wasFinishCalled = false
+    public var finishCallCount = 0
+    public var finishHandler: (() -> Void)?
+    public var executeCallCount = 0
+    public var executeHandler: (() -> Void)?
+    public var initializeWebViewHandler: (() async -> Void)?
     public var wasExecuteCalledForUserData = false
     public var wasExecuteCalledForSolveCaptcha = false
     public var wasExecuteJavascriptCalled = false
@@ -341,6 +346,7 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
 
     public func initializeWebView(showWebView: Bool) async {
         wasInitializeWebViewCalled = true
+        await initializeWebViewHandler?()
     }
 
     public func load(url: URL) async throws {
@@ -356,9 +362,14 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
 
     public func finish() async {
         wasFinishCalled = true
+        finishCallCount += 1
+        finishHandler?()
     }
 
     public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async {
+        executeCallCount += 1
+        executeHandler?()
+
         switch data {
         case .solveCaptcha:
             wasExecuteCalledForSolveCaptcha = true
@@ -390,6 +401,11 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
         wasLoadCalledWithURL = nil
         wasWaitForWebViewLoadCalled = false
         wasFinishCalled = false
+        finishCallCount = 0
+        finishHandler = nil
+        executeCallCount = 0
+        executeHandler = nil
+        initializeWebViewHandler = nil
         wasExecuteCalledForSolveCaptcha = false
         wasExecuteJavascriptCalled = false
         wasExecuteCalledForUserData = false
@@ -1010,10 +1026,15 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 
     private static let queue = DispatchQueue(label: "MockDataBrokerProtectionPixelsHandler.queue")
     private static var _lastPixelsFired = [DataBrokerProtectionSharedPixels]()
+    private var _firedEvents = [DataBrokerProtectionSharedPixels]()
 
     public static var lastPixelsFired: [DataBrokerProtectionSharedPixels] {
         get { queue.sync { _lastPixelsFired } }
         set { queue.sync { _lastPixelsFired = newValue } }
+    }
+
+    public var firedEvents: [DataBrokerProtectionSharedPixels] {
+        Self.queue.sync { _firedEvents }
     }
 
     public var lastFiredEvent: DataBrokerProtectionSharedPixels?
@@ -1027,9 +1048,12 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
         }
 
         mockMapping = { [weak self] event, _, params, _ in
-            self?.lastFiredEvent = event
-            self?.lastPassedParameters = params
+            guard let self else { return }
+
+            self.lastFiredEvent = event
+            self.lastPassedParameters = params
             MockDataBrokerProtectionPixelsHandler.queue.sync {
+                self._firedEvents.append(event)
                 MockDataBrokerProtectionPixelsHandler._lastPixelsFired.append(event)
             }
         }
@@ -1041,6 +1065,7 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 
     public func clear() {
         MockDataBrokerProtectionPixelsHandler.queue.sync {
+            _firedEvents.removeAll()
             MockDataBrokerProtectionPixelsHandler._lastPixelsFired.removeAll()
         }
         lastFiredEvent = nil
@@ -2010,6 +2035,11 @@ public final class MockEmailConfirmationJobProvider: EmailConfirmationJobProvidi
 }
 
 public final class MockBrokerProfileJobQueue: BrokerProfileJobQueue {
+    private enum QueueEntry {
+        case operation(Operation)
+        case barrier(@Sendable () -> Void)
+    }
+
     public var maxConcurrentOperationCount = 1
 
     public var operations: [Operation] = []
@@ -2021,7 +2051,7 @@ public final class MockBrokerProfileJobQueue: BrokerProfileJobQueue {
     public private(set) var didCallAddCount = 0
     public private(set) var didCallAddBarrierBlockCount = 0
 
-    private var barrierBlock: (@Sendable () -> Void)?
+    private var entries: [QueueEntry] = []
 
     public init() { }
 
@@ -2033,28 +2063,43 @@ public final class MockBrokerProfileJobQueue: BrokerProfileJobQueue {
     public func addOperation(_ op: Operation) {
         didCallAddCount += 1
         self.operations.append(op)
+        entries.append(.operation(op))
     }
 
     public func addBarrierBlock1(_ barrier: @escaping @Sendable () -> Void) {
         didCallAddBarrierBlockCount += 1
-        self.barrierBlock = barrier
+        entries.append(.barrier(barrier))
     }
 
     public func completeAllOperations() {
-        operations.forEach { $0.start() }
-        operations.removeAll()
-        barrierBlock?()
+        while !entries.isEmpty {
+            switch entries.removeFirst() {
+            case .operation(let operation):
+                operation.start()
+                operations.removeAll { $0 === operation }
+            case .barrier(let barrier):
+                barrier()
+            }
+        }
+    }
+
+    public func completeNextBarrierBlock() {
+        guard case .barrier(let barrier)? = entries.first else { return }
+        entries.removeFirst()
+        barrier()
     }
 
     public func completeOperationsUpTo(index: Int) {
         guard index < operationCount else { return }
 
-        (0..<index).forEach {
-            operations[$0].start()
-        }
-
-        (0..<index).forEach {
-            operations.remove(at: $0)
+        let completedOperations = Array(operations.prefix(index))
+        completedOperations.forEach { operation in
+            operation.start()
+            operations.removeAll { $0 === operation }
+            entries.removeAll { entry in
+                guard case .operation(let queuedOperation) = entry else { return false }
+                return queuedOperation === operation
+            }
         }
     }
 }
@@ -2901,6 +2946,7 @@ public final class MockScanSubJobWebRunner: BrokerProfileScanSubJobWebRunning {
     public var shouldScanThrow = false
     public var scanResults = [ExtractedProfile]()
     public var wasScanCalled = false
+    public var scanHandler: (() async throws -> [ExtractedProfile])?
 
     public init() { }
 
@@ -2908,7 +2954,9 @@ public final class MockScanSubJobWebRunner: BrokerProfileScanSubJobWebRunning {
                      shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         wasScanCalled = true
 
-        if shouldScanThrow {
+        if let scanHandler {
+            return try await scanHandler()
+        } else if shouldScanThrow {
             throw DataBrokerProtectionError.unknown("Test error")
         } else {
             return scanResults
@@ -2919,6 +2967,7 @@ public final class MockScanSubJobWebRunner: BrokerProfileScanSubJobWebRunning {
         shouldScanThrow = false
         scanResults.removeAll()
         wasScanCalled = false
+        scanHandler = nil
     }
 }
 
@@ -2926,6 +2975,7 @@ public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebProtoc
     public var shouldOptOutThrow: (Int) -> Bool = { _ in false }
     public var wasOptOutCalled = false
     public var attemptCount = 0
+    public var optOutHandler: (() async throws -> Void)?
 
     public init() { }
 
@@ -2935,7 +2985,9 @@ public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebProtoc
         wasOptOutCalled = true
         attemptCount += 1
 
-        if shouldOptOutThrow(attemptCount) {
+        if let optOutHandler {
+            try await optOutHandler()
+        } else if shouldOptOutThrow(attemptCount) {
             throw DataBrokerProtectionError.unknown("Test error")
         }
     }
@@ -2956,6 +3008,7 @@ public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebProtoc
         shouldOptOutThrow = { _ in false }
         wasOptOutCalled = false
         attemptCount = 0
+        optOutHandler = nil
     }
 }
 

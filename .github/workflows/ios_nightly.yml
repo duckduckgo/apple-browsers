@@ -75,6 +75,9 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Set cache key hash
       run: |
          has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)

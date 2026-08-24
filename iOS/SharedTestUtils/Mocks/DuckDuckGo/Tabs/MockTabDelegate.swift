@@ -25,12 +25,11 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import EventHub
 import PrivacyDashboard
-import Persistence
+@_spi(Testing) import Persistence
 import Subscription
 import SubscriptionTestingUtilities
 import SpecialErrorPages
 import MaliciousSiteProtection
-import PersistenceTestingUtils
 @testable import DuckDuckGo
 import Combine
 @testable import Core
@@ -89,6 +88,8 @@ final class MockTabDelegate: TabDelegate {
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestDataImport source: DuckDuckGo.DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {}
 
     func tabDidRequestAIChat(tab: TabViewController) {}
+
+    func tabDidRequestNewAIChatTab(tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {}
 

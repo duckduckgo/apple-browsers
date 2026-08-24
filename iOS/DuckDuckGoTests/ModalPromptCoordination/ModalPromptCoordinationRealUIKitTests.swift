@@ -143,12 +143,11 @@ final class ModalPromptCoordinationRealUIKitTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock,
             rootAttachmentChecker: attachmentChecker
         )
         let lease = try acquireModalLease()
-        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
         schedulerMock.executeScheduledBlock()
 
         // Give the selected root a real child presentation. The window exists only so UIKit accepts the nesting:
@@ -167,15 +166,17 @@ final class ModalPromptCoordinationRealUIKitTests {
         // implementation that consulted the topmost controller would report the attempt finished and drop the lease.
         attachmentChecker.markAttached(exactRoot)
 
-        #expect(!sut.reconcilePresentedModal())
+        sut.reconcilePresentedModal()
         #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
         #expect(attachmentChecker.didQuery(exactRoot))
         #expect(!attachmentChecker.didQuery(nestedChild))
 
         // The lease is released only once the retained root itself goes away, child presentation or not.
         attachmentChecker.attachedRoots.remove(ObjectIdentifier(exactRoot))
 
-        #expect(sut.reconcilePresentedModal())
+        sut.reconcilePresentedModal()
+        #expect(sut.modalAttemptPhase == .idle)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
     }
 
@@ -197,7 +198,6 @@ final class ModalPromptCoordinationRealUIKitTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         let lease = try acquireModalLease()
@@ -207,17 +207,13 @@ final class ModalPromptCoordinationRealUIKitTests {
         // and UIKit detaches the root straight away — leaving nothing mid-animation for this test to observe.
         await withCheckedContinuation { continuation in
             presentationHost.onPresentationCompleted = { continuation.resume() }
-            _ = sut.presentModalPromptIfNeeded(from: presentationHost, with: lease)
+            sut.presentModalPromptIfNeeded(from: presentationHost, with: lease)
             schedulerMock.executeScheduledBlock()
         }
         #expect(exactRoot.presentingViewController === presentationHost)
-        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
 
-        let waitingPromoIdentity = VisiblePromoIdentity(
-            surfaceID: UUID(),
-            promoType: .remoteMessage,
-            promoID: "waiting-promo"
-        )
+        let waitingMessageID = "waiting-promo"
 
         // WHEN dismissal starts but UIKit still presents and windows the exact root.
         await withCheckedContinuation { continuation in
@@ -229,9 +225,9 @@ final class ModalPromptCoordinationRealUIKitTests {
             #expect(exactRoot.isBeingDismissed)
             #expect(exactRoot.presentingViewController === presentationHost)
             #expect(exactRoot.viewIfLoaded?.window != nil)
-            #expect(!sut.reconcilePresentedModal())
-            #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
-            guard case .blockedByModal = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: waitingPromoIdentity) else {
+            sut.reconcilePresentedModal()
+            #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
+            guard case .blockedByModal = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: waitingMessageID) else {
                 Issue.record("Expected the dismissing modal to keep blocking visible promo admission")
                 return
             }
@@ -243,52 +239,21 @@ final class ModalPromptCoordinationRealUIKitTests {
         #expect(exactRoot.viewIfLoaded?.window == nil)
 
         // THEN reconciliation releases the modal lease and the waiting promo can be admitted.
-        #expect(sut.reconcilePresentedModal())
+        sut.reconcilePresentedModal()
         #expect(sut.modalAttemptPhase == .idle)
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
-        guard case .acquired(let visiblePromoLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: waitingPromoIdentity) else {
+        guard case .acquired(let remoteMessageLease) = promoQueueLeaseArbiter.acquireRemoteMessageLease(for: waitingMessageID) else {
             Issue.record("Expected visible promo admission after the dismissed modal detached")
             return
         }
-        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [waitingPromoIdentity])
-        _ = visiblePromoLease
-    }
-
-    @available(iOS 16, *)
-    @Test("Enabling Re-Adopts Exact Root Attached To A Different Host", .timeLimit(.minutes(1)))
-    func whenLegacyRootIsAttachedToAnotherHostThenEnablingReAdoptsModalLease() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
-        let exactRoot = UIViewController()
-        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            modalPromptScheduling: schedulerMock
+        #expect(
+            promoQueueLeaseArbiter.snapshot.owner == .remoteMessage(
+                messageID: waitingMessageID,
+                acquisitionIdentity: remoteMessageLease.acquisitionIdentity,
+                appearanceConfirmed: false
+            )
         )
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        schedulerMock.executeScheduledBlock()
-
-        let actualPresentationHost = UIViewController()
-        let window = makeKeyWindow(withRoot: actualPresentationHost)
-        defer { window.isHidden = true }
-        actualPresentationHost.present(exactRoot, animated: false, completion: nil)
-        #expect(exactRoot.presentingViewController === actualPresentationHost)
-
-        // WHEN
-        sut.promoQueueWillTransition(to: .enabled)
-        promoQueueLeaseArbiter.invalidateAllLeases()
-        sut.promoQueueDidTransition(to: .enabled)
-
-        // THEN
-        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
-        guard case .presentationActive = sut.modalAttemptPhase else {
-            Issue.record("Expected the attached exact root to be re-adopted regardless of its presentation host")
-            return
-        }
+        _ = remoteMessageLease
     }
 
     private func acquireModalLease() throws -> PromoQueueModalLease {

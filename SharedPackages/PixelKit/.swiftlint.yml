@@ -1,0 +1,74 @@
+allow_zero_lintable_files: true
+
+disabled_rules:
+  - no_space_in_method_call
+  - multiple_closures_with_trailing_closure
+  - block_based_kvo
+  - compiler_protocol_init
+  - unused_setter_value
+  - line_length
+  - type_name
+  - implicit_getter
+  - trailing_comma
+  - nesting
+  - opening_brace
+  - function_parameter_count
+  - function_body_length
+  - file_length
+  - type_body_length
+  - static_over_final_class
+  - non_optional_string_data_conversion
+
+opt_in_rules:
+  - file_header
+  - explicit_init
+
+custom_rules:
+  explicit_non_final_class:
+    included: ".*\\.swift"
+    name: "Implicitly non-final class"
+    regex: "^\\s*(class) (?!func|var)"
+    capture_group: 0
+    match_kinds:
+      - keyword
+    message: "Classes should be `final` by default, use explicit `internal` or `public` for non-final classes."
+    severity: error
+
+analyzer_rules: # Rules run by `swiftlint analyze`
+  - explicit_self
+
+# Rule Config
+cyclomatic_complexity:
+  ignores_case_statements: true
+identifier_name:
+  min_length: 1
+  max_length: 1000
+large_tuple:
+  warning: 4
+  error: 5
+file_header:
+  required_pattern: |
+                    \/\/
+                    \/\/  SWIFTLINT_CURRENT_FILENAME
+                    \/\/
+                    \/\/  Copyright © \d{4} DuckDuckGo\. All rights reserved\.
+                    \/\/
+                    \/\/  Licensed under the Apache License, Version 2\.0 \(the \"License\"\);
+                    \/\/  you may not use this file except in compliance with the License\.
+                    \/\/  You may obtain a copy of the License at
+                    \/\/
+                    \/\/  http:\/\/www\.apache\.org\/licenses\/LICENSE-2\.0
+                    \/\/
+                    \/\/  Unless required by applicable law or agreed to in writing, software
+                    \/\/  distributed under the License is distributed on an \"AS IS\" BASIS,
+                    \/\/  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.
+                    \/\/  See the License for the specific language governing permissions and
+                    \/\/  limitations under the License\.
+                    \/\/
+
+# General Config
+excluded:
+  - Package.swift
+  - .build
+  - scripts/
+

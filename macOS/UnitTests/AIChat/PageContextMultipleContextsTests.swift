@@ -46,37 +46,63 @@ struct NavigationContextActionTests {
 
 // MARK: - isContextCollectionEnabled Logic Tests
 
+/// Exercises `PageContextTabExtension`'s real decision functions (not a mirror).
 struct ContextCollectionEnabledTests {
 
-    /// Mirrors the logic in PageContextTabExtension.isContextCollectionEnabled
+    private typealias Extension = PageContextTabExtension
+
     private func isContextCollectionEnabled(
-        shouldForceContextCollection: Bool,
-        userRemovedContext: Bool,
+        shouldForceContextCollection: Bool = false,
+        isAutoPageContextSuppressed: Bool = false,
         shouldAutomaticallySendPageContext: Bool
     ) -> Bool {
-        if shouldForceContextCollection { return true }
-        if userRemovedContext { return false }
-        return shouldAutomaticallySendPageContext
+        Extension.isContextCollectionEnabled(shouldForceContextCollection: shouldForceContextCollection,
+                                             isAutoPageContextSuppressed: isAutoPageContextSuppressed,
+                                             shouldAutomaticallySendPageContext: shouldAutomaticallySendPageContext)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Force collection overrides everything", .timeLimit(.minutes(1)))
     func forceCollectionOverrides() {
-        #expect(isContextCollectionEnabled(shouldForceContextCollection: true, userRemovedContext: true, shouldAutomaticallySendPageContext: false) == true)
-        #expect(isContextCollectionEnabled(shouldForceContextCollection: true, userRemovedContext: false, shouldAutomaticallySendPageContext: false) == true)
+        #expect(isContextCollectionEnabled(shouldForceContextCollection: true, isAutoPageContextSuppressed: true, shouldAutomaticallySendPageContext: false) == true)
+        #expect(isContextCollectionEnabled(shouldForceContextCollection: true, shouldAutomaticallySendPageContext: false) == true)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("User removed context suppresses auto-collection", .timeLimit(.minutes(1)))
-    func userRemovedSuppresses() {
-        #expect(isContextCollectionEnabled(shouldForceContextCollection: false, userRemovedContext: true, shouldAutomaticallySendPageContext: true) == false)
+    @Test("Suppression beats the auto-send setting", .timeLimit(.minutes(1)))
+    func suppressionBeatsAutoSend() {
+        #expect(isContextCollectionEnabled(isAutoPageContextSuppressed: true, shouldAutomaticallySendPageContext: true) == false)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Auto-send setting is respected when no overrides", .timeLimit(.minutes(1)))
     func autoSendRespected() {
-        #expect(isContextCollectionEnabled(shouldForceContextCollection: false, userRemovedContext: false, shouldAutomaticallySendPageContext: true) == true)
-        #expect(isContextCollectionEnabled(shouldForceContextCollection: false, userRemovedContext: false, shouldAutomaticallySendPageContext: false) == false)
+        #expect(isContextCollectionEnabled(shouldAutomaticallySendPageContext: true) == true)
+        #expect(isContextCollectionEnabled(shouldAutomaticallySendPageContext: false) == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Attaching a selection that opens the sidebar suppresses auto page-context", .timeLimit(.minutes(1)))
+    func selectionAttachThatOpensSidebarSuppressesPageContext() {
+        let suppressed = Extension.shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: false)
+        #expect(suppressed == true)
+        // The whole point of the fix: auto-attach ON must not also attach the page.
+        #expect(isContextCollectionEnabled(isAutoPageContextSuppressed: suppressed, shouldAutomaticallySendPageContext: true) == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Attaching a selection with the sidebar already open leaves page context alone", .timeLimit(.minutes(1)))
+    func selectionAttachWithOpenSidebarKeepsPageContext() {
+        let suppressed = Extension.shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: true)
+        #expect(suppressed == false)
+        #expect(isContextCollectionEnabled(isAutoPageContextSuppressed: suppressed, shouldAutomaticallySendPageContext: true) == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Ask About Page still forces collection after a selection attach", .timeLimit(.minutes(1)))
+    func askAboutPageOverridesSelectionSuppression() {
+        let suppressed = Extension.shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: false)
+        #expect(isContextCollectionEnabled(shouldForceContextCollection: true, isAutoPageContextSuppressed: suppressed, shouldAutomaticallySendPageContext: false) == true)
     }
 }
 

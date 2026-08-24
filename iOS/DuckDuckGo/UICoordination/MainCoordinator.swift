@@ -71,6 +71,7 @@ final class MainCoordinator {
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let promoCoordinationService: PromoCoordinationService
+    private let homePageConfiguration: HomePageConfiguration
     private let launchSourceManager: LaunchSourceManaging
     private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
@@ -122,6 +123,7 @@ final class MainCoordinator {
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
          didFinishLaunchingStartTime: CFAbsoluteTime?,
+         isAppLaunchedInBackground: Bool,
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
@@ -158,7 +160,10 @@ final class MainCoordinator {
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
-                                                          isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
+                                                          isStillOnboarding: { daxDialogsManager.isStillOnboarding() },
+                                                          promoGate: promoCoordinationService,
+                                                          isRMFAdmissionEnabled: !isAppLaunchedInBackground)
+        self.homePageConfiguration = homePageConfiguration
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
         let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
@@ -186,6 +191,10 @@ final class MainCoordinator {
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+        let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
+        let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
+            await appSwitcherSnapshotCleaner.clearSnapshots()
+        }
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
@@ -223,7 +232,8 @@ final class MainCoordinator {
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
-                                eventHub: eventHub)
+                                eventHub: eventHub,
+                                clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -241,7 +251,8 @@ final class MainCoordinator {
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         fireModeStorageController: contentBlockingService.fireModeStorageController,
-                                        wideEvent: wideEvent)
+                                        wideEvent: wideEvent,
+                                        clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,
             syncService: syncService.sync
@@ -317,8 +328,7 @@ final class MainCoordinator {
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
-                                        newTabPagePromoCoordinator: promoCoordinationService,
-                                        recentModalPromptStatusProvider: promoCoordinationService)
+                                        promoCoordinationService: promoCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -664,9 +674,15 @@ final class MainCoordinator {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
+    func prepareHomePageMessagesForForegroundIfNeeded() {
+        controller.prepareHomePageMessagesForForegroundIfNeeded()
+    }
+
     // MARK: App Lifecycle handling
 
     func onForeground(isFirstForeground: Bool) {
+        homePageConfiguration.handleAppForegrounded()
+
         // Apply tracker animation suppression based on launch source
         // Must be called after launchSourceManager.handleAppAction sets the source
         if isFirstForeground {
@@ -688,6 +704,7 @@ final class MainCoordinator {
     }
 
     func onBackground() {
+        homePageConfiguration.handleAppBackgrounded()
         resetAppStartTime()
         Task {
             await privacyStats.handleAppTermination()
@@ -823,7 +840,7 @@ extension MainCoordinator: URLHandling {
           controller.clearNavigationStack()
           // Give the `clearNavigationStack` call time to complete.
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
-              self.controller.openAIChat()
+              self.controller.openAIChat(source: .iconShortcut)
           }
           Pixel.fire(pixel: .openAIChatFromIconShortcut)
       }

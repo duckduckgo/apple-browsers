@@ -49,6 +49,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Set up Ruby and Bundler
         uses: ./.github/actions/setup-ruby
         with:

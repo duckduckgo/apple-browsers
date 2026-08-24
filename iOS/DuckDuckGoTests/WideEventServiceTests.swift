@@ -20,9 +20,8 @@
 import XCTest
 import Common
 import FoundationExtensions
-import PixelKit
+@_spi(Testing) import PixelKit
 import Subscription
-import PixelKitTestingUtilities
 import SubscriptionTestingUtilities
 import BrowserServicesKit
 @testable import DuckDuckGo

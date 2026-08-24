@@ -16,10 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Common
 import ContentScopeScripts
 import FeatureFlags_macOS
 import Foundation
 import MaliciousSiteProtection
+import Persistence
 import PrivacyConfig
 import WebKit
 
@@ -29,6 +32,10 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
     let faviconManager: FaviconManagement
     let isNTPSpecialPageSupported: Bool
     let userBackgroundImagesManager: UserBackgroundImagesManaging?
+
+    private var failureURLSchemeDebugKeyedStorage: some KeyedStoring<FailureURLSchemeDebugSettingsKeys> {
+        UserDefaults.standard.keyedStoring()
+    }
 
     /// Identifiers of in-flight favicon scheme tasks that complete asynchronously (after awaiting the
     /// image decode). Used to skip messaging a task that WebKit has already stopped.
@@ -54,6 +61,12 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
             assertionFailure("No URL for Duck scheme handler")
             return
         }
+
+        if requestURL.isDebugURLScheme {
+            handleDebugSchemeURL(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
+            return
+        }
+
         let webViewURL = webView.url ?? requestURL
 
         switch webViewURL.type {
@@ -96,6 +109,157 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
         // skipped instead of messaging a stopped task (which would crash).
         runningFaviconTasks.remove(ObjectIdentifier(urlSchemeTask))
         faviconsDebugInspector.webViewDidStop(urlSchemeTask)
+    }
+
+    private static let failureSchemeDemoHtml = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <title>debug://failure</title>
+      <style>
+        body { font: -apple-system-body; margin: 2rem; line-height: 1.4; }
+        code { font: -apple-system-monospaced; }
+      </style>
+    </head>
+    <body>
+      <h1><code>debug://failure</code></h1>
+      <p>This page is served by the app URL scheme handler.</p>
+      <p>Turn on <strong>Debug → debug:// URL scheme → Simulate debug://failure connection error</strong> to produce a
+      connection-lost navigation failure instead of this page.</p>
+    </body>
+    </html>
+    """
+
+    /// UI tests only: `debug://failure?alternatingFailures=1` alternates simulated `URLError` on successive handler invocations (tab reactivation / reload), matching the former `ErrorPageTests` connection-lost vs not-connected style updates without the tests server.
+    ///
+    /// `debug://failure?simulatedError=notConnected` always uses `URLError.notConnectedToInternet`; `simulatedError=hostNotFound` always uses `URLError.cannotFindHost` (no auto-reload on tab reactivation). Simulated failures append ` · attempt N` to `NSLocalizedDescriptionKey` (counter resets with the alternating pass index when the Debug simulate toggle changes).
+    static func resetFailureSchemeAlternatingStateForUITests() {
+        alternatingFailuresLock.lock()
+        alternatingFailuresPassIndex = 0
+        alternatingFailuresLock.unlock()
+        failureSimulateAttemptLock.lock()
+        failureSimulateAttemptIndex = 0
+        failureSimulateAttemptLock.unlock()
+    }
+
+    private static let alternatingFailuresLock = NSLock()
+    private static var alternatingFailuresPassIndex = 0
+
+    private static let failureSimulateAttemptLock = NSLock()
+    private static var failureSimulateAttemptIndex = 0
+
+    private static func nextSimulatedFailureAttemptNumber() -> Int {
+        failureSimulateAttemptLock.lock()
+        failureSimulateAttemptIndex += 1
+        let n = failureSimulateAttemptIndex
+        failureSimulateAttemptLock.unlock()
+        return n
+    }
+
+    private func shouldUseAlternatingSimulatedFailures(requestURL: URL) -> Bool {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
+        return requestURL.hasDebugURLAlternatingFailures
+    }
+
+    /// UI tests: `debug://failure?simulatedError=notConnected` always fails with `URLError.notConnectedToInternet` (when simulate is on).
+    private func failureSchemeForcesNotConnectedToInternetError(requestURL: URL) -> Bool {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
+        switch requestURL.debugURLSimulatedError {
+        case .notConnected, .notConnectedToInternet:
+            return true
+        case .hostNotFound, .cannotFindHost, nil:
+            return false
+        }
+    }
+
+    /// UI tests: `debug://failure?simulatedError=hostNotFound` always fails with `URLError.cannotFindHost` (when simulate is on).
+    /// Unlike the connection-style errors above, this error kind must NOT trigger the tab-reactivation auto-reload
+    /// (`Tab.shouldReload` reloads only for `.notConnectedToInternet` / `.networkConnectionLost`), which the attempt counter makes observable.
+    private func failureSchemeForcesHostNotFoundError(requestURL: URL) -> Bool {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
+        switch requestURL.debugURLSimulatedError {
+        case .hostNotFound, .cannotFindHost:
+            return true
+        case .notConnected, .notConnectedToInternet, nil:
+            return false
+        }
+    }
+
+    private func handleDebugSchemeURL(requestURL: URL, urlSchemeTask: WKURLSchemeTask) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else {
+            urlSchemeTask.didFailWithError(URLError(.unsupportedURL))
+            return
+        }
+
+        switch requestURL.debugURLIdentifier {
+        case .failure:
+            handleDebugFailureURL(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
+        case nil:
+            urlSchemeTask.didFailWithError(URLError(.unsupportedURL))
+        }
+    }
+
+    private func handleDebugFailureURL(requestURL: URL, urlSchemeTask: WKURLSchemeTask) {
+        if failureURLSchemeDebugKeyedStorage.simulateConnectionLost == true {
+            if failureSchemeForcesHostNotFoundError(requestURL: requestURL) {
+                let attempt = Self.nextSimulatedFailureAttemptNumber()
+                let error = URLError(.cannotFindHost, userInfo: [
+                    NSURLErrorFailingURLErrorKey: requestURL,
+                    NSLocalizedDescriptionKey: "Debug simulated host not found (debug://failure) · attempt \(attempt)"
+                ])
+                urlSchemeTask.didFailWithError(error)
+                return
+            }
+            if failureSchemeForcesNotConnectedToInternetError(requestURL: requestURL) {
+                let attempt = Self.nextSimulatedFailureAttemptNumber()
+                let error = URLError(.notConnectedToInternet, userInfo: [
+                    NSURLErrorFailingURLErrorKey: requestURL,
+                    NSLocalizedDescriptionKey: "Debug simulated not connected to internet (debug://failure) · attempt \(attempt)"
+                ])
+                urlSchemeTask.didFailWithError(error)
+                return
+            }
+            if shouldUseAlternatingSimulatedFailures(requestURL: requestURL) {
+                Self.alternatingFailuresLock.lock()
+                let pass = Self.alternatingFailuresPassIndex
+                Self.alternatingFailuresPassIndex += 1
+                Self.alternatingFailuresLock.unlock()
+
+                let attempt = Self.nextSimulatedFailureAttemptNumber()
+                let error: URLError
+                if pass % 2 == 0 {
+                    error = URLError(.networkConnectionLost, userInfo: [
+                        NSURLErrorFailingURLErrorKey: requestURL,
+                        NSLocalizedDescriptionKey: "Debug simulated connection lost (debug://failure) · attempt \(attempt)"
+                    ])
+                } else {
+                    error = URLError(.notConnectedToInternet, userInfo: [
+                        NSURLErrorFailingURLErrorKey: requestURL,
+                        NSLocalizedDescriptionKey: "Debug simulated not connected to internet (debug://failure) · attempt \(attempt)"
+                    ])
+                }
+                urlSchemeTask.didFailWithError(error)
+                return
+            }
+
+            let attempt = Self.nextSimulatedFailureAttemptNumber()
+            let error = URLError(.networkConnectionLost, userInfo: [
+                NSURLErrorFailingURLErrorKey: requestURL,
+                NSLocalizedDescriptionKey: "Debug simulated connection lost (debug://failure) · attempt \(attempt)"
+            ])
+            urlSchemeTask.didFailWithError(error)
+            return
+        }
+
+        let data = Self.failureSchemeDemoHtml.utf8data
+        let response = URLResponse(url: requestURL,
+                                   mimeType: "text/html",
+                                   expectedContentLength: data.count,
+                                   textEncodingName: "utf-8")
+        urlSchemeTask.didReceive(response)
+        urlSchemeTask.didReceive(data)
+        urlSchemeTask.didFinish()
     }
 
     private lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {

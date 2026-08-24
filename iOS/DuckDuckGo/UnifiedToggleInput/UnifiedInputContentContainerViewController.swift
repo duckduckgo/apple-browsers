@@ -240,6 +240,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // The fire empty state is a SwiftUI host content state now — just flip the flag; no manager rebuild.
         unifiedSuggestionsHost?.setIsFireTab(fireMode)
         rebuildDuckAISuggestionsCoordinator()
+
+        guard isContentActive,
+              let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
+              homePageMessagesConfiguration.mode == .coordinated else {
+            return
+        }
+
+        guard !fireMode else { return }
+        homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil)
     }
 
     func setInputMode(_ mode: TextEntryMode, animated: Bool = true) {
@@ -259,6 +268,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         isContentActive = active
         markNeedsVisibleRefresh()
         if active {
+            if let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
+               homePageMessagesConfiguration.mode == .coordinated,
+               !switchBarHandler.isFireTab {
+                homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil)
+            }
             unifiedSuggestionsHost?.setIsFireTab(switchBarHandler.isFireTab)
             unifiedSuggestionsHost?.setLandscape(isLandscapeOrientation)
             unifiedSuggestionsHost?.prepareForActivation()
@@ -582,7 +596,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             !dependencies.newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
         }
 
-        let searchStateChanged = dependencies.favoritesViewModel.localUpdates
+        var searchStateChanged = dependencies.favoritesViewModel.localUpdates
             .merge(with: dependencies.favoritesViewModel.externalUpdates)
             // Favorites changes fire on the Core Data context queue; marshal here so the merged
             // inputs (and the view model's `@Published content` mutation) stay on main.
@@ -591,6 +605,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             // so the re-resolve it drives stays synchronous, landing before the host becomes visible.
             .merge(with: activationResolveTrigger)
             .eraseToAnyPublisher()
+        let homePageMessagesConfiguration = dependencies.newTabPageDependencies.homePageMessagesConfiguration
+        if homePageMessagesConfiguration.mode == .coordinated {
+            searchStateChanged = searchStateChanged
+                .merge(with: homePageMessagesConfiguration.contentDidChangePublisher)
+                .eraseToAnyPublisher()
+        }
         let inputsPublisher = makeMergedInputsPublisher(hasFavorites: hasFavorites,
                                                         hasMessages: hasMessages,
                                                         searchStateChanged: searchStateChanged)
@@ -765,7 +785,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             remoteMessagingActionHandler: ntpDeps.remoteMessagingActionHandler,
             remoteMessagingImageLoader: ntpDeps.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: ntpDeps.remoteMessagingPixelReporter,
-            promoCoordinator: ntpDeps.promoCoordinator,
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,
@@ -823,6 +842,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func observeRemoteMessagesChanges() {
+        guard let configuration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
+              configuration.mode == .legacy else { return }
+
         notificationCancellable = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in

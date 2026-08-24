@@ -17,8 +17,7 @@
 //
 
 import Foundation
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import Configuration
 
 final class MockStoreWithStorage: ConfigurationStoring {

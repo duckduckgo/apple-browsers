@@ -75,8 +75,8 @@ struct OnboardingAIModelsResolverTests {
         #expect(result.models.map(\.id) == ["openai-1"])
     }
 
-    @Test("Check providers are returned in display order (Claude, ChatGPT, Mistral) regardless of input order")
-    func ordersByProviderDisplayOrder() {
+    @Test("Check providers are returned in the API (first-appearance) order")
+    func ordersByProviderAppearanceOrder() {
         // WHEN
         let result = OnboardingAIModelsResolver.resolve(from: [
             model(id: "mistral", provider: "mistral"),
@@ -84,9 +84,9 @@ struct OnboardingAIModelsResolverTests {
             model(id: "anthropic", provider: "anthropic")
         ])
 
-        // THEN
-        #expect(result.models.map(\.provider) == [.anthropic, .openai, .mistral])
-        #expect(result.models.map(\.id) == ["anthropic", "openai", "mistral"])
+        // THEN the order matches the input, not a fixed provider order
+        #expect(result.models.map(\.provider) == [.mistral, .openai, .anthropic])
+        #expect(result.models.map(\.id) == ["mistral", "openai", "anthropic"])
     }
 
     @Test("Check default is the OpenAI model when present")
@@ -110,8 +110,8 @@ struct OnboardingAIModelsResolverTests {
             model(id: "anthropic", provider: "anthropic")
         ])
 
-        // THEN default is the first model in display order (Claude before Mistral) regardless of input order.
-        #expect(result.defaultModelId == "anthropic")
+        // THEN default is the first model in API (first-appearance) order.
+        #expect(result.defaultModelId == "mistral")
     }
 
     @Test("Check empty input yields no models and no default")

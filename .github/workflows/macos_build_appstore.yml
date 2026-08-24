@@ -77,7 +77,7 @@ jobs:
       group: macos-appstore-build-${{ github.event.inputs.destination || inputs.destination }}
       cancel-in-progress: true
 
-    runs-on: macos-26-xlarge
+    runs-on: bitrise:macos26-m4pro
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}
@@ -91,6 +91,9 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.branch }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Assert release branch
       if: env.destination == 'appstore' || env.destination == 'testflight'
@@ -227,7 +230,7 @@ jobs:
       group: macos-appstore-upload-${{ github.event.inputs.destination || inputs.destination }}
       cancel-in-progress: true
 
-    runs-on: macos-26
+    runs-on: bitrise:macos26-m4
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}
@@ -240,6 +243,9 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.branch }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby

@@ -54,6 +54,8 @@ struct UTIPixelContext {
     let isDuckAISurfaceForAttribution: Bool
     let inputMode: TextEntryMode
     let isToggleVisible: Bool
+    let pageType: UnifiedToggleInputPromptPageType
+    let duckAIEntrySource: AIChatEntryPointSource?
 }
 
 /// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
@@ -103,6 +105,26 @@ final class UTIPixelReporter {
     func reportStopGenerationTapped() {
         withContext { firing.fire(.unifiedToggleInputStopGenerationTapped, ["surface": $0.surface.rawValue]) }
     }
+
+    // MARK: - Message edit
+
+    func reportEditReceived() {
+        withContext { firing.fire(.unifiedToggleInputEditReceived, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditSubmitted() {
+        withContext { firing.fire(.unifiedToggleInputEditSubmitted, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditCancelled() {
+        withContext { firing.fire(.unifiedToggleInputEditCancelled, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {
+        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireEditAttachmentRemovedPixel(for: attachment, surface: $0.surface, firing: firing) }
+    }
+
+    // MARK: - Voice
 
     func reportVoiceTapped(hasPendingPageContext: Bool) {
         withContext {
@@ -195,7 +217,8 @@ final class UTIPixelReporter {
                                selectedTool: AIChatRAGTool?,
                                attachments: [UnifiedToggleInputAttachment],
                                reasoningMode: AIChatReasoningMode?,
-                               modelId: String?) {
+                               modelId: String?,
+                               defaultOmnibarMode: DefaultOmnibarMode) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -204,8 +227,31 @@ final class UTIPixelReporter {
                 reasoningMode: reasoningMode,
                 modelId: modelId,
                 surface: $0.surface,
+                pageType: $0.pageType,
+                origin: Self.promptOrigin(for: $0),
+                defaultMode: defaultOmnibarMode,
                 firing: firing
             )
+        }
+    }
+
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode) {
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
+                surface: $0.surface,
+                pageType: $0.pageType,
+                isToggleVisible: $0.isToggleVisible,
+                defaultMode: defaultOmnibarMode,
+                firing: firing
+            )
+        }
+    }
+
+    static func promptOrigin(for context: UTIPixelContext) -> AIChatEntryPointSource? {
+        switch context.surface {
+        case .addressBar: return .addressBarPrompt
+        case .contextualChat: return .contextualChat
+        case .duckAI: return context.duckAIEntrySource
         }
     }
 

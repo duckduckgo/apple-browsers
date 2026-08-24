@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Core
 import RemoteMessaging
 import XCTest
@@ -67,6 +68,56 @@ final class NewTabPageMessagesModelTests: XCTestCase {
                                 object: nil)
 
         XCTAssertEqual(sut.homeMessageViewModels.count, 1)
+    }
+
+    func testCoordinatedLoadReadsSharedSourceWithoutRefreshingOrEagerAppearance() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+
+        sut.load()
+
+        XCTAssertEqual(configuration.refreshCallCount, 0)
+        XCTAssertEqual(configuration.didAppearCallCount, 0)
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+        XCTAssertEqual(viewModel.acquisitionIdentity, configuration.presentationContext.acquisitionIdentity)
+    }
+
+    func testCoordinatedSignalSynchronouslyConvergesTwoModelsWithoutGlobalNotification() {
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [])
+        let first = createSUT(configuration: configuration)
+        let second = createSUT(configuration: configuration)
+        first.load()
+        second.load()
+
+        configuration.homeMessages = [.placeholder]
+        configuration.sendContentDidChange()
+
+        XCTAssertEqual(first.homeMessageViewModels.count, 1)
+        XCTAssertEqual(second.homeMessageViewModels.count, 1)
+        XCTAssertEqual(configuration.refreshCallCount, 0)
+
+        configuration.homeMessages = []
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+
+        XCTAssertEqual(first.homeMessageViewModels.count, 1)
+        XCTAssertEqual(second.homeMessageViewModels.count, 1)
+    }
+
+    func testCoordinatedCallbacksRoundTripCapturedPresentationContext() async throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+
+        viewModel.onDidAppear()
+        await viewModel.onDidClose(.close)
+
+        XCTAssertEqual(configuration.lastAppearedContext, configuration.presentationContext)
+        XCTAssertEqual(configuration.lastDismissedContext, configuration.presentationContext)
+        XCTAssertEqual(configuration.didAppearCallCount, 1)
+        XCTAssertEqual(configuration.dismissCallCount, 1)
     }
 
     // MARK: Callbacks
@@ -329,16 +380,81 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     // MARK: - Helpers
 
     private func createSUT(isOpenedAfterIdle: Bool = false) -> NewTabPageMessagesModel {
+        createSUT(configuration: messagesConfiguration, isOpenedAfterIdle: isOpenedAfterIdle)
+    }
+
+    private func createSUT(
+        configuration: HomePageMessagesConfiguration,
+        isOpenedAfterIdle: Bool = false
+    ) -> NewTabPageMessagesModel {
         let remoteMessageActionHandler = RemoteMessagingActionHandler(lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher())
         remoteMessageActionHandler.messageNavigator = DefaultMessageNavigator(delegate: self)
 
-        return NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
+        return NewTabPageMessagesModel(homePageMessagesConfiguration: configuration,
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
                                 messageActionHandler: remoteMessageActionHandler,
                                 imageLoader: MockRemoteMessagingImageLoader(),
-                                promoCoordinator: MockNewTabPagePromoCoordinator(),
                                 isOpenedAfterIdle: { isOpenedAfterIdle })
+    }
+}
+
+@MainActor
+private final class CoordinatedMessagesConfigurationMock: HomePageMessagesConfiguration {
+    let mode = PromoCoordinationMode.coordinated
+    let presentationContext: HomeMessagePresentationContext
+    var homeMessages: [HomeMessage]
+
+    private let contentDidChangeSubject = PassthroughSubject<Void, Never>()
+    private let arbiterLease: PromoQueueRemoteMessageArbiterLease
+
+    private(set) var refreshCallCount = 0
+    private(set) var didAppearCallCount = 0
+    private(set) var dismissCallCount = 0
+    private(set) var lastAppearedContext: HomeMessagePresentationContext?
+    private(set) var lastDismissedContext: HomeMessagePresentationContext?
+
+    var contentDidChangePublisher: AnyPublisher<Void, Never> {
+        contentDidChangeSubject.eraseToAnyPublisher()
+    }
+
+    init(homeMessages: [HomeMessage]) {
+        self.homeMessages = homeMessages
+        let arbiter = PromoQueueLeaseArbiter()
+        guard case .acquired(let arbiterLease) = arbiter.acquireRemoteMessageLease(for: "foo") else {
+            fatalError("Expected the test arbiter to grant its first RMF acquisition")
+        }
+        self.arbiterLease = arbiterLease
+        presentationContext = HomeMessagePresentationContext(
+            messageID: "foo",
+            acquisitionIdentity: arbiterLease.acquisitionIdentity
+        )
+    }
+
+    func sendContentDidChange() {
+        contentDidChangeSubject.send(())
+    }
+
+    func refresh(openedAfterIdle: Bool) {
+        refreshCallCount += 1
+    }
+
+    func dismissHomeMessage(_ homeMessage: HomeMessage) async {}
+
+    func dismissHomeMessage(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) async {
+        dismissCallCount += 1
+        lastDismissedContext = presentationContext
+    }
+
+    func didAppear(_ homeMessage: HomeMessage) {}
+
+    func didAppear(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) {
+        didAppearCallCount += 1
+        lastAppearedContext = presentationContext
+    }
+
+    func presentationContext(for homeMessage: HomeMessage) -> HomeMessagePresentationContext? {
+        presentationContext
     }
 }
 

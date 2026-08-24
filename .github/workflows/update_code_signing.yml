@@ -20,7 +20,7 @@ on:
 
 jobs:
   update_code_signing:
-    runs-on: macos-15
+    runs-on: macos-26
     name: Update Code Signing Assets
 
     steps:
@@ -32,6 +32,9 @@ jobs:
 
       - name: Check out the code
         uses: actions/checkout@v6
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Setup Ruby and dependencies for iOS
         if: startsWith(inputs.target, 'ios')
@@ -96,6 +99,6 @@ jobs:
               lane="sync_signing_ci"
               ;;
           esac
- 
+
           cd "$platform"
           bundle exec fastlane ${lane}

@@ -17,9 +17,11 @@
 //
 
 import AppKit
+import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import SharedTestUtilities
 import Testing
@@ -247,6 +249,95 @@ struct FireCoordinatorTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForCurrentTab_ShowsTabScopedDeletingDataMessage() async throws {
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .currentTab), isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingDataFromThisTab])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForAllData_ShowsAllDataDeletingDataMessage() async throws {
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .allData), isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingAllData])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForAllDataKeepingTabsAndWindows_ShowsAllDataDeletingDataMessage() async throws {
+        // This burns all windows as an entity instead of burning all data.
+        let result = makeDialogResult(clearingOption: .allData, includeTabsAndWindows: false)
+        let messages = await deletingDataMessages(for: result, isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingAllData])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_ForCurrentWindow_ShowsGenericDeletingDataMessage() async throws {
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .currentWindow), isAllHistorySelected: true)
+
+        #expect(messages == [UserText.fireDialogDeletingData])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testBurnVisitsFromToday_ShowsGenericDeletingDataMessage() async throws {
+        // Burning today's visits burns all windows, but it only deletes the selected visits.
+        let messages = await deletingDataMessages { coordinator in
+            await coordinator.fireViewModel.fire.burnVisits([],
+                                                            except: coordinator.fireViewModel.fire.fireproofDomains,
+                                                            isToday: true,
+                                                            closeWindows: true,
+                                                            clearSiteData: true,
+                                                            clearChatHistory: false)
+        }
+
+        #expect(messages == [UserText.fireDialogDeletingData])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testHandleDialogResult_WhenFireDialogIsNotSimplified_ShowsGenericDeletingDataMessage() async throws {
+        let messages = await deletingDataMessages(for: makeDialogResult(clearingOption: .currentTab),
+                                                  isAllHistorySelected: true,
+                                                  isFireDialogSimplified: false)
+
+        #expect(messages == [UserText.fireDialogDeletingData])
+    }
+
+    private func makeDialogResult(clearingOption: FireDialogViewModel.ClearingOption, includeTabsAndWindows: Bool = true) -> FireDialogResult {
+        FireDialogResult(clearingOption: clearingOption,
+                         includeHistory: true,
+                         includeTabsAndWindows: includeTabsAndWindows,
+                         includeCookiesAndSiteData: true,
+                         includeChatHistory: false)
+    }
+
+    /// Collects the text of the burning progress dialog for all burns started by `result`.
+    private func deletingDataMessages(for result: FireDialogResult,
+                                      isAllHistorySelected: Bool,
+                                      isFireDialogSimplified: Bool = true) async -> [String] {
+        await deletingDataMessages(isFireDialogSimplified: isFireDialogSimplified) { coordinator in
+            await coordinator.handleDialogResult(result,
+                                                 tabCollectionViewModel: tabCollectionViewModel,
+                                                 isAllHistorySelected: isAllHistorySelected)
+        }
+    }
+
+    /// Collects the text of the burning progress dialog for all burns started by `burn`.
+    private func deletingDataMessages(isFireDialogSimplified: Bool = true,
+                                      during burn: @MainActor (FireCoordinator) async -> Void) async -> [String] {
+        let coordinator = makeCoordinator()
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: isFireDialogSimplified])
+        var messages = [String]()
+        let cancellable = coordinator.fireViewModel.fire.burningDataPublisher
+            .compactMap { $0?.deletingDataMessage(featureFlagger: featureFlagger) }
+            .sink { messages.append($0) }
+        defer { cancellable.cancel() }
+
+        await burn(coordinator)
+
+        return messages
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1))) func testPresentFireDialog_whenUserDismisses_thenMeasureFireDialogDismissedCalled() async throws {
         let mockFireReporting = MockOnboardingFireReporting()
         let factory: FireDialogViewFactory = { config in
@@ -283,6 +374,56 @@ struct FireCoordinatorTests {
         #expect(mockFireReporting.measureFireDialogDismissedCallCount == 0)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testPresentFireDialog_whenTabIsAddedWhileDialogIsOpen_thenDialogIsClosed() async throws {
+        // Scenario: A link opened from another app adds a tab to the window while the dialog is open.
+        // Expectation: The dialog is closed, and it deletes nothing, because what it shows was read
+        // when it opened and no longer matches the tabs of the window.
+
+        var presenter: SheetLikeFireDialogPresenter?
+        var wasClosedByTabsChange = false
+        let factory: FireDialogViewFactory = { _ in
+            let sheetLikePresenter = SheetLikeFireDialogPresenter { [self] in
+                _ = tabCollectionViewModel.append(tab: Tab(content: .newtab))
+                wasClosedByTabsChange = (presenter?.dismissCallCount ?? 0) >= 1
+                // Finish the presentation, so that a regression fails here and not on the time limit.
+                presenter?.complete()
+            }
+            presenter = sheetLikePresenter
+            return sheetLikePresenter
+        }
+        let coordinator = makeCoordinator(fireDialogViewFactory: factory)
+
+        let response = await coordinator.presentFireDialog(mode: .fireButton, in: MockWindow(isVisible: false), settings: nil)
+
+        #expect(wasClosedByTabsChange, "The dialog should be closed when a tab is added")
+        if case .burn = response {
+            Issue.record("A closed dialog should delete nothing")
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testPresentFireDialog_whenTabIsAddedAfterDialogIsClosed_thenNothingIsDismissed() async throws {
+        // Scenario: The tabs of the window change after the dialog was closed, which is what burning
+        // the data does itself.
+        // Expectation: The closed dialog no longer watches the tabs.
+
+        var presenter: SheetLikeFireDialogPresenter?
+        let factory: FireDialogViewFactory = { config in
+            let sheetLikePresenter = SheetLikeFireDialogPresenter {
+                config.onConfirm(.noAction)
+            }
+            presenter = sheetLikePresenter
+            return sheetLikePresenter
+        }
+        let coordinator = makeCoordinator(fireDialogViewFactory: factory)
+
+        _ = await coordinator.presentFireDialog(mode: .fireButton, in: MockWindow(isVisible: false), settings: nil)
+        _ = tabCollectionViewModel.append(tab: Tab(content: .newtab))
+
+        #expect(presenter?.dismissCallCount == 0, "The dialog was closed by the user, so nothing should dismiss it again")
+    }
+
 }
 
 private final class MockTabCleanupPreparer: TabCleanupPreparing {
@@ -291,6 +432,7 @@ private final class MockTabCleanupPreparer: TabCleanupPreparing {
 
 private final class TestPresenter: FireDialogViewPresenting {
     func present(in window: NSWindow, completion: (() -> Void)?) { }
+    func dismiss() { }
 }
 
 private final class CallbackFireDialogPresenter: FireDialogViewPresenting {
@@ -302,6 +444,36 @@ private final class CallbackFireDialogPresenter: FireDialogViewPresenting {
 
     func present(in window: NSWindow, completion: (() -> Void)?) {
         onPresent()
+    }
+
+    func dismiss() { }
+}
+
+/// A presenter that stays presented until it is dismissed, like the sheet of the real dialog does.
+private final class SheetLikeFireDialogPresenter: FireDialogViewPresenting {
+    private let onPresent: () -> Void
+    private var completion: (() -> Void)?
+    private(set) var dismissCallCount = 0
+
+    init(onPresent: @escaping () -> Void = {}) {
+        self.onPresent = onPresent
+    }
+
+    func present(in window: NSWindow, completion: (() -> Void)?) {
+        self.completion = completion
+        onPresent()
+    }
+
+    func dismiss() {
+        dismissCallCount += 1
+        complete()
+    }
+
+    /// Finishes the presentation, like the sheet does when it closes. Does nothing when finished.
+    func complete() {
+        let completion = self.completion
+        self.completion = nil
+        completion?()
     }
 }
 

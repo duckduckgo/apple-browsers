@@ -20,6 +20,7 @@
 import Foundation
 import PixelKit
 import Networking
+import Subscription
 
 enum SubscriptionPixel: PixelKit.Event {
     // Subscription
@@ -39,9 +40,9 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
     // VPN Subscription Funnel Entry Points
     case subscriptionVPNToolbarImpression(isSubscriptionActive: Bool?)
-    case subscriptionVPNToolbarClick
+    case subscriptionVPNToolbarClick(isSubscriptionActive: Bool?)
     case subscriptionVPNAddressBarImpression(isSubscriptionActive: Bool?)
-    case subscriptionVPNAddressBarClick
+    case subscriptionVPNAddressBarClick(isSubscriptionActive: Bool?)
     case subscriptionVPNWidgetClick
     case subscriptionVPNShortcutClick
     case subscriptionVPNNotificationClick
@@ -100,7 +101,9 @@ enum SubscriptionPixel: PixelKit.Event {
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.rawValue]
         case .subscriptionVPNToolbarImpression(let isSubscriptionActive),
-                .subscriptionVPNAddressBarImpression(let isSubscriptionActive):
+                .subscriptionVPNToolbarClick(let isSubscriptionActive),
+                .subscriptionVPNAddressBarImpression(let isSubscriptionActive),
+                .subscriptionVPNAddressBarClick(let isSubscriptionActive):
             return [SubscriptionPixelsDefaults.vpnSubscriptionActiveKey: Self.vpnSubscriptionActiveValue(isSubscriptionActive)]
         default:
             return nil
@@ -128,6 +131,37 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionVPNShortcutClick,
                 .subscriptionVPNNotificationClick:
             return [.pixelSource]
+        }
+    }
+}
+
+// This is a separate definition in order to get the correct platform and form factor suffixes, which the
+// subscription pixels above do not have.
+enum SubscriptionAutomaticSignOutPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+    case automaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)
+
+    private static let sourceKey = "source"
+
+    var namePrefix: String { "" }
+
+    var name: String {
+        switch self {
+        case .automaticSignOut: return "m_privacy-pro_auth_account_automatically_signed_out"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .automaticSignOut(let data, let source, _):
+            var parameters = data.parameters
+            parameters[Self.sourceKey] = source.rawValue
+            return parameters
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .automaticSignOut: return [.pixelSource]
         }
     }
 }

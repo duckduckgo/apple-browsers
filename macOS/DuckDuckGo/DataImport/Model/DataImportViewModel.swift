@@ -867,9 +867,9 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
-        case .getDirectoryReadPermission:
+        case .getDirectoryReadPermission, .directoryReadPermissionDenied:
             return .grantDirectoryAccess(source: importSource)
-        case .getFileReadPermission, .directoryReadPermissionDenied:
+        case .getFileReadPermission:
             return nil
         case .passwordEntryHelp:
             return nil

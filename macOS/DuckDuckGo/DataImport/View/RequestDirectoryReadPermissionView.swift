@@ -28,6 +28,7 @@ struct RequestDirectoryReadPermissionView: View {
     enum Mode {
         case initialRequest
         case retryAfterCancel
+        case retryAfterError
     }
 
     let source: DataImport.Source
@@ -87,6 +88,8 @@ private extension RequestDirectoryReadPermissionView.Mode {
             return DesignSystemImages.Glyphs.Size16.infoSolid
         case .retryAfterCancel:
             return DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert
+        case .retryAfterError:
+            return DesignSystemImages.Glyphs.Size16.exclamationRecolorable
         }
     }
 
@@ -94,7 +97,7 @@ private extension RequestDirectoryReadPermissionView.Mode {
         switch self {
         case .initialRequest:
             return RebrandingColor.Pondwater.pondwater50
-        case .retryAfterCancel:
+        case .retryAfterCancel, .retryAfterError:
             return nil
         }
     }
@@ -105,6 +108,8 @@ private extension RequestDirectoryReadPermissionView.Mode {
             return UserText.importBrowserDataRequestAccessTitle(for: source)
         case .retryAfterCancel:
             return UserText.importBrowserDataRequestAccessDeniedTitle(for: source)
+        case .retryAfterError:
+            return UserText.importBrowserDataRequestAccessErrorTitle(for: source)
         }
     }
 }
@@ -150,6 +155,7 @@ private struct FilePickerExampleView: View {
             Text(UserText.importBrowserDataAccessPanelPrompt)
                 .font(.system(size: Metrics.buttonFontSize, weight: .semibold))
                 .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
+                .padding(.horizontal, Metrics.grantAccessButtonPaddingHorizontal)
                 .frame(height: Metrics.buttonHeight)
                 .background(
                     RoundedRectangle(cornerRadius: Metrics.buttonCornerRadius)
@@ -193,6 +199,7 @@ private extension FilePickerExampleView {
         static let buttonSpacing: CGFloat = 7
         static let buttonCornerRadius: CGFloat = 5
         static let buttonFontSize: CGFloat = 10
+        static let grantAccessButtonPaddingHorizontal: CGFloat = 6
         static let placeholderButtonWidth: CGFloat = 60
         static let buttonsTrailingInset: CGFloat = 12
         static let buttonsBottomInset: CGFloat = 12
@@ -208,5 +215,10 @@ private extension FilePickerExampleView {
 
 #Preview("Retry After Cancel") {
     RequestDirectoryReadPermissionView(source: .chrome, mode: .retryAfterCancel)
+        .frame(width: 420)
+}
+
+#Preview("Retry After Error") {
+    RequestDirectoryReadPermissionView(source: .chrome, mode: .retryAfterError)
         .frame(width: 420)
 }

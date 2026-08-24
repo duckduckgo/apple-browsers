@@ -1726,6 +1726,13 @@ struct UserText {
         return String(format: localized, source.importSourceName)
     }
 
+    static func importBrowserDataRequestAccessErrorTitle(for source: DataImport.Source) -> String {
+        let localized = NotLocalizedString("import.request-access-error.title",
+                                           value: "Something went wrong. DuckDuckGo can’t access your %1$@ Data folder.",
+                                           comment: "Title of the screen shown when DuckDuckGo still can't read the browser data folder after the user picked one, asking them to try again (%1$@ is the browser name)")
+        return String(format: localized, source.importSourceName)
+    }
+
     static let importBrowserDataRequestAccessDeniedCancelTitle = NotLocalizedString("import.request-access-denied.cancel.title", value: "Cancel Import", comment: "Button that aborts the data import flow and closes the import dialog")
 
     static let importChooseSourceTitle = NSLocalizedString("import.choose-source.title", value: "Choose where to import from", comment: "Title text for the import dialog, before the user selects a source")

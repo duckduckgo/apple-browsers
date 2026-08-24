@@ -81,6 +81,8 @@ struct DataImportViewModel {
         case getDirectoryReadPermission(URL)
         /// Shown when the user didn't grant access to the browser data directory (macOS 27+)
         case directoryReadPermissionCancelled(URL)
+        /// Shown when the browser data directory is still unreadable after the user picked a directory (macOS 27+)
+        case directoryReadPermissionDenied(URL)
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
@@ -867,7 +869,7 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
-        case .getDirectoryReadPermission, .directoryReadPermissionCancelled:
+        case .getDirectoryReadPermission, .directoryReadPermissionCancelled, .directoryReadPermissionDenied:
             return .grantDirectoryAccess(source: importSource)
         case .getFileReadPermission:
             return nil
@@ -900,7 +902,7 @@ extension DataImportViewModel {
                 return .cancel
             case .archiveImport, .profilePicker, .moreInfo, .getFileReadPermission, .getDirectoryReadPermission:
                 return .back
-            case .directoryReadPermissionCancelled:
+            case .directoryReadPermissionCancelled, .directoryReadPermissionDenied:
                 return .cancelImport
             case .passwordEntryHelp:
                 return .cancel
@@ -1093,7 +1095,10 @@ extension DataImportViewModel {
             reloadProfilesAfterGrantingAccess()
             importButtonPressed()
 
-        case .denied, .cancelled:
+        case .denied:
+            showDirectoryReadPermissionDeniedScreen(for: selectedProfile)
+
+        case .cancelled:
             showDirectoryReadPermissionCancelledScreen(for: selectedProfile)
         }
     }
@@ -1101,6 +1106,11 @@ extension DataImportViewModel {
     @MainActor
     private mutating func showDirectoryReadPermissionCancelledScreen(for profile: BrowserProfile) {
         screen = .directoryReadPermissionCancelled(profile.profileURL)
+    }
+
+    @MainActor
+    private mutating func showDirectoryReadPermissionDeniedScreen(for profile: BrowserProfile) {
+        screen = .directoryReadPermissionDenied(profile.profileURL)
     }
 
     @MainActor

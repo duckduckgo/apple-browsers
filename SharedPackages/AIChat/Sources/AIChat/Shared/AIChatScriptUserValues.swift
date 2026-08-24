@@ -512,7 +512,25 @@ public struct AIChatNativePrompt: Codable, Equatable {
     }
 
     public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext, selections: selections)
+        let usesFrontendImageGenerationRouting = modelId == nil
+            && mode == nil
+            && toolChoice == [AIChatRAGTool.imageGeneration.rawValue]
+        let resolvedToolChoice = usesFrontendImageGenerationRouting ? nil : toolChoice
+        let resolvedMode = usesFrontendImageGenerationRouting ? imageGenerationMode : mode
+
+        return AIChatNativePrompt(
+            platform: Platform.name,
+            tool: .query(.init(
+                prompt: prompt,
+                autoSubmit: autoSubmit,
+                toolChoice: resolvedToolChoice,
+                images: images,
+                files: files,
+                modelId: modelId,
+                mode: resolvedMode,
+                reasoningEffort: reasoningEffort)),
+            pageContext: pageContext,
+            selections: selections)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

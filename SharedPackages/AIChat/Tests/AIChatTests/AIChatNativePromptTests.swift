@@ -577,6 +577,35 @@ struct AIChatNativePromptTests {
         #expect(toolChoice == ["WebSearch"])
     }
 
+    @Test
+    func imageGenerationWithoutModelUsesFrontendRoutingMode() throws {
+        let prompt = AIChatNativePrompt.queryPrompt(
+            "Draw a cat",
+            autoSubmit: true,
+            toolChoice: [AIChatRAGTool.imageGeneration.rawValue])
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        #expect(queryDict["toolChoice"] == nil)
+        #expect(queryDict["modelId"] == nil)
+        #expect(queryDict["mode"] as? String == AIChatNativePrompt.imageGenerationMode)
+    }
+
+    @Test
+    func imageGenerationWithModelKeepsExplicitToolChoice() throws {
+        let prompt = AIChatNativePrompt.queryPrompt(
+            "Draw a cat",
+            autoSubmit: true,
+            toolChoice: [AIChatRAGTool.imageGeneration.rawValue],
+            modelId: "image-model")
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        #expect(queryDict["toolChoice"] as? [String] == [AIChatRAGTool.imageGeneration.rawValue])
+        #expect(queryDict["modelId"] as? String == "image-model")
+        #expect(queryDict["mode"] == nil)
+    }
+
     // MARK: - Helpers
 
     private func decodePrompt(from json: String) throws -> AIChatNativePrompt {

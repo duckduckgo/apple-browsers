@@ -96,12 +96,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         modelStore.submissionReasoningEffort
     }
     private var promptSubmissionModelId: String? {
-        hasSubmittedPrompt ? nil : persistedModelId
+        toolsController.selectedTool == .imageGeneration || hasSubmittedPrompt ? nil : persistedModelId
     }
     private var promptSubmissionConfiguration: PromptSubmissionConfiguration {
         PromptSubmissionConfiguration(
             modelId: promptSubmissionModelId,
-            reasoningEffort: persistedReasoningEffort
+            reasoningEffort: toolsController.selectedTool == .imageGeneration ? nil : persistedReasoningEffort
         )
     }
     var voicePromptSubmissionConfiguration: (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {

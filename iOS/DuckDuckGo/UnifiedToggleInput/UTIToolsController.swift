@@ -39,7 +39,7 @@ final class UTIToolsController {
     private(set) var selectedTool: AIChatRAGTool?
 
     func select(_ tool: AIChatRAGTool, for modelStore: UTIModelStore) {
-        guard modelStore.selectedModelSupports(tool: tool) else { return }
+        guard isToolAvailable(tool, modelStore: modelStore) else { return }
         selectedTool = tool
     }
 
@@ -56,7 +56,7 @@ final class UTIToolsController {
     }
 
     func clearSelectionIfUnsupported(for modelStore: UTIModelStore) {
-        guard let selectedTool, !modelStore.selectedModelSupports(tool: selectedTool) else { return }
+        guard let selectedTool, !isToolAvailable(selectedTool, modelStore: modelStore) else { return }
         self.selectedTool = nil
     }
 
@@ -91,8 +91,12 @@ final class UTIToolsController {
                 // Non-tool actions (e.g. Customize Responses) are always available and keep the tools button visible.
                 return true
             }
-            return modelStore.selectedModelSupports(tool: tool)
+            return isToolAvailable(tool, modelStore: modelStore)
         }
+    }
+
+    private func isToolAvailable(_ tool: AIChatRAGTool, modelStore: UTIModelStore) -> Bool {
+        tool == .imageGeneration || modelStore.selectedModelSupports(tool: tool)
     }
 }
 
@@ -112,7 +116,7 @@ private extension UTIToolsController {
 
         items.append(.imageGeneration(
             isSelected: selectedTool == .imageGeneration,
-            isEnabled: modelStore.selectedModelSupports(tool: .imageGeneration)
+            isEnabled: true
         ))
         items.append(.webSearch(
             isSelected: selectedTool == .webSearch,
@@ -147,8 +151,8 @@ struct UTIToolsMenu {
             }
         }
 
-        /// The model-gated RAG tool this item toggles, or `nil` for actions (e.g. Customize Responses)
-        /// that aren't model-dependent and don't participate in tool selection.
+        /// The RAG tool this item toggles, or `nil` for actions (e.g. Customize Responses)
+        /// that don't participate in tool selection.
         var tool: AIChatRAGTool? {
             switch self {
             case .customizeResponses:

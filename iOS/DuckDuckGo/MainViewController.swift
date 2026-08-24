@@ -4942,9 +4942,11 @@ extension MainViewController: OmniBarDelegate {
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
         let controlValues = viewCoordinator.omniBar.iPadDuckAIControlValues
-        openAIChat(source: .ipadTogglePrompt, query, autoSend: true, tools: tools ?? controlValues.selectedTools,
-                   modelId: controlValues.selectedModelId,
-                   reasoningEffort: controlValues.selectedReasoningEffort,
+        let selectedTools = tools ?? controlValues.selectedTools
+        let usesFrontendImageGenerationRouting = selectedTools == [.imageGeneration]
+        openAIChat(source: .ipadTogglePrompt, query, autoSend: true, tools: selectedTools,
+                   modelId: usesFrontendImageGenerationRouting ? nil : controlValues.selectedModelId,
+                   reasoningEffort: usesFrontendImageGenerationRouting ? nil : controlValues.selectedReasoningEffort,
                    images: controlValues.selectedImages,
                    files: controlValues.selectedFiles)
     }

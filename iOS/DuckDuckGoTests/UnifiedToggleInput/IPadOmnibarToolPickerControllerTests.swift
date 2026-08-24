@@ -59,16 +59,16 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
         XCTAssertNotNil(sut.makeMenu())
     }
 
-    func testWhenModelSupportsNoToolsThenNotAvailable() {
+    func testWhenModelSupportsNoToolsThenImageGenerationKeepsPickerAvailable() {
         store.models = [makeModel(id: "gpt-oss", supportedTools: [])]
 
-        XCTAssertFalse(sut.isToolPickerAvailable)
-        XCTAssertNil(sut.makeMenu())
+        XCTAssertTrue(sut.isToolPickerAvailable)
+        XCTAssertNotNil(sut.makeMenu())
     }
 
-    func testWhenNoModelsThenNotAvailableAndMenuNil() {
-        XCTAssertFalse(sut.isToolPickerAvailable)
-        XCTAssertNil(sut.makeMenu())
+    func testWhenNoModelsThenImageGenerationKeepsPickerAvailable() {
+        XCTAssertTrue(sut.isToolPickerAvailable)
+        XCTAssertNotNil(sut.makeMenu())
     }
 
     // MARK: - Selection
@@ -101,13 +101,13 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
         XCTAssertEqual(sut.selectedToolsForSubmission, [.imageGeneration])
     }
 
-    func testWhenUnsupportedToolSelectedThenIgnored() {
+    func testWhenImageGenerationSelectedThenModelSupportIsNotRequired() {
         store.models = [makeModel(id: "gpt-5.2", supportedTools: [.webSearch])]
 
         sut.handleToolSelection(.imageGeneration)
 
-        XCTAssertNil(sut.selectedToolsForSubmission)
-        XCTAssertFalse(sut.isToolSelected)
+        XCTAssertEqual(sut.selectedToolsForSubmission, [.imageGeneration])
+        XCTAssertTrue(sut.isToolSelected)
     }
 
     func testSelectedToolsForSubmissionIsNilWhenNothingSelected() {
@@ -174,9 +174,9 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
         XCTAssertFalse(sut.selectedToolHidesReasoningPicker)
     }
 
-    // MARK: - Model change clears unsupported tool
+    // MARK: - Model change handling
 
-    func testWhenModelChangesToOneWithoutToolThenSelectionCleared() {
+    func testWhenModelChangesToOneWithoutImageGenerationThenSelectionKept() {
         store.models = [makeModel(id: "gpt-5.2", supportedTools: [.imageGeneration])]
         sut.handleToolSelection(.imageGeneration)
         XCTAssertEqual(sut.selectedToolsForSubmission, [.imageGeneration])
@@ -185,8 +185,8 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
         store.models = [makeModel(id: "gpt-basic", supportedTools: [.webSearch])]
         sut.handleModelChanged()
 
-        XCTAssertNil(sut.selectedToolsForSubmission)
-        XCTAssertFalse(sut.isToolSelected)
+        XCTAssertEqual(sut.selectedToolsForSubmission, [.imageGeneration])
+        XCTAssertTrue(sut.isToolSelected)
     }
 
     func testWhenModelChangesButStillSupportsToolThenSelectionKept() {

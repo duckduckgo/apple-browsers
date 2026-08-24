@@ -5,14 +5,14 @@
 // contextual sheet into the Duck.ai bucket (keeps the funnel origin / subscription redirect URL stable).
 {
     "m_aichat_unified_input_image_generation_selected": {
-        "description": "Fires when the user activates Create Image from the tools menu in the Unified Toggle Input. Does not fire when the toggle is rejected by an unsupporting model.",
+        "description": "Fires when the user activates Create Image from the tools menu in the Unified Toggle Input.",
         "owners": ["pikorddg", "aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
     "m_aichat_unified_input_image_generation_deselected": {
-        "description": "Fires when the user toggles the image generation tool off, either via menu re-tap or the chip's close button. Does not fire on auto-clear from a model switch.",
+        "description": "Fires when the user toggles the image generation tool off, either via menu re-tap or the chip's close button.",
         "owners": ["pikorddg", "aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],

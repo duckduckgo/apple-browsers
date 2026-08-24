@@ -1500,14 +1500,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isToolsButtonHidden)
     }
 
-    func test_toolsButton_hiddenWhenModelDoesNotSupportAnyTool() {
+    func test_toolsButton_visibleWhenModelDoesNotSupportAnyTool() {
         mockPreferences.selectedModelId = "mistral"
         sut.modelStore.models = [makeModel(id: "mistral", access: true, supportedTools: [])]
 
         sut.activateFromOmnibar(inputMode: .aiChat)
         sut.updateInputMode(.aiChat, animated: false)
 
-        XCTAssertTrue(sut.viewController.isToolsButtonHidden)
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden)
     }
 
     func test_toolsButton_visibleInOmnibarAIChatWhenModelSupportsWebSearch() {
@@ -1673,7 +1673,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(actionTitles.contains(UserText.aiChatToolbarImageGenerationToolTitle))
     }
 
-    func test_toolsMenu_disablesImageGenerationActionWhenModelDoesNotSupportIt() {
+    func test_toolsMenu_enablesImageGenerationActionWhenModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
 
@@ -1681,7 +1681,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         let imageGenAction = toolsMenuActions().first { $0.title == UserText.aiChatToolbarImageGenerationToolTitle }
 
-        XCTAssertEqual(imageGenAction?.attributes, .disabled)
+        XCTAssertEqual(imageGenAction?.attributes, [])
     }
 
     func test_toolsMenu_enablesImageGenerationActionWhenModelSupportsIt() {
@@ -1706,14 +1706,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
     }
 
-    func test_selectTool_imageGeneration_isIgnoredWhenModelDoesNotSupportIt() {
+    func test_selectTool_imageGeneration_isSelectedWhenModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [])]
         sut.activateFromOmnibar(inputMode: .aiChat)
 
         sut.selectTool(.imageGeneration)
 
-        XCTAssertNil(sut.selectedTool)
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
     }
 
     /// Mirrors `handleNewImageGenerationChatStarted` on the host: the FE message must leave
@@ -1756,7 +1756,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(toolsController.selectedTool, .imageGeneration)
     }
 
-    func test_updateSelectedModel_clearsImageGenerationSelectionWhenNewModelDoesNotSupportIt() {
+    func test_updateSelectedModel_keepsImageGenerationSelectionWhenNewModelDoesNotSupportIt() {
         mockPreferences.selectedModelId = "gpt-5"
         sut.modelStore.models = [
             makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration]),
@@ -1767,19 +1767,26 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.updateSelectedModel("claude")
 
-        XCTAssertNil(sut.selectedTool)
-        XCTAssertNil(sut.viewController.selectedTool)
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
     }
 
-    func test_submitAIChat_imageGenerationSelected_forwardsToolChoice() {
+    func test_submitAIChat_imageGenerationSelected_forwardsSelectionWithoutModelOrReasoning() {
         mockPreferences.selectedModelId = "gpt-5"
-        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+        mockPreferences.selectedReasoningMode = .reasoning
+        sut.modelStore.models = [makeModel(
+            id: "gpt-5",
+            access: true,
+            supportedTools: [.imageGeneration],
+            supportedReasoningEffort: [.low])]
         sut.activateFromOmnibar(inputMode: .aiChat)
         sut.selectTool(.imageGeneration)
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "draw a cat", mode: .aiChat)
 
         XCTAssertEqual(mockDelegate.submittedTools, [.imageGeneration])
+        XCTAssertNil(mockDelegate.submittedModelId)
+        XCTAssertNil(mockDelegate.submittedReasoningEffort)
     }
 
     // MARK: - Image Generation: Model & Reasoning Visibility

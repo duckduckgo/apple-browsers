@@ -157,6 +157,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1213999582715096
     case subscriptionOnboarding
 
+    /// ABN test on the subscription onboarding flow (control vs. treatment), July 2026.
+    /// https://app.asana.com/1/137249556945/task/1215581300423035?focus=true
+    case subscriptionOnboardingJul2026
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
 
@@ -567,6 +571,12 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
+    /// Cohorts for the `subscriptionOnboardingJul2026` ABN test.
+    public enum SubscriptionOnboardingJul2026Cohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     public static var localOverrideStoreName: String = "com.duckduckgo.app.featureFlag.localOverrides"
 
     private struct Config {
@@ -676,6 +686,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
         case .subscriptionOnboarding:
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboarding))
+        case .subscriptionOnboardingJul2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingJul2026), cohortType: SubscriptionOnboardingJul2026Cohort.self)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:

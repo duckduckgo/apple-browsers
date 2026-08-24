@@ -19,19 +19,18 @@
 
 import XCTest
 import PixelKit
-import PixelKitTestingUtilities
 @testable import DuckDuckGo
 
 @MainActor
 final class SubscriptionOnboardingInstrumentationTests: XCTestCase {
 
-    private var pixelFiring: PixelKitMock!
+    private var pixelFiring: MockPixelFiring!
 
-    private var fired: [SubscriptionPixel] { pixelFiring.actualFireCalls.compactMap { $0.pixel as? SubscriptionPixel } }
+    private var fired: [PixelKit.Event] { pixelFiring.firedEvents }
 
     override func setUp() {
         super.setUp()
-        pixelFiring = PixelKitMock()
+        pixelFiring = MockPixelFiring()
     }
 
     override func tearDown() {
@@ -50,7 +49,7 @@ final class SubscriptionOnboardingInstrumentationTests: XCTestCase {
 
     func testWhenEverySectionIsNamedThenTheNamesAreTheAgreedVocabulary() {
         XCTAssertEqual(SubscriptionOnboardingSection.allCases.map(\.pixelStepName),
-                       ["intro", "features_summary", "vpn", "vpn_widget", "idtr", "duck_ai", "completion", "pir"])
+                       ["intro", "features_summary", "vpn", "vpn_widget", "vpn_widget", "idtr", "duck_ai", "completion", "pir"])
     }
 
     func testWhenEntryPointsAreNamedThenTheyMatchThePixelValues() {
@@ -107,5 +106,17 @@ final class SubscriptionOnboardingInstrumentationTests: XCTestCase {
         sut.stepShown(.idtr)
 
         XCTAssertEqual(fired.first?.parameters?["entry_point"], "post_checkout")
+    }
+}
+
+private final class MockPixelFiring: PixelFiring {
+    private(set) var firedEvents: [PixelKit.Event] = []
+
+    func fire(event: PixelKit.Event,
+             frequency: PixelKit.Frequency,
+             options: PixelKit.Options,
+             onComplete: @escaping PixelKit.CompletionBlock) {
+        firedEvents.append(event)
+        onComplete(true, nil)
     }
 }

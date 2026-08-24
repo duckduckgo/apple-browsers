@@ -20,7 +20,6 @@
 import XCTest
 import SwiftUI
 import Persistence
-import PersistenceTestingUtils
 import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
@@ -50,27 +49,29 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
                                               .identityTheftRestoration, .identityTheftRestorationGlobal,
                                               .paidAIChat]
 
-        let flow = try await XCTUnwrap(await SubscriptionOnboardingFlowViewModel.postCheckout(
+        let result = await SubscriptionOnboardingFlowViewModel.postCheckout(
             persistor: makePersistor(),
             isPIRAvailable: true,
             subscriptionManager: subscriptionManager,
             onFinish: {},
-            pirScreen: { EmptyView() }))
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
 
         XCTAssertEqual(flow.sequence,
-                       [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .idtr, .duckAI, .progress])
+                       [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
     }
 
     /// The fetched entitlement, not a caller-supplied default, is what gates the built flow's sequence.
     func testWhenBuildingPostCheckoutThenTheFetchedEntitlementGatesTheSequence() async throws {
         subscriptionManager.resultFeatures = [.dataBrokerProtection, .identityTheftRestoration]
 
-        let flow = try await XCTUnwrap(await SubscriptionOnboardingFlowViewModel.postCheckout(
+        let result = await SubscriptionOnboardingFlowViewModel.postCheckout(
             persistor: makePersistor(),
             isPIRAvailable: true,
             subscriptionManager: subscriptionManager,
             onFinish: {},
-            pirScreen: { EmptyView() }))
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
 
         XCTAssertEqual(flow.sequence, [.orderConfirmation, .welcome, .idtr, .progress])
     }
@@ -98,14 +99,15 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
         var persistor = makePersistor()
         persistor.markComplete(.vpn)
 
-        let flow = try await XCTUnwrap(await SubscriptionOnboardingFlowViewModel.subscriptionSettings(
+        let result = await SubscriptionOnboardingFlowViewModel.subscriptionSettings(
             persistor: persistor,
             isPIRAvailable: true,
             subscriptionManager: subscriptionManager,
             onFinish: {},
-            pirScreen: { EmptyView() }))
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
 
-        XCTAssertEqual(flow.sequence, [.vpnWidget, .idtr, .duckAI, .progress])
+        XCTAssertEqual(flow.sequence, [.vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
     }
 
     func testWhenTheChecklistIsEmptyThenSubscriptionSettingsReturnsNil() async {
@@ -124,6 +126,16 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
     // MARK: - Helpers
 
     private func makePersistor() -> SubscriptionOnboardingProgressPersistor {
-        SubscriptionOnboardingProgressPersistor(keyValueStore: InMemoryThrowingKeyValueStore())
+        SubscriptionOnboardingProgressPersistor(keyValueStore: InMemoryThrowingStore())
     }
+}
+
+/// A local stub rather than `PersistenceTestingUtils`
+private final class InMemoryThrowingStore: ThrowingKeyValueStoring {
+
+    private var values: [String: Any] = [:]
+
+    func object(forKey key: String) throws -> Any? { values[key] }
+    func set(_ value: Any?, forKey key: String) throws { values[key] = value }
+    func removeObject(forKey key: String) throws { values.removeValue(forKey: key) }
 }

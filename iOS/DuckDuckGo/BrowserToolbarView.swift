@@ -658,10 +658,6 @@ final class BrowserToolbarView: UIView {
         return height
     }
 
-    #if DEBUG
-    var standaloneCapsuleTransformForTesting: CGAffineTransform { materialBackgroundView.transform }
-    #endif
-
     func setStandaloneCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) {
         guard isFloatingStyleEnabled, !hasEmbeddedOmnibar, !reduceMotion else {
             standaloneCollapseScale = 1

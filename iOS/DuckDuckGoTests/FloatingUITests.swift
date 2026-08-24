@@ -270,6 +270,38 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         XCTAssertEqual(height, 91, accuracy: 0.001)
     }
 
+    func testWhenVisibleTopChromeIsTallerThanTheInterpolatedChromeThenTopObscuredHeightUsesTheVisibleChrome() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0.8,
+            expandedChromeHeight: 111,
+            visibleChromeHeight: 105,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 105, accuracy: 0.001)
+    }
+
+    func testWhenBarsVisibleAboveTheHandoffThenChromeStaysFullyOnScreen() {
+        for percent in [1.0, 0.9, 0.75, 0.6] as [CGFloat] {
+            let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: percent, handoffStart: 0.6)
+
+            XCTAssertEqual(fraction, 1, accuracy: 0.001, "expected no slide at \(percent)")
+        }
+    }
+
+    func testWhenBarsVisibleBelowTheHandoffThenChromeSlidesOutProportionally() {
+        let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: 0.3, handoffStart: 0.6)
+
+        XCTAssertEqual(fraction, 0.5, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenThenChromeIsFullyOffScreen() {
+        let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: 0, handoffStart: 0.6)
+
+        XCTAssertEqual(fraction, 0, accuracy: 0.001)
+    }
+
     func testWhenFloatingBottomAddressBarAndNotMinimalChromeThenOmnibarIsHostedInToolbar() {
         XCTAssertTrue(FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
             isFloatingUIEnabled: true,

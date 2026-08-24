@@ -252,6 +252,14 @@ extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDele
             guard !progress.completedItems.contains(item) else { return }
             progress.markComplete(item)
         }
+        switch section {
+        case .vpnActivation:
+            SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: true)
+        case .duckAI:
+            SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: true)
+        default:
+            break
+        }
         // `.vpnTips` completes nothing of its own
         guard section != .vpnTips else { return }
         instrumentation.stepCompleted(section)

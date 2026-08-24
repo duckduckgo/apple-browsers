@@ -21,9 +21,19 @@ import XCTest
 @testable import DuckDuckGo
 import SwiftUI
 import Subscription
+import PrivacyConfig
+import PixelKit
+import PixelExperimentKit
 
 @MainActor
 final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        PixelKit.configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                         eventTracker: ExperimentEventTracker(),
+                                         fire: { _, _, _ in })
+    }
 
     // MARK: - Sequence, post-checkout
 

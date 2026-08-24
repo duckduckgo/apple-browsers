@@ -22,12 +22,22 @@ import XCTest
 import AIChat
 @testable import Subscription
 import SubscriptionTestingUtilities
+import PrivacyConfig
+import PixelKit
+import PixelExperimentKit
 @testable import DuckDuckGo
 
 @MainActor
 final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
     private var cancellables = Set<AnyCancellable>()
+
+    override func setUp() {
+        super.setUp()
+        PixelKit.configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                         eventTracker: ExperimentEventTracker(),
+                                         fire: { _, _, _ in })
+    }
 
     func testWhenOnAppearThenFetchesAndPopulatesModels() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])

@@ -24,5 +24,5 @@ public enum iOSPromoQueueSubfeature: String, PrivacySubfeature {
         .promoQueue
     }
 
-    case iOSPromoPresentationCoordination
+    case promoPresentationCoordination
 }

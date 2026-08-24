@@ -1728,6 +1728,14 @@ struct UserText {
 
     static let importBrowserDataRequestAccessDeniedCancelTitle = NSLocalizedString("import.request-access-denied.cancel.title", value: "Cancel Import", comment: "Button that aborts the data import flow and closes the import dialog")
 
+    static func importBrowserDataRequestAccessErrorTitle(for source: DataImport.Source) -> String {
+        let localized = NotLocalizedString("import.request-access-error.title",
+                                           value: "Something went wrong. DuckDuckGo can’t access your %1$@ Data folder.",
+                                           comment: "Title of the screen shown when DuckDuckGo still can't read the browser data folder after the user picked one, asking them to try again (%1$@ is the browser name)")
+        return String(format: localized, source.importSourceName)
+    }
+
+
     static let importChooseSourceTitle = NSLocalizedString("import.choose-source.title", value: "Choose where to import from", comment: "Title text for the import dialog, before the user selects a source")
     static let importChooseSourceShowMoreButtonTitle = NSLocalizedString("import.choose-source.more-button.title", value: "More", comment: "Button text for showing more import options in the data import view")
     static let importChooseSourceSyncButtonTitle = NSLocalizedString("import.choose-source.sync-button.title", value: "Using DuckDuckGo on another device?", comment: "Button text for syncing from the data import view")

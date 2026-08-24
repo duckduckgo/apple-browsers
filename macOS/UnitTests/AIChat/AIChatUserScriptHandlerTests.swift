@@ -575,58 +575,66 @@ struct AIChatUserScriptHandlerTests {
         #expect(testPixelFiring.actualFireCalls.isEmpty)
     }
 
+    // Constructing AIChatMetric from the enum can't catch a Swift
+    // name that doesn't match what Duck.ai posts. 
     @available(iOS 16, macOS 13, *)
-    @Test("didReportMetric fires the subscription-funnel impression pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
-        (AIChatMetricName.userDidViewAiSidebarUpgradeButton, "funnel_duckai_macos__aisidebar"),
-        (.userDidViewActivateSubscriptionBanner, "funnel_duckai_macos__activatesubscription"),
-        (.userDidViewFreePlanBadge, "funnel_duckai_macos__freelabel"),
-        (.userDidViewFreeLimitMessage, "funnel_duckai_macos__freelimit"),
-        (.userDidViewImageGenerationLimitMessage, "funnel_duckai_macos__imagegenerationlimit"),
-        (.userDidViewPlusLimitMessage, "funnel_duckai_macos__pluslimit"),
-        (.userDidViewPromotionCard, "funnel_duckai_macos__promotioncard"),
-        (.userDidViewSettingsSubscribeButton, "funnel_duckai_macos__settings"),
-        (.userDidViewProUpgradeDisclaimerBanner, "funnel_duckai_macos__disclaimerbanner"),
-        (.userDidViewVoiceChatLimitModal, "funnel_duckai_macos__voicechatlimit"),
-        (.userDidViewVoiceChatDurationLimitModal, "funnel_duckai_macos__voicechatdurationlimit")
+    @Test("reportMetric fires the subscription-funnel impression pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
+        ("userDidViewAiSidebarUpgradeButton", "funnel_duckai_macos__aisidebar"),
+        ("userDidViewActivateSubscriptionBanner", "funnel_duckai_macos__activatesubscription"),
+        ("userDidViewFreePlanBadge", "funnel_duckai_macos__freelabel"),
+        ("userDidViewFreeLimitMessage", "funnel_duckai_macos__freelimit"),
+        ("userDidViewImageGenerationLimitMessage", "funnel_duckai_macos__imagegenerationlimit"),
+        ("userDidViewPlusLimitMessage", "funnel_duckai_macos__pluslimit"),
+        ("userDidViewPromotionCard", "funnel_duckai_macos__promotioncard"),
+        ("userDidViewSettingsSubscribeButton", "funnel_duckai_macos__settings"),
+        ("userDidViewProUpgradeDisclaimerBanner", "funnel_duckai_macos__disclaimerbanner"),
+        ("userDidViewVoiceChatLimitModal", "funnel_duckai_macos__voicechatlimit"),
+        ("userDidViewVoiceChatDurationLimitModal", "funnel_duckai_macos__voicechatdurationlimit"),
+        ("userDidViewModelPickerUpgrade", "funnel_duckai_macos__modelpicker"),
+        ("userDidViewReasoningDropdownUpgrade", "funnel_duckai_macos__reasoningdropdown"),
+        ("userDidViewSwitchModelUpgrade", "funnel_duckai_macos__switchmodel")
     ])
     @MainActor
-    func testFunnelImpressionMetricFiresImpressionPixelWithOrigin(metric: AIChatMetricName, origin: String) async {
+    func testFunnelImpressionMetricFiresImpressionPixelWithOrigin(metricName: String, origin: String) async {
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSubscriptionFunnelImpression(origin: origin), frequency: .dailyAndCount)]
 
-        await withCheckedContinuation { continuation in
-            handler.didReportMetric(.init(metricName: metric)) {
-                continuation.resume()
-            }
-        }
+        _ = await handler.reportMetric(
+            params: ["metricName": metricName],
+            message: WKScriptMessage.mock()
+        )
 
         #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+        #expect(userScriptErrorEventMapper.events.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("didReportMetric fires the subscription-funnel click pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
-        (AIChatMetricName.userDidClickAiSidebarUpgradeButton, "funnel_duckai_macos__aisidebar"),
-        (.userDidClickActivateSubscriptionButton, "funnel_duckai_macos__activatesubscription"),
-        (.userDidClickFreePlanUpgradeButton, "funnel_duckai_macos__freelabel"),
-        (.userDidClickFreeLimitSubscribeLink, "funnel_duckai_macos__freelimit"),
-        (.userDidClickImageGenerationLimitSubscribeButton, "funnel_duckai_macos__imagegenerationlimit"),
-        (.userDidClickPlusLimitUpgradeLink, "funnel_duckai_macos__pluslimit"),
-        (.userDidClickPromotionCardButton, "funnel_duckai_macos__promotioncard"),
-        (.userDidClickSettingsSubscribeButton, "funnel_duckai_macos__settings"),
-        (.userDidClickProUpgradeDisclaimerBannerButton, "funnel_duckai_macos__disclaimerbanner"),
-        (.userDidClickVoiceChatLimitModalSubscribeButton, "funnel_duckai_macos__voicechatlimit"),
-        (.userDidClickVoiceChatDurationLimitModalSubscribeButton, "funnel_duckai_macos__voicechatdurationlimit")
+    @Test("reportMetric fires the subscription-funnel click pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
+        ("userDidClickAiSidebarUpgradeButton", "funnel_duckai_macos__aisidebar"),
+        ("userDidClickActivateSubscriptionButton", "funnel_duckai_macos__activatesubscription"),
+        ("userDidClickFreePlanUpgradeButton", "funnel_duckai_macos__freelabel"),
+        ("userDidClickFreeLimitSubscribeLink", "funnel_duckai_macos__freelimit"),
+        ("userDidClickImageGenerationLimitSubscribeButton", "funnel_duckai_macos__imagegenerationlimit"),
+        ("userDidClickPlusLimitUpgradeLink", "funnel_duckai_macos__pluslimit"),
+        ("userDidClickPromotionCardButton", "funnel_duckai_macos__promotioncard"),
+        ("userDidClickSettingsSubscribeButton", "funnel_duckai_macos__settings"),
+        ("userDidClickProUpgradeDisclaimerBannerButton", "funnel_duckai_macos__disclaimerbanner"),
+        ("userDidClickVoiceChatLimitModalSubscribeButton", "funnel_duckai_macos__voicechatlimit"),
+        ("userDidClickVoiceChatDurationLimitModalSubscribeButton", "funnel_duckai_macos__voicechatdurationlimit"),
+        ("userDidClickModelPickerUpgrade", "funnel_duckai_macos__modelpicker"),
+        ("userDidClickReasoningDropdownUpgrade", "funnel_duckai_macos__reasoningdropdown"),
+        ("userDidClickSwitchModelUpgrade", "funnel_duckai_macos__switchmodel")
     ])
     @MainActor
-    func testFunnelClickMetricFiresClickPixelWithOrigin(metric: AIChatMetricName, origin: String) async {
+    func testFunnelClickMetricFiresClickPixelWithOrigin(metricName: String, origin: String) async {
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSubscriptionFunnelClick(origin: origin), frequency: .dailyAndCount)]
 
-        await withCheckedContinuation { continuation in
-            handler.didReportMetric(.init(metricName: metric)) {
-                continuation.resume()
-            }
-        }
+        _ = await handler.reportMetric(
+            params: ["metricName": metricName],
+            message: WKScriptMessage.mock()
+        )
 
         #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+        #expect(userScriptErrorEventMapper.events.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)

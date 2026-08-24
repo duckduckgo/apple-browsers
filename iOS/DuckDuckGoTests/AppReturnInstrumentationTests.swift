@@ -156,6 +156,14 @@ struct AppReturnInstrumentationTests {
         #expect(collector.fired.first?.params["toggle_enabled"] == "true")
     }
 
+    // MARK: - PETAL tag
+
+    @available(iOS 16, *)
+    @Test("The pixel self-tags petal=randomize for the PETAL pipeline", .timeLimit(.minutes(1)))
+    func pixelSelfTagsPetalRandomize() {
+        #expect(AppReturnPixel.appReturn.parameters?["petal"] == "randomize")
+    }
+
     // MARK: - Launch source
 
     @available(iOS 16, *)

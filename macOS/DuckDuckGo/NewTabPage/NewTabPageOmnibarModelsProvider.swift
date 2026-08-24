@@ -33,6 +33,10 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     private(set) var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?
     private(set) var attachmentLimits: NewTabPageDataModel.AttachmentLimits?
     private(set) var isEligibleForFreeTrial = false
+
+    /// Kept so usage warnings resolve without repeating the subscription lookup. Empty until first fetch.
+    private(set) var lastResolvedUserTier: AIChatUserTier = .free
+    private(set) var lastFetchedModels: [AIChatModel] = []
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
@@ -73,6 +77,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             attachmentLimits = mapAttachmentLimits(response.attachmentLimits?.limits(for: userTier))
             isEligibleForFreeTrial = userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
             let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+            lastResolvedUserTier = userTier
+            lastFetchedModels = models
 
             // Recommended = backend-labelled models, shown first with the label as a subtitle.
             let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)

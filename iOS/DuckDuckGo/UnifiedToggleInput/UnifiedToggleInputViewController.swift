@@ -198,6 +198,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     func presentModelPickerMenu() -> Bool {
         inputBarView.presentModelPickerMenu()
     }
+    
+    @discardableResult
+    func presentReasoningPickerMenu() -> Bool {
+        inputBarView.presentReasoningPickerMenu()
+    }
 
     var toolsMenu: UIMenu? {
         get { inputBarView.toolsMenu }

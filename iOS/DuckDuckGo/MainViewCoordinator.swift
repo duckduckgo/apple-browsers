@@ -420,7 +420,6 @@ class MainViewCoordinator {
         // Re-focus supersedes dismiss: drop any snapshot, but don't restore NTP under the new focus.
         stopInFlightOmnibarDismiss(runningInterruptCleanup: false)
         removeOmnibarDismissContentSnapshot()
-        removeOmnibarDismissContentSnapshot()
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false

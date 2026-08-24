@@ -49,7 +49,8 @@ struct SuggestionsListView: View {
         static let searchSectionSpacing: CGFloat = 26
         static let searchAfterHatchTopInset: CGFloat = searchSectionSpacing - scrollableChromeBottomInset
         static let duckAIAfterHatchTopInset: CGFloat = 4
-        /// Keeps the 48pt shadow with its 16pt downward offset inside the List row.
+        /// The 48pt shadow with its 16pt downward offset extends 32pt above and 64pt below the card.
+        static let messageShadowTopInset: CGFloat = 32
         static let messageShadowBottomInset: CGFloat = 64
         /// Search content starts at 16pt; favorites use the NTP's 24pt grid margin.
         static let favoritesHorizontalInset: CGFloat = 8
@@ -167,7 +168,8 @@ struct SuggestionsListView: View {
     }
 
     private var searchContentTopInset: CGFloat {
-        escapeHatch == nil ? scrollableChromeTopInset : Metrics.searchAfterHatchTopInset
+        let contentInset = escapeHatch == nil ? scrollableChromeTopInset : Metrics.searchAfterHatchTopInset
+        return contentInset + (hasMessages ? Metrics.messageShadowTopInset : 0)
     }
 
     private var searchContentBottomInset: CGFloat {

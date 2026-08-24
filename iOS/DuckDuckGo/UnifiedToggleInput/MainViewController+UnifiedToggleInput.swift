@@ -1528,7 +1528,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewTab() {
-        newTab(reuseExisting: false, allowingKeyboard: false)
+        newTab(reuseExisting: false, allowingKeyboard: true)
     }
 
     /// Force-search NTP. Override mode without committing — preserved toggle preference must survive.

@@ -48,7 +48,7 @@ final class AIChatMenu: NSMenu {
     private lazy var openDuckAIItem: NSMenuItem = {
         let item = NSMenuItem(title: UserText.aiChatMenuOpenDuckAI, action: #selector(openDuckAITapped), keyEquivalent: "")
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.duckAi
+        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.duckAi)
         return item
     }()
 
@@ -59,7 +59,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.compose
+        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.compose)
         return item
     }()
 
@@ -71,7 +71,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.voice
+        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.voice)
         return item
     }()
 
@@ -82,7 +82,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.images
+        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.images)
         return item
     }()
 
@@ -94,7 +94,7 @@ final class AIChatMenu: NSMenu {
         if origin == .mainMenu {
             item.keyEquivalentModifierMask = [.command, .option]
         }
-        item.image = DesignSystemImages.Glyphs.Size12.aiChat
+        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.aiChat)
         return item
     }()
 
@@ -107,7 +107,7 @@ final class AIChatMenu: NSMenu {
     private lazy var deleteAllChatsItem: NSMenuItem = {
         let item = NSMenuItem(title: UserText.aiChatMenuDeleteAllChats, action: #selector(deleteAllChatsTapped), keyEquivalent: "")
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.fire
+        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.fire)
         return item
     }()
 
@@ -216,7 +216,7 @@ final class AIChatMenu: NSMenu {
             let item = NSMenuItem(title: chat.title, action: #selector(chatItemTapped(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = chat
-            item.image = chat.isPinned ? DesignSystemImages.Color.Size12.chatPinned : DesignSystemImages.Color.Size12.chat
+            item.withImageOnMacOS26(chat.isPinned ? DesignSystemImages.Color.Size12.chatPinned : DesignSystemImages.Color.Size12.chat)
             insertItem(item, at: labelIndex + 1 + offset)
             chatItems.append(item)
         }
@@ -225,7 +225,7 @@ final class AIChatMenu: NSMenu {
             let separator = NSMenuItem.separator()
             let viewAllItem = NSMenuItem(title: UserText.aiChatMenuViewAllChats, action: #selector(viewAllChatsTapped), keyEquivalent: "")
             viewAllItem.target = self
-            viewAllItem.image = DesignSystemImages.Glyphs.Size12.aiChatHistory
+            viewAllItem.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.aiChatHistory)
             let insertIndex = labelIndex + 1 + chats.count
             insertItem(separator, at: insertIndex)
             insertItem(viewAllItem, at: insertIndex + 1)

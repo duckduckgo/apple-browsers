@@ -1973,30 +1973,30 @@ extension NavigationBarViewController: NSMenuDelegate {
         HomeButtonMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences, pinningManager: pinningManager)
         let shareTitle = pinningManager.shortcutTitle(for: .share)
         menu.addItem(withTitle: shareTitle, action: #selector(toggleSharePanelPinning), keyEquivalent: "")
-            .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.shareApple)
 
         let downloadsTitle = pinningManager.shortcutTitle(for: .downloads)
         menu.addItem(withTitle: downloadsTitle, action: #selector(toggleDownloadsPanelPinning), keyEquivalent: "J")
-            .withImage(DesignSystemImages.Glyphs.Size12.download)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.download)
 
         let autofillTitle = pinningManager.shortcutTitle(for: .autofill)
         menu.addItem(withTitle: autofillTitle, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "A")
-            .withImage(DesignSystemImages.Glyphs.Size12.keyLogin)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.keyLogin)
 
         let bookmarksTitle = pinningManager.shortcutTitle(for: .bookmarks)
         menu.addItem(withTitle: bookmarksTitle, action: #selector(toggleBookmarksPanelPinning), keyEquivalent: "K")
-            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.bookmarks)
 
         if !isInPopUpWindow && DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager).isVPNVisible() {
             let networkProtectionTitle = pinningManager.shortcutTitle(for: .networkProtection)
             menu.addItem(withTitle: networkProtectionTitle, action: #selector(toggleNetworkProtectionPanelPinning), keyEquivalent: "")
-                .withImage(DesignSystemImages.Glyphs.Size12.vpnUnlock)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.vpnUnlock)
         }
 
         if !isInPopUpWindow && NSApp.delegateTyped.internalUserDecider.isInternalUser {
             let feedbackTitle = pinningManager.shortcutTitle(for: .feedback)
             menu.addItem(withTitle: feedbackTitle, action: #selector(toggleFeedbackPanelPinning), keyEquivalent: "")
-                .withImage(DesignSystemImages.Glyphs.Size12.feedback)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.feedback)
         }
     }
 

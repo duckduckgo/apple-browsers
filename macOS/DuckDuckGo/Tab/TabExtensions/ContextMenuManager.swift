@@ -261,7 +261,7 @@ extension ContextMenuManager {
     }
 
     private func handleShareItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
-        item.image = DesignSystemImages.Glyphs.Size12.shareApple
+        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.shareApple)
     }
 
     private var shouldShowTextSummarization: Bool {
@@ -357,25 +357,25 @@ private extension ContextMenuManager {
     func openLinkInNewTabMenuItem(from item: NSMenuItem, makeBurner: Bool) -> NSMenuItem {
         let title = makeBurner ? UserText.openLinkInNewBurnerTab : UserText.openLinkInNewTab
         let action = makeBurner ? #selector(openLinkInNewBurnerTab) : #selector(openLinkInNewTab)
-        return makeMenuItem(withTitle: title, action: action, from: item, with: .openLinkInNewWindow).withImage(DesignSystemImages.Glyphs.Size12.tabNew)
+        return makeMenuItem(withTitle: title, action: action, from: item, with: .openLinkInNewWindow).withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.tabNew)
     }
 
     func addLinkToBookmarksMenuItem(from item: NSMenuItem) -> NSMenuItem {
-        makeMenuItem(withTitle: UserText.addLinkToBookmarks, action: #selector(addLinkToBookmarks), from: item, with: .openLinkInNewWindow, keyEquivalent: "").withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
+        makeMenuItem(withTitle: UserText.addLinkToBookmarks, action: #selector(addLinkToBookmarks), from: item, with: .openLinkInNewWindow, keyEquivalent: "").withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.bookmarks)
     }
 
     func bookmarkPageMenuItem() -> NSMenuItem {
         NSMenuItem(title: UserText.bookmarkPage, action: #selector(MainViewController.bookmarkThisPage), target: nil, keyEquivalent: "")
-            .withImage(DesignSystemImages.Glyphs.Size12.bookmarkAdd)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.bookmarkAdd)
             .withAccessibilityIdentifier("ContextMenuManager.bookmarkPageMenuItem")
     }
 
     func openLinkInNewWindowMenuItem(from item: NSMenuItem) -> NSMenuItem {
-        makeMenuItem(withTitle: item.title, action: #selector(openLinkInNewWindow), from: item, with: .openLinkInNewWindow).withImage(DesignSystemImages.Glyphs.Size12.windowNew)
+        makeMenuItem(withTitle: item.title, action: #selector(openLinkInNewWindow), from: item, with: .openLinkInNewWindow).withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.windowNew)
     }
 
     func openLinkInNewFireWindowMenuItem(from item: NSMenuItem) -> NSMenuItem {
-        let menuItem = makeMenuItem(withTitle: UserText.openLinkInNewBurnerWindow, action: #selector(openLinkInNewFireWindow), from: item, with: .openLinkInNewWindow).withImage(DesignSystemImages.Glyphs.Size12.fireWindow)
+        let menuItem = makeMenuItem(withTitle: UserText.openLinkInNewBurnerWindow, action: #selector(openLinkInNewFireWindow), from: item, with: .openLinkInNewWindow).withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.fireWindow)
         return menuItem
     }
 
@@ -400,12 +400,12 @@ private extension ContextMenuManager {
 
     func copyLinkOrEmailAddressMenuItem(withTitle title: String, from openLinkItem: NSMenuItem) -> NSMenuItem {
         makeMenuItem(withTitle: title, action: #selector(copyLinkOrEmailAddress), from: openLinkItem, with: .openLinkInNewWindow)
-            .withImage(.init(systemSymbolName: "document.on.document", accessibilityDescription: title))
+            .withImageOnMacOS26(.init(systemSymbolName: "document.on.document", accessibilityDescription: title))
     }
 
     func copySelectionMenuItem() -> NSMenuItem {
         NSMenuItem(title: UserText.copySelection, action: #selector(copySelection), target: self)
-            .withImage(.init(systemSymbolName: "document.on.document", accessibilityDescription: UserText.copySelection))
+            .withImageOnMacOS26(.init(systemSymbolName: "document.on.document", accessibilityDescription: UserText.copySelection))
     }
 
     func copyImageAddressMenuItem(from item: NSMenuItem) -> NSMenuItem {
@@ -428,20 +428,20 @@ private extension ContextMenuManager {
 
     func searchMenuItem(makeBurner: Bool) -> NSMenuItem {
         let action = makeBurner ? #selector(searchInBurner) : #selector(search)
-        return NSMenuItem(title: UserText.searchWithDuckDuckGo, action: action, target: self).withImage(DesignSystemImages.Glyphs.Size12.searchFind)
+        return NSMenuItem(title: UserText.searchWithDuckDuckGo, action: action, target: self).withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.searchFind)
     }
 
     func summarizeMenuItem() -> NSMenuItem {
-        NSMenuItem(title: UserText.aiChatSummarize, action: #selector(summarize), target: self, keyEquivalent: [.command, .shift, "\r"]).withImage(DesignSystemImages.Glyphs.Size12.aiChat)
+        NSMenuItem(title: UserText.aiChatSummarize, action: #selector(summarize), target: self, keyEquivalent: [.command, .shift, "\r"]).withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.aiChat)
     }
 
     func translateMenuItem() -> NSMenuItem {
-        NSMenuItem(title: UserText.aiChatTranslate, action: #selector(translate), target: self).withImage(DesignSystemImages.Glyphs.Size12.translateAi)
+        NSMenuItem(title: UserText.aiChatTranslate, action: #selector(translate), target: self).withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.translateAi)
     }
 
     func attachToDuckAIMenuItem() -> NSMenuItem {
         NSMenuItem(title: UserText.aiChatAttachSelection, action: #selector(attachToDuckAI), target: self)
-            .withImage(DesignSystemImages.Glyphs.Size12.textSelectedRight)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.textSelectedRight)
     }
 
     private func makeMenuItem(withTitle title: String, action: Selector, from item: NSMenuItem, with identifier: WKMenuItemIdentifier, keyEquivalent: String? = nil) -> NSMenuItem {
@@ -455,7 +455,7 @@ private extension ContextMenuManager {
         let identifier = item.identifier.flatMap(WKMenuItemIdentifier.init)
         assert(identifier != nil && validIdentifiers.contains(identifier!))
 
-        return NSMenuItem(title: title, action: action, target: self, keyEquivalent: [.charCode(keyEquivalent ?? item.keyEquivalent)], representedObject: item).withImage(item.image)
+        return NSMenuItem(title: title, action: action, target: self, keyEquivalent: [.charCode(keyEquivalent ?? item.keyEquivalent)], representedObject: item).withImageOnMacOS26(item.image)
     }
 
 }

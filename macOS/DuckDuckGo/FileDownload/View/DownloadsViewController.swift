@@ -279,23 +279,23 @@ final class DownloadsViewController: NSViewController {
     private func setUpContextMenu() -> NSMenu {
         let menu = NSMenu {
             NSMenuItem(title: UserText.downloadsOpenItem, action: #selector(openDownloadAction), target: self)
-                .withImage(DesignSystemImages.Glyphs.Size12.open)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.open)
             NSMenuItem(title: UserText.downloadsShowInFinderItem, action: #selector(revealDownloadAction), target: self)
-                .withImage(DesignSystemImages.Glyphs.Size12.searchFind)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.searchFind)
             NSMenuItem.separator()
             NSMenuItem(title: UserText.downloadsCopyLinkItem, action: #selector(copyDownloadLinkAction), target: self)
-                .withImage(DesignSystemImages.Glyphs.Size12.copy)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.copy)
             NSMenuItem(title: UserText.downloadsOpenWebsiteItem, action: #selector(openOriginatingWebsiteAction), target: self)
-                .withImage(DesignSystemImages.Glyphs.Size12.globe)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.globe)
             NSMenuItem.separator()
             NSMenuItem(title: UserText.downloadsRemoveFromListItem, action: #selector(removeDownloadAction), target: self)
-                .withImage(DesignSystemImages.Glyphs.Size12.close)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.close)
             NSMenuItem(title: UserText.downloadsStopItem, action: #selector(cancelDownloadAction), target: self)
-                .withImage(DesignSystemImages.Glyphs.Size12.close)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.close)
             NSMenuItem(title: UserText.downloadsRestartItem, action: #selector(restartDownloadAction), target: self)
-                .withImage(DesignSystemImages.Glyphs.Size12.reloadSmall)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.reloadSmall)
             NSMenuItem(title: UserText.downloadsClearAllItem, action: #selector(clearDownloadsAction), target: self)
-                .withImage(DesignSystemImages.Glyphs.Size12.trash)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.trash)
         }
         menu.delegate = self
         return menu

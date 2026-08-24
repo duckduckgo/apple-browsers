@@ -51,16 +51,16 @@ struct BookmarksBarMenuFactory {
                 title: UserText.bookmarksBarContextMenuReorderByName,
                 action: reorderByNameSelector,
                 target: target
-            ).withImage(DesignSystemImages.Glyphs.Size12.arrowUpDown)
+            ).withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.arrowUpDown)
             menu.addItem(reorderByNameItem)
             menu.addItem(.separator())
         }
-        menu.addItem(NSMenuItem(title: UserText.addFolder, action: addFolderSelector, target: target).withImage(DesignSystemImages.Glyphs.Size12.folderAdd))
-        menu.addItem(NSMenuItem(title: UserText.bookmarksManageBookmarks, action: manageBookmarksSelector, target: target).withImage(DesignSystemImages.Glyphs.Size12.bookmarks))
+        menu.addItem(NSMenuItem(title: UserText.addFolder, action: addFolderSelector, target: target).withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.folderAdd))
+        menu.addItem(NSMenuItem(title: UserText.bookmarksManageBookmarks, action: manageBookmarksSelector, target: target).withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.bookmarks))
     }
 
     static func makeMenuItem( _ prefs: AppearancePreferences) -> NSMenuItem {
-        let item = NSMenuItem(title: UserText.showBookmarksBar, action: nil, keyEquivalent: "B").withImage(DesignSystemImages.Glyphs.Size12.toolbar)
+        let item = NSMenuItem(title: UserText.showBookmarksBar, action: nil, keyEquivalent: "B").withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.toolbar)
         item.submenu = NSMenu(items: [
             BlockMenuItem(title: UserText.mainMenuBookmarksShowBookmarksBarAlways, isChecked: prefs.showBookmarksBar && prefs.bookmarksBarAppearance == .alwaysOn) {
                 prefs.bookmarksBarAppearance = .alwaysOn

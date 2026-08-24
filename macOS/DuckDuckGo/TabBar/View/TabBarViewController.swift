@@ -1039,7 +1039,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let newChatItem = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(duckAIMenuNewChatAction), keyEquivalent: "")
         newChatItem.target = self
-        newChatItem.image = DesignSystemImages.Glyphs.Size12.compose
+        newChatItem.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.compose)
         // Display-only: mirror the main menu's ⌥⌘N (handling lives on the main-menu item).
         newChatItem.keyEquivalent = "n"
         newChatItem.keyEquivalentModifierMask = [.command, .option]

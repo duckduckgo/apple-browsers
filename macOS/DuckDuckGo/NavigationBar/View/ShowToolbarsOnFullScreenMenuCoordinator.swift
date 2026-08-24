@@ -40,7 +40,7 @@ struct ShowToolbarsOnFullScreenMenuCoordinator {
         let item = BlockMenuItem(title: UserText.mainMenuViewShowToolbarsOnFullScreen, isChecked: prefs.showTabsAndBookmarksBarOnFullScreen, block: {
             prefs.showTabsAndBookmarksBarOnFullScreen = !prefs.showTabsAndBookmarksBarOnFullScreen
         })
-            .withImage(DesignSystemImages.Glyphs.Size12.window)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.window)
         return item
     }
 

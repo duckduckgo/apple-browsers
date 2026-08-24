@@ -42,7 +42,11 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         XCTAssertTrue(menu.items[1].isSeparatorItem)
         XCTAssertEqual(menu.items[2].title, UserText.bookmarksBarContextMenuReorderByName)
         XCTAssertEqual(menu.items[2].action, #selector(targetMock.reorderByName(_:)))
-        XCTAssertEqual(menu.items[2].image?.pngData(), DesignSystemImages.Glyphs.Size12.arrowUpDown.pngData())
+        if ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26 {
+            XCTAssertEqual(menu.items[2].image?.pngData(), DesignSystemImages.Glyphs.Size12.arrowUpDown.pngData())
+        } else {
+            XCTAssertNil(menu.items[2].image)
+        }
         XCTAssertTrue(menu.items[3].isSeparatorItem)
         XCTAssertEqual(menu.items[4].title, UserText.addFolder)
         XCTAssertEqual(menu.items[4].action, #selector(targetMock.addFolder(_:)))

@@ -239,11 +239,11 @@ final class PasswordManagementViewController: NSViewController {
         subscribeToThemeChanges()
         applyThemeStyle()
 
-        lockMenuItem.image = DesignSystemImages.Glyphs.Size12.lock
-        importPasswordMenuItem.image = DesignSystemImages.Glyphs.Size12.import
-        exportLoginItem.image = DesignSystemImages.Glyphs.Size12.export
-        deleteAllPasswordsMenuItem.image = DesignSystemImages.Glyphs.Size12.trash
-        settingsMenuItem.image = DesignSystemImages.Glyphs.Size12.settings
+        lockMenuItem.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.lock)
+        importPasswordMenuItem.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.import)
+        exportLoginItem.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.export)
+        deleteAllPasswordsMenuItem.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.trash)
+        settingsMenuItem.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.settings)
     }
 
     private func setUpEmptyStateMessageView() {

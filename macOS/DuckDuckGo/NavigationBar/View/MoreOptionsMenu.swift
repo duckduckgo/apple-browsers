@@ -575,7 +575,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         if aiChatMenuConfiguration.shouldDisplayMoreOptionsMenuShortcut {
             let aiChatItem = NSMenuItem(title: "Duck.ai", action: #selector(newAiChat), keyEquivalent: "n")
             aiChatItem.keyEquivalentModifierMask = [.command, .option]
-            aiChatItem.image = DesignSystemImages.Glyphs.Size12.duckAi
+            aiChatItem.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.duckAi)
             aiChatItem.target = self
             aiChatItem.submenu = makeAIChatMenu()
             addItem(aiChatItem)
@@ -1165,7 +1165,7 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
             .withModifierMask([.command])
             .targetting(target)
             .withAccessibilityIdentifier("MoreOptionsMenu.bookmarkPage")
-            .withImage(DesignSystemImages.Glyphs.Size12.bookmarkAdd)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.bookmarkAdd)
 
         bookmarkPageItem.isEnabled = tabCollectionViewModel.selectedTabViewModel?.canBeBookmarked == true
 
@@ -1185,7 +1185,7 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
         addItem(withTitle: UserText.bookmarksManageBookmarks, action: #selector(MoreOptionsMenu.openBookmarksManagementInterface), keyEquivalent: "b")
             .withModifierMask([.command, .option])
             .targetting(target)
-            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.bookmarks)
 
         addItem(NSMenuItem.separator())
 
@@ -1218,10 +1218,10 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
 
         addItem(withTitle: UserText.importBookmarks, action: #selector(MoreOptionsMenu.openBookmarkImportInterface(_:)), keyEquivalent: "")
             .targetting(target)
-            .withImage(DesignSystemImages.Glyphs.Size12.import)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.import)
 
         let exportBookmarItem = NSMenuItem(title: UserText.exportBookmarks, action: #selector(MoreOptionsMenu.openBookmarkExportInterface(_:)), keyEquivalent: "").targetting(target)
-            .withImage(DesignSystemImages.Glyphs.Size12.export)
+            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.export)
         exportBookmarItem.isEnabled = bookmarkManager.list?.totalBookmarks != 0
         addItem(exportBookmarItem)
 

@@ -86,7 +86,7 @@ extension TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
     }

@@ -44,7 +44,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
@@ -91,7 +91,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
 
@@ -142,7 +142,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
 
@@ -425,7 +425,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
@@ -470,7 +470,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
@@ -515,7 +515,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
@@ -566,7 +566,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
@@ -818,7 +818,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
@@ -871,7 +871,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
@@ -947,7 +947,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
@@ -999,7 +999,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
@@ -1063,7 +1063,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
@@ -1122,7 +1122,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
@@ -1175,7 +1175,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
             <script>
             var popupUrl = "\(popupWindowURL)";
             </script>
-            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300,noopener")'>Open popup</a>
             """
         }
         let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch

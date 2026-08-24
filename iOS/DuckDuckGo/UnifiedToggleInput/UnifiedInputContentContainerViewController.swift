@@ -103,9 +103,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// `contentContainerView`.
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
     private var unifiedSuggestionsContainerView: UIView?
-    /// Single-host path: the suggestions container's top offset (input height + content gap) lives on this
-    /// constraint, not the hosting view's safe-area inset — so the whole content (incl. the escape
-    /// hatch) glides natively with the input instead of SwiftUI snapping the safe-area reposition.
+    /// Keeps the suggestions viewport fixed while the host's safe-area inset tracks the input height.
+    /// The constraint only carries the small per-state content gap.
     private var unifiedSuggestionsTopConstraint: NSLayoutConstraint?
     /// The lazily-attached duck.ai surface (source + fetchers + state feed); nil while detached.
     private var duckAISurface: DuckAISuggestionsSurfaceProvider?
@@ -377,9 +376,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
     }
 
-    /// Keeps the List's top inset stable; the top bar is carried by the host constraint instead.
+    /// Keeps the List viewport full-height while resting content starts below the UTI.
     private func applyHostContentInsets() {
-        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: 0,
+        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: isUsingTopBarPosition ? requestedContentInset.top : 0,
                                                               left: 0,
                                                               bottom: requestedContentInset.bottom,
                                                               right: 0))
@@ -660,11 +659,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         applyEscapeHatchPlacement()
     }
 
-    /// The unified list owns the focused New Tab Page and Duck.ai content, so one top constraint
-    /// moves the entire scroll hierarchy with the input.
+    /// Keep the viewport fixed; the host's safe-area inset moves resting content with the input.
     private func updateSingleHostTopOffset() {
-        let inputOffset = isUsingTopBarPosition ? requestedContentInset.top : 0
-        unifiedSuggestionsTopConstraint?.constant = inputOffset + topBarContentGap
+        unifiedSuggestionsTopConstraint?.constant = topBarContentGap
     }
 
     /// Duck.ai's no-hatch list keeps main's 4pt clearance. Search content owns its NTP-aligned spacing.
@@ -800,7 +797,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     func setContentInset(top: CGFloat, bottom: CGFloat) {
         guard requestedContentInset.top != top || requestedContentInset.bottom != bottom else { return }
-        let hostTop = (isUsingTopBarPosition ? top : 0) + topBarContentGap
+        let hostTop = topBarContentGap
         Logger.unifiedInputState.debug("[UTITransition] contentInset mode=\(String(describing: self.switchBarHandler.currentToggleState), privacy: .public) oldTop=\(self.requestedContentInset.top, privacy: .public) oldBottom=\(self.requestedContentInset.bottom, privacy: .public) newTop=\(top, privacy: .public) newBottom=\(bottom, privacy: .public) hostTop=\(hostTop, privacy: .public) active=\(self.isContentActive, privacy: .public)")
         requestedContentInset = (top, bottom)
         guard isContentActive else {
@@ -811,8 +808,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func applyRequestedContentInset() {
-        // Move top-bar content with the host frame so a simultaneous List pan never has its adjusted
-        // top inset changed mid-gesture. Bottom-bar content still uses the host's bottom safe-area inset.
+        // The host frame stays fixed while safe-area insets move resting content with the UTI.
         updateSingleHostTopOffset()
 
         applyHostContentInsets()

@@ -170,8 +170,7 @@ final class UnifiedSuggestionsHost {
         rebuildRootView()
     }
 
-    /// Single-host path: only the bottom bar remains a safe-area inset; top-bar movement is owned by
-    /// the container's host constraint so List scroll offsets remain stable.
+    /// Insets the List content without shrinking its viewport, allowing rows to scroll beneath the top UTI.
     func setContentInsets(_ insets: UIEdgeInsets) {
         contentInsets = insets
         applyCombinedInsets()

@@ -1,5 +1,5 @@
 //
-//  AIChatRecentChatsPopupViewModel.swift
+//  AIChatRecentChatsMenuViewModel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -20,11 +20,9 @@
 import AIChat
 import Foundation
 
-// MARK: - Delegate
-
-/// Backs the chats menu: the recent chats to offer, capped, plus whether New Chat applies.
+/// Backs the chats menu: the recent chats to offer, capped.
 @MainActor
-final class AIChatRecentChatsPopupViewModel {
+final class AIChatRecentChatsMenuViewModel {
 
     // MARK: - Constants
 
@@ -37,9 +35,7 @@ final class AIChatRecentChatsPopupViewModel {
 
     // MARK: - Initialization
 
-    /// Creates a view model from raw fetched data.
-    /// - Parameters:
-    ///   - suggestions: The chat suggestions to display (will be capped at maxVisibleChats).
+    /// - Parameter suggestions: The chat suggestions to display (will be capped at maxVisibleChats).
     init(suggestions: [AIChatSuggestion]) {
         self.suggestions = Array(suggestions.prefix(Self.maxVisibleChats))
     }
@@ -48,15 +44,14 @@ final class AIChatRecentChatsPopupViewModel {
 
 // MARK: - Fetching
 
-extension AIChatRecentChatsPopupViewModel {
+extension AIChatRecentChatsMenuViewModel {
 
     /// Fetches recent chats from the reader and creates a view model.
-    /// Returns nil only if the reader is nil; the popup still opens with no suggestions.
-    static func fetch(using reader: AIChatSuggestionsReading?) async -> AIChatRecentChatsPopupViewModel? {
+    /// Returns nil only if the reader is nil; the menu still opens with no suggestions.
+    static func fetch(using reader: AIChatSuggestionsReading?) async -> AIChatRecentChatsMenuViewModel? {
         guard let reader else { return nil }
         let result = await reader.fetchSuggestions(query: nil, maxChats: maxVisibleChats + 1)
         let all = result.pinned + result.recent
-        let capped = Array(all.prefix(maxVisibleChats))
-        return AIChatRecentChatsPopupViewModel(suggestions: capped)
+        return AIChatRecentChatsMenuViewModel(suggestions: Array(all.prefix(maxVisibleChats)))
     }
 }

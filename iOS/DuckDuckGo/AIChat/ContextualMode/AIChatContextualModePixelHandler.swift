@@ -56,8 +56,8 @@ protocol AIChatContextualModePixelFiring {
                                surface: AIChatContextualSuggestionsSurface)
     func fireSuggestionsContextCollectionTimedOut()
 
-    // MARK: - Recent Chats Popup
-    func fireRecentChatsPopupDisplayed()
+    // MARK: - Recent Chats Menu
+    func fireRecentChatsMenuDisplayed()
     func fireRecentChatSelected()
     func fireViewAllChatsTapped()
 
@@ -313,9 +313,9 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualSuggestionsContextCollectionTimedOut)
     }
 
-    // MARK: - Recent Chats Popup
+    // MARK: - Recent Chats Menu
 
-    func fireRecentChatsPopupDisplayed() {
+    func fireRecentChatsMenuDisplayed() {
         firePixel(.aiChatContextualRecentChatsPopupDisplayed)
     }
 

@@ -731,7 +731,8 @@ private extension AIChatContextualSheetCoordinator {
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
-            start: start
+            start: start,
+            footerWarningProvider: duckAiFooterWarningProvider
         )
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
@@ -958,6 +959,13 @@ private extension AIChatContextualSheetCoordinator {
             DuckAiLastUsedModelProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
         }
     }
+
+    var duckAiFooterWarningProvider: UTIFooterWarningProviding? {
+        let storageHandler = isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+        return storageHandler.map {
+            UTIFooterWarningProvider(limitsStore: DuckAiUsageLimitsStore(storageHandler: $0))
+        }
+    }
     
     /// Starts the session timer after the sheet is dismissed.
     /// Timer will automatically reset the chat to native input after configured inactivity period.
@@ -1035,8 +1043,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
         switch action {
         case .askAboutPage:
-            // Only offered while the strip isn't showing its own re-attach button, so this is the sole
-            // affordance when it appears rather than a duplicate of it.
+            // Only offered before an explicit removal, so it never competes with the attachment menu.
             requestManualPageContextAttach()
         case .summarize, .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()

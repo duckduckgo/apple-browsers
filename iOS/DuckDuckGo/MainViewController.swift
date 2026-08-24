@@ -281,32 +281,28 @@ class MainViewController: UIViewController {
         refreshSettledFloatingGlassAppearance()
     }
 
-    /// Restyles liquid glass from the now-visible page, then scales the live toolbar in from its centre.
-    /// Call this only after transition overlays have been removed; snapshotting glass
-    /// during the morph samples the wrong background and appears dark.
+    /// Call only once transition overlays are gone: glass snapshotted mid-morph samples the wrong background and lands dark.
     func revealFloatingToolbarAfterTabSwitcherTransition() {
         isTabSwitcherTransitionOwningToolbar = false
+        // Non-floating transitions never conceal the toolbar or reset chrome, so forcing
+        // alpha here would desync `lastChromeVisibilityPercent` and break tap-to-show-bars.
+        guard isFloatingUIEnabled else { return }
+
         let toolbar: BrowserToolbarView = viewCoordinator.toolbar
-        guard isFloatingUIEnabled else {
-            toolbar.transform = .identity
-            toolbar.alpha = 1
-            return
-        }
         _ = themeColorManager.updateThemeColor()
         refreshSettledFloatingGlassAppearance()
         toolbar.layoutIfNeeded()
-        let duration = UIAccessibility.isReduceMotionEnabled
-            ? 0
-            : TabSwitcherTransition.Constants.floatingToolbarRevealDuration
-        guard duration > 0 else {
+
+        guard !UIAccessibility.isReduceMotionEnabled else {
             toolbar.transform = .identity
             toolbar.alpha = 1
             return
         }
+
         let revealScale = TabSwitcherTransition.Constants.floatingToolbarRevealScale
         toolbar.alpha = 0
         toolbar.transform = CGAffineTransform(scaleX: revealScale, y: revealScale)
-        UIView.animate(withDuration: duration,
+        UIView.animate(withDuration: TabSwitcherTransition.Constants.floatingToolbarRevealDuration,
                        delay: 0,
                        usingSpringWithDamping: 0.86,
                        initialSpringVelocity: 0.35,

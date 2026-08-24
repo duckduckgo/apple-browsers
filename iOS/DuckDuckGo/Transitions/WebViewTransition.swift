@@ -122,8 +122,7 @@ class FromWebViewTransition: WebViewTransition {
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
         let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
                                                      transitionContext: transitionContext,
-                                                     afterScreenUpdates: false,
-                                                     seedCollapsed: false)
+                                                     afterScreenUpdates: false)
 
         var initialContainerFrame = mainViewController.viewCoordinator.contentContainer.frame
         if isFloating {

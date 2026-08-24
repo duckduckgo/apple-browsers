@@ -26,11 +26,7 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         static let duration = 0.20
         static let floatingDuration = 0.28
         static let collapsedToolbarScale: CGFloat = 0.7
-        static let revealMidpointAlpha: CGFloat = 0.85
-        static let revealMidpointScale: CGFloat = collapsedToolbarScale + revealMidpointAlpha * (1 - collapsedToolbarScale)
-        /// Appear animation for the live floating toolbar after the destination page is on screen.
-        /// Incoming transitions must not snapshot liquid glass: that capture samples the tab
-        /// switcher (or an unpainted webview) and lands dark.
+        /// Appear animation for the live floating toolbar, once the destination page is on screen.
         static let floatingToolbarRevealDuration: TimeInterval = 0.22
         static let floatingToolbarRevealScale: CGFloat = 0.94
     }
@@ -185,8 +181,7 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
 
     func installToolbarSnapshot(for mainViewController: MainViewController,
                                 transitionContext: UIViewControllerContextTransitioning,
-                                afterScreenUpdates: Bool,
-                                seedCollapsed: Bool) -> UIView? {
+                                afterScreenUpdates: Bool) -> UIView? {
         guard mainViewController.isFloatingUIEnabled else { return nil }
 
         concealLiveFloatingToolbar(of: mainViewController)
@@ -196,13 +191,6 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         guard let snapshot = makeToolbarSnapshot(of: toolbar,
                                                  in: transitionContext.containerView,
                                                  afterScreenUpdates: afterScreenUpdates) else { return nil }
-
-        if seedCollapsed {
-            if !UIAccessibility.isReduceMotionEnabled {
-                snapshot.transform = Self.collapsedToolbarTransform(for: snapshot)
-            }
-            snapshot.alpha = 0
-        }
 
         transitionContext.containerView.addSubview(snapshot)
         return snapshot

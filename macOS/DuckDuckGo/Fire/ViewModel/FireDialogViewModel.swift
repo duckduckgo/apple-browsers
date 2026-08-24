@@ -302,6 +302,13 @@ final class FireDialogViewModel: ObservableObject {
 
     private static func isCurrentTabOptionEnabled(for tab: Tab?) -> Bool {
         guard let tab else { return true }
+
+        // This check is here to catch cases when Fire Dialog is opened for a freshly burned tab that wasn't closed.
+        // In that case such tab isn't recorded in history and we're unable to present a history item for it,
+        // and effectively burning a tab wouldn't delete any history items.
+        let hasVisitWithHistoryItems = tab.localHistory.contains(where: { $0.historyEntry != nil })
+        guard hasVisitWithHistoryItems else { return false }
+
         return tab.content.isExternalUrl || tab.canGoBack || tab.canGoForward
     }
 
@@ -553,7 +560,7 @@ final class FireDialogViewModel: ObservableObject {
         case .allData:
             self.historyVisits = scopeVisits ?? historyCoordinating.allHistoryVisits ?? []
         case .currentTab:
-            self.historyVisits = tabCollectionViewModel?.selectedTabViewModel?.tab.localHistory ?? []
+            self.historyVisits = tabCollectionViewModel?.selectedTabViewModel?.tab.localHistory.filter({ $0.historyEntry != nil }) ?? []
         case .currentWindow:
             self.historyVisits = tabCollectionViewModel?.localHistory ?? []
         }

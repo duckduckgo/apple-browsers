@@ -20,7 +20,7 @@
 import UIKit
 import Testing
 import AIChat
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 @MainActor

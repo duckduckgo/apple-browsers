@@ -36,7 +36,8 @@ struct OnboardingPersonalizationToggleBindingTests {
         (.searchAssist, \.isSearchAssistEnabled),
         (.aiGeneratedImages, \.areAIGeneratedImagesHidden),
         (.youTubeAdBlocking, \.isYouTubeAdBlockingEnabled),
-        (.duckPlayer, \.isDuckPlayerEnabled)
+        (.rejectOptionalCookies, \.isCookiePopUpProtectionEnabled),
+        (.acceptOtherCookies, \.isPopUpsWithoutOptOutsEnabled)
     ]
 
     @Test("Check Each toggle binding's reads its own manager setting", arguments: Self.wiring)

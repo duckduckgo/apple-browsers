@@ -18,8 +18,7 @@
 
 import Combine
 import FeatureFlags_macOS
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import XCTest
 

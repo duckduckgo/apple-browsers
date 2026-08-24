@@ -25,7 +25,7 @@ import SecureStorage
 import Core
 import Common
 import FoundationExtensions
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 final class SyncCreditCardsAdapterTests: XCTestCase {

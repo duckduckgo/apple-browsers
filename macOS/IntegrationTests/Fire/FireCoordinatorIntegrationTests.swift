@@ -20,11 +20,10 @@ import AppKit
 import FeatureFlags_macOS
 import History
 import HistoryView
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import SharedTestUtilities
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -3368,6 +3367,7 @@ private final class TestPresenter: FireDialogViewPresenting {
     private let handler: (NSWindow?, (() -> Void)?) -> Void
     init(handler: @escaping (NSWindow?, (() -> Void)?) -> Void) { self.handler = handler }
     func present(in window: NSWindow, completion: (() -> Void)?) { handler(window, completion) }
+    func dismiss() {}
 }
 
 // Expected dialog configuration to validate against when presenter is invoked

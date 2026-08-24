@@ -312,7 +312,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         specialPagesUserScript?
             .withAllSubfeatures()
         let configuration = webViewConfiguration ?? WKWebViewConfiguration()
-        configuration.applyStandardConfiguration(contentBlocking: privacyFeatures.contentBlocking,
+        configuration.applyStandardConfiguration(featureFlagger: featureFlagger,
+                                                 contentBlocking: privacyFeatures.contentBlocking,
                                                  burnerMode: burnerMode,
                                                  earlyAccessHandlers: specialPagesUserScript.map { [$0] } ?? [])
         self.webViewConfiguration = configuration
@@ -1009,7 +1010,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         // In the case of an error only reload web URLs to prevent uxss attacks via redirecting to javascript://
         if let error = error,
            let failingUrl = error.failingUrl ?? content.urlForWebView,
-           failingUrl.isHttp || failingUrl.isHttps {
+           // treat debug:// URLs as valid hypertext URLs for reloading (used in UI tests to simulate connection errors)
+           failingUrl.isHttp || failingUrl.isHttps || (featureFlagger.isFeatureOn(.debugURLScheme) && failingUrl.isDebugURLScheme) {
 
             // Use location.replace to retry the failed URL in-place without adding a back/forward
             // entry. Invoke without user gesture so the resulting navigation arrives at the policy
@@ -1093,7 +1095,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @MainActor
     private func shouldReload(_ url: URL, source: ReloadIfNeededSource) -> Bool {
         /// Use unified logic if enabled to decide if URL is valid
-        guard url.isValid(usingUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) else { return false }
+        guard url.isValid(usingUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor))
+                // treat debug:// URLs as valid hypertext URLs for reloading (used in UI tests to simulate connection errors)
+                || (featureFlagger.isFeatureOn(.debugURLScheme) && url.isDebugURLScheme) else { return false }
 
         switch source {
         // should load when Web View is displayed?
@@ -1106,6 +1110,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             switch error {
             case .some(URLError.notConnectedToInternet),
                  .some(URLError.networkConnectionLost):
+                guard !webView.isLoading else { return false }
                 // reload when showing error due to connection failure
                 return true
             default:

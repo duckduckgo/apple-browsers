@@ -54,6 +54,7 @@ final class AIChatSummarizer: AIChatSummarizing {
     private let aiChatCoordinator: AIChatCoordinating
     private let aiChatTabOpener: AIChatTabOpening
     private let pixelFiring: PixelFiring?
+    private let currentPageContextProvider: () -> PageContextProtocol?
     private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
 
     init(
@@ -61,12 +62,14 @@ final class AIChatSummarizer: AIChatSummarizing {
         aiChatCoordinator: AIChatCoordinating,
         aiChatTabOpener: AIChatTabOpening,
         pixelFiring: PixelFiring?,
+        currentPageContextProvider: @escaping () -> PageContextProtocol?,
         aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatCoordinator = aiChatCoordinator
         self.aiChatTabOpener = aiChatTabOpener
         self.pixelFiring = pixelFiring
+        self.currentPageContextProvider = currentPageContextProvider
         self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
     }
 
@@ -94,6 +97,8 @@ final class AIChatSummarizer: AIChatSummarizing {
             )
             aiChatConversationSourceHandler.setData(.summarization)
         }
+        // The selection is what the user asked about — don't also auto-attach the whole page.
+        currentPageContextProvider()?.suppressAutoPageContextForSelectionAction()
         aiChatCoordinator.revealChat(for: prompt)
     }
 }

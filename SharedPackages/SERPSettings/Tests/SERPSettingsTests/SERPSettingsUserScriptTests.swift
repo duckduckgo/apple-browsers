@@ -16,8 +16,7 @@
 //  limitations under the License.
 //
 
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 import UserScript
 import WebKit

@@ -21,7 +21,7 @@ import XCTest
 @testable import Networking
 import NetworkingTestingUtils
 import SubscriptionTestingUtilities
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import JWTKit
 
 final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {

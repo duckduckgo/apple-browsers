@@ -92,6 +92,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private let backgroundView = MouseBlockingBackgroundView()
     private let shadowView = ShadowView()
+    /// The card's own shadow. Separate from `shadowView` so the gap between the panel and the
+    /// card isn't shadowed as if it were part of either one.
+    private let usageWarningShadowView = ShadowView()
     private let innerBorderView = ColorView(frame: .zero)
     private let containerView = HitTestableContainerView()
     private let submitButton = AIChatSubmitButton()
@@ -118,11 +121,29 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Suggestions view - always in hierarchy, height is 0 when no suggestions
     private let suggestionsView = AIChatSuggestionsView()
 
+    /// The Duck.ai usage-limit card. Sits below the panel's chrome rather than inside it, so it
+    /// reads as its own card; `isUsageWarningVisible` is what the height maths keys off.
+    private lazy var usageWarningCardView = AIChatUsageWarningCardView(isBurner: burnerMode.isBurner)
+
     /// Holds ongoing resize tasks keyed by attachment ID, so we can await them before submission.
     private var resizeTasks: [UUID: Task<Void, Never>] = [:]
 
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
+
+    /// Swapped between the view's bottom (no card) and the card's top (card shown), which is what
+    /// keeps the panel chrome from covering the card.
+    private var backgroundViewBottomToViewConstraint: NSLayoutConstraint?
+    private var backgroundViewBottomToCardConstraint: NSLayoutConstraint?
+    private var usageWarningHeightConstraint: NSLayoutConstraint?
+
+    /// Mirrors the card's height constraint so the reservation and the layout can't disagree.
+    private var isUsageWarningVisible = false
+
+    /// What the card adds to the panel's height when shown: the card plus the gap above it.
+    private var usageWarningReservation: CGFloat {
+        isUsageWarningVisible ? AIChatUsageWarningCardView.Constants.panelReservation : 0
+    }
 
     /// Zero when rebranded: hosts size the panel from the list's own height, so a gap reserved out
     /// here is height the panel never got. The expanded gap lives inside the list instead.
@@ -170,6 +191,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var windowFrameObserver: AnyCancellable?
     private var viewBoundsObserver: AnyCancellable?
     private var imageGenModeCancellable: AnyCancellable?
+    private var usageWarningCancellable: AnyCancellable?
     /// KVO on the submit button's hover/press state — drives the layer fill through the
     /// accent / accent-alt three-state palette. Direct-layer fill (rather than the
     /// `MouseOverButton.backgroundColor` sub-layer) keeps the icon visible.
@@ -289,13 +311,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// This must be added to the container height calculation by the parent.
     var additionalContentHeight: CGFloat {
         let containerTopPadding = themeManager.isAppRebranded ? Constants.containerTopPadding : Constants.legacyContainerTopPadding
-        return attachmentRowReservation + containerTopPadding
+        return attachmentRowReservation + containerTopPadding + usageWarningReservation
     }
 
     /// Calculates the total height that should be passthrough for the text container view.
     /// This includes the suggestions area and the tool buttons area (when enabled).
     var totalPassthroughHeight: CGFloat {
-        var height = suggestionsHeight
+        // The card is below everything else, so its region has to pass through too or the text
+        // container overlay swallows every click meant for it.
+        var height = suggestionsHeight + usageWarningReservation
         if suggestionsHeight > 0 {
             height += suggestionsBottomPadding
         }
@@ -349,6 +373,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         setupUI()
         setupSuggestionsView()
+        setupUsageWarningCard()
         subscribeToThemeChanges()
         subscribeToTextChanges()
         subscribeToToolsVisibilityChanges()
@@ -846,7 +871,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             innerBorderView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.innerBorderInset),
             innerBorderView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: Constants.innerBorderInset),
@@ -997,6 +1021,105 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
     }
 
+    // MARK: - Usage Warning Card
+
+    private func setupUsageWarningCard() {
+        usageWarningCardView.translatesAutoresizingMaskIntoConstraints = false
+        usageWarningCardView.isHidden = true
+        view.addSubview(usageWarningCardView)
+
+        usageWarningShadowView.shadowColor = themeManager.theme.colorsProvider.addressBarShadowColor
+        usageWarningShadowView.shadowOpacity = 1
+        usageWarningShadowView.shadowOffset = CGSize(width: 0, height: 0)
+        usageWarningShadowView.shadowRadius = themeManager.theme.addressBarStyleProvider.suggestionShadowRadius
+        usageWarningShadowView.cornerRadius = AIChatUsageWarningCardView.Constants.cornerRadius
+        usageWarningShadowView.shadowSides = .all
+
+        // Both are built here rather than in `setupUI` so the swap stays in one place.
+        backgroundViewBottomToViewConstraint = backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        backgroundViewBottomToCardConstraint = backgroundView.bottomAnchor.constraint(
+            equalTo: usageWarningCardView.topAnchor,
+            constant: -AIChatUsageWarningCardView.Constants.topSpacing
+        )
+        backgroundViewBottomToViewConstraint?.isActive = true
+
+        let heightConstraint = usageWarningCardView.heightAnchor.constraint(equalToConstant: 0)
+        usageWarningHeightConstraint = heightConstraint
+
+        NSLayoutConstraint.activate([
+            usageWarningCardView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            usageWarningCardView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            usageWarningCardView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            heightConstraint
+        ])
+
+        usageWarningCardView.onAction = { [weak self] in
+            self?.omnibarController.usageWarningViewModel?.performAction()
+        }
+        usageWarningCardView.onDismiss = { [weak self] in
+            self?.omnibarController.usageWarningViewModel?.dismiss()
+        }
+        usageWarningCardView.onOpenModelPicker = { [weak self] in
+            self?.omnibarController.usageWarningViewModel?.openModelPicker()
+        }
+
+        // The controller has no view of its own, so the picker is anchored from here — this is the
+        // programmatic entry point `setUpUsageWarnings()` was waiting on.
+        omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
+            guard let self else { return }
+            presentModelPicker(anchoredTo: usageWarningCardView.modelPickerAnchor)
+        }
+
+        subscribeToUsageWarnings()
+    }
+
+    private func subscribeToUsageWarnings() {
+        guard let viewModel = omnibarController.usageWarningViewModel else { return }
+
+        usageWarningCancellable = viewModel.$warning
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] warning in
+                self?.applyUsageWarning(warning)
+            }
+    }
+
+    /// Deliberately not gated on `shouldSuppressSuggestions`: image-generation mode and pending
+    /// attachments still spend the allowance, so the message stays up where suggestions don't.
+    private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
+        if let warning {
+            usageWarningCardView.update(with: warning)
+        }
+        setUsageWarningVisible(warning != nil && !isSuggestionsCollapsedByUnfocus)
+    }
+
+    private func setUsageWarningVisible(_ visible: Bool) {
+        guard applyUsageWarningVisibility(visible) else { return }
+
+        onSuggestionsHeightChanged?(suggestionsHeight)
+        onPassthroughHeightNeedsUpdate?()
+        layoutShadowView()
+    }
+
+    /// The layout half, without telling the host to resize — teardown has its own height reset and
+    /// must not drive a resize on a panel that is going away.
+    ///
+    /// - Returns: whether anything changed.
+    @discardableResult
+    private func applyUsageWarningVisibility(_ visible: Bool) -> Bool {
+        guard isUsageWarningVisible != visible else { return false }
+
+        isUsageWarningVisible = visible
+        usageWarningCardView.isHidden = !visible
+        usageWarningHeightConstraint?.constant = visible ? AIChatUsageWarningCardView.Constants.height : 0
+        // Order matters: the panel chrome has to let go of the view's bottom edge before the card
+        // claims it, or the two constraints fight over one layout pass.
+        backgroundViewBottomToViewConstraint?.isActive = !visible
+        backgroundViewBottomToCardConstraint?.isActive = visible
+        usageWarningShadowView.isHidden = !visible
+        return true
+    }
+
     /// The last known suggestions height before image gen mode suppressed it.
     private var lastKnownSuggestionsHeight: CGFloat = 0
 
@@ -1016,6 +1139,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard isSuggestionsCollapsedByUnfocus != collapsed else { return }
         isSuggestionsCollapsedByUnfocus = collapsed
         suggestionsView.isHidden = shouldSuppressSuggestions
+        // The panel itself shrinks to a single line on unfocus, so the card goes with it.
+        setUsageWarningVisible(!collapsed && omnibarController.usageWarningViewModel?.warning != nil)
         suggestionsHeight = -1
         updateSuggestionsHeight(shouldSuppressSuggestions ? 0 : lastKnownSuggestionsHeight)
         onPassthroughHeightNeedsUpdate?()
@@ -1054,6 +1179,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             addShadowToWindow()
         } else {
             shadowView.removeFromSuperview()
+            usageWarningShadowView.removeFromSuperview()
         }
     }
 
@@ -1086,12 +1212,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         lastKnownSuggestionsHeight = 0
         suggestionsHeight = 0
         suggestionsHeightConstraint?.constant = 0
+        // `omnibarController.cleanup()` already cleared the view model, but the card's own
+        // reservation has to come off too or the next open sizes the panel as if it were still up.
+        applyUsageWarningVisibility(false)
+        usageWarningShadowView.removeFromSuperview()
     }
 
     private func addShadowToWindow() {
         guard !hostDrawsChrome else { return }
         guard shadowView.superview == nil else { return }
         view.window?.contentView?.addSubview(shadowView)
+        view.window?.contentView?.addSubview(usageWarningShadowView)
+        usageWarningShadowView.isHidden = !isUsageWarningVisible
         layoutShadowView()
     }
 
@@ -1113,15 +1245,26 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard let superview = shadowView.superview else { return }
 
         let winFrame = view.convert(view.bounds, to: nil)
-        var frame = superview.convert(winFrame, from: nil)
+        let viewFrame = superview.convert(winFrame, from: nil)
 
         /// Do not overlap shadow of main address bar
         let overlap = themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
+        let reservation = usageWarningReservation
+
+        var frame = viewFrame
+        /// The card and the gap above it sit below the panel, so the panel's shadow has to start
+        /// above them — otherwise it fills the gap and the two stop reading as separate cards.
+        frame.origin.y += reservation
         /// `ShadowView` clamps its radius to half its shorter side, so trimming further would round
         /// the corners tighter than the background. Costs nothing: it draws no top edge anyway.
-        frame.size.height = max(shadowView.cornerRadius * 2, frame.height - overlap)
+        frame.size.height = max(shadowView.cornerRadius * 2, frame.height - overlap - reservation)
 
         shadowView.frame = frame
+
+        guard isUsageWarningVisible else { return }
+        var cardFrame = viewFrame
+        cardFrame.size.height = AIChatUsageWarningCardView.Constants.height
+        usageWarningShadowView.frame = cardFrame
     }
 
     @objc private func submitButtonClicked() {
@@ -1825,6 +1968,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func modelPickerButtonClicked() {
+        presentModelPicker(anchoredTo: modelPickerButton)
+    }
+
+    /// Opens the model picker against `anchor`, so a menu raised from the usage card's `>` lands
+    /// under the control the user clicked rather than under the toolbar button.
+    private func presentModelPicker(anchoredTo anchor: NSView) {
         // Resolved once and passed on: `modelPickerItems` records a free-trial badge impression, so
         // asking for it twice per open would burn through the badge's view cap at double speed.
         let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId)
@@ -1833,9 +1982,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             omnibarController.pixelHandler.fire(.modelPickerShown)
         }
         let menu = buildModelPickerMenu(items: items)
-        // Align menu's trailing edge with button's trailing edge, with a small gap below
-        let x = modelPickerButton.bounds.width - menu.size.width
-        popUp(menu, at: NSPoint(x: x, y: -5), in: modelPickerButton)
+        // Align menu's trailing edge with the anchor's trailing edge, with a small gap below
+        let point = NSPoint(x: anchor.bounds.width - menu.size.width, y: -5)
+
+        // Only a `FocusRingControlling` anchor has a ring that modal tracking would otherwise
+        // leave lit; anything else can pop the menu directly.
+        if let focusRingAnchor = anchor as? (NSView & FocusRingControlling) {
+            popUp(menu, at: point, in: focusRingAnchor)
+        } else {
+            menu.popUp(positioning: nil, at: point, in: anchor)
+        }
     }
 
     private var selectedModelId: String {
@@ -2156,8 +2312,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
+        usageWarningCardView.applyThemeStyle()
+        usageWarningShadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
+
         NSAppearance.withAppearance(from: view) {
             shadowView.shadowColor = colorsProvider.addressBarShadowColor
+            usageWarningShadowView.shadowColor = colorsProvider.addressBarShadowColor
             imageUploadButton.hoverBackgroundColor = .buttonMouseOver
             imageUploadButton.pressedBackgroundColor = .buttonMouseDown
             modelPickerButton.hoverBackgroundColor = .buttonMouseOver

@@ -109,6 +109,13 @@ enum SubscriptionFunnelOrigin: String {
     /// Gated reasoning effort shown in the Prompt Bar's reasoning picker. Impression only, as above.
     case promptBarReasoningDropdown = "funnel_promptbar_macos__reasoningdropdown"
 
+    /// User entered the funnel from the "Try for free" CTA on the usage-limit card below the
+    /// address bar's duck.ai omnibar.
+    case addressBarUsageLimit = "funnel_addressbar_macos__usagelimit"
+
+    /// The same CTA on the Prompt Bar's usage-limit card.
+    case promptBarUsageLimit = "funnel_promptbar_macos__usagelimit"
+
     // MARK: - Duck.ai Funnel Origins (frontend-reported)
 
     /// Entry points shown in the duck.ai web frontend; reported over the `reportMetric` bridge because

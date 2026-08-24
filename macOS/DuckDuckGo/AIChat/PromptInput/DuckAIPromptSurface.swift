@@ -82,4 +82,12 @@ extension DuckAIPromptSurface {
         case .promptBar: true
         }
     }
+
+    /// Funnel origin for the "Try for free" CTA on the usage-limit card.
+    var usageLimitFunnelOrigin: SubscriptionFunnelOrigin {
+        switch self {
+        case .addressBar: .addressBarUsageLimit
+        case .promptBar: .promptBarUsageLimit
+        }
+    }
 }

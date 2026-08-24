@@ -958,6 +958,33 @@ struct UserText {
         comment: "Label on the 'View all chats' footer row indicating it opens duck.ai"
     )
     static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Ask anything privately", comment: "Placeholder text shown in the Duck.ai chat input field")
+
+    // Duck.ai usage-limit messages, shown on the card below the Duck.ai omnibar.
+    static func aiChatUsageWarningsDailyUsage(percent: Int) -> String {
+        let message = NSLocalizedString("aichat.usageWarnings.daily-usage", value: "%d%% of daily limit", comment: "Headline on the Duck.ai usage card as the user approaches their daily limit. Parameter is the percentage of the daily allowance already used.")
+        return String(format: message, percent)
+    }
+    static func aiChatUsageWarningsWeeklyUsage(percent: Int) -> String {
+        let message = NSLocalizedString("aichat.usageWarnings.weekly-usage", value: "%d%% of weekly limit", comment: "Headline on the Duck.ai usage card as the user approaches their weekly limit. Parameter is the percentage of the weekly allowance already used.")
+        return String(format: message, percent)
+    }
+    static let aiChatUsageWarningsDailyLimitReached = NSLocalizedString("aichat.usageWarnings.daily-limit-reached", value: "Daily limit reached", comment: "Headline on the Duck.ai usage card when the user's daily allowance is fully spent")
+    static let aiChatUsageWarningsWeeklyLimitReached = NSLocalizedString("aichat.usageWarnings.weekly-limit-reached", value: "Weekly usage limit reached", comment: "Headline on the Duck.ai usage card when the user's weekly allowance is fully spent")
+    static let aiChatUsageWarningsAdvancedModelsLimitReached = NSLocalizedString("aichat.usageWarnings.advanced-models-limit-reached", value: "Advanced AI models limit reached", comment: "Headline on the Duck.ai usage card when the allowance for advanced AI models specifically is spent, while free models remain available")
+    static func aiChatUsageWarningsResetsIn(_ interval: String) -> String {
+        let message = NSLocalizedString("aichat.usageWarnings.resets-in", value: "Resets in %@", comment: "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".")
+        return String(format: message, interval)
+    }
+    static func aiChatUsageWarningsSwitchToModel(_ modelShortName: String) -> String {
+        let message = NSLocalizedString("aichat.usageWarnings.switch-to-model", value: "Switch to %@", comment: "Button on the Duck.ai usage card offering a model that uses the allowance more slowly. Parameter is the model's short name, e.g. \"5.4 mini\".")
+        return String(format: message, modelShortName)
+    }
+    static let aiChatUsageWarningsSwitchModel = NSLocalizedString("aichat.usageWarnings.switch-model", value: "Switch Model", comment: "Button on the Duck.ai usage card offering a model that uses the allowance more slowly, used when the suggested model has no short name to show")
+    static let aiChatUsageWarningsSwitchToFreeModel = NSLocalizedString("aichat.usageWarnings.switch-to-free-model", value: "Switch to a Free Model", comment: "Button on the Duck.ai usage card offering a free-tier model, shown once the advanced-model allowance is spent")
+    static let aiChatUsageWarningsTryForFree = NSLocalizedString("aichat.usageWarnings.try-for-free", value: "Try for free", comment: "Button on the Duck.ai usage card taking a user who is still eligible for a free trial to the subscription flow")
+    static let aiChatUsageWarningsSubscribe = NSLocalizedString("aichat.usageWarnings.subscribe", value: "Subscribe", comment: "Button on the Duck.ai usage card taking a user who has already used their free trial to the subscription flow")
+    static let aiChatUsageWarningsDismissAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.dismiss.accessibility", value: "Dismiss", comment: "Accessibility label for the close button on the Duck.ai usage card")
+    static let aiChatUsageWarningsModelPickerAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.model-picker.accessibility", value: "Choose a model", comment: "Accessibility label for the chevron on the Duck.ai usage card, which opens the model picker")
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
     static let moreSearchSettingsDescription = NSLocalizedString("settings.more-search-settings.description", value: "Customize your language, region, and more.", comment: "Subtitle of the 'More Search Settings' button")
     static let moreSearchSettingsLink = NSLocalizedString("settings.more-search-settings.link", value: "Open DuckDuckGo Search Settings", comment: "Button to open Search Settings on duckduckgo.com")

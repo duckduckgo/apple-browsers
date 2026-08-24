@@ -48,11 +48,11 @@ struct FavoriteItemView: View {
     @ViewBuilder
     private var favoriteIcon: some View {
         if isEditable && isolatesContextMenu {
-            IsolatedFavoriteContextMenu(favorite: favorite, faviconLoading: faviconLoading) {
-                contextMenuItems()
-            }
-            .frame(width: NewTabPageGrid.Item.edgeSize,
-                   height: NewTabPageGrid.Item.edgeSize)
+            FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+                .contentShape(.contextMenuPreview, FavoriteIconView.itemShape())
+                .contextMenu {
+                    contextMenuItems()
+                }
         } else {
             FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
                 .if(isEditable) {
@@ -85,38 +85,6 @@ struct FavoriteItemView: View {
                 }
             }
         }
-    }
-}
-
-private struct IsolatedFavoriteContextMenu<MenuItems: View>: UIViewControllerRepresentable {
-    let favorite: Favorite
-    let faviconLoading: FavoritesFaviconLoading?
-    let menuItems: MenuItems
-
-    init(favorite: Favorite,
-         faviconLoading: FavoritesFaviconLoading?,
-         @ViewBuilder menuItems: () -> MenuItems) {
-        self.favorite = favorite
-        self.faviconLoading = faviconLoading
-        self.menuItems = menuItems()
-    }
-
-    func makeUIViewController(context: Context) -> UIHostingController<AnyView> {
-        let controller = UIHostingController(rootView: rootView)
-        controller.view.backgroundColor = .clear
-        return controller
-    }
-
-    func updateUIViewController(_ controller: UIHostingController<AnyView>, context: Context) {
-        controller.rootView = rootView
-    }
-
-    private var rootView: AnyView {
-        AnyView(
-            FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
-                .contentShape(.contextMenuPreview, FavoriteIconView.itemShape())
-                .contextMenu { menuItems }
-        )
     }
 }
 

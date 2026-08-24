@@ -46,3 +46,32 @@ final class FloatingOmnibarTransitionMetricsTests: XCTestCase {
         XCTAssertGreaterThan(attached, detached)
     }
 }
+
+final class OmnibarDismissSupersessionTests: XCTestCase {
+
+    @MainActor
+    func testWhenReplacementDismissStopsInFlightThenPreviousNTPCleanupDoesNotRun() {
+        let coordinator = MainViewCoordinator(parentController: UIViewController())
+        var restoredNTPChrome = false
+        coordinator.startOmnibarDismissForTesting {
+            restoredNTPChrome = true
+        }
+
+        coordinator.stopInFlightOmnibarDismiss(runningInterruptCleanup: false)
+
+        XCTAssertFalse(restoredNTPChrome)
+    }
+
+    @MainActor
+    func testWhenDismissStopsWithoutReplacementThenNTPCleanupRuns() {
+        let coordinator = MainViewCoordinator(parentController: UIViewController())
+        var restoredNTPChrome = false
+        coordinator.startOmnibarDismissForTesting {
+            restoredNTPChrome = true
+        }
+
+        coordinator.stopInFlightOmnibarDismiss(runningInterruptCleanup: true)
+
+        XCTAssertTrue(restoredNTPChrome)
+    }
+}

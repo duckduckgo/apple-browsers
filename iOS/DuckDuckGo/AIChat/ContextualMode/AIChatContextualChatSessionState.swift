@@ -583,7 +583,9 @@ final class AIChatContextualChatSessionState {
             return
         }
 
-        let context = context.flatMap { $0.contextData.content.isEmpty ? nil : $0 }
+        // hasAttachedPage, not content.isEmpty: a document context (PDF) carries its page as bytes
+        // in `data` with empty `content`, and must not be dropped here.
+        let context = context.flatMap { $0.contextData.hasAttachedPage ? $0 : nil }
 
         guard let context = context else {
             guard shouldProcessNilContextUpdate else {

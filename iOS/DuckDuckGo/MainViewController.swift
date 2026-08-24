@@ -1609,6 +1609,9 @@ class MainViewController: UIViewController {
         }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
+        // The omnibar and the domain capsule have swapped screen edges, so their scroll-edge
+        // interactions have to be rebuilt against the edge they now sit on.
+        updateScrollInteractionIfNeeded()
     }
 
     @objc private func onShowFullURLAddressChanged() {
@@ -2793,6 +2796,7 @@ class MainViewController: UIViewController {
 
         tab.progressWorker.progressBar = viewCoordinator.progress
         chromeManager.attach(to: tab.webView.scrollView)
+        chromeManager.reset(animated: false)
         themeColorManager.attach(to: tab)
         tab.chromeDelegate = self
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
@@ -5582,22 +5586,26 @@ extension MainViewController: OmniBarDelegate {
     }
 
     private func toggleAddressBarLocation() {
+        // The setter posts `addressBarPositionChanged`, so `onAddressBarPositionChanged` has already
+        // rehosted the bar and refreshed the scroll-edge interactions by the time this returns.
         let current = appSettings.currentAddressBarPosition
         appSettings.currentAddressBarPosition = current == .top ? .bottom : .top
-        updateScrollInteractionIfNeeded()
         self.view.layoutIfNeeded()
     }
 
     // Refreshes the iOS 26 scroll-edge chrome interactions so they track the currently visible
     // page. Must be called on every content change (tab switch, address bar move, NTP attach),
-    // otherwise the interactions keep pointing at a dismissed tab's scroll view.
+    // otherwise the interactions keep pointing at a dismissed tab's scroll view — or, after the bar
+    // moves between top and bottom, at a container that has crossed to the opposite edge, which
+    // stretches the edge effect across the whole page.
     private func updateScrollInteractionIfNeeded() {
         guard #available(iOS 26, *) else { return }
-        guard floatingUIManager.isFloatingUIEnabled else { return }
 
         // Detach any existing interactions from whatever views they're currently installed in.
         scrollEdgeInteractions.forEach { $0.view?.removeInteraction($0) }
         scrollEdgeInteractions.removeAll()
+
+        guard floatingUIManager.isFloatingUIEnabled else { return }
 
         // The scroll-edge chrome must track the currently visible scroll view. On the NTP (or any
         // tab without a web view) there's no scroll view to track, so we leave the interactions

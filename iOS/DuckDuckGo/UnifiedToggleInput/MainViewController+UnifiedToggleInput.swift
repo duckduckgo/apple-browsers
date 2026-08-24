@@ -1065,7 +1065,6 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
-        applyUnifiedInputChromeBackground(.standardChrome)
         coordinator.viewController.deactivateInput()
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
@@ -1104,7 +1103,6 @@ extension MainViewController {
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
-                self.viewCoordinator.focusedStateBackground.alpha = 0
                 if stationaryContentSnapshot != nil {
                     self.viewCoordinator.fadeOmnibarDismissContentSnapshot()
                 } else if !isSeamlessHandoff, let contentContainer {
@@ -1152,6 +1150,7 @@ extension MainViewController {
 
     private func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
+        applyUnifiedInputChromeBackground(.standardChrome)
         coordinator.contentViewController.setActive(false)
         newTabPageViewController?.setLogoHidden(false)
         newTabPageViewController?.setFavoritesHidden(false)

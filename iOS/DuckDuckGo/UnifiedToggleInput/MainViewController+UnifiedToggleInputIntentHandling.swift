@@ -337,6 +337,7 @@ private extension MainViewController {
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
             coordinator?.clearText()
+            self?.applyUnifiedInputChromeBackground(.standardChrome)
             if fadesForFloatingBottom {
                 // Hide UTI before revealing NTP chrome so logo/favorites don't flash under the
                 // still-visible focused content (especially seamless logo/favorites handoff).
@@ -376,7 +377,6 @@ private extension MainViewController {
                         unifiedInputContentContainer.alpha = 0
                         unifiedInputContentContainer.transform = .identity
                     }
-                    self.viewCoordinator.focusedStateBackground.alpha = 0
                 }
             }
             viewCoordinator.hideUnifiedToggleInputOmnibar(

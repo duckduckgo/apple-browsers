@@ -526,6 +526,9 @@ class MainViewCoordinator {
             installOmnibarDismissContentSnapshot(contentSnapshot)
         }
         omnibarDismissInterruptCleanup = interruptCleanup
+        if isFloatingUIEnabled, addressBarPosition.isBottom {
+            hideFocusedStateBackground()
+        }
 
         let animator = UIViewPropertyAnimator(duration: MainViewController.Constants.omnibarTransitionDuration(isBottom: addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled), curve: .easeInOut) { [weak self] in
             self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)

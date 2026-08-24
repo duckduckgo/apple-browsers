@@ -66,7 +66,13 @@ extension MainViewController {
         let aiChatPreferences = AIChatPreferencesPersistor()
         let stateStore = UnifiedInputStateStore(
             preferences: aiChatPreferences,
-            toggleModeStorage: toggleModeStorage
+            toggleModeStorage: toggleModeStorage,
+            initialToggleModeProvider: { [weak self] in
+                guard let self else { return .search }
+                return self.aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode {
+                    self.toggleModeStorage.restore()
+                }
+            }
         )
         stateStore.observeTabsModel(tabManager.normalTabsModel)
         stateStore.observeTabsModel(tabManager.fireModeTabsModel)

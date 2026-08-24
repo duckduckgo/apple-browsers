@@ -66,6 +66,17 @@ final class UnifiedInputStateStoreTests: XCTestCase {
         XCTAssertEqual(state.toggleMode, .search)
     }
 
+    func test_state_forUnknownUID_usesInitialToggleModeProvider() {
+        toggleStorage.stored = .aiChat
+        let store = UnifiedInputStateStore(
+            preferences: preferences,
+            toggleModeStorage: toggleStorage,
+            initialToggleModeProvider: { .search }
+        )
+
+        XCTAssertEqual(store.state(for: "tab-1").toggleMode, .search)
+    }
+
     func test_update_thenState_returnsSameValue() {
         var state = TabInputState()
         state.text = "hello"

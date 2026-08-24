@@ -27,6 +27,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private var states: [TabUID: TabInputState] = [:]
     private var preferences: AIChatPreferencesPersisting
     private let toggleModeStorage: ToggleModeStoring
+    private let initialToggleModeProvider: (() -> TextEntryMode)?
     private var trackedLastUsed: LastUsedInputDefaults
     private var modelSnapshots: [ObjectIdentifier: [Tab]] = [:]
     private var tabsCancellables = Set<AnyCancellable>()
@@ -35,10 +36,12 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
 
     init(
         preferences: AIChatPreferencesPersisting,
-        toggleModeStorage: ToggleModeStoring
+        toggleModeStorage: ToggleModeStoring,
+        initialToggleModeProvider: (() -> TextEntryMode)? = nil
     ) {
         self.preferences = preferences
         self.toggleModeStorage = toggleModeStorage
+        self.initialToggleModeProvider = initialToggleModeProvider
         self.trackedLastUsed = LastUsedInputDefaults(
             toggleMode: toggleModeStorage.restore() ?? .search,
             selectedModelID: preferences.selectedModelId,
@@ -139,7 +142,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private func seededState(from inputState: UnifiedInputTabState) -> TabInputState {
         TabInputState(
             text: "",
-            toggleMode: trackedLastUsed.toggleMode,
+            toggleMode: initialToggleMode,
             attachments: [],
             selectedModelID: inputState.selectedModelID ?? trackedLastUsed.selectedModelID,
             selectedReasoningMode: inputState.selectedReasoningMode ?? trackedLastUsed.selectedReasoningMode,
@@ -150,11 +153,15 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private func seededState() -> TabInputState {
         TabInputState(
             text: "",
-            toggleMode: trackedLastUsed.toggleMode,
+            toggleMode: initialToggleMode,
             attachments: [],
             selectedModelID: trackedLastUsed.selectedModelID,
             selectedReasoningMode: trackedLastUsed.selectedReasoningMode,
             selectedTool: trackedLastUsed.selectedTool
         )
+    }
+
+    private var initialToggleMode: TextEntryMode {
+        initialToggleModeProvider?() ?? trackedLastUsed.toggleMode
     }
 }

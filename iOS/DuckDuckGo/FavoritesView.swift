@@ -37,7 +37,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
         VStack(alignment: .center, spacing: 24) {
 
             NewTabPageGridView {
-                ReorderableForEach(model.allFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites) { item in
+                ReorderableForEach(model.allFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites && !isolatesContextMenu) { item in
                     viewFor(item)
                         .previewShape()
                         .transition(.opacity)

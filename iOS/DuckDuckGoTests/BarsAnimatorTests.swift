@@ -488,7 +488,7 @@ class BarsAnimatorFloatingTests: XCTestCase {
         advanceOffset(sut, scrollView, clock, to: 0)
 
         XCTAssertEqual(sut.barsState, .revealed)
-        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
+        XCTAssertTrue(delegate.receivedMessages.isEmpty)
     }
 
     private func scroll<Offsets: Sequence>(_ sut: BarsAnimator,

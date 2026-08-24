@@ -44,8 +44,8 @@ let package = Package(
             targets: ["UIKitExtensionsProxy"]
         ),
         .library(
-            name: "WebKitExtensions",
-            targets: ["WebKitExtensions"]
+            name: "WKWebViewExtensions",
+            targets: ["WKWebViewExtensions"]
         ),
     ],
     dependencies: [
@@ -66,7 +66,7 @@ let package = Package(
             ]
         ),
         .target(
-            name: "WebKitExtensions",
+            name: "WKWebViewExtensions",
             dependencies: ["ConcurrencyExtensions"]
         ),
 

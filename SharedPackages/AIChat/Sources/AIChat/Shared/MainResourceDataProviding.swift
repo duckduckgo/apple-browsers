@@ -18,12 +18,12 @@
 
 import Foundation
 import WebKit
-import WebKitExtensions
+import WKWebViewExtensions
 
 /// Read access to the bytes of the document a web view is displaying.
 ///
 /// A seam AIChat owns so document context extraction can be unit-tested without a real web view.
-/// The production conformance is `WKWebView`, backed by the WebKitExtensions main-resource reader.
+/// The production conformance is `WKWebView`, backed by the WKWebViewExtensions main-resource reader.
 public protocol MainResourceDataProviding: AnyObject {
     @MainActor func mainResourceData(timeout: TimeInterval) async -> Data?
 }

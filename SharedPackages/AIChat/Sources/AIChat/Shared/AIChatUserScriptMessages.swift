@@ -83,7 +83,7 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     case showReasoningPicker
 
-    case openAttachmentPicker
+    case openFilePicker
 
     /// Posted by the FE while the subscription recovery card is showing for the active chat.
     case disableChatInput

@@ -184,7 +184,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable?
     func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable?
-    func openAttachmentPicker(params: Any, message: UserScriptMessage) async -> Encodable?
+    func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable?
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -635,8 +635,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     @MainActor
-    func openAttachmentPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
-        NotificationCenter.default.post(name: .aiChatOpenAttachmentPicker, object: message.messageWebView)
+    func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatOpenFilePicker, object: message.messageWebView)
         return nil
     }
 

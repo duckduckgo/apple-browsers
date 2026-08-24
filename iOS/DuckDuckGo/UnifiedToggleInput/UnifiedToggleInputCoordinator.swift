@@ -1375,21 +1375,30 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelReporter.reportSubmitChangeModel(modelId: modelId)
     }
 
+    /// Expands the input if needed, then presents a picker once the toolbar is laid out.
+    private func presentPickerForActiveChat(_ present: @escaping () -> Void) {
+        if isInputPaneExpanded {
+            applyToolbarPresentation()
+            present()
+            return
+        }
+        showExpanded(inputMode: .aiChat)
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isInputPaneExpanded, self.inputMode == .aiChat else { return }
+            present()
+        }
+    }
+
     /// Surfaces the native model picker on the active chat (FE `showModelPicker` / recovery card).
     func presentModelPickerForActiveChat() {
         isModelPickerForcedVisible = true
-        if !isInputPaneExpanded {
-            showExpanded(inputMode: .aiChat)
-        } else {
-            applyToolbarPresentation() // reveal the forced chip without reloading the expanded bar
-        }
         if isSubmitBlockedByRecoveryCard,
            let supportedModel = modelStore.selectedModel,
            supportedModel.entityHasAccess {
             isSubmitBlockedByRecoveryCard = false
             notifyFrontendOfActiveChatModelChange(supportedModel.id)
         }
-        DispatchQueue.main.async { [weak self] in
+        presentPickerForActiveChat { [weak self] in
             guard let self else { return }
             self.pixelReporter.reportShowModelPicker()
             if self.viewController.presentModelPickerMenu() {
@@ -1400,10 +1409,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// Surfaces the native reasoning picker on the active chat (FE `showReasoningPicker`).
     func presentReasoningPickerForActiveChat() {
-        if !isInputPaneExpanded {
-            showExpanded(inputMode: .aiChat)
-        }
-        DispatchQueue.main.async { [weak self] in
+        presentPickerForActiveChat { [weak self] in
             guard let self else { return }
             if self.viewController.presentReasoningPickerMenu() {
                 self.pixelReporter.reportReasoningPickerShown()
@@ -1411,12 +1417,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    /// Opens the system file picker on the active chat (FE `openAttachmentPicker`).
-    func presentAttachmentPickerForActiveChat() {
-        if !isInputPaneExpanded {
-            showExpanded(inputMode: .aiChat)
-        }
-        DispatchQueue.main.async { [weak self] in
+    /// Opens the system file picker on the active chat (FE `openFilePicker`).
+    func presentFilePickerForActiveChat() {
+        presentPickerForActiveChat { [weak self] in
             self?.attachmentController.presentFilePicker()
         }
     }

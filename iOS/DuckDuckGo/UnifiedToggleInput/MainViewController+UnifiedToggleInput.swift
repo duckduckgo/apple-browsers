@@ -650,7 +650,7 @@ private extension MainViewController {
             .sink { [weak self] in self?.handleShowPicker(.reasoning, for: $0) }
             .store(in: &unifiedToggleInputCancellables)
 
-        NotificationCenter.default.publisher(for: .aiChatOpenAttachmentPicker)
+        NotificationCenter.default.publisher(for: .aiChatOpenFilePicker)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.handleShowPicker(.attachment, for: $0) }
@@ -671,7 +671,7 @@ private extension MainViewController {
         switch picker {
         case .model: coordinator.presentModelPickerForActiveChat()
         case .reasoning: coordinator.presentReasoningPickerForActiveChat()
-        case .attachment: coordinator.presentAttachmentPickerForActiveChat()
+        case .attachment: coordinator.presentFilePickerForActiveChat()
         }
     }
 

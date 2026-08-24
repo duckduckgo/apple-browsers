@@ -4244,7 +4244,7 @@
 "settings.afterInactivity.option.openLastUsedTab" = "Abrir la última pestaña utilizada";
 
 /* Option: open New Tab when returning after inactivity */
-"settings.afterInactivity.option.openNewTab" = "Abrir en una nueva pestaña";
+"settings.afterInactivity.option.openNewTab" = "Abrir una nueva pestaña";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Última pestaña utilizada";

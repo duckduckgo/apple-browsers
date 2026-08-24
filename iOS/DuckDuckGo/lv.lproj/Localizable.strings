@@ -2567,7 +2567,7 @@
 "escapeHatch.menu.hideReturnToShortcut" = "Paslēpt “Atgriezties” saīsni";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
-"escapeHatch.menu.returnToLastUsedTab" = "Atgriezties iepriekšējā cilnē";
+"escapeHatch.menu.returnToLastUsedTab" = "Atgriezties pēdējā izmantotajā cilnē";
 
 /* Menu item that returns the user to the open tab from the escape hatch card */
 "escapeHatch.menu.returnToTab" = "Atgriezties pie cilnes";

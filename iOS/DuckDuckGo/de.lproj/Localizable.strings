@@ -4625,7 +4625,7 @@
 "settings.refreshButton.position.title" = "Position der Schaltfläche „Neu laden“";
 
 /* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
-"settings.returnToShortcut.label" = "Kurzbefehl „ Zurück zu “";
+"settings.returnToShortcut.label" = "Kurzbefehl „Zurück zu“";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Sucheinstellungen";

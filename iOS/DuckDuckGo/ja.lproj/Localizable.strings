@@ -2564,7 +2564,7 @@
 "escapeHatch.menu.deleteTab" = "タブを削除";
 
 /* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
-"escapeHatch.menu.hideReturnToShortcut" = "「戻る」を非表示にするショートカット";
+"escapeHatch.menu.hideReturnToShortcut" = "「戻る」ショートカットを非表示にする";
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
 "escapeHatch.menu.returnToLastUsedTab" = "最後に使用したタブに戻る";

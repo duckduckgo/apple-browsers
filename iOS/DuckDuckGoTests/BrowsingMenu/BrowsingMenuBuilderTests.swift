@@ -19,7 +19,7 @@
 
 import Bookmarks
 import Core
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyDashboard
 import UIKit
 import XCTest

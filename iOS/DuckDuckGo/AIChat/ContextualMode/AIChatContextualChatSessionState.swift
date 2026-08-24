@@ -836,15 +836,14 @@ private extension AIChatContextualChatSessionState {
         }
         // No "Ask about page" for pages that can't be attached — it would no-op on tap.
         guard isCurrentPageAttachable() else { return [] }
-        // Dropped only while the strip is actually offering its own re-attach button, which takes an
-        // explicit removal — feature availability alone would also drop it after a new chat, where the
-        // strip has cleared that offer and neither affordance would be left.
-        let actions = quickActionsIgnoringReattachAffordance()
+        // An explicit removal is the user declining page context: re-attaching is the attachment
+        // menu's job from then on, so offering it here as well would talk them back out of it.
+        let actions = quickActionsForChipState()
         guard floatingInputFeature.isAvailable, userDowngradedToPlaceholder else { return actions }
         return actions.filter { $0 != .askAboutPage }
     }
 
-    private func quickActionsIgnoringReattachAffordance() -> [AIChatContextualQuickAction] {
+    private func quickActionsForChipState() -> [AIChatContextualQuickAction] {
         if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
             switch chipState {
             case .placeholder: return [.askAboutPage]

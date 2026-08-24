@@ -21,7 +21,7 @@ import Combine
 import DDGSync
 import FeatureFlags_macOS
 import NewTabPage
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils

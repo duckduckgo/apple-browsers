@@ -22,7 +22,7 @@ import Foundation
 import XCTest
 @testable import Core
 import WebKit
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 class DataStoreIDManagerTests: XCTestCase {
 

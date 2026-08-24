@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 @testable import Core
 @testable import BrowserServicesKit

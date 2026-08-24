@@ -397,6 +397,14 @@ final class UTIAttachmentController {
         )
     }
 
+    /// Opens the system file picker directly for the promo "add file" CTA. No-ops when files can't be
+    /// attached to the active chat.
+    func presentFilePicker() {
+        guard canPresentFilePicker, !allowedFileUTTypes.isEmpty, !view.isGenerating(),
+              let presenterVC = environment.presenterViewController() else { return }
+        presenter.presentFilePicker(from: presenterVC, allowedFileTypes: allowedFileUTTypes)
+    }
+
     func updateAttachButtonPresentation() {
         let policy = environment.policy()
         let supportsPageContextAttachment = environment.isContextualChatState() && environment.pageContextAttachHandler() != nil && (environment.isPageContextAttachable() ?? true)

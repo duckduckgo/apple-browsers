@@ -1726,7 +1726,7 @@ struct UserText {
         return String(format: localized, source.importSourceName)
     }
 
-    static let importBrowserDataRequestAccessDeniedCancelTitle = NSLocalizedString("import.request-access-denied.cancel.title", value: "Cancel Import", comment: "Button that aborts the data import flow and closes the import dialog")
+    static let importBrowserDataRequestAccessDeniedCancelTitle = NSLocalizedString("import.request-access-denied.cancel.title", value: "Cancel", comment: "Button that aborts the data import flow and closes the import dialog")
 
     static let importChooseSourceTitle = NSLocalizedString("import.choose-source.title", value: "Choose where to import from", comment: "Title text for the import dialog, before the user selects a source")
     static let importChooseSourceShowMoreButtonTitle = NSLocalizedString("import.choose-source.more-button.title", value: "More", comment: "Button text for showing more import options in the data import view")

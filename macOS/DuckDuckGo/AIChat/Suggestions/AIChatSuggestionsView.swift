@@ -135,19 +135,49 @@ final class AIChatSuggestionsView: NSView {
         }
 
         let trackingArea = NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .activeInActiveApp],
+            // `.inVisibleRect` so the rect follows the view: this panel resizes constantly
+            // (suggestions arriving, the usage card appearing) and a rect captured once goes
+            // stale, which is how exits went missing and left a row highlighted.
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInActiveApp, .inVisibleRect],
             owner: self,
             userInfo: nil
         )
         addTrackingArea(trackingArea)
         viewTrackingArea = trackingArea
+
+        // Rebuilt whenever the panel resizes — a good moment to check the highlight still matches
+        // where the pointer actually is, since a resize under a still pointer produces no exit.
+        reconcileSelectionWithPointer()
     }
 
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
         // Clear selection when mouse leaves the suggestions view entirely
         boundViewModel?.clearSelection()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        reconcileSelectionWithPointer()
+    }
+
+    /// A tracking-area exit can go missing when the pointer crosses a boundary quickly, leaving a
+    /// row highlighted while the pointer is elsewhere. Wherever an event does reach us, treat the
+    /// pointer's real position as the truth rather than the last transition we happened to see.
+    private func reconcileSelectionWithPointer() {
+        guard let viewModel = boundViewModel,
+              viewModel.selectedIndex != nil,
+              !viewModel.isKeyboardNavigating,
+              let window else { return }
+
+        let pointerInWindow = window.mouseLocationOutsideOfEventStream
+        // Resolved per row, so this doesn't depend on where the rows sit in the hierarchy.
+        let isOverRow = rowViews.contains { $0.bounds.contains($0.convert(pointerInWindow, from: nil)) }
+        let isOverViewAll = viewAllChatsRowView.map { $0.bounds.contains($0.convert(pointerInWindow, from: nil)) } ?? false
+
+        guard !isOverRow, !isOverViewAll else { return }
+        viewModel.clearSelection()
     }
 
     // MARK: - Static Height Calculation
@@ -201,8 +231,17 @@ final class AIChatSuggestionsView: NSView {
             }
 
             rowView.onHoverChanged = { [weak self] isHovered in
+                guard let viewModel = self?.boundViewModel else { return }
                 if isHovered {
-                    self?.boundViewModel?.select(at: index)
+                    viewModel.select(at: index)
+                } else if !viewModel.isKeyboardNavigating, viewModel.selectedIndex == index {
+                    // Rows used to select on hover-in only, leaning on this view's own
+                    // `mouseExited` to clear — which doesn't fire when the pointer leaves the
+                    // first row upward or the last row downward, so the highlight stuck. Matches
+                    // what the "View all chats" row already does.
+                    // Guarded on `selectedIndex` because AppKit can deliver this exit after the
+                    // next row's enter, which would otherwise wipe the new selection.
+                    viewModel.clearSelection()
                 }
             }
 
@@ -277,8 +316,11 @@ final class AIChatSuggestionsView: NSView {
         for (index, rowView) in rowViews.enumerated() {
             rowView.isSelected = (index == selectedIndex)
             rowView.isKeyboardNavigating = isKeyboardNavigating
-            // Clear hover state when keyboard navigating
-            if isKeyboardNavigating {
+            // A row draws itself highlighted on `isSelected || isHovered`, so hover is a second,
+            // row-local source of truth that survives a `mouseExited` going missing — which is how
+            // a row stayed lit after the pointer had left the list. Hovering a row always selects
+            // it, so any row that isn't the selected one cannot legitimately be hovered either.
+            if isKeyboardNavigating || index != selectedIndex {
                 rowView.isHovered = false
             }
         }
@@ -287,7 +329,7 @@ final class AIChatSuggestionsView: NSView {
         let isViewAllSelected = selectedIndex == rowViews.count
         viewAllChatsRowView?.isSelected = isViewAllSelected
         viewAllChatsRowView?.isKeyboardNavigating = isKeyboardNavigating
-        if isKeyboardNavigating {
+        if isKeyboardNavigating || !isViewAllSelected {
             viewAllChatsRowView?.isHovered = false
         }
     }

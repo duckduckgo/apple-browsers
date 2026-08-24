@@ -232,8 +232,10 @@ final class AIChatViewAllChatsRowView: NSView {
         }
 
         let newTrackingArea = NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow],
+            // See `AIChatSuggestionsView`: `.inVisibleRect` keeps this in step with a row whose
+            // geometry changes as the panel resizes.
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
             owner: self,
             userInfo: nil
         )

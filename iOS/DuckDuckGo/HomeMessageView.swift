@@ -28,6 +28,7 @@ import Core
 struct HomeMessageView: View {
 
     let viewModel: HomeMessageViewModel
+    var showsAmbientShadow = true
 
     @State var activityItem: TitleValueShareItem?
     @State private var loadedImage: UIImage?
@@ -74,7 +75,9 @@ struct HomeMessageView: View {
         .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
             .fill(Color.background)
             .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow1, x: 0, y: Const.Offset.updatedShadow1Vertical)
-            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
+            .if(showsAmbientShadow) {
+                $0.shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
+            }
         )
         .onAppear {
             viewModel.onDidAppear()

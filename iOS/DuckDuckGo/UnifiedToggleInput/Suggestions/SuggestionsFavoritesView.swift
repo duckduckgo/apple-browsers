@@ -30,7 +30,7 @@ struct FocusedNewTabPageMessagesView: View {
     var body: some View {
         VStack(spacing: Metrics.sectionSpacing) {
             ForEach(messagesModel.homeMessageViewModels, id: \.viewIdentity) { messageModel in
-                HomeMessageView(viewModel: messageModel)
+                HomeMessageView(viewModel: messageModel, showsAmbientShadow: false)
                     .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
                     .transition(.scale.combined(with: .opacity))
             }

@@ -49,9 +49,9 @@ struct SuggestionsListView: View {
         static let searchSectionSpacing: CGFloat = 26
         static let searchAfterHatchTopInset: CGFloat = searchSectionSpacing - scrollableChromeBottomInset
         static let duckAIAfterHatchTopInset: CGFloat = 4
-        /// The 48pt shadow with its 16pt downward offset extends 32pt above and 64pt below the card.
-        static let messageShadowTopInset: CGFloat = 32
-        static let messageShadowBottomInset: CGFloat = 64
+        /// The focused RMF's 12pt shadow with its 4pt downward offset extends 8pt above and 16pt below the card.
+        static let messageShadowTopInset: CGFloat = 8
+        static let messageShadowBottomInset: CGFloat = 16
         /// Search content starts at 16pt; favorites use the NTP's 24pt grid margin.
         static let favoritesHorizontalInset: CGFloat = 8
         /// Per Figma: single-line rows use 15pt top/bottom padding; rows with a subtitle use 14pt

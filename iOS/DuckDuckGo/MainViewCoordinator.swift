@@ -616,6 +616,7 @@ class MainViewCoordinator {
     func finalizeInlineDismissOmnibarReveal() {
         guard !isNavigationChromeHidden else { return }
         navigationBarCollectionView.alpha = 1
+        navigationBarCollectionView.isUserInteractionEnabled = true
     }
 
     /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.

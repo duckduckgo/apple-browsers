@@ -1089,6 +1089,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.hideOmnibarEditing(animated: animateDismiss, reattachingOmnibar: reattachingOmnibar))
     }
 
+    /// Completes coordinator state after a caller-owned omnibar dismiss animation.
+    /// Unlike `deactivateToOmnibar`, this does not start a second chrome dismissal.
     @discardableResult
     func completeOmnibarDeactivation(resetView: Bool = true) -> Bool {
         guard isOmnibarSession else { return false }

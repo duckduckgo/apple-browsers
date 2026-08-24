@@ -110,10 +110,16 @@ internal class MouseEventInterceptingView: ColorView {
             }
         }
 
-        if let hitView = hitTest(locationInView), hitView != self {
+        if let hitView = hitTest(inSelfSpace: locationInView), hitView != self {
             forward(event, to: hitView, in: window)
         }
-        return nil
+
+        // Mouse-moved carries no action of its own, and AppKit has to keep seeing it to drive
+        // tracking-area enter/exit — which is what every hover effect in these panels is built on.
+        // Consuming it starved them. Clicks and scrolls are still consumed, which is the point of
+        // this view: they must not reach the web view behind it. A moved event can't, since by here
+        // the pointer is inside our bounds and we sit above it.
+        return event.type == .mouseMoved ? event : nil
     }
 
     private func forward(_ event: NSEvent, to hitView: NSView, in window: NSWindow) {
@@ -164,7 +170,18 @@ internal class MouseEventInterceptingView: ColorView {
     override func otherMouseDragged(with event: NSEvent) {}
     override func scrollWheel(with event: NSEvent) {}
 
+    /// AppKit hands `hitTest` a point in the *superview's* space, while everything this override
+    /// compares against — `bounds`, subview frames, `shouldPassThroughEvent` — is in our own. The
+    /// two coincide only while the view sits at its superview's origin at the same size, which was
+    /// true of every caller until the Duck.ai panel started leaving room below itself for the
+    /// usage-limit card. Without the conversion the panel answered hit tests for points below it
+    /// and routed them to whatever sat at the same offset inside it.
     override func hitTest(_ point: NSPoint) -> NSView? {
+        hitTest(inSelfSpace: convert(point, from: superview))
+    }
+
+    /// The event monitor already works in this view's space, so it skips the conversion above.
+    func hitTest(inSelfSpace point: NSPoint) -> NSView? {
         if shouldPassThroughEvent(at: point) { return nil }
         guard bounds.contains(point) else { return nil }
         // Front-to-back so a subview claims its own hit.

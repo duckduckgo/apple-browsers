@@ -290,7 +290,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     /// Rebuilt per refresh because the burner mode depends on the requesting webview.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
-
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?) {
         guard let windowControllersManager else { return }
@@ -309,7 +308,9 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         usageWarningViewModel?.onAction = { [weak self] action in
             switch action {
             case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
+                // Both, or the picker label keeps showing the model we just switched away from.
                 self?.aiChatPreferencesPersistor.selectedModelId = suggestion.modelId
+                self?.aiChatPreferencesPersistor.selectedModelShortName = suggestion.modelShortName
             case .tryForFree, .startUsingWeeklyLimit:
                 // Both need a UI to route from; logged by the view model meanwhile.
                 break

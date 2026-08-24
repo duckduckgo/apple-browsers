@@ -54,13 +54,29 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
 
     // MARK: - Severity
 
+    /// Whole numbers, so this pins the ladder itself; rounding is covered separately below.
     func testSeverityLaddersOnTheDocumentedBoundaries() {
         XCTAssertEqual(resolve(limits(daily: 50))?.severity, .info)
-        XCTAssertEqual(resolve(limits(daily: 74.9))?.severity, .info)
+        XCTAssertEqual(resolve(limits(daily: 74))?.severity, .info)
         XCTAssertEqual(resolve(limits(daily: 75))?.severity, .warning)
-        XCTAssertEqual(resolve(limits(daily: 89.9))?.severity, .warning)
+        XCTAssertEqual(resolve(limits(daily: 89))?.severity, .warning)
         XCTAssertEqual(resolve(limits(daily: 90))?.severity, .critical)
         XCTAssertEqual(resolve(limits(daily: 100))?.severity, .reached)
+    }
+
+    /// The ring and the headline are read together, so a percentage that rounds up to a threshold must
+    /// take that threshold's severity with it.
+    func testSeverityFollowsTheDisplayedPercentageNotTheRawOne() {
+        XCTAssertEqual(resolve(limits(daily: 74.6))?.percent, 75)
+        XCTAssertEqual(resolve(limits(daily: 74.6))?.severity, .warning)
+        XCTAssertEqual(resolve(limits(daily: 89.6))?.percent, 90)
+        XCTAssertEqual(resolve(limits(daily: 89.6))?.severity, .critical)
+    }
+
+    /// Rounding down must not promote severity either.
+    func testSeverityStaysDownWhenThePercentageRoundsDown() {
+        XCTAssertEqual(resolve(limits(daily: 74.4))?.percent, 74)
+        XCTAssertEqual(resolve(limits(daily: 74.4))?.severity, .info)
     }
 
     // MARK: - Percentage

@@ -151,11 +151,14 @@ public struct DuckAiUsageWarningResolver {
                                  isTrialEligible: isTrialEligible,
                                  weeklyHasRoom: Self.hasRoom(limits.weekly))
 
+        // Severity comes off the displayed percentage, not the raw one, so the ring can't sit a rung
+        // below a headline that already reads as the next threshold (74.6% displays as 75%).
+        let displayedPercent = isBlocked ? 100 : min(99, Int(percentUsed.rounded()))
         let warning = DuckAiUsageWarning(
             window: window,
             message: message,
-            severity: isBlocked ? .reached : (window.severity(forPercentUsed: percentUsed) ?? .info),
-            percent: isBlocked ? 100 : min(99, Int(percentUsed.rounded())),
+            severity: isBlocked ? .reached : (window.severity(forPercentUsed: Double(displayedPercent)) ?? .info),
+            percent: displayedPercent,
             resetsIn: .from(now: now, resetsAt: data.resetsAt),
             isDismissible: isDismissible,
             action: action,

@@ -2331,6 +2331,19 @@ public struct UserText {
     public static let aiChatHeaderCloseTabAccessibilityLabel = NotLocalizedString("aichat.header.closeTab.a11y", value: "Close tab", comment: "Accessibility label for the close-tab button in the Duck.ai tab header")
     public static let aiChatHeaderNewChatAccessibilityLabel = NotLocalizedString("aichat.header.newChat.a11y", value: "New chat", comment: "Accessibility label for the new-chat button in the Duck.ai tab header")
     public static let aiChatHeaderPlusMenuAccessibilityLabel = NSLocalizedString("aichat.header.plusMenu.a11y", value: "New", comment: "Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions")
+
+    // MARK: - Duck.ai usage warnings (unified toggle input footer)
+    // NotLocalizedString while the copy is being finalised behind `utiDuckAIWarnings`; these must
+    // become NSLocalizedString with .xcstrings entries before the feature ships externally.
+
+    public static let utiDuckAIWarningsWeeklyUsageTitle = NotLocalizedString("aichat.usageWarnings.weeklyUsage.title", value: "%d%% of weekly limit", comment: "Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage")
+    public static let utiDuckAIWarningsDailyUsageTitle = NotLocalizedString("aichat.usageWarnings.dailyUsage.title", value: "%d%% of daily limit", comment: "Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage")
+    public static let utiDuckAIWarningsWeeklyLimitReached = NotLocalizedString("aichat.usageWarnings.weeklyLimitReached.title", value: "Weekly limit reached", comment: "Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up")
+    public static let utiDuckAIWarningsDailyLimitReached = NotLocalizedString("aichat.usageWarnings.dailyLimitReached.title", value: "Daily limit reached", comment: "Title of the Duck.ai input footer warning shown once the user's daily message limit is used up")
+    public static let utiDuckAIWarningsResetsIn = NotLocalizedString("aichat.usageWarnings.resetsIn", value: "Resets in %@", comment: "Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days'")
+    public static let utiDuckAIWarningsReduceUsage = NotLocalizedString("aichat.usageWarnings.action.reduceUsage", value: "Reduce Usage", comment: "Button in the Duck.ai input footer warning that shows the user how to use fewer messages")
+    public static let utiDuckAIWarningsSwitch = NotLocalizedString("aichat.usageWarnings.action.switch", value: "Switch", comment: "Button in the Duck.ai input footer warning that switches the user to a model they still have messages for")
+    public static let utiDuckAIWarningsDismissAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.dismiss.a11y", value: "Dismiss", comment: "Accessibility label for the button that dismisses the Duck.ai input footer warning")
     public static let aiChatHeaderNewVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newVoiceChat", value: "New Voice Chat", comment: "Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu")
     public static let aiChatHeaderNewImageTitle = NSLocalizedString("aichat.header.plusMenu.newImage", value: "New Image", comment: "Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode")
     public static let aiChatHeaderNewTabTitle = NSLocalizedString("aichat.header.plusMenu.newTab", value: "New Tab", comment: "Title for the New Tab row in the Duck.ai tab header Plus (+) menu")
@@ -2547,9 +2560,9 @@ public struct UserText {
         public enum DownloadReason {
             public static let title = NotLocalizedString("onboarding.downloadReason.title", value: "Set things up your way", comment: "Title of the onboarding screen asking why the user downloaded the app.")
             public static let message = NotLocalizedString("onboarding.downloadReason.message", value: "Choose what interests you most, and we’ll start there.", comment: "Subtitle of the onboarding screen asking why the user downloaded the app.")
-            public static let browsePrivately = NotLocalizedString("onboarding.downloadReason.browsePrivately", value: "Search\nprivately", comment: "Label for the option to set up the app for private searching and browsing.")
+            public static let browsePrivately = NotLocalizedString("onboarding.downloadReason.browsePrivately", value: "Search and\nbrowse privately", comment: "Label for the option to set up the app for private searching and browsing.")
             public static let chatWithAI = NotLocalizedString("onboarding.downloadReason.chatWithAI", value: "Chat with AI\nprivately", comment: "Label for the option to set up the app for private AI chat.")
-            public static let removeAI = NotLocalizedString("onboarding.downloadReason.removeAI", value: "Turn off\nAI features", comment: "Label for the option to set up the app without AI in search results.")
+            public static let removeAI = NotLocalizedString("onboarding.downloadReason.removeAI", value: "Disable\nAI features", comment: "Label for the option to set up the app without AI in search results.")
             public static let blockAds = NotLocalizedString("onboarding.downloadReason.blockAds", value: "Block ads\nand pop-ups", comment: "Label for the option to set up the app to block ads and pop-ups.")
             public static let cta = NotLocalizedString("onboarding.downloadReason.cta", value: "Next", comment: "Button to continue to the next onboarding screen after choosing a reason.")
         }
@@ -2599,8 +2612,9 @@ public struct UserText {
                 public static let adBlockingTitle = NotLocalizedString("onboarding.personalization.adBlocking.youTubeAdBlocking.title", value: "Block video ads on YouTube", comment: "Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen.")
                 public static let rejectOptionalCookiesTitle = NotLocalizedString("onboarding.personalization.adBlocking.rejectOptionalCookies.title", value: "Reject optional cookies", comment: "Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen.")
                 public static let rejectOptionalCookiesSubtitle = NotLocalizedString("onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle", value: "Maximizes privacy and closes cookie pop-ups", comment: "Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen.")
-                public static let acceptOtherCookiesTitle = NotLocalizedString("onboarding.personalization.adBlocking.acceptOtherCookies.title", value: "Accept cookies that can’t be rejected", comment: "Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen.")
-                public static let acceptOtherCookiesSubtitle = NotLocalizedString("onboarding.personalization.adBlocking.acceptOtherCookies.subtitle", value: "Hides even more pop-ups", comment: "Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen.")
+                public static let acceptOtherCookiesTitle = NotLocalizedString("onboarding.personalization.adBlocking.acceptOtherCookies.title", value: "Accept some cookies", comment: "Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen.")
+                public static let acceptOtherCookiesSubtitle = NotLocalizedString("onboarding.personalization.adBlocking.acceptOtherCookies.subtitle", value: "Hides more pop-ups by accepting cookies that can’t be rejected", comment: "Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen.")
+                public static let footer = NotLocalizedString("onboarding.personalization.adBlocking.footer", value: "You can always adjust later in Settings.", comment: "Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later.")
                 public static let cta = NotLocalizedString("onboarding.personalization.adBlocking.cta", value: "Next", comment: "Button to continue to the next onboarding screen from the ad-blocking personalization screen.")
             }
 

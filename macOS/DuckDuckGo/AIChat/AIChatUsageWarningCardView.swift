@@ -76,14 +76,9 @@ extension DuckAiUsageWarning {
 final class AIChatUsageWarningCardView: NSView {
 
     enum Constants {
+        /// The band that actually shows below the panel, and all the height a host has to reserve.
         /// Hosts reserve panel height from this, so it lives here rather than at the call site.
-        static let height: CGFloat = 44
-        /// Visible gap between the panel's bottom edge and the card.
-        static let topSpacing: CGFloat = 6
-        /// Total panel height the card reserves when visible.
-        static var panelReservation: CGFloat { height + topSpacing }
-
-        static let cornerRadius: CGFloat = 16
+        static let contentHeight: CGFloat = 44
         static let horizontalPadding: CGFloat = 14
         static let iconSize: CGFloat = 16
         static let iconTitleSpacing: CGFloat = 8
@@ -91,18 +86,37 @@ final class AIChatUsageWarningCardView: NSView {
         static let actionCloseSpacing: CGFloat = 4
         static let closeButtonSize: CGFloat = 24
         static let fontSize: CGFloat = 13
+        /// High enough to stay bright over a dark page, low enough to still read as translucent.
+        static let tintAlpha: CGFloat = 0.75
     }
 
     // MARK: - UI Components
 
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
-    private let isBurner: Bool
+    /// Frosted rather than filled. An opaque card in the panel's own colour reads as one more
+    /// section of the panel; letting the page blur through is what separates the two surfaces.
+    /// `.popover` rather than `.hudWindow`: the latter is a dark material that reads as a grey
+    /// slab in light mode. `.withinWindow` because what sits behind the card is the web view.
+    private let backgroundView: NSVisualEffectView = {
+        let view = NSVisualEffectView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.material = .popover
+        view.blendingMode = .withinWindow
+        view.state = .active
+        view.wantsLayer = true
+        // Bottom corners only — the top edge is behind the panel, and rounding it would notch
+        // the seam. AppKit layers are unflipped, so MinY is the bottom.
+        view.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        view.layer?.masksToBounds = true
+        return view
+    }()
 
-    private let backgroundView: ColorView = {
+    /// Sits over the blur to keep the card bright and mostly independent of whatever is behind it.
+    /// The blur alone tracks the page too closely — a dark hero image dragged the whole card down
+    /// with it. Semi-transparent, so a hint of the page still shows and it doesn't read as opaque.
+    private let tintView: ColorView = {
         let view = ColorView(frame: .zero)
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.borderWidth = 1
-        view.cornerRadius = Constants.cornerRadius
+        view.roundedCorners = [.bottomLeft, .bottomRight]
         return view
     }()
 
@@ -137,6 +151,10 @@ final class AIChatUsageWarningCardView: NSView {
         return button
     }()
 
+    /// The band below the panel. Content centres on this rather than on the card, whose top runs
+    /// up behind the panel and would pull everything off-centre.
+    private let contentGuide = NSLayoutGuide()
+
     /// Hidden views still take part in Auto Layout, so each optional element's footprint is
     /// collapsed explicitly rather than left to `isHidden`.
     private var closeButtonWidthConstraint: NSLayoutConstraint?
@@ -153,8 +171,7 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Initialization
 
-    init(isBurner: Bool) {
-        self.isBurner = isBurner
+    init() {
         super.init(frame: .zero)
         setupView()
     }
@@ -175,6 +192,8 @@ final class AIChatUsageWarningCardView: NSView {
         closeButton.action = #selector(closeButtonClicked)
 
         addSubview(backgroundView)
+        addSubview(tintView)
+        addLayoutGuide(contentGuide)
         addSubview(iconImageView)
         addSubview(titleLabel)
         addSubview(actionButton)
@@ -193,21 +212,31 @@ final class AIChatUsageWarningCardView: NSView {
             backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
+            tintView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
+            tintView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
+            tintView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
+            tintView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
+
+            contentGuide.leadingAnchor.constraint(equalTo: leadingAnchor),
+            contentGuide.trailingAnchor.constraint(equalTo: trailingAnchor),
+            contentGuide.bottomAnchor.constraint(equalTo: bottomAnchor),
+            contentGuide.heightAnchor.constraint(equalToConstant: Constants.contentHeight),
+
             iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
-            iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            iconImageView.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
-            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
 
             actionButton.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor,
                                                   constant: Constants.titleActionSpacing),
-            actionButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            actionButton.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
 
             actionCloseSpacing,
             closeWidth,
-            closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            closeButton.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
             closeButton.heightAnchor.constraint(equalToConstant: Constants.closeButtonSize),
             closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding)
         ])
@@ -264,10 +293,19 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Appearance
 
+    /// Deliberately borderless: the design separates the card from the page with the shadow alone,
+    /// and a stroke along the top edge would draw a line across the seam with the panel.
     private func applyTheme() {
-        let colorsProvider = themeManager.theme.colorsProvider
-        backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)
-        backgroundView.borderColor = NSColor(named: "AddressBarBorderColor")
+        NSAppearance.withAppearance(appearance) {
+            tintView.backgroundColor = NSColor(designSystemColor: .surfacePrimary)
+                .withAlphaComponent(Constants.tintAlpha)
+        }
+    }
+
+    /// Matched to the panel's, so the two silhouettes agree where the card emerges from under it.
+    func applyPanelCornerRadius(_ radius: CGFloat) {
+        backgroundView.layer?.cornerRadius = radius
+        tintView.cornerRadius = radius
     }
 
     func applyThemeStyle() {
@@ -328,8 +366,8 @@ final class AIChatUsageWarningActionButton: NSView {
         return imageView
     }()
 
-    private let primaryHitButton = Self.makeHitButton()
-    private let pickerHitButton = Self.makeHitButton()
+    private let primaryHitButton = AIChatUsageWarningActionButton.makeHitButton()
+    private let pickerHitButton = AIChatUsageWarningActionButton.makeHitButton()
 
     private var dividerWidthConstraint: NSLayoutConstraint?
     private var pickerRegionWidthConstraint: NSLayoutConstraint?

@@ -98,7 +98,7 @@ final class PromoQueueUITests: UITestCase {
         app.fireTestTrigger()
         XCTAssertTrue(app.alertA.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        app.restart()
+        app.restart(forceTerminate: true)
 
         XCTAssertTrue(app.alertA.waitForExistence(timeout: UITests.Timeouts.elementExistence), "test-promo-a should restore on restart (lastShown > lastDismissed)")
 

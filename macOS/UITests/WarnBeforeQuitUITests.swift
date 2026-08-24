@@ -484,7 +484,7 @@ class WarnBeforeQuitUITests: UITestCase {
         )
 
         // Restart app and verify checkbox stayed off, then re-enable and test
-        app.restart()
+        app.launch() // swiftlint:disable:this uitest_use_application_setup
 
         // Open settings and verify checkbox is still off
         app.openGeneralPreferences()

@@ -139,8 +139,12 @@ extension XCUIApplication {
     }
 
     /// Terminate the running app and launch it again, preserving environment and arguments from `setUp()`.
-    func restart() {
-        menuItems[AccessibilityIdentifiers.quitMenuItem].tap()
+    func restart(forceTerminate: Bool = false) {
+        if forceTerminate {
+            terminate()
+        } else {
+            menuItems[AccessibilityIdentifiers.quitMenuItem].tap()
+        }
         launch()
     }
 

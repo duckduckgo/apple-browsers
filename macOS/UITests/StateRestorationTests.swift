@@ -104,7 +104,7 @@ class StateRestorationTests: UITestCase {
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        app.restart()
+        app.restart(forceTerminate: true)
 
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),

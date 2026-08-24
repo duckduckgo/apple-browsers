@@ -147,7 +147,7 @@ class BookmarkSortTests: UITestCase {
         app.openBookmarksPanel()
         selectSortByName(mode: .panel)
 
-        app.restart()
+        app.restart(forceTerminate: true)
         app.enforceSingleWindow()
 
         // Wait for new application to start

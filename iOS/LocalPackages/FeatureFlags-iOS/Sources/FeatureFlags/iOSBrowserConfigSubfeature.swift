@@ -87,7 +87,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
 
-    /// Failsafe for suppressing delays introduced by the show-bars tap gesture recognizer.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217806576104027?focus=true
     case suppressShowBarsGestureRecogniserDelay
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true

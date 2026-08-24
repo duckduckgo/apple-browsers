@@ -448,8 +448,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
 
-    /// Failsafe kill switch for suppressing delays introduced by the show-bars tap gesture recognizer.
-    /// On by default; disable remotely to restore the previous gesture arbitration and touch-end delay.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217806576104027?focus=true
     case suppressShowBarsGestureRecogniserDelay
 
     case aiChatNativeStorage

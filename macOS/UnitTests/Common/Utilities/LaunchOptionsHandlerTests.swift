@@ -72,35 +72,30 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         XCTAssertFalse(makeHandler(arguments: ["automationPort": 65_536]).isWebDriverAutomationSession)
     }
 
-    func testWebViewProxyAcceptsOnlyLoopbackSOCKS5EndpointsWithValidPorts() {
-        let ipv4Proxy = WebViewProxy("socks5://127.0.0.1:1")
+    func testWebViewProxyAcceptsOnlyLoopbackHTTPEndpointsWithValidPorts() {
+        let ipv4Proxy = WebViewProxy("http://127.0.0.1:1")
         XCTAssertEqual(ipv4Proxy?.host, "127.0.0.1")
         XCTAssertEqual(ipv4Proxy?.port, 1)
 
-        let ipv6Proxy = WebViewProxy("socks5://[::1]:65535")
-        XCTAssertEqual(ipv6Proxy?.kind, .socks5)
+        let ipv6Proxy = WebViewProxy("http://[::1]:65535")
         XCTAssertEqual(ipv6Proxy?.host, "::1")
         XCTAssertEqual(ipv6Proxy?.port, 65_535)
 
-        let httpProxy = WebViewProxy("http://127.0.0.1:9998")
-        XCTAssertEqual(httpProxy?.kind, .httpConnect)
-        XCTAssertEqual(httpProxy?.host, "127.0.0.1")
-        XCTAssertEqual(httpProxy?.port, 9_998)
-
+        XCTAssertNil(WebViewProxy("socks5://127.0.0.1:9997"))
         XCTAssertNil(WebViewProxy("https://127.0.0.1:9997"))
-        XCTAssertNil(WebViewProxy("socks5://localhost:9997"))
-        XCTAssertNil(WebViewProxy("socks5://192.168.1.10:9997"))
-        XCTAssertNil(WebViewProxy("socks5://127.0.0.1"))
-        XCTAssertNil(WebViewProxy("socks5://127.0.0.1:0"))
-        XCTAssertNil(WebViewProxy("socks5://127.0.0.1:65536"))
-        XCTAssertNil(WebViewProxy("socks5://user@127.0.0.1:9997"))
-        XCTAssertNil(WebViewProxy("socks5://127.0.0.1:9997/path"))
+        XCTAssertNil(WebViewProxy("http://localhost:9997"))
+        XCTAssertNil(WebViewProxy("http://192.168.1.10:9997"))
+        XCTAssertNil(WebViewProxy("http://127.0.0.1"))
+        XCTAssertNil(WebViewProxy("http://127.0.0.1:0"))
+        XCTAssertNil(WebViewProxy("http://127.0.0.1:65536"))
+        XCTAssertNil(WebViewProxy("http://user@127.0.0.1:9997"))
+        XCTAssertNil(WebViewProxy("http://127.0.0.1:9997/path"))
     }
 
     func testWebViewProxyRequiresAuthenticatedDebugOrReviewAutomationSession() {
         let arguments: [String: Any] = [
             "automationPort": 8788,
-            "webViewProxy": "socks5://127.0.0.1:9997",
+            "webViewProxy": "http://127.0.0.1:9997",
         ]
 
         XCTAssertNil(makeHandler(arguments: arguments, environment: [:]).webViewProxy)
@@ -117,7 +112,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         buildType.isReviewBuild = true
         let completeArguments: [String: Any] = [
             "automationPort": 8788,
-            "webViewProxy": "socks5://127.0.0.1:9997",
+            "webViewProxy": "http://127.0.0.1:9997",
             "acceptInsecureCerts": true,
         ]
 
@@ -132,7 +127,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         XCTAssertFalse(
             makeHandler(
                 arguments: [
-                    "webViewProxy": "socks5://127.0.0.1:9997",
+                    "webViewProxy": "http://127.0.0.1:9997",
                     "acceptInsecureCerts": true,
                 ],
                 environment: ["AUTOMATION_TOKEN": "token"]
@@ -145,7 +140,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let handler = makeHandler(
             arguments: [
                 "automationPort": 8788,
-                "webViewProxy": "socks5://127.0.0.1:9997",
+                "webViewProxy": "http://127.0.0.1:9997",
                 "acceptInsecureCerts": "true",
             ],
             environment: ["AUTOMATION_TOKEN": "token"]

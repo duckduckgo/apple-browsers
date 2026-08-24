@@ -107,8 +107,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
         let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
                                                      transitionContext: transitionContext,
-                                                     afterScreenUpdates: false,
-                                                     seedCollapsed: false)
+                                                     afterScreenUpdates: false)
 
         let theme = ThemeManager.shared.currentTheme
 

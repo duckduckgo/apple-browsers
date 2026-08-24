@@ -2557,9 +2557,6 @@
 /* Menu item that closes the last used open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeLastUsedTab" = "Luk sidst brugte fane";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Luk fane";
-
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Slet fane";
 
@@ -2568,9 +2565,6 @@
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
 "escapeHatch.menu.returnToLastUsedTab" = "Gå tilbage til sidst brugte fane";
-
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Gå tilbage til fanen";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Flere muligheder";
@@ -4245,12 +4239,6 @@
 
 /* Option: open New Tab when returning after inactivity */
 "settings.afterInactivity.option.openNewTab" = "Åbn ny fane";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Sidst brugte fane";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Ny fane";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Efter inaktivitet";

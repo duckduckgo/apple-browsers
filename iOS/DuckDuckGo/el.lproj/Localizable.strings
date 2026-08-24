@@ -2557,9 +2557,6 @@
 /* Menu item that closes the last used open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeLastUsedTab" = "Κλείσιμο τελευταίας καρτέλας που χρησιμοποιήθηκε";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Κλείσιμο καρτέλας";
-
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Διαγραφή καρτέλας";
 
@@ -2568,9 +2565,6 @@
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
 "escapeHatch.menu.returnToLastUsedTab" = "Επιστροφή στην τελευταία καρτέλα που χρησιμοποιήθηκε";
-
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Επιστροφή στην καρτέλα";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Περισσότερες επιλογές";
@@ -4245,12 +4239,6 @@
 
 /* Option: open New Tab when returning after inactivity */
 "settings.afterInactivity.option.openNewTab" = "Άνοιγμα νέας καρτέλας";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Νέα καρτέλα";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Μετά από αδράνεια";

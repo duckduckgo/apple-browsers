@@ -2557,9 +2557,6 @@
 /* Menu item that closes the last used open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeLastUsedTab" = "Zamknij ostatnio używaną kartę";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Zamknij zakładkę";
-
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Usuń kartę";
 
@@ -2568,9 +2565,6 @@
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
 "escapeHatch.menu.returnToLastUsedTab" = "Wróć do ostatnio używanej karty";
-
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Powrót do zakładki";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Więcej opcji";
@@ -4245,12 +4239,6 @@
 
 /* Option: open New Tab when returning after inactivity */
 "settings.afterInactivity.option.openNewTab" = "Otwórz nową kartę";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Ostatnio używana karta";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Nowa karta";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Po braku aktywności";

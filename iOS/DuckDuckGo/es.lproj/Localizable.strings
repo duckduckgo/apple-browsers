@@ -2557,9 +2557,6 @@
 /* Menu item that closes the last used open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeLastUsedTab" = "Cerrar la última pestaña utilizada";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Cerrar pestaña";
-
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Eliminar pestaña";
 
@@ -2568,9 +2565,6 @@
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
 "escapeHatch.menu.returnToLastUsedTab" = "Volver a la última pestaña utilizada";
-
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Volver a la pestaña";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Más opciones";
@@ -4245,12 +4239,6 @@
 
 /* Option: open New Tab when returning after inactivity */
 "settings.afterInactivity.option.openNewTab" = "Abrir una nueva pestaña";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Última pestaña utilizada";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Nueva pestaña";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Después de inactividad";

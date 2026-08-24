@@ -2557,9 +2557,6 @@
 /* Menu item that closes the last used open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeLastUsedTab" = "Uždaryti paskutinę naudotą kortelę";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Uždaryti kortelę";
-
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Ištrinti kortelę";
 
@@ -2568,9 +2565,6 @@
 
 /* Menu item that returns the user to the last used open tab from the escape hatch card */
 "escapeHatch.menu.returnToLastUsedTab" = "Grįžti į paskutinę naudotą kortelę";
-
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Grįžti į kortelę";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Daugiau parinkčių";
@@ -4245,12 +4239,6 @@
 
 /* Option: open New Tab when returning after inactivity */
 "settings.afterInactivity.option.openNewTab" = "Atidaryti naują kortelę";
-
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Paskutinį kartą naudotas skirtukas";
-
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Nauja kortelė";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Po neaktyvumo";

@@ -82,7 +82,6 @@ final class AIChatHistoryListViewController: UIViewController {
         }
     }
 
-    private let featureFlagger: FeatureFlagger
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
     private let onChatDeleted: (AIChatSuggestion) -> Void
@@ -143,15 +142,13 @@ final class AIChatHistoryListViewController: UIViewController {
          isIPadExperience: Bool,
          onChatSelected: @escaping (AIChatSuggestion) -> Void,
          onChatDeleted: @escaping (AIChatSuggestion) -> Void,
-         onViewAllSelected: @escaping () -> Void,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger)
+         onViewAllSelected: @escaping () -> Void)
     {
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected
         self.onChatDeleted = onChatDeleted
         self.onViewAllSelected = onViewAllSelected
-        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -369,7 +366,7 @@ final class AIChatHistoryListViewController: UIViewController {
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
 
-        configureDeleteActionIfNeeded(cell: cell, chat: chat)
+        configureDeleteAction(cell: cell, chat: chat)
     }
 
     /// Index of the virtual "View all chats" row, shown after the last suggestion when the view model opts in.
@@ -413,13 +410,13 @@ final class AIChatHistoryListViewController: UIViewController {
 
 private extension AIChatHistoryListViewController {
 
-    func configureDeleteActionIfNeeded(cell: UITableViewCell, chat: AIChatSuggestion) {
+    func configureDeleteAction(cell: UITableViewCell, chat: AIChatSuggestion) {
         guard let cell = cell as? DuckAISuggestionTableViewCell else {
             return
         }
 
         cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.fire
-        cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.displaysAccessoryButton = true
         cell.onAccessoryButtonPressed = { [weak self] source in
             self?.presentChatDeletionConfirmation(chat: chat, source: source)
         }

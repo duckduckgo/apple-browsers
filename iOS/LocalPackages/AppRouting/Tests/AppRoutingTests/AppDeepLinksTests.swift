@@ -18,9 +18,9 @@
 //
 
 import XCTest
-@testable import Core
+@testable import AppRouting
 
-class AppDeepLinksTests: XCTestCase {
+final class AppDeepLinksTests: XCTestCase {
 
     func testWhenLinkIsLowercaseQuickLinkThenDetected() {
         XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "ddgquicklink://foo.bar")!),
@@ -94,5 +94,4 @@ class AppDeepLinksTests: XCTestCase {
         let url = AppDeepLinkSchemes.openAIVoiceChat.url.appendingParameter(name: "source", value: "control_center")
         XCTAssertEqual(url.getParameter(named: "source"), "control_center")
     }
-
 }

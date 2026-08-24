@@ -731,7 +731,8 @@ private extension AIChatContextualSheetCoordinator {
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
-            start: start
+            start: start,
+            footerWarningProvider: duckAiFooterWarningProvider
         )
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
@@ -956,6 +957,13 @@ private extension AIChatContextualSheetCoordinator {
         let storageHandler = isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
         return storageHandler.map {
             DuckAiLastUsedModelProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
+        }
+    }
+
+    var duckAiFooterWarningProvider: UTIFooterWarningProviding? {
+        let storageHandler = isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+        return storageHandler.map {
+            UTIFooterWarningProvider(limitsStore: DuckAiUsageLimitsStore(storageHandler: $0))
         }
     }
     

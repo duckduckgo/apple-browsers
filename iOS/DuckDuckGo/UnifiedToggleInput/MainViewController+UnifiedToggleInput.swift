@@ -1115,6 +1115,9 @@ extension MainViewController {
                     contentContainer.alpha = 0
                     contentContainer.transform = .identity
                 }
+                // Keep the coordinator's top/editing state until all dismiss targets have been
+                // captured, then deactivate before an interrupted animation can strand active state.
+                coordinator.completeOmnibarDeactivation(resetView: false)
             },
             interruptCleanup: { [weak self] in
                 self?.restoreChromeAfterInterruptedOmnibarDismiss()
@@ -1123,9 +1126,6 @@ extension MainViewController {
                 self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
             }
         )
-        // `startAnimation()` has now captured the top/editing inset. Deactivating any earlier flips
-        // the coordinator to bottom/inactive and makes the content overshoot behind the collapsing UTI.
-        guard coordinator.completeOmnibarDeactivation(resetView: false) else { return }
 
         if let omnibarPlaceholderColor {
             coordinator.viewController.animatePlaceholderColorTransition(

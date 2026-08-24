@@ -152,7 +152,6 @@ final class DuckAISuggestionsSurfaceProvider {
             urlLoader: urlLoader,
             chatManager: chatManager,
             query: { [weak self] in self?.switchBarHandler.currentText ?? "" },
-            deleteEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.removeChatHistory) },
             // The "View all chats" row opens the native history page — an iPhone-only experience gated on the same flag.
             viewAllChatsEnabled: { [featureFlagger] in
                 featureFlagger.isFeatureOn(.aiChatNativeChatHistory) && UIDevice.current.userInterfaceIdiom != .pad

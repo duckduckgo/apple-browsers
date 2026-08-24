@@ -43,6 +43,10 @@ let package = Package(
             name: "UIKitExtensions",
             targets: ["UIKitExtensionsProxy"]
         ),
+        .library(
+            name: "WebKitExtensions",
+            targets: ["WebKitExtensions"]
+        ),
     ],
     dependencies: [
     ],
@@ -60,6 +64,10 @@ let package = Package(
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
+        ),
+        .target(
+            name: "WebKitExtensions",
+            dependencies: ["ConcurrencyExtensions"]
         ),
 
         // MARK: - Platform Specific Targets

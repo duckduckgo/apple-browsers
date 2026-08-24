@@ -290,7 +290,10 @@ private extension AIChatPageContextHandler {
             return
         }
 
-        let title = webView.title ?? ""
+        // WebKit's PDF viewer usually reports no document title, which would leave the chip blank —
+        // fall back to the file name so the attachment has a readable label.
+        let webViewTitle = webView.title ?? ""
+        let title = webViewTitle.isEmpty ? url.lastPathComponent : webViewTitle
         let startedAt = Date()
         Task { @MainActor [weak self] in
             let result = await DocumentPageContextProvider.makeDocumentContext(webView: webView, url: url, title: title)

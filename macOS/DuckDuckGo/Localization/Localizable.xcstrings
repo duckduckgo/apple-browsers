@@ -64703,6 +64703,18 @@
         }
       }
     },
+    "import.request-access-error.title" : {
+      "comment" : "Title of the screen shown when DuckDuckGo still can't read the browser data folder after the user picked one, asking them to try again (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something went wrong. DuckDuckGo can’t access your %1$@ Data folder."
+          }
+        }
+      }
+    },
     "import.request-access.button" : {
       "comment" : "Button opening the folder picker used to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)",
       "extractionState" : "extracted_with_value",

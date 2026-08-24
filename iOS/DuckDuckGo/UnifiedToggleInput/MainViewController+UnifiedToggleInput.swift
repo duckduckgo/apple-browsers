@@ -1198,22 +1198,28 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
-        fireDirectDuckAINavigationPixelIfNeeded(for: query)
+        let duckAIEntrySource = fireDirectDuckAINavigationPixelIfNeeded(for: query)
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
         recordNewTabPageSessionAction { $0.hitSubmit() }
-        loadQuery(query)
+        // Stamped via the load completion: the new-tab case has no tab to stamp until `loadQuery` creates it.
+        loadQuery(query) { [weak self] in
+            if let duckAIEntrySource {
+                self?.stampDuckAIEntrySourceOnCurrentTab(duckAIEntrySource)
+            }
+        }
     }
 
     /// The only place a typed duck.ai address can be told apart from an in-page or deep link.
     /// Mirrors `loadQuery`'s URL resolution so detection matches what gets navigated.
-    private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) {
+    /// Returns the entry source the caller must stamp on the tab hosting the load.
+    private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) -> AIChatEntryPointSource? {
         guard let url = URL.makeSearchURL(query: query,
                                           useUnifiedLogic: isUnifiedURLPredictionEnabled,
                                           queryContext: currentTab?.url),
-              url.isDuckAIURL else { return }
+              url.isDuckAIURL else { return nil }
 
         DailyPixel.fireDailyAndCount(pixel: .aiChatDuckAIDirectNavigation, withAdditionalParameters: [
             "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
@@ -1235,10 +1241,7 @@ extension MainViewController {
         fireAIChatEntryPointPixel(source: .directURL,
                                   opensNewTab: decision == .openInNewTab,
                                   hasPrompt: false)
-        // The new-tab case can't be stamped here: `loadQuery` creates that tab later.
-        if decision == .loadInPlace {
-            stampDuckAIEntrySourceOnCurrentTab(.directURL)
-        }
+        return .directURL
     }
 
 }

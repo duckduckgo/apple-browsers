@@ -2522,7 +2522,7 @@ class MainViewController: UIViewController {
         }
     }
 
-    func loadQuery(_ query: String) {
+    func loadQuery(_ query: String, completion: (() -> Void)? = nil) {
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
             Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.shortDescription ?? "<nil>", privacy: .public)\"")
             return
@@ -2530,7 +2530,7 @@ class MainViewController: UIViewController {
         // Make sure that once query is submitted, we don't trigger the non-SERP flow
         skipSERPFlow = false
         endNewTabPageSessionWithLoad(of: url)
-        loadUrlRespectingAIBoundary(url)
+        loadUrlRespectingAIBoundary(url, completion: completion)
     }
 
     func postIdleSubmissionReason(for query: String) -> ReturnSessionWideEventData.StatusReason {
@@ -4772,7 +4772,9 @@ extension MainViewController: BrowserChromeDelegate {
         showHomeRowReminder()
     }
 
-    func loadUrlRespectingAIBoundary(_ url: URL, fromExternalLink: Bool = false) {
+    /// `completion` runs once the tab hosting the load is current, so callers can stamp per-tab
+    /// state that the new-tab branch could not set up front (the tab does not exist yet).
+    func loadUrlRespectingAIBoundary(_ url: URL, fromExternalLink: Bool = false, completion: (() -> Void)? = nil) {
         let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
             currentIsAI: currentTab?.isAITab == true,
             currentHasContent: currentTab?.tabModel.link != nil,
@@ -4785,10 +4787,11 @@ extension MainViewController: BrowserChromeDelegate {
             if let tab = currentTab {
                 tab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: tab)
             }
-            loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
+            loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink, completion: completion)
         case .loadInPlace:
             currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
+            completion?()
         }
     }
 
@@ -4895,7 +4898,9 @@ extension MainViewController: OmniBarDelegate {
         ) == .openInNewTab
         fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
         // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
-        loadUrlRespectingAIBoundary(url)
+        loadUrlRespectingAIBoundary(url) { [weak self] in
+            self?.stampDuckAIEntrySourceOnCurrentTab(.chatHistoryOpenChat)
+        }
     }
 
     func onViewAllChatsSelected() {

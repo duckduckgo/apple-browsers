@@ -29,6 +29,12 @@ extension PromoServiceFactory {
                                                             windowControllersManager: dependencies.windowControllersManager,
                                                             isNewUserProvider: dependencies.isNewUserProvider)
 
-        return InternalPromo(id: identifier, triggers: [.autoplayDiscoverability], initiated: .app, promoType: promoType, context: .webPage, delegate: delegate)
+        return InternalPromo(id: identifier,
+                             triggers: [.autoplayDiscoverability],
+                             initiated: .app,
+                             promoType: promoType,
+                             context: .webPage,
+                             respectsGlobalCooldown: false,
+                             delegate: delegate)
     }
 }

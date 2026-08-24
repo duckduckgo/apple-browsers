@@ -158,9 +158,10 @@ extension DuckAiUsageWarning {
 
 extension DuckAiUsageWindow {
 
+    /// Compared against the raw percentage, so 49.6% is never shown as a "50%" message.
     static let visibilityFloor: Double = 50
 
-    static let severityLadder: [(floor: Double, severity: DuckAiUsageSeverity)] = [
+    static let severityLadder: [(floor: Int, severity: DuckAiUsageSeverity)] = [
         (90, .critical),
         (75, .warning),
         (50, .info)
@@ -175,12 +176,15 @@ extension DuckAiUsageWindow {
         }
     }
 
-    func severity(forPercentUsed percentUsed: Double) -> DuckAiUsageSeverity? {
-        Self.severityLadder.first { percentUsed >= $0.floor }?.severity
+    // Both ladders key off the displayed percentage, not the raw one, so the copy, the ring and
+    // dismissal can never disagree about which rung the user is on.
+
+    func severity(forDisplayedPercent percent: Int) -> DuckAiUsageSeverity? {
+        Self.severityLadder.first { percent >= $0.floor }?.severity
     }
 
     /// The bucket a dismissal is recorded against, so crossing the next one brings the message back.
-    func redisplayThreshold(forPercentUsed percentUsed: Double) -> Int {
-        redisplayLadder.last { percentUsed >= Double($0) } ?? 0
+    func redisplayThreshold(forDisplayedPercent percent: Int) -> Int {
+        redisplayLadder.last { percent >= $0 } ?? 0
     }
 }

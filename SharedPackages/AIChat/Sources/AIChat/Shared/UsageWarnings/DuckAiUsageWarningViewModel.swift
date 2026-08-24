@@ -87,7 +87,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         guard let warning, warning.isDismissible, let data = lastReadLimits.window(warning.window) else { return }
 
         let window = warning.window
-        let threshold = window.redisplayThreshold(forPercentUsed: data.percentUsed)
+        let threshold = window.redisplayThreshold(forDisplayedPercent: data.displayedPercent)
         dismissalStore.setDismissal(DuckAiUsageWarningDismissal(resetsAt: data.resetsAt, threshold: threshold),
                                     for: window)
         Logger.aiChat.debug("""

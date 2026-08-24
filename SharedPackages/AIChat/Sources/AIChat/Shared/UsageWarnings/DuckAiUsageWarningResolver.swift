@@ -46,9 +46,6 @@ public struct DuckAiUsageWarningResolver {
         case none(reason: NoWarningReason)
     }
 
-    /// The payload carries no `isBlocked`; web reports a flat 100 only once the window is blocked.
-    private static let blockedPercent: Double = 100
-
     /// `.internal` never occurs at runtime; internal users arrive separately as `isInternalUser`.
     private static let tiersThatSeeApproachingWarnings: Set<AIChatUserTier> = [.plus, .pro, .internal]
 
@@ -125,9 +122,10 @@ public struct DuckAiUsageWarningResolver {
         guard let data = limits.window(window) else { return .rejected(.noData) }
 
         let percentUsed = data.percentUsed
-        let isBlocked = percentUsed >= Self.blockedPercent
+        let isBlocked = data.isBlocked
+        let displayedPercent = data.displayedPercent
 
-        // Raw, not rounded, so 49.6% never renders as a "50%" message.
+        // The floor gates on the raw value: nobody under 50% actual usage should see a message.
         guard isBlocked || percentUsed >= DuckAiUsageWindow.visibilityFloor else {
             return .rejected(.belowVisibilityFloor)
         }
@@ -139,7 +137,9 @@ public struct DuckAiUsageWarningResolver {
         guard isBlocked || canSeeApproachingWarnings else { return .rejected(.tierNotEligible) }
 
         let isDismissible = !isBlocked && canSeeApproachingWarnings
-        if isDismissible, isSuppressedByDismissal(window: window, percentUsed: percentUsed, resetsAt: data.resetsAt) {
+        if isDismissible, isSuppressedByDismissal(window: window,
+                                                  displayedPercent: displayedPercent,
+                                                  resetsAt: data.resetsAt) {
             return .rejected(.dismissedUntilReset)
         }
 
@@ -149,15 +149,12 @@ public struct DuckAiUsageWarningResolver {
                                  suggestion: suggestion,
                                  isPaid: hasPaidTier,
                                  isTrialEligible: isTrialEligible,
-                                 weeklyHasRoom: Self.hasRoom(limits.weekly))
+                                 weeklyHasRoom: limits.weekly.map { !$0.isBlocked } ?? false)
 
-        // Severity comes off the displayed percentage, not the raw one, so the ring can't sit a rung
-        // below a headline that already reads as the next threshold (74.6% displays as 75%).
-        let displayedPercent = isBlocked ? 100 : min(99, Int(percentUsed.rounded()))
         let warning = DuckAiUsageWarning(
             window: window,
             message: message,
-            severity: isBlocked ? .reached : (window.severity(forPercentUsed: Double(displayedPercent)) ?? .info),
+            severity: isBlocked ? .reached : (window.severity(forDisplayedPercent: displayedPercent) ?? .info),
             percent: displayedPercent,
             resetsIn: .from(now: now, resetsAt: data.resetsAt),
             isDismissible: isDismissible,
@@ -210,17 +207,21 @@ public struct DuckAiUsageWarningResolver {
         }
     }
 
-    private static func hasRoom(_ window: DuckAiUsageLimitWindow?) -> Bool {
-        guard let window else { return false }
-        return window.percentUsed < blockedPercent
-    }
-
-    private func isSuppressedByDismissal(window: DuckAiUsageWindow, percentUsed: Double, resetsAt: Date) -> Bool {
+    private func isSuppressedByDismissal(window: DuckAiUsageWindow, displayedPercent: Int, resetsAt: Date) -> Bool {
         guard let dismissal = dismissalStore.dismissal(for: window), dismissal.applies(to: resetsAt) else {
             return false
         }
-        return window.redisplayThreshold(forPercentUsed: percentUsed) <= dismissal.threshold
+        return window.redisplayThreshold(forDisplayedPercent: displayedPercent) <= dismissal.threshold
     }
+}
+
+extension DuckAiUsageLimitWindow {
+
+    /// The payload carries no `isBlocked`; web reports a flat 100 only once the window is blocked.
+    var isBlocked: Bool { percentUsed >= 100 }
+
+    /// Rounded, capped at 99 until blocked. The one number every threshold decision keys off.
+    var displayedPercent: Int { isBlocked ? 100 : min(99, Int(percentUsed.rounded())) }
 }
 
 extension DuckAiUsageLimits {

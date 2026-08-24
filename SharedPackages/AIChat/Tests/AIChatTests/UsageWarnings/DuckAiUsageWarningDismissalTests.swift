@@ -81,6 +81,18 @@ final class DuckAiUsageWarningDismissalTests: XCTestCase {
         XCTAssertEqual(resolve(weekly: 90)?.severity, .critical)
     }
 
+    // MARK: - Rounding
+
+    /// The dismissal is recorded against the rung the user saw, not the raw value. Weekly 74.6% reads as
+    /// "75%", so dismissing it must not record 50 and let an identical-looking message straight back.
+    func testDismissalRecordsTheDisplayedRungNotTheRawOne() {
+        dismiss(.weekly, atThreshold: DuckAiUsageWindow.weekly.redisplayThreshold(forDisplayedPercent: 75))
+
+        XCTAssertNil(resolve(weekly: 74.6), "the message the user dismissed stays dismissed")
+        XCTAssertNil(resolve(weekly: 75), "and crossing the rung it was dismissed on does not revive it")
+        XCTAssertNotNil(resolve(weekly: 90), "only the next rung brings it back")
+    }
+
     // MARK: - Expiry and scope
 
     func testWhenTheWindowHasResetThenAnOldDismissalIsIgnored() {

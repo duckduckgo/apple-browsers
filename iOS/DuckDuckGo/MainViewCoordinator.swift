@@ -418,8 +418,7 @@ class MainViewCoordinator {
     @MainActor
     func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
         // Re-focus supersedes dismiss: drop any snapshot, but don't restore NTP under the new focus.
-        omnibarDismissInterruptCleanup = nil
-        stopOmnibarDismissAnimatorAtCurrentPosition()
+        stopInFlightOmnibarDismiss(runningInterruptCleanup: false)
         removeOmnibarDismissContentSnapshot()
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
@@ -518,7 +517,11 @@ class MainViewCoordinator {
                                        additionalAnimations: (() -> Void)? = nil,
                                        interruptCleanup: (() -> Void)? = nil,
                                        completion: (() -> Void)? = nil) {
-        stopOmnibarDismissAnimatorAtCurrentPosition()
+        // Replacement dismiss owns NTP chrome until it finishes. Drop the previous
+        // interruptCleanup first — otherwise stopping the in-flight animator restores
+        // logo/favorites under the new shrinking card (floating-bottom keeps
+        // restoringNTPChrome false for the rest of the animation).
+        stopInFlightOmnibarDismiss(runningInterruptCleanup: false)
         if let contentSnapshot {
             installOmnibarDismissContentSnapshot(contentSnapshot)
         }
@@ -566,6 +569,35 @@ class MainViewCoordinator {
         omnibarDismissInterruptCleanup = nil
         cleanup?()
     }
+
+    @MainActor
+    func stopInFlightOmnibarDismiss(runningInterruptCleanup: Bool) {
+        if !runningInterruptCleanup {
+            omnibarDismissInterruptCleanup = nil
+        }
+        stopOmnibarDismissAnimatorAtCurrentPosition()
+    }
+
+#if DEBUG
+    /// Starts a no-op dismiss animator so tests can supersede it without laying out chrome.
+    @MainActor
+    func startOmnibarDismissForTesting(interruptCleanup: @escaping () -> Void) {
+        stopInFlightOmnibarDismiss(runningInterruptCleanup: false)
+        omnibarDismissInterruptCleanup = interruptCleanup
+        let animator = UIViewPropertyAnimator(duration: 10, curve: .linear) {}
+        animator.addCompletion { [weak self] position in
+            guard let self else { return }
+            self.omnibarDismissAnimator = nil
+            guard position == .end else {
+                self.performOmnibarDismissInterruptCleanup()
+                return
+            }
+            self.omnibarDismissInterruptCleanup = nil
+        }
+        omnibarDismissAnimator = animator
+        animator.startAnimation()
+    }
+#endif
 
     @MainActor
     private func stopOmnibarDismissAnimatorAtCurrentPosition() {

@@ -28,6 +28,11 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         static let collapsedToolbarScale: CGFloat = 0.7
         static let revealMidpointAlpha: CGFloat = 0.85
         static let revealMidpointScale: CGFloat = collapsedToolbarScale + revealMidpointAlpha * (1 - collapsedToolbarScale)
+        /// Appear animation for the live floating toolbar after the destination page is on screen.
+        /// Incoming transitions must not snapshot liquid glass: that capture samples the tab
+        /// switcher (or an unpainted webview) and lands dark.
+        static let floatingToolbarRevealDuration: TimeInterval = 0.22
+        static let floatingToolbarRevealScale: CGFloat = 0.94
     }
 
     static func duration(isFloatingUIEnabled: Bool) -> TimeInterval {
@@ -172,13 +177,19 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         return snapshot
     }
 
+    func concealLiveFloatingToolbar(of mainViewController: MainViewController) {
+        guard mainViewController.isFloatingUIEnabled else { return }
+        mainViewController.beginTabSwitcherToolbarOwnership()
+        mainViewController.viewCoordinator.toolbar.alpha = 0
+    }
+
     func installToolbarSnapshot(for mainViewController: MainViewController,
                                 transitionContext: UIViewControllerContextTransitioning,
                                 afterScreenUpdates: Bool,
                                 seedCollapsed: Bool) -> UIView? {
         guard mainViewController.isFloatingUIEnabled else { return nil }
 
-        mainViewController.beginTabSwitcherToolbarOwnership()
+        concealLiveFloatingToolbar(of: mainViewController)
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         defer { toolbar.alpha = 0 }
 

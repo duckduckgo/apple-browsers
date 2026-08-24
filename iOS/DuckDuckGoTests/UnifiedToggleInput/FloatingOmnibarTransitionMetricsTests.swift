@@ -40,9 +40,47 @@ final class FloatingOmnibarTransitionMetricsTests: XCTestCase {
             accuracy: 0.0001)
     }
 
+    func testWhenReturningFromTabSwitcherThenLiveToolbarRevealIsShorterThanTheMorph() {
+        XCTAssertGreaterThan(TabSwitcherTransition.Constants.floatingToolbarRevealDuration, 0)
+        XCTAssertLessThan(
+            TabSwitcherTransition.Constants.floatingToolbarRevealDuration,
+            TabSwitcherTransition.Constants.floatingDuration)
+        XCTAssertGreaterThan(TabSwitcherTransition.Constants.floatingToolbarRevealScale, 0)
+        XCTAssertLessThan(TabSwitcherTransition.Constants.floatingToolbarRevealScale, 1)
+    }
+
     func testWhenOmnibarDetachesThenToolbarHeightShrinksBelowTheCombinedSlot() {
         let detached = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: true)
         let attached = BrowserToolbarView.totalHeight(withOmnibarHeight: 48, isFloating: true)
         XCTAssertGreaterThan(attached, detached)
+    }
+}
+
+final class OmnibarDismissSupersessionTests: XCTestCase {
+
+    @MainActor
+    func testWhenReplacementDismissStopsInFlightThenPreviousNTPCleanupDoesNotRun() {
+        let coordinator = MainViewCoordinator(parentController: UIViewController())
+        var restoredNTPChrome = false
+        coordinator.startOmnibarDismissForTesting {
+            restoredNTPChrome = true
+        }
+
+        coordinator.stopInFlightOmnibarDismiss(runningInterruptCleanup: false)
+
+        XCTAssertFalse(restoredNTPChrome)
+    }
+
+    @MainActor
+    func testWhenDismissStopsWithoutReplacementThenNTPCleanupRuns() {
+        let coordinator = MainViewCoordinator(parentController: UIViewController())
+        var restoredNTPChrome = false
+        coordinator.startOmnibarDismissForTesting {
+            restoredNTPChrome = true
+        }
+
+        coordinator.stopInFlightOmnibarDismiss(runningInterruptCleanup: true)
+
+        XCTAssertTrue(restoredNTPChrome)
     }
 }

@@ -646,7 +646,6 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
                 freeTrialConversionService.markDuckAIActivated()
                 // Also completes the subscription onboarding checklist's Duck.ai step
                 onboardingActivationRecorder.recordDuckAIActivated()
-                SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: true)
             }
 
             DispatchQueue.main.async {

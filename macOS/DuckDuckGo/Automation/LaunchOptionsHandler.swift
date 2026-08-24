@@ -139,12 +139,18 @@ public final class LaunchOptionsHandler {
 }
 
 struct WebViewProxy: Equatable {
+    enum Kind: Equatable {
+        case socks5
+        case httpConnect
+    }
+
+    let kind: Kind
     let host: String
     let port: UInt16
 
     init?(_ value: String) {
         guard let components = URLComponents(string: value),
-              components.scheme == "socks5",
+              let scheme = components.scheme,
               components.user == nil,
               components.password == nil,
               components.path.isEmpty,
@@ -155,6 +161,14 @@ struct WebViewProxy: Equatable {
               let portValue = components.port,
               let port = UInt16(exactly: portValue),
               port > 0 else {
+            return nil
+        }
+        switch scheme {
+        case "socks5":
+            kind = .socks5
+        case "http":
+            kind = .httpConnect
+        default:
             return nil
         }
         self.host = host

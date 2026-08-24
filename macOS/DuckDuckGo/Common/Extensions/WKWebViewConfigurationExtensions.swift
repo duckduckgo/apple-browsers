@@ -94,9 +94,14 @@ extension WKWebViewConfiguration {
             host: NWEndpoint.Host(proxy.host),
             port: port
         )
-        websiteDataStore.proxyConfigurations = [
-            ProxyConfiguration(socksv5Proxy: endpoint)
-        ]
+        let proxyConfiguration: ProxyConfiguration
+        switch proxy.kind {
+        case .socks5:
+            proxyConfiguration = ProxyConfiguration(socksv5Proxy: endpoint)
+        case .httpConnect:
+            proxyConfiguration = ProxyConfiguration(httpCONNECTProxy: endpoint)
+        }
+        websiteDataStore.proxyConfigurations = [proxyConfiguration]
     }
 }
 

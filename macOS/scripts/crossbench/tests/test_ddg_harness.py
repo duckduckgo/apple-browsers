@@ -56,9 +56,13 @@ class DDGHarnessTests(unittest.TestCase):
                 },
                 output,
             )
-        self.wpr_http, self.wpr_https, self.tsproxy, self.automation = (
-            free_ports(4)
-        )
+        (
+            self.wpr_http,
+            self.wpr_https,
+            self.tsproxy,
+            self.http_proxy,
+            self.automation,
+        ) = free_ports(5)
         self.app_launches = self.root / "app-launches.jsonl"
         self.tsproxy_args = self.root / "tsproxy-args.json"
         self.tsproxy_launches = self.root / "tsproxy-launches.jsonl"
@@ -79,6 +83,8 @@ class DDGHarnessTests(unittest.TestCase):
             "WPR_KEY_FILE": str(key),
             "TSPROXY_PY": str(self.bin / "fake-tsproxy.py"),
             "TSPROXY_PORT": str(self.tsproxy),
+            "HTTPPROXY_PY": str(ROOT / "httpproxy.py"),
+            "HTTPPROXY_PORT": str(self.http_proxy),
             "DDG_APP": str(self.app),
             "DDG_AUTOMATION_PY": str(self.bin / "fake-automation.py"),
             "DDG_LAUNCHER": str(self.bin / "fake-launcher"),
@@ -420,7 +426,7 @@ class DDGHarnessTests(unittest.TestCase):
             self.assertTrue(launch["token"])
             self.assertNotIn(launch["token"], launch["args"])
             self.assertIn(
-                "socks5://127.0.0.1:{}".format(self.tsproxy),
+                "http://127.0.0.1:{}".format(self.http_proxy),
                 launch["args"],
             )
             self.assertIn("-isOnboardingCompleted", launch["args"])
@@ -475,9 +481,10 @@ class DDGHarnessTests(unittest.TestCase):
         self.assertIn('stop_exact_pid "$DDG_PID"', harness)
         self.assertIn('stop_exact_pid "$WPR_PID"', harness)
         self.assertIn('stop_exact_pid "$TSPROXY_PID"', harness)
+        self.assertIn('stop_exact_pid "$HTTPPROXY_PID"', harness)
         self.assertNotIn("finalize_shared_proxy", harness)
 
-    def test_tsproxy_uses_wpr_preset_and_no_http_proxy(self):
+    def test_proxy_chain_uses_http_connect_and_wpr_shaping_preset(self):
         result = self.run_harness()
         self.assertEqual(result.returncode, 0, result.stderr)
         args = json.loads(self.tsproxy_args.read_text())
@@ -492,7 +499,7 @@ class DDGHarnessTests(unittest.TestCase):
             args[args.index("--mapports") + 1],
             "443:{},*:{}".format(self.wpr_https, self.wpr_http),
         )
-        self.assertNotIn("httpproxy", result.stdout + result.stderr)
+        self.assertIn("httpproxy:{}".format(self.http_proxy), result.stdout)
         self.assertNotIn("WebKit2HTTPProxy", result.stdout + result.stderr)
 
     def test_site_automation_failure_continues_to_later_site(self):

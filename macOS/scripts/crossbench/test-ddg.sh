@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
 # Measure DuckDuckGo Review/debug navigation-to-LCP against validated WPR
-# archives. Every repetition launches a fresh app and SOCKS5 tsproxy:
+# archives. Every repetition launches a fresh app and proxy chain:
 #
-#   DuckDuckGo WKWebView -> tsproxy -> WPR
+#   DuckDuckGo WKWebView -> HTTP CONNECT proxy -> tsproxy -> WPR
 #
-# There is no live-network fallback, forward HTTP proxy, Safari preference
-# mutation, or keychain mutation.
+# There is no live-network fallback, Safari preference mutation, or keychain
+# mutation.
 #
 # Usage:
 #   ./test-ddg.sh [--sites a.com,b.com] [--reps N] [--out FILE]
@@ -41,6 +41,8 @@ WPR_KEY_FILE="${WPR_KEY_FILE:-$WPR_SRC/ecdsa_key.pem}"
 
 TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
 TSPROXY_PORT="${TSPROXY_PORT:-9997}"
+HTTPPROXY_PY="${HTTPPROXY_PY:-$SCRIPT_DIR/httpproxy.py}"
+HTTPPROXY_PORT="${HTTPPROXY_PORT:-9998}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 DDG_AUTOMATION_PY="${DDG_AUTOMATION_PY:-$SCRIPT_DIR/ddg-automation.py}"
 DDG_LAUNCHER="${DDG_LAUNCHER:-$SCRIPT_DIR/launch-ddg-app.sh}"
@@ -143,10 +145,10 @@ if [ "${#SITES[@]}" -gt 22 ]; then
   exit 2
 fi
 
-for port_name in WPR_HTTP_PORT WPR_HTTPS_PORT TSPROXY_PORT AUTOMATION_PORT; do
+for port_name in WPR_HTTP_PORT WPR_HTTPS_PORT TSPROXY_PORT HTTPPROXY_PORT AUTOMATION_PORT; do
   bounded_integer "$port_name" 1 65535
 done
-PORT_VALUES=("$WPR_HTTP_PORT" "$WPR_HTTPS_PORT" "$TSPROXY_PORT" "$AUTOMATION_PORT")
+PORT_VALUES=("$WPR_HTTP_PORT" "$WPR_HTTPS_PORT" "$TSPROXY_PORT" "$HTTPPROXY_PORT" "$AUTOMATION_PORT")
 for ((left = 0; left < ${#PORT_VALUES[@]}; left++)); do
   for ((right = left + 1; right < ${#PORT_VALUES[@]}; right++)); do
     if [ "${PORT_VALUES[$left]}" = "${PORT_VALUES[$right]}" ]; then
@@ -169,9 +171,11 @@ BROWSER_NAME=ddg
 
 WPR_PID=""
 TSPROXY_PID=""
+HTTPPROXY_PID=""
 DDG_PID=""
 WPR_LOG=""
 TSPROXY_LOG=""
+HTTPPROXY_LOG=""
 DDG_LOG=""
 # Replay checks consume the WPR and tsproxy logs, so only the app diagnostic
 # log may be trimmed while its producer is running.
@@ -296,8 +300,21 @@ finish_tsproxy_log() {
   TSPROXY_LOG=""
 }
 
+finish_http_proxy_log() {
+  local site="$1" rep="$2" preserve="$3"
+  if [ "$preserve" = 1 ] &&
+      [ "$SITE_DIAGNOSTICS" -lt "$MAX_SITE_DIAGNOSTICS" ]; then
+    preserve_diagnostic "$HTTPPROXY_LOG" "httpproxy-$site-rep-$rep.log"
+    SITE_DIAGNOSTICS=$((SITE_DIAGNOSTICS + 1))
+  fi
+  [ -z "$HTTPPROXY_PID" ] || return 0
+  [ -z "$HTTPPROXY_LOG" ] || rm -f "$HTTPPROXY_LOG"
+  HTTPPROXY_LOG=""
+}
+
 finish_repetition_logs() {
   finish_app_log "$@"
+  finish_http_proxy_log "$@"
   finish_tsproxy_log "$@"
 }
 
@@ -326,8 +343,8 @@ cleanup() {
   if ! stop_app; then
     exit_code=1
   fi
-  if stop_exact_pid "$WPR_PID"; then
-    WPR_PID=""
+  if stop_exact_pid "$HTTPPROXY_PID"; then
+    HTTPPROXY_PID=""
   else
     exit_code=1
   fi
@@ -336,14 +353,21 @@ cleanup() {
   else
     exit_code=1
   fi
+  if stop_exact_pid "$WPR_PID"; then
+    WPR_PID=""
+  else
+    exit_code=1
+  fi
   if [ "$exit_code" -ne 0 ]; then
     preserve_diagnostic "$DDG_LOG" ddg.log
     preserve_diagnostic "$WPR_LOG" wpr.log
     preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+    preserve_diagnostic "$HTTPPROXY_LOG" httpproxy.log
   fi
   [ -n "$DDG_PID" ] || [ -z "$DDG_LOG" ] || rm -f "$DDG_LOG"
   [ -n "$WPR_PID" ] || [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
   [ -n "$TSPROXY_PID" ] || [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
+  [ -n "$HTTPPROXY_PID" ] || [ -z "$HTTPPROXY_LOG" ] || rm -f "$HTTPPROXY_LOG"
   exit "$exit_code"
 }
 trap cleanup EXIT
@@ -463,6 +487,10 @@ check_prerequisites() {
   }
   [ -f "$TSPROXY_PY" ] || {
     echo "ERROR: pinned tsproxy missing at $TSPROXY_PY." >&2
+    exit 1
+  }
+  [ -f "$HTTPPROXY_PY" ] || {
+    echo "ERROR: HTTP CONNECT proxy missing at $HTTPPROXY_PY." >&2
     exit 1
   }
   [ -f "$DDG_AUTOMATION_PY" ] && [ -x "$DDG_LAUNCHER" ] &&
@@ -636,6 +664,48 @@ start_tsproxy() {
   return 0
 }
 
+start_http_proxy() {
+  assert_port_free "$HTTPPROXY_PORT" httpproxy || return 1
+  HTTPPROXY_LOG="$(mktemp)"
+  "$PYTHON_BIN" "$HTTPPROXY_PY" \
+    "$HTTPPROXY_PORT" "$TSPROXY_PORT" >>"$HTTPPROXY_LOG" 2>&1 &
+  HTTPPROXY_PID=$!
+  if ! process_is_alive "$HTTPPROXY_PID" ||
+      ! wait_for_port "$HTTPPROXY_PORT" "$SERVICE_START_TIMEOUT_SECONDS" ||
+      ! process_is_alive "$HTTPPROXY_PID"; then
+    echo "ERROR: HTTP CONNECT proxy failed to start." >&2
+    if stop_exact_pid "$HTTPPROXY_PID"; then
+      HTTPPROXY_PID=""
+    else
+      set_shared_failure cleanup unsafe_http_proxy_cleanup \
+        "HTTP CONNECT proxy failed to stop after startup failure"
+    fi
+    return 1
+  fi
+  return 0
+}
+
+stop_http_proxy() {
+  if ! stop_exact_pid "$HTTPPROXY_PID"; then
+    return 1
+  fi
+  HTTPPROXY_PID=""
+  return 0
+}
+
+stop_repetition_http_proxy() {
+  local rep="$1" status=0
+  if ! process_is_alive "$HTTPPROXY_PID"; then
+    set_runtime_failure 60 shaping httpproxy_exited "repetition=$rep"
+    status=1
+  fi
+  if ! stop_http_proxy; then
+    set_shared_failure cleanup unsafe_http_proxy_cleanup "repetition=$rep"
+    status=1
+  fi
+  return "$status"
+}
+
 stop_tsproxy() {
   if ! stop_exact_pid "$TSPROXY_PID"; then
     return 1
@@ -683,7 +753,7 @@ start_app() {
       -automationWindowWidth "$BROWSER_WINDOW_WIDTH" \
       -automationWindowHeight "$BROWSER_WINDOW_HEIGHT" \
       -isOnboardingCompleted true \
-      -webViewProxy "socks5://127.0.0.1:$TSPROXY_PORT" \
+      -webViewProxy "http://127.0.0.1:$HTTPPROXY_PORT" \
       -acceptInsecureCerts true \
       -SUEnableAutomaticChecks false
   )"; then
@@ -809,6 +879,14 @@ measure_site() {
       [ "$SHARED_SERVICE_FAILURE" -eq 0 ] || break
       continue
     fi
+    if ! start_http_proxy; then
+      site_failed=1
+      set_runtime_failure 40 shaping httpproxy_start_failed "repetition=$rep"
+      stop_repetition_tsproxy "$rep" || true
+      finish_repetition_logs "$site" "$rep" 1
+      [ "$SHARED_SERVICE_FAILURE" -eq 0 ] || break
+      continue
+    fi
     if ! start_app; then
       site_failed=1
       set_runtime_failure 20 automation app_start_failed "repetition=$rep"
@@ -816,6 +894,7 @@ measure_site() {
       if ! shutdown_app; then
         cleanup_failed=1
       fi
+      stop_repetition_http_proxy "$rep" || true
       stop_repetition_tsproxy "$rep" || true
       if ! process_is_alive "$WPR_PID"; then
         set_runtime_failure 80 replay wpr_exited "repetition=$rep; after app start failure"
@@ -849,9 +928,14 @@ measure_site() {
       cleanup_failed=1
     fi
 
-    # Stop the per-repetition shaper before accepting its route evidence.
-    # This also guarantees that the next repetition starts with empty queues
-    # and a fresh DNS cache.
+    # Stop the per-repetition proxy chain before accepting its route evidence.
+    # This also guarantees that the next repetition starts with empty queues,
+    # fresh tunnels, and a fresh DNS cache.
+    http_proxy_failed=0
+    if ! stop_repetition_http_proxy "$rep"; then
+      http_proxy_failed=1
+      site_failed=1
+    fi
     tsproxy_failed=0
     if ! stop_repetition_tsproxy "$rep"; then
       tsproxy_failed=1
@@ -871,7 +955,7 @@ measure_site() {
       finish_repetition_logs "$site" "$rep" 1
       break
     fi
-    if [ "$tsproxy_failed" -ne 0 ]; then
+    if [ "$http_proxy_failed" -ne 0 ] || [ "$tsproxy_failed" -ne 0 ]; then
       rm -f "$status_file"
       finish_repetition_logs "$site" "$rep" 1
       continue
@@ -1168,7 +1252,7 @@ run_ddg() {
   local site
   log "DuckDuckGo LCP (mandatory WPR, ${WPR_US_BROADBAND_RTT_MS}ms RTT, ${WPR_US_BROADBAND_IN_KBPS}/${WPR_US_BROADBAND_OUT_KBPS} Kbps, window ${WPR_US_BROADBAND_WINDOW})"
   echo "ddg:     $BROWSER_VERSION"
-  echo "route:   DDG WKWebView -> tsproxy:$TSPROXY_PORT -> per-site WPR"
+  echo "route:   DDG WKWebView -> httpproxy:$HTTPPROXY_PORT -> tsproxy:$TSPROXY_PORT -> per-site WPR"
   echo "results: $RESULTS_FILE"
   record_session_diagnostics "run-start"
 

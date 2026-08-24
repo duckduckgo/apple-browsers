@@ -78,10 +78,16 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         XCTAssertEqual(ipv4Proxy?.port, 1)
 
         let ipv6Proxy = WebViewProxy("socks5://[::1]:65535")
+        XCTAssertEqual(ipv6Proxy?.kind, .socks5)
         XCTAssertEqual(ipv6Proxy?.host, "::1")
         XCTAssertEqual(ipv6Proxy?.port, 65_535)
 
-        XCTAssertNil(WebViewProxy("http://127.0.0.1:9997"))
+        let httpProxy = WebViewProxy("http://127.0.0.1:9998")
+        XCTAssertEqual(httpProxy?.kind, .httpConnect)
+        XCTAssertEqual(httpProxy?.host, "127.0.0.1")
+        XCTAssertEqual(httpProxy?.port, 9_998)
+
+        XCTAssertNil(WebViewProxy("https://127.0.0.1:9997"))
         XCTAssertNil(WebViewProxy("socks5://localhost:9997"))
         XCTAssertNil(WebViewProxy("socks5://192.168.1.10:9997"))
         XCTAssertNil(WebViewProxy("socks5://127.0.0.1"))

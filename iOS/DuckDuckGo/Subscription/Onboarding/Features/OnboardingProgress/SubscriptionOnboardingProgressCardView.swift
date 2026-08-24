@@ -146,21 +146,24 @@ private struct SubscriptionOnboardingProgressBar: View {
             .accessibilityElement()
             .accessibilityLabel(UserText.subscriptionOnboardingProgressAccessibilityLabel)
             .accessibilityValue(String(format: UserText.subscriptionOnboardingProgressAccessibilityValue, percentage))
-            .onAppear {
-                if reduceMotion {
-                    animatedPercentage = percentage
-                } else {
-                    withAnimation(.easeOut(duration: SubscriptionOnboardingProgressCardView.progressBarGrowDuration)) {
-                        animatedPercentage = percentage
-                    }
-                }
-            }
+            .onAppear(perform: updateAnimatedPercentage)
+            .onChange(of: percentage) { _ in updateAnimatedPercentage() }
     }
 }
 
 private extension SubscriptionOnboardingProgressBar {
     var fraction: Double {
         Double(animatedPercentage) / 100
+    }
+
+    func updateAnimatedPercentage() {
+        if reduceMotion {
+            animatedPercentage = percentage
+        } else {
+            withAnimation(.easeOut(duration: SubscriptionOnboardingProgressCardView.progressBarGrowDuration)) {
+                animatedPercentage = percentage
+            }
+        }
     }
 }
 

@@ -36,6 +36,8 @@ struct FavoriteItemView: View {
                         contextMenuItems()
                     } preview: {
                         FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+                            .frame(width: NewTabPageGrid.Item.edgeSize,
+                                   height: NewTabPageGrid.Item.edgeSize)
                     }
                 }
 

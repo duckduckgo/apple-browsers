@@ -348,6 +348,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1214804748957575?focus=true
     case aiChatOmnibarAttachMoreTabs
 
+    /// Enables attaching content from multiple open tabs to Duck.ai outside the sidebar (the
+    /// full-page duck.ai tab). Independent of `aiChatSidebarAttachMoreTabs`, which stays the
+    /// sidebar-only gate, so each surface can be ramped or killed separately.
+    case aiChatAttachMoreTabs
+
     /// Kill switch for the tab-attachment limit (native omnibar and NTP). Default on.
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1216831900874433?focus=true
     case aiChatTabAttachmentLimit
@@ -742,6 +747,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.sidebarAttachMoreTabs), category: .duckAI)
         case .aiChatOmnibarAttachMoreTabs:
             Config(source: .remoteReleasable(AIChatSubfeature.omnibarAttachMoreTabs), category: .duckAI)
+        case .aiChatAttachMoreTabs:
+            Config(source: .remoteReleasable(AIChatSubfeature.attachMoreTabs), category: .duckAI)
         case .aiChatTabAttachmentLimit:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabAttachmentLimit), category: .duckAI)
         case .aiChatSidebarResizable:

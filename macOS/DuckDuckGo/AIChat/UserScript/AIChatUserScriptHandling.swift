@@ -273,7 +273,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             conversationSource = conversationSourceHandler.consumeData()
         }
         let isFireWindow = isFireWindowProvider?() ?? false
-        return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+        let isSidebar = await message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
+        return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow, isSidebar: isSidebar)
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {

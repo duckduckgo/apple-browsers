@@ -1097,6 +1097,10 @@ extension MainViewController {
         }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
+        let finishDismiss: () -> Void = { [weak self] in
+            self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
+        }
+
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             contentSnapshot: stationaryContentSnapshot,
             additionalAnimations: { [weak self, weak coordinator] in
@@ -1119,12 +1123,14 @@ extension MainViewController {
                 // captured, then deactivate before an interrupted animation can strand active state.
                 coordinator.completeOmnibarDeactivation(resetView: false)
             },
-            interruptCleanup: { [weak self] in
-                self?.restoreChromeAfterInterruptedOmnibarDismiss()
+            interruptCleanup: { [weak self, weak coordinator] in
+                guard let self, let coordinator, !coordinator.isOmnibarSession else { return }
+                // The state already reached hidden, so finish the visual handoff that the
+                // interrupted animator did not complete.
+                self.viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
+                finishDismiss()
             },
-            completion: { [weak self] in
-                self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
-            }
+            completion: finishDismiss
         )
 
         if let omnibarPlaceholderColor {
@@ -1151,12 +1157,6 @@ extension MainViewController {
         return snapshot
     }
 
-    private func restoreChromeAfterInterruptedOmnibarDismiss() {
-        viewCoordinator.unifiedInputContentContainer.alpha = 1
-        newTabPageViewController?.setLogoHidden(false)
-        newTabPageViewController?.setFavoritesHidden(false)
-    }
-
     private func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         applyUnifiedInputChromeBackground(.standardChrome)
@@ -1170,7 +1170,6 @@ extension MainViewController {
         coordinator.contentViewController.setContentInset(top: 0, bottom: 0)
         hideSuggestionTray()
         coordinator.viewController.setTextHorizontalShift(0)
-        coordinator.completeOmnibarDeactivation(resetView: false)
         coordinator.viewController.finalizeOmnibarEditingDismiss()
         coordinator.clearText()
         reconcileToolbarVisibilityForCurrentTab()

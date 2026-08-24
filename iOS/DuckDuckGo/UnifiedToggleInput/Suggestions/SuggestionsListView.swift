@@ -29,8 +29,8 @@ struct SuggestionsListView: View {
     let isAddressBarAtBottom: Bool
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
-    var favoritesViewModel: FavoritesViewModel? = nil
-    var messagesModel: NewTabPageMessagesModel? = nil
+    var favoritesViewModel: FavoritesViewModel?
+    var messagesModel: NewTabPageMessagesModel?
     var showsRestingContent = false
     var showsFavorites = false
     var showsSuggestionRows = true

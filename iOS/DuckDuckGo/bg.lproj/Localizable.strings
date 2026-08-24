@@ -4244,7 +4244,7 @@
 "settings.afterInactivity.option.openLastUsedTab" = "Отваряне на последно използвания раздел";
 
 /* Option: open New Tab when returning after inactivity */
-"settings.afterInactivity.option.openNewTab" = "Отвари нов раздел";
+"settings.afterInactivity.option.openNewTab" = "Отвори нов раздел";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Последно използван раздел";

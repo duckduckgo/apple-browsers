@@ -108,7 +108,7 @@ private extension SubscriptionOnboardingVPNActivationView {
                 onInfoLinkTap: { isShowingInfoSheet = true })
         case .on:
             return SubscriptionOnboardingHeaderView(
-                visual: .lottie(name: "vpn-v4"),
+                visual: .lottie(name: "vpn-animation"),
                 title: UserText.subscriptionOnboardingVPNActivationOnTitle,
                 explanation: UserText.subscriptionOnboardingVPNActivationOnExplanation,
                 onInfoLinkTap: { isShowingInfoSheet = true })

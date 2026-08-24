@@ -48,6 +48,7 @@ struct SubscriptionOnboardingProgressView: View {
     @State private var completedItems: Set<SubscriptionOnboardingChecklistItem>
 
     @State private var didTriggerConfetti = false
+    @State private var didScheduleConfetti = false
 
     @MainActor
     init(variant: Variant = .summary,
@@ -103,8 +104,14 @@ struct SubscriptionOnboardingProgressView: View {
     private func refresh() {
         completedItems = progress.completedItems
 
-        guard shouldCelebrate, !didTriggerConfetti else { return }
-        didTriggerConfetti = true
+        guard shouldCelebrate, !didScheduleConfetti else { return }
+        didScheduleConfetti = true
+
+        Task {
+            try? await Task.sleep(nanoseconds: UInt64(SubscriptionOnboardingProgressCardView.progressBarGrowDuration * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            didTriggerConfetti = true
+        }
     }
 }
 

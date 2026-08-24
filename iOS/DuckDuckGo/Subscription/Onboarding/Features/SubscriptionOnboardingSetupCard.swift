@@ -77,9 +77,12 @@ struct SubscriptionOnboardingSetupCard: View {
                 text: CardItemText(UserText.subscriptionOnboardingSetupCardBody, font: .bodyRegular),
                 titleTextSpacing: Metrics.titleTextSpacing),
             style: .borderless) {
-                Button(UserText.subscriptionOnboardingSetupCardButton, action: onContinue)
-                    .buttonStyle(PrimaryButtonStyle(compact: true))
-                    .padding(.top, Metrics.buttonTopSpacing)
+                // The card itself stays up for the rest of this session at 100%.
+                if percentage < 100 {
+                    Button(UserText.subscriptionOnboardingSetupCardButton, action: onContinue)
+                        .buttonStyle(PrimaryButtonStyle(compact: true))
+                        .padding(.top, Metrics.buttonTopSpacing)
+                }
             }
     }
 
@@ -102,19 +105,24 @@ private struct SubscriptionOnboardingSetupCardPreview: View {
         ScrollView {
             // PIR unavailable, so the checklist is four items and these read 3/4 and 1/4.
             VStack(spacing: 24) {
-                card(completed: [.vpn, .vpnWidget, .vpnTips, .idtr])
+                card(completed: [.vpn, .vpnWidget, .idtr])
                 card(completed: [.vpn])
+                card(completed: [.vpn, .vpnWidget, .idtr, .duckAI], completedThisSession: true)
             }
             .padding()
         }
         .background(Color(designSystemColor: .surfaceTertiary).ignoresSafeArea())
     }
 
-    private func card(completed: Set<SubscriptionOnboardingChecklistItem>) -> some View {
-        SubscriptionOnboardingSetupCard(
+    private func card(completed: Set<SubscriptionOnboardingChecklistItem>, completedThisSession: Bool = false) -> some View {
+        let session = SubscriptionOnboardingSessionState()
+        if completedThisSession {
+            session.recordCompletedDuringThisSession()
+        }
+        return SubscriptionOnboardingSetupCard(
             visual: .image(Image(.subscription56)),
             progress: SubscriptionOnboardingProgress(completedItems: completed, isPIRAvailable: false),
-            session: SubscriptionOnboardingSessionState(),
+            session: session,
             onContinue: {})
     }
 }

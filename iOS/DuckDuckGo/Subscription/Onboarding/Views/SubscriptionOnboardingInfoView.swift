@@ -134,7 +134,7 @@ struct SubscriptionOnboardingInfoContent {
     var disclaimer: String?
 
     /// Info screens sit explanation further below title than default header spacing.
-    static let headerExplanationTopSpacing: CGFloat = 24
+    static let headerExplanationTopSpacing: CGFloat = 16
 }
 
 extension SubscriptionOnboardingInfoContent {

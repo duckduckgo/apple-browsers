@@ -19,17 +19,16 @@
 
 import XCTest
 import Persistence
-import PersistenceTestingUtils
 @testable import DuckDuckGo
 
 final class SubscriptionOnboardingProgressTests: XCTestCase {
 
-    private var keyValueStore: InMemoryThrowingKeyValueStore!
+    private var keyValueStore: InMemoryThrowingStore!
     private var sut: SubscriptionOnboardingProgressPersistor!
 
     override func setUp() {
         super.setUp()
-        keyValueStore = InMemoryThrowingKeyValueStore()
+        keyValueStore = InMemoryThrowingStore()
         sut = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
     }
 
@@ -306,4 +305,14 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
 
         XCTAssertNil(sut.cardFirstShownDate)
     }
+}
+
+/// A local stub rather than `PersistenceTestingUtils`
+private final class InMemoryThrowingStore: ThrowingKeyValueStoring {
+
+    private var values: [String: Any] = [:]
+
+    func object(forKey key: String) throws -> Any? { values[key] }
+    func set(_ value: Any?, forKey key: String) throws { values[key] = value }
+    func removeObject(forKey key: String) throws { values.removeValue(forKey: key) }
 }

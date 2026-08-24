@@ -49,7 +49,7 @@ struct SubscriptionOnboardingVPNTipsView: View {
 private struct VPNTipsCarousel: View {
     private enum Metrics {
         static let cardWidth: CGFloat = 217
-        static let horizontalPadding: CGFloat = 28
+        static let horizontalPadding: CGFloat = 32
         static let verticalPadding: CGFloat = 32
         static let cardSpacing: CGFloat = 16
         static let iconSpacing: CGFloat = 4

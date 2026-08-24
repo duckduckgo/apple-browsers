@@ -33,8 +33,9 @@ private enum Metrics {
     static let navigationButtonSize: CGFloat = 44
     static let navigationGlyphSize: CGFloat = 24
     static let contentVerticalPadding = SubscriptionOnboardingPageInsets.vertical
-    static let sectionSpacing: CGFloat = 24
+    static let sectionSpacing: CGFloat = 16
     static let footerSpacing: CGFloat = 8
+    static let footerBlurFadeHeight: CGFloat = 40
 }
 
 /// The navigation bar's leading button: either a back button or a close button. Both render as a
@@ -106,6 +107,7 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     private let footer: SubscriptionOnboardingFooter?
     private let scrollsContent: Bool
     private let declaresNavigationChrome: Bool
+    private let footerBlur: Bool
     private let content: Content
 
     init(title: String? = nil,
@@ -114,6 +116,7 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
          footer: SubscriptionOnboardingFooter? = nil,
          scrollsContent: Bool = true,
          declaresNavigationChrome: Bool = true,
+         footerBlur: Bool = false,
          @ViewBuilder content: () -> Content) {
         self.title = title
         self.navigationButton = navigationButton
@@ -121,6 +124,7 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
         self.footer = footer
         self.scrollsContent = scrollsContent
         self.declaresNavigationChrome = declaresNavigationChrome
+        self.footerBlur = footerBlur
         self.content = content()
     }
 
@@ -129,15 +133,26 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     }
 
     var body: some View {
-        let page = pageContent
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(pageBackgroundColor.ignoresSafeArea())
-            .safeAreaInset(edge: .bottom) { footerView }
+        let page = pageWithFooter
 
         if declaresNavigationChrome {
             navigationChrome(around: page)
         } else {
             page
+        }
+    }
+
+    /// `footerBlur` overlays the footer on top of scrolling content instead of reserving space below it
+    @ViewBuilder
+    private var pageWithFooter: some View {
+        let page = pageContent
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(pageBackgroundColor.ignoresSafeArea())
+
+        if footerBlur {
+            page.overlay(alignment: .bottom) { blurredFooterView }
+        } else {
+            page.safeAreaInset(edge: .bottom) { footerView }
         }
     }
 
@@ -173,6 +188,7 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
         }
         .padding(.vertical, Metrics.contentVerticalPadding)
         .padding(.horizontal, Metrics.horizontalPadding)
+        .padding(.bottom, footerBlur ? Metrics.footerBlurFadeHeight : 0)
     }
 }
 
@@ -232,6 +248,23 @@ private extension SubscriptionOnboardingBaseView {
     func footerContainer<Buttons: View>(@ViewBuilder _ buttons: () -> Buttons) -> some View {
         buttons()
             .padding(.horizontal, Metrics.horizontalPadding)
+    }
+
+    /// The `footerBlur` variant of `footerView`
+    @ViewBuilder
+    var blurredFooterView: some View {
+        if footer != nil {
+            VStack(spacing: 0) {
+                LinearGradient(colors: [pageBackgroundColor.opacity(0), pageBackgroundColor],
+                              startPoint: .top,
+                              endPoint: .bottom)
+                    .frame(height: Metrics.footerBlurFadeHeight)
+                    .allowsHitTesting(false)
+                footerView
+                    .padding(.bottom, Metrics.contentVerticalPadding)
+                    .background(pageBackgroundColor, ignoresSafeAreaEdges: .bottom)
+            }
+        }
     }
 
     /// A footer button's underlying control: a `Button` for a tap action, or a `NavigationLink` for a push
@@ -395,6 +428,35 @@ private func onboardingPreviewLongBody() -> some View {
         .subscriptionOnboardingNavigationContainer()
     }
     .dynamicTypeSize(.accessibility5)
+}
+
+#Preview("Blurred footer background") {
+    RebrandedPreview {
+        SubscriptionOnboardingBaseView(
+            title: "Step 2 of 4",
+            navigationButton: .back({}),
+            header: onboardingPreviewHeader(),
+            footer: .single(.init("Activate", action: {})),
+            footerBlur: true) {
+            onboardingPreviewLongBody()
+        }
+        .subscriptionOnboardingNavigationContainer()
+    }
+}
+
+#Preview("Blurred footer background - Dark") {
+    RebrandedPreview {
+        SubscriptionOnboardingBaseView(
+            title: "Step 2 of 4",
+            navigationButton: .back({}),
+            header: onboardingPreviewHeader(),
+            footer: .single(.init("Activate", action: {})),
+            footerBlur: true) {
+            onboardingPreviewLongBody()
+        }
+        .subscriptionOnboardingNavigationContainer()
+    }
+    .preferredColorScheme(.dark)
 }
 
 #Preview("Back + step, no footer") {

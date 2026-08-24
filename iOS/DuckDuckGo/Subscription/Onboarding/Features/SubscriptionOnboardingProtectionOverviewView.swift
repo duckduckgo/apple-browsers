@@ -55,7 +55,8 @@ struct SubscriptionOnboardingProtectionOverviewView: View {
             title: title,
             navigationButton: navigationButton,
             header: SubscriptionOnboardingHeaderView(content: content),
-            footer: .single(activateButton)) {
+            footer: .single(activateButton),
+            footerBlur: true) {
             SubscriptionOnboardingInfoView(content: content)
         }
     }

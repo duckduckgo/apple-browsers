@@ -25,6 +25,9 @@ import UIComponents
 /// The completion progress card. The percentage and items come from the caller, so the same card renders
 /// both the intermediate and complete states.
 struct SubscriptionOnboardingProgressCardView: View {
+    /// How long `SubscriptionOnboardingProgressBar` takes to grow from 0 to its target percentage on appear.
+    static let progressBarGrowDuration: Double = 0.8
+
     private enum Metrics {
         static let headerPadding: CGFloat = 24
         static let percentageFontSize: CGFloat = 34
@@ -125,6 +128,9 @@ private struct SubscriptionOnboardingProgressBar: View {
     /// The completion percentage, bounded to `0...100`
     let percentage: Int
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var animatedPercentage: Int = 0
+
     var body: some View {
         Capsule()
             .fill(Color(designSystemColor: .controlsFillPrimary))
@@ -139,12 +145,21 @@ private struct SubscriptionOnboardingProgressBar: View {
             .accessibilityElement()
             .accessibilityLabel(UserText.subscriptionOnboardingProgressAccessibilityLabel)
             .accessibilityValue(String(format: UserText.subscriptionOnboardingProgressAccessibilityValue, percentage))
+            .onAppear {
+                if reduceMotion {
+                    animatedPercentage = percentage
+                } else {
+                    withAnimation(.easeOut(duration: SubscriptionOnboardingProgressCardView.progressBarGrowDuration)) {
+                        animatedPercentage = percentage
+                    }
+                }
+            }
     }
 }
 
 private extension SubscriptionOnboardingProgressBar {
     var fraction: Double {
-        Double(percentage) / 100
+        Double(animatedPercentage) / 100
     }
 }
 

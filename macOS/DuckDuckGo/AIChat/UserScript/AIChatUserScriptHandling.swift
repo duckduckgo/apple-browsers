@@ -976,8 +976,9 @@ extension AIChatUserScriptHandler {
 
 extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
-    /// Maps each frontend-reported funnel metric to its origin and click flag. Picker/sidebar/browser-upsell
-    /// surfaces are intentionally absent — instrumented natively elsewhere, not via `reportMetric`.
+    /// Maps each frontend-reported funnel metric to its origin and click flag. Native-only
+    /// surfaces (address bar / NTP / prompt bar picker impressions) are intentionally absent —
+    /// instrumented natively elsewhere, not via `reportMetric`.
     private static let funnelMetrics: [AIChatMetricName: (origin: SubscriptionFunnelOrigin, isClick: Bool)] = [
         .userDidViewAiSidebarUpgradeButton: (.duckAIAiSidebar, false),
         .userDidClickAiSidebarUpgradeButton: (.duckAIAiSidebar, true),
@@ -1001,6 +1002,12 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         .userDidClickVoiceChatLimitModalSubscribeButton: (.duckAIVoiceChatLimit, true),
         .userDidViewVoiceChatDurationLimitModal: (.duckAIVoiceChatDurationLimit, false),
         .userDidClickVoiceChatDurationLimitModalSubscribeButton: (.duckAIVoiceChatDurationLimit, true),
+        .userDidViewModelPickerUpgrade: (.duckAIModelPicker, false),
+        .userDidClickModelPickerUpgrade: (.duckAIModelPicker, true),
+        .userDidViewReasoningDropdownUpgrade: (.duckAIReasoningDropdown, false),
+        .userDidClickReasoningDropdownUpgrade: (.duckAIReasoningDropdown, true),
+        .userDidViewSwitchModelUpgrade: (.duckAISwitchModel, false),
+        .userDidClickSwitchModelUpgrade: (.duckAISwitchModel, true),
     ]
 
     /// The modal metrics, each building its pixel from the origin the modal was opened from.

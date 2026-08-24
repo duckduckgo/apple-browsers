@@ -1093,6 +1093,7 @@ extension MainViewController {
             coordinator.contentViewController.beginDismissFade()
         }
 
+        guard coordinator.completeOmnibarDeactivation(resetView: false) else { return }
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             contentSnapshot: stationaryContentSnapshot,

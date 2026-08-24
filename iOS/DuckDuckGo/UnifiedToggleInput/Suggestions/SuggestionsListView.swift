@@ -68,7 +68,6 @@ struct SuggestionsListView: View {
             List {
                 if let escapeHatch {
                     EscapeHatchView(model: escapeHatch)
-                    .padding(.horizontal, searchContentHorizontalPadding)
                     .frame(height: showsRestingContent ? nil : 0)
                     .clipped()
                     .opacity(showsRestingContent ? 1 : 0)
@@ -91,7 +90,6 @@ struct SuggestionsListView: View {
                                 .padding(.horizontal, Metrics.favoritesHorizontalInset)
                         }
                     }
-                    .padding(.horizontal, searchContentHorizontalPadding)
                     .padding(.top, searchContentTopInset)
                     .padding(.bottom, searchContentBottomInset)
                     .listRowInsets(EdgeInsets())
@@ -128,7 +126,7 @@ struct SuggestionsListView: View {
             // input on the top bar; 0 on the bottom bar, where the input sits below the list).
             .modifier(ListContentMarginsModifier(top: isFloatingPopover ? Metrics.popoverVerticalInset : (isAddressBarAtBottom ? 0 : Metrics.listTopInset),
                                                  bottom: isFloatingPopover ? Metrics.popoverVerticalInset : nil,
-                                                 horizontal: isSearchContentVisible ? 0 : Metrics.listHorizontalContentMargin))
+                                                 horizontal: Metrics.listHorizontalContentMargin))
             .hideScrollContentBackground()
             .scrollDismissesKeyboardIfAvailable()
             // Pointer (trackpad/mouse) leaving the list clears the hover highlight. Touch never fires onHover.
@@ -140,14 +138,6 @@ struct SuggestionsListView: View {
                 guard let id else { return }
                 withAnimation { proxy.scrollTo(id) }
             }
-        }
-    }
-
-    private var searchContentHorizontalPadding: CGFloat {
-        if #available(iOS 17.0, *) {
-            isSearchContentVisible ? Metrics.listHorizontalContentMargin : 0
-        } else {
-            0
         }
     }
 

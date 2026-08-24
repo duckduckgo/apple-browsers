@@ -26,20 +26,12 @@ struct FavoriteItemView: View {
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
     let isEditable: Bool
+    let isolatesContextMenu: Bool
     let onMenuAction: ((MenuAction) -> Void)?
 
     var body: some View {
         VStack(spacing: 6) {
-            FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
-                .if(isEditable) {
-                    $0.contextMenuWithPreviewIfAvailable {
-                        contextMenuItems()
-                    } preview: {
-                        FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
-                            .frame(width: NewTabPageGrid.Item.edgeSize,
-                                   height: NewTabPageGrid.Item.edgeSize)
-                    }
-                }
+            favoriteIcon
 
             Text(favorite.title)
                 .font(Font.system(size: 12))
@@ -51,6 +43,24 @@ struct FavoriteItemView: View {
         .accessibilityElement()
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("\(favorite.title). \(UserText.favorite)")
+    }
+
+    @ViewBuilder
+    private var favoriteIcon: some View {
+        if isEditable && isolatesContextMenu {
+            IsolatedFavoriteContextMenu(favorite: favorite, faviconLoading: faviconLoading) {
+                contextMenuItems()
+            }
+            .frame(width: NewTabPageGrid.Item.edgeSize,
+                   height: NewTabPageGrid.Item.edgeSize)
+        } else {
+            FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+                .if(isEditable) {
+                    $0.contextMenu {
+                        contextMenuItems()
+                    }
+                }
+        }
     }
 
     private func contextMenuItems() -> some View {
@@ -78,6 +88,38 @@ struct FavoriteItemView: View {
     }
 }
 
+private struct IsolatedFavoriteContextMenu<MenuItems: View>: UIViewControllerRepresentable {
+    let favorite: Favorite
+    let faviconLoading: FavoritesFaviconLoading?
+    let menuItems: MenuItems
+
+    init(favorite: Favorite,
+         faviconLoading: FavoritesFaviconLoading?,
+         @ViewBuilder menuItems: () -> MenuItems) {
+        self.favorite = favorite
+        self.faviconLoading = faviconLoading
+        self.menuItems = menuItems()
+    }
+
+    func makeUIViewController(context: Context) -> UIHostingController<AnyView> {
+        let controller = UIHostingController(rootView: rootView)
+        controller.view.backgroundColor = .clear
+        return controller
+    }
+
+    func updateUIViewController(_ controller: UIHostingController<AnyView>, context: Context) {
+        controller.rootView = rootView
+    }
+
+    private var rootView: AnyView {
+        AnyView(
+            FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+                .contentShape(.contextMenuPreview, FavoriteIconView.itemShape())
+                .contextMenu { menuItems }
+        )
+    }
+}
+
 extension FavoriteItemView {
     enum MenuAction {
         case edit
@@ -94,6 +136,10 @@ extension FavoriteItemView {
 
 private extension FavoriteItemView {
     init(favorite: Favorite, isEditable: Bool = true) {
-        self.init(favorite: favorite, faviconLoading: nil, isEditable: isEditable, onMenuAction: nil)
+        self.init(favorite: favorite,
+                  faviconLoading: nil,
+                  isEditable: isEditable,
+                  isolatesContextMenu: false,
+                  onMenuAction: nil)
     }
 }

@@ -28,6 +28,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
     @ObservedObject var model: Model
+    var isolatesContextMenu = false
 
     private let selectionFeedback = UISelectionFeedbackGenerator()
     private let haptics = UIImpactFeedbackGenerator()
@@ -73,6 +74,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
                 favorite: favorite,
                 faviconLoading: model.faviconLoader,
                 isEditable: model.canEditFavorites,
+                isolatesContextMenu: isolatesContextMenu,
                 onMenuAction: { action in
                     switch action {
                     case .delete: model.deleteFavorite(favorite)

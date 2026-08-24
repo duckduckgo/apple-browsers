@@ -86,7 +86,7 @@ struct SuggestionsListView: View {
                             FocusedNewTabPageMessagesView(messagesModel: messagesModel)
                         }
                         if hasFavorites, let favoritesViewModel {
-                            FavoritesView(model: favoritesViewModel)
+                            FavoritesView(model: favoritesViewModel, isolatesContextMenu: true)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .padding(.horizontal, Metrics.favoritesHorizontalInset)
                         }

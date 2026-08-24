@@ -1069,6 +1069,9 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
+        guard coordinator.isOmnibarSession else { return }
+        applyUnifiedInputChromeBackground(.standardChrome)
+        // Resign up-front so the keyboard descent runs concurrent with the bar collapse.
         coordinator.viewController.deactivateInput()
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
@@ -1093,7 +1096,6 @@ extension MainViewController {
             coordinator.contentViewController.beginDismissFade()
         }
 
-        guard coordinator.completeOmnibarDeactivation(resetView: false) else { return }
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             contentSnapshot: stationaryContentSnapshot,
@@ -1121,6 +1123,9 @@ extension MainViewController {
                 self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
             }
         )
+        // `startAnimation()` has now captured the top/editing inset. Deactivating any earlier flips
+        // the coordinator to bottom/inactive and makes the content overshoot behind the collapsing UTI.
+        guard coordinator.completeOmnibarDeactivation(resetView: false) else { return }
 
         if let omnibarPlaceholderColor {
             coordinator.viewController.animatePlaceholderColorTransition(

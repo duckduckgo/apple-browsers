@@ -82,10 +82,8 @@ struct UnifiedSuggestionsView: View {
                             messagesModel: messagesModel,
                             showsRestingContent: !isTypingList,
                             showsFavorites: viewModel.isShowingFavorites,
-                            showsSuggestionRows: isShowingList)
-            // Fade out with the collapse (like the logo) so a list→favorites dismiss hands off to the
-            // NTP favorites instead of snapping away when the host is hidden.
-            .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
+                            showsSuggestionRows: isShowingList,
+                            isFadingOut: viewModel.isFadingOut)
             .accessibilityHidden(viewModel.isFireTab && !isTypingList)
     }
 }
@@ -173,7 +171,7 @@ struct UnifiedSuggestionsLogoView: View {
 ///
 /// One-directional: only the fade-*out* (false→true) animates. The reset (true→false, on the next
 /// focus) snaps, so the logo reappears instantly instead of replaying a fade-in.
-private struct DismissFade: ViewModifier {
+struct DismissFade: ViewModifier {
     let isFadingOut: Bool
     func body(content: Content) -> some View {
         content

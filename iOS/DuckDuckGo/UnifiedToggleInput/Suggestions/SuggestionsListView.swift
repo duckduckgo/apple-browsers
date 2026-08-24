@@ -34,6 +34,7 @@ struct SuggestionsListView: View {
     var showsRestingContent = false
     var showsFavorites = false
     var showsSuggestionRows = true
+    var isFadingOut = false
     var isFloatingPopover: Bool = false
 
     private enum Metrics {
@@ -96,6 +97,8 @@ struct SuggestionsListView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                    .modifier(DisableListRowSelection())
+                    .modifier(DismissFade(isFadingOut: isFadingOut))
                 }
                 if showsRestingContent, let syncPromo {
                     syncPromo
@@ -104,6 +107,7 @@ struct SuggestionsListView: View {
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
+                        .modifier(DismissFade(isFadingOut: isFadingOut))
                 }
                 if showsSuggestionRows {
                     ForEach(viewModel.sections) { section in
@@ -113,12 +117,12 @@ struct SuggestionsListView: View {
                             sectionHeader(section.title)
                         }
                     }
+                    .modifier(DismissFade(isFadingOut: isFadingOut))
                 }
             }
             .environment(\.defaultMinListRowHeight, 0)
             .listStyle(.insetGrouped)
-            .modifier(SectionSpacingModifier(isFloatingPopover: isFloatingPopover,
-                                             popoverSpacing: Metrics.popoverSectionSpacing,
+            .modifier(SectionSpacingModifier(popoverSpacing: Metrics.popoverSectionSpacing,
                                              restingSpacing: restingSectionSpacing))
             // Replace insetGrouped's variable top margin with the design's list top inset (6pt below the
             // input on the top bar; 0 on the bottom bar, where the input sits below the list).
@@ -271,20 +275,24 @@ private struct ListContentMarginsModifier: ViewModifier {
 }
 
 private struct SectionSpacingModifier: ViewModifier {
-    let isFloatingPopover: Bool
     let popoverSpacing: CGFloat
     let restingSpacing: CGFloat?
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
-            if isFloatingPopover {
-                content.listSectionSpacing(popoverSpacing)
-            } else if let restingSpacing {
-                content.listSectionSpacing(restingSpacing)
-            } else {
-                content.listSectionSpacing(.compact)
-            }
+            content.listSectionSpacing(restingSpacing ?? popoverSpacing)
+        } else {
+            content
+        }
+    }
+}
+
+private struct DisableListRowSelection: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *) {
+            content.selectionDisabled()
         } else {
             content
         }

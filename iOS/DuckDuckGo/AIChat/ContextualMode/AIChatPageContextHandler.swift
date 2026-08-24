@@ -115,6 +115,10 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     private let mimeTypeProvider: PageContextMIMETypeProvider
     private let extractionPixelHandler: PageContextExtractionPixelFiring
 
+    /// Whether a PDF tab is handed to Duck.ai as document bytes rather than page markdown.
+    /// Gated by the `aiChatPdfPageContext` feature flag, wired in by the app.
+    private let isDocumentContextEnabled: () -> Bool
+
     /// FIFO-pairs collect requests with results so pixels carry the right trigger/latency; reset on navigation.
     private var extractionResolver = PageContextExtractionResolver()
 
@@ -144,7 +148,8 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
          attachabilityPolicyProvider: @escaping AttachabilityPolicyProvider = { nil },
          currentURLProvider: PageContextURLProvider? = nil,
          mimeTypeProvider: @escaping PageContextMIMETypeProvider = { _ in nil },
-         extractionPixelHandler: PageContextExtractionPixelFiring = PageContextExtractionPixelHandler()) {
+         extractionPixelHandler: PageContextExtractionPixelFiring = PageContextExtractionPixelHandler(),
+         isDocumentContextEnabled: @escaping () -> Bool = { false }) {
         self.webViewProvider = webViewProvider
         self.userScriptProvider = userScriptProvider
         self.faviconProvider = faviconProvider
@@ -153,6 +158,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         self.currentURLProvider = currentURLProvider ?? { webViewProvider()?.url }
         self.mimeTypeProvider = mimeTypeProvider
         self.extractionPixelHandler = extractionPixelHandler
+        self.isDocumentContextEnabled = isDocumentContextEnabled
     }
 
     @discardableResult
@@ -161,6 +167,13 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
         let url = currentURLProvider()
         resetExtractionStateIfNavigated(to: url)
+
+        // A document tab (PDF) is handed over as bytes: the page-context user script can't read
+        // WebKit's PDF viewer, so this bypasses collection and reads the bytes out of the web view.
+        if let url, isDocumentTab(url) {
+            collectDocumentContext(for: url, trigger: trigger)
+            return true
+        }
 
         // Gate: skip collection + deliver nil (iOS has no native attachable:false path) for blocklisted pages.
         if firePreventedIfNonAttachable(for: url, trigger: trigger) {
@@ -191,8 +204,11 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     }
 
     func isCurrentPageAttachable() -> Bool {
-        guard let policy = attachabilityPolicyProvider() else { return true }
         let url = currentURLProvider()
+        // A document tab is handed over as bytes, so it's attachable regardless of the blocklist
+        // (which would otherwise prevent the `pdf` category this feature replaces).
+        if let url, isDocumentTab(url) { return true }
+        guard let policy = attachabilityPolicyProvider() else { return true }
         return policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) }).isAttachable
     }
 
@@ -244,6 +260,8 @@ private extension AIChatPageContextHandler {
     /// gate and the standalone sheet-open/navigation measurement.
     @discardableResult
     func firePreventedIfNonAttachable(for url: URL?, trigger: PageContextExtractionTrigger) -> Bool {
+        // A document tab is attachable via its bytes — never prevented by the blocklist.
+        if let url, isDocumentTab(url) { return false }
         guard let policy = attachabilityPolicyProvider() else { return false }
         let verdict = policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) })
         guard !verdict.isAttachable else { return false }
@@ -251,6 +269,57 @@ private extension AIChatPageContextHandler {
         Logger.aiChat.debug("[PageContext] 🚫 gate: prevented attach (reason: \(reason))")
         fireExtractionPixel(.prevented(reason), trigger: trigger, latency: nil)
         return true
+    }
+
+    // MARK: - Document Context (PDF)
+
+    /// Whether this tab's page goes to Duck.ai as document bytes rather than markdown.
+    func isDocumentTab(_ url: URL) -> Bool {
+        isDocumentContextEnabled()
+            && DocumentPageContextProvider.isSupportedDocument(mimeType: mimeTypeProvider(url), url: url)
+    }
+
+    /// Reads the document out of the web view and delivers it as page context. Bypasses the
+    /// `extractionResolver` (which pairs collects with the user script's result, and a document
+    /// never produces one), so the outcome is measured here instead.
+    func collectDocumentContext(for url: URL, trigger: PageContextExtractionTrigger) {
+        guard let webView = webViewProvider() else {
+            Logger.aiChat.debug("[PageContext] Document collect skipped - no web view available")
+            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
+            contextSubject.send(nil)
+            return
+        }
+
+        let title = webView.title ?? ""
+        let startedAt = Date()
+        Task { @MainActor [weak self] in
+            let result = await DocumentPageContextProvider.makeDocumentContext(webView: webView, url: url, title: title)
+            guard let self else { return }
+            let latency = PageContextExtractionLatencyBucket(seconds: Date().timeIntervalSince(startedAt))
+
+            // The read is async: the tab may have navigated while it was in flight. Delivering now
+            // would attach this document to whatever page the user is on instead.
+            guard self.currentURLProvider() == url else {
+                Logger.aiChat.debug("[PageContext] Navigated away while reading document - dropping")
+                return
+            }
+
+            switch result {
+            case .document(let context):
+                Logger.aiChat.debug("[PageContext] Document attached")
+                self.publishContextUpdate(context)
+                self.fireExtractionPixel(.success, trigger: trigger, latency: latency)
+            case .tooLarge:
+                // Over the size ceiling: attach nothing, no error state (iOS has no attachable:false path).
+                Logger.aiChat.debug("[PageContext] Document over size ceiling - not attaching")
+                self.contextSubject.send(nil)
+                self.fireExtractionPixel(.prevented(PageContextExtractionOutcome.documentTooLargeCategory), trigger: trigger, latency: latency)
+            case .unavailable:
+                Logger.aiChat.debug("[PageContext] Document bytes unavailable")
+                self.contextSubject.send(nil)
+                self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency)
+            }
+        }
     }
 
     /// On navigation to a new URL, drops stale pending collects so they can't mis-attribute the next page's result.
@@ -350,19 +419,8 @@ private extension AIChatPageContextHandler {
         }
 
         let favicon = AIChatPageContextData.PageContextFavicon(href: faviconBase64, rel: "icon")
-        // Preserve pageTypeSignals/attached/tabId when re-building the context with an encoded favicon
-        return AIChatPageContextData(
-            title: context.title,
-            favicon: [favicon],
-            url: context.url,
-            content: context.content,
-            truncated: context.truncated,
-            fullContentLength: context.fullContentLength,
-            attachable: context.attachable,
-            tabId: context.tabId,
-            pageTypeSignals: context.pageTypeSignals,
-            attached: context.attached
-        )
+        // Copy preserves every other field — including a document context's mimeType/data.
+        return context.withFavicon([favicon])
     }
 
     func decodeFaviconImage(from favicons: [AIChatPageContextData.PageContextFavicon]) -> UIImage? {

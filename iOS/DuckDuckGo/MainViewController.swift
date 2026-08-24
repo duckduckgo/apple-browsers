@@ -4692,13 +4692,31 @@ extension MainViewController: BrowserChromeDelegate {
         toolbarHeight + view.safeAreaInsets.bottom
     }
 
+    private func floatingChromeOnScreenFraction(for percent: CGFloat) -> CGFloat {
+        FloatingUILayoutPolicy.chromeOnScreenFraction(
+            barsVisibilityPercent: percent,
+            handoffStart: FloatingDomainCapsuleController.handoffStart
+        )
+    }
+
     private func floatingToolbarOnScreenFraction(for percent: CGFloat) -> CGFloat {
         guard isFloatingCapsuleActive,
               viewCoordinator.isOmnibarInToolbar,
               !UIAccessibility.isReduceMotionEnabled else {
             return percent
         }
-        return min(1, percent / FloatingDomainCapsuleController.handoffStart)
+        return floatingChromeOnScreenFraction(for: percent)
+    }
+
+    /// Top-chrome counterpart of `floatingToolbarOnScreenFraction`, for the address bar hosted in the
+    /// navigation bar rather than the toolbar.
+    private func floatingTopChromeOnScreenFraction(for percent: CGFloat) -> CGFloat {
+        guard isFloatingCapsuleActive,
+              appSettings.currentAddressBarPosition == .top,
+              !UIAccessibility.isReduceMotionEnabled else {
+            return percent
+        }
+        return floatingChromeOnScreenFraction(for: percent)
     }
 
     private func floatingVisibleToolbarHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
@@ -4768,9 +4786,11 @@ extension MainViewController: BrowserChromeDelegate {
             let clampedPercent = max(0, min(1, barsVisibilityPercent))
             return safeAreaTop + omniBar.barView.expectedHeight * clampedPercent
         }
+        let expandedChromeHeight = safeAreaTop + omniBar.barView.expectedHeight
         return FloatingUILayoutPolicy.webViewTopObscuredHeight(
             barsVisibilityPercent: barsVisibilityPercent,
-            expandedChromeHeight: safeAreaTop + omniBar.barView.expectedHeight,
+            expandedChromeHeight: expandedChromeHeight,
+            visibleChromeHeight: expandedChromeHeight * floatingTopChromeOnScreenFraction(for: barsVisibilityPercent),
             topCapsuleObscuredHeight: floatingTopCapsuleObscuredHeight,
             safeAreaTop: safeAreaTop
         )
@@ -4827,12 +4847,14 @@ extension MainViewController: BrowserChromeDelegate {
         // Horizontal adaptation reserves no vertical room when tabs are hidden.
         let windowControlsOffset = (sharesRow && isTabsBarHidden) ? WindowControlsRowLayout.rowHeight(in: view) : 0
         let sharedRowTopSpacing = sharesRow ? MainViewCoordinator.Constants.windowControlsRowTopSpacing : 0
+        // Tabs bar and nav bar share one slide fraction so the top chrome stack stays stacked.
+        let slideRatio = floatingTopChromeOnScreenFraction(for: ratio)
         if !isTabsBarHidden {
-            let topBarsConstant = sharedRowTopSpacing - browserTabsOffset * (1.0 - ratio)
+            let topBarsConstant = sharedRowTopSpacing - browserTabsOffset * (1.0 - slideRatio)
             viewCoordinator.constraints.tabBarContainerTop.constant = topBarsConstant
         }
         viewCoordinator.constraints.navigationBarContainerTop.constant =
-            sharedRowTopSpacing + windowControlsOffset + browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
+            sharedRowTopSpacing + windowControlsOffset + browserTabsOffset + -navBarTopOffset * (1.0 - slideRatio)
     }
 
     private var sharesWindowControlsRow: Bool {

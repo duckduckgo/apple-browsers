@@ -81,8 +81,8 @@ struct SwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
             DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarQuerySubmitted, withAdditionalParameters: additionalParams)
         case .aiChat:
             var mergedParams = additionalParams.merging(featureDiscovery.addToParams([:], forFeature: .aiChat)) { (_, new) in new }
-            if featureDiscovery.isFirstDuckAIPrompt {
-                mergedParams[PixelParameters.aiChatFirstPrompt] = "true"
+            if featureDiscovery.isFirstDuckAIPromptNewInstall {
+                mergedParams[PixelParameters.aiChatFirstPromptNewInstall] = "true"
             }
             DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted, withAdditionalParameters: mergedParams)
             featureDiscovery.setWasUsedBefore(.aiChat)

@@ -400,10 +400,10 @@ extension DefaultOmniBarViewController {
                 dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
-                let isFirstEverPrompt = featureDiscovery.isFirstDuckAIPrompt
-                let firstPromptParameters: [String: String] = isFirstEverPrompt ? [PixelParameters.aiChatFirstPrompt: "true"] : [:]
+                let isFirstPromptNewInstall = featureDiscovery.isFirstDuckAIPromptNewInstall
+                let firstPromptParameters: [String: String] = isFirstPromptNewInstall ? [PixelParameters.aiChatFirstPromptNewInstall: "true"] : [:]
                 DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted, withAdditionalParameters: firstPromptParameters)
-                fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty, isFirstEverPrompt: isFirstEverPrompt)
+                fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty, isFirstPromptNewInstall: isFirstPromptNewInstall)
                 featureDiscovery.markDuckAIPromptSubmitted()
                 /// Collapse and resign instantly so a quick re-tap doesn't race the post-submit
                 /// collapse animation.
@@ -641,7 +641,7 @@ extension DefaultOmniBarViewController {
         omniBarView.aiChatAttachmentMenu = attachmentController?.makeMenu()
     }
 
-    private func fireIPadUnifiedPromptSubmittedPixels(hasText: Bool, isFirstEverPrompt: Bool) {
+    private func fireIPadUnifiedPromptSubmittedPixels(hasText: Bool, isFirstPromptNewInstall: Bool) {
         guard modelPickerController != nil else { return }
         let attachments = attachmentController?.pendingAttachments ?? []
         let selectedTool = toolPickerController?.selectedTool
@@ -654,7 +654,7 @@ extension DefaultOmniBarViewController {
             surface: .addressBar,
             pageType: omniDelegate?.currentPromptPageType() ?? .unknown,
             origin: .ipadTogglePrompt,
-            isFirstEverPrompt: isFirstEverPrompt
+            isFirstPromptNewInstall: isFirstPromptNewInstall
         )
         UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
             selectedTool: selectedTool,

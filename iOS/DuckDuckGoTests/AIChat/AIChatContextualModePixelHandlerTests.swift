@@ -346,7 +346,7 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPromptSubmittedWithoutContextNative.name)
     }
 
-    @Test("First ever prompt submission carries first_prompt and marks the flag")
+    @Test("First prompt on a new install carries first_prompt_new_install and marks the flag")
     func testFirstEverPromptSubmissionCarriesFirstPromptParam() {
         // GIVEN
         var firedEventName: String?
@@ -365,11 +365,11 @@ final class AIChatContextualModePixelHandlerTests {
 
         // THEN
         #expect(firedEventName == Pixel.Event.aiChatContextualPromptSubmittedWithContextNative.name)
-        #expect(firedParameters == ["first_prompt": "true"])
+        #expect(firedParameters == ["first_prompt_new_install": "true"])
         #expect(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
     }
 
-    @Test("Returning-user prompt submission omits first_prompt")
+    @Test("Returning-user prompt submission omits first_prompt_new_install")
     func testReturningUserPromptSubmissionOmitsFirstPromptParam() {
         // GIVEN
         var firedParameters: [String: String]?

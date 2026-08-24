@@ -33,7 +33,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    /// A user who has already submitted a Duck.ai prompt, so no first_prompt param is added.
+    /// A user who has already submitted a Duck.ai prompt, so no first_prompt_new_install param is added.
     private static func returningUserFeatureDiscovery() -> MockFeatureDiscovery {
         let featureDiscovery = MockFeatureDiscovery()
         featureDiscovery.setReturnValue(true, for: .duckAIPrompt)
@@ -190,7 +190,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitPrompt))
 
         // Then
-        XCTAssertEqual(PixelFiringMock.lastParams?["first_prompt"], "true")
+        XCTAssertEqual(PixelFiringMock.lastParams?["first_prompt_new_install"], "true")
         XCTAssertTrue(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
     }
 
@@ -205,7 +205,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitFirstPrompt))
 
         // Then
-        XCTAssertNil(PixelFiringMock.lastParams?["first_prompt"])
+        XCTAssertNil(PixelFiringMock.lastParams?["first_prompt_new_install"])
     }
 
     func testWhenNonPromptMetricFiresThenFirstPromptFlagIsUntouched() {
@@ -219,7 +219,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         handler.firePixelWithMetric(AIChatMetric(metricName: .userDidOpenHistory))
 
         // Then
-        XCTAssertNil(PixelFiringMock.lastParams?["first_prompt"])
+        XCTAssertNil(PixelFiringMock.lastParams?["first_prompt_new_install"])
         XCTAssertFalse(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
     }
 

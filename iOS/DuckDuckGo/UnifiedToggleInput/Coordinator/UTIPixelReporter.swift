@@ -219,7 +219,7 @@ final class UTIPixelReporter {
                                reasoningMode: AIChatReasoningMode?,
                                modelId: String?,
                                defaultOmnibarMode: DefaultOmnibarMode,
-                               isFirstEverPrompt: Bool) {
+                               isFirstPromptNewInstall: Bool) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -231,7 +231,7 @@ final class UTIPixelReporter {
                 pageType: $0.pageType,
                 origin: Self.promptOrigin(for: $0),
                 defaultMode: defaultOmnibarMode,
-                isFirstEverPrompt: isFirstEverPrompt,
+                isFirstPromptNewInstall: isFirstPromptNewInstall,
                 firing: firing
             )
         }

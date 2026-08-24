@@ -291,8 +291,8 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     /// Marking after the fire keeps the first-prompt claim on this submission's pixel; the UTI
     /// prompt pixel for the same submission fires earlier in the flow, so it reads the same state.
     private func firePromptSubmissionPixel(_ event: Pixel.Event) {
-        if featureDiscovery.isFirstDuckAIPrompt {
-            firePixelWithParameters(event, [PixelParameters.aiChatFirstPrompt: "true"])
+        if featureDiscovery.isFirstDuckAIPromptNewInstall {
+            firePixelWithParameters(event, [PixelParameters.aiChatFirstPromptNewInstall: "true"])
             featureDiscovery.markDuckAIPromptSubmitted()
         } else {
             firePixel(event)

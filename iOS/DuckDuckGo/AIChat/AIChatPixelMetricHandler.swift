@@ -115,11 +115,11 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
                 parameters = timestampParameters ?? [:]
             }
 
-            // Native submission paths mark the flag first, so this claims first_prompt only
-            // for submissions made directly in the frontend composer (e.g. iPad AI tabs).
+            // Native submission paths mark the flag first, so this claims first_prompt_new_install
+            // only for submissions made directly in the frontend composer (e.g. iPad AI tabs).
             let isPromptSubmission = Self.promptSubmissionMetrics.contains(metric.metricName)
-            if isPromptSubmission && featureDiscovery.isFirstDuckAIPrompt {
-                parameters[PixelParameters.aiChatFirstPrompt] = "true"
+            if isPromptSubmission && featureDiscovery.isFirstDuckAIPromptNewInstall {
+                parameters[PixelParameters.aiChatFirstPromptNewInstall] = "true"
             }
 
             pixelFiring.fire(event, withAdditionalParameters: parameters)

@@ -1719,7 +1719,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             reasoningMode: reasoningModeForSubmitPixel,
             modelId: modelStore.persistedModelId,
             defaultOmnibarMode: aiChatSettings.defaultOmnibarMode,
-            isFirstEverPrompt: featureDiscovery.isFirstDuckAIPrompt
+            isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall
         )
         pixelReporter.reportToolSubmittedIfNeeded(
             selectedTool: toolsController.selectedTool,

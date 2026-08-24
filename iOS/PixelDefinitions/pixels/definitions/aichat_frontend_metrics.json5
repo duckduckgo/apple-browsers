@@ -9,7 +9,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            "aichat_first_prompt",
+            "aichat_first_prompt_new_install",
             {
                 "key": "delta-timestamp-minutes",
                 "type": "integer",
@@ -24,7 +24,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            "aichat_first_prompt",
+            "aichat_first_prompt_new_install",
             {
                 "key": "delta-timestamp-minutes",
                 "type": "integer",

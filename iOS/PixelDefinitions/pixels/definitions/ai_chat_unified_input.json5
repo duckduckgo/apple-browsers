@@ -398,7 +398,7 @@
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
-            "aichat_first_prompt",
+            "aichat_first_prompt_new_install",
             "unified_input_page_type",
             {
                 "key": "default_mode",

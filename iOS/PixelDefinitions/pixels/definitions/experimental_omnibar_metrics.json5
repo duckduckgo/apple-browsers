@@ -27,7 +27,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            "aichat_first_prompt",
+            "aichat_first_prompt_new_install",
             {
                 "key": "was_used_before",
                 "description": "Indicates if AI Chat was used before this submission: 1=returning user, 0=first-time user",

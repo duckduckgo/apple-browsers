@@ -140,6 +140,9 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
     func startChat() {
         if let selectedModelID {
             prefetcher.updateSelectedModel(selectedModelID)
+            if availableModels.first(where: { $0.id == selectedModelID })?.lowestPublicAccessTier == .plus {
+                SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: true)
+            }
         }
         onComplete()
         didHandOffToChat = false

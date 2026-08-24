@@ -15,6 +15,10 @@ on:
         description: "Origin variant. Used for measuring attribution only."
         required: false
         type: string
+      variants:
+        description: 'JSON array of ATB and origin pairs to create one by one, e.g. [{"variant":"ab"},{"origin":"app"},{"origin":"app","variant":"ab"}]. Takes precedence over atb-variant and origin-variant.'
+        required: false
+        type: string
       dmg-url:
         description: "Custom DMG URL to use instead of the release DMG."
         required: false
@@ -34,6 +38,10 @@ on:
         description: "Origin variant. Used for measuring attribution only. Passed by the caller workflow."
         required: false
         type: string
+      variants:
+        description: 'JSON array of ATB and origin pairs to create one by one, e.g. [{"variant":"ab"},{"origin":"app"},{"origin":"app","variant":"ab"}]. Takes precedence over atb-variant and origin-variant.'
+        required: false
+        type: string
       dmg-url:
         description: "Custom DMG URL to use instead of the release DMG."
         required: false
@@ -51,18 +59,20 @@ on:
 
 jobs:
 
-  create-dmg-variant:
+  create-dmg-variants:
 
-    name: Create DMG Variant
+    name: Create DMG Variants
 
     env:
       ATB_VARIANT_NAME: ${{ inputs.atb-variant || github.event.inputs.atb-variant }}
       ORIGIN_VARIANT_NAME: ${{ inputs.origin-variant || github.event.inputs.origin-variant }}
+      VARIANTS_JSON: ${{ inputs.variants || github.event.inputs.variants }}
       DMG_URL: ${{ inputs.dmg-url || github.event.inputs.dmg-url }}
       DRY_RUN: ${{ inputs.dry-run || github.event.inputs.dry-run }}
 
     runs-on: macos-26
-    timeout-minutes: 15
+    # The job creates all the variants of its batch one by one, so the timeout covers the whole batch.
+    timeout-minutes: 120
 
     steps:
 
@@ -75,6 +85,47 @@ jobs:
 
     - name: Print macOS version
       run: sw_vers
+
+    # Runs before the download steps, so that a malformed list fails the job early.
+    - name: Prepare the list of variants
+      id: prepare-variants
+      run: |
+        if [ -n "$VARIANTS_JSON" ]; then
+          variants="$VARIANTS_JSON"
+        else
+          variants="$(jq -nc --arg variant "$ATB_VARIANT_NAME" --arg origin "$ORIGIN_VARIANT_NAME" \
+            '[{variant: $variant, origin: $origin}]')"
+        fi
+
+        # Accept a single object as well as an array, replace null values with empty strings
+        # and compute the name of each variant. The name is also the name of the S3 folder
+        # that the variant is published to.
+        variants="$(jq -c '
+          def variant_name:
+            [(.origin // "" | select(. != "")), (.variant // "" | select(. != ""))] | join("-");
+          (if type == "object" then [.] else . end)
+          | map({variant: (.variant // ""), origin: (.origin // "")} + {name: variant_name})
+        ' <<< "$variants")"
+
+        count="$(jq 'length' <<< "$variants")"
+        if [ "$count" -eq 0 ]; then
+          echo "Error: the list of variants is empty"
+          exit 1
+        fi
+
+        # Each variant needs an ATB variant, an origin, or both.
+        unnamed="$(jq '[.[] | select(.name == "")] | length' <<< "$variants")"
+        if [ "$unnamed" -ne 0 ]; then
+          echo "Error: ${unnamed} of ${count} variants have neither an ATB variant nor an origin"
+          exit 1
+        fi
+
+        echo "Creating ${count} variants: $(jq -r '[.[].name] | join(", ")' <<< "$variants")"
+
+        echo "variants=${variants}" >> "$GITHUB_OUTPUT"
+        echo "count=${count}" >> "$GITHUB_OUTPUT"
+        # Names the artifact of a dry run. Variant names are unique, so batches do not clash.
+        echo "first-variant-name=$(jq -r '.[0].name' <<< "$variants")" >> "$GITHUB_OUTPUT"
 
     - name: Download DMG artifact
       id: download-dmg-artifact
@@ -100,7 +151,7 @@ jobs:
       id: extract-app-from-dmg
       run: |
           hdiutil attach duckduckgo.dmg -mountpoint vanilla
-          mkdir -p dmg
+          mkdir -p pristine
           app_path="$(find vanilla -maxdepth 1 -name 'DuckDuckGo*.app' | head -1)"
           if [ -z "$app_path" ]; then
             echo "No .app found in DMG"
@@ -108,84 +159,123 @@ jobs:
           fi
           app_name="$(basename "$app_path")"
           echo "app-name=$app_name" >> "$GITHUB_OUTPUT"
-          cp -R "$app_path" "dmg/$app_name"
+          # Keep the app aside. Every variant starts from this copy, so that it only carries its own xattrs.
+          cp -R "$app_path" "pristine/$app_name"
           hdiutil detach vanilla
           rm -f duckduckgo.dmg
 
     - name: Install create-dmg
       run: brew install create-dmg
 
-    - name: Set variant xattrs
-      working-directory: ${{ github.workspace }}/macOS/dmg
+    - name: Create variant DMGs
       env:
         APP_NAME: ${{ steps.extract-app-from-dmg.outputs.app-name }}
-      run: |
-        if [ -n "$ATB_VARIANT_NAME" ]; then
-          xattr -w com.duckduckgo.variant "$ATB_VARIANT_NAME" "$APP_NAME"
-        fi
-        if [ -n "$ORIGIN_VARIANT_NAME" ]; then
-          xattr -w com.duckduckgo.origin "$ORIGIN_VARIANT_NAME" "$APP_NAME"
-        fi
-        echo "=== Verifying xattrs ==="
-        xattr -l "$APP_NAME"
-        echo "=== Verifying code signature is still valid ==="
-        codesign --verify --deep --strict "$APP_NAME"
-
-    - name: Create variant DMG
-      env:
-        GH_TOKEN: ${{ github.token }}
-        APP_NAME: ${{ steps.extract-app-from-dmg.outputs.app-name }}
-      run: |
-        retries=3
-
-        while [[ $retries -gt 0 ]]; do
-          # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
-          if create-dmg --volname "DuckDuckGo" \
-            --volicon "scripts/assets/dmg-release.icns" \
-            --filesystem APFS \
-            --icon "$APP_NAME" 140 160 \
-            --background "scripts/assets/dmg-background.png" \
-            --window-size 600 400 \
-            --icon-size 120 \
-            --app-drop-link 430 160 "duckduckgo.dmg" \
-            "dmg"
-          then
-            break
-          fi
-          retries=$((retries-1))
-        done
-
-    - name: Set variant name
-      id: set-variant-name
-      run: |
-        if [ -z "$ORIGIN_VARIANT_NAME" ] && [ -n "$ATB_VARIANT_NAME" ]; then
-          name=$ATB_VARIANT_NAME
-        elif [ -n "$ORIGIN_VARIANT_NAME" ] && [ -z "$ATB_VARIANT_NAME" ]; then
-          name=$ORIGIN_VARIANT_NAME
-        elif [ -n "$ORIGIN_VARIANT_NAME" ] && [ -n "$ATB_VARIANT_NAME" ]; then
-          name="${ORIGIN_VARIANT_NAME}-${ATB_VARIANT_NAME}"
-        else
-          echo "Neither ATB_VARIANT_NAME nor ORIGIN_VARIANT_NAME is set"
-          exit 1
-        fi
-
-        echo "variant-name=${name}" >> "$GITHUB_OUTPUT"
-
-    - name: Upload variant DMG as artifact
-      if: ${{ env.DRY_RUN == 'true' }}
-      uses: actions/upload-artifact@v6
-      with:
-        name: variant-dmg-${{ steps.set-variant-name.outputs.variant-name }}
-        path: ${{ github.workspace }}/macOS/duckduckgo.dmg
-        retention-days: 5
-
-    - name: Upload variant DMG to S3
-      if: ${{ env.DRY_RUN != 'true' }}
-      env:
+        VARIANTS: ${{ steps.prepare-variants.outputs.variants }}
+        VARIANTS_COUNT: ${{ steps.prepare-variants.outputs.count }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
         AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+        RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
+        RELEASE_BUCKET_PREFIX: ${{ vars.RELEASE_BUCKET_PREFIX }}
       run: |
-        aws s3 cp duckduckgo.dmg \
-          s3://${{ vars.RELEASE_BUCKET_NAME }}/${{ vars.RELEASE_BUCKET_PREFIX }}/${{ steps.set-variant-name.outputs.variant-name }}/duckduckgo.dmg \
-          --acl public-read
+        create_dmg_with_retries() {
+          local output_path="$1"
+          local retries=3
+
+          while [[ $retries -gt 0 ]]; do
+            # Remove the leftovers of a failed attempt, create-dmg does not overwrite them.
+            rm -f "$output_path" "$(dirname "$output_path")"/rw.*.dmg
+
+            # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
+            if create-dmg --volname "DuckDuckGo" \
+              --volicon "scripts/assets/dmg-release.icns" \
+              --filesystem APFS \
+              --icon "$APP_NAME" 140 160 \
+              --background "scripts/assets/dmg-background.png" \
+              --window-size 600 400 \
+              --icon-size 120 \
+              --app-drop-link 430 160 "$output_path" \
+              "dmg"
+            then
+              return 0
+            fi
+            retries=$((retries-1))
+          done
+
+          echo "create-dmg did not succeed in 3 attempts"
+          return 1
+        }
+
+        failed=()
+        index=0
+
+        while read -r variant; do
+          index=$((index + 1))
+          name="$(jq -r '.name' <<< "$variant")"
+          atb="$(jq -r '.variant' <<< "$variant")"
+          origin="$(jq -r '.origin' <<< "$variant")"
+
+          echo "::group::[${index}/${VARIANTS_COUNT}] ${name}"
+
+          # bash suspends `set -e` in a condition context, so the variant runs in a plain
+          # subshell and its status is read afterwards. A failure only skips this variant,
+          # the remaining ones are still created and the job fails at the end.
+          set +e
+          (
+            set -e
+
+            # Start from the untouched app, so that the variant only carries its own xattrs.
+            rm -rf dmg
+            mkdir -p dmg "output/${name}"
+            cp -R "pristine/${APP_NAME}" "dmg/${APP_NAME}"
+
+            cd dmg
+            if [ -n "$atb" ]; then
+              xattr -w com.duckduckgo.variant "$atb" "$APP_NAME"
+            fi
+            if [ -n "$origin" ]; then
+              xattr -w com.duckduckgo.origin "$origin" "$APP_NAME"
+            fi
+            echo "=== Verifying xattrs ==="
+            xattr -l "$APP_NAME"
+            echo "=== Verifying code signature is still valid ==="
+            codesign --verify --deep --strict "$APP_NAME"
+            cd ..
+
+            create_dmg_with_retries "output/${name}/duckduckgo.dmg"
+
+            if [ "$DRY_RUN" != "true" ]; then
+              aws s3 cp "output/${name}/duckduckgo.dmg" \
+                "s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/${name}/duckduckgo.dmg" \
+                --acl public-read
+              # Only a dry run keeps the DMGs, to upload them as artifacts.
+              rm -rf "output/${name}"
+            fi
+          )
+          status=$?
+          set -e
+
+          echo "::endgroup::"
+
+          if [ $status -ne 0 ]; then
+            echo "Failed to create the ${name} variant"
+            failed+=("$name")
+          fi
+        done < <(jq -c '.[]' <<< "$VARIANTS")
+
+        if [ ${#failed[@]} -gt 0 ]; then
+          echo "Failed to create ${#failed[@]} of ${VARIANTS_COUNT} variants: ${failed[*]}"
+          exit 1
+        fi
+
+        echo "Created ${VARIANTS_COUNT} variants"
+
+    - name: Upload variant DMGs as artifacts
+      # Upload the DMGs that were created, even if one of the variants failed.
+      if: ${{ !cancelled() && env.DRY_RUN == 'true' && steps.prepare-variants.outcome == 'success' }}
+      uses: actions/upload-artifact@v6
+      with:
+        name: variant-dmgs-${{ steps.prepare-variants.outputs.first-variant-name }}
+        path: ${{ github.workspace }}/macOS/output
+        if-no-files-found: ignore
+        retention-days: 5

@@ -7,6 +7,18 @@ set -e -o pipefail
 
 asana_api_url="https://app.asana.com/api/1.0"
 
+# Number of variants that a single job creates. Set VARIANTS_PER_JOB to fine-tune
+# the balance between the number of jobs and the duration of each job.
+VARIANTS_PER_JOB="${VARIANTS_PER_JOB:-10}"
+
+# Maximum number of jobs that a GitHub Actions matrix supports.
+MAX_MATRIX_JOBS=256
+
+if ! [[ "$VARIANTS_PER_JOB" =~ ^[0-9]+$ ]] || [[ "$VARIANTS_PER_JOB" -lt 1 ]]; then
+	echo "Error: VARIANTS_PER_JOB must be a positive integer, got '${VARIANTS_PER_JOB}'"
+	exit 1
+fi
+
 # Create a JSON string with the `origin-variant` pairs from the list of .
 _create_origins_and_variants() {
 	local response="$1"
@@ -94,21 +106,25 @@ _fetch_atb_variants() {
 	printf "%s\n" "${variants_list[@]}"
 }
 
-split_array_into_chunks() {
-    local array=("$@")
-    local chunk_size=256
-    local total_elements=${#array[@]}
-    local chunks=()
-	local items
+# Group the variants into batches of VARIANTS_PER_JOB items and format them as a
+# GitHub Actions matrix. Each matrix entry drives one job that creates all the variants
+# of its batch, one by one.
+# For more info see https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs#example-adding-configurations.
+#
+# The `variants` value of each entry is the batch encoded as a JSON string, because reusable
+# workflow inputs only accept scalar values. The called workflow decodes it.
+# Example output for a batch size of 2:
+#   {"include":[{"batch":1,"count":2,"variants":"[{\"variant\":\"ab\"},{\"origin\":\"app\"}]"}]}
+_create_matrix() {
+	local array=("$@")
 
-    for ((i = 0; i < total_elements; i += chunk_size)); do
-		# Format the list of variants in a JSON object suitable for being consumed by GitHub Actions matrix.
-		# For more info see https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs#example-adding-configurations.
-		items="$(echo "${array[@]:i:chunk_size}" |  tr ' ' ',')"
-		chunks+=("{\"include\": [${items}]}")
-    done
-
-	printf "%s\n" "${chunks[@]}"
+	printf "%s\n" "${array[@]}" \
+		| jq -s -c --argjson size "$VARIANTS_PER_JOB" '
+			{include: [
+				range(0; length; $size) as $i
+				| (.[$i:$i+$size]) as $batch
+				| {batch: (($i / $size) + 1), count: ($batch | length), variants: ($batch | tojson)}
+			]}'
 }
 
 main() {
@@ -118,26 +134,37 @@ main() {
 	# fetch ATB variants
 	variants+=("$(_fetch_atb_variants)")
 	# fetch Origin variants
-	variants+=("$(_fetch_origin_tasks "$origin_batch")")
+	variants+=("$(_fetch_origin_tasks)")
 
 	while read -r variant; do
+		# skip empty lines to keep the JSON payload valid
+		[[ -z "$variant" ]] && continue
 		items+=("$variant")
 	done <<< "$(printf "%s\n" "${variants[@]}")"
 
-	echo "Found ${#items[@]} variants"
+	if [[ ${#items[@]} -eq 0 ]]; then
+		echo "No variants found"
+		exit 1
+	fi
 
-	local chunks=()
-	while read -r chunk; do
-		chunks+=("$chunk")
-	done <<< "$(split_array_into_chunks "${items[@]}")"
+	echo "Found ${#items[@]} variants, creating up to ${VARIANTS_PER_JOB} of them per job"
 
-	local i=1
-    for chunk in "${chunks[@]}"; do
-		# Save to GitHub output
-		echo "Storing chunk #${i}"
-		echo "build-variants-${i}=${chunk}" >> "$GITHUB_OUTPUT"
-		i=$((i + 1))
-    done
+	local matrix
+	matrix="$(_create_matrix "${items[@]}")"
+
+	local jobs_count
+	jobs_count="$(jq '.include | length' <<< "$matrix")"
+
+	# A GitHub Actions matrix is capped at 256 jobs. Anything above that would be dropped silently.
+	if [[ "$jobs_count" -gt "$MAX_MATRIX_JOBS" ]]; then
+		echo "Error: ${#items[@]} variants at ${VARIANTS_PER_JOB} per job require ${jobs_count} jobs," \
+			"which is more than the ${MAX_MATRIX_JOBS} allowed in a GitHub Actions matrix."
+		echo "Raise the variants-per-job input to at least $(( (${#items[@]} + MAX_MATRIX_JOBS - 1) / MAX_MATRIX_JOBS ))."
+		exit 1
+	fi
+
+	echo "Storing a matrix of ${jobs_count} jobs"
+	echo "build-variants=${matrix}" >> "$GITHUB_OUTPUT"
 }
 
 main "$@"

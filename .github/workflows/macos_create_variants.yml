@@ -11,6 +11,11 @@ on:
         description: "DMG URL to download (overrides RELEASE_DMG_URL variable when set)"
         required: false
         type: string
+      variants-per-job:
+        description: "Number of variants that a single job creates."
+        required: false
+        type: string
+        default: "10"
 
   workflow_call:
     inputs:
@@ -18,6 +23,11 @@ on:
         description: "DMG URL to download (overrides RELEASE_DMG_URL variable when set)"
         required: false
         type: string
+      variants-per-job:
+        description: "Number of variants that a single job creates."
+        required: false
+        type: string
+        default: "10"
     secrets:
       ASANA_ACCESS_TOKEN:
         required: true
@@ -38,8 +48,7 @@ jobs:
     timeout-minutes: 15
 
     outputs:
-      build-variants-1: ${{ steps.get-build-variants.outputs.build-variants-1 }}
-      build-variants-2: ${{ steps.get-build-variants.outputs.build-variants-2 }}
+      build-variants: ${{ steps.get-build-variants.outputs.build-variants }}
 
     steps:
       - name: Check out repository
@@ -55,6 +64,7 @@ jobs:
           access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           atb-asana-task-id: ${{ vars.DMG_VARIANTS_LIST_TASK_ID }}
           origin-asana-section-id: ${{ vars.DMG_VARIANTS_ORIGIN_SECTION_ID }}
+          variants-per-job: ${{ inputs.variants-per-job || '10' }}
 
   download-dmg-and-upload-artifact:
 
@@ -91,43 +101,31 @@ jobs:
           path: ${{ github.workspace }}/macOS/duckduckgo.dmg
           retention-days: 1
 
-  create-variants-1:
+  create-variants:
 
-    name: Create Variant
+    # Each matrix entry is a batch of variants that a single job creates one by one.
+    # The number of variants per batch is controlled by the variants-per-job input.
+    name: Create Variants (batch ${{ matrix.batch }}, ${{ matrix.count }} variants)
     needs: [set-up-variants, download-dmg-and-upload-artifact]
 
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.set-up-variants.outputs.build-variants-1) }}
+      matrix: ${{ fromJSON(needs.set-up-variants.outputs.build-variants) }}
     uses: ./.github/workflows/macos_create_variant.yml
     with:
-      atb-variant: ${{ matrix.variant }}
-      origin-variant: ${{ matrix.origin }}
-    secrets: inherit
-
-  create-variants-2:
-
-    name: Create Variant
-    needs: [set-up-variants, download-dmg-and-upload-artifact]
-
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.set-up-variants.outputs.build-variants-2) }}
-    uses: ./.github/workflows/macos_create_variant.yml
-    with:
-      atb-variant: ${{ matrix.variant }}
-      origin-variant: ${{ matrix.origin }}
+      variants: ${{ matrix.variants }}
     secrets: inherit
 
   mattermost:
 
     name: Send Mattermost message
-    needs: [create-variants-1, create-variants-2]
+    needs: [create-variants]
+    if: ${{ always() }}
     runs-on: macos-26
 
     env:
-      success: ${{ needs.create-variants-1.result == 'success' && needs.create-variants-2.result == 'success' }}
-      failure: ${{ needs.create-variants-1.result == 'failure' || needs.create-variants-2.result == 'failure' }}
+      success: ${{ needs.create-variants.result == 'success' }}
+      failure: ${{ needs.create-variants.result == 'failure' }}
 
     steps:
       - name: Check out the code

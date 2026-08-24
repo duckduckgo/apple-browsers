@@ -14,13 +14,14 @@ inputs:
   origin-asana-section-id:
     description: "Asana Section id for the Origins list"
     required: true
+  variants-per-job:
+    description: "Number of variants that a single job creates."
+    required: false
+    default: "10"
 outputs:
-  build-variants-1:
-    description: "The list of build variants to create (batch 1)"
-    value: ${{ steps.get-build-variants-task.outputs.build-variants-1 }}
-  build-variants-2:
-    description: "The list of build variants to create (batch 2)"
-    value: ${{ steps.get-build-variants-task.outputs.build-variants-2 }}
+  build-variants:
+    description: "The GitHub Actions matrix of build variant batches to create, one entry per job."
+    value: ${{ steps.get-build-variants-task.outputs.build-variants }}
 runs:
   using: "composite"
   steps:
@@ -31,5 +32,6 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
         ORIGIN_ASANA_SECTION_ID: ${{ inputs.origin-asana-section-id }}
         ATB_ASANA_TASK_ID: ${{ inputs.atb-asana-task-id }}
+        VARIANTS_PER_JOB: ${{ inputs.variants-per-job }}
       run: |
         ${{ github.action_path }}/get_build_variants_list.sh

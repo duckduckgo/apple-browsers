@@ -19,40 +19,36 @@
 import AIChat
 import AppKit
 import FeatureFlags_macOS
-import os.log
 import PrivacyConfig
 
-/// Owns the app-side flag gating so the shared reader stays flag-agnostic and call sites don't repeat it.
-/// Mirrors `CustomizeResponsesStore`: cheap to build, constructed with a burner-aware handler per surface.
+/// Owns the app-side flag gating so the shared logic stays flag-agnostic and call sites don't repeat it.
+/// Mirrors `CustomizeResponsesStore`: cheap to build, one per surface with a burner-aware handler.
 final class DuckAiUsageLimitsStore {
 
-    private let provider: DuckAiUsageLimitsProviding?
+    private let storageHandler: DuckAiNativeStorageHandling?
     private let featureFlagger: FeatureFlagger
 
     init(storageHandler: DuckAiNativeStorageHandling?,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
-        self.provider = storageHandler.map {
-            DuckAiUsageLimitsProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
-        }
+        self.storageHandler = storageHandler
         self.featureFlagger = featureFlagger
     }
 
-    /// `nil` means the feature is inactive (flag off, or no storage bridge); `.noData` means active but nothing
-    /// worth warning about. Callers must keep the two apart.
-    func currentLimits() -> DuckAiUsageLimits? {
-        guard featureFlagger.isFeatureOn(.aiChatUsageWarnings), let provider else { return nil }
-        let limits = provider.currentUsageLimits()
-        // Marked private so the percentages are redacted wherever redaction applies; local debug builds
-        // still show them, which is what makes a read verifiable while testing.
-        Logger.aiChat.debug("""
-            Duck.ai usage limits read: daily=\(Self.describe(limits.daily), privacy: .private) \
-            weekly=\(Self.describe(limits.weekly), privacy: .private)
-            """)
-        return limits
-    }
-
-    private static func describe(_ window: DuckAiUsageLimitWindow?) -> String {
-        guard let window else { return "none" }
-        return "\(window.percentUsed)% resets \(window.resetsAt)"
+    /// `nil` means inactive (flag off, or no storage bridge), which differs from having nothing to show.
+    func makeWarningViewModel(tierProvider: @escaping () -> AIChatUserTier,
+                              modelSuggester: DuckAiModelSuggesting,
+                              isTrialEligible: @escaping () -> Bool,
+                              isFireMode: @escaping () -> Bool) -> DuckAiUsageWarningViewModel? {
+        DuckAiUsageWarningViewModelFactory.make(
+            isFeatureEnabled: featureFlagger.isFeatureOn(.aiChatUsageWarnings),
+            storage: storageHandler,
+            dismissalStore: DuckAiUsageWarningDismissalStore(),
+            tierProvider: tierProvider,
+            isInternalUser: { [featureFlagger] in featureFlagger.internalUserDecider.isInternalUser },
+            modelSuggester: modelSuggester,
+            isTrialEligible: isTrialEligible,
+            isFireMode: isFireMode,
+            pixelFiring: DuckAiNativeStoragePixelAdapter()
+        )
     }
 }

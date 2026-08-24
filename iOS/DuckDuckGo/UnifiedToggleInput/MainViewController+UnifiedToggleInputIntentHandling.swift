@@ -225,8 +225,18 @@ private extension MainViewController {
                     contentContainer.transform = .identity
                 }
                 coordinator.viewController.setTextHorizontalShift(0)
+            },
+            completion: { [weak self] _ in
+                self?.refreshFloatingToolbarBackdrop()
             }
         )
+    }
+
+    /// The NTP replaces the web page behind the toolbar while the input is focused, so the glass has to
+    /// re-resolve at each settled end of the morph or it keeps the previous surface's appearance.
+    func refreshFloatingToolbarBackdrop() {
+        guard isFloatingUIEnabled else { return }
+        viewCoordinator.toolbar.refreshMaterialBackdrop()
     }
 
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
@@ -336,11 +346,13 @@ private extension MainViewController {
                 self?.newTabPageViewController?.view.setNeedsLayout()
                 self?.newTabPageViewController?.view.layoutIfNeeded()
             }
+            self?.refreshFloatingToolbarBackdrop()
         }
         let restoreNTPChromeIfNeeded: () -> Void = { [weak self] in
             guard fadesForFloatingBottom else { return }
             self?.newTabPageViewController?.setLogoHidden(false)
             self?.newTabPageViewController?.setFavoritesHidden(false)
+            self?.refreshFloatingToolbarBackdrop()
         }
         if animated {
             // Bottom floating: the omnibar is detached from the toolbar by now, so fall back to the

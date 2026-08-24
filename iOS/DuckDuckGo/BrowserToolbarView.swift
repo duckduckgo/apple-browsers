@@ -739,6 +739,18 @@ final class BrowserToolbarView: UIView {
         }
     }
 
+    /// Rebuilds the glass so it re-resolves against whatever is now behind the capsule. Swapping the
+    /// surface under the bar (web page <-> new tab page) doesn't invalidate the effect on its own, so
+    /// a light page's material survives into a dark NTP and the capsule reads lighter than its backdrop.
+    func refreshMaterialBackdrop() {
+        guard isFloatingStyleEnabled else { return }
+        UIView.performWithoutAnimation {
+            materialBackgroundView.effect = nil
+            materialBackgroundView.effect = materialEffect()
+            materialBackgroundView.layoutIfNeeded()
+        }
+    }
+
     private func materialEffect() -> UIVisualEffect {
         if #available(iOS 26.0, *) {
             UIGlassEffect(style: .regular)

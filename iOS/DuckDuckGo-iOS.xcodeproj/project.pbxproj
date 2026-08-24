@@ -988,7 +988,6 @@
 		9354C33177CC2A51CA978356 /* IPadOmnibarReasoningPickerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 883AAA241504625A0E8455C1 /* IPadOmnibarReasoningPickerController.swift */; };
 		94F1268288BB496AF25D24A6 /* SubscriptionOnboardingHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7916A1677761825AA258550 /* SubscriptionOnboardingHeaderView.swift */; };
 		95C3B5788F2B2DA78E266C2A /* CalendarEventPreviewHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFDD2F8A58E59142D8FDD931 /* CalendarEventPreviewHelperTests.swift */; };
-		95FE01864F9DB7809837524A /* vpn-v4.json in Resources */ = {isa = PBXBuildFile; fileRef = 476A68112A66CB1C5BBDC94E /* vpn-v4.json */; };
 		971CC88E3045ACAA00AEE252 /* CreateImageModelSwitcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971CC88D3045ACAA00AEE252 /* CreateImageModelSwitcherTests.swift */; };
 		97C1A9E23045ACAA00AEE302 /* CreateImagePixelAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C1A9E13045ACAA00AEE301 /* CreateImagePixelAdapterTests.swift */; };
 		971CC8903045ACFF00AEE252 /* UTIToolsControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971CC88F3045ACFF00AEE252 /* UTIToolsControllerTests.swift */; };
@@ -2992,7 +2991,6 @@
 		400B261D8DC4DF44729F8CAD /* TapAllowHintOverlayWindow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TapAllowHintOverlayWindow.swift; sourceTree = "<group>"; };
 		40D67C082BD4927358D771DB /* RebrandedAppIconPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RebrandedAppIconPicker.swift; sourceTree = "<group>"; };
 		46DD3D592D0A29F400F33D49 /* CrashReportSenderExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashReportSenderExtensions.swift; sourceTree = "<group>"; };
-		476A68112A66CB1C5BBDC94E /* vpn-v4.json */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json; path = "vpn-v4.json"; sourceTree = "<group>"; };
 		4B0295182537BC6700E00CEF /* ConfigurationDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationDebugViewController.swift; sourceTree = "<group>"; };
 		4B0F3F4F2B9BFF2100392892 /* NetworkProtectionFAQView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionFAQView.swift; sourceTree = "<group>"; };
 		4B1BAFF03022A5BB00314B62 /* OpenAction.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenAction.entitlements; sourceTree = "<group>"; };
@@ -6581,7 +6579,6 @@
 			isa = PBXGroup;
 			children = (
 				3666D879300193EA00B63F99 /* check-color.json */,
-				476A68112A66CB1C5BBDC94E /* vpn-v4.json */,
 				36E82750302657A800147F78 /* subscription-hero.json */,
 			);
 			path = Resources;
@@ -12030,7 +12027,6 @@
 				C145F6CC2F8D0201006CD340 /* export-passwords-light-optimised.json in Resources */,
 				98788E9A2521DA1E00D55218 /* Localizable.stringsdict in Resources */,
 				CB9B873E278C93C2001F4906 /* HomeMessage.xcassets in Resources */,
-				95FE01864F9DB7809837524A /* vpn-v4.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

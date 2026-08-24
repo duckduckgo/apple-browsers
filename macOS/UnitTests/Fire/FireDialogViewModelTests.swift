@@ -21,10 +21,8 @@ import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import HistoryView
-import Persistence
-import PersistenceTestingUtils
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import SharedTestUtilities
 import WebKit
@@ -48,6 +46,12 @@ final class FireDialogViewModelTests: XCTestCase {
     private var schemeHandler: TestSchemeHandler!
 
     private var fireDialogViewResponse: FireDialogView.Response!
+
+    /// Keeps the made history entries alive, because `Visit` refers to its history entry weakly.
+    ///
+    /// An entry that the test does not hold is deallocated at once, and its visit then looks like
+    /// a visit of an already burned tab, which is not what most of the tests here set up.
+    private var historyEntries: [HistoryEntry] = []
 
     @MainActor
     override func setUp() {
@@ -117,6 +121,7 @@ final class FireDialogViewModelTests: XCTestCase {
         aiChatHistoryCleaner = nil
         dataClearingPreferences = nil
         pixelFiringMock = nil
+        historyEntries = []
     }
 
     @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() {
@@ -2502,6 +2507,45 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.clearingOption, .currentTab, "The dialog should keep the user choice")
     }
 
+    @MainActor func testWhenCurrentTabWasAlreadyBurned_ThenTheScopeIsDisabledAndAllDataIsUsed() {
+        // Scenario: The fire button is used again on a tab that was burned, and that stayed open.
+        // The visits of such a tab are no longer in history, so the scope has no history item to
+        // show, and deleting it would delete nothing.
+        // Expectation: The scope is disabled, the dialog uses All data, and the stored choice stays.
+
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentTab)
+        let historyMock = HistoryTabExtensionMock()
+        historyMock.localHistory = [Visit(date: Date(), identifier: "https://example.com".url!, historyEntry: nil)]
+        tabCollectionVM.append(tab: makeTab(url: "https://example.com".url!, historyMock: historyMock))
+        tabCollectionVM.select(at: .unpinned(1))
+
+        let viewModel = makeViewModel(tabCollectionViewModel: tabCollectionVM, settings: mockSettings)
+
+        XCTAssertFalse(viewModel.isCurrentTabOptionEnabled, "The burned tab holds no history item to delete")
+        XCTAssertEqual(viewModel.clearingOption, .allData, "The dialog should use All data")
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .currentTab, "The user choice should stay stored")
+    }
+
+    @MainActor func testWhenCurrentTabHasVisitsWithoutHistoryItems_ThenOnlyTheOtherVisitsAreCounted() {
+        // Scenario: A tab that was burned, and that was then used to visit another website. The
+        // burned visits are no longer in history, and the new visit is.
+        // Expectation: The current tab scope counts the new visit only.
+
+        let historyMock = HistoryTabExtensionMock()
+        let entry = makeHistoryEntry(url: "https://example.com")
+        historyMock.localHistory = [
+            Visit(date: Date(), identifier: "https://burned.com".url!, historyEntry: nil),
+            Visit(date: Date(), identifier: entry.url, historyEntry: entry)
+        ]
+        tabCollectionVM.append(tab: makeTab(url: "https://example.com".url!, historyMock: historyMock))
+        tabCollectionVM.select(at: .unpinned(1))
+
+        let viewModel = makeViewModel(with: tabCollectionVM, clearingOption: .currentTab)
+
+        XCTAssertEqual(viewModel.historyItemsCountForCurrentScope, 1, "A visit without a history item should not be counted")
+        XCTAssertEqual(viewModel.historyVisits.first?.historyEntry?.url, entry.url)
+    }
+
     @MainActor func testWhenCurrentTabHasNoDataToDeleteAndAllDataWasSelected_ThenNothingChanges() {
         // Scenario: The user already chose All data, then uses the fire button on a new tab page.
         // Expectation: The scope is disabled, and the stored choice stays as it is.
@@ -3203,15 +3247,17 @@ final class FireDialogViewModelTests: XCTestCase {
     }
 
     private func makeHistoryEntry(url: String) -> HistoryEntry {
-        HistoryEntry(identifier: UUID(),
-                     url: URL(string: url)!,
-                     failedToLoad: false,
-                     numberOfTotalVisits: 1,
-                     lastVisit: Date(),
-                     visits: [],
-                     numberOfTrackersBlocked: 0,
-                     blockedTrackingEntities: [],
-                     trackersFound: false)
+        let entry = HistoryEntry(identifier: UUID(),
+                                 url: URL(string: url)!,
+                                 failedToLoad: false,
+                                 numberOfTotalVisits: 1,
+                                 lastVisit: Date(),
+                                 visits: [],
+                                 numberOfTrackersBlocked: 0,
+                                 blockedTrackingEntities: [],
+                                 trackersFound: false)
+        historyEntries.append(entry)
+        return entry
     }
 
     @MainActor
@@ -3318,4 +3364,5 @@ private final class TestPresenter: FireDialogViewPresenting {
     private let handler: (NSWindow?, (() -> Void)?) -> Void
     init(handler: @escaping (NSWindow?, (() -> Void)?) -> Void) { self.handler = handler }
     func present(in window: NSWindow, completion: (() -> Void)?) { handler(window, completion) }
+    func dismiss() {}
 }

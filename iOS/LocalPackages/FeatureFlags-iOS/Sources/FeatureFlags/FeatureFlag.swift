@@ -239,14 +239,6 @@ public enum FeatureFlag: String {
     /// Gates the "Strict routing" VPN toggle.
     case vpnStrictRoutingToggle
 
-    /// Gates the "Exclude Carrier-Grade NAT" VPN toggle.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
-    case vpnExcludeCGNATToggle
-
-    /// Toggle for the Copy VPN Diagnostics button in the VPN status screen.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
-    case vpnShowCopyDiagnosticsButton
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
@@ -447,6 +439,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case duckAIVoiceShortcut
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true
+    case appSwitcherSnapshotClearing
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
@@ -483,6 +478,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603
     case newTabPageSessionInstrumentation
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
+    case newTabPageRedesign
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -493,11 +491,12 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216000794365770?focus=true
     case iPadDuckAIBarControls
 
+    /// Warns Duck.ai users in the unified toggle input as they approach their usage limits, using the
+    /// snapshot the web app writes into the reserved `usageLimits` native-storage entry.
+    case utiDuckAIWarnings
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUIAugust2026
-
-    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true
-    case removeChatHistory
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
     case aiChatTabSwitcherRichCard
@@ -545,6 +544,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216352541195038?focus=true
     case nativeAIPromptEditing
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217671927314542
+    case nativePromoCards
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -737,16 +739,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.vpnMenuItem))
         case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
-        case .vpnExcludeCGNATToggle:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT))
-        case .vpnShowCopyDiagnosticsButton:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.showCopyDiagnosticsButton))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:
             Config(source: .remoteReleasable(AIChatSubfeature.fullDuckAIMode))
         case .iPadDuckAIBarControls:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadDuckAIBarControls))
+        case .utiDuckAIWarnings:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .onboardingDuckAIFlow:
@@ -810,7 +810,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
         case .aiChatContextualFloatingInput:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .freeTrialConversionWideEvent:
@@ -828,7 +828,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .searchTokenExperimentV3:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV3), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
-            Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment), cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment2:
             Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment2), cohortType: MonthlyFreeTrialExperimentCohort.self)
         case .genericBackgroundTask:
@@ -873,6 +873,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:
             Config(source: .remoteReleasable(AIChatSubfeature.voiceShortcut))
+        case .appSwitcherSnapshotClearing:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appSwitcherSnapshotClearing))
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .bottomBarViewportFixedElementsWorkaround:
@@ -897,14 +899,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customizeNTPIcons))
         case .newTabPageSessionInstrumentation:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageSessionInstrumentation))
+        case .newTabPageRedesign:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageRedesign))
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .floatingUIAugust2026:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIAugust2026))
-        case .removeChatHistory:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
         case .aiChatTabSwitcherRichCard:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .syncScopedAccessCredentials:
@@ -927,6 +929,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
+        case .nativePromoCards:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromoCards))
         }
     }
 

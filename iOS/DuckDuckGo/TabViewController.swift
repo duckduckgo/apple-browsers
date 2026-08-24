@@ -744,7 +744,8 @@ class TabViewController: UIViewController {
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            selectionJourneyScopeID: tabModel.uid
         )
         coordinator.delegate = self
         return coordinator
@@ -2230,13 +2231,26 @@ extension TabViewController: WKNavigationDelegate {
 
         url = webView.url
         let tld = storageCache.tld
-        let httpsForced = tld.domain(lastUpgradedURL?.host) == tld.domain(webView.url?.host)
+        let httpsForced = Self.isHTTPSForced(lastUpgradedURL: lastUpgradedURL, currentURL: webView.url, tld: tld)
         onWebpageDidStartLoading(httpsForced: httpsForced)
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
         
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
 
+    }
+
+    /// Whether the committed page was reached via an HTTPS upgrade.
+    ///
+    /// Needs both an upgrade on record and an HTTPS commit: `lastUpgradedURL` isn't reset across
+    /// same-domain navigations, so without the scheme check a later HTTP commit on the same domain
+    /// would be mis-flagged. Mirrors macOS's `connectionUpgradedTo != nil`.
+    static func isHTTPSForced(lastUpgradedURL: URL?, currentURL: URL?, tld: TLD) -> Bool {
+        guard let lastUpgradedURL, let currentURL, currentURL.isHttps else { return false }
+        guard let upgradedDomain = tld.domain(lastUpgradedURL.host) else {
+            return lastUpgradedURL.host == currentURL.host
+        }
+        return upgradedDomain == tld.domain(currentURL.host)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {

@@ -290,7 +290,7 @@ final class OnboardingIntroViewModel: ObservableObject {
 
         postDownloadSelectionPersonalizationSetup(for: reason)
 
-        // TODO: pixel for the selected download reason. https://app.asana.com/1/137249556945/task/1216200647629938
+        pixelReporter.measureDownloadReasonSelection(reason)
         let remainingSteps = onboardingManager.selectDownloadReason(reason)
         if let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) {
             introSteps.insert(contentsOf: remainingSteps, at: currentStepIndex + 1)
@@ -299,31 +299,52 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
-    // NA Experiment: per-step actions for the reason-tailored screens. They only advance for now;
-    // the UI task adds each screen's real behaviour (persisting the setting, pixels, etc.).
+    // NA Experiment: per-step actions for the reason-tailored screens.
     func searchPrivacySettingsContinueAction() {
+        pixelReporter.measureSearchPrivacySettingsSelection(
+            recentlyVisitedSitesEnabled: personalizationManager.isRecentlyVisitedSitesEnabled,
+            safeSearchEnabled: personalizationManager.isSafeSearchEnabled
+        )
         makeNextViewState()
     }
 
     func aiSearchSettingsContinueAction() {
+        pixelReporter.measureAISearchSettingsSelection(
+            searchAssistEnabled: personalizationManager.isSearchAssistEnabled,
+            aiGeneratedImagesEnabled: !personalizationManager.areAIGeneratedImagesHidden
+        )
         makeNextViewState()
     }
 
     func aiModelContinueAction() {
+        // Report the model's provider (e.g. "openai") rather than the specific model id — coarser and
+        // more privacy-preserving.
+        let selectedModelID = personalizationManager.selectedAIChatModelID
+        let provider = aiModelsPrefetcher.resolvedModel.models.first { $0.id == selectedModelID }?.provider
+        pixelReporter.measureAIModelSelection(model: provider?.rawValue ?? "unknown")
         makeNextViewState()
     }
 
-    func toggleInputModeContinueAction() {
+    func toggleInputModeContinueAction(opensWithAIChat: Bool) {
+        personalizationManager.setNewTabOpensWithAIChat(opensWithAIChat)
+        pixelReporter.measureToggleInputModeSelection(openNewTabsWithAIChat: personalizationManager.doesNewTabOpenWithAIChat)
         makeNextViewState()
     }
 
-    func keepDuckAIContinueAction(isEnabled: Bool) {
-        onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: isEnabled)
+    func keepDuckAIContinueAction(shouldKeep: Bool) {
+        personalizationManager.setDuckAIEnabled(shouldKeep)
+        onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: shouldKeep)
+        pixelReporter.measureKeepDuckAISelection(shouldKeep: shouldKeep)
 
         makeNextViewState()
     }
 
-    func duckPlayerContinueAction() {
+    func adBlockingContinueAction() {
+        pixelReporter.measureAdBlockingSelection(
+            youTubeAdBlockingEnabled: personalizationManager.isYouTubeAdBlockingEnabled,
+            cookiePopUpProtectionEnabled: personalizationManager.isCookiePopUpProtectionEnabled,
+            popUpsWithoutOptOutsEnabled: personalizationManager.isPopUpsWithoutOptOutsEnabled
+        )
         makeNextViewState()
     }
 
@@ -471,10 +492,10 @@ private extension OnboardingIntroViewModel {
                         step: stepInfo()
                     )
                 )
-            case .duckPlayerSelection:
+            case .adBlockingPersonalization:
                 return .onboarding(
                     .init(
-                        type: .duckPlayerDialog(content: contentProvider.youTubePersonalizationContent),
+                        type: .adBlockingDialog(content: contentProvider.adBlockingPersonalizationContent),
                         step: stepInfo()
                     )
                 )
@@ -615,8 +636,8 @@ private extension OnboardingIntroViewModel {
             currentIntroStep = .toggleInputModeSelection
         case .keepDuckAISelection where introSteps.contains(.keepDuckAISelection):
             currentIntroStep = .keepDuckAISelection
-        case .duckPlayerSelection where introSteps.contains(.duckPlayerSelection):
-            currentIntroStep = .duckPlayerSelection
+        case .adBlockingPersonalization where introSteps.contains(.adBlockingPersonalization):
+            currentIntroStep = .adBlockingPersonalization
         case .duckAIAnswerStep:
             break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
         case .interludeDuckAI where introSteps.contains(.interlude(.duckAI)):
@@ -656,10 +677,19 @@ private extension OnboardingIntroViewModel {
         case .duckAIQueryDialog:
             pixelReporter.measureDuckAIQuerySelectionImpression()
         case .downloadReasonDialog:
-            break // TODO: Download Screen impression pixel. https://app.asana.com/1/137249556945/task/1216200647629938
-        case .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
-             .toggleInputModeDialog, .keepDuckAIDialog, .duckPlayerDialog:
-            break // TODO: impression pixels for the reason-tailored steps (UI task).
+            pixelReporter.measureDownloadReasonImpression()
+        case .searchPrivacySettingsDialog:
+            pixelReporter.measureSearchPrivacySettingsImpression()
+        case .aiSearchSettingsDialog:
+            pixelReporter.measureAISearchSettingsImpression()
+        case .aiModelDialog:
+            pixelReporter.measureAIModelImpression()
+        case .toggleInputModeDialog:
+            pixelReporter.measureToggleInputModeImpression()
+        case .keepDuckAIDialog:
+            pixelReporter.measureKeepDuckAIImpression()
+        case .adBlockingDialog:
+            pixelReporter.measureAdBlockingImpression()
         }
     }
 

@@ -33,6 +33,10 @@ import AIChat
 protocol FireDialogViewPresenting {
     @MainActor
     func present(in window: NSWindow, completion: (() -> Void)?)
+
+    /// Closes the presented dialog, and does nothing when it is not presented any more.
+    @MainActor
+    func dismiss()
 }
 
 struct FireDialogViewConfig {
@@ -43,11 +47,29 @@ struct FireDialogViewConfig {
 
 typealias FireDialogViewFactory = (_ config: FireDialogViewConfig) -> FireDialogViewPresenting
 
-private struct DefaultFireDialogPresenter: FireDialogViewPresenting {
-    let view: any ModalView
+private final class DefaultFireDialogPresenter: FireDialogViewPresenting {
+    private let view: any ModalView
+    private weak var window: NSWindow?
+    private var isPresented = false
+
+    init(view: any ModalView) {
+        self.view = view
+    }
+
     @MainActor
     func present(in window: NSWindow, completion: (() -> Void)?) {
-        view.show(in: window, completion: completion)
+        self.window = window
+        isPresented = true
+        view.show(in: window) { [weak self] in
+            self?.isPresented = false
+            completion?()
+        }
+    }
+
+    @MainActor
+    func dismiss() {
+        guard isPresented, let window, let sheet = window.attachedSheet else { return }
+        window.endSheet(sheet)
     }
 }
 
@@ -263,6 +285,8 @@ extension FireCoordinator {
             pixelFiring: self.pixelFiring
         )
 
+        var tabsChangedCancellable: AnyCancellable?
+
         let response: FireDialogView.Response = await withCheckedContinuation { (continuation: CheckedContinuation<FireDialogView.Response, Never>) in
             var didResume = false
             func resumeOnce(returning value: FireDialogView.Response) {
@@ -281,10 +305,25 @@ extension FireCoordinator {
                     }
                 )
             )
+
+            // The tabs of the window can change while the dialog is open, without the user doing it
+            // in the browser: a link opened from another app adds a tab and selects it. Let's close the
+            // dialog then.
+            tabsChangedCancellable = tabCollectionViewModel.tabCollection.$tabs
+                .dropFirst()
+                .map { _ in () }
+                .merge(with: tabCollectionViewModel.$selectedTabViewModel.dropFirst().map { _ in () })
+                .sink { _ in
+                    presenter.dismiss()
+                }
+
             presenter.present(in: parentWindow) {
                 resumeOnce(returning: .noAction)
             }
         }
+
+        // The dialog is closed here, so a later change of the tabs is none of its business.
+        tabsChangedCancellable?.cancel()
 
         switch response {
         case .noAction:

@@ -53,6 +53,22 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         sut.onRemoveActionRequested = { [weak self] in self?.removeCalls += 1 }
     }
 
+    // MARK: - Removal
+
+    /// The attachment menu is the way back, so a removal leaves nothing behind.
+    func test_removingTheChip_leavesNothingVisible() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url),
+                initialAttachmentDeliveryState: .pendingSubmit)
+
+        sut.tapToRemove()
+
+        XCTAssertFalse(sut.isVisible)
+        XCTAssertEqualState(sut.state, .placeholder)
+        XCTAssertEqual(removeCalls, 1)
+    }
+
     // MARK: - State transitions
 
     func test_initial_attachedAndOriginatingMatches_isAttached() {

@@ -167,9 +167,13 @@ public extension String {
         return message
     }
 
+    private static let maxPercentDecodingByteCount = 8192
+
     /// Repeatedly removes percent-encoding until no more percent-escapes remain.
     /// - Returns: The fully unescaped string.
     func fullyRemovingPercentEncoding() -> String {
+        guard utf8.count <= Self.maxPercentDecodingByteCount else { return self }
+
         var currentString = self
         var previousString: String
 

@@ -32,7 +32,7 @@ protocol OnboardingIntroContentProviding {
     var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent { get }
     var aiSearchPersonalizationContent: OnboardingPersonalizationContent { get }
     var aiChatEnabledPersonalizationContent: OnboardingDuckAIEnabledPersonalizationContent { get }
-    var youTubePersonalizationContent: OnboardingPersonalizationContent { get }
+    var adBlockingPersonalizationContent: OnboardingPersonalizationContent { get }
     var setDefaultBrowserContent: OnboardingComparisonContent { get }
     var aiIntroContent: OnboardingComparisonContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
@@ -201,6 +201,16 @@ struct OnboardingPersonalizationContent: Equatable {
     let items: [Item]
     let primaryCTA: String
     let daxAnimation: DaxAnimation
+    let footer: String?
+
+    init(title: String, message: String?, items: [Item], primaryCTA: String, daxAnimation: DaxAnimation, footer: String? = nil) {
+        self.title = title
+        self.message = message
+        self.items = items
+        self.primaryCTA = primaryCTA
+        self.daxAnimation = daxAnimation
+        self.footer = footer
+    }
 }
 
 extension OnboardingPersonalizationContent {
@@ -209,6 +219,15 @@ extension OnboardingPersonalizationContent {
         let type: ItemType
         let title: String
         let subtitle: String?
+        /// Rows shown only while this item's toggle is on. Empty for standalone rows.
+        let dependentItems: [Item]
+
+        init(type: ItemType, title: String, subtitle: String?, dependentItems: [Item] = []) {
+            self.type = type
+            self.title = title
+            self.subtitle = subtitle
+            self.dependentItems = dependentItems
+        }
     }
 
 }
@@ -221,7 +240,8 @@ extension OnboardingPersonalizationContent.Item {
         case searchAssist
         case aiGeneratedImages
         case youTubeAdBlocking
-        case duckPlayer
+        case rejectOptionalCookies
+        case acceptOtherCookies
     }
 
 }
@@ -310,16 +330,28 @@ extension OnboardingIntroContentProvider {
         )
     }
 
-    var youTubePersonalizationContent: OnboardingPersonalizationContent {
+    var adBlockingPersonalizationContent: OnboardingPersonalizationContent {
         OnboardingPersonalizationContent(
-            title: UserText.Onboarding.Personalization.YouTube.title,
+            title: UserText.Onboarding.Personalization.AdBlocking.title,
             message: nil,
             items: [
-                OnboardingPersonalizationContent.Item(type: .youTubeAdBlocking, title: UserText.Onboarding.Personalization.YouTube.adBlockingTitle, subtitle: nil),
-                OnboardingPersonalizationContent.Item(type: .duckPlayer, title: UserText.Onboarding.Personalization.YouTube.duckPlayerTitle, subtitle: UserText.Onboarding.Personalization.YouTube.duckPlayerSubtitle)
+                OnboardingPersonalizationContent.Item(type: .youTubeAdBlocking, title: UserText.Onboarding.Personalization.AdBlocking.adBlockingTitle, subtitle: nil),
+                OnboardingPersonalizationContent.Item(
+                    type: .rejectOptionalCookies,
+                    title: UserText.Onboarding.Personalization.AdBlocking.rejectOptionalCookiesTitle,
+                    subtitle: UserText.Onboarding.Personalization.AdBlocking.rejectOptionalCookiesSubtitle,
+                    dependentItems: [
+                        OnboardingPersonalizationContent.Item(
+                            type: .acceptOtherCookies,
+                            title: UserText.Onboarding.Personalization.AdBlocking.acceptOtherCookiesTitle,
+                            subtitle: UserText.Onboarding.Personalization.AdBlocking.acceptOtherCookiesSubtitle
+                        )
+                    ]
+                )
             ],
-            primaryCTA: UserText.Onboarding.Personalization.YouTube.cta,
-            daxAnimation: .wingLeft
+            primaryCTA: UserText.Onboarding.Personalization.AdBlocking.cta,
+            daxAnimation: .wingLeft,
+            footer: UserText.Onboarding.Personalization.AdBlocking.footer
         )
     }
 
@@ -374,6 +406,15 @@ extension OnboardingIntroContentProvider {
         // Return default version of comparison table if download reason is nil (Duck.ai + No experiment enrolled users)
         guard let reason = downloadReasonProvider() else { return defaultSetDefaultBrowserContent }
 
+        let title = switch reason {
+        case .browserPrivately, .privateAIChat:
+            UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
+        case .noAI:
+            UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
+        case .blockAds:
+            UserText.Onboarding.BrowsersComparison.titleNoAdsDownloadReasonExperiment
+        }
+
         let subHeader = reason == .privateAIChat ? UserText.Onboarding.DuckAICPP.AIComparison.subHeader : nil
 
         let competitor: OnboardingComparisonContent.Competitor = switch reason {
@@ -386,7 +427,7 @@ extension OnboardingIntroContentProvider {
         }
 
         return OnboardingComparisonContent(
-            title: UserText.Onboarding.BrowsersComparison.titleDownloadExperiment,
+            title: title,
             subHeader: subHeader,
             competitor: competitor,
             features: RebrandedComparisonTableModel.browserFeatures(for: reason),

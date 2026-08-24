@@ -173,12 +173,12 @@ class NavigationProtectionUITests: UITestCase {
 
     func testNavigationProtection_TrackingParameters_RemovedFromURLs() throws {
         // Test URL with commonly removed tracking parameters (based on actual browser behavior)
-        let trackedURL = URL(string: "https://example.com/?utm_source=test&utm_medium=test&utm_campaign=test&fbclid=test123&gclid=test456")!
+        let trackedURL = URL(string: "https://github.com/?utm_source=test&utm_medium=test&utm_campaign=test&fbclid=test123&gclid=test456")!
         addressBarTextField.pasteURL(trackedURL, pressingEnter: true)
 
         // Wait for page to load
-        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Example page should load")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "GitHub page should load")
 
         // Check final URL after navigation - tracking parameters should be removed
         let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
@@ -189,8 +189,8 @@ class NavigationProtectionUITests: UITestCase {
         // Assert that utm_medium parameter was removed (this is consistently removed)
         XCTAssertFalse(finalURL.contains("utm_medium"), "utm_medium tracking parameter should be removed; actual: \(finalURL)")
 
-        // Should still be on example.com (basic functionality preserved)
-        XCTAssertEqual(finalURL, "https://example.com/", "Should be on clean example.com URL after parameter removal; actual: \(finalURL)")
+        // Should still be on github.com (basic functionality preserved)
+        XCTAssertEqual(finalURL, "https://github.com/", "Should be on clean github.com URL after parameter removal; actual: \(finalURL)")
     }
 
     // MARK: - Redirect Protection Tests
@@ -221,21 +221,21 @@ class NavigationProtectionUITests: UITestCase {
         XCTAssertTrue(originContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Origin page should load")
 
         // Navigate to different origin to test cross-site protection
-        let crossOriginURL = URL(string: "https://example.com")!
+        let crossOriginURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(crossOriginURL, pressingEnter: true)
 
         // Wait for cross-origin page to load completely
-        let crossOriginContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(crossOriginContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Cross-origin page should load")
+        let crossOriginContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(crossOriginContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Cross-origin page should load")
 
         // Ensure page is fully loaded before accessing address bar
-        let pageFullyLoaded = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        let pageFullyLoaded = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
         XCTAssertTrue(pageFullyLoaded.waitForExistence(timeout: UITests.Timeouts.navigation), "Page should be fully loaded")
 
         // Verify cross-site navigation completed (protection allows legitimate navigation)
         let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertTrue(finalURL.contains("example.com"), "Legitimate cross-site navigation should work; actual: \(finalURL)")
+        XCTAssertTrue(finalURL.contains("github.com"), "Legitimate cross-site navigation should work; actual: \(finalURL)")
     }
 
     // MARK: - Referrer Protection Tests

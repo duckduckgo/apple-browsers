@@ -80,7 +80,7 @@ struct DataImportViewModel {
         /// Shown before importing when the browser data directory isn't readable (macOS 27+)
         case getDirectoryReadPermission(URL)
         /// Shown when the user didn't grant access to the browser data directory (macOS 27+)
-        case directoryReadPermissionDenied(URL)
+        case directoryReadPermissionCancelled(URL)
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
@@ -867,7 +867,7 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
-        case .getDirectoryReadPermission, .directoryReadPermissionDenied:
+        case .getDirectoryReadPermission, .directoryReadPermissionCancelled:
             return .grantDirectoryAccess(source: importSource)
         case .getFileReadPermission:
             return nil
@@ -900,7 +900,7 @@ extension DataImportViewModel {
                 return .cancel
             case .archiveImport, .profilePicker, .moreInfo, .getFileReadPermission, .getDirectoryReadPermission:
                 return .back
-            case .directoryReadPermissionDenied:
+            case .directoryReadPermissionCancelled:
                 return .cancelImport
             case .passwordEntryHelp:
                 return .cancel
@@ -1094,13 +1094,13 @@ extension DataImportViewModel {
             importButtonPressed()
 
         case .denied, .cancelled:
-            showDirectoryReadPermissionDeniedScreen(for: selectedProfile)
+            showDirectoryReadPermissionCancelledScreen(for: selectedProfile)
         }
     }
 
     @MainActor
-    private mutating func showDirectoryReadPermissionDeniedScreen(for profile: BrowserProfile) {
-        screen = .directoryReadPermissionDenied(profile.profileURL)
+    private mutating func showDirectoryReadPermissionCancelledScreen(for profile: BrowserProfile) {
+        screen = .directoryReadPermissionCancelled(profile.profileURL)
     }
 
     @MainActor

@@ -27,7 +27,7 @@ struct RequestDirectoryReadPermissionView: View {
 
     enum Mode {
         case initialRequest
-        case retryAfterDenial
+        case retryAfterCancel
     }
 
     let source: DataImport.Source
@@ -85,7 +85,7 @@ private extension RequestDirectoryReadPermissionView.Mode {
         switch self {
         case .initialRequest:
             return DesignSystemImages.Glyphs.Size16.infoSolid
-        case .retryAfterDenial:
+        case .retryAfterCancel:
             return DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert
         }
     }
@@ -94,7 +94,7 @@ private extension RequestDirectoryReadPermissionView.Mode {
         switch self {
         case .initialRequest:
             return RebrandingColor.Pondwater.pondwater50
-        case .retryAfterDenial:
+        case .retryAfterCancel:
             return nil
         }
     }
@@ -103,7 +103,7 @@ private extension RequestDirectoryReadPermissionView.Mode {
         switch self {
         case .initialRequest:
             return UserText.importBrowserDataRequestAccessTitle(for: source)
-        case .retryAfterDenial:
+        case .retryAfterCancel:
             return UserText.importBrowserDataRequestAccessDeniedTitle(for: source)
         }
     }
@@ -206,7 +206,7 @@ private extension FilePickerExampleView {
         .frame(width: 420)
 }
 
-#Preview("Retry After Denial") {
-    RequestDirectoryReadPermissionView(source: .chrome, mode: .retryAfterDenial)
+#Preview("Retry After Cancel") {
+    RequestDirectoryReadPermissionView(source: .chrome, mode: .retryAfterCancel)
         .frame(width: 420)
 }

@@ -138,8 +138,8 @@ struct DataImportView: ModalView {
                 .padding(.vertical, 12)
             case .getDirectoryReadPermission:
                 RequestDirectoryReadPermissionView(source: model.importSource)
-            case .directoryReadPermissionDenied:
-                RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterDenial)
+            case .directoryReadPermissionCancelled:
+                RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterCancel)
             case .passwordEntryHelp:
                 PasswordEntryRetryPromptView(
                     onRetry: {

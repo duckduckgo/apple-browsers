@@ -100,9 +100,9 @@ jobs:
         uses: ./.github/actions/select-xcode-version
 
       - name: Setup Bitrise Build Cache
-        if: runner.environment == 'self-hosted'
         uses: ./.github/actions/bitrise-build-cache
         with:
+          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
           token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
           workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
@@ -259,24 +259,41 @@ jobs:
 
       - name: Resolve package dependencies
         run: |
+          set -o pipefail
+
           echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
           echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
-          while xcodebuild -resolvePackageDependencies \
-            -scheme DataBrokerProtectionCore-Package \
-            -destination '${{ steps.select-simulator.outputs.destination }}' \
-            -derivedDataPath DerivedData \
-            2>&1 | grep Error; do :; done
+          max_attempts=5
+          retry_delay=10
+          resolve_log=ios-build-log.txt
+          : > "$resolve_log"
 
-          # you just can't have good things
-          # set -o pipefail && swift package resolve | tee ios-build-log.txt | xcbeautify
-          # mkdir -p DerivedData/SourcePackages
-          # mv .build/* DerivedData/SourcePackages
+          for attempt in $(seq 1 "$max_attempts"); do
+            echo "Resolving packages: attempt $attempt of $max_attempts"
+
+            if xcodebuild -resolvePackageDependencies \
+              -scheme DataBrokerProtectionCore-Package \
+              -destination '${{ steps.select-simulator.outputs.destination }}' \
+              -derivedDataPath DerivedData \
+              2>&1 | tee -a "$resolve_log"; then
+              echo "Package resolution succeeded"
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt "$max_attempts" ]]; then
+              echo "Package resolution failed; retrying in ${retry_delay}s"
+              sleep "$retry_delay"
+            fi
+          done
+
+          echo "::error::Package resolution failed after $max_attempts attempts"
+          exit 1
 
       - name: Setup Bitrise Build Cache
-        if: runner.environment == 'self-hosted'
         uses: ./.github/actions/bitrise-build-cache
         with:
+          enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
           token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
           workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 

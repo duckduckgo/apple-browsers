@@ -19,7 +19,7 @@
 import Combine
 import Common
 import XCTest
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DDGSync
 
 final class DDGSyncLifecycleTests: XCTestCase {

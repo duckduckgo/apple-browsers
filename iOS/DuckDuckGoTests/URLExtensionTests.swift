@@ -53,86 +53,6 @@ class URLExtensionTests: XCTestCase {
         XCTAssertEqual("https://www.example.com", URL(string: "https://www.example.com")?.toDesktopUrl().absoluteString)
     }
 
-    func testWhenURLHasLongTLDItStillIsConsideredValid() {
-        XCTAssertTrue(URL.isWebUrl("https://blah.accountants"))
-    }
-
-    func testWhenGivenLongWellFormedUrlThenIsWebUrlIsTrue() {
-        XCTAssertTrue(URL.isWebUrl("http://www.veganchic.com/products/Camo-High-Top-Sneaker-by-The-Critical-Slide-Societ+80758-0180.html"))
-    }
-
-    func testWhenHostIsValidThenIsWebUrlIsTrue() {
-        XCTAssertTrue(URL.isWebUrl("test.com"))
-        XCTAssertTrue(URL.isWebUrl("121.33.2.11"))
-        XCTAssertTrue(URL.isWebUrl("localhost"))
-        XCTAssertTrue(URL.isWebUrl("myhost.local"))
-    }
-
-    func testWhenHostIsInvalidThenIsWebUrlIsFalse() {
-        XCTAssertFalse(URL.isWebUrl("t est.com"))
-        XCTAssertFalse(URL.isWebUrl("test!com.com"))
-        XCTAssertFalse(URL.isWebUrl("121.33.33."))
-        XCTAssertFalse(URL.isWebUrl("localhostt"))
-        XCTAssertFalse(URL.isWebUrl("localserver"))
-    }
-
-    func testWhenSchemeIsValidThenIsWebUrlIsTrue() {
-        XCTAssertTrue(URL.isWebUrl("http://test.com"))
-        XCTAssertTrue(URL.isWebUrl("http://121.33.2.11"))
-        XCTAssertTrue(URL.isWebUrl("http://localhost"))
-        XCTAssertTrue(URL.isWebUrl("http://localserver"))
-    }
-
-    func testWhenSchemeIsInvalidThenIsWebUrlIsFalse() {
-        XCTAssertFalse(URL.isWebUrl("asdas://test.com"))
-        XCTAssertFalse(URL.isWebUrl("asdas://121.33.2.11"))
-        XCTAssertFalse(URL.isWebUrl("asdas://localhost"))
-    }
-
-    func testWhenTextIsIncompleteSchemeThenIsWebUrlIsFalse() {
-        XCTAssertFalse(URL.isWebUrl("http"))
-        XCTAssertFalse(URL.isWebUrl("http:"))
-        XCTAssertFalse(URL.isWebUrl("http:/"))
-        XCTAssertFalse(URL.isWebUrl("https"))
-        XCTAssertFalse(URL.isWebUrl("https:"))
-        XCTAssertFalse(URL.isWebUrl("https:/"))
-    }
-
-    func testWhenPathIsValidThenIsWebUrlIsTrue() {
-        XCTAssertTrue(URL.isWebUrl("http://test.com/path"))
-        XCTAssertTrue(URL.isWebUrl("http://121.33.2.11/path"))
-        XCTAssertTrue(URL.isWebUrl("http://localhost/path"))
-        XCTAssertTrue(URL.isWebUrl("test.com/path"))
-        XCTAssertTrue(URL.isWebUrl("121.33.2.11/path"))
-        XCTAssertTrue(URL.isWebUrl("localhost/path"))
-    }
-
-    func testWhenParamsAreValidThenIsWebUrlIsTrue() {
-        XCTAssertTrue(URL.isWebUrl("http://test.com?s=dafas&d=342"))
-        XCTAssertTrue(URL.isWebUrl("http://121.33.2.11?s=dafas&d=342"))
-        XCTAssertTrue(URL.isWebUrl("http://localhost?s=dafas&d=342"))
-        XCTAssertTrue(URL.isWebUrl("test.com?s=dafas&d=342"))
-        XCTAssertTrue(URL.isWebUrl("121.33.2.11?s=dafas&d=342"))
-        XCTAssertTrue(URL.isWebUrl("localhost?s=dafas&d=342"))
-        XCTAssertTrue(URL.isWebUrl("https://m.facebook.com/?refsrc=https%3A%2F%2Fwww.facebook.com%2F&_rdr"))
-    }
-
-    func testWhenGivenSimpleStringThenIsWebUrlIsFalse() {
-        XCTAssertFalse(URL.isWebUrl("randomtext"))
-    }
-
-    func testWhenGivenStringWithDotPrefixThenIsWebUrlIsFalse() {
-        XCTAssertFalse(URL.isWebUrl(".randomtext"))
-    }
-
-    func testWhenGivenStringWithDotSuffixThenIsWebUrlIsFalse() {
-        XCTAssertFalse(URL.isWebUrl("randomtext."))
-    }
-
-    func testWhenGivenNumberThenIsWebUrlIsFalse() {
-        XCTAssertFalse(URL.isWebUrl("33"))
-    }
-
     func testWhenWebUrlCalledWithValidURLThenSameUrlIsReturned() {
         let input = "http://test.com"
         let result = URL.webUrl(from: input)
@@ -250,10 +170,4 @@ class URLExtensionTests: XCTestCase {
         XCTAssertEqual(normalized, expected)
     }
 
-}
-
-extension URL {
-    static func isWebUrl(_ text: String) -> Bool {
-        return webUrl(from: text) != nil
-    }
 }

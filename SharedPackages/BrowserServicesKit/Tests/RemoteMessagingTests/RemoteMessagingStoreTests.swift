@@ -20,8 +20,7 @@ import BrowserServicesKitTestsUtils
 import ConcurrencyExtensions
 import CoreData
 import Foundation
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import RemoteMessagingTestsUtils
 import XCTest
 @testable import RemoteMessaging

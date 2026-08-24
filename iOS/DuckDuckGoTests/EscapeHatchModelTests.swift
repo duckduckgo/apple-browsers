@@ -22,7 +22,7 @@ import CoreGraphics
 import Testing
 import Core
 import PrivacyConfig
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 @Suite("Escape Hatch Model")

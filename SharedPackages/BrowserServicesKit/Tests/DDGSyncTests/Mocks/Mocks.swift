@@ -20,8 +20,7 @@ import Combine
 import Common
 import Foundation
 import Gzip
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import Networking

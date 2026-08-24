@@ -182,6 +182,24 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertEqual(spy.completeCount, 1)
     }
 
+    func testWhenStartChatWithAPlusModelThenThePaidUsedMetricFires() async {
+        let firedEvents = await firedEventsAfterStartingChat(withModelTier: ["plus"])
+
+        XCTAssertEqual(firedEvents.map(\.name), ["experiment_metrics_subscriptionOnboardingJul2026_treatment"])
+    }
+
+    func testWhenStartChatWithAProModelThenThePaidUsedMetricFires() async {
+        let firedEvents = await firedEventsAfterStartingChat(withModelTier: ["pro"])
+
+        XCTAssertEqual(firedEvents.map(\.name), ["experiment_metrics_subscriptionOnboardingJul2026_treatment"])
+    }
+
+    func testWhenStartChatWithAFreeModelThenThePaidUsedMetricDoesNotFire() async {
+        let firedEvents = await firedEventsAfterStartingChat(withModelTier: ["free"])
+
+        XCTAssertTrue(firedEvents.isEmpty)
+    }
+
     func testWhenSkippingThenTheDuckAIStepDoesNotComplete() async {
         let spy = SectionOutputSpy()
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
@@ -325,6 +343,25 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
     private func model(_ id: String, name: String = "Model", tier: [String], hasAccess: Bool = true) -> AIChatModel {
         AIChatModel(id: id, name: name, provider: .openAI, supportsImageUpload: false, entityHasAccess: hasAccess, accessTier: tier)
+    }
+
+    private func firedEventsAfterStartingChat(withModelTier tier: [String]) async -> [PixelKit.Event] {
+        var firedEvents: [PixelKit.Event] = []
+        let experimentData = ExperimentData(parentID: PrivacyProSubfeature.subscriptionOnboardingJul2026.parent.rawValue,
+                                            cohortID: "treatment",
+                                            enrollmentDate: Date())
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(
+            allActiveExperiments: [PrivacyProSubfeature.subscriptionOnboardingJul2026.rawValue: experimentData])
+        PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
+                                        eventTracker: ExperimentEventTracker(),
+                                        fire: { event, _, _ in firedEvents.append(event) })
+
+        let provider = MockAIModelProvider(models: [model("a", tier: tier)])
+        let (viewModel, _) = makeViewModel(provider: provider)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }, trigger: { viewModel.onAppear() })
+
+        viewModel.startChat()
+        return firedEvents
     }
 
     /// Runs `trigger`, then waits until `publisher` emits a value satisfying `predicate`. 

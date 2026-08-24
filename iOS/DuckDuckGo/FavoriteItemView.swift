@@ -31,11 +31,11 @@ struct FavoriteItemView: View {
     var body: some View {
         VStack(spacing: 6) {
             FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
-                .contentShape(.contextMenuPreview, FavoriteIconView.itemShape())
                 .if(isEditable) {
-                    $0.contextMenu {
-                        // This context menu can be moved up in the hierarchy to `FavoritesView` once support for iOS 15 is removed. contextMenu with preview modifier can be used then.
+                    $0.contextMenuWithPreviewIfAvailable {
                         contextMenuItems()
+                    } preview: {
+                        FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
                     }
                 }
 

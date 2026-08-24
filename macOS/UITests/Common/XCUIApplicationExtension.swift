@@ -345,7 +345,7 @@ extension XCUIApplication {
         addressBar.pasteURL(url, pressingEnter: true)
         XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         XCTAssertTrue(
-            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            windows.firstMatch.webViews[pageTitle].waitForNavigationToExist(),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }
@@ -366,12 +366,12 @@ extension XCUIApplication {
         XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         if let expectedLabel {
             XCTAssertTrue(
-                windows.firstMatch.webViews[expectedLabel].waitForExistence(timeout: UITests.Timeouts.navigation),
+                windows.firstMatch.webViews[expectedLabel].waitForNavigationToExist(),
                 "Web view with label '\(expectedLabel)' didn't load in a reasonable timeframe."
             )
         } else {
             XCTAssertTrue(
-                windows.firstMatch.webViews.firstMatch.waitForExistence(timeout: UITests.Timeouts.navigation),
+                windows.firstMatch.webViews.firstMatch.waitForNavigationToExist(),
                 "Web view didn't load in a reasonable timeframe."
             )
         }
@@ -392,7 +392,7 @@ extension XCUIApplication {
         )
         _=progressIndicator.waitForExistence(timeout: 1)
         XCTAssertTrue(
-            progressIndicator.waitForNonExistence(timeout: UITests.Timeouts.navigation),
+            progressIndicator.waitForNavigationToFinish(),
             "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
         )
     }
@@ -484,7 +484,7 @@ extension XCUIApplication {
         )
         addressBarTextField.typeURL(url)
         XCTAssertTrue(
-            windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            windows.webViews[pageTitle].waitForNavigationToExist(),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         if bookmarkingViaDialog {

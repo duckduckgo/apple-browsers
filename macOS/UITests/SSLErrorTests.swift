@@ -299,7 +299,7 @@ final class SSLErrorTests: UITestCase {
 
         // Navigate to secure site and verify shield without dot
         navigateTo(URL(string: "https://www.wikipedia.org/")!)
-        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: UITests.Timeouts.navigation),
+        XCTAssertTrue(app.webViews.firstMatch.waitForNavigationToExist(),
                       "Wikipedia should load")
         verifyAddressBarContains("wikipedia.org", context: "on Wikipedia")
         verifyShieldWithoutDot(context: "on secure site")

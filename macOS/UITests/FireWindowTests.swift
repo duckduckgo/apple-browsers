@@ -197,7 +197,7 @@ class FireWindowTests: UITestCase {
         )
         addressBar.typeURL(URL(string: "https://privacy-test-pages.site/autofill/autoprompt/1-standard-login-form.html")!)
         XCTAssertTrue(
-            app.windows.firstMatch.webViews["Autofill autoprompt for signin forms"].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.firstMatch.webViews["Autofill autoprompt for signin forms"].waitForNavigationToExist(),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }
@@ -247,7 +247,7 @@ class FireWindowTests: UITestCase {
         )
         addressBar.typeURL(URL(string: "https://privacy-test-pages.site/autofill/signup.html")!)
         XCTAssertTrue(
-            app.windows.firstMatch.webViews["Password generation during signup"].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.firstMatch.webViews["Password generation during signup"].waitForNavigationToExist(),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }

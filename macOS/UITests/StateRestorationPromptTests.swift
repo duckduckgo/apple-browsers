@@ -56,7 +56,7 @@ class StateRestorationPromptTests: UITestCase {
 
         addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForNavigationToExist(),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
@@ -68,7 +68,7 @@ class StateRestorationPromptTests: UITestCase {
         app.acceptSessionRestore()
 
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForNavigationToExist(),
             "Visited site wasn't found in a webview with the expected title in a reasonable timeframe."
         )
 
@@ -94,7 +94,7 @@ class StateRestorationPromptTests: UITestCase {
 
         addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForNavigationToExist(),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 

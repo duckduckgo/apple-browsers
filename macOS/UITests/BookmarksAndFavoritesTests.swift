@@ -796,7 +796,7 @@ private extension BookmarksAndFavoritesTests {
         )
         addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForNavigationToExist(),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         if bookmarkingViaDialog {

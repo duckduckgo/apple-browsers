@@ -352,7 +352,7 @@ class PinnedTabsTests: UITestCase {
 
     private func waitForSite(pageTitle: String, file: StaticString = #file, line: UInt = #line) {
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForNavigationToExist(),
             "Web view for '\(pageTitle)' should exist (line \(#line))",
             file: file,
             line: line

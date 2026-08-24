@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Foundation
 import XCTest
 
 extension XCUIElementSnapshot {
@@ -76,6 +77,38 @@ extension XCUIElement {
         }
 
         return false
+    }
+
+    @discardableResult
+    func waitForNavigationToExist(timeout: TimeInterval = UITests.Timeouts.navigation,
+                                  expectedDuration: TimeInterval = UITests.Timeouts.expectedNavigationDuration,
+                                  file: StaticString = #file,
+                                  line: UInt = #line) -> Bool {
+        let startTime = ProcessInfo.processInfo.systemUptime
+        let didLoad = waitForExistence(timeout: timeout)
+        let duration = ProcessInfo.processInfo.systemUptime - startTime
+
+        if didLoad, duration > expectedDuration {
+            XCTFail("Navigation completed in \(duration) seconds; expected \(expectedDuration) seconds or less.", file: file, line: line)
+        }
+
+        return didLoad
+    }
+
+    @discardableResult
+    func waitForNavigationToFinish(timeout: TimeInterval = UITests.Timeouts.navigation,
+                                   expectedDuration: TimeInterval = UITests.Timeouts.expectedNavigationDuration,
+                                   file: StaticString = #file,
+                                   line: UInt = #line) -> Bool {
+        let startTime = ProcessInfo.processInfo.systemUptime
+        let didFinish = waitForNonExistence(timeout: timeout)
+        let duration = ProcessInfo.processInfo.systemUptime - startTime
+
+        if didFinish, duration > expectedDuration {
+            XCTFail("Navigation completed in \(duration) seconds; expected \(expectedDuration) seconds or less.", file: file, line: line)
+        }
+
+        return didFinish
     }
 
     /// On some individual systems, strings which contain a ":" do not type the ":" when the string is entirely typed with `typeText(...)` into the

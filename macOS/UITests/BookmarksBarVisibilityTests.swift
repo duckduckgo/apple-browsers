@@ -57,7 +57,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
         // Wait for the page to load
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForNavigationToExist(),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
@@ -114,7 +114,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
         // Wait for the page to load
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForNavigationToExist(),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
@@ -162,7 +162,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
         // Wait for the page to load
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForNavigationToExist(),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 

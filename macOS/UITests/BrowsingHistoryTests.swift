@@ -135,12 +135,12 @@ class BrowsingHistoryTests: UITestCase {
         app.reopenLastClosedWindowMenuItem.click()
 
         XCTAssertTrue(
-            app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForNavigationToExist(),
             "Restored visited tab 1 wasn't available with the expected title in a reasonable timeframe."
         )
         app.closeCurrentTab()
         XCTAssertTrue(
-            app.windows.webViews[titleOfSecondTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[titleOfSecondTabWhichShouldRestore].waitForNavigationToExist(),
             "Restored visited tab 2 wasn't available with the expected title in a reasonable timeframe."
         )
     }

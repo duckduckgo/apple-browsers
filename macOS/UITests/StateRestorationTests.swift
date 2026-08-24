@@ -59,25 +59,25 @@ class StateRestorationTests: UITestCase {
         )
         addressBarTextField.pasteURL(firstURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[firstPageTitle].waitForNavigationToExist(),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
         app.openNewTab()
         addressBarTextField.pasteURL(secondURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[secondPageTitle].waitForNavigationToExist(),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
         app.restart()
 
         XCTAssertTrue(
-            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[secondPageTitle].waitForNavigationToExist(),
             "Second visited site wasn't found in a webview with the expected title in a reasonable timeframe."
         )
         app.closeCurrentTab()
         XCTAssertTrue(
-            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[firstPageTitle].waitForNavigationToExist(),
             "First visited site wasn't found in a webview with the expected title in a reasonable timeframe."
         )
     }
@@ -94,13 +94,13 @@ class StateRestorationTests: UITestCase {
         )
         addressBarTextField.pasteURL(firstURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[firstPageTitle].waitForNavigationToExist(),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
         app.openNewTab()
         addressBarTextField.pasteURL(secondURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[secondPageTitle].waitForNavigationToExist(),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 

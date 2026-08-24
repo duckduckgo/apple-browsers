@@ -83,6 +83,8 @@ struct DataImportViewModel {
         /// Shown before importing when the browser data directory isn't readable (macOS 27+)
         case getDirectoryReadPermission(URL)
         /// Shown when the user didn't grant access to the browser data directory (macOS 27+)
+        case directoryReadPermissionCancelled(URL)
+        /// Shown when the browser data directory is still unreadable after the user picked a directory (macOS 27+)
         case directoryReadPermissionDenied(URL)
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
@@ -873,7 +875,7 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
-        case .getDirectoryReadPermission, .directoryReadPermissionDenied:
+        case .getDirectoryReadPermission, .directoryReadPermissionCancelled, .directoryReadPermissionDenied:
             return .grantDirectoryAccess(source: importSource)
         case .getFileReadPermission:
             return nil
@@ -906,7 +908,7 @@ extension DataImportViewModel {
                 return .cancel
             case .archiveImport, .profilePicker, .moreInfo, .getFileReadPermission, .getDirectoryReadPermission:
                 return .back
-            case .directoryReadPermissionDenied:
+            case .directoryReadPermissionCancelled, .directoryReadPermissionDenied:
                 return .cancelImport
             case .passwordEntryHelp:
                 return .cancel
@@ -1112,6 +1114,12 @@ extension DataImportViewModel {
             PixelKit.fire(DataImportPermissionPixel.directoryPermissionCancelled(source: source), options: .unenforcedPrefix)
             showDirectoryReadPermissionDeniedScreen(for: selectedProfile)
         }
+    }
+
+    @MainActor
+    private mutating func showDirectoryReadPermissionCancelledScreen(for profile: BrowserProfile) {
+        PixelKit.fire(DataImportPermissionPixel.directoryPermissionErrorScreenShown(source: importSource.pixelSourceParameterName), options: .unenforcedPrefix)
+        screen = .directoryReadPermissionCancelled(profile.profileURL)
     }
 
     @MainActor

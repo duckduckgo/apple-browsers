@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/macos_replay_harness_tests.yml"
+      - ".github/workflows/macos_ddg_lcp.yml"
       - "macOS/scripts/crossbench/**"
 
 permissions:
@@ -26,4 +27,4 @@ jobs:
 
       - name: Run replay harness tests
         working-directory: macOS/scripts/crossbench
-        run: python3 -m unittest discover -s tests -p 'test_*.py'
+        run: python3 -m unittest discover -v -s tests -p 'test_*.py'

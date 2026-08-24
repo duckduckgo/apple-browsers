@@ -364,18 +364,18 @@ struct FireDialogView: ModalView {
     }
 
     private var detailsDisclosureView: some View {
-        HStack {
-            Text(UserText.fireDialogChooseWhatToDelete)
-                .font(.system(size: 11))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+        Button {
+            withAnimation(.easeOut(duration: 0.2)) {
+                viewModel.isSectionsExpanded.toggle()
+            }
+        } label: {
+            HStack {
+                Text(UserText.fireDialogChooseWhatToDelete)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
 
-            Spacer()
+                Spacer()
 
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    viewModel.isSectionsExpanded.toggle()
-                }
-            } label: {
                 Image(nsImage: (viewModel.isSectionsExpanded ? DesignSystemImages.Glyphs.Size24.chevronUpSmall : DesignSystemImages.Glyphs.Size24.chevronDownSmall))
                     .resizable()
                     .renderingMode(.template)
@@ -384,13 +384,14 @@ struct FireDialogView: ModalView {
                     .padding(6)
                     .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
-            .accessibilityValue(viewModel.isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
+            .contentShape(Rectangle())
+            .padding(.horizontal, 4)
         }
-        .padding(.horizontal, 4)
+        .buttonStyle(.plain)
+        .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
+        .accessibilityValue(viewModel.isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
     }
 
     private var sectionsView: some View {
@@ -428,6 +429,7 @@ struct FireDialogView: ModalView {
                 detailAction: viewModel.hasCookiesAndSiteDataInScope ? { isShowingSitesOverlay = true } : nil,
                 // grey-out the detail label when the toggle is Off
                 detailActionEnabled: viewModel.includeCookiesAndSiteData,
+                detailAccessibilityIdentifier: "FireDialogView.cookiesDetailButton",
                 isEnabled: viewModel.hasCookiesAndSiteDataInScope,
                 toggleId: "FireDialogView.cookiesToggle"
             )
@@ -479,8 +481,7 @@ struct FireDialogView: ModalView {
     private var sitesOverlayHeader: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 8) {
-                (Text(UserText.fireDialogSitesOverlayTitleBold(viewModel.selectable.count)).fontWeight(.semibold)
-                 + Text(" \(UserText.fireDialogSitesOverlayTitleRegular)"))
+                Text(.init(UserText.fireDialogSitesOverlayTitle(viewModel.selectable.count)))
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .multilineTextAlignment(.leading)
@@ -602,8 +603,7 @@ struct FireDialogView: ModalView {
 
     private var chatsOverlayHeader: some View {
         HStack(alignment: .center, spacing: 12) {
-            (Text(UserText.fireDialogChatsOverlayTitleBold(viewModel.chats.count)).fontWeight(.semibold)
-             + Text(" \(UserText.fireDialogChatsOverlayTitleRegular)"))
+            Text(.init(UserText.fireDialogChatsOverlayTitle(viewModel.chats.count)))
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.leading)
@@ -693,8 +693,7 @@ struct FireDialogView: ModalView {
 
     private var historyOverlayHeader: some View {
         HStack(alignment: .center, spacing: 12) {
-            (Text(UserText.fireDialogHistoryOverlayTitleBold(viewModel.historyVisits.count)).fontWeight(.semibold)
-             + Text(" \(UserText.fireDialogHistoryOverlayTitleRegular)"))
+            Text(.init(UserText.fireDialogHistoryOverlayTitle(viewModel.historyVisits.count)))
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.leading)
@@ -892,13 +891,19 @@ struct FireDialogView: ModalView {
 
         var body: some View {
             if let action {
-                Button(action: action) {
+                Button {
+                    guard isEnabled else { return }
+                    action()
+                } label: {
                     label
                 }
                 .buttonStyle(.plain)
-                .disabled(!isEnabled)
+                // `disabled(_:)` is deliberately not used here: the button style dims the label
+                // in the disabled state, and the text must keep its normal appearance. The guard
+                // in the action and `allowsHitTesting(_:)` make the button inert instead.
+                .allowsHitTesting(isEnabled)
                 .onHover { isHovered = $0 }
-                .cursor(.pointingHand)
+                .cursor(isEnabled ? .pointingHand : .arrow)
                 .accessibilityIdentifier(accessibilityIdentifier ?? "")
             } else {
                 label
@@ -917,7 +922,6 @@ struct FireDialogView: ModalView {
                     Capsule(style: .continuous)
                         .fill(isHovered && isEnabled ? Color(designSystemColor: .buttonsSecondaryFillDefault) : Color.clear)
                 )
-                .opacity(action != nil && !isEnabled ? 0.4 : 1.0)
         }
     }
 
@@ -928,22 +932,22 @@ struct FireDialogView: ModalView {
     private var deleteButtonBackground: LinearGradient {
         LinearGradient(
             stops: [
-                .init(color: Color(singleUseColor: .fireButtonGradientStart), location: 0.116),
+                .init(color: Color(singleUseColor: .fireButtonGradientStart), location: 0),
                 .init(color: Color(singleUseColor: .fireButtonGradientEnd), location: 1.0)
             ],
-            startPoint: UnitPoint(x: 0, y: 0.37),
-            endPoint: UnitPoint(x: 1, y: 0.63)
+            startPoint: UnitPoint(x: -0.20, y: 0),
+            endPoint: UnitPoint(x: 1.20, y: 1)
         )
     }
 
     private var deleteButtonPressedBackground: LinearGradient {
         LinearGradient(
             stops: [
-                .init(color: Color(singleUseColor: .fireButtonPressedGradientStart), location: 0.116),
+                .init(color: Color(singleUseColor: .fireButtonPressedGradientStart), location: 0),
                 .init(color: Color(singleUseColor: .fireButtonPressedGradientEnd), location: 1.0)
             ],
-            startPoint: UnitPoint(x: 0, y: 0.37),
-            endPoint: UnitPoint(x: 1, y: 0.63)
+            startPoint: UnitPoint(x: -0.20, y: 0),
+            endPoint: UnitPoint(x: 1.20, y: 1)
         )
     }
 

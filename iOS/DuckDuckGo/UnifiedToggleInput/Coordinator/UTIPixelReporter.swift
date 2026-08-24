@@ -106,6 +106,26 @@ final class UTIPixelReporter {
         withContext { firing.fire(.unifiedToggleInputStopGenerationTapped, ["surface": $0.surface.rawValue]) }
     }
 
+    // MARK: - Message edit
+
+    func reportEditReceived() {
+        withContext { firing.fire(.unifiedToggleInputEditReceived, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditSubmitted() {
+        withContext { firing.fire(.unifiedToggleInputEditSubmitted, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditCancelled() {
+        withContext { firing.fire(.unifiedToggleInputEditCancelled, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {
+        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireEditAttachmentRemovedPixel(for: attachment, surface: $0.surface, firing: firing) }
+    }
+
+    // MARK: - Voice
+
     func reportVoiceTapped(hasPendingPageContext: Bool) {
         withContext {
             firing.fireDailyAndCount(.unifiedToggleInputVoiceTapped, [

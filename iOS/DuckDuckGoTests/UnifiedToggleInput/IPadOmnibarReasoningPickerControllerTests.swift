@@ -38,7 +38,8 @@ final class IPadOmnibarReasoningPickerControllerTests: XCTestCase {
         store = UTIModelStore(
             modelsService: StubModelsService(),
             preferences: preferences,
-            subscriptionManager: SubscriptionManagerMock()
+            subscriptionManager: SubscriptionManagerMock(),
+            isUpdatedModelPickerEnabled: false
         )
         upsellPresenter = MockUpsellPresenter()
         sut = IPadOmnibarReasoningPickerController(

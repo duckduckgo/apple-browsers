@@ -125,13 +125,23 @@ extension NewTabPageActionsManager {
                 featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
             ))
         )
+        let omnibarModelsProvider = NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger)
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
             searchPreferences: NSApp.delegateTyped.searchPreferences,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            duckAiStorageHandlerProvider: { burnerMode in
+                NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode)
+                    ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+            },
+            // Reuses whatever the model picker last resolved, rather than repeating the subscription
+            // lookup on every input activation.
+            userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },
+            availableModelsProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastFetchedModels ?? [] },
+            isTrialEligibleProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.isEligibleForFreeTrial ?? false }
         )
         omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
             omnibarConfigProvider?.notifyCustomizeResponsesChanged()
@@ -239,7 +249,7 @@ extension NewTabPageActionsManager {
             NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
                                     aiChatsProvider: aiChatsProvider,
-                                    modelsProvider: NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger),
+                                    modelsProvider: omnibarModelsProvider,
                                     actionHandler: omnibarActionHandler,
                                     tabsProvider: NewTabPageOmnibarTabsProvider(windowControllersManager: windowControllersManager),
                                     subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenter(

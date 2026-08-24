@@ -52,7 +52,10 @@ extension DebugScreensViewModel {
                 }
             }),
             .view(title: "CPM", { d in
-                CPMDebugScreensView(keyValueStore: d.keyValueStore)
+                CPMDebugScreensView(
+                    keyValueStore: d.keyValueStore,
+                    cooldownResetter: d.promoCoordinationCooldownResetter
+                )
             }),
             .action(title: "Reset Sync Promos", { d in
                 let syncPromoPresenter = SyncPromoManager(syncService: d.syncService)
@@ -84,7 +87,7 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
-            .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
+            resetModalPromptsCooldownPeriodScreen,
 
             // MARK: SwiftUI Views
             .view(title: "DuckUI", { _ in
@@ -168,11 +171,18 @@ extension DebugScreensViewModel {
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
             }),
-            .view(title: "Modal Prompt Coordination", { d in
-                ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
+            .view(title: "Prompt Coordination", { d in
+                PromptCoordinationDebugView(
+                    diagnosticsProvider: d.promoCoordinationDiagnosticsProvider,
+                    cooldownResetter: d.promoCoordinationCooldownResetter
+                )
             }),
             .view(title: "What's New", { dependencies in
-                WhatsNewDebugView(keyValueStore: dependencies.keyValueStore, remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)
+                WhatsNewDebugView(
+                    diagnosticsProvider: dependencies.promoCoordinationDiagnosticsProvider,
+                    cooldownResetter: dependencies.promoCoordinationCooldownResetter,
+                    remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler
+                )
             }),
             .view(title: "Next Steps Dismissal", { d in
                 SettingsNextStepsDebugView(keyValueStore: d.keyValueStore)
@@ -306,13 +316,12 @@ extension DebugScreensViewModel {
         ].compactMap { $0 }
     }
     
-    private func resetModalPromptsCooldownPeriod(_ dependencies: DebugScreen.Dependencies) {
-        let store = PromptCooldownKeyValueFilesStore(
-            keyValueStore: dependencies.keyValueStore,
-            eventMapper: .init(mapping: { _, _, _, _ in })
-        )
+    private var resetModalPromptsCooldownPeriodScreen: DebugScreen? {
+        guard let cooldownResetter = dependencies.promoCoordinationCooldownResetter else { return nil }
 
-        store.lastPresentationTimestamp = nil
+        return .action(title: "Reset Prompts Cooldown Period") { _ in
+            cooldownResetter.resetModalCooldown()
+        }
     }
 
     private var webExtensionsDebugScreen: DebugScreen? {
@@ -336,6 +345,7 @@ extension DebugScreensViewModel {
 private struct CPMDebugScreensView: View {
 
     let keyValueStore: ThrowingKeyValueStoring
+    let cooldownResetter: PromoCoordinationCooldownResetting?
 
     var body: some View {
         List {
@@ -347,7 +357,7 @@ private struct CPMDebugScreensView: View {
                     // Clears the shown flag + shown count.
                     CookiePopupProtectionOptInPromptStore(keyValueStore: keyValueStore).reset()
                     // Also lift the global modal cooldown — otherwise the queue suppresses all prompts on launch until it expires.
-                    try? keyValueStore.set(nil, forKey: PromptCooldownKeyValueFilesStore.StorageKey.lastPromptShownTimestamp)
+                    cooldownResetter?.resetModalCooldown()
                     ActionMessageView.present(message: "Reset opt-in dialog launch state - DONE")
                 }
             }

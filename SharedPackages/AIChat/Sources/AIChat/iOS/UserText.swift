@@ -18,21 +18,22 @@
 
 #if os(iOS)
 import Foundation
-import FoundationExtensions
 
 public struct UserText {
     public static let aiChatTitle = NSLocalizedString("aichat.title", bundle: Bundle.module, value: "Duck.ai", comment: "Title for DuckDuckGo AI Chat. Should not be translated")
     public static let downloadComplete = NSLocalizedString("aichat.download.complete", bundle: Bundle.module, value: "Download complete for %@", comment: "Download complete for duck.ai")
     public static let downloadToastShow = NSLocalizedString("aichat.download.show", bundle: Bundle.module, value: "Show", comment: "Show button for downloads")
     public static let downloadFailed = NSLocalizedString("aichat.download.failed", bundle: Bundle.module, value: "Download failed", comment: "Download failed message")
-    public static let modelPickerLabelEverydayUse = NotLocalizedString(
+    public static let modelPickerLabelEverydayUse = NSLocalizedString(
         "aichat.model-picker.label.everyday-use",
+        bundle: Bundle.module,
         value: "Best for everyday use",
         comment: "Editorial descriptor shown beneath a model in the model picker when it is recommended for everyday use"
     )
-    public static let modelPickerLabelUsesLimitsFaster = NotLocalizedString(
+    public static let modelPickerLabelUsesLimitsFaster = NSLocalizedString(
         "aichat.model-picker.label.uses-limits-faster",
-        value: "Solid but uses limits faster",
+        bundle: Bundle.module,
+        value: "Solid but hits limits sooner",
         comment: "Editorial descriptor shown beneath a model in the model picker when it consumes usage limits faster"
     )
     public static let attachPageContent = NSLocalizedString("duckai.contextual.attach.content", value: "Attach Page Content", comment: "Title for the attach placeholder chip in Duck.ai contextual sheet")

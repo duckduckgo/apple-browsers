@@ -23,7 +23,7 @@ import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import HistoryView
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils

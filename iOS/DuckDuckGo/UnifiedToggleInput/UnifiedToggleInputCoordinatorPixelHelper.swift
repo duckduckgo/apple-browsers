@@ -145,6 +145,15 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         }
     }
 
+    static func fireEditAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
+        switch attachment {
+        case .image:
+            firing.fireDailyAndCount(.unifiedToggleInputEditImageRemoved, surfaceParameters(surface))
+        case .file, .invalidFile:
+            firing.fireDailyAndCount(.unifiedToggleInputEditFileRemoved, surfaceParameters(surface))
+        }
+    }
+
     static func fireSubscriptionUpsellTriggeredPixel(
         source: SubscriptionFlowSource,
         currentTier: AIChatUserTier,

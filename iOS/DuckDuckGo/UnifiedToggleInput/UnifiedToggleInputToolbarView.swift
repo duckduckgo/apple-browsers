@@ -50,7 +50,6 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onStopGeneratingTapped: (() -> Void)?
     var onReturnKeyTapped: (() -> Void)?
     var onModelPickerShown: (() -> Void)?
-    var onUpdatedModelPickerTapped: (() -> Void)?
     var onReasoningPickerShown: (() -> Void)?
 
     // MARK: - State
@@ -107,10 +106,6 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateModelChipConfiguration() }
     }
 
-    var usesUpdatedModelPickerPresentation = false {
-        didSet { updateModelPickerPrimaryAction() }
-    }
-
     var selectedTool: AIChatRAGTool? {
         didSet { updateChipVisibility() }
     }
@@ -129,10 +124,6 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
-    var modelPickerSourceView: UIView {
-        modelChipButton
-    }
-
     /// Programmatically opens the model chip's pull-down menu. Returns `true` when the OS
     /// exposes an API to trigger it (iOS 17.4+, where `performPrimaryAction()` lands), `false`
     /// otherwise.
@@ -140,18 +131,24 @@ final class UnifiedToggleInputToolbarView: UIView {
     func presentModelPickerMenu() -> Bool {
         guard modelPickerMenu != nil else { return false }
 
-        if usesUpdatedModelPickerPresentation {
-            guard let onUpdatedModelPickerTapped else { return false }
-            onUpdatedModelPickerTapped()
-            return true
-        }
-
         if #available(iOS 17.4, *) {
             modelChipButton.performPrimaryAction()
             return true
         }
         return false
     }
+    
+    @discardableResult
+    func presentReasoningPickerMenu() -> Bool {
+        guard reasoningPickerMenu != nil else { return false }
+
+        if #available(iOS 17.4, *) {
+            reasoningButton.performPrimaryAction()
+            return true
+        }
+        return false
+    }
+
 
     var reasoningPickerMenu: UIMenu? {
         get { reasoningButton.menu }
@@ -509,7 +506,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     private func updateModelPickerPrimaryAction() {
-        modelChipButton.menu = usesUpdatedModelPickerPresentation ? nil : storedModelPickerMenu
+        modelChipButton.menu = storedModelPickerMenu
         modelChipButton.showsMenuAsPrimaryAction = modelChipButton.menu != nil
     }
 
@@ -582,11 +579,7 @@ private extension UnifiedToggleInputToolbarView {
     @objc private func returnKeyTapped() { onReturnKeyTapped?() }
     @objc private func modelPickerShown() {
         guard modelPickerMenu != nil else { return }
-        if usesUpdatedModelPickerPresentation {
-            onUpdatedModelPickerTapped?()
-        } else {
-            onModelPickerShown?()
-        }
+        onModelPickerShown?()
     }
     @objc private func reasoningPickerShown() {
         guard reasoningPickerMenu != nil else { return }

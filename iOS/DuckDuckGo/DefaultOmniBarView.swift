@@ -2294,8 +2294,8 @@ extension DefaultOmniBarView {
         textField.alpha = hasText ? 0 : 1
     }
 
-    func updateAIChatButtonForContextualSurface(isPresented: Bool) {
-        searchAreaView.aiChatButton.setImage(isPresented
+    func updateAIChatButtonForContextualChat(hasContextualSession: Bool) {
+        searchAreaView.aiChatButton.setImage(hasContextualSession
             ? DesignSystemImages.Glyphs.Size24.aiChatDown
             : DesignSystemImages.Glyphs.Size24.aiChat)
     }

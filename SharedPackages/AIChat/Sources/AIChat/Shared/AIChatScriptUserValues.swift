@@ -116,7 +116,14 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsOpenAIChatLink: Bool
     public let supportsAIChatSync: Bool
     public let supportsMultipleContexts: Bool
+    /// `true` when the sidebar surface may show the multi-tab attach picker
+    /// (gated on `sidebarAttachMoreTabs`).
     public let supportsTabPicker: Bool
+    /// `true` when the full-page duck.ai surface (regular tab) may show the multi-tab attach
+    /// picker (gated on `attachMoreTabs`). A separate key so old app versions — which never
+    /// send it — keep the picker sidebar-only regardless of remote-config state; the FE picks
+    /// the key matching its placement.
+    public let supportsFullPageTabPicker: Bool
     public let supportsNativeStorage: Bool
     public let supportsNativePromptEditing: Bool
     /// `true` when the native input can handle the Duck.ai promo card CTAs (model/reasoning/attachment
@@ -208,6 +215,7 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsAIChatSync: Bool,
                 supportsMultipleContexts: Bool = false,
                 supportsTabPicker: Bool = false,
+                supportsFullPageTabPicker: Bool = false,
                 supportsNativeStorage: Bool = false,
                 supportsNativePromptEditing: Bool = false,
                 supportsPromoCards: Bool = false,
@@ -235,6 +243,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsAIChatSync = supportsAIChatSync
         self.supportsMultipleContexts = supportsMultipleContexts
         self.supportsTabPicker = supportsTabPicker
+        self.supportsFullPageTabPicker = supportsFullPageTabPicker
         self.supportsNativeStorage = supportsNativeStorage
         self.supportsNativePromptEditing = supportsNativePromptEditing
         self.supportsPromoCards = supportsPromoCards

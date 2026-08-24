@@ -483,7 +483,7 @@ func AIChatMockDebugSettings() -> any KeyedStoring<AIChatDebugURLSettings> {
 }
 
 private final class MockAIChatMessageHandling: AIChatMessageHandling {
-    func getNativeConfigValues(isFireWindow: Bool, isSidebar: Bool) -> AIChatNativeConfigValues {
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues {
         .defaultValues
     }
 

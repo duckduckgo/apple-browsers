@@ -31,10 +31,7 @@ enum AIChatMessageType {
 }
 
 protocol AIChatMessageHandling {
-    /// Builds the native config for one webview. `isSidebar` identifies the requesting surface
-    /// (sidebar / detached floating window vs. the full-page duck.ai tab) so per-surface
-    /// capabilities like the tab picker can resolve against the right feature flag.
-    func getNativeConfigValues(isFireWindow: Bool, isSidebar: Bool) -> AIChatNativeConfigValues
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable?
     func setData(_ data: Any?, forMessageType type: AIChatMessageType)
 
@@ -124,9 +121,7 @@ final class AIChatMessageHandler: AIChatMessageHandling {
 
 // MARK: - Messages
 extension AIChatMessageHandler {
-    /// `isSidebar` defaults to the full-page surface for direct (e.g. test) callers; the
-    /// user-script call site always passes the surface resolved from the requesting webview.
-    func getNativeConfigValues(isFireWindow: Bool, isSidebar: Bool = false) -> AIChatNativeConfigValues {
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues {
         let appVersion = AppVersion.shared.versionAndBuildNumber
         let defaults = AIChatNativeConfigValues.defaultValues
         return AIChatNativeConfigValues(
@@ -146,10 +141,11 @@ extension AIChatMessageHandler {
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !isFireWindow,
             supportsMultipleContexts: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
-            // Tab attachment is gated per surface: the sidebar (and its detached floating window)
-            // by `aiChatSidebarAttachMoreTabs`, the full-page duck.ai tab by `aiChatAttachMoreTabs`.
-            supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext)
-                && featureFlagger.isFeatureOn(isSidebar ? .aiChatSidebarAttachMoreTabs : .aiChatAttachMoreTabs),
+            // Tab attachment is gated per surface via two separate keys: the sidebar reads
+            // `supportsTabPicker`, the full-page duck.ai tab reads `supportsFullPageTabPicker`.
+            // Old app versions never send the second key, so the picker stays sidebar-only there.
+            supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatSidebarAttachMoreTabs),
+            supportsFullPageTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatAttachMoreTabs),
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsSuggestions: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.sidebarSuggestedPrompts),
             supportsNativeVoicePermissionHandler: featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),

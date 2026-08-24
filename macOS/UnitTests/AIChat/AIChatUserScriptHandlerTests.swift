@@ -51,7 +51,7 @@ final class MockAIChatMessageHandler: AIChatMessageHandling {
     var getNativeConfigValuesImpl: (Bool) -> AIChatNativeConfigValues = { _ in .defaultValues }
     var setData: (Any?, AIChatMessageType) -> Void = { _, _ in }
 
-    func getNativeConfigValues(isFireWindow: Bool, isSidebar: Bool) -> AIChatNativeConfigValues {
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues {
         getNativeConfigValuesCalls.append(isFireWindow)
         return getNativeConfigValuesImpl(isFireWindow)
     }
@@ -1287,8 +1287,8 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("supportsTabPicker resolves per surface: sidebar follows aiChatSidebarAttachMoreTabs, full-page follows aiChatAttachMoreTabs", .timeLimit(.minutes(1)))
-    func testSupportsTabPickerResolvesPerSurface() {
+    @Test("Tab picker keys resolve per flag: supportsTabPicker follows aiChatSidebarAttachMoreTabs, supportsFullPageTabPicker follows aiChatAttachMoreTabs", .timeLimit(.minutes(1)))
+    func testTabPickerKeysResolvePerFlag() {
         func makeHandler(sidebarFlagEnabled: Bool, attachMoreTabsFlagEnabled: Bool) -> AIChatMessageHandler {
             let featureFlagger = MockFeatureFlagger()
             featureFlagger.featuresStub["aiChatPageContext"] = true
@@ -1301,12 +1301,12 @@ struct AIChatUserScriptHandlerTests {
         }
 
         let sidebarFlagOnly = makeHandler(sidebarFlagEnabled: true, attachMoreTabsFlagEnabled: false)
-        #expect(sidebarFlagOnly.getNativeConfigValues(isFireWindow: false, isSidebar: true).supportsTabPicker == true)
-        #expect(sidebarFlagOnly.getNativeConfigValues(isFireWindow: false, isSidebar: false).supportsTabPicker == false)
+        #expect(sidebarFlagOnly.getNativeConfigValues(isFireWindow: false).supportsTabPicker == true)
+        #expect(sidebarFlagOnly.getNativeConfigValues(isFireWindow: false).supportsFullPageTabPicker == false)
 
         let attachMoreTabsFlagOnly = makeHandler(sidebarFlagEnabled: false, attachMoreTabsFlagEnabled: true)
-        #expect(attachMoreTabsFlagOnly.getNativeConfigValues(isFireWindow: false, isSidebar: false).supportsTabPicker == true)
-        #expect(attachMoreTabsFlagOnly.getNativeConfigValues(isFireWindow: false, isSidebar: true).supportsTabPicker == false)
+        #expect(attachMoreTabsFlagOnly.getNativeConfigValues(isFireWindow: false).supportsTabPicker == false)
+        #expect(attachMoreTabsFlagOnly.getNativeConfigValues(isFireWindow: false).supportsFullPageTabPicker == true)
     }
 
     // MARK: - voiceChatStartFailed flag gating

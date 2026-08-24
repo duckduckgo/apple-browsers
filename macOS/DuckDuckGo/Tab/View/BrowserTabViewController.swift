@@ -1024,7 +1024,8 @@ final class BrowserTabViewController: NSViewController {
                 // If the current content is the native internal site, delay the webview presentation
                 // until a website renders (or edge cases) to avoid white flash
                 if [URL.newtab, URL.settings, URL.bookmarks].contains(self?.lastURL) &&
-                    self?.featureFlagger.isFeatureOn(.delayedWebviewPresentation) == true {
+                    self?.featureFlagger.isFeatureOn(.delayedWebviewPresentation) == true &&
+                    LaunchOptionsHandler().disablesDelayedWebViewPresentation == false {
                     return Publishers.Merge5(
                         tabViewModel.tab.webViewDidReceiveRedirectPublisher,
                         tabViewModel.tab.webViewRenderingProgressDidChangePublisher,

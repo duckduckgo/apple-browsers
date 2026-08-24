@@ -27,6 +27,7 @@ public final class LaunchOptionsHandler {
     private static let isInternalUserKey = "isInternalUser"
     private static let webViewProxyKey = "webViewProxy"
     private static let acceptInsecureCertsKey = "acceptInsecureCerts"
+    private static let disableDelayedWebViewPresentationKey = "disableDelayedWebViewPresentation"
     private let userDefaults: UserDefaults
     private let applicationBuildType: ApplicationBuildType
     private let environment: [String: String]
@@ -87,6 +88,11 @@ public final class LaunchOptionsHandler {
             return false
         }
         return argumentBoolean(forKey: Self.acceptInsecureCertsKey)
+    }
+
+    var disablesDelayedWebViewPresentation: Bool {
+        guard isAuthenticatedWebDriverAutomationSession else { return false }
+        return argumentBoolean(forKey: Self.disableDelayedWebViewPresentationKey)
     }
 
     /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)

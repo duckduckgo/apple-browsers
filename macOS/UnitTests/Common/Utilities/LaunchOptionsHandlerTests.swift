@@ -148,6 +148,23 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         XCTAssertTrue(handler.acceptsInsecureCertificates)
     }
 
+    func testDisableDelayedWebViewPresentationRequiresAuthenticatedAutomationSession() {
+        buildType.isReviewBuild = true
+        let arguments: [String: Any] = [
+            "automationPort": 8788,
+            "disableDelayedWebViewPresentation": true,
+        ]
+
+        XCTAssertTrue(
+            makeHandler(arguments: arguments, environment: ["AUTOMATION_TOKEN": "token"])
+                .disablesDelayedWebViewPresentation
+        )
+        XCTAssertFalse(
+            makeHandler(arguments: arguments, environment: [:])
+                .disablesDelayedWebViewPresentation
+        )
+    }
+
     private func makeHandler(
         arguments: [String: Any],
         environment: [String: String] = [:]

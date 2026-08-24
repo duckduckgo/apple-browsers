@@ -426,6 +426,10 @@ class DDGHarnessTests(unittest.TestCase):
             self.assertIn("-isOnboardingCompleted", launch["args"])
             self.assertIn("-acceptInsecureCerts", launch["args"])
             self.assertEqual(
+                launch["args"][launch["args"].index("-disableDelayedWebViewPresentation") + 1],
+                "0",
+            )
+            self.assertEqual(
                 launch["args"][launch["args"].index("-automationWindowWidth") + 1],
                 "1366",
             )
@@ -442,6 +446,15 @@ class DDGHarnessTests(unittest.TestCase):
             self.assertNotIn(launch["token"], result.stdout + result.stderr)
             with self.assertRaises(ProcessLookupError):
                 os.kill(launch["pid"], 0)
+
+    def test_delayed_webview_presentation_can_be_disabled(self):
+        result = self.run_harness(DISABLE_DELAYED_WEBVIEW_PRESENTATION="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        launch = self.launches()[0]
+        self.assertEqual(
+            launch["args"][launch["args"].index("-disableDelayedWebViewPresentation") + 1],
+            "1",
+        )
 
     def test_readiness_gate_waits_for_the_window_instead_of_giving_up(self):
         result = self.run_harness(AUTOMATION_CHECK_FAILURES="3")

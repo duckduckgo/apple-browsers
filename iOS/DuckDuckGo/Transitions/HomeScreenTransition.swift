@@ -206,18 +206,16 @@ class ToHomeScreenTransition: HomeScreenTransition {
             // hasn't laid out its cell yet. Fall back to a simple crossfade to avoid a flash.
             if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
                 mainViewController.view.alpha = 1
-                mainViewController.endTabSwitcherToolbarOwnership()
-                if mainViewController.isFloatingUIEnabled {
-                    mainViewController.viewCoordinator.toolbar.transform = .identity
-                    mainViewController.viewCoordinator.toolbar.alpha = 1
-                }
+                concealLiveFloatingToolbar(of: mainViewController)
             }
-            let isFloating = (transitionContext.viewController(forKey: .to) as? MainViewController)?.isFloatingUIEnabled ?? false
+            let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController
+            let isFloating = mainViewController?.isFloatingUIEnabled ?? false
             UIView.animate(withDuration: TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating), animations: {
                 self.tabSwitcherViewController.view.alpha = 0
             }, completion: { _ in
                 self.solidBackground.removeFromSuperview()
                 self.imageContainer.removeFromSuperview()
+                mainViewController?.revealFloatingToolbarAfterTabSwitcherTransition()
                 transitionContext.completeTransition(true)
             })
             return
@@ -225,17 +223,12 @@ class ToHomeScreenTransition: HomeScreenTransition {
 
         mainViewController.view.alpha = 1
 
-        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
         let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
-        let reduceMotion = UIAccessibility.isReduceMotionEnabled
         if isFloating {
             mainViewController.chromeManager.reset(animated: false)
+            concealLiveFloatingToolbar(of: mainViewController)
         }
-        let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
-                                                     transitionContext: transitionContext,
-                                                     afterScreenUpdates: true,
-                                                     seedCollapsed: true)
 
         let theme = ThemeManager.shared.currentTheme
         imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
@@ -294,31 +287,10 @@ class ToHomeScreenTransition: HomeScreenTransition {
                 self.tabSwitcherViewController.view.alpha = 0
             }
 
-            if let toolbarSnapshot {
-                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.6) {
-                    if !reduceMotion {
-                        toolbarSnapshot.transform = TabSwitcherTransition.toolbarTransform(
-                            scale: Constants.revealMidpointScale,
-                            for: toolbarSnapshot)
-                    }
-                    toolbarSnapshot.alpha = Constants.revealMidpointAlpha
-                }
-                UIView.addKeyframe(withRelativeStartTime: 0.6, relativeDuration: 0.4) {
-                    if !reduceMotion {
-                        toolbarSnapshot.transform = .identity
-                    }
-                    toolbarSnapshot.alpha = 1
-                }
-            }
-
         }, completion: { _ in
             self.imageContainer.removeFromSuperview()
             self.settingsButtonSnapshot?.removeFromSuperview()
-            toolbarSnapshot?.removeFromSuperview()
-            if isFloating {
-                toolbar.alpha = 1
-                mainViewController.endTabSwitcherToolbarOwnership()
-            }
+            mainViewController.revealFloatingToolbarAfterTabSwitcherTransition()
             transitionContext.completeTransition(true)
         })
     }

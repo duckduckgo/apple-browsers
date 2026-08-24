@@ -201,11 +201,7 @@ class ToWebViewTransition: WebViewTransition {
         let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController
         if let mainViewController {
             mainViewController.view.alpha = 1
-            mainViewController.endTabSwitcherToolbarOwnership()
-            if mainViewController.isFloatingUIEnabled {
-                mainViewController.viewCoordinator.toolbar.transform = .identity
-                mainViewController.viewCoordinator.toolbar.alpha = 1
-            }
+            concealLiveFloatingToolbar(of: mainViewController)
         }
         let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: mainViewController?.isFloatingUIEnabled ?? false)
         UIView.animate(withDuration: duration, animations: {
@@ -213,6 +209,7 @@ class ToWebViewTransition: WebViewTransition {
         }, completion: { _ in
             self.solidBackground.removeFromSuperview()
             self.imageContainer.removeFromSuperview()
+            mainViewController?.revealFloatingToolbarAfterTabSwitcherTransition()
             transitionContext.completeTransition(true)
         })
     }
@@ -233,17 +230,12 @@ class ToWebViewTransition: WebViewTransition {
         let theme = ThemeManager.shared.currentTheme
         mainViewController.view.alpha = 1
 
-        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
         let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
-        let reduceMotion = UIAccessibility.isReduceMotionEnabled
         if isFloating {
             mainViewController.chromeManager.reset(animated: false)
+            concealLiveFloatingToolbar(of: mainViewController)
         }
-        let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
-                                                     transitionContext: transitionContext,
-                                                     afterScreenUpdates: true,
-                                                     seedCollapsed: true)
 
         solidBackground.backgroundColor = theme.backgroundColor
         solidBackground.frame = webView.bounds
@@ -292,31 +284,10 @@ class ToWebViewTransition: WebViewTransition {
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.7) {
                 self.tabSwitcherViewController.view.alpha = 0
             }
-
-            if let toolbarSnapshot {
-                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.6) {
-                    if !reduceMotion {
-                        toolbarSnapshot.transform = TabSwitcherTransition.toolbarTransform(
-                            scale: Constants.revealMidpointScale,
-                            for: toolbarSnapshot)
-                    }
-                    toolbarSnapshot.alpha = Constants.revealMidpointAlpha
-                }
-                UIView.addKeyframe(withRelativeStartTime: 0.6, relativeDuration: 0.4) {
-                    if !reduceMotion {
-                        toolbarSnapshot.transform = .identity
-                    }
-                    toolbarSnapshot.alpha = 1
-                }
-            }
         }, completion: { _ in
             self.solidBackground.removeFromSuperview()
             self.imageContainer.removeFromSuperview()
-            toolbarSnapshot?.removeFromSuperview()
-            if isFloating {
-                toolbar.alpha = 1
-                mainViewController.endTabSwitcherToolbarOwnership()
-            }
+            mainViewController.revealFloatingToolbarAfterTabSwitcherTransition()
             transitionContext.completeTransition(true)
         })
     }

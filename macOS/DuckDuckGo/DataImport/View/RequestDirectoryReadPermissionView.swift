@@ -150,7 +150,7 @@ private struct FilePickerExampleView: View {
             Text(UserText.importBrowserDataAccessPanelPrompt)
                 .font(.system(size: Metrics.buttonFontSize, weight: .semibold))
                 .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
-                .frame(width: Metrics.grantAccessButtonWidth, height: Metrics.buttonHeight)
+                .frame(height: Metrics.buttonHeight)
                 .background(
                     RoundedRectangle(cornerRadius: Metrics.buttonCornerRadius)
                         .fill(Color(designSystemColor: .accentAltPrimary))
@@ -194,7 +194,6 @@ private extension FilePickerExampleView {
         static let buttonCornerRadius: CGFloat = 5
         static let buttonFontSize: CGFloat = 10
         static let placeholderButtonWidth: CGFloat = 60
-        static let grantAccessButtonWidth: CGFloat = 86
         static let buttonsTrailingInset: CGFloat = 12
         static let buttonsBottomInset: CGFloat = 12
 

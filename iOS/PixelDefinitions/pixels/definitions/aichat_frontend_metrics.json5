@@ -1,0 +1,35 @@
+// Duck.ai frontend-reported prompt submission metrics. The duck.ai page reports these via
+// reportMetric; native maps them to pixels in AIChatPixelMetricHandler. Defined here (the pixels
+// themselves predate pixel definitions) because they now carry the first_prompt parameter.
+{
+    "m_aichat_sent_prompt_ongoing_chat": {
+        "description": "Fires when the duck.ai frontend reports a prompt submission in an ongoing chat (the frontend's userDidSubmitPrompt metric). Covers submissions made directly in the page composer, which fire no native prompt-submission pixel.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "aichat_first_prompt",
+            {
+                "key": "delta-timestamp-minutes",
+                "type": "integer",
+                "description": "Minutes elapsed since the Duck.ai session started. Absent when no session timer is available."
+            }
+        ]
+    },
+    "m_aichat_start_new_conversation": {
+        "description": "Fires when the duck.ai frontend reports the first prompt of a new conversation (the frontend's userDidSubmitFirstPrompt metric). Covers submissions made directly in the page composer, which fire no native prompt-submission pixel.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "aichat_first_prompt",
+            {
+                "key": "delta-timestamp-minutes",
+                "type": "integer",
+                "description": "Minutes elapsed since the Duck.ai session started. Absent when no session timer is available."
+            }
+        ]
+    }
+}

@@ -18,6 +18,7 @@
 //
 
 import Testing
+import BrowserServicesKitTestsUtils
 import Core
 import PixelKit
 @testable import DuckDuckGo
@@ -311,12 +312,18 @@ final class AIChatContextualModePixelHandlerTests {
 
     // MARK: - Prompt Submission Pixels
 
+    private static func returningUserFeatureDiscovery() -> MockFeatureDiscovery {
+        let featureDiscovery = MockFeatureDiscovery()
+        featureDiscovery.setReturnValue(true, for: .duckAIPrompt)
+        return featureDiscovery
+    }
+
     @Test("Prompt submitted with context pixel fires correctly")
     func testPromptSubmittedWithContextPixel() {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
             PixelFiringMock.fire(event, withAdditionalParameters: [:])
-        })
+        }, featureDiscovery: Self.returningUserFeatureDiscovery())
 
         // WHEN
         sut.firePromptSubmittedWithContext()
@@ -330,13 +337,54 @@ final class AIChatContextualModePixelHandlerTests {
         // GIVEN
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
             PixelFiringMock.fire(event, withAdditionalParameters: [:])
-        })
+        }, featureDiscovery: Self.returningUserFeatureDiscovery())
 
         // WHEN
         sut.firePromptSubmittedWithoutContext()
 
         // THEN
         #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPromptSubmittedWithoutContextNative.name)
+    }
+
+    @Test("First ever prompt submission carries first_prompt and marks the flag")
+    func testFirstEverPromptSubmissionCarriesFirstPromptParam() {
+        // GIVEN
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let featureDiscovery = MockFeatureDiscovery()
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            },
+            featureDiscovery: featureDiscovery)
+
+        // WHEN
+        sut.firePromptSubmittedWithContext()
+
+        // THEN
+        #expect(firedEventName == Pixel.Event.aiChatContextualPromptSubmittedWithContextNative.name)
+        #expect(firedParameters == ["first_prompt": "true"])
+        #expect(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    @Test("Returning-user prompt submission omits first_prompt")
+    func testReturningUserPromptSubmissionOmitsFirstPromptParam() {
+        // GIVEN
+        var firedParameters: [String: String]?
+        var firedEventName: String?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { event in firedEventName = event.name },
+            firePixelWithParameters: { _, parameters in firedParameters = parameters },
+            featureDiscovery: Self.returningUserFeatureDiscovery())
+
+        // WHEN
+        sut.firePromptSubmittedWithoutContext()
+
+        // THEN
+        #expect(firedEventName == Pixel.Event.aiChatContextualPromptSubmittedWithoutContextNative.name)
+        #expect(firedParameters == nil)
     }
 
     // MARK: - Manual Attach State Management

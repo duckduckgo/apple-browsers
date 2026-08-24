@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import BrowserServicesKit
 import PrivacyDashboard
 import AIChat
 import Core
@@ -37,6 +38,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     /// Manages shared text state for the iPad duck.ai ↔ search mode toggle.
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
+    private let featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     private var modelPickerController: IPadOmnibarModelPickerController?
     private var reasoningPickerController: IPadOmnibarReasoningPickerController?
     private var toolPickerController: IPadOmnibarToolPickerController?
@@ -398,8 +400,11 @@ extension DefaultOmniBarViewController {
                 dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted)
-                fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty)
+                let isFirstEverPrompt = featureDiscovery.isFirstDuckAIPrompt
+                let firstPromptParameters: [String: String] = isFirstEverPrompt ? [PixelParameters.aiChatFirstPrompt: "true"] : [:]
+                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted, withAdditionalParameters: firstPromptParameters)
+                fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty, isFirstEverPrompt: isFirstEverPrompt)
+                featureDiscovery.markDuckAIPromptSubmitted()
                 /// Collapse and resign instantly so a quick re-tap doesn't race the post-submit
                 /// collapse animation.
                 /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1215084286493408?focus=true
@@ -636,7 +641,7 @@ extension DefaultOmniBarViewController {
         omniBarView.aiChatAttachmentMenu = attachmentController?.makeMenu()
     }
 
-    private func fireIPadUnifiedPromptSubmittedPixels(hasText: Bool) {
+    private func fireIPadUnifiedPromptSubmittedPixels(hasText: Bool, isFirstEverPrompt: Bool) {
         guard modelPickerController != nil else { return }
         let attachments = attachmentController?.pendingAttachments ?? []
         let selectedTool = toolPickerController?.selectedTool
@@ -648,7 +653,8 @@ extension DefaultOmniBarViewController {
             modelId: modelPickerController?.currentModelId,
             surface: .addressBar,
             pageType: omniDelegate?.currentPromptPageType() ?? .unknown,
-            origin: .ipadTogglePrompt
+            origin: .ipadTogglePrompt,
+            isFirstEverPrompt: isFirstEverPrompt
         )
         UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
             selectedTool: selectedTool,

@@ -122,7 +122,8 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: "gpt-x",
-                                       defaultOmnibarMode: .search)
+                                       defaultOmnibarMode: .search,
+                                       isFirstEverPrompt: false)
 
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputPromptSubmitted.name)
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [
@@ -139,6 +140,20 @@ final class UTIPixelReporterTests: XCTestCase {
         ])
     }
 
+    func testWhenFirstEverPromptSubmittedThenFirstPromptParamIsTrue() {
+        let reporter = makeReporter { self.context(surface: .addressBar, pageType: .ntp) }
+
+        reporter.reportPromptSubmitted(hasText: true,
+                                       selectedTool: nil,
+                                       attachments: [],
+                                       reasoningMode: nil,
+                                       modelId: nil,
+                                       defaultOmnibarMode: .search,
+                                       isFirstEverPrompt: true)
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["first_prompt"], "true")
+    }
+
     func testWhenPromptSubmittedFromAddressBarThenOriginIsAddressBarPrompt() {
         let reporter = makeReporter { self.context(surface: .addressBar, pageType: .serp) }
 
@@ -147,7 +162,8 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: nil,
-                                       defaultOmnibarMode: .lastUsed)
+                                       defaultOmnibarMode: .lastUsed,
+                                       isFirstEverPrompt: false)
 
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["origin"], "address_bar_prompt")
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["page_type"], "serp")
@@ -161,7 +177,8 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: nil,
-                                       defaultOmnibarMode: .lastUsed)
+                                       defaultOmnibarMode: .lastUsed,
+                                       isFirstEverPrompt: false)
 
         XCTAssertNil(PixelFiringMock.lastDailyPixelInfo?.params?["origin"])
     }
@@ -201,7 +218,8 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: nil,
-                                       defaultOmnibarMode: .search)
+                                       defaultOmnibarMode: .search,
+                                       isFirstEverPrompt: false)
         let promptParams = PixelFiringMock.lastDailyPixelInfo?.params ?? [:]
 
         for key in ["surface", "page_type", "default_mode"] {

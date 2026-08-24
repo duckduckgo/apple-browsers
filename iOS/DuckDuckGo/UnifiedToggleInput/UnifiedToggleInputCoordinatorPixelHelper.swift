@@ -18,10 +18,24 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import Core
 import Foundation
 import PixelKit
 import Subscription
+
+/// Install-lifetime first-Duck.ai-prompt flag behind the shared `first_prompt` pixel parameter.
+/// Read by every prompt-submission pixel; marked once per submission flow after its pixels fire.
+extension FeatureDiscovery {
+
+    var isFirstDuckAIPrompt: Bool {
+        !wasUsedBefore(.duckAIPrompt)
+    }
+
+    func markDuckAIPromptSubmitted() {
+        setWasUsedBefore(.duckAIPrompt)
+    }
+}
 
 /// The schedule suffix is part of the name, fired with frequencies that append nothing, so PixelKit's
 /// platform suffix lands after it and the wire name stays `..._daily_ios_phone` as the legacy pixel reports it.
@@ -218,6 +232,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         pageType: UnifiedToggleInputPromptPageType? = nil,
         origin: AIChatEntryPointSource? = nil,
         defaultMode: DefaultOmnibarMode? = nil,
+        isFirstEverPrompt: Bool = false,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
@@ -236,6 +251,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         parameters["page_type"] = pageType?.rawValue
         parameters["origin"] = origin?.rawValue
         parameters["default_mode"] = defaultMode?.rawValue
+        parameters[PixelParameters.aiChatFirstPrompt] = isFirstEverPrompt ? "true" : nil
 
         firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
     }

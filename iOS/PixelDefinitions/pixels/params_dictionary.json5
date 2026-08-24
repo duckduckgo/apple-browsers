@@ -21,6 +21,11 @@
         "description": "The Unified Toggle Input surface the pixel was fired from, distinguishing the contextual chat sheet from the Duck.ai tab and the address bar.",
         "enum": ["address_bar", "duck_ai", "contextual_chat"]
     },
+    "aichat_first_prompt": {
+        "key": "first_prompt",
+        "type": "boolean",
+        "description": "Present (true) only when this submission is the user's first ever Duck.ai prompt on this install. Omitted on every later submission. For installs that predate the parameter, the first submission after updating also reports true, so filter to new-install cohorts when analysing."
+    },
     "unified_input_page_type": {
         "key": "page_type",
         "type": "string",

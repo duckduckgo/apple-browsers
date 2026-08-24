@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Core
 import Foundation
 import PixelKit
@@ -116,6 +117,7 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     private let firePixel: (Pixel.Event) -> Void
     private let firePixelWithParameters: (Pixel.Event, [String: String]) -> Void
     private let fireSelectionPixel: (PixelKit.Event, PixelKit.Frequency) -> Void
+    private let featureDiscovery: FeatureDiscovery
 
     // MARK: - Public Properties
 
@@ -131,10 +133,12 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
          },
          fireSelectionPixel: @escaping (PixelKit.Event, PixelKit.Frequency) -> Void = {
              PixelKit.fire($0, frequency: $1)
-         }) {
+         },
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.firePixel = firePixel
         self.firePixelWithParameters = firePixelWithParameters
         self.fireSelectionPixel = fireSelectionPixel
+        self.featureDiscovery = featureDiscovery
     }
 
     // MARK: - Sheet Lifecycle
@@ -277,11 +281,22 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     // MARK: - Prompt Submission
 
     func firePromptSubmittedWithContext() {
-        firePixel(.aiChatContextualPromptSubmittedWithContextNative)
+        firePromptSubmissionPixel(.aiChatContextualPromptSubmittedWithContextNative)
     }
 
     func firePromptSubmittedWithoutContext() {
-        firePixel(.aiChatContextualPromptSubmittedWithoutContextNative)
+        firePromptSubmissionPixel(.aiChatContextualPromptSubmittedWithoutContextNative)
+    }
+
+    /// Marking after the fire keeps the first-prompt claim on this submission's pixel; the UTI
+    /// prompt pixel for the same submission fires earlier in the flow, so it reads the same state.
+    private func firePromptSubmissionPixel(_ event: Pixel.Event) {
+        if featureDiscovery.isFirstDuckAIPrompt {
+            firePixelWithParameters(event, [PixelParameters.aiChatFirstPrompt: "true"])
+            featureDiscovery.markDuckAIPromptSubmitted()
+        } else {
+            firePixel(event)
+        }
     }
 
     // MARK: - Suggested Prompts

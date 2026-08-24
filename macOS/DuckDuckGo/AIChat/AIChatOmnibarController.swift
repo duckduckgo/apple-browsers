@@ -55,6 +55,13 @@ extension AIChatOmnibarControllerDelegate {
 enum AIChatToolMode: Equatable {
     case imageGeneration
     case webSearch
+
+    var ragTool: AIChatRAGTool {
+        switch self {
+        case .imageGeneration: return .imageGeneration
+        case .webSearch: return .webSearch
+        }
+    }
 }
 
 /// Controller that manages the state and actions for the AI Chat omnibar.
@@ -131,8 +138,30 @@ final class AIChatOmnibarController {
     /// omits the block — callers fall back to the previously shipped defaults in that case.
     private(set) var attachmentLimits: AIChatAttachmentTierLimits?
 
-    /// `nil` when the usage-warnings feature isn't active, which is not the same as `.noData`.
-    @Published private(set) var usageLimits: DuckAiUsageLimits?
+    /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
+    private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
+
+    private func performUsageWarningAction(_ action: DuckAiUsageAction) {
+        switch action {
+        case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
+            updateSelectedModel(suggestion.modelId)
+        case .tryForFree:
+            // The funnel origin is surface-specific and belongs to the view layer, so this waits for UI.
+            Logger.aiChat.debug("Duck.ai usage warning: try-for-free tapped, no native route yet")
+        case .startUsingWeeklyLimit:
+            // Awaiting the native-storage value web will set; logged so the tap is observable meanwhile.
+            Logger.aiChat.debug("Duck.ai usage warning: start-using-weekly-limit tapped, no native action yet")
+        }
+    }
+
+    /// Stops the cheaper-model CTA suggesting something that can't handle the current draft.
+    private var chatCapabilityRequirements: DuckAiChatCapabilityRequirements {
+        DuckAiChatCapabilityRequirements(
+            needsImageUpload: hasImageAttachments,
+            requiredMimeTypes: activeFileAttachments.map(\.mimeType),
+            requiredTools: activeToolMode.map { [$0.ragTool] } ?? []
+        )
+    }
 
     /// Called after a successful submit so the container VC can cancel any in-flight image
     /// resize tasks (data is cleared via `persistAttachmentsToActiveTab([])`).
@@ -300,6 +329,24 @@ final class AIChatOmnibarController {
         subscribeToDraftSource()
         subscribeToTextChangesForSuggestions()
         subscribeToToolModeChangesForDraftStore()
+        setUpUsageWarnings()
+    }
+
+    private func setUpUsageWarnings() {
+        usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
+            tierProvider: { [weak self] in self?.userTier ?? .free },
+            modelSuggester: DuckAiModelSuggester(
+                modelsProvider: { [weak self] in self?.models ?? [] },
+                currentModelIdProvider: { [weak self] in self?.currentModelId },
+                requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
+            ),
+            isTrialEligible: { [weak self] in self?.subscriptionManager.isUserEligibleForFreeTrial() ?? false },
+            isFireMode: { [weak self] in self?.isBurner ?? false }
+        )
+        usageWarningViewModel?.onAction = { [weak self] action in
+            self?.performUsageWarningAction(action)
+        }
+        // macOS has no programmatic model-picker entry point yet; `>` is wired when the UI lands.
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;
@@ -375,7 +422,7 @@ final class AIChatOmnibarController {
         }
 
         fetchModels()
-        refreshUsageLimits()
+        refreshUsageWarnings()
 
         // If feature is disabled, clear any existing suggestions and don't fetch
         if !isSuggestionsEnabled {
@@ -388,10 +435,8 @@ final class AIChatOmnibarController {
         }
     }
 
-    /// Synchronous: a lookup in the already-loaded entries blob, so it doesn't need the async treatment
-    /// `fetchModels()` gets for its network call.
-    private func refreshUsageLimits() {
-        usageLimits = usageLimitsStore?.currentLimits()
+    private func refreshUsageWarnings() {
+        usageWarningViewModel?.refresh()
     }
 
     private func fetchModels() {
@@ -411,6 +456,9 @@ final class AIChatOmnibarController {
                 self.clearStaleReasoningEffortIfNeeded()
                 self.deactivateWebSearchIfUnsupported()
                 self.deactivateImageGenerationIfUnsupported()
+                // Tier and models land after the activation that resolved the warning, so the first
+                // banner after a tier change would otherwise show a stale tier and no CTA.
+                self.refreshUsageWarnings()
             } catch is CancellationError {
                 return
             } catch {
@@ -1056,7 +1104,7 @@ final class AIChatOmnibarController {
         activeToolMode = nil
         hasImageAttachments = false
         hasBeenActivated = false
-        usageLimits = nil
+        usageWarningViewModel?.clear()
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
         currentFetchTask = nil

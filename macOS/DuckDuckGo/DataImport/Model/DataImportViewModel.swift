@@ -838,12 +838,13 @@ extension DataImportViewModel {
         case `continue`
         case sync
         case close
+        case grantDirectoryAccess(source: Source)
 
         var isDisabled: Bool {
             switch self {
             case .initiateImport(disabled: let disabled):
                 return disabled
-            case .skip, .done, .cancel, .cancelImport, .back, .submit, .continue, .selectFile, .sync, .close:
+            case .skip, .done, .cancel, .cancelImport, .back, .submit, .continue, .selectFile, .sync, .close, .grantDirectoryAccess:
                 return false
             }
         }
@@ -866,7 +867,9 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
-        case .getFileReadPermission, .getDirectoryReadPermission, .directoryReadPermissionDenied:
+        case .getDirectoryReadPermission:
+            return .grantDirectoryAccess(source: importSource)
+        case .getFileReadPermission, .directoryReadPermissionDenied:
             return nil
         case .passwordEntryHelp:
             return nil
@@ -1025,6 +1028,8 @@ extension DataImportViewModel {
             self.dismiss(using: dismiss)
         case .sync:
             launchSync(using: dismiss)
+        case .grantDirectoryAccess:
+            grantAccessButtonPressed()
         }
     }
 

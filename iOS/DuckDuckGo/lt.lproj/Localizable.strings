@@ -2554,11 +2554,20 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Paskutinį kartą naudota „Fire“ kortelė";
 
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Uždaryti paskutinę naudotą kortelę";
+
 /* Menu item that closes the open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeTab" = "Uždaryti kortelę";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Ištrinti kortelę";
+
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Slėpti nuorodą „Grįžti į“";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Grįžti į paskutinę naudotą kortelę";
 
 /* Menu item that returns the user to the open tab from the escape hatch card */
 "escapeHatch.menu.returnToTab" = "Grįžti į kortelę";
@@ -2574,6 +2583,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Grįžti į %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Uždaryti kortelę";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Privačios kortelės";
@@ -4228,6 +4240,12 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Neaktyvumo laikmatis";
 
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Atidaryti paskutinę naudotą kortelę";
+
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Atidaryti naują kortelę";
+
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Paskutinį kartą naudotas skirtukas";
 
@@ -4540,6 +4558,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatūra";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Rodo nuorodą grįžti į paskutinę naudotą kortelę, kai paleidžiate programą po neaktyvumo.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Sužinoti daugiau";
 
@@ -4602,6 +4623,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Perkrovimo mygtuko padėtis";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "Nuoroda „Grįžti į“";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Paieškos nustatymai";

@@ -2554,11 +2554,20 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Ostatnio używana karta Fire";
 
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Zamknij ostatnio używaną kartę";
+
 /* Menu item that closes the open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeTab" = "Zamknij zakładkę";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Usuń kartę";
+
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Ukryj skrót „Wróć do”";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Wróć do ostatnio używanej karty";
 
 /* Menu item that returns the user to the open tab from the escape hatch card */
 "escapeHatch.menu.returnToTab" = "Powrót do zakładki";
@@ -2574,6 +2583,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Wróć do karty %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Zamknij kartę";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Karty prywatne";
@@ -4228,6 +4240,12 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Timer bezczynności";
 
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Otwórz ostatnio używaną kartę";
+
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Otwórz nową kartę";
+
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Ostatnio używana karta";
 
@@ -4540,6 +4558,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klawiatura";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Wyświetla link umożliwiający powrót do ostatnio używanej karty po uruchomieniu aplikacji po okresie braku aktywności.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Dowiedz się więcej";
 
@@ -4602,6 +4623,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Pozycja przycisku ponownego załadowania";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "Skrót „Wróć do”";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Ustawienia wyszukiwania";

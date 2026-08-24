@@ -2554,11 +2554,20 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "最後に使ったFireタブ";
 
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "最後に使用したタブを閉じる";
+
 /* Menu item that closes the open tab referenced by the escape hatch card */
 "escapeHatch.menu.closeTab" = "タブを閉じる";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "タブを削除";
+
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "「戻る」を非表示にするショートカット";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "最後に使用したタブに戻る";
 
 /* Menu item that returns the user to the open tab from the escape hatch card */
 "escapeHatch.menu.returnToTab" = "タブに戻る";
@@ -2574,6 +2583,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "%1$@、%2$@ に戻る";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "タブを閉じる";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "プライベートタブ";
@@ -4228,6 +4240,12 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "非アクティブタイマー";
 
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "最後に使用したタブを開く";
+
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "新しいタブを開く";
+
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "最後に使用したタブ";
 
@@ -4540,6 +4558,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "キーボード";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "アプリをしばらく操作せずに起動すると、最後に使用したタブに戻るリンクが表示されます。";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "詳細情報";
 
@@ -4602,6 +4623,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "リロードボタンの位置";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "「戻る」ショートカット";
 
 /* Header of settings related to search */
 "settings.search.settings" = "検索設定";

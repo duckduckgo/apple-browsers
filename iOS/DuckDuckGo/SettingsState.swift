@@ -190,4 +190,3 @@ struct SettingsState {
         )
     }
 }
-

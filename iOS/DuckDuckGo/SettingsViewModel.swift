@@ -1615,10 +1615,6 @@ extension SettingsViewModel {
         urlOpener.open(url)
     }
 
-    @MainActor func openCookiePopupManagement() {
-        pushViewController(legacyViewProvider.autoConsent)
-    }
-    
     @MainActor func dismissSettings() {
         onRequestDismissSettings?()
     }
@@ -1665,8 +1661,6 @@ extension SettingsViewModel {
             firePixel(.settingsDoNotSellShown)
             pushViewController(legacyViewProvider.gpc)
         
-        case .autoconsent:
-            pushViewController(legacyViewProvider.autoConsent)
         case .passwordsImport:
             pushViewController(legacyViewProvider.importPasswords(importScreen: .completeSetup,
                                                                   delegate: self,
@@ -1740,6 +1734,7 @@ extension SettingsViewModel {
         case customizeAddressBarButton
         case appearance
         case general
+        case cookiePopupProtection
         // Add other cases as needed
 
         var id: String {
@@ -1759,6 +1754,7 @@ extension SettingsViewModel {
             case .customizeAddressBarButton: return "customizeAddressButton"
             case .appearance: return "appearance"
             case .general: return "general"
+            case .cookiePopupProtection: return "cookiePopupProtection"
             // Ensure all cases are covered
             }
         }
@@ -1767,7 +1763,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection:
                 return .navigationLink
             }
         }

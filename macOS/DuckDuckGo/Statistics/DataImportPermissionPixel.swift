@@ -33,12 +33,12 @@ enum DataImportPermissionPixel: PixelKit.Event {
 
     var name: String {
         switch self {
-        case .directoryPermissionPromptScreenShown: return "m_mac_data-import_directory-permission_prompt-screen_shown"
-        case .directoryPermissionGranted: return "m_mac_data-import_directory-permission_granted"
-        case .directoryPermissionDenied: return "m_mac_data-import_directory-permission_denied"
-        case .directoryPermissionCancelled: return "m_mac_data-import_directory-permission_cancelled"
-        case .directoryPermissionRetryScreenShown: return "m_mac_data-import_directory-permission_retry-screen_shown"
-        case .directoryPermissionErrorScreenShown: return "m_mac_data-import_directory-permission_error-screen_shown"
+        case .directoryPermissionPromptScreenShown: return "dataimport_directory-permission_prompt-screen_shown_macos"
+        case .directoryPermissionGranted: return "dataimport_directory-permission_granted_macos"
+        case .directoryPermissionDenied: return "dataimport_directory-permission_denied_macos"
+        case .directoryPermissionCancelled: return "dataimport_directory-permission_cancelled_macos"
+        case .directoryPermissionRetryScreenShown: return "dataimport_directory-permission_retry-screen_shown_macos"
+        case .directoryPermissionErrorScreenShown: return "dataimport_directory-permission_error-screen_shown_macos"
         }
     }
 

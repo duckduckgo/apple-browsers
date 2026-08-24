@@ -1088,7 +1088,7 @@ extension DataImportViewModel {
     mutating func showDirectoryReadPermissionScreen() {
         guard let selectedProfile else { return }
 
-        PixelKit.fire(DataImportPermissionPixel.directoryPermissionPromptScreenShown(source: importSource.pixelSourceParameterName))
+        PixelKit.fire(DataImportPermissionPixel.directoryPermissionPromptScreenShown(source: importSource.pixelSourceParameterName), options: .unenforcedPrefix)
         screen = .getDirectoryReadPermission(selectedProfile.profileURL)
     }
 
@@ -1100,23 +1100,23 @@ extension DataImportViewModel {
 
         switch requestDirectoryAccess(for: selectedProfile.profileURL) {
         case .granted:
-            PixelKit.fire(DataImportPermissionPixel.directoryPermissionGranted(source: source))
+            PixelKit.fire(DataImportPermissionPixel.directoryPermissionGranted(source: source), options: .unenforcedPrefix)
             reloadProfilesAfterGrantingAccess()
             importButtonPressed()
 
         case .denied:
-            PixelKit.fire(DataImportPermissionPixel.directoryPermissionDenied(source: source))
+            PixelKit.fire(DataImportPermissionPixel.directoryPermissionDenied(source: source), options: .unenforcedPrefix)
             showDirectoryReadPermissionDeniedScreen(for: selectedProfile)
 
         case .cancelled:
-            PixelKit.fire(DataImportPermissionPixel.directoryPermissionCancelled(source: source))
+            PixelKit.fire(DataImportPermissionPixel.directoryPermissionCancelled(source: source), options: .unenforcedPrefix)
             showDirectoryReadPermissionDeniedScreen(for: selectedProfile)
         }
     }
 
     @MainActor
     private mutating func showDirectoryReadPermissionDeniedScreen(for profile: BrowserProfile) {
-        PixelKit.fire(DataImportPermissionPixel.directoryPermissionRetryScreenShown(source: importSource.pixelSourceParameterName))
+        PixelKit.fire(DataImportPermissionPixel.directoryPermissionRetryScreenShown(source: importSource.pixelSourceParameterName), options: .unenforcedPrefix)
         screen = .directoryReadPermissionDenied(profile.profileURL)
     }
 

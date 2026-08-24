@@ -25,7 +25,6 @@ import SwiftUIExtensions
 /// Asks the user to grant access to a browser data directory before importing from it.
 struct RequestDirectoryReadPermissionView: View {
     let source: DataImport.Source
-    let onSelectData: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: Metrics.iconSpacing) {
@@ -39,7 +38,6 @@ struct RequestDirectoryReadPermissionView: View {
             VStack(alignment: .leading, spacing: Metrics.contentSpacing) {
                 titleView
                 instructionsView
-                selectSourceButton
                 FilePickerExampleView()
             }
         }
@@ -58,22 +56,6 @@ struct RequestDirectoryReadPermissionView: View {
         Text(instructionsAttributedText)
             .font(.body)
             .foregroundColor(Color(designSystemColor: .textPrimary))
-    }
-
-    private var selectSourceButton: some View {
-        Button {
-            onSelectData()
-        } label: {
-            Text(UserText.importBrowserDataRequestAccessButton(for: source))
-                .padding(.horizontal, Metrics.buttonHorizontalPadding)
-        }
-        .buttonStyle(DefaultActionButtonStyle(enabled: true,
-                                              topPadding: Metrics.buttonVerticalPadding,
-                                              bottomPadding: Metrics.buttonVerticalPadding,
-                                              stateColors: .themedActionButton,
-                                              pillShape: true))
-        .padding(.top, Metrics.buttonTopPadding)
-        .padding(.bottom, Metrics.buttonBottomPadding)
     }
 
     private var instructionsAttributedText: AttributedString {
@@ -149,11 +131,6 @@ private extension RequestDirectoryReadPermissionView {
         static let iconTopOffset: CGFloat = 4
 
         static let contentSpacing: CGFloat = 16
-
-        static let buttonHorizontalPadding: CGFloat = 12
-        static let buttonVerticalPadding: CGFloat = 6
-        static let buttonTopPadding: CGFloat = 6
-        static let buttonBottomPadding: CGFloat = 12
     }
 }
 
@@ -183,6 +160,6 @@ private extension FilePickerExampleView {
 }
 
 #Preview {
-    RequestDirectoryReadPermissionView(source: .chrome) {}
+    RequestDirectoryReadPermissionView(source: .chrome)
         .frame(width: 420)
 }

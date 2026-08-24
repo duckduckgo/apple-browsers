@@ -547,6 +547,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216352541195038?focus=true
     case nativeAIPromptEditing
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217671927314542
+    case nativePromoCards
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -931,6 +934,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
+        case .nativePromoCards:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromoCards))
         }
     }
 

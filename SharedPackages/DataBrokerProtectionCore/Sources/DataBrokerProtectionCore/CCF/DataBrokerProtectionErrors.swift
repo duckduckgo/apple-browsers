@@ -146,6 +146,17 @@ extension DataBrokerProtectionError: LocalizedError {
     }
 }
 
+extension DataBrokerProtectionError {
+    var debugDescription: String {
+        switch self {
+        case .emailError(let emailError?):
+            return "Email service error: \(emailError.debugDescription)"
+        default:
+            return localizedDescription
+        }
+    }
+}
+
 extension DataBrokerProtectionError: CustomNSError {
     public var errorCode: Int {
         switch self {

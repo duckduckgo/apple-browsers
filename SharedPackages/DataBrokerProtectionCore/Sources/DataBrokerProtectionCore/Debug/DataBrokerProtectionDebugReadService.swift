@@ -224,7 +224,7 @@ public struct DataBrokerProtectionDebugReadService {
         case .matchesFound(let count):
             return DebugHistoryEvent(type: eventTypeName(event.type), date: event.date, matchCount: count, error: nil)
         case .error(let error):
-            let debugError = DebugError(name: error.name, code: error.errorCode, description: error.errorDescription ?? error.name)
+            let debugError = DebugError(name: error.name, code: error.errorCode, description: error.debugDescription)
             return DebugHistoryEvent(type: eventTypeName(event.type), date: event.date, matchCount: nil, error: debugError)
         default:
             return DebugHistoryEvent(type: eventTypeName(event.type), date: event.date, matchCount: nil, error: nil)

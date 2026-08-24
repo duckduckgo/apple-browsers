@@ -45,9 +45,18 @@ public extension SubJobWebRunning {
     }
 
     func errorDetails(_ error: Error) -> String {
+        let description: String
+        if let error = error as? DataBrokerProtectionError {
+            description = error.debugDescription
+        } else if let error = error as? EmailError {
+            description = error.debugDescription
+        } else {
+            description = error.localizedDescription
+        }
+
         DebugHelper.prettyPrintedJSON(from: [
             "type": String(describing: type(of: error)),
-            "description": error.localizedDescription
+            "description": description
         ])
     }
 }

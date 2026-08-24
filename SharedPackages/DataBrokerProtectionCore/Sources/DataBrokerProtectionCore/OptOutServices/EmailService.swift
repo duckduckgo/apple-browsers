@@ -117,8 +117,9 @@ public struct EmailService: EmailServiceProtocol {
         if let httpResponse = response as? HTTPURLResponse {
             if !(200...299).contains(httpResponse.statusCode) {
                 servicePixel.fireGenerateEmailHTTPError(statusCode: httpResponse.statusCode)
+                let message = body.isEmpty ? nil : String(decoding: body.prefix(200), as: UTF8.self)
                 throw EmailError.httpError(statusCode: httpResponse.statusCode,
-                                           message: String(decoding: body.prefix(200), as: UTF8.self))
+                                           message: message)
             }
         } else {
             servicePixel.fireGenerateEmailHTTPError(statusCode: 0)
@@ -226,11 +227,8 @@ extension EmailError: LocalizedError {
             return "Unknown email status received"
         case .cancelled:
             return "Email operation cancelled"
-        case .httpError(let statusCode, let message):
-            guard let message, !message.isEmpty else {
-                return "Email HTTP error \(statusCode)"
-            }
-            return "Email HTTP error \(statusCode): \(message)"
+        case .httpError(let statusCode, _):
+            return "Email HTTP error \(statusCode)"
         case .unknownHTTPError:
             return "Unknown email HTTP error"
         case .extractionError:
@@ -243,6 +241,20 @@ extension EmailError: LocalizedError {
             return "Email retries exceeded"
         case .alreadyGeneratedEmail:
             return "generateEmail action ran more than once in the same job"
+        }
+    }
+}
+
+extension EmailError {
+    var debugDescription: String {
+        switch self {
+        case .httpError(let statusCode, let message):
+            guard let message, !message.isEmpty else {
+                return "Email HTTP error \(statusCode)"
+            }
+            return "Email HTTP error \(statusCode): \(message)"
+        default:
+            return localizedDescription
         }
     }
 }

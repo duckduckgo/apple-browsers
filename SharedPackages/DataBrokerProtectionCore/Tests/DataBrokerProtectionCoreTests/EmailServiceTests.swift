@@ -117,7 +117,8 @@ final class EmailServiceTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? EmailError,
                            .httpError(statusCode: 400, message: "INVALID_REQUEST: Invalid dataBroker parameter"))
-            XCTAssertEqual(error.localizedDescription,
+            XCTAssertEqual(error.localizedDescription, "Email HTTP error 400")
+            XCTAssertEqual((error as? EmailError)?.debugDescription,
                            "Email HTTP error 400: INVALID_REQUEST: Invalid dataBroker parameter")
         }
     }
@@ -134,8 +135,8 @@ final class EmailServiceTests: XCTestCase {
             _ = try await sut.getEmail(dataBrokerURL: "fakeBroker", attemptId: UUID())
             XCTFail("Expected an error to be thrown")
         } catch {
-            XCTAssertEqual(error as? EmailError, .httpError(statusCode: 400, message: ""))
             XCTAssertEqual(error.localizedDescription, "Email HTTP error 400")
+            XCTAssertEqual((error as? EmailError)?.debugDescription, "Email HTTP error 400")
         }
     }
 

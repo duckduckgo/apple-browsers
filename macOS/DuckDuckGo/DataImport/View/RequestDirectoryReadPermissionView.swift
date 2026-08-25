@@ -24,16 +24,19 @@ import SwiftUIExtensions
 
 /// Asks the user to grant access to a browser data directory before importing from it.
 struct RequestDirectoryReadPermissionView: View {
+
+    enum Mode {
+        case initialRequest
+        case retryAfterCancel
+        case retryAfterError
+    }
+
     let source: DataImport.Source
+    var mode: Mode = .initialRequest
 
     var body: some View {
         HStack(alignment: .top, spacing: Metrics.iconSpacing) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.infoSolid)
-                .renderingMode(.template)
-                .resizable()
-                .foregroundColor(RebrandingColor.Pondwater.pondwater50)
-                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                .offset(y: Metrics.iconTopOffset)
+            iconView
 
             VStack(alignment: .leading, spacing: Metrics.contentSpacing) {
                 titleView
@@ -46,8 +49,17 @@ struct RequestDirectoryReadPermissionView: View {
         .padding(.vertical, Metrics.verticalPadding)
     }
 
+    private var iconView: some View {
+        Image(nsImage: mode.icon)
+            .renderingMode(mode.iconTintColor == nil ? .original : .template)
+            .resizable()
+            .foregroundColor(mode.iconTintColor)
+            .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+            .offset(y: Metrics.iconTopOffset)
+    }
+
     private var titleView: some View {
-        Text(UserText.importBrowserDataRequestAccessTitle(for: source))
+        Text(mode.title(for: source))
             .font(.title2.weight(.semibold))
             .foregroundColor(Color(designSystemColor: .textPrimary))
     }
@@ -63,6 +75,42 @@ struct RequestDirectoryReadPermissionView: View {
         let output = try? AttributedString(markdown: text)
 
         return output ?? AttributedString(text)
+    }
+}
+
+// MARK: - Mode Presentation
+
+private extension RequestDirectoryReadPermissionView.Mode {
+
+    var icon: DesignSystemImage {
+        switch self {
+        case .initialRequest:
+            return DesignSystemImages.Glyphs.Size16.infoSolid
+        case .retryAfterCancel:
+            return DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert
+        case .retryAfterError:
+            return DesignSystemImages.Glyphs.Size16.exclamationRecolorable
+        }
+    }
+
+    var iconTintColor: Color? {
+        switch self {
+        case .initialRequest:
+            return RebrandingColor.Pondwater.pondwater50
+        case .retryAfterCancel, .retryAfterError:
+            return nil
+        }
+    }
+
+    func title(for source: DataImport.Source) -> String {
+        switch self {
+        case .initialRequest:
+            return UserText.importBrowserDataRequestAccessTitle(for: source)
+        case .retryAfterCancel:
+            return UserText.importBrowserDataRequestAccessDeniedTitle(for: source)
+        case .retryAfterError:
+            return UserText.importBrowserDataRequestAccessErrorTitle(for: source)
+        }
     }
 }
 
@@ -107,7 +155,8 @@ private struct FilePickerExampleView: View {
             Text(UserText.importBrowserDataAccessPanelPrompt)
                 .font(.system(size: Metrics.buttonFontSize, weight: .semibold))
                 .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
-                .frame(width: Metrics.grantAccessButtonWidth, height: Metrics.buttonHeight)
+                .padding(.horizontal, Metrics.grantAccessButtonPaddingHorizontal)
+                .frame(height: Metrics.buttonHeight)
                 .background(
                     RoundedRectangle(cornerRadius: Metrics.buttonCornerRadius)
                         .fill(Color(designSystemColor: .accentAltPrimary))
@@ -150,8 +199,8 @@ private extension FilePickerExampleView {
         static let buttonSpacing: CGFloat = 7
         static let buttonCornerRadius: CGFloat = 5
         static let buttonFontSize: CGFloat = 10
+        static let grantAccessButtonPaddingHorizontal: CGFloat = 6
         static let placeholderButtonWidth: CGFloat = 60
-        static let grantAccessButtonWidth: CGFloat = 86
         static let buttonsTrailingInset: CGFloat = 12
         static let buttonsBottomInset: CGFloat = 12
 
@@ -161,5 +210,15 @@ private extension FilePickerExampleView {
 
 #Preview {
     RequestDirectoryReadPermissionView(source: .chrome)
+        .frame(width: 420)
+}
+
+#Preview("Retry After Cancel") {
+    RequestDirectoryReadPermissionView(source: .chrome, mode: .retryAfterCancel)
+        .frame(width: 420)
+}
+
+#Preview("Retry After Error") {
+    RequestDirectoryReadPermissionView(source: .chrome, mode: .retryAfterError)
         .frame(width: 420)
 }

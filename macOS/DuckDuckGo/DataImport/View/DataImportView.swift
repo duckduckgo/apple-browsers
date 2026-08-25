@@ -138,11 +138,10 @@ struct DataImportView: ModalView {
                 .padding(.vertical, 12)
             case .getDirectoryReadPermission:
                 RequestDirectoryReadPermissionView(source: model.importSource)
+            case .directoryReadPermissionCancelled:
+                RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterCancel)
             case .directoryReadPermissionDenied:
-                // Implemented in a Follow-UP
-                Text(verbatim: "Directory access was not granted")
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
+                RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterError)
             case .passwordEntryHelp:
                 PasswordEntryRetryPromptView(
                     onRetry: {
@@ -448,6 +447,7 @@ extension DataImportViewModel.ButtonType {
         case .selectFile: .defaultAction
         case .skip: .cancelAction
         case .cancel: .cancelAction
+        case .cancelImport: .cancelAction
         case .back: .cancelAction
         case .close: .cancelAction
         case .done: .cancelAction
@@ -492,6 +492,8 @@ extension DataImportViewModel.ButtonType {
             }
         case .cancel:
             UserText.cancel
+        case .cancelImport:
+            UserText.importBrowserDataRequestAccessDeniedCancelTitle
         case .back:
             UserText.navigateBack
         case .done:

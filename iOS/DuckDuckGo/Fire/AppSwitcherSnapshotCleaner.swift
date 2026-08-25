@@ -19,16 +19,20 @@
 
 import Common
 import Foundation
+import PixelKit
 
 actor AppSwitcherSnapshotCleaner {
 
     private let fileManager: FileManager
     private let libraryDirectoryOverride: URL?
+    private let pixelFiring: PixelFiring?
 
     init(fileManager: FileManager = .default,
-         libraryDirectoryOverride: URL? = nil) {
+         libraryDirectoryOverride: URL? = nil,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.fileManager = fileManager
         self.libraryDirectoryOverride = libraryDirectoryOverride
+        self.pixelFiring = pixelFiring
     }
 
     func clearSnapshots() async {
@@ -40,9 +44,17 @@ actor AppSwitcherSnapshotCleaner {
             .appendingPathComponent("SplashBoard", isDirectory: true)
             .appendingPathComponent("Snapshots", isDirectory: true)
 
-        let snapshotItems = (try? fileManager.contentsOfDirectory(at: snapshotsDirectory,
-                                                                  includingPropertiesForKeys: nil,
-                                                                  options: [])) ?? []
+        let snapshotItems: [URL]
+        do {
+            snapshotItems = try fileManager.contentsOfDirectory(at: snapshotsDirectory,
+                                                                includingPropertiesForKeys: nil,
+                                                                options: [])
+        } catch {
+            let errorDescription = error.localizedDescription
+            Logger.general.error("Failed to enumerate app switcher snapshots: \(errorDescription, privacy: .public)")
+            pixelFiring?.fire(DataClearingPixels.appSwitcherSnapshotEnumerationFailed(error), frequency: .dailyAndCount)
+            return
+        }
 
         for snapshotItem in snapshotItems {
             do {

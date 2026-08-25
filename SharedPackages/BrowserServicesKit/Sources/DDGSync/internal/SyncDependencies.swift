@@ -61,7 +61,7 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
 
 protocol AccountManaging {
 
-    func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount
+    func createAccount(deviceName: String, deviceType: String) async throws -> AccountCreationResult
     func deleteAccount(_ account: SyncAccount) async throws
 
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> LoginResult
@@ -71,6 +71,11 @@ protocol AccountManaging {
 
     func fetchDevicesForAccount(_ account: SyncAccount) async throws -> RegisteredDeviceMappingResult
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice]
+}
+
+struct AccountCreationResult {
+    let account: SyncAccount
+    let didPublishDeviceInfo: Bool
 }
 
 /// Manages the scoped ("3party") access credential: recovering, creating, and fetching its password and protected keys.

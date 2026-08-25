@@ -31,6 +31,7 @@ protocol DeviceInfoMigrationCoordinating {
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async
     func repairCurrentDeviceInfo(for account: SyncAccount) async
     func renameCurrentDevice(to name: String, for account: SyncAccount, mode: DeviceInfoRenameMode) async throws -> [RegisteredDevice]
+    func recordSuccessfulUnifiedWrite(for account: SyncAccount)
     func hasCompletedMigration(for account: SyncAccount) -> Bool
     func reset()
 }
@@ -178,6 +179,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
         return devices
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func updateCurrentDeviceInfo(for account: SyncAccount,
                                          identity: DeviceInfoMigrationIdentity,
                                          write: DeviceInfoWrite) async {
@@ -298,6 +300,10 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
             return false
         }
         return storedValue as? String == DeviceInfoMigrationIdentity(account: account).persistedValue
+    }
+
+    func recordSuccessfulUnifiedWrite(for account: SyncAccount) {
+        markMigrationComplete(for: account)
     }
 
     private func markMigrationComplete(for account: SyncAccount) {

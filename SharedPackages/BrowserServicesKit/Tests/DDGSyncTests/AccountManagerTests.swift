@@ -98,7 +98,7 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
 
         let signupBody = try makeSignupBody(from: api)
         let keys = try XCTUnwrap(signupBody["keys"] as? [[String: Any]])
@@ -114,6 +114,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(deviceInfoCodec.encryptUsingProtectedKeyCalls.first?.deviceInfo,
                        DeviceInfo(name: "iPhone", type: "iOS"))
         XCTAssertEqual(deviceInfoCodec.encryptUsingProtectedKeyCalls.first?.protectedKey.kid, protectedKey.kid)
+        XCTAssertTrue(result.didPublishDeviceInfo)
         XCTAssertEqual(events.events, [
             .accountInfoKeyCreateSuccess,
             .ownRowDeviceInfoFirstWriteSuccess
@@ -142,7 +143,7 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
 
         let signupBody = try makeSignupBody(from: api)
         XCTAssertNil(signupBody["keys"])
@@ -151,6 +152,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
         XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
         XCTAssertTrue(deviceInfoCodec.encryptUsingProtectedKeyCalls.isEmpty)
+        XCTAssertFalse(result.didPublishDeviceInfo)
         XCTAssertTrue(events.events.isEmpty)
     }
 
@@ -177,7 +179,7 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
 
         let signupBody = try makeSignupBody(from: api)
         XCTAssertNil(signupBody["keys"])
@@ -185,6 +187,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
         XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
         XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.signup])
+        XCTAssertFalse(result.didPublishDeviceInfo)
         XCTAssertEqual(events.events, [.ownRowDeviceInfoFirstWriteFailed(.encryptFailed)])
     }
 
@@ -210,7 +213,7 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
 
         let signupBody = try makeSignupBody(from: api)
         XCTAssertNil(signupBody["keys"])
@@ -220,6 +223,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(accountInfoKeyFactory.makeProtectedKeysCalls.count, 1)
         XCTAssertTrue(deviceInfoCodec.encryptUsingProtectedKeyCalls.isEmpty)
         XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.signup])
+        XCTAssertFalse(result.didPublishDeviceInfo)
         XCTAssertEqual(events.events, [.accountInfoKeyCreateFailed(.mintFailed)])
     }
 
@@ -281,13 +285,14 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        let result = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
 
         let signupBody = try makeSignupBody(from: api)
         XCTAssertNil(signupBody["keys"])
         XCTAssertNil(signupBody["device_info"])
         XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
         XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertFalse(result.didPublishDeviceInfo)
         XCTAssertEqual(events.events, [.ownRowDeviceInfoFirstWriteFailed(.encryptFailed)])
     }
 

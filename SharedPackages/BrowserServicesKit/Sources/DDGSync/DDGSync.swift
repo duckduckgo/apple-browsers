@@ -113,9 +113,13 @@ public class DDGSync: DDGSyncing {
             throw SyncError.accountAlreadyExists
         }
 
-        let account = try await dependencies.account.createAccount(deviceName: deviceName, deviceType: deviceType)
-        try updateAccount(account)
-        scheduleDeviceInfoMigration(for: account)
+        let result = try await dependencies.account.createAccount(deviceName: deviceName, deviceType: deviceType)
+        try updateAccount(result.account)
+        if result.didPublishDeviceInfo {
+            deviceInfoMigrationCoordinator.recordSuccessfulUnifiedWrite(for: result.account)
+        } else {
+            scheduleDeviceInfoMigration(for: result.account)
+        }
         scheduler.requestSyncImmediately()
     }
 

@@ -236,7 +236,7 @@ struct DataImportViewModel {
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
         let directoryAccessFeature = DataDirectoryPermissionFixAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
-        let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessFeature.isEnabled) }
+        let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessFeature.isAvailable) }
 
         let filteredAvailableSources = availableImportSources.filter {
             // Filter out CSV and HTML as we're using the new combined file import option

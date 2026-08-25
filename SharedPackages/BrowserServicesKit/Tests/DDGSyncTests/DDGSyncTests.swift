@@ -661,6 +661,80 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
     }
 
+    func testWhenUnifiedReadObservationsAreReturnedThenTheyFireWithoutRequiringWriteFlag() async throws {
+        dependencies.canReadUnifiedDeviceList = { true }
+        dependencies.canWriteUnifiedDeviceList = { false }
+        let events = UnifiedDeviceListEventMappingMock()
+        dependencies.unifiedDeviceListEvents = events
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        accountManager.fetchDevicesForAccountStub = RegisteredDeviceMappingResult(
+            devices: [.mock],
+            needsCurrentDeviceInfoRepair: false,
+            unifiedReadObservations: [
+                .event(.ownRowResolvedDeviceInfo),
+                .event(.otherRowResolvedPlaceholder(.ddg))
+            ])
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.fetchDevices()
+
+        XCTAssertEqual(events.events, [
+            .ownRowResolvedDeviceInfo,
+            .otherRowResolvedPlaceholder(.ddg)
+        ])
+    }
+
+    func testWhenUnifiedWriteIsDisabledThenOwnRowFallbackObservationsDoNotFire() async throws {
+        dependencies.canReadUnifiedDeviceList = { true }
+        dependencies.canWriteUnifiedDeviceList = { false }
+        let events = UnifiedDeviceListEventMappingMock()
+        dependencies.unifiedDeviceListEvents = events
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        accountManager.fetchDevicesForAccountStub = RegisteredDeviceMappingResult(
+            devices: [.mock],
+            needsCurrentDeviceInfoRepair: false,
+            unifiedReadObservations: [
+                .event(.ownRowResolvedLegacy(.blobDecryptFailed)),
+                .event(.ownRowResolvedPlaceholder(.blobDecryptFailed)),
+                .ownRowMissingDeviceInfo(.legacy),
+                .ownRowMissingDeviceInfo(.placeholder),
+                .event(.ownRowResolvedDeviceInfo),
+                .event(.otherRowResolvedPlaceholder(.ddg))
+            ])
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.fetchDevices()
+
+        XCTAssertEqual(events.events, [
+            .ownRowResolvedDeviceInfo,
+            .otherRowResolvedPlaceholder(.ddg)
+        ])
+    }
+
+    func testWhenOwnRowDeviceInfoIsMissingThenMigrationMarkerDistinguishesNotPublishedFromAbsent() async throws {
+        dependencies.canReadUnifiedDeviceList = { true }
+        dependencies.canWriteUnifiedDeviceList = { true }
+        let events = UnifiedDeviceListEventMappingMock()
+        dependencies.unifiedDeviceListEvents = events
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        accountManager.fetchDevicesForAccountStub = RegisteredDeviceMappingResult(
+            devices: [.mock],
+            needsCurrentDeviceInfoRepair: false,
+            unifiedReadObservations: [.ownRowMissingDeviceInfo(.legacy)])
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.fetchDevices()
+        migrationCoordinator.hasCompletedMigrationStub = true
+        _ = try await syncService.fetchDevices()
+
+        XCTAssertEqual(events.events, [
+            .ownRowResolvedLegacy(.notPublishedYet),
+            .ownRowResolvedLegacy(.blobAbsent)
+        ])
+    }
+
     func testWhenMigrationCompletesDuringDeviceFetchThenStaleResultDoesNotScheduleRepairUntilNextPoll() async throws {
         dependencies.canWriteUnifiedDeviceList = { true }
         (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil

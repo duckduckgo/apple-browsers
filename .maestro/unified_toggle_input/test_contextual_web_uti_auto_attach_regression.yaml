@@ -73,6 +73,14 @@ name: test_contextual_web_uti_auto_attach_regression
     id: "Browser.OmniBar.Button.AIChat"
 - assertVisible:
     id: "AIChat.ContextualSheet"
+
+# The attached chip is the positive signal that auto-attach picked up the new page. Expanded first:
+# collapsed, neither the chip nor the attach affordance is on screen and both checks below would
+# pass without auto-attach having done anything.
+- runFlow:
+    file: ../shared/expand_contextual_uti.yaml
 - extendedWaitUntil:
-    notVisible: "Attach Page Content"
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
     timeout: 10000
+- assertNotVisible: "Attach Page Content"

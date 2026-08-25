@@ -19,8 +19,7 @@
 
 import XCTest
 import Networking
-import PersistenceTestingUtils
-import Persistence
+@_spi(Testing) import Persistence
 @testable import Core
 
 final class DailyPixelTests: XCTestCase {

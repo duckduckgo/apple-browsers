@@ -21,11 +21,12 @@ import Common
 import ConcurrencyExtensions
 import FoundationExtensions
 import NetworkingTestingUtils
-import PersistenceTestingUtils
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import PreferencesUI_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+@_spi(Testing) import SharedTestUtilities
 import SubscriptionTestingUtilities
 import SubscriptionUI
 import XCTest

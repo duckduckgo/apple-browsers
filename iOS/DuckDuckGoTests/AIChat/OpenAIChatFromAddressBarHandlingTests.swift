@@ -21,7 +21,7 @@ import XCTest
 @testable import Core
 @testable import DuckDuckGo
 import AIChat
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 final class OpenAIChatFromAddressBarHandlingTests: XCTestCase {
 

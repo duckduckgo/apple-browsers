@@ -186,8 +186,6 @@ class PrivacyDashboardUITests: UITestCase {
         let trackerNetworksGroup = privacyDashboard.groups["List of tracker networks"]
         XCTAssertTrue(trackerNetworksGroup.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tracker companies list should be visible")
 
-        // AX snapshots can be deeply nested and vary between runs, so we validate the expanded
-        // tracker list from the full subtree rather than assuming a fixed row depth.
         func descr() -> String {
             do {
                 return try JSONSerialization.data(withJSONObject: privacyDashboard.snapshot().toDictionary(), options: .prettyPrinted).utf8String() ?? "<nil>"
@@ -196,24 +194,31 @@ class PrivacyDashboardUITests: UITestCase {
             }
         }
 
-        let groupSnapshot = try trackerNetworksGroup.snapshot()
-        // Recursively flatten all descendants to avoid missing domain text hidden in nested groups.
+        // The list container can exist before company rows are in the AX tree (web dashboard slide).
+        // Poll the live query until the section markers are present instead of snapshotting immediately.
+        let trackerDomainSections = privacyDashboard.groups.matching(
+            NSPredicate.keyPath(\.title, beginsWith: "Tracker domains for ")
+                .or(.keyPath(\.label, beginsWith: "Tracker domains for "))
+        )
+        XCTAssertTrue(
+            trackerDomainSections.wait(for: \.count, in: 3..., timeout: UITests.Timeouts.elementExistence),
+            "Expected more than 2 tracker domain sections (\(trackerDomainSections.count) found in \(descr()))"
+        )
+
+        // AX snapshots can be deeply nested and vary between runs, so we validate domains from the
+        // full dashboard subtree after the sections have appeared.
         func collectDescendants(from node: XCUIElementSnapshot) -> [XCUIElementSnapshot] {
-            let descendants = node.children.flatMap { child in
+            node.children.flatMap { child in
                 [child] + collectDescendants(from: child)
             }
-            return descendants
         }
-        let nestedNodes = [groupSnapshot] + collectDescendants(from: groupSnapshot)
+        let dashboardSnapshot = try privacyDashboard.snapshot()
+        let nestedNodes = [dashboardSnapshot] + collectDescendants(from: dashboardSnapshot)
         // "Tracker domains for ..." is the stable section marker for each company block.
         let trackerDomainSectionNodes = nestedNodes.filter { node in
             let title = node.title
             let label = node.trimmedLabel
             return title.hasPrefix("Tracker domains for ") || label.hasPrefix("Tracker domains for ")
-        }
-        guard trackerDomainSectionNodes.count > 2 else {
-            XCTFail("Expected more than 2 tracker domain sections (\(trackerDomainSectionNodes.count) found in \(descr())")
-            return
         }
 
         let domainPattern = #"^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
@@ -293,16 +298,16 @@ class PrivacyDashboardUITests: UITestCase {
     }
 
     func testPrivacyDashboard_HTTPSUpgrade_ShowsUpgradeStatus() throws {
-        let upgradedURL = URL(string: "http://example.com")!
+        let upgradedURL = URL(string: "http://github.com")!
         for _ in 0..<5 {
             // Navigate to HTTP URL that should be upgraded (tested from UI perspective)
             addressBarTextField.pasteURL(upgradedURL, pressingEnter: true)
 
-            // Wait for example.com content
-            let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-            XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Example.com should load")
+            // Wait for github.com content
+            let pageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+            XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "github.com should load")
 
-            XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for example.com")
+            XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for github.com")
             let url = app.tabs.firstMatch.url?.dropping(suffix: "/")
             if let url, url.hasPrefix("https://") {
                 break
@@ -532,12 +537,12 @@ class PrivacyDashboardUITests: UITestCase {
 
         // Navigate to second site
         app.activateAddressBar()
-        let secondURL = URL(string: "http://example.com")!
+        let secondURL = URL(string: "http://github.com")!
         addressBarTextField.pasteURL(secondURL, pressingEnter: true)
 
         // Wait for second page content
-        let secondPageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(secondPageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Second test page should load")
+        let secondPageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(secondPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Second test page should load")
 
         // Check privacy dashboard for second site
         XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should remain available for second site")
@@ -547,9 +552,9 @@ class PrivacyDashboardUITests: UITestCase {
         // Privacy dashboard should open for second site
         XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open for second site")
 
-        // Verify dashboard updated to show second site information (example.com)
-        let secondSiteInfo = privacyDashboard.staticTexts.containing(\.value, containing: "example.com").firstMatch
-        XCTAssertTrue(secondSiteInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should update to show example.com information")
+        // Verify dashboard updated to show second site information (github.com)
+        let secondSiteInfo = privacyDashboard.staticTexts.containing(\.value, containing: "github.com").firstMatch
+        XCTAssertTrue(secondSiteInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should update to show github.com information")
     }
 
 }

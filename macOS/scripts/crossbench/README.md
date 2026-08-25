@@ -1,7 +1,7 @@
-# macOS crossbench — Chrome LCP with WPR
+# macOS browser LCP with WPR
 
-Measures Chrome navigation-to-LCP on macOS using fixed Web Page Replay archives
-and the same US-broadband profile as the Windows harness:
+Measures browser navigation-to-LCP on macOS using fixed Web Page Replay
+archives and the same US-broadband profile as the Windows harness:
 
 - 28 ms RTT
 - 50,000 Kbps downstream
@@ -30,11 +30,15 @@ downloading the files again.
 |------|---------|
 | `.github/workflows/wpr_archive_validation.yml` | Reusable validation and consolidated alerting for every browser workflow. |
 | `provision-macos.sh` | Installs Chrome, Python 3.11, Poetry, a pinned crossbench checkout, the LCP extras, a pinned WPR binary, and a checksum-verified tsproxy. |
+| `provision-ddg-runtime.sh` | Installs only DDG's pinned WPR, Python, and tsproxy runtime under the runner user. |
 | `provision-wpr-tools.sh` | Builds requested WPR tools from the crossbench-pinned WPR revision. |
 | `validate-wpr-archives.sh` | Downloads the complete selected archive set and produces its validation report and manifest. |
 | `validate-wpr.go` | Parses stored WPR requests and responses without starting a replay server. |
 | `wpr-sites.txt` | Single default site list shared by validation and the browser run. |
 | `test-chrome.sh` | Runs Chrome through the validated WPR archives and tsproxy, and writes per-repetition results and per-site dispositions. |
+| `test-ddg.sh` | Runs a DuckDuckGo Review build through validated WPR archives and tsproxy. |
+| `ddg-automation.py` | Authenticated local automation client used by the DDG harness. |
+| `prepare-ddg-review.py` | Downloads or consumes, verifies, and normalizes the signed Review app used by DDG CI. |
 | `run-with-watchdog.py` | Bounds one Crossbench site process group and terminates it on timeout. |
 | `aggregate-lcp.py` | Produces per-domain ClickHouse metric rows. |
 | `aggregate-dispositions.py` | Validates and encodes ClickHouse eligibility and measurement-outcome rows for every requested site. |
@@ -62,9 +66,11 @@ Everything else is installed by `provision-macos.sh`.
 The manual CI workflow also accepts a `reps` input. Scheduled runs retain the
 10-load default; use a smaller value for validation runs.
 
-CI can create one write-only Asana subtask for archive-validation errors and one
-for browser-measurement errors per workflow run under task `1216902374642227`.
-It uses `ASANA_ACCESS_TOKEN` only to create subtasks and never reads Asana.
+CI can create one write-only Asana task for archive-validation errors and one
+for browser-measurement errors per workflow run, in the `Alerts` section
+(`1217628708169657`) of project `1217628708169653`. It uses
+`ASANA_ACCESS_TOKEN` only to create tasks and never reads Asana. Repository
+variable `CROSSBENCH_ALERT_FOLLOWERS` optionally adds collaborators.
 GitHub artifacts provide best-effort deduplication without querying Asana.
 Alerting defaults on and can be disabled for a manual run with `alert-asana`;
 repository variables `CROSSBENCH_WPR_ASANA_ALERTS_ENABLED` and
@@ -78,8 +84,7 @@ The runner writes:
 - `wpr-validation/manifest.tsv`
 - `wpr-validation/report.txt`
 
-CI uploads both artifacts and aggregates them with `webview_type=chr-wpr`, so
-replay results cannot be mixed with the earlier live-network `chr` rows.
+CI uploads both artifacts with `webview_type=chrome`.
 
 The attempts table records one row for every requested site.
 `requested_repetitions` remains the configured count when validation excludes a
@@ -118,9 +123,48 @@ Safari runs ten replay loads per eligible site with no live-network fallback.
 Validation errors are exclusions. A per-site WPR or automation failure is
 `infra_error` and does not stop later sites; failure of the shared proxy,
 shaping, or SafariDriver service stops measurement and records the remaining
-eligible sites as `infra_error`. Its rows use `webview_type=sfr-wpr`. CI retains
+eligible sites as `infra_error`. Its rows use `webview_type=safari`. CI retains
 bounded Safari, proxy, shaping, and per-site WPR logs in `safari-diagnostics/`.
 
-A new WebDriver session does not by itself prove a cold Safari HTTP cache.
-Before comparing absolute Safari values with Chrome cold-profile values, verify
-per-repetition WPR subresource traffic or add a reliable cache reset.
+Safari is quit before every repetition, so each load runs on a process
+safaridriver has just launched — the same per-repetition freshness Chrome gets
+from a new process and profile, and DuckDuckGo from a relaunch and data wipe.
+Because Safari must therefore be the only one on the machine, the run refuses to
+start while another Safari is already open, and a Safari that will not quit is a
+harness failure rather than a warmer measurement.
+
+Quitting removes the JIT, prewarmed-process and in-memory carry-over. The disk
+cache needs no separate reset: safaridriver gives every WebDriver session its own
+ephemeral store under the Safari container's `tmp/SafariAutomation`, and the
+harness opens one session per repetition, so each load starts with an empty
+network cache, cookie jar and local storage while Safari's own persistent cache
+is left untouched.
+
+safaridriver never removes those session stores, so the harness prunes them
+itself: at startup, after each repetition's quit, and during cleanup. Pruning is
+skipped while any Safari is alive, since a live session owns its store.
+
+## DuckDuckGo
+
+DuckDuckGo uses `test-ddg.sh` with a Review or Debug app build that exposes the
+authenticated local automation server. Each repetition launches a fresh app,
+clears website data, and uses a fresh tsproxy instance to route its WKWebView
+to WPR. There is no live-network fallback or system proxy change.
+
+The harness consumes validator-staged archives and writes the same result and
+disposition formats as the other browser runners. Replay misses, failed
+automation acknowledgements, incomplete cleanup, and invalid measurements are
+recorded as infrastructure errors, and affected samples are discarded.
+
+The manual `macos_ddg_lcp.yml` workflow runs on the same hosted `macos-latest`
+runner as Chrome and Safari, behind the `macos-performance` environment, so the
+three browsers stay comparable. A supplied Review URL is downloaded without
+placing it on a process command line. With a blank URL, CI builds the exact
+workflow commit using the existing notarized Review workflow. Before execution,
+the app is checked for its Review bundle identifier, DuckDuckGo signing team,
+valid deep signature, and Gatekeeper assessment. Validation failures are
+included in the consolidated runtime report.
+
+DDG scheduling remains disabled until two full runs complete
+with understood variance. The optional ClickHouse rows use
+`webview_type=ddg` and `webview_channel=review`.

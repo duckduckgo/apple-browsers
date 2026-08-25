@@ -19,8 +19,7 @@
 import XCTest
 @testable import Subscription
 @testable import DuckDuckGo_Privacy_Browser
-@testable import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) @testable import PixelKit
 
 final class SubscriptionErrorReporterTests: XCTestCase {
 

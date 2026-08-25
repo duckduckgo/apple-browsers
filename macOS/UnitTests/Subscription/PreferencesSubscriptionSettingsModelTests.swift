@@ -21,8 +21,7 @@ import Combine
 import Subscription
 import SubscriptionTestingUtilities
 import BrowserServicesKit
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import SubscriptionUI
 @testable import DuckDuckGo_Privacy_Browser
 

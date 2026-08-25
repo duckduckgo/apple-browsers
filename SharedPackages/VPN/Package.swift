@@ -14,6 +14,9 @@ let package = Package(
         .library(name: "VPNTestUtils", targets: ["VPNTestUtils"]),
     ],
     dependencies: [
+        .package(path: "../Common"),
+        .package(path: "../Persistence"),
+        .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],
@@ -22,14 +25,14 @@ let package = Package(
             name: "VPN",
             dependencies: [
                 .target(name: "WireGuardC"),
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Networking", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit")
+                .product(name: "PixelKit", package: "PixelKit")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

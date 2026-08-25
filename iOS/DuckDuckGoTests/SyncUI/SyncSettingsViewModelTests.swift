@@ -704,6 +704,49 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.firedSyncSetupPixelEvents, [.anotherDevicePromptOptionTapped(.thisDeviceOnly)])
     }
 
+    func testWhenAnotherDevicePromptIsDismissedWithoutSelectionThenFiresPromptDismissedPixel() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
+        sut.anotherDevicePromptAppeared()
+
+        sut.dismissAnotherDevicePrompt()
+        sut.connectingSheetDidDismiss()
+
+        XCTAssertEqual(delegate.firedSyncSetupPixelEvents, [.anotherDevicePromptShown, .anotherDevicePromptDismissed])
+    }
+
+    func testWhenSyncAnotherDeviceOptionIsSelectedThenDoesNotFirePromptDismissedPixel() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
+        sut.anotherDevicePromptAppeared()
+
+        sut.syncAnotherDeviceFromConnectingSheet()
+        sut.connectingSheetDidDismiss()
+
+        XCTAssertEqual(delegate.firedSyncSetupPixelEvents, [
+            .anotherDevicePromptShown,
+            .anotherDevicePromptOptionTapped(.syncAnotherDevice)
+        ])
+    }
+
+    func testWhenThisDeviceOnlyOptionIsSelectedThenDoesNotFirePromptDismissedPixel() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
+        sut.anotherDevicePromptAppeared()
+
+        sut.syncThisDeviceOnlyFromConnectingSheet()
+        sut.dismissConnectingSheet()
+        sut.connectingSheetDidDismiss()
+
+        XCTAssertEqual(delegate.firedSyncSetupPixelEvents, [
+            .anotherDevicePromptShown,
+            .anotherDevicePromptOptionTapped(.thisDeviceOnly)
+        ])
+    }
+
     private func makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler,
                          delegate: MockSyncSettingsViewModelDelegate? = nil) -> SyncSettingsViewModel {
         let model = SyncSettingsViewModel(

@@ -20,8 +20,7 @@
 import Foundation
 import Testing
 import Core
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import FeatureFlags_iOS
 @testable import DuckDuckGo
 

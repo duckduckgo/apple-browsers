@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import Persistence
+@_spi(Testing) import Persistence
 import Bookmarks
 import DDGSync
 import History
@@ -31,7 +31,6 @@ import Core
 import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
-@testable import PersistenceTestingUtils
 import SystemSettingsPiPTutorialTestSupport
 import Combine
 import PrivacyConfig

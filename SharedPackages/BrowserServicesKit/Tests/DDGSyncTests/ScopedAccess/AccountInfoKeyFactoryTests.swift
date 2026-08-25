@@ -61,6 +61,19 @@ final class AccountInfoKeyFactoryTests: XCTestCase {
         XCTAssertEqual(defaultCredentialPrivateKey, thirdPartyCredentialPrivateKey)
     }
 
+    func testWhenThirdPartyWrappingFailsThenReportsThatStage() throws {
+        let factory = DefaultAccountInfoKeyFactory(crypter: CryptingMock())
+
+        XCTAssertThrowsError(try factory.makeProtectedKeys(accountSecretKey: accountSecretKey,
+                                                           thirdPartyMainKey: Data())) { error in
+            guard case AccountInfoKeyFactoryError.thirdPartyWrappingFailed(let underlyingError) = error else {
+                XCTFail("Expected a third-party wrapping failure, got \(error)")
+                return
+            }
+            XCTAssertEqual(underlyingError as? JWECompactCodecError, .invalidContentEncryptionKeyLength(0))
+        }
+    }
+
     private func modulusByteCount(of protectedKey: ProtectedKey) throws -> Int {
         let modulus = try XCTUnwrap(protectedKey.publicKey.n)
         return try XCTUnwrap(Base64URL.decode(modulus)).count

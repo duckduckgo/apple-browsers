@@ -22,6 +22,9 @@ import Foundation
 
 /// Implementation of ``PixelKit.Event`` with specific logic for debug events.
 public final class DebugEvent: PixelKit.Event {
+    /// Frozen: these names ship without a platform marker.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     public enum EventType {
         case assertionFailure(message: String, file: StaticString, line: UInt)
         case custom(_ event: PixelKit.Event)

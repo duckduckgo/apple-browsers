@@ -40,6 +40,9 @@ public enum IOSPixels {
 }
 
 extension IOSPixels: PixelKit.Event {
+    /// Frozen: these names ship without a platform marker.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     public var name: String {
         switch self {
         case .backgroundTaskStarted: return "m_ios_dbp_background-task_started"

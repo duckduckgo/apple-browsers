@@ -21,6 +21,8 @@ import PixelKit
 
 /// Tracks site loading performance metrics received via push notifications from Content Scope Scripts
 enum SiteLoadingPerformancePixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     // MARK: - Parameter Names
 

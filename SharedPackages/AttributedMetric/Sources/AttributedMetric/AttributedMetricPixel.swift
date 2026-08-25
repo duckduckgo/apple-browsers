@@ -40,6 +40,8 @@ enum AttributedMetricPixelName: String {
 /// - Send default suffixes such as [phone|tablet]  or [store|direct]
 /// See https://app.asana.com/1/137249556945/project/72649045549333/task/1210849966244847?focus=true
 enum AttributedMetricPixel: PixelKit.Event {
+    /// Frozen: these names ship without a platform marker.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
 
     // Metrics
     case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int, bucketVersion: Int)

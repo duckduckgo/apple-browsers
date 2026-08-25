@@ -25,6 +25,9 @@ import PixelKit
 import SERPSettings
 
 enum SERPSettingsPixel: PixelKit.Event {
+    /// Frozen: these names ship without a platform marker.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     case serpSettingsSerializationFailed
     case serpSettingsKeyValueStoreReadError
     case serpSettingsKeyValueStoreWriteError

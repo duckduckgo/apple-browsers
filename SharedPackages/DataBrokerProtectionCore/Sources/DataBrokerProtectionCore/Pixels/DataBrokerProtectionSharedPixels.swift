@@ -221,6 +221,9 @@ public enum DataBrokerProtectionSharedPixels {
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKit.Event {
+    /// Frozen: these names ship without a platform marker.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     public var name: String {
         switch self {
         case .parentChildMatches: return "dbp_parent-child-broker-matches"

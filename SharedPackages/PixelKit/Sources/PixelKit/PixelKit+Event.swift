@@ -33,7 +33,21 @@ extension PixelKit {
         var parameters: [String: String]? { get }
         /// Automatically implemented by the below extension using reflection, please implement the error, if needed as enum parameter
         var error: NSError? { get }
+        /// Where the `_ios_phone` / `_ios_tablet` marker goes in this pixel's name.
+        ///
+        /// Defaults to `.standard`, which is what every new pixel wants. Only override it to freeze
+        /// a name that shipped before the marker was applied consistently.
+        var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { get }
+
     }
+}
+
+public extension PixelKit.Event {
+
+    /// The correct convention, so a new pixel gets it without opting in. See
+    /// `PixelKitPlatformSuffixPolicy` for the legacy cases and why they exist.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .standard }
+
 }
 
 /// Extract Error parameter from the PixelKit.Event, only one error is supported, if multiple errors are found we assert

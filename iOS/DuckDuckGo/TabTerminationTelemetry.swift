@@ -188,6 +188,9 @@ final class TabTerminationTelemetryOccurrenceStore {
 }
 
 enum TabTerminationTelemetryPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case interactionStateFailedToRestore
     case interactionStateFailedToRestoreDaily
     case foreground

@@ -18,10 +18,10 @@
 
 import Foundation
 
-/// New version of this protocol that allows us to maintain backwards-compatibility with PixelKit.Event
+/// Lets an event control its own name prefix instead of taking the platform default.
 ///
 /// This allows us to introduce support for new features without having to immediately migrate every other pixel to it.
-///
+/// 
 public protocol PixelKitEventWithCustomPrefix {
     var namePrefix: String { get }
 }

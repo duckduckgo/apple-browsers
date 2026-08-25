@@ -27,6 +27,9 @@ import PixelKit
 /// below. See `IOSEventHubPixelFiring`'s doc comment for why the empty `namePrefix` is what produces the
 /// names `event_hub.json5` declares.
 private struct EventHubPixelKitEvent: PixelKit.Event, PixelKitEventWithCustomPrefix {
+    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     let namePrefix = ""
     let name: String
     let parameters: [String: String]?
@@ -39,17 +42,14 @@ private struct EventHubPixelKitEvent: PixelKit.Event, PixelKitEventWithCustomPre
 /// Fires EventHub-originated pixels through PixelKit, appending iOS' platform and form-factor markers per
 /// the Tech Design's platform-suffix split (`EventHub` itself fires the bare governed config name).
 ///
-/// The conformance to `PixelKitEventWithCustomPrefix` with an **empty** `namePrefix` is deliberate, and is
-/// the only combination that produces the name `event_hub.json5` declares. `PixelKit`'s name resolution
-/// has three relevant paths:
+/// The conformance to `PixelKitEventWithCustomPrefix` with an **empty** `namePrefix` is deliberate:
+/// these governed names must not gain the legacy `m_` prefix that the conventional conformance adds.
+/// It no longer has anything to do with the platform marker, which is now driven by
+/// `platformSuffixPolicy` alone.
 ///
-/// - no `PixelKitEventWithCustomPrefix`: on iOS the name is returned untouched, so it would carry no
-///   platform or form-factor marker at all and would not match the declared `platform`/`form_factor`
-///   suffixes.
-/// - `PixelKitEventWithCustomPrefix` with the conventional `"m_"` prefix (what `WideEventFailureEvent`
-///   uses): appends the platform suffix but reintroduces the legacy `m_` prefix these names must not have.
-/// - `PixelKitEventWithCustomPrefix` with `""`: appends `platformSuffix` (`_ios_phone` / `_ios_tablet`,
-///   derived from the `source` given to `PixelKit.setUp`) and prepends nothing. This is what we want.
+/// The policy is pinned to `.legacyBeforeFrequencySuffix` on `EventHubPixelKitEvent` because
+/// `event_hub.json5` declares `["platform", "form_factor", "first_daily_count"]`, matching the shape
+/// these names shipped with. New pixels should take the default `.standard` instead.
 struct IOSEventHubPixelFiring: EventHubPixelFiring {
 
     func enqueueFirePixel(named name: String, parameters: [String: String]) {

@@ -49,6 +49,15 @@ enum SafariRedirectPixel {
 }
 
 struct SafariRedirectScheduledPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+    /// These already send the correct `..._daily_ios_phone` shape, because `name` bakes the
+    /// frequency suffix in (see `dailyPixel` / `countPixel` above) to work around PixelKit placing
+    /// the marker before the frequency suffix. Both policies therefore produce the same wire name
+    /// here; the legacy one is kept only so the throttling key stays byte-identical.
+    ///
+    /// Now that `.standard` exists these could stop baking the suffix in and fire with
+    /// `.dailyAndCount` instead, which is a rename of the throttling key only.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     let name: String
 
     var parameters: [String: String]? { nil }

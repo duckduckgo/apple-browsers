@@ -284,6 +284,9 @@ public final class WideEvent: WideEventManaging {
 }
 
 public struct WideEventPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names ship without a platform marker.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     public let name: String
     public let parameters: [String: String]?
     public let standardParameters: [PixelKitStandardParameter]?

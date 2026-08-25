@@ -53,6 +53,10 @@ public struct OSDistributionPixel: PixelKit.Event {
         "os_distribution_\(metric.rawValue)_major_version_\(osMajorVersion)_\(platform.rawValue.lowercased())_\(formFactor)"
     }
 
+    /// The name above already ends in the platform and form factor, so PixelKit must not append a
+    /// second marker.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     /// Per-metric firing frequency. `.searches` measures total search + AI-query traffic so it fires
     /// on every event; `.client` and `.activeSubscriptions` measure monthly-active users / subscribers.
     var frequency: PixelKit.Frequency {

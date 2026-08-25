@@ -306,6 +306,17 @@ Key fields:
 
 Prefer referencing shared suffix/parameter keys where possible to keep definitions consistent and validatable.
 
+### Platform and form-factor suffixes on iOS
+
+A pixel fired through PixelKit on iOS ends in `_ios_phone` or `_ios_tablet`, appended after any
+frequency suffix. Declare it as `"suffixes": ["first_daily_count", "platform", "form_factor"]` (or
+whichever frequency key applies) and write no code for it: `PixelKit.Event.platformSuffixPolicy`
+defaults to `.standard`, which produces exactly that.
+
+The two `legacy` cases of `PixelKitPlatformSuffixPolicy` freeze pixels that shipped before the
+marker was applied consistently. Never use one on a new pixel. See
+`SharedPackages/PixelKit/Sources/PixelKit/README.md`.
+
 Pixels have some default values, please check the Pixel implementation in the respective platform to determine what those are.
 
 ## Related Files

@@ -21,6 +21,8 @@ import Foundation
 import PixelKit
 
 enum AppReturnPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     case appReturn
 

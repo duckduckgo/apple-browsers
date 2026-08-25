@@ -32,6 +32,13 @@ public enum WideEventFailureEvent {
     case discardFailed(pixelName: String, error: Error)
 }
 
+/// Deliberately left on the default `.standard` platform-suffix policy rather than frozen like the
+/// other pixels that predate it.
+///
+/// These previously shipped as `m_wide_pixel_save_failed_ios_phone_daily`, which contradicted
+/// `wide_pixel.json5`'s own declaration of `["first_daily_count", "platform", "form_factor"]`. The
+/// default policy produces `m_wide_pixel_save_failed_daily_ios_phone`, so the code now matches the
+/// definition that was already correct.
 extension WideEventFailureEvent: PixelKit.Event, PixelKitEventWithCustomPrefix {
     public var namePrefix: String {
 #if os(macOS)

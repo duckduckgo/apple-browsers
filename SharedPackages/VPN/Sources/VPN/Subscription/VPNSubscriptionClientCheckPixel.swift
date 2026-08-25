@@ -20,6 +20,9 @@ import PixelKit
 import Subscription
 
 public enum VPNSubscriptionClientCheckPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case vpnFeatureEnabled(isSubscriptionActive: Bool?,
                            trigger: Trigger)
     case vpnFeatureDisabled(isSubscriptionActive: Bool?,

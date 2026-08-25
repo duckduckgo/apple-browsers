@@ -50,6 +50,8 @@ public class DataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerPr
 }
 
 public enum DataBrokerProtectionFreemiumPixels: PixelKit.Event {
+    /// Frozen: these names ship without a platform marker.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
 
     // Before the first scan
     case newTabScanImpression

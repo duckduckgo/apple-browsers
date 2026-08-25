@@ -21,6 +21,8 @@ import PixelKit
 import UIKit
 
 enum AutoconsentPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     case acInit
     case errorMultiplePopups

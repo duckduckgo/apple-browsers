@@ -127,6 +127,9 @@ final class LaunchTimeMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
 }
 
 enum LaunchTimeMetricsPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case firstDraw(minMs: Int, maxMs: Int)
     case resume(minMs: Int, maxMs: Int)
     case optimizedFirstDraw(minMs: Int, maxMs: Int)

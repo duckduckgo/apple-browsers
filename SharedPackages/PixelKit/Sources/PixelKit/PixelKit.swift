@@ -315,9 +315,12 @@ public final class PixelKit {
                      options: Options,
                      onComplete: @escaping CompletionBlock) {
 
-        let pixelName = prefixedAndSuffixedName(for: event,
-                                                namePrefix: options.namePrefix,
-                                                doNotEnforcePrefix: !options.enforcePrefix)
+        let resolvedName = self.resolvedName(for: event,
+                                             namePrefix: options.namePrefix,
+                                             doNotEnforcePrefix: !options.enforcePrefix)
+        // Throttling and de-duplication key off the name without the trailing marker, so a pixel
+        // whose policy is `.standard` is counted once per device rather than once per form factor.
+        let pixelName = resolvedName.base
 
         if !dryRun {
             if frequency == .daily, pixelHasBeenFiredDailyToday(pixelName) {
@@ -353,6 +356,7 @@ public final class PixelKit {
         }
 
         fire(pixelNamed: pixelName,
+             platformSuffix: resolvedName.trailingPlatformSuffix,
              frequency: frequency,
              withHeaders: options.headers,
              withAdditionalParameters: newParams,
@@ -443,6 +447,7 @@ public final class PixelKit {
     // MARK: - Private Fire
 
     private func fire(pixelNamed pixelName: String,
+                      platformSuffix: String,
                       frequency: Frequency,
                       withHeaders headers: [String: String]?,
                       withAdditionalParameters params: [String: String]?,
@@ -495,37 +500,38 @@ public final class PixelKit {
 
         switch frequency {
         case .standard:
-            handleStandardFrequency(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleStandardFrequency(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .uniqueByName:
-            handleUnique(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleUnique(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .uniqueByNameAndParameters:
-            handleUniqueByNameAndParameters(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleUniqueByNameAndParameters(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .daily:
-            handleDaily(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleDaily(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .monthly:
-            handleMonthly(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleMonthly(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .dailyAndCount:
-            handleDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleDailyAndCount(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .dailyAndStandard:
-            handleDailyAndStandard(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleDailyAndStandard(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .legacyInitial:
-            handleLegacyInitial(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleLegacyInitial(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .legacyDaily:
-            handleLegacyDaily(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleLegacyDaily(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .legacyDailyAndCount:
-            handleLegacyDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleLegacyDailyAndCount(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .legacyDailyNoSuffix:
-            handleLegacyDailyNoSuffix(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+            handleLegacyDailyNoSuffix(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .sample(let percentage):
-            handleSample(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, percentage, onComplete)
+            handleSample(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, percentage, onComplete)
         case .debounce(let seconds):
-            handleDebounce(pixelName, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, seconds, onComplete)
+            handleDebounce(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, seconds, onComplete)
         }
     }
 
     // MARK: -
 
     private func handleStandardFrequency(_ pixelName: String,
+                                         _ platformSuffix: String,
                                          _ headers: [String: String],
                                          _ params: [String: String],
                                          _ allowedQueryReservedCharacters: CharacterSet?,
@@ -533,10 +539,11 @@ public final class PixelKit {
                                          _ onComplete: @escaping CompletionBlock) {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_d")
-        fireRequestWrapper(pixelName, headers, params, allowedQueryReservedCharacters, true, .standard, retryOnFailure, onComplete)
+        fireRequestWrapper(pixelName, platformSuffix, headers, params, allowedQueryReservedCharacters, true, .standard, retryOnFailure, onComplete)
     }
 
     private func handleLegacyInitial(_ pixelName: String,
+                                     _ platformSuffix: String,
                                      _ headers: [String: String],
                                      _ newParams: [String: String],
                                      _ allowedQueryReservedCharacters: CharacterSet?,
@@ -547,7 +554,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredEver(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .uniqueByName)
-                fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyInitial, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyInitial, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName, frequency: .legacyInitial, parameters: newParams, skipped: true)
@@ -560,6 +567,7 @@ public final class PixelKit {
     }
 
     private func handleUnique(_ pixelName: String,
+                              _ platformSuffix: String,
                               _ headers: [String: String],
                               _ newParams: [String: String],
                               _ allowedQueryReservedCharacters: CharacterSet?,
@@ -574,7 +582,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredEver(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .uniqueByName)
-                fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .uniqueByName, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .uniqueByName, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName, frequency: .uniqueByName, parameters: newParams, skipped: true)
@@ -587,6 +595,7 @@ public final class PixelKit {
     }
 
     private func handleUniqueByNameAndParameters(_ pixelName: String,
+                                                 _ platformSuffix: String,
                                                  _ headers: [String: String],
                                                  _ newParams: [String: String],
                                                  _ allowedQueryReservedCharacters: CharacterSet?,
@@ -596,7 +605,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredEver(pixelNameAndParams) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelNameAndParams, frequency: .uniqueByName)
-                fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .uniqueByNameAndParameters, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .uniqueByNameAndParameters, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName, frequency: .uniqueByNameAndParameters, parameters: newParams, skipped: true)
@@ -609,6 +618,7 @@ public final class PixelKit {
     }
 
     private func handleDaily(_ pixelName: String,
+                             _ platformSuffix: String,
                              _ headers: [String: String],
                              _ newParams: [String: String],
                              _ allowedQueryReservedCharacters: CharacterSet?,
@@ -619,7 +629,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
-                fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .daily, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName + "_daily", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .daily, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_daily", frequency: .daily, parameters: newParams, skipped: true)
@@ -632,6 +642,7 @@ public final class PixelKit {
     }
 
     private func handleDebounce(_ pixelName: String,
+                                _ platformSuffix: String,
                                 _ headers: [String: String],
                                 _ newParams: [String: String],
                                 _ allowedQueryReservedCharacters: CharacterSet?,
@@ -642,7 +653,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredWithinDebounceInterval(pixelName, seconds: seconds) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: frequency)
-                fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, frequency, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, frequency, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName, frequency: frequency, parameters: newParams, skipped: true)
@@ -655,6 +666,7 @@ public final class PixelKit {
     }
 
     private func handleMonthly(_ pixelName: String,
+                               _ platformSuffix: String,
                                _ headers: [String: String],
                                _ newParams: [String: String],
                                _ allowedQueryReservedCharacters: CharacterSet?,
@@ -665,7 +677,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredMonthlyThisMonth(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .monthly)
-                fireRequestWrapper(pixelName + "_monthly", headers, newParams, allowedQueryReservedCharacters, true, .monthly, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName + "_monthly", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .monthly, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_monthly", frequency: .monthly, parameters: newParams, skipped: true)
@@ -678,6 +690,7 @@ public final class PixelKit {
     }
 
     private func handleLegacyDailyNoSuffix(_ pixelName: String,
+                                           _ platformSuffix: String,
                                            _ headers: [String: String],
                                            _ newParams: [String: String],
                                            _ allowedQueryReservedCharacters: CharacterSet?,
@@ -688,7 +701,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
-                fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyNoSuffix, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyNoSuffix, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName, frequency: .legacyDailyNoSuffix, parameters: newParams, skipped: true)
@@ -709,6 +722,7 @@ public final class PixelKit {
     ///   - percentage: Sampling percentage from 1 to 100 (inclusive)
     ///   - onComplete: Completion handler called with whether the pixel was fired
     private func handleSample(_ pixelName: String,
+                              _ platformSuffix: String,
                               _ headers: [String: String],
                               _ newParams: [String: String],
                               _ allowedQueryReservedCharacters: CharacterSet?,
@@ -726,7 +740,7 @@ public final class PixelKit {
         let sampler = ClosureSampler(percentage: percentage)
         sampler.sample({
             let sampledPixelName = pixelName + suffix
-            fireRequestWrapper(sampledPixelName, headers, newParams, allowedQueryReservedCharacters, true, .sample(percentage: percentage), retryOnFailure, onComplete)
+            fireRequestWrapper(sampledPixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .sample(percentage: percentage), retryOnFailure, onComplete)
         }, onDiscarded: {
             self.printDebugInfo(pixelName: pixelName + suffix, frequency: .sample(percentage: percentage), parameters: newParams, skipped: true)
             onComplete(false, nil)
@@ -734,6 +748,7 @@ public final class PixelKit {
     }
 
     private func handleLegacyDaily(_ pixelName: String,
+                                   _ platformSuffix: String,
                                    _ headers: [String: String],
                                    _ newParams: [String: String],
                                    _ allowedQueryReservedCharacters: CharacterSet?,
@@ -744,7 +759,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
-                fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .legacyDaily, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName + "_d", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyDaily, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDaily, parameters: newParams, skipped: true)
@@ -757,6 +772,7 @@ public final class PixelKit {
     }
 
     private func handleLegacyDailyAndCount(_ pixelName: String,
+                                           _ platformSuffix: String,
                                            _ headers: [String: String],
                                            _ newParams: [String: String],
                                            _ allowedQueryReservedCharacters: CharacterSet?,
@@ -768,7 +784,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
-                fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyAndCount, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName + "_d", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyAndCount, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDailyAndCount, parameters: newParams, skipped: true)
@@ -777,10 +793,11 @@ public final class PixelKit {
             printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDailyAndCount, parameters: newParams, skipped: true)
         }
 
-        fireRequestWrapper(pixelName + "_c", headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyAndCount, retryOnFailure, onComplete)
+        fireRequestWrapper(pixelName + "_c", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyAndCount, retryOnFailure, onComplete)
     }
 
     private func handleDailyAndCount(_ pixelName: String,
+                                     _ platformSuffix: String,
                                      _ headers: [String: String],
                                      _ newParams: [String: String],
                                      _ allowedQueryReservedCharacters: CharacterSet?,
@@ -792,7 +809,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
-                fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName + "_daily", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
@@ -801,10 +818,11 @@ public final class PixelKit {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
         }
 
-        fireRequestWrapper(pixelName + "_count", headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
+        fireRequestWrapper(pixelName + "_count", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
     }
 
     private func handleDailyAndStandard(_ pixelName: String,
+                                        _ platformSuffix: String,
                                         _ headers: [String: String],
                                         _ newParams: [String: String],
                                         _ allowedQueryReservedCharacters: CharacterSet?,
@@ -815,7 +833,7 @@ public final class PixelKit {
         if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)
-                fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
+                fireRequestWrapper(pixelName + "_daily", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
@@ -824,7 +842,7 @@ public final class PixelKit {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
         }
 
-        fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
+        fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
     }
 
     /// If the pixel name ends with the forbiddenString then an error is logged or an assertion failure is fired in debug
@@ -860,8 +878,15 @@ public final class PixelKit {
         logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : "Fired", privacy: .public)] \(pixelName, privacy: .public) [\(sortedParamsString, privacy: .public)]")
     }
 
+    /// The single place a pixel name reaches the network, and therefore the only place the platform
+    /// marker is appended.
+    ///
+    /// `pixelName` already carries the frequency suffix its handler added, so appending
+    /// `platformSuffix` here is what produces `<name>_<frequency>_ios_<formFactor>`. Handlers pass
+    /// the marker through untouched and never see it in a position where they could misorder it.
     private func fireRequestWrapper(
         _ pixelName: String,
+        _ platformSuffix: String,
         _ headers: [String: String],
         _ parameters: [String: String],
         _ allowedQueryReservedCharacters: CharacterSet?,
@@ -869,10 +894,11 @@ public final class PixelKit {
         _ frequency: Frequency,
         _ retryOnFailure: Bool,
         _ onComplete: @escaping CompletionBlock) {
+            let requestName = pixelName + platformSuffix
 #if DEBUG
-            Self.writeValidationPixel(pixelName: pixelName, parameters: parameters)
+            Self.writeValidationPixel(pixelName: requestName, parameters: parameters)
 #endif
-            printDebugInfo(pixelName: pixelName, frequency: frequency, parameters: parameters, skipped: false)
+            printDebugInfo(pixelName: requestName, frequency: frequency, parameters: parameters, skipped: false)
             guard !dryRun else {
                 // simulate server response time for Dry Run mode
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -881,10 +907,10 @@ public final class PixelKit {
                 return
             }
             guard let retryQueue else {
-                fireRequest(pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete)
+                fireRequest(requestName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete)
                 return
             }
-            retryQueue.fire(pixelName: pixelName,
+            retryQueue.fire(pixelName: requestName,
                             headers: headers,
                             parameters: parameters,
                             allowedQueryReservedCharacters: allowedQueryReservedCharacters,
@@ -893,37 +919,74 @@ public final class PixelKit {
                             onComplete: onComplete)
         }
 
-    private func prefixedAndSuffixedName(for event: PixelKit.Event, namePrefix: String?, doNotEnforcePrefix: Bool = false) -> String {
+    /// A pixel name split at the point the frequency suffix gets inserted.
+    private struct ResolvedPixelName: Equatable {
+        /// Prefix + event name, plus any platform marker a legacy policy places *before* the
+        /// frequency suffix.
+        ///
+        /// Also the throttling and last-fire-date key, so for any pixel that already shipped this
+        /// must stay byte-identical to what it was before its policy was pinned. Otherwise a daily
+        /// pixel would forget it had fired and send one extra time on upgrade.
+        let base: String
+        /// The platform marker `fireRequestWrapper` appends *after* the frequency suffix. Empty for
+        /// both legacy policies, and on macOS for all of them.
+        let trailingPlatformSuffix: String
+    }
+
+    /// Builds the prefixed name and decides where this event's platform marker goes.
+    private func resolvedName(for event: PixelKit.Event, namePrefix: String?, doNotEnforcePrefix: Bool = false) -> ResolvedPixelName {
 
         if let pixelWithCustomPrefix = event as? PixelKitEventWithCustomPrefix {
-            return pixelWithCustomPrefix.namePrefix + event.name + platformSuffix
+            return splitting(pixelWithCustomPrefix.namePrefix + event.name, per: event.platformSuffixPolicy)
         }
 
         let pixelName = (namePrefix ?? "") + event.name
         if pixelName.hasPrefix("experiment") {
-            return addExperimentPlatformSuffix(to: pixelName)
+            // Experiment names carry their own marker, applied here rather than through the policy.
+            // Routing them through `splitting` as well would append a second one.
+            return ResolvedPixelName(base: addExperimentPlatformSuffix(to: pixelName), trailingPlatformSuffix: "")
         }
 
 #if os(iOS)
-        return pixelName
+        return splitting(pixelName, per: event.platformSuffixPolicy)
 #else
         // Many macOS pixel names need "correcting" after the fact
         // However, we should try and move away from this approach
         // (and towards the more deliberate approach above with the prefix and experiment suffix)
         // This approach won't work for iOS as the names have a very varied set of prefixes
+        let correctedName: String
         if pixelName.hasPrefix("m_mac_") {
             // Can be a debug event or not, if already prefixed the name remains unchanged
-            return pixelName
+            correctedName = pixelName
         } else if let debugEvent = event as? DebugEvent {
             // Is a Debug event not already prefixed
-            return "m_mac_debug_\(debugEvent.name)"
+            correctedName = "m_mac_debug_\(debugEvent.name)"
         } else if doNotEnforcePrefix {
             // For pixels event that don't follow the standard naming conventions
-            return pixelName
+            correctedName = pixelName
         } else {
-            return "m_mac_\(pixelName)"
+            correctedName = "m_mac_\(pixelName)"
         }
+        // `platformSuffix` is empty on macOS, so the policy cannot change this name.
+        return splitting(correctedName, per: event.platformSuffixPolicy)
 #endif
+    }
+
+    /// Places `platformSuffix` relative to the frequency suffix according to `policy`.
+    private func splitting(_ name: String, per policy: PixelKitPlatformSuffixPolicy) -> ResolvedPixelName {
+        switch policy {
+        case .standard:
+            return ResolvedPixelName(base: name, trailingPlatformSuffix: platformSuffix)
+        case .legacyBeforeFrequencySuffix:
+            return ResolvedPixelName(base: name + platformSuffix, trailingPlatformSuffix: "")
+        case .legacyOmitted:
+            return ResolvedPixelName(base: name, trailingPlatformSuffix: "")
+        }
+    }
+
+    /// The throttling key for `event`: the resolved name without the trailing marker.
+    private func prefixedAndSuffixedName(for event: PixelKit.Event, namePrefix: String?, doNotEnforcePrefix: Bool = false) -> String {
+        resolvedName(for: event, namePrefix: namePrefix, doNotEnforcePrefix: doNotEnforcePrefix).base
     }
 
     var platformSuffix: String {
@@ -1022,6 +1085,7 @@ public final class PixelKit {
 
         fireRequestWrapper(
             pixelName,
+            "", // The names above already carry their platform marker.
             defaultHeaders,
             params,
             nil,

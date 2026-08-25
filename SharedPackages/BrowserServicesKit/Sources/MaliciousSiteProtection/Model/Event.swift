@@ -37,6 +37,9 @@ public extension PixelKit {
 }
 
 public enum Event: PixelKit.Event {
+    /// Frozen: these names ship without a platform marker.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     case errorPageShown(category: ThreatKind, clientSideHit: Bool?)
     case visitSite(category: ThreatKind)
     case leaveSite(category: ThreatKind)

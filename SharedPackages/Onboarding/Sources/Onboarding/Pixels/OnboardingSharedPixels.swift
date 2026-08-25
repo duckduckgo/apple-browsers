@@ -183,6 +183,9 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
 }
 
 public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
+    /// Frozen: these names ship without a platform marker.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     // Linear onboarding events
     case welcome(EngagementEvent)
     case skipOnboarding(EngagementEvent) // iOS only

@@ -238,18 +238,46 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsPromoCards, false)
     }
 
-    func testWhenUsageWarningsFlagIsOnThenConfigAdvertisesNativeUsageWarnings() {
+    func testWhenUsageWarningsFlagIsOnAndNativeChatInputAndBridgeAvailableThenConfigAdvertisesSupport() {
         mockFeatureFlagger.enabledFeatureFlags = [.utiDuckAIWarnings]
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true)
 
         let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
 
         XCTAssertEqual(configValues?.supportsNativeUsageWarnings, true)
     }
 
-    func testWhenUsageWarningsFlagIsOffThenConfigDoesNotAdvertiseNativeUsageWarnings() {
+    /// The card lives on the native input's footer, so without it the FE must keep its own banner.
+    func testWhenUsageWarningsFlagIsOnButNativeChatInputUnavailableThenConfigDoesNotAdvertiseSupport() {
+        mockFeatureFlagger.enabledFeatureFlags = [.utiDuckAIWarnings]
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = false
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true)
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeUsageWarnings, false)
+    }
+
+    /// The usage snapshot is read from native storage, so without the bridge there is nothing to show.
+    func testWhenUsageWarningsFlagIsOnButStorageBridgeUnavailableThenConfigDoesNotAdvertiseSupport() {
+        mockFeatureFlagger.enabledFeatureFlags = [.utiDuckAIWarnings]
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: false)
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeUsageWarnings, false)
+    }
+
+    func testWhenUsageWarningsFlagIsOffThenConfigDoesNotAdvertiseSupport() {
         mockFeatureFlagger.enabledFeatureFlags = []
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true)
 
         let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
 

@@ -57203,18 +57203,6 @@
         }
       }
     },
-    "import.access-panel.message" : {
-      "comment" : "Access Panel that grants permissions to import data from another browser",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Grant access to the %1$@ data folder to allow DuckDuckGo to import your data"
-          }
-        }
-      }
-    },
     "import.bookmarks.bookmarks" : {
       "comment" : "Title text for the Bookmarks import option",
       "extractionState" : "extracted_with_value",

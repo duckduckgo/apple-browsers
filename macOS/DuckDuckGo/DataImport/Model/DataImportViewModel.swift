@@ -235,7 +235,7 @@ struct DataImportViewModel {
          wideEvent: WideEventManaging = Application.appDelegate.wideEvent,
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
-        let directoryAccessFeature = DirectoryAccessAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
+        let directoryAccessFeature = DataDirectoryPermissionFixAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
         let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessFeature.isEnabled) }
 
         let filteredAvailableSources = availableImportSources.filter {
@@ -1074,7 +1074,7 @@ extension DataImportViewModel {
             return false
         }
 
-        let directoryAccessFeature = DirectoryAccessAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
+        let directoryAccessFeature = DataDirectoryPermissionFixAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
         let isImportScreenAndForced = (screen == .sourceAndDataTypesPicker && directoryAccessFeature.mustForcePermissionFix)
         return selectedProfile.requiresDirectoryAccessPermission || isImportScreenAndForced
     }

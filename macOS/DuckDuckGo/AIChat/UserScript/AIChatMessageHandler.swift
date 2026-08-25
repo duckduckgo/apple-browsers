@@ -141,11 +141,8 @@ extension AIChatMessageHandler {
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !isFireWindow,
             supportsMultipleContexts: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
-            // Tab attachment is gated per surface via two separate keys: the sidebar reads
-            // `supportsTabPicker`, the full-page duck.ai tab reads `supportsFullPageTabPicker`.
-            // Old app versions never send the second key, so the picker stays sidebar-only there.
             supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatSidebarAttachMoreTabs),
-            supportsFullPageTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatAttachMoreTabs),
+            supportsFullPageTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatDuckAiAttachMoreTabs),
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsSuggestions: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.sidebarSuggestedPrompts),
             supportsNativeVoicePermissionHandler: featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),

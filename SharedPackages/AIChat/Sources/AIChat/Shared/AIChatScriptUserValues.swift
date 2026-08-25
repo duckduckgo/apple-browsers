@@ -116,13 +116,10 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsOpenAIChatLink: Bool
     public let supportsAIChatSync: Bool
     public let supportsMultipleContexts: Bool
-    /// `true` when the sidebar surface may show the multi-tab attach picker
-    /// (gated on `sidebarAttachMoreTabs`).
     public let supportsTabPicker: Bool
-    /// `true` when the full-page duck.ai surface (regular tab) may show the multi-tab attach
-    /// picker (gated on `attachMoreTabs`). A separate key so old app versions — which never
-    /// send it — keep the picker sidebar-only regardless of remote-config state; the FE picks
-    /// the key matching its placement.
+    /// Tab picker support for the full-page duck.ai surface. Kept separate from
+    /// `supportsTabPicker` (sidebar) so old app versions, which never send this key,
+    /// keep the picker sidebar-only.
     public let supportsFullPageTabPicker: Bool
     public let supportsNativeStorage: Bool
     public let supportsNativePromptEditing: Bool

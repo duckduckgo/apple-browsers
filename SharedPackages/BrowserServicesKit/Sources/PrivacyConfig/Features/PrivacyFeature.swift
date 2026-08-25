@@ -427,9 +427,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables attaching content from multiple open tabs to the Duck.ai omnibar (address bar) chat.
     case omnibarAttachMoreTabs
 
-    /// Enables attaching content from multiple open tabs to Duck.ai outside the sidebar
-    /// (the full-page duck.ai tab). The sidebar keeps its own gate, `sidebarAttachMoreTabs`.
-    case attachMoreTabs
+    /// Enables attaching content from multiple open tabs to the full-page Duck.ai tab.
+    case duckAiAttachMoreTabs
 
     /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
     case ntpAttachMoreTabs

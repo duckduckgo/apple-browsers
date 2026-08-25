@@ -100,7 +100,7 @@ final class AIChatTranslator: AIChatTranslating {
                 ),
                 frequency: .dailyAndStandard
             )
-            aiChatConversationSourceHandler.setData(.translation)
+            aiChatConversationSourceHandler.setData(.contextualTranslate)
         }
         // The selection is what the user asked about — don't also auto-attach the whole page.
         currentPageContextProvider()?.suppressAutoPageContextForSelectionAction()

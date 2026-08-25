@@ -181,7 +181,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         if mode == AIChatNativePrompt.voiceMode {
             let sourceCollection = windowControllersManager.lastKeyMainWindowController?
                 .mainViewController.tabCollectionViewModel
-            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.voice)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageVoice)
             tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: behavior)
             return
         }
@@ -244,7 +244,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.recentChat)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageRecentChat)
         tabOpener.openAIChatTab(with: .existingChat(chatId: chatId), behavior: behavior)
     }
 
@@ -261,7 +261,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPage)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageViewAllChats)
         tabOpener.openNewAIChat(in: behavior)
     }
 

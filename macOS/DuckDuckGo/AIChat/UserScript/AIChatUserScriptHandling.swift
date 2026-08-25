@@ -206,6 +206,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// (whose underlying page is attachable) can report true.
     private var hasAttachedPageContext = false
 
+    /// An unstamped chat reports `.unattributed` rather than dropping the parameter.
+    private var pixelConversationSource: AIChatConversationSource { conversationSource ?? .unattributed }
+
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
@@ -1057,7 +1060,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: conversationSource?.isAskDuckAiButton ?? false, hasPageContext: hasAttachedPageContext), frequency: .standard)
+            pixelFiring?.fire(
+                AIChatPixel.aiChatMetricStartNewConversation(source: pixelConversationSource,
+                                                             hasPageContext: hasAttachedPageContext),
+                frequency: .standard
+            )
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
@@ -1066,7 +1073,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: conversationSource?.isAskDuckAiButton ?? false, hasPageContext: hasAttachedPageContext), frequency: .standard)
+            pixelFiring?.fire(
+                AIChatPixel.aiChatMetricSentPromptOngoingChat(source: pixelConversationSource,
+                                                              hasPageContext: hasAttachedPageContext),
+                frequency: .standard
+            )
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }

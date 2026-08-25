@@ -28,7 +28,8 @@ enum AppReturnPixel: PixelKit.Event {
 
     var name: String { "app_return" }
 
-    var parameters: [String: String]? { nil }
+    // Self-tags the pixel to route through the PETAL (timestamp-randomization) pipeline.
+    var parameters: [String: String]? { ["petal": "randomize"] }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 

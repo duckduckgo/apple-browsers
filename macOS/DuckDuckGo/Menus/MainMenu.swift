@@ -1328,7 +1328,7 @@ final class MainMenu: NSMenu {
 
     @MainActor private func makeAIChatMenu() -> AIChatMenu {
         let actions = AIChatMenu.Actions.makeDefault(
-            conversationSource: .mainMenu,
+            conversationSources: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: aiChatHistoryCleaner,

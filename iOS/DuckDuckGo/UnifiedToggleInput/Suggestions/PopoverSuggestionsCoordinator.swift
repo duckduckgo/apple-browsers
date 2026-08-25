@@ -160,8 +160,7 @@ final class PopoverSuggestionsCoordinator {
             chatViewModel: chatViewModel,
             urlLoader: urlLoader,
             chatManager: chatManager,
-            query: { querySubject.value },
-            deleteEnabled: { [featureFlagger = dependencies.featureFlagger] in featureFlagger.isFeatureOn(.removeChatHistory) })
+            query: { querySubject.value })
 
         tray.duckAINavigationDelegate = navigationDelegate
         // Duck.ai content arrives asynchronously; re-apply only while a Duck.ai surface is current. In

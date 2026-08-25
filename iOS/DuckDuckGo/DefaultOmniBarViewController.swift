@@ -18,10 +18,7 @@
 //
 
 import UIKit
-import Combine
 import PrivacyDashboard
-import Suggestions
-import Bookmarks
 import AIChat
 import Core
 import FeatureFlags_iOS
@@ -34,15 +31,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private let isFloatingUIEnabled: Bool
     private lazy var omniBarView = DefaultOmniBarView.create(isFloatingUIEnabled: isFloatingUIEnabled)
-    private weak var editingStateViewController: OmniBarEditingStateViewController?
-    private var cancellables = Set<AnyCancellable>()
-    private let sessionStateMetrics = SessionStateMetrics(storage: UserDefaults.standard)
-
-    private var animateNextEditingTransition = true
     private var isSuppressingKeyboardTransfer = false
-    /// Applied to the next `OmniBarEditingStateViewController` at creation so the Dax logo
-    /// is never shown between the field activating and the chat-path completion dialog appearing.
-    private var pendingHideEditingStateLogo = false
 
     weak var unifiedToggleInputOmnibarActivating: UnifiedToggleInputOmnibarActivating?
 
@@ -191,15 +180,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return false
         }
 
-        if dependencies.aiChatAddressBarExperience.shouldUseExperimentalEditingState {
-            if textFieldTapped {
-                omniDelegate?.onExperimentalAddressBarTapped()
-            }
-            presentExperimentalEditingState(for: textField, animated: animateNextEditingTransition)
-
-            return false
-        }
-
         if modeToggleTextModel.isTransitioning {
             return true
         }
@@ -253,27 +233,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         handleIPadModeToggleTransition(to: mode)
     }
 
-    override func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {
-        animateNextEditingTransition = animated
-
-        super.beginEditing(animated: animated, forTextEntryMode: textEntryMode)
-        
-        animateNextEditingTransition = true
-    }
-
     override func endEditing() {
         if omniBarView.isSearchAreaExpanded {
             omniBarView.aiChatTextView.resignFirstResponder()
         }
         super.endEditing()
-        editingStateViewController?.dismissAnimated()
-    }
-
-    override func setEditingStateLogoHidden(_ hidden: Bool) {
-        // Always update the pending flag so the next created editing-state VC picks it up,
-        // even if a stale weak `editingStateViewController` ref is currently being torn down.
-        pendingHideEditingStateLogo = hidden
-        editingStateViewController?.setLogoHidden(hidden)
     }
 
     // MARK: - Layout
@@ -400,95 +364,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                                     clip: shouldClipShadows)
     }
 
-    private func presentExperimentalEditingState(for textField: UITextField, animated: Bool = true) {
-        guard editingStateViewController == nil else { return }
-        guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
-
-        // Use explicit mode if set (programmatic beginEditing), otherwise fall back
-        // to the tab's per-tab mode already stored in selectedTextEntryMode.
-        let capturedTextEntryMode: TextEntryMode = textEntryMode ?? selectedTextEntryMode
-
-        if let omniDelegate {
-            omniDelegate.dismissContextualSheetIfNeeded { [weak self] in
-                guard let self else { return }
-                self.present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
-            }
-        } else {
-            present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
-        }
-    }
-
-    private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
-        guard editingStateViewController == nil else { return }
-        omniDelegate?.onDidBeginEditing()
-
-        let switchBarHandler = createSwitchBarHandler(for: textField, initialToggleState: textEntryMode)
-        let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
-
-        let escapeHatchModel = omniDelegate?.escapeHatchForEditingState()
-        let initialLogoHidden = pendingHideEditingStateLogo
-        pendingHideEditingStateLogo = false
-        let editingStateViewController = OmniBarEditingStateViewController(
-            switchBarHandler: switchBarHandler,
-            aiChatSyncCleaner: dependencies.aiChatSyncCleaner,
-            duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
-            escapeHatchModel: escapeHatchModel,
-            initialLogoHidden: initialLogoHidden
-        )
-        editingStateViewController.delegate = self
-
-        editingStateViewController.modalPresentationStyle = .custom
-        editingStateViewController.transitioningDelegate = self
-
-        editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
-        editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
-        editingStateViewController.useNewTransitionBehaviour = omniDelegate?.useNewOmnibarTransitionBehaviour() ?? false
-
-        switchBarHandler.clearButtonTappedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.omniDelegate?.onExperimentalAddressBarClearPressed()
-            }
-            .store(in: &cancellables)
-
-        self.editingStateViewController = editingStateViewController
-
-        present(editingStateViewController, animated: animated)
-    }
-
-    private func createSwitchBarHandler(for textField: UITextField, initialToggleState: TextEntryMode? = nil) -> SwitchBarHandler {
-        let isFireTab = omniDelegate?.isCurrentTabFireTab() ?? false
-        let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
-                                                aiChatSettings: dependencies.aiChatSettings,
-                                                initialToggleState: initialToggleState,
-                                                sessionStateMetrics: sessionStateMetrics,
-                                                isFireTab: isFireTab)
-
-        guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty, omniBarView.isFullAIChatHidden else {
-            return switchBarHandler
-        }
-
-        /// Determine whether the current text in the omnibar is a search query or a URL.
-        /// - If the text is a URL, retrieve the full URL from the delegate and update the text with the full URL for display.
-        /// - If the text is a search query, simply update the text with the query itself.
-        if URL(trimmedAddressBarString: currentText, useUnifiedLogic: isUsingUnifiedPredictor) != nil,
-           let url = omniDelegate?.didRequestCurrentURL() {
-            let urlText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true)
-            switchBarHandler.updateCurrentText(urlText.string)
-        } else {
-            switchBarHandler.updateCurrentText(currentText)
-        }
-
-        return switchBarHandler
-    }
-
-    private func shouldAutoSelectTextForUrl(_ textField: UITextField) -> Bool {
-        guard let textFieldText = textField.text else { return false }
-        if URL(trimmedAddressBarString: textFieldText.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) != nil {
-            return true
-        }
-        return omniDelegate?.shouldAutoSelectTextForSERPQuery() ?? false
-    }
 }
 
 // MARK: - iPad Duck.ai Mode Toggle
@@ -794,114 +669,6 @@ extension DefaultOmniBarViewController {
     }
 }
 
-// MARK: - OmniBarEditingStateViewControllerDelegate
-
-extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
-
-    func onQueryUpdated(_ query: String) {
-        omniDelegate?.onOmniBarTextEdited(query)
-    }
-
-    func onQuerySubmitted(_ query: String) {
-        editingStateViewController?.dismissAnimated { [weak self] in
-            self?.editingStateViewController = nil
-        }
-        omniDelegate?.onOmniQuerySubmitted(query)
-    }
-
-    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
-        editingStateViewController?.dismissAnimated { [weak self] in
-            guard let self else { return }
-            self.editingStateViewController = nil
-            self.omniDelegate?.onPromptSubmitted(query, tools: tools)
-        }
-    }
-
-    func onSelectFavorite(_ favorite: BookmarkEntity) {
-        editingStateViewController?.dismissAnimated { [weak self] in
-            self?.editingStateViewController = nil
-        }
-        omniDelegate?.onSelectFavorite(favorite)
-    }
-
-    func onEditFavorite(_ favorite: BookmarkEntity) {
-        editingStateViewController?.dismissAnimated { [weak self] in
-            self?.editingStateViewController = nil
-        }
-        omniDelegate?.onEditFavorite(favorite)
-    }
-
-    func onSelectSuggestion(_ suggestion: Suggestion) {
-        omniDelegate?.onOmniSuggestionSelected(suggestion)
-        editingStateViewController?.dismissAnimated { [weak self] in
-            self?.editingStateViewController = nil
-        }
-    }
-
-    func onVoiceSearchRequested(from mode: TextEntryMode) {
-        editingStateViewController?.dismissAnimated { [weak self] in
-            guard let self else { return }
-            self.editingStateViewController = nil
-
-            let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
-            self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
-        }
-    }
-
-    func onChatHistorySelected(url: URL) {
-        editingStateViewController?.dismissAnimated { [weak self] in
-            guard let self else { return }
-            self.editingStateViewController = nil
-            self.omniDelegate?.onChatHistorySelected(url: url)
-        }
-    }
-
-    func onViewAllChatsSelected() {
-        editingStateViewController?.dismissAnimated { [weak self] in
-            guard let self else { return }
-            self.editingStateViewController = nil
-            self.omniDelegate?.onViewAllChatsSelected()
-        }
-    }
-
-    func onDismissRequested() {
-        // Restore the tab's committed mode — the user toggled but didn't submit.
-        omniDelegate?.onExperimentalAddressBarCancelPressed()
-        if let tabMode = omniDelegate?.preferredTextEntryModeForCurrentTab() {
-            selectedTextEntryMode = tabMode
-        }
-        editingStateViewController?.dismissAnimated { [weak self] in
-            // Fix address bar non-activation bug when cancelling the edit from the Duck.ai fire onboarding completion dialog.
-            self?.editingStateViewController = nil
-        }
-    }
-
-    func onSwitchToTab(_ tab: Tab) {
-        omniDelegate?.onSwitchToTab(tab)
-    }
-
-    func onTabSwitcherRequested() {
-        // Pure forwarder — MVC's handler calls `performCancel()`, which already invokes
-        // `endEditing()` -> `dismissAnimated()` on the editing state. Dismissing here too
-        // would cause UIKit's "presentation/dismissal in progress" error.
-        omniDelegate?.onTabSwitcherRequested()
-    }
-
-    func onToggleModeSwitched(to mode: TextEntryMode) {
-        // Keep selectedTextEntryMode in sync with the editing state's toggle.
-        selectedTextEntryMode = mode
-        omniDelegate?.onToggleModeSwitched()
-    }
-
-    func onVoiceModeRequested() {
-        editingStateViewController?.dismissAnimated { [weak self] in
-            guard let self else { return }
-            self.editingStateViewController = nil
-            self.omniDelegate?.onDuckAIVoiceModeRequested()
-        }
-    }
-}
-
 // MARK: - UITextViewDelegate (iPad Duck.ai Expanded Text View)
 //
 // Handles text input in the expanded duckAITextView when the iPad duck.ai mode toggle is active.
@@ -981,25 +748,6 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         omniDelegate?.onDidBeginEditing()
 
         omniBarView.layoutIfNeeded()
-    }
-}
-
-// MARK: - UIViewControllerTransitioningDelegate
-
-extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
-
-    func animationController(forPresented presented: UIViewController,
-                             presenting: UIViewController,
-                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        let useNew = (presented as? OmniBarEditingStateViewController)?.useNewTransitionBehaviour ?? false
-        return UniversalOmniBarEditingStateTransition(isPresenting: true,
-                                                      addressBarPosition: dependencies.appSettings.currentAddressBarPosition,
-                                                      useNewTransitionBehaviour: useNew)
-    }
-
-    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        UniversalOmniBarEditingStateTransition(isPresenting: false,
-                                               addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
 }
 

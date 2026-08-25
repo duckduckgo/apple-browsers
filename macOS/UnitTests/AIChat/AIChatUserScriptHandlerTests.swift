@@ -451,7 +451,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitFirstPromptFiresStartNewConversationPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: false, hasPageContext: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .unattributed, hasPageContext: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -475,15 +475,15 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("didReportMetric reports isOpenedFromAskDuckAiButton=true when the chat was opened from the Duck.ai button", .timeLimit(.minutes(1)))
+    @Test("didReportMetric reports the surface that opened the chat", .timeLimit(.minutes(1)))
     @MainActor
-    func testThatConversationPixelReportsOpenedFromAskDuckAiButton() async throws {
+    func testThatConversationPixelReportsTheOpeningSurface() async throws {
         // A tab-bar Duck.ai button gesture stamps the pending source just before opening the chat.
         let sourceHandler = AIChatConversationSourceHandler()
         sourceHandler.setData(.tabBarButton)
 
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: true, hasPageContext: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton, hasPageContext: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -516,7 +516,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitPromptFiresSentPromptOngoingChatPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: false, hasPageContext: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat(source: .unattributed, hasPageContext: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -537,6 +537,68 @@ struct AIChatUserScriptHandlerTests {
         }
 
         #expect(testPixelFiring.expectedFireCalls == testPixelFiring.actualFireCalls)
+    }
+
+    /// `PixelKitMock` runs both sides through the same `parameters` code, so it can't catch a wrong
+    /// value — these read the fired parameters directly.
+    @MainActor
+    private func firedConversationParameters(source: AIChatConversationSource?,
+                                             metric: AIChatMetricName) async -> [String: String]? {
+        let sourceHandler = AIChatConversationSourceHandler()
+        if let source {
+            sourceHandler.setData(source)
+        }
+
+        let testPixelFiring = PixelKitMock()
+        let testHandler = AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: testPixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: MockFeatureFlagger(),
+            notificationCenter: notificationCenter,
+            conversationSourceHandler: sourceHandler
+        )
+
+        // The first native-config fetch is what consumes the pending source.
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
+
+        await withCheckedContinuation { continuation in
+            testHandler.didReportMetric(.init(metricName: metric)) {
+                continuation.resume()
+            }
+        }
+
+        return testPixelFiring.actualFireCalls.first?.pixel.parameters
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A chat with no recorded surface is attributed to 'other' rather than dropped", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelFallsBackToOtherSource() async {
+        let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt)
+        #expect(parameters?["source"] == "unattributed")
+        #expect(parameters?["isOpenedFromAskDuckAiButton"] == "false")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A non-button surface is reported verbatim and leaves the legacy boolean false", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelReportsNonButtonSourceVerbatim() async {
+        let parameters = await firedConversationParameters(source: .contextualSummarize, metric: .userDidSubmitFirstPrompt)
+        #expect(parameters?["source"] == "contextual-summarize")
+        #expect(parameters?["isOpenedFromAskDuckAiButton"] == "false")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An ongoing chat reports the surface that originally opened it", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatOngoingChatPixelReportsTheOpeningSurface() async {
+        let parameters = await firedConversationParameters(source: .newTabPage, metric: .userDidSubmitPrompt)
+        #expect(parameters?["source"] == "new-tab-page")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -1415,5 +1477,124 @@ struct AIChatMessageHandlerInstallInfoTests {
     func testNilInstallDateBucketsToZero() {
         let config = makeHandler(installDate: nil, installType: .new).getNativeConfigValues(isFireWindow: false)
         #expect(config.installAge == 0)
+    }
+}
+
+struct AIChatConversationSourcePixelTests {
+
+    /// Pinned so a new case can't ship without the matching `aiChatConversationSource` value in
+    /// `params_dictionary.json5` — the app would send a value the definition rejects.
+    private static let expectedRawValues = [
+        "tab-bar-button",
+        "ask-about-page",
+        "tab-bar-sidebar",
+        "address-bar",
+        "address-bar-suggestion",
+        "address-bar-context-menu",
+        "new-tab-page",
+        "new-tab-page-view-all-chats",
+        "new-tab-page-voice",
+        "new-tab-page-recent-chat",
+        "omnibar",
+        "omnibar-view-all-chats",
+        "omnibar-voice",
+        "omnibar-recent-chat",
+        "prompt-bar",
+        "prompt-bar-voice",
+        "main-menu-file-new-chat",
+        "main-menu-sidebar",
+        "main-menu-open-duck-ai",
+        "main-menu-new-chat",
+        "main-menu-view-all-chats",
+        "main-menu-voice",
+        "main-menu-image",
+        "main-menu-recent-chat",
+        "more-options-menu-new-duck-ai-chat",
+        "more-options-menu-open-duck-ai",
+        "more-options-menu-new-chat",
+        "more-options-menu-view-all-chats",
+        "more-options-menu-voice",
+        "more-options-menu-image",
+        "more-options-menu-recent-chat",
+        "contextual-summarize",
+        "contextual-translate",
+        "contextual-attach-selection",
+        "serp",
+        "sidebar-handoff",
+        "settings",
+        "unattributed"
+    ]
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Conversation source raw values match the pixel definition", .timeLimit(.minutes(1)))
+    func testConversationSourceRawValuesMatchPixelDefinition() {
+        #expect(AIChatConversationSource.allCases.map(\.rawValue) == Self.expectedRawValues)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Every source is reported verbatim by both conversation pixels", .timeLimit(.minutes(1)),
+          arguments: AIChatConversationSource.allCases)
+    func testEverySourceIsReportedVerbatim(source: AIChatConversationSource) {
+        #expect(AIChatPixel.aiChatMetricStartNewConversation(source: source, hasPageContext: false)
+            .parameters?["source"] == source.rawValue)
+        #expect(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: source, hasPageContext: false)
+            .parameters?["source"] == source.rawValue)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A button surface with page context reports every parameter", .timeLimit(.minutes(1)))
+    func testButtonSourceWithPageContextParameters() {
+        #expect(AIChatPixel.aiChatMetricStartNewConversation(source: .askAboutPage, hasPageContext: true).parameters == [
+            "source": "ask-about-page",
+            "isOpenedFromAskDuckAiButton": "true",
+            "hasPageContext": "true"
+        ])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Each Duck.ai menu item maps to a source scoped to its own menu", .timeLimit(.minutes(1)), arguments: [
+        (AIChatMenuConversationSources.mainMenu, "main-menu"),
+        (AIChatMenuConversationSources.moreOptionsMenu, "more-options-menu")
+    ])
+    func testMenuSourcesAreScopedToTheirMenu(sources: AIChatMenuConversationSources, prefix: String) {
+        #expect(sources.openDuckAI.rawValue == "\(prefix)-open-duck-ai")
+        #expect(sources.newChat.rawValue == "\(prefix)-new-chat")
+        #expect(sources.viewAllChats.rawValue == "\(prefix)-view-all-chats")
+        #expect(sources.voice.rawValue == "\(prefix)-voice")
+        #expect(sources.image.rawValue == "\(prefix)-image")
+        #expect(sources.recentChat.rawValue == "\(prefix)-recent-chat")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The shared new-chat menu items resolve to distinct sources", .timeLimit(.minutes(1)))
+    func testSharedNewChatItemsAreDistinct() {
+        let sources = AIChatMenuConversationSources.mainMenu
+        let resolved = [AIChatMenuNewChatItem.openDuckAI, .newChat, .viewAllChats]
+            .map { sources.source(for: $0).rawValue }
+        #expect(resolved == ["main-menu-open-duck-ai", "main-menu-new-chat", "main-menu-view-all-chats"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The no-stamp fallback reports 'unattributed'", .timeLimit(.minutes(1)))
+    func testFallbackIsNamedUnattributed() {
+        #expect(AIChatConversationSource.unattributed.rawValue == "unattributed")
+        #expect(!AIChatConversationSource.unattributed.isAskDuckAiButton)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The address-bar button and its suggestion row report different sources", .timeLimit(.minutes(1)))
+    func testAddressBarButtonAndSuggestionAreDistinct() {
+        #expect(AIChatConversationSource.addressBar.rawValue == "address-bar")
+        #expect(AIChatConversationSource.addressBarSuggestion.rawValue == "address-bar-suggestion")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An unattributed chat reports every parameter", .timeLimit(.minutes(1)))
+    func testUnattributedSourceParameters() {
+        #expect(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: .unattributed, hasPageContext: false).parameters == [
+            "source": "unattributed",
+            "isOpenedFromAskDuckAiButton": "false",
+            "hasPageContext": "false"
+        ])
     }
 }

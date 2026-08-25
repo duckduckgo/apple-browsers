@@ -1155,7 +1155,6 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             showTrackersBlockedAnimation: appSettings.showTrackersBlockedAnimation,
-            isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
             forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,

@@ -1116,6 +1116,7 @@ extension DataImportViewModel {
     }
 
     @MainActor
+
     private mutating func showDirectoryReadPermissionDeniedScreen(for profile: BrowserProfile) {
         screen = .directoryReadPermissionDenied(profile.profileURL)
     }

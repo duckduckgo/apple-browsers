@@ -49072,7 +49072,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elem. historii"
+                      "value" : "%arg elementów historii"
                     }
                   }
                 }
@@ -49452,7 +49452,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Из журнала будет удалено **%#@items@**"
+            "value" : "Из журнала будет удалено **%1$#@items@**"
           },
           "substitutions" : {
             "items" : {
@@ -50817,13 +50817,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryna"
+                      "value" : "%arg"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryn"
+                      "value" : "%arg"
                     }
                   }
                 }
@@ -50885,7 +50885,7 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайт"
+                      "value" : "%arg сайта"
                     }
                   },
                   "other" : {

@@ -48,8 +48,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// `setFireTab` (which no-ops on an unchanged value, so repeated per-focus sets don't invalidate
     /// the view body).
     @Published private(set) var isFireTab = false
-    /// iPhone landscape suppresses the empty state entirely (no room) — matches the unfocused NTP and
-    /// the legacy `DaxLogoManager` horizontal-compact gate. Set by the container.
+    /// iPhone landscape suppresses the empty state entirely because there is not enough room.
     @Published private(set) var isLandscape = false
     /// Chrome bottom (bar + reserved hatch) below the host top, pushed by the container as the bar
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo

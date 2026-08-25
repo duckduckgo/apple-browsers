@@ -1132,7 +1132,9 @@ extension MainViewController {
                 }
                 // Keep the coordinator's top/editing state until all dismiss targets have been
                 // captured, then deactivate before an interrupted animation can strand active state.
-                coordinator.completeOmnibarDeactivation(resetView: false)
+                if coordinator.completeOmnibarDeactivation(resetView: false) {
+                    coordinator.contentViewController.setActive(false)
+                }
             },
             interruptCleanup: { [weak self, weak coordinator] in
                 guard let self, let coordinator, !coordinator.isOmnibarSession else { return }

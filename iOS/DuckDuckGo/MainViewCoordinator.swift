@@ -548,6 +548,7 @@ class MainViewCoordinator {
             self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
             additionalAnimations?()
         }
+        animator.isUserInteractionEnabled = false
         animator.addCompletion { [weak self] position in
             guard let self else { return }
             self.omnibarDismissAnimator = nil

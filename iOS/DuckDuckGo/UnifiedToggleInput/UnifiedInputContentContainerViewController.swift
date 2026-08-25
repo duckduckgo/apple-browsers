@@ -103,8 +103,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// `contentContainerView`.
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
     private var unifiedSuggestionsContainerView: UIView?
-    /// Keeps the suggestions viewport fixed while the host's safe-area inset tracks the input height.
-    /// The constraint only carries the small per-state content gap.
+    /// Positions the suggestions viewport below the input on iOS 15. Newer systems keep the viewport
+    /// fixed and apply the input height as scroll-content spacing instead.
     private var unifiedSuggestionsTopConstraint: NSLayoutConstraint?
     /// The lazily-attached duck.ai surface (source + fetchers + state feed); nil while detached.
     private var duckAISurface: DuckAISuggestionsSurfaceProvider?
@@ -376,9 +376,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
     }
 
-    /// Keeps the List viewport full-height while resting content starts below the UTI.
+    /// Keeps the List viewport full-height on modern systems. On iOS 15 the table-backed SwiftUI List
+    /// must use the host constraint instead; changing its safe area makes its first row drift by state.
     private func applyHostContentInsets() {
-        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: isUsingTopBarPosition ? requestedContentInset.top : 0,
+        let topInset = positionsLegacyListBelowTopBar ? 0 : (isUsingTopBarPosition ? requestedContentInset.top : 0)
+        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: topInset,
                                                               left: 0,
                                                               bottom: requestedContentInset.bottom,
                                                               right: 0))
@@ -661,9 +663,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         applyEscapeHatchPlacement()
     }
 
-    /// Keep the viewport fixed; the host's safe-area inset moves resting content with the input.
+    /// iOS 15 positions its table-backed List below the top bar. Newer systems keep the viewport fixed.
     private func updateSingleHostTopOffset() {
-        unifiedSuggestionsTopConstraint?.constant = topBarContentGap
+        let topOffset = positionsLegacyListBelowTopBar ? requestedContentInset.top : 0
+        unifiedSuggestionsTopConstraint?.constant = topOffset + topBarContentGap
+    }
+
+    private var positionsLegacyListBelowTopBar: Bool {
+        if #available(iOS 16, *) { return false }
+        return isUsingTopBarPosition
     }
 
     /// Duck.ai's no-hatch list keeps main's 4pt clearance. Search content owns its NTP-aligned spacing.
@@ -820,7 +828,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func applyRequestedContentInset() {
-        // The host frame stays fixed while safe-area insets move resting content with the UTI.
         updateSingleHostTopOffset()
 
         applyHostContentInsets()

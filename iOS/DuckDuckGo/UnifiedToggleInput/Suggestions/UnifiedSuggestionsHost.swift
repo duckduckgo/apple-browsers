@@ -172,6 +172,7 @@ final class UnifiedSuggestionsHost {
 
     /// Insets the List content without shrinking its viewport, allowing rows to scroll beneath the top UTI.
     func setContentInsets(_ insets: UIEdgeInsets) {
+        guard contentInsets != insets else { return }
         contentInsets = insets
         applyCombinedInsets()
     }

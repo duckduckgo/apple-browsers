@@ -149,7 +149,8 @@ struct SuggestionsListView: View {
             }
             .environment(\.defaultMinListRowHeight, 0)
             .listStyle(.insetGrouped)
-            .modifier(SectionSpacingModifier(popoverSpacing: Metrics.popoverSectionSpacing,
+            .modifier(SectionSpacingModifier(isFloatingPopover: isFloatingPopover,
+                                             popoverSpacing: Metrics.popoverSectionSpacing,
                                              restingSpacing: restingSectionSpacing))
             // Replace insetGrouped's variable top margin with the design's list top inset (6pt below the
             // input on the top bar; 0 on the bottom bar, where the input sits below the list).
@@ -357,13 +358,20 @@ private struct ListContentMarginsModifier: ViewModifier {
 }
 
 private struct SectionSpacingModifier: ViewModifier {
+    let isFloatingPopover: Bool
     let popoverSpacing: CGFloat
     let restingSpacing: CGFloat?
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
-            content.listSectionSpacing(restingSpacing ?? popoverSpacing)
+            if let restingSpacing {
+                content.listSectionSpacing(restingSpacing)
+            } else if isFloatingPopover {
+                content.listSectionSpacing(popoverSpacing)
+            } else {
+                content.listSectionSpacing(.compact)
+            }
         } else {
             content
         }

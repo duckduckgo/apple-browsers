@@ -1077,7 +1077,10 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
-        guard coordinator.isOmnibarSession else { return }
+        guard coordinator.isOmnibarSession else {
+            completion?()
+            return
+        }
         applyUnifiedInputChromeBackground(.standardChrome)
         // Resign up-front so the keyboard descent runs concurrent with the bar collapse.
         coordinator.viewController.deactivateInput()

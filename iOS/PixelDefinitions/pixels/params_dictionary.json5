@@ -298,6 +298,11 @@
         "type": "number",
         "description": "Total duration of the opt-out attempt in milliseconds"
     },
+    "dbpAwakeDuration": {
+        "key": "awake_duration",
+        "type": "number",
+        "description": "Total duration excluding machine sleep in milliseconds"
+    },
     "dbpConfirmationAttemptNumber": {
         "key": "attempt_number",
         "type": "integer",

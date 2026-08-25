@@ -670,7 +670,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         return NetworkProtectionStatusServerInfo(serverLocation: attributes, serverAddress: info.ip)
     }
 
-    /// Builds a location-only server-info value (no address) 
+    /// Builds a location-only server-info value (no address)
     private func serverInfo(locationOnlyFor info: SubscriptionOnboardingConnectionInfo) -> NetworkProtectionStatusServerInfo {
         let json = "{\"city\": \"\(info.city)\", \"country\": \"\(info.country)\", \"state\": \"\"}"
         // swiftlint:disable:next force_try

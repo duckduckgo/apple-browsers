@@ -29,6 +29,7 @@ struct AccountManager: AccountManaging {
     let api: RemoteAPIRequestCreating
     let crypter: CryptingInternal
     let registeredDeviceMapper: any RegisteredDeviceMapping
+    let accountInfoKeys: (any AccountInfoKeyManaging)?
     let accountInfoKeyFactory: AccountInfoKeyFactory
     let deviceInfoCodec: DeviceInfoCoding
     let isScopedAccessCredentialsEnabled: () -> Bool
@@ -39,6 +40,7 @@ struct AccountManager: AccountManaging {
          api: RemoteAPIRequestCreating,
          crypter: CryptingInternal,
          registeredDeviceMapper: (any RegisteredDeviceMapping)? = nil,
+         accountInfoKeys: (any AccountInfoKeyManaging)? = nil,
          accountInfoKeyFactory: AccountInfoKeyFactory? = nil,
          deviceInfoCodec: DeviceInfoCoding = DeviceInfoCodec(),
          isScopedAccessCredentialsEnabled: @escaping () -> Bool,
@@ -51,6 +53,7 @@ struct AccountManager: AccountManaging {
             crypter: crypter,
             isScopedAccessCredentialsEnabled: isScopedAccessCredentialsEnabled,
             canReadUnifiedDeviceList: canReadUnifiedDeviceList)
+        self.accountInfoKeys = accountInfoKeys
         self.accountInfoKeyFactory = accountInfoKeyFactory ?? DefaultAccountInfoKeyFactory(crypter: crypter)
         self.deviceInfoCodec = deviceInfoCodec
         self.isScopedAccessCredentialsEnabled = isScopedAccessCredentialsEnabled
@@ -333,6 +336,21 @@ struct AccountManager: AccountManaging {
         if isUnifiedReadEnabled,
            let devicesV2 = result.devicesV2,
            !devicesV2.isEmpty {
+            if devicesV2.contains(where: { $0.info != nil }),
+               let accountInfoKeys,
+               let protectedKeys = result.keys,
+               !protectedKeys.isEmpty {
+                do {
+                    // Preloading uses only login response data; normal key loading handles missing credentials.
+                    try await accountInfoKeys.preloadKey(from: protectedKeys,
+                                                         accessCredentials: result.accessCredentials ?? [],
+                                                         for: account)
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    // Device info remains additive; normal key loading can still use cached or refreshed keys.
+                }
+            }
             devices = await registeredDeviceMapper.registeredDevices(from: devicesV2,
                                                                       account: account,
                                                                       isUnifiedReadEnabled: isUnifiedReadEnabled)

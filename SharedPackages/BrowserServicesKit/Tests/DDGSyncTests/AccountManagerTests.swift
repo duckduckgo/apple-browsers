@@ -516,11 +516,16 @@ final class AccountManagerTests: XCTestCase {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let mapper = RegisteredDeviceMappingMock()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        mapper.registeredDevicesHandler = {
+            XCTAssertEqual(accountInfoKeys.preloadKeyCalls.count, 1)
+        }
         var readFlagCallCount = 0
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
+                                            accountInfoKeys: accountInfoKeys,
                                             isScopedAccessCredentialsEnabled: { true },
                                             canReadUnifiedDeviceList: {
                                                 readFlagCallCount += 1
@@ -545,7 +550,28 @@ final class AccountManagerTests: XCTestCase {
                 }
             ],
             "token": "token-1",
-            "protected_encryption_key": ""
+            "protected_encryption_key": "",
+            "keys": [
+                {
+                    "kid": "account-info-key",
+                    "encrypted_private_key": "encrypted-private-key",
+                    "public_key": {
+                        "alg": "RSA-OAEP-256",
+                        "e": "AQAB",
+                        "kty": "RSA",
+                        "n": "modulus"
+                    },
+                    "encrypted_with": "3party",
+                    "purpose": "account_info"
+                }
+            ],
+            "access_credentials": [
+                {
+                    "id": "3party",
+                    "scope": "sync",
+                    "encrypted_3party_credential": "encrypted-credential"
+                }
+            ]
         }
         """)
 
@@ -558,16 +584,23 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertTrue(mapper.defaultCredentialLoginEntryIDs.isEmpty)
         XCTAssertEqual(result.devices.map(\.id), ["unified-device"])
         XCTAssertEqual(readFlagCallCount, 1)
+        let keyLoad = try XCTUnwrap(accountInfoKeys.preloadKeyCalls.first)
+        XCTAssertEqual(accountInfoKeys.preloadKeyCalls.count, 1)
+        XCTAssertEqual(keyLoad.protectedKeys.map(\.kid), ["account-info-key"])
+        XCTAssertEqual(keyLoad.accessCredentials.map(\.id), ["3party"])
+        XCTAssertEqual(keyLoad.account.userId, "user-1")
     }
 
     func testWhenUnifiedReadIsDisabledThenLoginMapsLegacyDevices() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let mapper = RegisteredDeviceMappingMock()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),
                                             registeredDeviceMapper: mapper,
+                                            accountInfoKeys: accountInfoKeys,
                                             isScopedAccessCredentialsEnabled: { true },
                                             canReadUnifiedDeviceList: { false })
         api.fakeRequests[endpoints.login] = makeJSONRequest("""
@@ -589,7 +622,21 @@ final class AccountManagerTests: XCTestCase {
                 }
             ],
             "token": "token-1",
-            "protected_encryption_key": ""
+            "protected_encryption_key": "",
+            "keys": [
+                {
+                    "kid": "account-info-key",
+                    "encrypted_private_key": "encrypted-private-key",
+                    "public_key": {
+                        "alg": "RSA-OAEP-256",
+                        "e": "AQAB",
+                        "kty": "RSA",
+                        "n": "modulus"
+                    },
+                    "encrypted_with": "ddg",
+                    "purpose": "account_info"
+                }
+            ]
         }
         """)
 
@@ -600,6 +647,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertTrue(mapper.registeredDevicesCallEntryIDs.isEmpty)
         XCTAssertEqual(mapper.defaultCredentialLoginEntryIDs, ["legacy-device"])
         XCTAssertEqual(result.devices.map(\.id), ["legacy-device"])
+        XCTAssertTrue(accountInfoKeys.preloadKeyCalls.isEmpty)
     }
 
     func testWhenLoggingInWithScopedAccessCredentialsEnabledThenLoginRequestIncludesSyncScope() async throws {
@@ -1191,10 +1239,12 @@ private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
     private(set) var registeredDevicesCallEntryIDs: [String] = []
     private(set) var unifiedReadEnabledValues: [Bool] = []
     private(set) var defaultCredentialLoginEntryIDs: [String] = []
+    var registeredDevicesHandler: (() -> Void)?
 
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
                                           isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
+        registeredDevicesHandler?()
         registeredDevicesCallEntryIDs = entries.map(\.id)
         unifiedReadEnabledValues.append(isUnifiedReadEnabled)
         let devices = entries.map { entry in

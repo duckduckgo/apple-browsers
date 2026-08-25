@@ -114,11 +114,8 @@ internal class MouseEventInterceptingView: ColorView {
             forward(event, to: hitView, in: window)
         }
 
-        // Mouse-moved carries no action of its own, and AppKit has to keep seeing it to drive
-        // tracking-area enter/exit — which is what every hover effect in these panels is built on.
-        // Consuming it starved them. Clicks and scrolls are still consumed, which is the point of
-        // this view: they must not reach the web view behind it. A moved event can't, since by here
-        // the pointer is inside our bounds and we sit above it.
+        // AppKit needs mouse-moved to drive tracking-area enter/exit, which every hover effect
+        // here relies on. Clicks and scrolls stay consumed so they can't reach the web view.
         return event.type == .mouseMoved ? event : nil
     }
 
@@ -170,12 +167,8 @@ internal class MouseEventInterceptingView: ColorView {
     override func otherMouseDragged(with event: NSEvent) {}
     override func scrollWheel(with event: NSEvent) {}
 
-    /// AppKit hands `hitTest` a point in the *superview's* space, while everything this override
-    /// compares against — `bounds`, subview frames, `shouldPassThroughEvent` — is in our own. The
-    /// two coincide only while the view sits at its superview's origin at the same size, which was
-    /// true of every caller until the Duck.ai panel started leaving room below itself for the
-    /// usage-limit card. Without the conversion the panel answered hit tests for points below it
-    /// and routed them to whatever sat at the same offset inside it.
+    /// AppKit passes a point in the superview's space, but `bounds`, subview frames and
+    /// `shouldPassThroughEvent` are all in ours — the two only match at the superview's origin.
     override func hitTest(_ point: NSPoint) -> NSView? {
         hitTest(inSelfSpace: convert(point, from: superview))
     }

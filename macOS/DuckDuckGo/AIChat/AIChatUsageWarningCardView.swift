@@ -25,8 +25,7 @@ import DesignResourcesKitIcons
 
 extension DuckAiUsageWarning {
 
-    /// The module's own `messagePreview` is unlocalized and debug-log-only, so the card renders
-    /// its copy from `UserText` instead. Kept pure so it can be tested without a view.
+    /// The module's `messagePreview` is unlocalized and debug-only, so copy comes from `UserText`.
     var localizedHeadline: String {
         switch message {
         case .approaching:
@@ -47,9 +46,8 @@ extension DuckAiUsageWarning {
         UserText.aiChatUsageWarningsResetsIn(resetsIn.shortDescription)
     }
 
-    /// `nil` hides the button. `.startUsingWeeklyLimit` has no native route yet — the resolver
-    /// still produces it so the decision stays visible in the log, but a button that does nothing
-    /// is worse than no button, so that message renders without one.
+    /// `nil` hides the button. `.startUsingWeeklyLimit` has no native route yet, and a button that
+    /// does nothing is worse than none.
     var localizedActionTitle: String? {
         guard let action else { return nil }
 
@@ -69,15 +67,13 @@ extension DuckAiUsageWarning {
 
 // MARK: - Card
 
-/// The Duck.ai usage-limit message: a card below the omnibar panel, detached from its chrome.
+/// The Duck.ai usage-limit message, shown in a band below the omnibar panel.
 ///
-/// Rendered from `DuckAiUsageWarning`, which already decided what to say, whether it can be
-/// dismissed and what to offer — this view only lays it out and reports clicks back.
+/// `DuckAiUsageWarning` has already decided what to say and what to offer; this only lays it out.
 final class AIChatUsageWarningCardView: NSView {
 
     enum Constants {
-        /// The band that actually shows below the panel, and all the height a host has to reserve.
-        /// Hosts reserve panel height from this, so it lives here rather than at the call site.
+        /// The band that shows below the panel, and all the height a host has to reserve.
         static let contentHeight: CGFloat = 44
         static let horizontalPadding: CGFloat = 14
         static let iconSize: CGFloat = 16
@@ -86,16 +82,14 @@ final class AIChatUsageWarningCardView: NSView {
         static let actionCloseSpacing: CGFloat = 4
         static let closeButtonSize: CGFloat = 24
         static let fontSize: CGFloat = 13
-        /// High enough to stay bright over a dark page, low enough to still read as translucent.
+        /// Bright enough over a dark page, low enough to still read as translucent.
         static let tintAlpha: CGFloat = 0.75
     }
 
     // MARK: - UI Components
 
-    /// Frosted rather than filled. An opaque card in the panel's own colour reads as one more
-    /// section of the panel; letting the page blur through is what separates the two surfaces.
-    /// `.popover` rather than `.hudWindow`: the latter is a dark material that reads as a grey
-    /// slab in light mode. `.withinWindow` because what sits behind the card is the web view.
+    /// Frosted, not filled: in the panel's own colour it reads as one more section of the panel.
+    /// `.hudWindow` is a dark material, and `.withinWindow` because the web view sits behind it.
     private let backgroundView: NSVisualEffectView = {
         let view = NSVisualEffectView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -103,16 +97,14 @@ final class AIChatUsageWarningCardView: NSView {
         view.blendingMode = .withinWindow
         view.state = .active
         view.wantsLayer = true
-        // Bottom corners only — the top edge is behind the panel, and rounding it would notch
-        // the seam. AppKit layers are unflipped, so MinY is the bottom.
+        // Bottom corners only: rounding the top would notch the seam. Layers are unflipped.
         view.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         view.layer?.masksToBounds = true
         return view
     }()
 
-    /// Sits over the blur to keep the card bright and mostly independent of whatever is behind it.
-    /// The blur alone tracks the page too closely — a dark hero image dragged the whole card down
-    /// with it. Semi-transparent, so a hint of the page still shows and it doesn't read as opaque.
+    /// The blur alone tracks the page too closely — a dark image dragged the whole card down with
+    /// it. Semi-transparent, so a hint still shows through.
     private let tintView: ColorView = {
         let view = ColorView(frame: .zero)
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -124,7 +116,7 @@ final class AIChatUsageWarningCardView: NSView {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.imageScaling = .scaleProportionallyDown
-        imageView.image = DesignSystemImages.Color.Size16.exclamation
+        imageView.image = DesignSystemImages.Glyphs.Size16.alertRecolorable
         return imageView
     }()
 
@@ -151,12 +143,10 @@ final class AIChatUsageWarningCardView: NSView {
         return button
     }()
 
-    /// The band below the panel. Content centres on this rather than on the card, whose top runs
-    /// up behind the panel and would pull everything off-centre.
+    /// Content centres on the visible band, not the card, whose top runs up behind the panel.
     private let contentGuide = NSLayoutGuide()
 
-    /// Hidden views still take part in Auto Layout, so each optional element's footprint is
-    /// collapsed explicitly rather than left to `isHidden`.
+    /// Hidden views still take part in Auto Layout, so footprints collapse explicitly.
     private var closeButtonWidthConstraint: NSLayoutConstraint?
     private var actionCloseSpacingConstraint: NSLayoutConstraint?
 
@@ -166,10 +156,8 @@ final class AIChatUsageWarningCardView: NSView {
     enum BackgroundStyle {
         /// Its own surface, distinct from the opaque panel it tucks under.
         case ownSurface
-        /// No fill at all: the host already paints one continuous surface across the whole bar, and
-        /// a second blur over it never matches — two `.behindWindow` effect views sample the desktop
-        /// at their own positions, which reads as a gradient across the seam. The host marks the
-        /// layering with a stroke and a shadow instead.
+        /// No fill: the host already paints one surface, and a second blur over it never matches,
+        /// because each samples the desktop at its own position and the seam reads as a gradient.
         case hostPaintsSurface
     }
 
@@ -283,8 +271,7 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Content
 
-    /// Lays out for `warning`. Whether the card is on screen at all is the host's call; this only
-    /// has to make the row match the message.
+    /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
     func update(with warning: DuckAiUsageWarning) {
         titleLabel.attributedStringValue = Self.attributedTitle(headline: warning.localizedHeadline,
                                                                 resetsIn: warning.localizedResetsIn)
@@ -300,7 +287,7 @@ final class AIChatUsageWarningCardView: NSView {
 
         closeButton.isHidden = !warning.isDismissible
         closeButtonWidthConstraint?.constant = warning.isDismissible ? Constants.closeButtonSize : 0
-        // Without this the CTA would sit a spacing's width off the trailing edge on a sticky message.
+        // Otherwise the CTA sits a spacing off the trailing edge on a message with no close button.
         actionCloseSpacingConstraint?.constant = warning.isDismissible ? Constants.actionCloseSpacing : 0
     }
 
@@ -322,19 +309,17 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Appearance
 
-    /// Deliberately borderless: the design separates the card from the page with the shadow alone,
-    /// and a stroke along the top edge would draw a line across the seam with the panel.
+    /// Borderless by design: a stroke along the top edge would draw a line across the seam.
     private func applyTheme() {
         NSAppearance.withAppearance(appearance) {
             tintView.backgroundColor = NSColor(designSystemColor: .surfacePrimary)
                 .withAlphaComponent(Constants.tintAlpha)
         }
-        // Re-assert last: this runs on every appearance change and would otherwise repaint a fill
-        // the current style had deliberately hidden.
+        // Re-assert last, or an appearance change repaints a fill the style had hidden.
         apply(backgroundStyle)
     }
 
-    /// Matched to the panel's, so the two silhouettes agree where the card emerges from under it.
+    /// Matched to the panel's, so the silhouettes agree where the card emerges.
     func applyPanelCornerRadius(_ radius: CGFloat) {
         backgroundView.layer?.cornerRadius = radius
         tintView.cornerRadius = radius
@@ -353,13 +338,10 @@ final class AIChatUsageWarningCardView: NSView {
 
 // MARK: - Action button
 
-/// The card's CTA: a pill carrying the primary action, optionally followed by a divider and the
-/// `>` that opens the native model picker.
+/// The card's CTA: a pill with the primary action, optionally a divider and the `>` model picker.
 ///
-/// Two hit regions rather than one, because the view model exposes them separately — the label
-/// applies the suggested model, the chevron lets the user pick a different one. The regions are
-/// invisible `NSButton`s constrained to the label and chevron areas, so neither the hit test nor
-/// the accessibility tree has to do pointer arithmetic.
+/// Two hit regions because the view model exposes them separately — the label applies the suggested
+/// model, the chevron opens the picker. Both are invisible `NSButton`s over the pill.
 final class AIChatUsageWarningActionButton: NSView {
 
     private enum Constants {
@@ -487,8 +469,7 @@ final class AIChatUsageWarningActionButton: NSView {
         updateTrackingAreas()
     }
 
-    /// - Parameter offersModelPicker: when false the divider and `>` collapse to nothing, leaving
-    ///   a plain pill whose whole surface performs the primary action.
+    /// - Parameter offersModelPicker: when false the divider and `>` collapse, leaving a plain pill.
     func configure(title: String, offersModelPicker: Bool) {
         titleLabel.stringValue = title
         self.offersModelPicker = offersModelPicker
@@ -503,16 +484,14 @@ final class AIChatUsageWarningActionButton: NSView {
         invalidateIntrinsicContentSize()
     }
 
-    /// Takes no width at all while collapsed, so a message with no CTA doesn't leave a gap where
-    /// the pill would have been. Expressed here rather than as a zero-width constraint, which the
-    /// required compression resistance would fight.
+    /// Collapses to no width so a message with no CTA leaves no gap. Done here rather than with a
+    /// constraint, which the required compression resistance would fight.
     func collapse() {
         isCollapsed = true
         invalidateIntrinsicContentSize()
     }
 
-    /// Leading padding, the label, then the trailing region — which is the same padding again plus
-    /// the divider and chevron when the picker is offered.
+    /// Padding, label, then the same padding plus the divider and chevron when a picker is offered.
     override var intrinsicContentSize: NSSize {
         guard !isCollapsed else { return NSSize(width: 0, height: Constants.height) }
 

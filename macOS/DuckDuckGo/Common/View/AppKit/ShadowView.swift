@@ -141,9 +141,8 @@ final class ShadowView: NSView {
         return maskPath
     }
 
-    /// Decoration only. These are mounted as overlays in the window's `contentView`, above the
-    /// content they shadow, and the ring is carved out with a layer mask — which doesn't affect
-    /// hit testing, so without this the view swallows clicks meant for whatever it sits over.
+    /// Decoration mounted above the content it shadows. The ring is carved out by a layer mask,
+    /// which doesn't affect hit testing, so without this it swallows clicks meant for that content.
     override func hitTest(_ point: NSPoint) -> NSView? {
         nil
     }

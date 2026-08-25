@@ -151,8 +151,7 @@ final class AIChatOmnibarController {
                                                             userTier: userTier,
                                                             origin: surface.usageLimitFunnelOrigin)
         case .startUsingWeeklyLimit:
-            // Unreachable from the card, which offers no button for this until web sets the
-            // native-storage value it needs. Kept so a future caller isn't silently dropped.
+            // The card offers no button for this until web sets the value it needs.
             Logger.aiChat.debug("Duck.ai usage warning: start-using-weekly-limit tapped, no native action yet")
         }
     }
@@ -349,8 +348,7 @@ final class AIChatOmnibarController {
         usageWarningViewModel?.onAction = { [weak self] action in
             self?.performUsageWarningAction(action)
         }
-        // `onOpenModelPicker` is set by the container view controller, which owns the anchor the
-        // menu pops from.
+        // `onOpenModelPicker` is set by the container VC, which owns the anchor the menu pops from.
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;

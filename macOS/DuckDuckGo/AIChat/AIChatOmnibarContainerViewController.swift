@@ -50,9 +50,8 @@ private final class HitTestableContainerView: NSView {
 
 /// Strokes the bottom edge and its two corner arcs, and nothing else.
 ///
-/// A plain border traces the whole outline, which on a host-drawn surface shows an edge along the
-/// top and sides where the design wants none. The bottom edge on its own is what tells the user the
-/// panel sits over the usage-limit card, so it gets drawn as a path rather than a border.
+/// A border would trace the whole outline, showing an edge along the top and sides where the design
+/// wants none. Only the bottom edge tells the user the panel sits over the usage-limit card.
 private final class BottomEdgeStrokeView: NSView {
 
     var cornerRadius: CGFloat = 0 {
@@ -73,7 +72,7 @@ private final class BottomEdgeStrokeView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        // The 1pt stroke straddles the path, so half of it falls outside these bounds.
+        // The stroke straddles the path, so half of it falls outside these bounds.
         layer?.masksToBounds = false
         layer?.addSublayer(shape)
     }
@@ -83,7 +82,7 @@ private final class BottomEdgeStrokeView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Decoration laid over the panel's controls, so it must never answer a hit test.
+    /// Laid over the panel's controls, so it must never answer a hit test.
     override func hitTest(_ point: NSPoint) -> NSView? {
         nil
     }
@@ -94,7 +93,7 @@ private final class BottomEdgeStrokeView: NSView {
         shape.frame = bounds
         let radius = min(cornerRadius, min(bounds.width, bounds.height) / 2)
         let path = CGMutablePath()
-        // AppKit layers are unflipped, so y == 0 is the bottom edge.
+        // Layers are unflipped, so y == 0 is the bottom edge.
         path.move(to: CGPoint(x: 0, y: radius))
         path.addArc(tangent1End: CGPoint(x: 0, y: 0),
                     tangent2End: CGPoint(x: radius, y: 0),
@@ -158,15 +157,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let legacyContentLeadingInset: CGFloat = 0
         /// Also the difference between the two borders' radii — see `innerBorderCornerRadius(for:)`.
         static let innerBorderInset: CGFloat = 1
-        /// Slack on top of the panel's corner radius, so the card's top edge is comfortably hidden
-        /// rather than landing exactly where the arc ends.
+        /// Slack past the corner radius, so the card's top edge doesn't land where the arc ends.
         static let usageWarningOverlapMargin: CGFloat = 6
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
     private let shadowView = ShadowView()
-    /// The card's own shadow. The panel's is trimmed to the panel, so its bottom edge casts onto
-    /// the card — that cast edge is what reads as "the card is underneath".
+    /// The card's own shadow. The panel's is trimmed so its bottom edge casts onto the card, which
+    /// is what reads as the card being underneath.
     private let usageWarningShadowView = ShadowView()
     private let innerBorderView = ColorView(frame: .zero)
     private let containerView = HitTestableContainerView()
@@ -194,13 +192,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Suggestions view - always in hierarchy, height is 0 when no suggestions
     private let suggestionsView = AIChatSuggestionsView()
 
-    /// Marks the panel's bottom edge where the card emerges from under it. Only needed where the
-    /// host paints the surface, since elsewhere the panel's own border already draws that edge.
+    /// Marks the panel's bottom edge. Only needed where the host paints the surface, since
+    /// elsewhere the panel's own border already draws it.
     private let panelBottomEdgeStrokeView = BottomEdgeStrokeView()
 
-    /// The Duck.ai usage-limit card. Sits *behind* the panel chrome and runs lower than it, so the
-    /// panel is drawn over its top edge and only a band shows — the card reads as sliding out from
-    /// under the omnibar. `isUsageWarningVisible` is what the height maths keys off.
+    /// Sits behind the panel chrome and runs lower, so only a band shows and the card reads as
+    /// sliding out from under the omnibar.
     private let usageWarningCardView = AIChatUsageWarningCardView()
 
     /// Holds ongoing resize tasks keyed by attachment ID, so we can await them before submission.
@@ -209,32 +206,26 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Constraint for suggestions view height
     private var suggestionsHeightConstraint: NSLayoutConstraint?
 
-    /// The panel chrome's bottom edge: the view's own bottom with no card, raised by the card's
-    /// exposed band when there is one. The card itself always reaches the view's bottom.
+    /// The chrome's bottom edge, raised by the card's band when there is one. The card itself
+    /// always reaches the view's bottom.
     private var backgroundViewBottomConstraint: NSLayoutConstraint?
     /// Re-set on theme changes, since the overlap is derived from the panel's corner radius.
     private var usageWarningTopConstraint: NSLayoutConstraint?
 
-    /// Mirrors the card's height constraint so the reservation and the layout can't disagree.
+    /// Mirrors the card's constraint so the reservation and the layout can't disagree.
     private var isUsageWarningVisible = false
 
-    /// What the card adds to the panel's height when shown. Only the exposed band counts — the
-    /// rest of the card is behind the panel and costs nothing.
+    /// Only the exposed band counts; the rest is behind the panel and costs nothing.
     private var usageWarningReservation: CGFloat {
         isUsageWarningVisible ? AIChatUsageWarningCardView.Constants.contentHeight : 0
     }
 
-    /// The card's exposed band. Hosts that draw their own chrome need it so they can stop that
-    /// chrome above the card rather than painting straight through it.
+    /// The card's exposed band, for hosts that need to stop their own chrome above it.
     var usageWarningBandHeight: CGFloat { usageWarningReservation }
 
-    /// How far the card runs up behind the panel. Has to clear the panel's bottom corner radius:
-    /// the arc leaves the panel transparent at the very bottom, so an overlap shorter than the
-    /// radius lets the card's own top edge show through the notch.
-    ///
-    /// Zero where the host draws the chrome: the overlap exists only to be hidden behind an opaque
-    /// panel, and the card sits above a translucent one, so it would paint over the chrome's bottom
-    /// strip. Those surfaces get a flush footer band instead of the tuck.
+    /// Clears the panel's corner radius, since the arc leaves the panel transparent at the bottom
+    /// and a shorter overlap lets the card's top edge show through. Zero over translucent chrome,
+    /// where the card would paint across it instead of hiding behind it.
     private var usageWarningOverlap: CGFloat {
         guard !hostDrawsChrome else { return 0 }
 
@@ -414,8 +405,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Calculates the total height that should be passthrough for the text container view.
     /// This includes the suggestions area and the tool buttons area (when enabled).
     var totalPassthroughHeight: CGFloat {
-        // The card is below everything else, so its region has to pass through too or the text
-        // container overlay swallows every click meant for it.
+        // Without the card's region the text container overlay swallows clicks meant for it.
         var height = suggestionsHeight + usageWarningReservation
         if suggestionsHeight > 0 {
             height += suggestionsBottomPadding
@@ -788,9 +778,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.surface.drawsOwnChrome
     }
 
-    /// The panel casts its own shadow whenever something sits under it, even where the host paints
-    /// the surface: that cast edge is the whole reason the card reads as being below. The fill and
-    /// the stroke stay the host's, so there is still one surface and one outline in the window.
+    /// The panel casts a shadow whenever something sits under it, even over host-drawn chrome:
+    /// that edge is the whole reason the card reads as below. The fill stays the host's.
     private var castsShadowOverCard: Bool {
         !hostDrawsChrome || isUsageWarningVisible
     }
@@ -832,8 +821,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         shadowView.shadowOpacity = 1
         shadowView.shadowOffset = CGSize(width: 0, height: 0)
         shadowView.shadowRadius = themeManager.theme.addressBarStyleProvider.suggestionShadowRadius
-        // `ShadowView` rounds a corner only when both of its sides are listed, so dropping the sides
-        // here would square off the bottom corners the panel is drawn with.
+        // `ShadowView` rounds a corner only when both its sides are listed.
         shadowView.shadowSides = [.left, .right, .bottom]
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -1132,21 +1120,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func setupUsageWarningCard() {
         usageWarningCardView.translatesAutoresizingMaskIntoConstraints = false
         usageWarningCardView.isHidden = true
-        // Behind the chrome, so the panel paints over the card's top edge and the two read as one
-        // surface. Ordering is the whole effect — as a sibling above, it would look like a slab
-        // dropped under the panel instead.
+        // Behind the chrome, so the panel paints over the card's top edge. Ordering is the effect:
+        // above, it would look like a slab dropped under the panel.
         view.addSubview(usageWarningCardView, positioned: .below, relativeTo: backgroundView)
 
         usageWarningShadowView.shadowOpacity = 1
         usageWarningShadowView.shadowOffset = CGSize(width: 0, height: 0)
         usageWarningShadowView.shadowSides = [.left, .right, .bottom]
 
-        // Raised by the exposed band when the card is up, flush with the view otherwise.
+        // Raised by the band when the card is up, flush otherwise.
         let bottomConstraint = backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         backgroundViewBottomConstraint = bottomConstraint
         bottomConstraint.isActive = true
 
-        // Height falls out of this: the overlap hidden behind the panel plus the visible band.
+        // Height falls out of this: hidden overlap plus visible band.
         let topConstraint = usageWarningCardView.topAnchor.constraint(equalTo: backgroundView.bottomAnchor,
                                                                      constant: -usageWarningOverlap)
         usageWarningTopConstraint = topConstraint
@@ -1158,7 +1145,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             topConstraint
         ])
 
-        // Over the chrome, so the edge reads on top of the controls row rather than under it.
+        // Over the chrome, so the edge reads on top of the controls row.
         panelBottomEdgeStrokeView.translatesAutoresizingMaskIntoConstraints = false
         panelBottomEdgeStrokeView.isHidden = true
         view.addSubview(panelBottomEdgeStrokeView, positioned: .above, relativeTo: backgroundView)
@@ -1179,8 +1166,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.omnibarController.usageWarningViewModel?.openModelPicker()
         }
 
-        // The controller has no view of its own, so the picker is anchored from here — this is the
-        // programmatic entry point `setUpUsageWarnings()` was waiting on.
+        // The controller has no view, so the picker is anchored from here.
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
             guard let self else { return }
             presentModelPicker(anchoredTo: usageWarningCardView.modelPickerAnchor)
@@ -1200,8 +1186,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             }
     }
 
-    /// Deliberately not gated on `shouldSuppressSuggestions`: image-generation mode and pending
-    /// attachments still spend the allowance, so the message stays up where suggestions don't.
+    /// Not gated on `shouldSuppressSuggestions`: image-gen mode and attachments still spend the
+    /// allowance, so the message stays up where suggestions don't.
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
         if let warning {
             usageWarningCardView.update(with: warning)
@@ -1217,10 +1203,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         layoutShadowView()
     }
 
-    /// The layout half, without telling the host to resize — teardown has its own height reset and
-    /// must not drive a resize on a panel that is going away.
-    ///
-    /// - Returns: whether anything changed.
+    /// The layout half, without asking the host to resize: teardown resets heights itself and must
+    /// not drive a resize on a panel that is going away. Returns whether anything changed.
     @discardableResult
     private func applyUsageWarningVisibility(_ visible: Bool) -> Bool {
         guard isUsageWarningVisible != visible else { return false }
@@ -1229,12 +1213,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.isHidden = !visible
         usageWarningShadowView.isHidden = !visible || hostDrawsChrome
         panelBottomEdgeStrokeView.isHidden = !visible || !hostDrawsChrome
-        // Lifting the chrome is what exposes the band; the card's own frame follows from it.
+        // Lifting the chrome exposes the band; the card's frame follows from it.
         backgroundViewBottomConstraint?.constant = visible
             ? -AIChatUsageWarningCardView.Constants.contentHeight
             : 0
-        // `castsShadowOverCard` just flipped, so the chrome needs repainting and — on a host-drawn
-        // surface, where it was never mounted — the shadow needs adding.
+        // `castsShadowOverCard` just flipped, so repaint the chrome and mount the shadow.
         applyTheme(theme: themeManager.theme)
         addShadowToWindow()
         return true
@@ -1259,7 +1242,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard isSuggestionsCollapsedByUnfocus != collapsed else { return }
         isSuggestionsCollapsedByUnfocus = collapsed
         suggestionsView.isHidden = shouldSuppressSuggestions
-        // The panel itself shrinks to a single line on unfocus, so the card goes with it.
+        // The panel shrinks to a single line on unfocus, so the card goes with it.
         setUsageWarningVisible(!collapsed && omnibarController.usageWarningViewModel?.warning != nil)
         suggestionsHeight = -1
         updateSuggestionsHeight(shouldSuppressSuggestions ? 0 : lastKnownSuggestionsHeight)
@@ -1332,8 +1315,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         lastKnownSuggestionsHeight = 0
         suggestionsHeight = 0
         suggestionsHeightConstraint?.constant = 0
-        // `omnibarController.cleanup()` already cleared the view model, but the card's own
-        // reservation has to come off too or the next open sizes the panel as if it were still up.
+        // The reservation has to come off too, or the next open sizes the panel as if it were up.
         applyUsageWarningVisibility(false)
         usageWarningShadowView.removeFromSuperview()
     }
@@ -1344,10 +1326,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if shadowView.superview == nil {
             view.window?.contentView?.addSubview(shadowView)
         }
-        // Mounted separately: gating this on the panel's shadow meant that once that one was up —
-        // which happens on focus, long before any card — this one never got added at all.
+        // Mounted separately: the panel's goes up on focus, long before any card exists.
         if usageWarningShadowView.superview == nil {
-            // Below the panel's shadow, so the panel's cast edge stays on top of the card.
+            // Below the panel's, so its cast edge stays on top of the card.
             view.window?.contentView?.addSubview(usageWarningShadowView, positioned: .below, relativeTo: shadowView)
         }
         usageWarningShadowView.isHidden = !isUsageWarningVisible || hostDrawsChrome
@@ -1379,8 +1360,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let band = usageWarningReservation
 
         var frame = viewFrame
-        /// Trimmed to the panel, not the whole silhouette: the panel has to keep a bottom edge of
-        /// its own to cast onto the card, or the card stops looking like it is underneath.
+        /// Trimmed to the panel, not the whole silhouette: it needs a bottom edge to cast onto the card.
         frame.origin.y += band
         /// `ShadowView` clamps its radius to half its shorter side, so trimming further would round
         /// the corners tighter than the background. Costs nothing: it draws no top edge anyway.
@@ -1389,8 +1369,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         shadowView.frame = frame
 
         guard isUsageWarningVisible else { return }
-        /// The card's full extent, overlap included — the hidden part is behind the panel, which
-        /// covers it, so shadowing it costs nothing and keeps the two corner radii aligned.
+        /// Overlap included: the panel covers it, so shadowing it keeps the corner radii aligned.
         var cardFrame = viewFrame
         cardFrame.size.height = AIChatUsageWarningCardView.Constants.contentHeight + usageWarningOverlap
         usageWarningShadowView.frame = cardFrame
@@ -2100,8 +2079,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         presentModelPicker(anchoredTo: modelPickerButton)
     }
 
-    /// Opens the model picker against `anchor`, so a menu raised from the usage card's `>` lands
-    /// under the control the user clicked rather than under the toolbar button.
+    /// Anchored, so a menu raised from the card's `>` lands under the control the user clicked.
     private func presentModelPicker(anchoredTo anchor: NSView) {
         // Resolved once and passed on: `modelPickerItems` records a free-trial badge impression, so
         // asking for it twice per open would burn through the badge's view cap at double speed.
@@ -2114,8 +2092,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Align menu's trailing edge with the anchor's trailing edge, with a small gap below
         let point = NSPoint(x: anchor.bounds.width - menu.size.width, y: -5)
 
-        // Only a `FocusRingControlling` anchor has a ring that modal tracking would otherwise
-        // leave lit; anything else can pop the menu directly.
+        // Only a `FocusRingControlling` anchor has a ring modal tracking would leave lit.
         if let focusRingAnchor = anchor as? (NSView & FocusRingControlling) {
             popUp(menu, at: point, in: focusRingAnchor)
         } else {
@@ -2428,9 +2405,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
 
-        // Only where the panel also paints its own fill. The two borders sit 1pt apart with slightly
-        // different radii and read as one crisp edge over an opaque surface — over a translucent one
-        // they separate into two visible outlines, so a host-drawn surface gets the outer stroke only.
+        // The two borders read as one crisp edge over an opaque fill, but split into a visible
+        // double outline over a translucent one.
         innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(named: "AddressBarInnerBorderColor")
         innerBorderView.backgroundColor = NSColor.clear
         innerBorderView.cornerRadius = Self.innerBorderCornerRadius(
@@ -2444,7 +2420,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
-        // Radius and overlap both track the panel's corner, so a theme change has to re-push them.
+        // Radius and overlap track the panel's corner, so a theme change re-pushes them.
         let panelRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
         usageWarningCardView.apply(hostDrawsChrome ? .hostPaintsSurface : .ownSurface)
         usageWarningCardView.applyThemeStyle()
@@ -2452,9 +2428,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningTopConstraint?.constant = -usageWarningOverlap
         panelBottomEdgeStrokeView.cornerRadius = panelRadius
         panelBottomEdgeStrokeView.strokeColor = NSColor(named: "AddressBarBorderColor")
-        // Re-asserted here because `applyTheme` re-runs on appearance changes: the card is the
-        // bottom-most layer, and where the host paints the surface it owns the outer silhouette, so
-        // a shadow around the card would only fall inside the bar.
+        // Re-asserted because `applyTheme` re-runs on appearance changes. Over host-drawn chrome
+        // the host owns the outer silhouette, so a shadow round the card falls inside the bar.
         usageWarningShadowView.isHidden = !isUsageWarningVisible || hostDrawsChrome
         panelBottomEdgeStrokeView.isHidden = !isUsageWarningVisible || !hostDrawsChrome
         usageWarningShadowView.shadowRadius = barStyleProvider.suggestionShadowRadius

@@ -83,7 +83,7 @@ extension DuckAIPromptSurface {
         }
     }
 
-    /// Funnel origin for the "Try for free" CTA on the usage-limit card.
+    /// Funnel origin for the usage-limit card's upsell.
     var usageLimitFunnelOrigin: SubscriptionFunnelOrigin {
         switch self {
         case .addressBar: .addressBarUsageLimit

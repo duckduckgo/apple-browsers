@@ -101,6 +101,14 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
                                                                     locale: locale)
     }
 
+    /// Whether the original (pre-VPN) info has loaded — gates the non-blurred real-IP card.
+    var isOriginalInfoAvailable: Bool {
+        if case .loaded = originalConnectionInfo { return true }
+        return false
+    }
+    /// Whether the VPN egress IP or location has arrived — gates the new-IP card.
+    var isVPNInfoAvailable: Bool { vpnServerInfo.serverAddress != nil || vpnServerInfo.serverLocation != nil }
+
     /// The "(Nearest)" indicator the existing VPN status/location UI shows when the "nearest available"
     var vpnLocationNearestIndicator: String? {
         guard vpnServerInfo.serverLocation != nil, vpnLocationProvider.isNearestSelected else { return nil }

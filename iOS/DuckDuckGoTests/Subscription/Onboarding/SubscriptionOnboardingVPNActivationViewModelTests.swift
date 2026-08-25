@@ -53,6 +53,8 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.originalLocationText, "XX,XX")
         XCTAssertEqual(viewModel.vpnIPText, "XXX.XXX.XX.XXX")
         XCTAssertEqual(viewModel.vpnLocationText, "XX,XX")
+        XCTAssertFalse(viewModel.isOriginalInfoAvailable)
+        XCTAssertFalse(viewModel.isVPNInfoAvailable)
     }
 
     // MARK: - Original IP fetch
@@ -67,6 +69,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.originalIPText, "31.120.130.50")
         XCTAssertEqual(viewModel.originalLocationText, "🇪🇸 Madrid, Spain")
+        XCTAssertTrue(viewModel.isOriginalInfoAvailable)
     }
 
     func testWhenOnAppearCalledTwiceThenConnectionInfoIsFetchedOnce() async {
@@ -91,6 +94,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.originalIPText, "XXX.XXX.XX.XXX")
         XCTAssertEqual(viewModel.originalLocationText, "XX,XX")
+        XCTAssertFalse(viewModel.isOriginalInfoAvailable)
     }
 
     // MARK: - Off / on state
@@ -146,6 +150,8 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.vpnIPText, "45.132.71.9")
         XCTAssertEqual(viewModel.vpnLocationText, "🇪🇸 Valencia, Spain")
         XCTAssertEqual(viewModel.originalIPText, "XXX.XXX.XX.XXX")
+        XCTAssertTrue(viewModel.isVPNInfoAvailable)
+        XCTAssertFalse(viewModel.isOriginalInfoAvailable)
     }
 
     func testWhenAlreadyOnAndOnAppearCalledTwiceThenSectionCompletesOnce() {
@@ -193,6 +199,20 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.vpnIPText, "45.132.71.9")
         XCTAssertEqual(viewModel.vpnLocationText, "XX,XX")
+        XCTAssertTrue(viewModel.isVPNInfoAvailable)
+    }
+
+    func testWhenServerInfoHasLocationButNoAddressThenIsVPNInfoAvailableIsTrue() async {
+        let observer = MockConnectionServerInfoObserver()
+        let viewModel = makeViewModel(controller: MockVPNController(isConnected: true), serverInfoObserver: observer)
+        let locationOnly = serverInfo(locationOnlyFor: valencia)
+        viewModel.onAppear()
+
+        await waitFor(viewModel.$vpnServerInfo, toEqual: locationOnly) {
+            observer.subject.send(locationOnly)
+        }
+
+        XCTAssertTrue(viewModel.isVPNInfoAvailable)
     }
 
     func testWhenTurnedOnThenPreVPNIPIsRetainedInOriginalIPRow() async {
@@ -648,6 +668,14 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         // swiftlint:disable:next force_try
         let attributes = try! JSONDecoder().decode(NetworkProtectionServerInfo.ServerAttributes.self, from: Data(json.utf8))
         return NetworkProtectionStatusServerInfo(serverLocation: attributes, serverAddress: info.ip)
+    }
+
+    /// Builds a location-only server-info value (no address) 
+    private func serverInfo(locationOnlyFor info: SubscriptionOnboardingConnectionInfo) -> NetworkProtectionStatusServerInfo {
+        let json = "{\"city\": \"\(info.city)\", \"country\": \"\(info.country)\", \"state\": \"\"}"
+        // swiftlint:disable:next force_try
+        let attributes = try! JSONDecoder().decode(NetworkProtectionServerInfo.ServerAttributes.self, from: Data(json.utf8))
+        return NetworkProtectionStatusServerInfo(serverLocation: attributes, serverAddress: nil)
     }
 
     /// Runs `trigger`, then waits until `publisher` emits `value`.

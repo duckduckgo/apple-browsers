@@ -74,7 +74,7 @@ struct SubscriptionOnboardingSetupCard: View {
             CardItem(
                 icon: CardItemIcon(position: .leading, visual: visual, size: .size40, spacing: Metrics.iconSpacing),
                 title: CardItemText(title, font: .headline),
-                text: CardItemText(UserText.subscriptionOnboardingSetupCardBody, font: .bodyRegular),
+                text: percentage < 100 ? CardItemText(UserText.subscriptionOnboardingSetupCardBody, font: .bodyRegular) : nil,
                 titleTextSpacing: Metrics.titleTextSpacing),
             style: .borderless) {
                 // The card itself stays up for the rest of this session at 100%.

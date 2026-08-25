@@ -138,7 +138,8 @@ private extension SubscriptionOnboardingVPNActivationView {
             VStack(spacing: Metrics.infoCardStackSpacing) {
                 SubscriptionOnboardingVPNInfoCard(state: .visibleIP,
                                                   ipAddress: viewModel.originalIPText,
-                                                  location: viewModel.originalLocationText)
+                                                  location: viewModel.originalLocationText,
+                                                  isAvailable: viewModel.isOriginalInfoAvailable)
                 footnote(UserText.subscriptionOnboardingVPNActivationOffFootnote)
             }
         } else {
@@ -150,7 +151,8 @@ private extension SubscriptionOnboardingVPNActivationView {
                     SubscriptionOnboardingVPNInfoCard(state: .newIP,
                                                       ipAddress: viewModel.vpnIPText,
                                                       location: viewModel.vpnLocationText,
-                                                      nearestIndicator: viewModel.vpnLocationNearestIndicator)
+                                                      nearestIndicator: viewModel.vpnLocationNearestIndicator,
+                                                      isAvailable: viewModel.isVPNInfoAvailable)
                 }
                 footnote(UserText.subscriptionOnboardingVPNActivationOnFootnote)
             }

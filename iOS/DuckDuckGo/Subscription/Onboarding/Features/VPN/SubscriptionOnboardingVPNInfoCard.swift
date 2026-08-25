@@ -37,30 +37,36 @@ struct SubscriptionOnboardingVPNInfoCard: View {
     private let ipAddress: String
     private let location: String
     private let nearestIndicator: String?
+    private let isAvailable: Bool
 
     @State private var blurRadius: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private static let hiddenBlurRadius: CGFloat = 8
 
-    init(state: IPState, ipAddress: String, location: String, nearestIndicator: String? = nil) {
+    init(state: IPState, ipAddress: String, location: String, nearestIndicator: String? = nil, isAvailable: Bool = true) {
         self.state = state
         self.ipAddress = ipAddress
         self.location = location
         self.nearestIndicator = nearestIndicator
+        self.isAvailable = isAvailable
     }
 
+    // Hide the card until their data is available.
+    @ViewBuilder
     var body: some View {
-        card
-            .accessibilityElement(children: .combine)
-            .onAppear {
-                guard state.hidesValues, blurRadius == 0 else { return }
-                if reduceMotion {
-                    blurRadius = Self.hiddenBlurRadius
-                } else {
-                    withAnimation(.easeInOut(duration: 0.4)) { blurRadius = Self.hiddenBlurRadius }
+        if state.hidesValues || isAvailable {
+            card
+                .accessibilityElement(children: .combine)
+                .onAppear {
+                    guard state.hidesValues, blurRadius == 0 else { return }
+                    if reduceMotion {
+                        blurRadius = Self.hiddenBlurRadius
+                    } else {
+                        withAnimation(.easeInOut(duration: 0.4)) { blurRadius = Self.hiddenBlurRadius }
+                    }
                 }
-            }
+        }
     }
 
     private var card: some View {

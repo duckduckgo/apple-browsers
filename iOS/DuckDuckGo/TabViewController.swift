@@ -706,7 +706,7 @@ class TabViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
     let aiChatSettings: AIChatSettingsProvider
-    let aiChatFullModeFeature: AIChatFullModeFeatureProviding
+    let devicePlatform: DevicePlatformProviding.Type
     let sharedSecureVault: (any AutofillSecureVault)?
     let privacyStats: PrivacyStatsProviding
     private let pixelFiring: (any PixelKitFiring)?
@@ -779,8 +779,8 @@ class TabViewController: UIViewController {
          adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
          aiChatSettings: AIChatSettingsProvider,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          privacyStats: PrivacyStatsProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -831,8 +831,8 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
-        self.aiChatFullModeFeature = aiChatFullModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.devicePlatform = devicePlatform
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,

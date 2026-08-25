@@ -19,7 +19,6 @@
 
 import XCTest
 @testable import DuckDuckGo
-@testable import Core
 
 final class AIChatFullModeFeatureTests: XCTestCase {
 
@@ -35,64 +34,19 @@ final class AIChatFullModeFeatureTests: XCTestCase {
 
     // MARK: - Tests
 
-    func testIsAvailableWhenFeatureOnAndIphone() {
-        // Given
-        let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [.fullDuckAIMode])
+    func testIsAvailableOnIphone() {
         MockDevicePlatform.shared.mockIsIphone = true
 
-        // When
-        let feature = AIChatFullModeFeature(
-            featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self
-        )
+        let feature = AIChatFullModeFeature(devicePlatform: MockDevicePlatform.self)
 
-        // Then
         XCTAssertTrue(feature.isAvailable)
     }
 
-    func testIsNotAvailableWhenFeatureOnButNotIphone() {
-        // Given
-        let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [.fullDuckAIMode])
+    func testIsNotAvailableOnIPad() {
         MockDevicePlatform.shared.mockIsIphone = false
 
-        // When
-        let feature = AIChatFullModeFeature(
-            featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self
-        )
+        let feature = AIChatFullModeFeature(devicePlatform: MockDevicePlatform.self)
 
-        // Then
         XCTAssertFalse(feature.isAvailable)
     }
-
-    func testIsNotAvailableWhenFeatureOffButIsIphone() {
-        // Given
-        let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        MockDevicePlatform.shared.mockIsIphone = true
-
-        // When
-        let feature = AIChatFullModeFeature(
-            featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self
-        )
-
-        // Then
-        XCTAssertFalse(feature.isAvailable)
-    }
-
-    func testIsNotAvailableWhenFeatureOffAndNotIphone() {
-        // Given
-        let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        MockDevicePlatform.shared.mockIsIphone = false
-
-        // When
-        let feature = AIChatFullModeFeature(
-            featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self
-        )
-
-        // Then
-        XCTAssertFalse(feature.isAvailable)
-    }
-
 }

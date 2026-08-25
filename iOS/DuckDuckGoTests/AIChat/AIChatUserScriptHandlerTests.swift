@@ -82,7 +82,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
                                              aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
                                              installDateProvider: @escaping () -> Date? = { nil },
                                              installTypeProvider: @escaping () -> AIChatInstallType = { .new }) -> AIChatUserScriptHandler {
-        let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
+        let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger)
         return AIChatUserScriptHandler(
             experimentalAIChatManager: experimentalAIChatManager,
             syncHandler: mockAIChatSyncHandler,

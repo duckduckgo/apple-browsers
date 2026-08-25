@@ -17,20 +17,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import PrivacyConfig
 import Common
-import FoundationExtensions
-import UIKit
-import FeatureFlags_iOS
 
 /// Provides access to full Duck AI chat mode availability.
 protocol AIChatFullModeFeatureProviding {
     /// Whether Duck AI full chat mode is available on this device.
     ///
-    /// Returns `true` only when both conditions are met:
-    /// - The `fullDuckAIMode` feature flag is enabled
-    /// - The device is running on an iPhone (not iPad or other devices)
+    /// Returns `true` when the device is running on an iPhone (not iPad or other devices).
     var isAvailable: Bool { get }
 }
 
@@ -45,23 +38,18 @@ extension DevicePlatform: DevicePlatformProviding {}
 /// Determines availability of Duck AI's full chat mode feature.
 struct AIChatFullModeFeature: AIChatFullModeFeatureProviding {
 
-    private let featureFlagger: any FeatureFlagger
     private let devicePlatform: DevicePlatformProviding.Type
 
     /// Initializes with dependencies.
     ///
     /// - Parameters:
-    ///   - featureFlagger: The feature flag provider. Defaults to the shared app dependency provider.
     ///   - devicePlatform: The device platform provider. Defaults to the actual `DevicePlatform`.
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger, devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
-        self.featureFlagger = featureFlagger
+    init(devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.devicePlatform = devicePlatform
     }
 
     /// Whether Duck AI full chat mode is available.
-    ///
-    /// Returns `true` only when both the feature flag is enabled AND the device is an iPhone.
     var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.fullDuckAIMode) && devicePlatform.isIphone
+        devicePlatform.isIphone
     }
 }

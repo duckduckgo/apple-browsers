@@ -159,7 +159,7 @@ final class AIChatSettings: AIChatSettingsProvider {
 
     var isAIChatSearchInputUserSettingsEnabled: Bool {
         keyValueStore.bool(.showAIChatExperimentalSearchInputKey, defaultValue: .showAIChatExperimentalSearchInputDefaultValue)
-                            && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalAddressBar)
+            && isAIChatEnabled
     }
 
     var isAIChatSearchInputUserSettingsDisabledByUser: Bool {

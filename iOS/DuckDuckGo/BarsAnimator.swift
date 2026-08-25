@@ -116,7 +116,7 @@ class BarsAnimator {
 
         // Page top is at `-adjustedContentInset.top` (not 0) when the scroll view has a top inset.
         let pageTopY = -scrollView.adjustedContentInset.top
-        if draggingStartPosY <= pageTopY, scrollView.contentOffset.y <= pageTopY {
+        if draggingStartPosY <= pageTopY, scrollView.contentOffset.y <= pageTopY, barsState != .hidden {
             if barsState != .revealed || transitionProgress != 0 {
                 barsState = .revealed
                 transitionProgress = 0

@@ -401,8 +401,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let fireMode = isFireModeProvider?() ?? false
 
         let supportsSuggestions = supportsContextualMode && featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
-        // The card lives on the native input's footer and reads the snapshot the bridge writes, so
-        // claiming support without either would have the FE hide its banner with nothing to replace it.
         let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
             && supportsNativeChatInput
             && isNativeStorageBridgeAvailable

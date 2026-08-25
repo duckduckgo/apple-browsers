@@ -432,7 +432,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             switchBarHandler: switchBarHandler,
             aiChatSyncCleaner: dependencies.aiChatSyncCleaner,
             duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
-            duckAiFireModeStorageHandler: dependencies.duckAiFireModeStorageHandler,
             escapeHatchModel: escapeHatchModel,
             initialLogoHidden: initialLogoHidden
         )

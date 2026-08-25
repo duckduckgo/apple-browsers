@@ -252,6 +252,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(fireExecutor.burnedChatIds, ["p1"])
         XCTAssertEqual(fireExecutor.burnedIsFireMode, [true],
                        "fire-mode chat history must delete from isolated fire-mode storage")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0,
+                       "fire-mode deletes must not enter the sync pipeline")
     }
 
     func testBurnAllChats_inFireMode_burnsIsolatedFireModeStorage() {
@@ -264,6 +266,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
 
         XCTAssertEqual(fireExecutor.burnedAllChatsIsFireMode, [true],
                        "fire-mode chat history must clear isolated fire-mode storage")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0,
+                       "fire-mode deletes must not enter the sync pipeline")
     }
 
     func testBurnSelectedChats_inFireMode_burnsIsolatedFireModeStorage() {
@@ -279,6 +283,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(fireExecutor.burnedChatsBatches, [["p1"]])
         XCTAssertEqual(fireExecutor.burnedIsFireMode, [true],
                        "fire-mode chat history must delete selected chats from isolated fire-mode storage")
+        XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0,
+                       "fire-mode deletes must not enter the sync pipeline")
     }
 
     func testTotalChatCount_reflectsAllChats_notTheSearchFilteredView() {

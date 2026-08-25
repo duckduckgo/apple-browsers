@@ -30,20 +30,17 @@ extension AIChatHistoryManager {
                                    privacyConfigurationManager: PrivacyConfigurationManaging,
                                    chatSyncCleaner: AIChatSyncCleaning?,
                                    chatSettings: AIChatSettingsProvider,
-                                   nativeStorageHandler: DuckAiNativeStorageHandling?,
-                                   fireModeStorageHandler: DuckAiNativeStorageHandling? = nil) -> (AIChatHistoryManager, AIChatSuggestionsViewModel)
+                                   nativeStorageHandler: DuckAiNativeStorageHandling?) -> (AIChatHistoryManager, AIChatSuggestionsViewModel)
     {
-        // Fire tabs must not fall back to persistent storage (`?? disk` would leak chats).
-        let storageHandler = isFireTab ? fireModeStorageHandler : nativeStorageHandler
         let suggestionsReader: AIChatSuggestionsReading = {
-            if isFireTab, storageHandler == nil {
+            if isFireTab {
                 return NilSuggestionsReader()
             }
 
             let reader = SuggestionsReader(
                 featureFlagger: featureFlagger,
                 privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: storageHandler,
+                nativeStorageHandler: nativeStorageHandler,
                 featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
             )
             let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
@@ -52,7 +49,7 @@ extension AIChatHistoryManager {
 
         let chatDeleter = AIChatDeleter(
             historyCleanerProvider: { _, _ in
-                HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager, nativeStorageHandler: storageHandler)
+                HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager, nativeStorageHandler: nativeStorageHandler)
             },
             aiChatSyncCleaner: chatSyncCleaner ?? NilAIChatSyncCleaner()
         )

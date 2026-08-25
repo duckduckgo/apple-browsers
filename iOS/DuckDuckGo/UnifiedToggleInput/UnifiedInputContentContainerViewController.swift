@@ -91,7 +91,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let aiChatSettings: AIChatSettingsProvider
     private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
-    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let syncService: DDGSyncing?
     private let syncPromoManager: SyncPromoManaging?
     private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
@@ -160,7 +159,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          syncService: DDGSyncing? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
@@ -173,7 +171,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
-        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.syncService = syncService
         self.syncPromoManager = syncService.map { SyncPromoManager(syncService: $0,
                                                                   featureFlagger: featureFlagger,
@@ -751,8 +748,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             aiChatSyncCleaner: aiChatSyncCleaner,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager,
-            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler
         )
         surface.delegate = self
         surface.statePublisher

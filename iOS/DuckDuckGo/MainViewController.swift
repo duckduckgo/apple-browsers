@@ -751,8 +751,7 @@ class MainViewController: UIViewController {
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
         viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
@@ -946,8 +945,7 @@ class MainViewController: UIViewController {
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
                                                       mobileCustomization: mobileCustomization,
-                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                                      duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -1072,7 +1070,6 @@ class MainViewController: UIViewController {
                     privacyConfigurationManager: privacyConfigurationManager,
                     aiChatSyncCleaner: aiChatSyncCleaner,
                     duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                    duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                     tabsModelProvider: { [weak self] in self?.tabManager.currentTabsModel },
                     isFireTab: { [weak self] in self?.isCurrentTabFireTab() ?? false }),
                 tray: controller,
@@ -6727,7 +6724,6 @@ extension MainViewController: TabDelegate {
         // misleading empty list. Fire mode uses isolated storage so persistent chats
         // cannot leak into a fire session.
         let isFireMode = isCurrentTabFireTab()
-        // Fire tabs must not fall back to persistent storage (`?? disk` would leak chats).
         let storageHandler = isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
         let reader = ChatHistoryReader(observer: storageHandler as? DuckAiNativeChatsObserving)
         // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`

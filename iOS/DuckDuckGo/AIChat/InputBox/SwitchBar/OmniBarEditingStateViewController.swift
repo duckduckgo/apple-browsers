@@ -122,7 +122,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
-    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     // MARK: - Manager Components
 
@@ -168,7 +167,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   aiChatSyncCleaner: AIChatSyncCleaning? = nil,
                   voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-                  duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
                   escapeHatchModel: EscapeHatchModel? = nil,
                   initialLogoHidden: Bool = false) {
         self.switchBarHandler = switchBarHandler
@@ -184,7 +182,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         self.aiChatSettings = aiChatSettings
         self.voiceShortcutFeature = voiceShortcutFeature
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
-        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.escapeHatchModel = escapeHatchModel
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
@@ -434,8 +431,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         manager.setEscapeHatch(escapeHatchModel)
     }
     
-    /// Creates a history manager configured for the current tab.
-    /// Fire tabs read isolated fire-mode storage so persistent chats cannot leak into a fire session.
+    /// Creates ad configured for the current tab.
+    /// Fire tabs use a no-op reader that always returns empty results,
+    /// preventing chat history from being fetched or displayed.
     private func makeAIChatHistoryManager() -> AIChatHistoryManager {
         let (chatManager, _) = AIChatHistoryManager.makeHistoryManager(isFireTab: switchBarHandler.isFireTab,
                                                                        isIPadExperience: false,
@@ -443,8 +441,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                                                                        privacyConfigurationManager: privacyConfigurationManager,
                                                                        chatSyncCleaner: aiChatSyncCleaner,
                                                                        chatSettings: aiChatSettings,
-                                                                       nativeStorageHandler: duckAiNativeStorageHandler,
-                                                                       fireModeStorageHandler: duckAiFireModeStorageHandler)
+                                                                       nativeStorageHandler: duckAiNativeStorageHandler)
 
         return chatManager
     }

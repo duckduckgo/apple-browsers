@@ -225,8 +225,9 @@ final class AIChatHistoryViewModel: ObservableObject {
         Task { @MainActor in
             let result = await fireExecutor.burnChat(chatID: chatId, isFireMode: isFireMode)
             guard case .success = result else { return }
+            // Fire-mode chats are local-only and must not enter the sync pipeline.
+            guard !isFireMode else { return }
             // Flush the deletion to sync now so the FE doesn't re-pull the chat.
-            // Fire-mode deletes are local-only; scheduleSync is a no-op for those records.
             fireExecutor.scheduleSync()
         }
     }
@@ -251,17 +252,19 @@ final class AIChatHistoryViewModel: ObservableObject {
         instrumentation.fireAllConfirmed()
         let result = await fireExecutor.burnAllChats(isFireMode: isFireMode)
         guard case .success = result else { return }
+        guard !isFireMode else { return }
         // Flush the clear to sync now so the FE doesn't re-pull the chats.
         fireExecutor.scheduleSync()
     }
 
-    /// One batch burn, sync flushed once. `isFireMode` selects isolated vs persistent storage.
+    /// One batch burn. Persistent deletes flush sync once; Fire-mode deletes stay local.
     func burnSelectedChats(chatIds: [String]) async {
         guard let fireExecutor, !chatIds.isEmpty else { return }
         // Reached only after the user confirms the multi-select delete action.
         instrumentation.selectionDeleteConfirmed()
         let result = await fireExecutor.burnChats(chatIDs: chatIds, isFireMode: isFireMode)
         guard case .success = result else { return }
+        guard !isFireMode else { return }
         fireExecutor.scheduleSync()
     }
 

@@ -154,10 +154,19 @@ class TabViewController: UIViewController {
     var errorMessage: UILabel!
     
     var containerStackView: UIStackView!
+    /// Top constraint of `containerStackView`, kept so the contextual onboarding dialog can be offset
+    /// below the floating chrome. See `applyContextualOnboardingTopInset(_:)`.
+    var containerStackViewTopConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
-    var daxContextualOnboardingController: UIViewController?
+    var daxContextualOnboardingController: UIViewController? {
+        didSet {
+            // Under floating UI the chrome-obscured top region is reserved for the dialog while one
+            // is on screen, so the content layout has to be recomputed as it appears and is removed.
+            updateContextualOnboardingLayoutForFloatingUIIfNeeded()
+        }
+    }
     var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec?
     
     /// Stores the visual state of the web view
@@ -266,10 +275,13 @@ class TabViewController: UIViewController {
     private(set) var webView: WKWebView!
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
+    /// Last chrome visibility fraction applied to the content layout, so layout that depends on it can
+    /// be recomputed outside a visibility change (e.g. when the contextual onboarding dialog appears).
+    private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
-    private lazy var floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger,
-                                                           unifiedToggleInputFeature: unifiedToggleInputFeature)
+    lazy var floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger,
+                                                   unifiedToggleInputFeature: unifiedToggleInputFeature)
     lazy var aiChatTextSelectionFeature: AIChatTextSelectionFeatureProviding =
         AIChatTextSelectionFeature(featureFlagger: featureFlagger,
                                    aiChatSettings: aiChatSettings,
@@ -1002,10 +1014,17 @@ class TabViewController: UIViewController {
     }
 
     private func updateWebViewBottomAnchor() {
-        updateWebViewBottomAnchor(for: 1.0)
+        // Deliberately does not record the fraction: this overload assumes fully visible chrome rather
+        // than knowing it, so remembering 1.0 here would replay it over a genuinely hidden bar later.
+        applyWebViewLayout(for: 1.0)
     }
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
+        lastAppliedBarsVisibilityPercent = barsVisibilityPercent
+        applyWebViewLayout(for: barsVisibilityPercent)
+    }
+
+    private func applyWebViewLayout(for barsVisibilityPercent: CGFloat) {
         updateWebViewBottomConstraint(for: barsVisibilityPercent)
 
         if floatingUIManager.isFloatingUIEnabled {
@@ -1059,9 +1078,25 @@ class TabViewController: UIViewController {
         // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
         // full-bleed with no obscured region there.
         let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
+        var obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
             ? .zero
             : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+
+        // The contextual onboarding dialog is a UIKit sibling of the web view in `containerStackView`,
+        // which starts at the screen top here so the web view can underflow the glass chrome. The
+        // dialog cannot underflow anything, so while one is on screen the obscured top region is
+        // reserved by offsetting the stack instead, and dropped from the web view's own inset —
+        // otherwise the page would be pushed down twice. The height is taken at full chrome visibility
+        // so the dialog (and with it the web view's frame) holds still while the bars hide and show,
+        // rather than being resized on every frame of the transition.
+        let expandedChromeTopObscuredHeight = chromeDelegate?.floatingWebViewObscuredInsets(for: 1.0).top ?? 0
+        let contextualOnboardingTopInset = FloatingUILayoutPolicy.contextualOnboardingTopInset(
+            isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled,
+            isContextualOnboardingVisible: daxContextualOnboardingController != nil,
+            topObscuredHeight: expandedChromeTopObscuredHeight)
+        applyContextualOnboardingTopInset(contextualOnboardingTopInset)
+        obscuredInsets.top = max(0, obscuredInsets.top - contextualOnboardingTopInset)
+
         let refreshControlTopOffset = appSettings.currentAddressBarPosition == .top
             ? max(0, obscuredInsets.top - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
             : 0
@@ -1086,6 +1121,7 @@ class TabViewController: UIViewController {
     }
 
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
+        applyContextualOnboardingTopInset(0)
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
@@ -1102,6 +1138,23 @@ class TabViewController: UIViewController {
         }
     }
 
+    /// Recomputes the content layout after the contextual onboarding dialog has been added to or
+    /// removed from `containerStackView`. No-op unless floating UI is enabled, so the classic layout
+    /// keeps behaving exactly as before.
+    private func updateContextualOnboardingLayoutForFloatingUIIfNeeded() {
+        // A tab that isn't current has no chrome to measure; it is laid out again on re-selection.
+        guard floatingUIManager.isFloatingUIEnabled, webView != nil, chromeDelegate != nil else { return }
+        applyWebViewLayout(for: lastAppliedBarsVisibilityPercent)
+    }
+
+    /// Offsets the top of the content stack by `inset` so the contextual onboarding dialog — the stack's
+    /// first arranged subview — clears the floating chrome. Driving the existing top constraint avoids
+    /// stack layout margins, whose values UIKit clamps to the safe area on every edge.
+    private func applyContextualOnboardingTopInset(_ inset: CGFloat) {
+        guard let containerStackViewTopConstraint, containerStackViewTopConstraint.constant != inset else { return }
+        containerStackViewTopConstraint.constant = inset
+    }
+
     private func restoreScrollViewAdjustmentBehaviorAfterFloatingUI() {
         guard let behavior = scrollViewAdjustmentBehaviorBeforeFloatingUI else { return }
         WebViewScrollViewInsetUpdater.endManaging(webView.scrollView, restoring: behavior)
@@ -1112,6 +1165,14 @@ class TabViewController: UIViewController {
         netPConnectionObserverCancellable = netPConnectionObserver.publisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.netPConnectionStatus, onWeaklyHeld: self)
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        // The contextual onboarding offset is derived from the safe area, so it has to be re-applied
+        // when that changes — rotation in particular, which not every path re-lays-out otherwise.
+        guard daxContextualOnboardingController != nil else { return }
+        updateContextualOnboardingLayoutForFloatingUIIfNeeded()
     }
 
     override func viewDidAppear(_ animated: Bool) {

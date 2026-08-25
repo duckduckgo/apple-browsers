@@ -244,6 +244,47 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
             ))
         }
     }
+
+    func testWhenContextualOnboardingVisibleThenTopInsetIsTheObscuredTopRegion() {
+        let inset = FloatingUILayoutPolicy.contextualOnboardingTopInset(
+            isFloatingUIEnabled: true,
+            isContextualOnboardingVisible: true,
+            topObscuredHeight: 111
+        )
+
+        XCTAssertEqual(inset, 111, accuracy: 0.001)
+    }
+
+    func testWhenNoContextualOnboardingThenTopInsetIsZero() {
+        let inset = FloatingUILayoutPolicy.contextualOnboardingTopInset(
+            isFloatingUIEnabled: true,
+            isContextualOnboardingVisible: false,
+            topObscuredHeight: 111
+        )
+
+        XCTAssertEqual(inset, 0, accuracy: 0.001)
+    }
+
+    func testWhenFloatingUIDisabledThenContextualOnboardingTopInsetIsZero() {
+        // The classic layout already positions the dialog below the chrome, so it must not be inset.
+        let inset = FloatingUILayoutPolicy.contextualOnboardingTopInset(
+            isFloatingUIEnabled: false,
+            isContextualOnboardingVisible: true,
+            topObscuredHeight: 111
+        )
+
+        XCTAssertEqual(inset, 0, accuracy: 0.001)
+    }
+
+    func testWhenObscuredTopIsNegativeThenContextualOnboardingTopInsetIsClampedToZero() {
+        let inset = FloatingUILayoutPolicy.contextualOnboardingTopInset(
+            isFloatingUIEnabled: true,
+            isContextualOnboardingVisible: true,
+            topObscuredHeight: -20
+        )
+
+        XCTAssertEqual(inset, 0, accuracy: 0.001)
+    }
 }
 
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {

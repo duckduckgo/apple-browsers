@@ -53,6 +53,23 @@ enum FloatingUILayoutPolicy {
         return max(expandedChromeHeight * clampedPercent, topCapsuleObscuredHeight, safeAreaTop)
     }
 
+    /// Height reserved at the top of the tab's content stack for the contextual onboarding dialog.
+    ///
+    /// The dialog is a plain UIKit sibling of the web view inside `containerStackView`, and under
+    /// floating UI that stack starts at the physical screen top so the web view can underflow the
+    /// glass chrome via `obscuredContentInsets`. The dialog has no equivalent mechanism, so without
+    /// this inset it lays out behind the status bar and the floating omnibar. While a dialog is on
+    /// screen the obscured top region is handed to the stack instead of the web view, which then
+    /// starts below the dialog — reproducing the pre-floating layout for the dialog only.
+    ///
+    /// Returns `0` when floating UI is disabled, so the classic layout is untouched.
+    static func contextualOnboardingTopInset(isFloatingUIEnabled: Bool,
+                                             isContextualOnboardingVisible: Bool,
+                                             topObscuredHeight: CGFloat) -> CGFloat {
+        guard isFloatingUIEnabled, isContextualOnboardingVisible else { return 0 }
+        return max(0, topObscuredHeight)
+    }
+
     static func shouldHostOmnibarInFloatingToolbar(isFloatingUIEnabled: Bool,
                                                    addressBarPosition: AddressBarPosition,
                                                    isUnifiedToggleInputVisible: Bool,

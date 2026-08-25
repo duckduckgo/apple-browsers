@@ -534,11 +534,11 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: UserText.favorites)
                     .submenu(favoritesMenu.buildItems {
                         NSMenuItem(title: UserText.mainMenuHistoryFavoriteThisPage, action: #selector(MainViewController.favoriteThisPage))
-                            .withImage(DesignSystemImages.Glyphs.Size12.favorite)
+                            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.favorite)
                             .withAccessibilityIdentifier("MainMenu.favoriteThisPage")
                         NSMenuItem.separator()
                     })
-                    .withImage(DesignSystemImages.Glyphs.Size12.favorite)
+                    .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.favorite)
 
                 NSMenuItem.separator()
             })

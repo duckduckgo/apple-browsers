@@ -53,7 +53,7 @@ final class SharingMenu: NSMenu {
         self.items = services.map { service in
             NSMenuItem(service: service, target: self, action: #selector(sharingItemSelected))
         } + [
-            NSMenuItem(title: UserText.moreMenuItem, action: #selector(openSharingPreferences), target: self).withImage(.sharedMoreMenu)
+            NSMenuItem(title: UserText.moreMenuItem, action: #selector(openSharingPreferences), target: self).withImageOnMacOS26(.sharedMoreMenu)
         ]
     }
 

@@ -112,18 +112,11 @@ public extension NSMenuItem {
         return self
     }
 
-    @discardableResult
-    func withImage(_ image: NSImage?) -> NSMenuItem {
-        self.image = image
-        return self
-    }
-
     /// Sets the image only when running on macOS 26.
     ///
     /// AppKit shows icons for system-provided menu actions only on macOS 26 – they were introduced
     /// with the macOS 26 design and removed again in macOS 27, per the updated Human Interface
-    /// Guidelines. Use this instead of ``withImage(_:)`` for icons that were added to match the
-    /// macOS 26 menu design, so that menus follow the system look on other OS versions.
+    /// Guidelines, so menu item icons are only set when running on macOS 26.
     @discardableResult
     func withImageOnMacOS26(_ image: NSImage?, shouldShowIcons: Bool = NSMenuItem.shouldShowIcons) -> NSMenuItem {
         if shouldShowIcons {

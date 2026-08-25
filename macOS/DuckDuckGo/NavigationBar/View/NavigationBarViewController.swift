@@ -1813,7 +1813,7 @@ final class NavigationBarViewController: NSViewController {
             if isAIChatButtonInOverflowMenu {
                 let aiChatItem = NSMenuItem(title: ShortcutTooltip.newAIChatTab.value, action: #selector(overflowMenuRequestedAIChat), keyEquivalent: "")
                     .targetting(self)
-                    .withImage(.aiChat)
+                    .withImageOnMacOS26(.aiChat)
                 overflowButton.menu?.addItem(aiChatItem)
             }
             overflowButton.isHidden = false
@@ -1849,31 +1849,31 @@ final class NavigationBarViewController: NSViewController {
         case .autofill:
             return NSMenuItem(title: UserText.autofill, action: #selector(overflowMenuRequestedLoginsPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.passwordManagerButtonImage)
+                .withImageOnMacOS26(theme.iconsProvider.navigationToolbarIconsProvider.passwordManagerButtonImage)
         case .bookmarks:
             return NSMenuItem(title: UserText.bookmarks, action: #selector(overflowMenuRequestedBookmarkPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.bookmarksButtonImage)
+                .withImageOnMacOS26(theme.iconsProvider.navigationToolbarIconsProvider.bookmarksButtonImage)
         case .downloads:
             return NSMenuItem(title: UserText.downloads, action: #selector(overflowMenuRequestedDownloadsPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage)
+                .withImageOnMacOS26(theme.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage)
         case .feedback:
             return NSMenuItem(title: UserText.feedbackShortcutTooltip, action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
                 .targetting(self)
-                .withImage(DesignSystemImages.Glyphs.Size16.feedback)
+                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size16.feedback)
         case .share:
             return NSMenuItem(title: UserText.shareMenuItem, action: #selector(overflowMenuRequestedSharePopover), keyEquivalent: "")
                 .targetting(self)
-                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.shareButtonImage)
+                .withImageOnMacOS26(theme.iconsProvider.navigationToolbarIconsProvider.shareButtonImage)
         case .homeButton:
             return NSMenuItem(title: UserText.homeButtonTooltip, action: #selector(overflowMenuRequestedHomeButton), keyEquivalent: "")
                 .targetting(self)
-                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.homeButtonImage)
+                .withImageOnMacOS26(theme.iconsProvider.navigationToolbarIconsProvider.homeButtonImage)
         case .networkProtection:
             return NSMenuItem(title: UserText.networkProtection, action: #selector(overflowMenuRequestedNetworkProtectionPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImage(networkProtectionButton.image)
+                .withImageOnMacOS26(networkProtectionButton.image)
         }
     }
 

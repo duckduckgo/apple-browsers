@@ -1092,9 +1092,9 @@ final class PasswordManagementViewController: NSViewController {
 
     private func createNewSecureVaultItemMenu() -> NSMenu {
         return NSMenu {
-            NSMenuItem(title: UserText.pmNewLogin, action: #selector(createNewLogin), target: self).withImage(.loginGlyph)
-            NSMenuItem(title: UserText.pmNewIdentity, action: #selector(createNewIdentity), target: self).withImage(.identityGlyph)
-            NSMenuItem(title: UserText.pmNewCard, action: #selector(createNewCreditCard), target: self).withImage(.creditCardGlyph)
+            NSMenuItem(title: UserText.pmNewLogin, action: #selector(createNewLogin), target: self).withImageOnMacOS26(.loginGlyph)
+            NSMenuItem(title: UserText.pmNewIdentity, action: #selector(createNewIdentity), target: self).withImageOnMacOS26(.identityGlyph)
+            NSMenuItem(title: UserText.pmNewCard, action: #selector(createNewCreditCard), target: self).withImageOnMacOS26(.creditCardGlyph)
         }
     }
 

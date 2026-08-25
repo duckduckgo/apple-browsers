@@ -64,10 +64,6 @@ struct SuggestionsListView: View {
         /// List's horizontal content margin (cell edge). Reduced 8pt from the NTP's 24pt regularPadding
         /// to widen the cells in step with the narrower input card.
         static let listHorizontalContentMargin: CGFloat = 16
-        /// Pre-iOS 17 insetGrouped defaults. These match the established AutocompleteView compensation;
-        /// custom rows use them only when contentMargins/listSectionSpacing are unavailable.
-        static let legacyListTopInset: CGFloat = 28
-        static let legacyListHorizontalContentMargin: CGFloat = 20
         static let suggestionGroupCornerRadius: CGFloat = 10
     }
 
@@ -149,10 +145,7 @@ struct SuggestionsListView: View {
             // input on the top bar; 0 on the bottom bar, where the input sits below the list).
             .modifier(ListContentMarginsModifier(top: listTopContentInset,
                                                  bottom: isFloatingPopover ? Metrics.popoverVerticalInset : nil,
-                                                 horizontal: Metrics.listHorizontalContentMargin,
-                                                 legacyTop: Metrics.legacyListTopInset,
-                                                 legacyHorizontal: Metrics.legacyListHorizontalContentMargin,
-                                                 appliesLegacyFallback: hasVisibleChromeRows))
+                                                 horizontal: Metrics.listHorizontalContentMargin))
             .hideScrollContentBackground()
             .scrollDismissesKeyboardIfAvailable()
             // Pointer (trackpad/mouse) leaving the list clears the hover highlight. Touch never fires onHover.
@@ -313,18 +306,11 @@ private struct ListContentMarginsModifier: ViewModifier {
     let top: CGFloat
     let bottom: CGFloat?
     let horizontal: CGFloat
-    let legacyTop: CGFloat
-    let legacyHorizontal: CGFloat
-    let appliesLegacyFallback: Bool
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
             applyMargins(to: content)
-        } else if appliesLegacyFallback {
-            content
-                .padding(.top, top - legacyTop)
-                .padding(.horizontal, horizontal - legacyHorizontal)
         } else {
             content
         }

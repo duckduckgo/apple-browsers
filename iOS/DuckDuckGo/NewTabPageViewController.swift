@@ -73,8 +73,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?
-    /// Top constraint of the contextual onboarding dialog, kept so it can be offset below the focused
-    /// unified toggle input card under floating UI. See `updateDaxDialogTopInsetIfNeeded()`.
+    /// Driven by `updateDaxDialogTopInsetIfNeeded()` to clear the focused unified toggle input card.
     private var daxDialogTopConstraint: NSLayoutConstraint?
     private(set) var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
@@ -555,7 +554,7 @@ extension NewTabPageViewController {
         let ntpContainer: UIView = view.superview ?? mainVC.view
         mainVC.addChild(ntpHC)
         ntpContainer.addSubview(ntpHC.view)
-        // This dialog is also shown with the input card focused, so it needs the same offset below it.
+        // Also shown with the input card focused, so it needs the same offset.
         let ntpTopConstraint = ntpHC.view.topAnchor.constraint(equalTo: view.topAnchor,
                                                               constant: floatingDaxDialogTopInset)
         daxDialogTopConstraint = ntpTopConstraint
@@ -685,7 +684,7 @@ extension NewTabPageViewController {
         view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
-        // Under floating UI the page spans behind the focused input card, so the dialog starts below it.
+        // Floating UI spans the page behind the focused input card, so start the dialog below it.
         let topConstraint = hostingController.view.topAnchor.constraint(equalTo: view.topAnchor,
                                                                        constant: floatingDaxDialogTopInset)
         daxDialogTopConstraint = topConstraint
@@ -740,23 +739,21 @@ extension NewTabPageViewController {
         }
     }
 
-    /// Offset the contextual onboarding dialog needs so it reads below the focused unified toggle input
-    /// card. Zero outside floating UI, where the card is laid out above the page rather than over it.
+    /// Offset the contextual onboarding dialog needs to clear the focused unified toggle input card.
+    /// Zero outside floating UI, which is the only layout that floats the card over the page.
     private var floatingDaxDialogTopInset: CGFloat {
         guard floatingUIManager.isFloatingUIEnabled else { return 0 }
         return (parent as? MainViewController)?.floatingNewTabPageTopObscuredHeight ?? 0
     }
 
-    /// Re-applies the contextual onboarding dialog's offset after the unified toggle input card has
-    /// resized — typing in it, or a Search ↔ Duck.ai toggle. Growing the card doesn't change this
-    /// page's frame, so a layout pass alone never reaches the dialog.
+    /// Re-applies the dialog offset after the input card resized — typing, or a Search ↔ Duck.ai
+    /// toggle. Neither dirties this page's layout, so the push has to be explicit.
     func refreshContextualOnboardingDialogLayout() {
         updateDaxDialogTopInsetIfNeeded()
     }
 
-    /// Re-applies the dialog's offset. Called on every layout pass, which covers rotation and the
-    /// initial attach, and pushed directly when the card resizes. The offset comes from the card's
-    /// applied constraints rather than anything downstream of this one, so it settles in one pass.
+    /// Runs on every layout pass (covers rotation and attach) and on the push above. The offset comes
+    /// from the card, not from anything downstream of this constraint, so it settles in one pass.
     private func updateDaxDialogTopInsetIfNeeded() {
         guard let daxDialogTopConstraint else { return }
         let inset = floatingDaxDialogTopInset

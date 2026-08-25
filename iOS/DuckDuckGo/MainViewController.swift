@@ -1704,14 +1704,11 @@ class MainViewController: UIViewController {
         )
     }
 
-    /// Height obscured at the top of the new tab page by the focused unified toggle input card, for new
-    /// tab page content that has to be offset below it (the contextual onboarding dialogs). Zero outside
-    /// floating UI, where the card is laid out above the page instead of floating over it.
+    /// Height obscured at the top of the new tab page by the focused unified toggle input card, for page
+    /// content that must sit below it (the contextual onboarding dialogs).
     ///
-    /// Derived from the card's applied constraints — the same values that put it on screen — so it is
-    /// correct with the landscape height cap applied and while the chrome is hidden, and so reading it
-    /// during a layout pass cannot feed back into itself. The unified toggle input is iPhone-only, so
-    /// the container's top constant carries no tabs-bar or window-controls offset here.
+    /// Read off the card's applied constraints, so it honours the landscape cap and the hidden-chrome
+    /// pose, and can't feed back when read during layout. iPhone-only, hence no tabs-bar offset.
     var floatingNewTabPageTopObscuredHeight: CGFloat {
         guard let coordinator = unifiedToggleInputCoordinator,
               coordinator.isActive,

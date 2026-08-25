@@ -266,7 +266,7 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
     }
 
     func testWhenFloatingUIDisabledThenContextualOnboardingTopInsetIsZero() {
-        // The classic layout already positions the dialog below the chrome, so it must not be inset.
+        // The classic layout already puts the dialog below the chrome.
         let inset = FloatingUILayoutPolicy.contextualOnboardingTopInset(
             isFloatingUIEnabled: false,
             isContextualOnboardingVisible: true,
@@ -299,7 +299,7 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
     }
 
     func testWhenBottomAddressBarThenNewTabPageTopObscuredHeightIsZero() {
-        // A bottom-position card sits below the page, so nothing at the top is obscured.
+        // A bottom-position card obscures nothing at the top.
         let height = FloatingUILayoutPolicy.newTabPageUnifiedInputTopObscuredHeight(
             isFloatingUIEnabled: true,
             isUnifiedToggleInputActive: true,
@@ -311,7 +311,7 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
     }
 
     func testWhenFloatingUIDisabledThenNewTabPageTopObscuredHeightIsZero() {
-        // The classic layout puts the card above the page, so the dialog must not be offset.
+        // The classic layout puts the card above the page.
         let height = FloatingUILayoutPolicy.newTabPageUnifiedInputTopObscuredHeight(
             isFloatingUIEnabled: false,
             isUnifiedToggleInputActive: true,
@@ -323,8 +323,7 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
     }
 
     func testWhenChromeHiddenPushesCardOffScreenThenNewTabPageTopObscuredHeightIsZero() {
-        // The card's top constant goes negative as the chrome hides; the dialog must not be lifted
-        // above the page's top edge.
+        // The card's top constant goes negative as the chrome hides; don't lift the dialog off-page.
         let height = FloatingUILayoutPolicy.newTabPageUnifiedInputTopObscuredHeight(
             isFloatingUIEnabled: true,
             isUnifiedToggleInputActive: true,

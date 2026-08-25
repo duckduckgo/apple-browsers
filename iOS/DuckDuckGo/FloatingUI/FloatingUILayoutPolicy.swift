@@ -53,16 +53,9 @@ enum FloatingUILayoutPolicy {
         return max(expandedChromeHeight * clampedPercent, topCapsuleObscuredHeight, safeAreaTop)
     }
 
-    /// Height reserved at the top of the tab's content stack for the contextual onboarding dialog.
-    ///
-    /// The dialog is a plain UIKit sibling of the web view inside `containerStackView`, and under
-    /// floating UI that stack starts at the physical screen top so the web view can underflow the
-    /// glass chrome via `obscuredContentInsets`. The dialog has no equivalent mechanism, so without
-    /// this inset it lays out behind the status bar and the floating omnibar. While a dialog is on
-    /// screen the obscured top region is handed to the stack instead of the web view, which then
-    /// starts below the dialog — reproducing the pre-floating layout for the dialog only.
-    ///
-    /// Returns `0` when floating UI is disabled, so the classic layout is untouched.
+    /// Top offset for the contextual onboarding dialog in the tab's content stack. Only the web view
+    /// can underflow the chrome (via `obscuredContentInsets`); the dialog is a plain UIKit sibling, so
+    /// it needs the obscured region as an offset or it renders behind the chrome.
     static func contextualOnboardingTopInset(isFloatingUIEnabled: Bool,
                                              isContextualOnboardingVisible: Bool,
                                              topObscuredHeight: CGFloat) -> CGFloat {
@@ -70,22 +63,16 @@ enum FloatingUILayoutPolicy {
         return max(0, topObscuredHeight)
     }
 
-    /// Height at the top of the new tab page obscured by the focused unified toggle input card.
+    /// Height obscured at the top of the new tab page by the focused unified toggle input card. Only
+    /// floating UI floats the card over the page; the classic layout puts it above.
     ///
-    /// The card is only laid out above the page in the classic layout. Under floating UI the page's
-    /// container is pinned to the physical screen top and the card floats over it, and nothing insets
-    /// the page while the input is active — so page content that has to stay readable below the card
-    /// (the contextual onboarding dialogs) must be offset by this much itself.
-    ///
-    /// Returns `0` when floating UI is disabled, so the classic layout is untouched.
-    /// `cardBottomEdge` is the card's bottom in screen coordinates, taken from its applied constraints
-    /// rather than its measured content height — the applied height is clamped in landscape and the
-    /// card is pushed off-screen when the chrome hides, so the two diverge.
+    /// `cardBottomEdge` must come from the card's applied constraints, not its measured height — those
+    /// diverge under the landscape cap and while the chrome is hidden.
     static func newTabPageUnifiedInputTopObscuredHeight(isFloatingUIEnabled: Bool,
                                                         isUnifiedToggleInputActive: Bool,
                                                         addressBarPosition: AddressBarPosition,
                                                         cardBottomEdge: CGFloat) -> CGFloat {
-        // A bottom-position card sits below the page, so it obscures nothing at the top.
+        // A bottom-position card obscures nothing at the top.
         guard isFloatingUIEnabled, isUnifiedToggleInputActive, addressBarPosition == .top else { return 0 }
         return max(0, cardBottomEdge)
     }

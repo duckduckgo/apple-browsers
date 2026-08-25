@@ -109,8 +109,8 @@ extension TabViewController {
         rootView.addSubview(containerStackView)
 
         let safeArea = rootView.safeAreaLayoutGuide
-        // Uses the tab's own manager rather than a fresh one so the anchor choice cannot disagree with
-        // the rest of the tab's floating layout (a fresh instance ignores the injected UTI feature).
+        // The tab's own manager, not a fresh one: a fresh instance ignores the injected UTI feature and
+        // could disagree with the rest of the tab's floating layout.
         let isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
         // Floating UI: top/bottom pin to the screen edges so content underflows the glass chrome (via
         // WebKit obscured insets); leading/trailing pin to the safe area so landscape respects the notch.

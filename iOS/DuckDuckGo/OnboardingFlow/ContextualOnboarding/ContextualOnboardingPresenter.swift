@@ -103,8 +103,7 @@ private extension ContextualOnboardingPresenter {
         animate(daxController: daxController, visible: false) { _ in
             parent.daxDialogsStackView.removeArrangedSubview(daxController.view)
             parent.removeChild(daxController)
-            // A dialog presented while this removal was animating owns the reference now, so only
-            // clear it if it still points at the controller that was just removed.
+            // A dialog presented mid-animation owns the reference now; don't clobber it.
             if parent.daxContextualOnboardingController === daxController {
                 parent.daxContextualOnboardingController = nil
             }

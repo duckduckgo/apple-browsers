@@ -487,8 +487,8 @@ private extension MainViewController {
 
     func subscribeToModeChanges(_ coordinator: UnifiedToggleInputCoordinator) {
         coordinator.modeChangePublisher
-            .sink { [weak self] mode in
-                self?.handleModeChange(mode)
+            .sink { [weak self] change in
+                self?.handleModeChange(change.mode, isUserInitiated: change.origin == .userInteraction)
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -539,14 +539,16 @@ private extension MainViewController {
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    func handleModeChange(_ mode: TextEntryMode) {
+    func handleModeChange(_ mode: TextEntryMode, isUserInitiated: Bool) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
-        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
-            ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        if isUserInitiated {
+            if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+                ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
+            }
+            postIdleSessionInstrumentation.toggleUsed()
+            recordNewTabPageSessionToggleSwitch(to: mode)
         }
-        postIdleSessionInstrumentation.toggleUsed()
-        recordNewTabPageSessionToggleSwitch(to: mode)
 
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
@@ -1466,7 +1468,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {
         // Route through the same path as a toggle tap so the toggle indicator, content swap, and
         // input-height all animate together in one transaction (a swipe is a user-driven switch).
-        unifiedToggleInputCoordinator?.updateInputMode(mode, animated: true)
+        unifiedToggleInputCoordinator?.updateInputMode(mode, animated: true, origin: .userInteraction)
     }
 
     func unifiedInputEditingStateDidRequestSyncSetup() {

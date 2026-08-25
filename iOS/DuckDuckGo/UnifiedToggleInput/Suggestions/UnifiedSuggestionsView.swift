@@ -83,7 +83,8 @@ struct UnifiedSuggestionsView: View {
                             showsRestingContent: !isTypingList,
                             showsFavorites: viewModel.isShowingFavorites,
                             showsSuggestionRows: isShowingList,
-                            isFadingOut: viewModel.isFadingOut)
+                            showsDuckAITail: activeListKind == .recents,
+                            animationModel: viewModel.animationModel)
             .accessibilityHidden(viewModel.isFireTab && !isTypingList)
     }
 }
@@ -125,7 +126,7 @@ struct UnifiedSuggestionsLogoView: View {
                 .animation(nil, value: viewModel.isShowingLogo)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.
-                .modifier(DismissFade(isFadingOut: viewModel.isFadingOut))
+                .modifier(DismissFade(animationModel: viewModel.animationModel))
                 .allowsHitTesting(false)
         }
         .ignoresSafeArea(.container, edges: .top)
@@ -172,10 +173,30 @@ struct UnifiedSuggestionsLogoView: View {
 /// One-directional: only the fade-*out* (false→true) animates. The reset (true→false, on the next
 /// focus) snaps, so the logo reappears instantly instead of replaying a fade-in.
 struct DismissFade: ViewModifier {
-    let isFadingOut: Bool
+    @ObservedObject var animationModel: UnifiedSuggestionsAnimationModel
+
     func body(content: Content) -> some View {
         content
-            .opacity(isFadingOut ? 0 : 1)
-            .animation(isFadingOut ? .easeInOut(duration: 0.2) : nil, value: isFadingOut)
+            .opacity(animationModel.isDismissing ? 0 : 1)
+            .animation(animationModel.isDismissing ? .easeInOut(duration: 0.2) : nil,
+                       value: animationModel.isDismissing)
+    }
+}
+
+/// Fades in only the Duck.ai tail after its rows have been laid out without animation.
+struct DuckAITailFade: ViewModifier {
+    @ObservedObject var animationModel: UnifiedSuggestionsAnimationModel
+    let isEnabled: Bool
+
+    func body(content: Content) -> some View {
+        let isVisible = !isEnabled || animationModel.isDuckAITailVisible
+        content
+            .opacity(isVisible ? 1 : 0)
+            .onAppear {
+                if isEnabled { animationModel.revealDuckAITail() }
+            }
+            .onChange(of: isEnabled) { isEnabled in
+                if isEnabled { animationModel.revealDuckAITail() }
+            }
     }
 }

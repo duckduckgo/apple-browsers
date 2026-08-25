@@ -34,8 +34,11 @@ struct SuggestionsListView: View {
     var showsRestingContent = false
     var showsFavorites = false
     var showsSuggestionRows = true
-    var isFadingOut = false
+    var showsDuckAITail = false
+    var animationModel: UnifiedSuggestionsAnimationModel
     var isFloatingPopover: Bool = false
+
+    @State private var keepsSearchContentMounted = false
 
     private enum Metrics {
         /// Per Figma: the list table sits 6pt below the top-positioned input's bottom margin.
@@ -62,61 +65,86 @@ struct SuggestionsListView: View {
         /// List's horizontal content margin (cell edge). Reduced 8pt from the NTP's 24pt regularPadding
         /// to widen the cells in step with the narrower input card.
         static let listHorizontalContentMargin: CGFloat = 16
+        /// Pre-iOS 17 insetGrouped defaults. These match the established AutocompleteView compensation;
+        /// custom rows use them only when contentMargins/listSectionSpacing are unavailable.
+        static let legacyListTopInset: CGFloat = 28
+        static let legacyListHorizontalContentMargin: CGFloat = 20
+        static let suggestionGroupCornerRadius: CGFloat = 10
     }
 
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                if let escapeHatch {
-                    EscapeHatchView(model: escapeHatch)
-                    .frame(height: showsRestingContent ? nil : 0)
-                    .clipped()
-                    .opacity(showsRestingContent ? 1 : 0)
-                    .allowsHitTesting(showsRestingContent)
-                    .accessibilityHidden(!showsRestingContent)
-                    .padding(.top, showsRestingContent ? scrollableChromeTopInset : 0)
-                    .padding(.bottom, showsRestingContent ? Metrics.scrollableChromeBottomInset : 0)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                }
-                if isSearchContentVisible {
-                    VStack(spacing: Metrics.searchSectionSpacing) {
-                        if hasMessages, let messagesModel {
-                            FocusedNewTabPageMessagesView(messagesModel: messagesModel)
-                        }
-                        if hasFavorites, let favoritesViewModel {
-                            FavoritesView(model: favoritesViewModel, isolatesContextMenu: true)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.horizontal, Metrics.favoritesHorizontalInset)
-                        }
-                    }
-                    .padding(.top, searchContentTopInset)
-                    .padding(.bottom, searchContentBottomInset)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .modifier(DisableListRowSelection())
-                    .modifier(DismissFade(isFadingOut: isFadingOut))
-                }
-                if showsRestingContent, let syncPromo {
-                    syncPromo
-                        .padding(.top, syncPromoTopInset)
-                        .padding(.bottom, Metrics.scrollableChromeBottomInset)
+                // Keep the persistent chrome/Search subtree and the first suggestion group in one
+                // section. A hidden zero-height RMF row therefore cannot leave section spacing ahead
+                // of typed suggestions or Duck.ai recents.
+                Section {
+                    if let escapeHatch {
+                        EscapeHatchView(model: escapeHatch)
+                        .frame(height: showsRestingContent ? nil : 0)
+                        .clipped()
+                        .opacity(showsRestingContent ? 1 : 0)
+                        .allowsHitTesting(showsRestingContent)
+                        .accessibilityHidden(!showsRestingContent)
+                        .padding(.top, showsRestingContent ? scrollableChromeTopInset : 0)
+                        .padding(.bottom, showsRestingContent ? escapeHatchBottomInset : 0)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
-                        .modifier(DismissFade(isFadingOut: isFadingOut))
+                    }
+                    if hasSearchContent && (keepsSearchContentMounted || isSearchContentVisible) {
+                        VStack(spacing: Metrics.searchSectionSpacing) {
+                            if hasMessages, let messagesModel {
+                                FocusedNewTabPageMessagesView(messagesModel: messagesModel)
+                            }
+                            if hasFavorites, let favoritesViewModel {
+                                FavoritesView(model: favoritesViewModel, isolatesContextMenu: true)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .padding(.horizontal, Metrics.favoritesHorizontalInset)
+                            }
+                        }
+                        .padding(.top, isSearchContentVisible ? searchContentTopInset : 0)
+                        .padding(.bottom, isSearchContentVisible ? searchContentBottomInset : 0)
+                        .frame(height: isSearchContentVisible ? nil : 0)
+                        .clipped()
+                        .opacity(isSearchContentVisible ? 1 : 0)
+                        .allowsHitTesting(isSearchContentVisible)
+                        .accessibilityHidden(!isSearchContentVisible)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .modifier(DisableListRowSelection())
+                        .modifier(DismissFade(animationModel: animationModel))
+                    }
+                    if showsRestingContent, let syncPromo {
+                        syncPromo
+                            .padding(.top, syncPromoTopInset)
+                            .padding(.bottom, syncPromoBottomInset)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .modifier(DismissFade(animationModel: animationModel))
+                            .modifier(DuckAITailFade(animationModel: animationModel, isEnabled: showsDuckAITail))
+                    }
+                    if showsSuggestionRows, let firstSection = viewModel.sections.first {
+                        if hasVisibleChromeRows, let title = firstSection.title, !title.isEmpty {
+                            inlineSectionHeader(title)
+                        }
+                        rows(for: firstSection, roundsFirstRowTop: hasRowsBeforeFirstSuggestion)
+                    }
+                } header: {
+                    if showsSuggestionRows, !hasVisibleChromeRows, let firstSection = viewModel.sections.first {
+                        sectionHeader(firstSection.title)
+                    }
                 }
                 if showsSuggestionRows {
-                    ForEach(viewModel.sections) { section in
+                    ForEach(viewModel.sections.dropFirst()) { section in
                         Section {
                             rows(for: section)
                         } header: {
                             sectionHeader(section.title)
                         }
                     }
-                    .modifier(DismissFade(isFadingOut: isFadingOut))
                 }
             }
             .environment(\.defaultMinListRowHeight, 0)
@@ -125,9 +153,12 @@ struct SuggestionsListView: View {
                                              restingSpacing: restingSectionSpacing))
             // Replace insetGrouped's variable top margin with the design's list top inset (6pt below the
             // input on the top bar; 0 on the bottom bar, where the input sits below the list).
-            .modifier(ListContentMarginsModifier(top: isFloatingPopover ? Metrics.popoverVerticalInset : (isAddressBarAtBottom ? 0 : Metrics.listTopInset),
+            .modifier(ListContentMarginsModifier(top: listTopContentInset,
                                                  bottom: isFloatingPopover ? Metrics.popoverVerticalInset : nil,
-                                                 horizontal: Metrics.listHorizontalContentMargin))
+                                                 horizontal: Metrics.listHorizontalContentMargin,
+                                                 legacyTop: Metrics.legacyListTopInset,
+                                                 legacyHorizontal: Metrics.legacyListHorizontalContentMargin,
+                                                 appliesLegacyFallback: hasVisibleChromeRows))
             .hideScrollContentBackground()
             .scrollDismissesKeyboardIfAvailable()
             // Pointer (trackpad/mouse) leaving the list clears the hover highlight. Touch never fires onHover.
@@ -139,12 +170,46 @@ struct SuggestionsListView: View {
                 guard let id else { return }
                 withAnimation { proxy.scrollTo(id) }
             }
+            .onAppear {
+                if isSearchContentVisible { keepsSearchContentMounted = true }
+            }
+            .onChange(of: isSearchContentVisible) { isVisible in
+                if isVisible { keepsSearchContentMounted = true }
+            }
         }
     }
 
     private var restingSectionSpacing: CGFloat? {
         guard showsRestingContent && showsSuggestionRows else { return nil }
         return isAddressBarAtBottom ? 0 : Metrics.listTopInset
+    }
+
+    private var listTopContentInset: CGFloat {
+        isFloatingPopover ? Metrics.popoverVerticalInset : (isAddressBarAtBottom ? 0 : Metrics.listTopInset)
+    }
+
+    private var hasVisibleChromeRows: Bool {
+        showsRestingContent && (escapeHatch != nil || isSearchContentVisible || syncPromo != nil)
+    }
+
+    private var hasRowsBeforeFirstSuggestion: Bool {
+        escapeHatch != nil
+            || (hasSearchContent && (keepsSearchContentMounted || isSearchContentVisible))
+            || (showsRestingContent && syncPromo != nil)
+    }
+
+    private var embeddedSuggestionSpacing: CGFloat {
+        guard hasVisibleChromeRows, showsSuggestionRows else { return 0 }
+        return restingSectionSpacing ?? 0
+    }
+
+    private var escapeHatchBottomInset: CGFloat {
+        let precedesSuggestionSection = syncPromo == nil && !isSearchContentVisible ? embeddedSuggestionSpacing : 0
+        return Metrics.scrollableChromeBottomInset + precedesSuggestionSection
+    }
+
+    private var syncPromoBottomInset: CGFloat {
+        Metrics.scrollableChromeBottomInset + embeddedSuggestionSpacing
     }
 
     private var hasMessages: Bool {
@@ -182,7 +247,7 @@ struct SuggestionsListView: View {
     }
 
     @ViewBuilder
-    private func rows(for section: SuggestionSection) -> some View {
+    private func rows(for section: SuggestionSection, roundsFirstRowTop: Bool = false) -> some View {
         ForEach(section.rows) { row in
             Button {
                 viewModel.selectRow(id: row.id)
@@ -197,8 +262,11 @@ struct SuggestionsListView: View {
             }
             .accessibilityIdentifier(row.accessibilityID)
             .listRowInsets(rowInsets(for: row))
-            .listRowBackground(rowBackground(for: row))
+            .listRowBackground(rowBackground(for: row,
+                                             roundsTop: roundsFirstRowTop && row.id == section.rows.first?.id))
             .modifier(SeparatorTrailingToContentModifier())
+            .modifier(DismissFade(animationModel: animationModel))
+            .modifier(DuckAITailFade(animationModel: animationModel, isEnabled: showsDuckAITail))
             // Pointer hover highlights the row, reusing the keyboard-selection highlight (matches the
             // legacy autocomplete). Touch never fires onHover, so this is pointer-only.
             .onHover { isHovering in
@@ -209,10 +277,16 @@ struct SuggestionsListView: View {
 
     /// Highlights the hardware-keyboard-selected row (iPad popover); plain surface otherwise.
     /// `selectedRowID` stays nil on iPhone (no arrow-key navigation), so this is inert there.
-    private func rowBackground(for row: SuggestionRow) -> Color {
-        row.id == viewModel.selectedRowID
+    @ViewBuilder
+    private func rowBackground(for row: SuggestionRow, roundsTop: Bool) -> some View {
+        let color = row.id == viewModel.selectedRowID
             ? Color(designSystemColor: .accentPrimary)
             : Color(designSystemColor: .surface)
+        if roundsTop {
+            color.cornerRadius(Metrics.suggestionGroupCornerRadius, corners: [.topLeft, .topRight])
+        } else {
+            color
+        }
     }
 
     /// Vertical padding per Figma; horizontal inset (on top of the list's content margin) keeps
@@ -233,6 +307,15 @@ struct SuggestionsListView: View {
             EmptyView()
         }
     }
+
+    private func inlineSectionHeader(_ title: String) -> some View {
+        Text(title)
+            .daxTitle3()
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
 }
 
 /// insetGrouped reserves a large variable top inset above the first section; replace it with the
@@ -242,11 +325,18 @@ private struct ListContentMarginsModifier: ViewModifier {
     let top: CGFloat
     let bottom: CGFloat?
     let horizontal: CGFloat
+    let legacyTop: CGFloat
+    let legacyHorizontal: CGFloat
+    let appliesLegacyFallback: Bool
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
             applyMargins(to: content)
+        } else if appliesLegacyFallback {
+            content
+                .padding(.top, top - legacyTop)
+                .padding(.horizontal, horizontal - legacyHorizontal)
         } else {
             content
         }

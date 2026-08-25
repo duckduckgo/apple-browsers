@@ -1164,13 +1164,69 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(renderState.inactiveAppearance)
     }
 
-    func test_updateInputMode_emitsMode() {
+    func test_updateInputMode_emitsUserInitiatedModeChange() {
         let exp = expectation(description: "modeChangePublisher emits")
         sut.modeChangePublisher
-            .sink { XCTAssertEqual($0, .search); exp.fulfill() }
+            .sink {
+                XCTAssertEqual($0.mode, .search)
+                XCTAssertEqual($0.origin, .userInteraction)
+                exp.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.updateInputMode(.search, animated: false, origin: .userInteraction)
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_updateInputMode_defaultsToStateSynchronization() {
+        let exp = expectation(description: "modeChangePublisher emits")
+        sut.modeChangePublisher
+            .sink {
+                XCTAssertEqual($0.mode, .search)
+                XCTAssertEqual($0.origin, .stateSynchronization)
+                exp.fulfill()
+            }
             .store(in: &cancellables)
 
         sut.updateInputMode(.search, animated: false)
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_updateInputMode_reportsModeSwitchPixelOnlyForUserInteraction() {
+        PixelFiringMock.tearDown()
+        defer { PixelFiringMock.tearDown() }
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            pixelFiring: UTIPixelFiring(pixel: PixelFiringMock.self,
+                                        daily: PixelFiringMock.self,
+                                        pixelKit: { nil }),
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
+        )
+
+        coordinator.updateInputMode(.search, animated: false)
+        XCTAssertNil(PixelFiringMock.lastPixelInfo)
+
+        coordinator.updateInputMode(.aiChat, animated: false, origin: .userInteraction)
+        XCTAssertEqual(PixelFiringMock.lastPixelInfo?.pixelName,
+                       Pixel.Event.aiChatExperimentalOmnibarModeSwitched.name)
+    }
+
+    func test_applyState_emitsStateSynchronizationModeChangeAndUpdatesUI() {
+        let exp = expectation(description: "modeChangePublisher emits")
+        sut.modeChangePublisher
+            .sink {
+                XCTAssertEqual($0.mode, .search)
+                XCTAssertEqual($0.origin, .stateSynchronization)
+                exp.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.applyState(TabInputState(toggleMode: .search))
+
+        XCTAssertEqual(sut.inputMode, .search)
+        XCTAssertEqual(sut.viewController.inputMode, .search)
         waitForExpectations(timeout: 1)
     }
 

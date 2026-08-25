@@ -42,8 +42,11 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// The empty-state logo's presentation (mark / morph / speed). All its transitions are pure, so
     /// the morph rules are tested in `FocusedLogoModelTests`.
     @Published private(set) var logoModel = FocusedLogoModel()
-    /// How the content collapses back to the omnibar. Cleared on the next focus.
-    @Published private(set) var dismissBehavior: DismissBehavior = .none
+    /// How the content collapses back to the omnibar. Cleared on the next focus. This is deliberately
+    /// not published: the nested animation model updates only the fading subtrees while UIKit resizes
+    /// the host, rather than invalidating the root List mid-collapse.
+    private(set) var dismissBehavior: DismissBehavior = .none
+    let animationModel = UnifiedSuggestionsAnimationModel()
     /// On a fire tab the empty state is the fire screen, not the Dax logo. Set by the container via
     /// `setFireTab` (which no-ops on an unchanged value, so repeated per-focus sets don't invalidate
     /// the view body).
@@ -96,9 +99,14 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     }
 
     /// Mode switches snap the shared state so persistent geometry is never implicitly animated.
-    /// The view animates new Duck.ai tail content explicitly; asynchronous recents still animate here.
+    /// Duck.ai tail opacity is prepared separately before the new rows are published.
     private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool) {
         guard newContent != content else { return }
+        if modeChanged && newContent == .list(.recents) {
+            animationModel.prepareDuckAITailAppearance()
+        } else {
+            animationModel.cancelDuckAITailAppearance()
+        }
         if modeChanged && !Self.sameCategory(content, newContent) {
             withTransaction(Transaction(animation: nil)) { content = newContent }
         } else if Self.isIdleDuckAITailChange(content, newContent) {
@@ -130,12 +138,10 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         return false
     }
 
-    /// True while the focused content is fading out (drives `DismissFade`).
-    var isFadingOut: Bool { dismissBehavior == .fadeOut }
-
     /// List/logo→favorites (or recents) collapse: fade the focused content out.
     func beginDismissFade() {
         dismissBehavior = .fadeOut
+        animationModel.beginDismissFade()
     }
 
     /// Logo→logo collapse: morph the focused logo back to the Dax mark and keep it visible (no fade).
@@ -149,6 +155,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// (`DismissFade` only animates the fade-out), so it never replays a fade-in as the logo reappears.
     func prepareForActivation() {
         dismissBehavior = .none
+        animationModel.resetDismissFade()
         hasResolvedSinceActivation = false
     }
 
@@ -185,5 +192,43 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         case .duckAI, .recents:
             return duckAIListViewModel ?? emptyListViewModel
         }
+    }
+}
+
+/// Animation-only state observed by the affected subtrees. Keeping it separate from the root view model
+/// prevents opacity changes from rebuilding the shared List while UIKit is animating the UTI host.
+@MainActor
+final class UnifiedSuggestionsAnimationModel: ObservableObject {
+
+    @Published private(set) var isDismissing = false
+    @Published private(set) var isDuckAITailVisible = true
+
+    func beginDismissFade() {
+        guard !isDismissing else { return }
+        isDismissing = true
+    }
+
+    func resetDismissFade() {
+        guard isDismissing else { return }
+        isDismissing = false
+    }
+
+    /// Inserts the Duck.ai rows without a layout animation, then fades only their pixels in.
+    func prepareDuckAITailAppearance() {
+        guard isDuckAITailVisible else { return }
+        isDuckAITailVisible = false
+    }
+
+    /// Called from the inserted tail's appearance lifecycle, after SwiftUI has committed its hidden state.
+    func revealDuckAITail() {
+        guard !isDuckAITailVisible else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isDuckAITailVisible = true
+        }
+    }
+
+    func cancelDuckAITailAppearance() {
+        guard !isDuckAITailVisible else { return }
+        isDuckAITailVisible = true
     }
 }

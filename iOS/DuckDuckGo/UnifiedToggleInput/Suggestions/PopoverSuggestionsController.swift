@@ -48,6 +48,7 @@ final class PopoverSuggestionsController: UIViewController {
 
     private let source: SuggestionsSource
     private let listViewModel: SuggestionsListViewModel
+    private let animationModel = UnifiedSuggestionsAnimationModel()
     private let isAddressBarAtBottom: Bool
     /// Single source of truth for the typed query: the source's pull-based `query()` reads its
     /// `.value` and the loader subscribes to its publisher, so display and resolution never drift.
@@ -114,7 +115,11 @@ final class PopoverSuggestionsController: UIViewController {
     }
 
     private func installHostingController() {
-        let listView = SuggestionsListView(viewModel: listViewModel, isAddressBarAtBottom: isAddressBarAtBottom, syncPromo: nil, isFloatingPopover: true)
+        let listView = SuggestionsListView(viewModel: listViewModel,
+                                           isAddressBarAtBottom: isAddressBarAtBottom,
+                                           syncPromo: nil,
+                                           animationModel: animationModel,
+                                           isFloatingPopover: true)
         let hosting = UIHostingController(rootView: listView)
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false

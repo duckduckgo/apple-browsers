@@ -51,6 +51,16 @@ enum UpsellFlowType: String {
     case upgrade
 }
 
+enum UnifiedToggleInputModeChangeOrigin: Equatable {
+    case userInteraction
+    case stateSynchronization
+}
+
+struct UnifiedToggleInputModeChange {
+    let mode: TextEntryMode
+    let origin: UnifiedToggleInputModeChangeOrigin
+}
+
 private struct PromptSubmissionConfiguration {
     let modelId: String?
     let reasoningEffort: AIChatReasoningEffort?
@@ -278,8 +288,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     var textChangePublisher: AnyPublisher<String, Never> { textModel.textChangePublisher }
 
-    private let modeChangeSubject = PassthroughSubject<TextEntryMode, Never>()
-    var modeChangePublisher: AnyPublisher<TextEntryMode, Never> {
+    private let modeChangeSubject = PassthroughSubject<UnifiedToggleInputModeChange, Never>()
+    var modeChangePublisher: AnyPublisher<UnifiedToggleInputModeChange, Never> {
         modeChangeSubject.eraseToAnyPublisher()
     }
 
@@ -1135,7 +1145,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.apply(computeRenderState().viewConfig, animated: false)
         if inputModeChanged {
             refreshToolsPresentation()
-            modeChangeSubject.send(effective)
+            modeChangeSubject.send(UnifiedToggleInputModeChange(mode: effective, origin: .stateSynchronization))
             attachmentController.syncValidationErrorForCurrentMode()
         }
         updateFloatingReturnKeyState()
@@ -1169,7 +1179,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Input Management
 
-    func updateInputMode(_ mode: TextEntryMode, animated: Bool) {
+    func updateInputMode(_ mode: TextEntryMode,
+                         animated: Bool,
+                         origin: UnifiedToggleInputModeChangeOrigin = .stateSynchronization) {
         let effectiveMode = effectiveInputMode(for: mode)
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
@@ -1181,7 +1193,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.prepareToolbarSubmitStyleForDismissal()
         }
 
-        if didModeChange && host == .omnibar {
+        if didModeChange && host == .omnibar && origin == .userInteraction {
             pixelReporter.reportModeSwitched(to: effectiveMode, currentText: currentText, defaultOmnibarMode: aiChatSettings.defaultOmnibarMode)
         }
 
@@ -1196,7 +1208,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 viewController.setInputMode(effectiveMode, animated: animated)
             }
             if didModeChange {
-                modeChangeSubject.send(effectiveMode)
+                modeChangeSubject.send(UnifiedToggleInputModeChange(mode: effectiveMode, origin: origin))
             }
         }
 
@@ -1238,7 +1250,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.setInputMode(effectiveMode, animated: false)
         }
         if didModeChange {
-            modeChangeSubject.send(effectiveMode)
+            modeChangeSubject.send(UnifiedToggleInputModeChange(mode: effectiveMode, origin: .stateSynchronization))
             refreshToolsPresentation()
         }
         updateToolbarAIVoiceChat()
@@ -1885,7 +1897,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
         Logger.unifiedInputState.debug("[UTITransition] source=toggle current=\(String(describing: self.inputMode), privacy: .public) target=\(String(describing: mode), privacy: .public)")
-        updateInputMode(mode, animated: true)
+        updateInputMode(mode, animated: true, origin: .userInteraction)
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, isDraggingToggle isDragging: Bool) {

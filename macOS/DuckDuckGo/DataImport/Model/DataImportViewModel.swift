@@ -23,6 +23,8 @@ import UniformTypeIdentifiers
 import PixelKit
 import os.log
 import BrowserServicesKit
+import Persistence
+import PrivacyConfig
 
 struct DataImportViewModel {
 
@@ -36,6 +38,8 @@ struct DataImportViewModel {
     var successfulImportHappened: Bool?
 
     let availableImportSources: [DataImport.Source]
+
+    private let featureFlagger: FeatureFlagger
 
     let selectableImportTypes: Set<DataType>
 
@@ -71,7 +75,14 @@ struct DataImportViewModel {
         case profilePicker
         case moreInfo
         case passwordEntryHelp
-        case getReadPermission(URL)
+        /// Shown after an import fails with no read permission (macOS < 15.2, Safari bookmarks file)
+        case getFileReadPermission(URL)
+        /// Shown before importing when the browser data directory isn't readable (macOS 27+)
+        case getDirectoryReadPermission(URL)
+        /// Shown when the user didn't grant access to the browser data directory (macOS 27+)
+        case directoryReadPermissionCancelled(URL)
+        /// Shown when the browser data directory is still unreadable after the user picked a directory (macOS 27+)
+        case directoryReadPermissionDenied(URL)
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
@@ -215,14 +226,18 @@ struct DataImportViewModel {
          isPickerExpanded: Bool = false,
          isPasswordManagerAutolockEnabled: Bool = AutofillPreferences().isAutoLockEnabled,
          syncFeatureVisibility: SyncFeatureVisibility = .hide,
-         loadProfiles: @escaping (ThirdPartyBrowser) -> BrowserProfileList = { $0.browserProfiles() },
+         loadProfiles: ((ThirdPartyBrowser) -> BrowserProfileList)? = nil,
          dataImporterFactory: @escaping DataImporterFactory = dataImporter,
          requestPrimaryPasswordCallback: @escaping @MainActor (Source) -> String? = Self.requestPrimaryPasswordCallback,
          openPanelCallback: @escaping @MainActor ([UTType]) -> URL? = Self.openPanelCallback,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          reportSenderFactory: @escaping ReportSenderFactory = { FeedbackSender().sendDataImportReport },
          wideEvent: WideEventManaging = Application.appDelegate.wideEvent,
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
+        let directoryAccessFeature = DataDirectoryPermissionFixAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
+        let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessFeature.isAvailable) }
+
         let filteredAvailableSources = availableImportSources.filter {
             // Filter out CSV and HTML as we're using the new combined file import option
              if $0 == .bookmarksHTML || $0 == .csv {
@@ -278,6 +293,7 @@ struct DataImportViewModel {
 
         self.requestPrimaryPasswordCallback = requestPrimaryPasswordCallback
         self.openPanelCallback = openPanelCallback
+        self.featureFlagger = featureFlagger
         self.reportSenderFactory = reportSenderFactory
         self.wideEvent = wideEvent
         self.onFinished = onFinished
@@ -465,7 +481,7 @@ struct DataImportViewModel {
 
                 // On macOS < 15.2, show permission request screen to let user grant access
                 if #unavailable(macOS 15.2) {
-                    screen = .getReadPermission(url)
+                    screen = .getFileReadPermission(url)
                     return true
                 }
 
@@ -817,18 +833,20 @@ extension DataImportViewModel {
         case selectFile
         case skip
         case cancel
+        case cancelImport
         case back
         case done
         case submit
         case `continue`
         case sync
         case close
+        case grantDirectoryAccess(source: Source)
 
         var isDisabled: Bool {
             switch self {
             case .initiateImport(disabled: let disabled):
                 return disabled
-            case .skip, .done, .cancel, .back, .submit, .continue, .selectFile, .sync, .close:
+            case .skip, .done, .cancel, .cancelImport, .back, .submit, .continue, .selectFile, .sync, .close, .grantDirectoryAccess:
                 return false
             }
         }
@@ -851,7 +869,9 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
-        case .getReadPermission:
+        case .getDirectoryReadPermission, .directoryReadPermissionCancelled, .directoryReadPermissionDenied:
+            return .grantDirectoryAccess(source: importSource)
+        case .getFileReadPermission:
             return nil
         case .passwordEntryHelp:
             return nil
@@ -880,8 +900,10 @@ extension DataImportViewModel {
             switch screen {
             case .sourceAndDataTypesPicker:
                 return .cancel
-            case .archiveImport, .profilePicker, .moreInfo, .getReadPermission:
+            case .archiveImport, .profilePicker, .moreInfo, .getFileReadPermission, .getDirectoryReadPermission:
                 return .back
+            case .directoryReadPermissionCancelled, .directoryReadPermissionDenied:
+                return .cancelImport
             case .passwordEntryHelp:
                 return .cancel
             case .fileImport(_, let summary):
@@ -929,6 +951,7 @@ extension DataImportViewModel {
                      loadProfiles: loadProfiles,
                      dataImporterFactory: dataImporterFactory,
                      requestPrimaryPasswordCallback: requestPrimaryPasswordCallback,
+                     featureFlagger: featureFlagger,
                      reportSenderFactory: reportSenderFactory,
                      onFinished: onFinished,
                      onCancelled: onCancelled)
@@ -949,13 +972,40 @@ extension DataImportViewModel {
     }
 
     @MainActor
+    private mutating func reloadProfilesAfterGrantingAccess() {
+        if let dataImportWideEventData {
+            wideEvent.discardFlow(dataImportWideEventData)
+            self.dataImportWideEventData = nil
+        }
+        self = .init(importSource: importSource,
+                     selectedDataTypes: hasUserModifiedDataTypeSelection ? selectedDataTypes : nil,
+                     hasUserModifiedDataTypeSelection: hasUserModifiedDataTypeSelection,
+                     isPickerExpanded: isPickerExpanded,
+                     isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
+                     syncFeatureVisibility: syncFeatureVisibility,
+                     loadProfiles: loadProfiles,
+                     dataImporterFactory: dataImporterFactory,
+                     requestPrimaryPasswordCallback: requestPrimaryPasswordCallback,
+                     openPanelCallback: openPanelCallback,
+                     featureFlagger: featureFlagger,
+                     reportSenderFactory: reportSenderFactory,
+                     wideEvent: wideEvent,
+                     onFinished: onFinished,
+                     onCancelled: onCancelled)
+    }
+
+    @MainActor
     mutating func performAction(for buttonType: ButtonType, dismiss: @escaping () -> Void) {
         switch buttonType {
         case .back, .close:
             goBack()
 
         case .initiateImport, .continue:
-            importButtonPressed()
+            if requiresDirectoryAccessPermission {
+                showDirectoryReadPermissionScreen()
+            } else {
+                importButtonPressed()
+            }
 
         case .selectFile:
             selectFile()
@@ -967,10 +1017,11 @@ extension DataImportViewModel {
             if screen == .passwordEntryHelp {
                 goBack()
             } else {
-                importTask?.cancel()
-                onCancelled()
-                self.dismiss(using: dismiss)
+                cancelImport(using: dismiss)
             }
+
+        case .cancelImport:
+            cancelImport(using: dismiss)
 
         case .submit:
             submitReport()
@@ -979,7 +1030,88 @@ extension DataImportViewModel {
             self.dismiss(using: dismiss)
         case .sync:
             launchSync(using: dismiss)
+        case .grantDirectoryAccess:
+            grantAccessButtonPressed()
         }
+    }
+
+    private mutating func cancelImport(using dismiss: @escaping () -> Void) {
+        importTask?.cancel()
+        onCancelled()
+        self.dismiss(using: dismiss)
+    }
+
+    /// Outcome of asking the user for read access to a browser data directory
+    enum DirectoryAccessResult {
+        case granted
+        case denied
+        case cancelled
+    }
+
+    @MainActor
+    private func requestDirectoryAccess(for directoryURL: URL) -> DirectoryAccessResult {
+        let openPanel = NSOpenPanel.directoryAccessPanel(directoryURL: directoryURL,
+                                                         message: UserText.importBrowserDataAccessPanelMessage(for: importSource),
+                                                         prompt: UserText.importBrowserDataAccessPanelPrompt)
+
+        guard case .OK = openPanel.runModal() else {
+            return .cancelled
+        }
+
+        guard let selectedURL = openPanel.url,
+              // access is granted for what the user actually picked, so it only covers the directory
+              // we need when that's the selection itself or one of its ancestors
+              directoryURL.isContained(in: selectedURL),
+              FileManager.default.isDirectoryReadable(atPath: directoryURL.path) else {
+            return .denied
+        }
+
+        return .granted
+    }
+
+    private var requiresDirectoryAccessPermission: Bool {
+        guard let selectedProfile else {
+            return false
+        }
+
+        let directoryAccessFeature = DataDirectoryPermissionFixAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
+        let isImportScreenAndForced = (screen == .sourceAndDataTypesPicker && directoryAccessFeature.mustForcePermissionFix)
+        return selectedProfile.requiresDirectoryAccessPermission || isImportScreenAndForced
+    }
+
+    @MainActor
+    mutating func showDirectoryReadPermissionScreen() {
+        guard let selectedProfile else { return }
+
+        screen = .getDirectoryReadPermission(selectedProfile.profileURL)
+    }
+
+    @MainActor
+    mutating func grantAccessButtonPressed() {
+        guard let selectedProfile else { return }
+
+        switch requestDirectoryAccess(for: selectedProfile.profileURL) {
+        case .granted:
+            reloadProfilesAfterGrantingAccess()
+            importButtonPressed()
+
+        case .denied:
+            showDirectoryReadPermissionDeniedScreen(for: selectedProfile)
+
+        case .cancelled:
+            showDirectoryReadPermissionCancelledScreen(for: selectedProfile)
+        }
+    }
+
+    @MainActor
+    private mutating func showDirectoryReadPermissionCancelledScreen(for profile: BrowserProfile) {
+        screen = .directoryReadPermissionCancelled(profile.profileURL)
+    }
+
+    @MainActor
+
+    private mutating func showDirectoryReadPermissionDeniedScreen(for profile: BrowserProfile) {
+        screen = .directoryReadPermissionDenied(profile.profileURL)
     }
 
     @MainActor

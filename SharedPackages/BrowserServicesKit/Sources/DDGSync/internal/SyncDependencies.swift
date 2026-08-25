@@ -42,6 +42,7 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
     var scheduler: SchedulingInternal { get }
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var errorEvents: EventMapping<SyncError> { get }
+    var unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent> { get }
     var shouldPreserveAccountWhenSyncDisabled: () -> Bool { get }
     var syncFeatureFlags: any SyncFeatureFlagProviding { get }
 

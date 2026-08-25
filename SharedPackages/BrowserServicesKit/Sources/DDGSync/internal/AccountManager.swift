@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 import DDGSyncCrypto
 import Networking
 import os.log
@@ -32,6 +33,7 @@ struct AccountManager: AccountManaging {
     let accountInfoKeys: (any AccountInfoKeyManaging)?
     let accountInfoKeyFactory: AccountInfoKeyFactory
     let deviceInfoCodec: DeviceInfoCoding
+    let unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>
     let isScopedAccessCredentialsEnabled: () -> Bool
     let canWriteUnifiedDeviceList: () -> Bool
     let canReadUnifiedDeviceList: () -> Bool
@@ -43,6 +45,7 @@ struct AccountManager: AccountManaging {
          accountInfoKeys: (any AccountInfoKeyManaging)? = nil,
          accountInfoKeyFactory: AccountInfoKeyFactory? = nil,
          deviceInfoCodec: DeviceInfoCoding = DeviceInfoCodec(),
+         unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>? = nil,
          isScopedAccessCredentialsEnabled: @escaping () -> Bool,
          canWriteUnifiedDeviceList: @escaping () -> Bool = { false },
          canReadUnifiedDeviceList: @escaping () -> Bool = { false }) {
@@ -56,6 +59,9 @@ struct AccountManager: AccountManaging {
         self.accountInfoKeys = accountInfoKeys
         self.accountInfoKeyFactory = accountInfoKeyFactory ?? DefaultAccountInfoKeyFactory(crypter: crypter)
         self.deviceInfoCodec = deviceInfoCodec
+        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? EventMapping { _, _, _, onComplete in
+            onComplete(nil)
+        }
         self.isScopedAccessCredentialsEnabled = isScopedAccessCredentialsEnabled
         self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
         self.canReadUnifiedDeviceList = canReadUnifiedDeviceList
@@ -94,24 +100,39 @@ struct AccountManager: AccountManaging {
 
         let request = api.createUnauthenticatedJSONRequest(url: endpoints.signup, method: .post, json: paramJson)
 
-        let result = try await request.execute()
+        do {
+            let response = try await request.execute()
 
-        guard let body = result.data else {
-            throw SyncError.noResponseBody
+            guard let body = response.data else {
+                throw SyncError.noResponseBody
+            }
+
+            guard let result = try? JSONDecoder.snakeCaseKeys.decode(Signup.Result.self, from: body) else {
+                throw SyncError.unableToDecodeResponse("Failed to decode signup result")
+            }
+
+            if deviceInfoFields != nil {
+                unifiedDeviceListEvents.fire(.accountInfoKeyCreateSuccess)
+                unifiedDeviceListEvents.fire(.ownRowDeviceInfoFirstWriteSuccess)
+            }
+            return SyncAccount(deviceId: deviceId,
+                               deviceName: deviceName,
+                               deviceType: deviceType,
+                               userId: userId,
+                               primaryKey: Data(accountKeys.primaryKey),
+                               secretKey: Data(accountKeys.secretKey),
+                               token: result.token,
+                               state: .active)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            if deviceInfoFields != nil {
+                unifiedDeviceListEvents.fire(
+                    .accountInfoKeyCreateFailed(UnifiedDeviceListTelemetry.keyCreateRequestFailureReason(for: error)),
+                    error: error)
+            }
+            throw error
         }
-
-        guard let result = try? JSONDecoder.snakeCaseKeys.decode(Signup.Result.self, from: body) else {
-            throw SyncError.unableToDecodeResponse("Failed to decode signup result")
-        }
-
-        return SyncAccount(deviceId: deviceId,
-                           deviceName: deviceName,
-                           deviceType: deviceType,
-                           userId: userId,
-                           primaryKey: Data(accountKeys.primaryKey),
-                           secretKey: Data(accountKeys.secretKey),
-                           token: result.token,
-                           state: .active)
     }
 
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> LoginResult {
@@ -260,27 +281,40 @@ struct AccountManager: AccountManaging {
             return nil
         }
 
+        let keys: [ProtectedKey]
         do {
-            let keys = try accountInfoKeyFactory.makeProtectedKeys(accountSecretKey: accountSecretKey,
-                                                                  thirdPartyMainKey: nil)
-            guard let protectedKey = keys.first else {
-                Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: missing account_info protected key")
-                return nil
-            }
-            let encryptedDeviceInfo = try deviceInfoCodec.encrypt(DeviceInfo(name: deviceName, type: deviceType),
-                                                                  using: protectedKey)
-            guard encryptedDeviceInfo.utf8.count <= DeviceInfo.maximumEncryptedLength else {
-                Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: encrypted payload exceeds the maximum length")
-                return nil
-            }
-            Logger.sync.debug("Sync-UnifiedDevices: prepared account_info key and device_info for signup")
-            return (keys: keys, deviceInfo: encryptedDeviceInfo)
+            keys = try accountInfoKeyFactory.makeProtectedKeys(accountSecretKey: accountSecretKey,
+                                                               thirdPartyMainKey: nil)
         } catch {
-            // Device info is additive, so local preparation failures must not block legacy signup.
+            unifiedDeviceListEvents.fire(.accountInfoKeyCreateFailed(.mintFailed), error: error)
             let errorType = String(describing: type(of: error))
-            Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: \(errorType)")
+            Logger.sync.error("Sync-UnifiedDevices: failed to prepare account_info key for signup: \(errorType)")
             return nil
         }
+        guard let protectedKey = keys.first else {
+            unifiedDeviceListEvents.fire(.accountInfoKeyCreateFailed(.mintFailed))
+            Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: missing account_info protected key")
+            return nil
+        }
+
+        let encryptedDeviceInfo: String
+        do {
+            encryptedDeviceInfo = try deviceInfoCodec.encrypt(DeviceInfo(name: deviceName, type: deviceType),
+                                                              using: protectedKey)
+        } catch {
+            // Device info is additive, so local preparation failures must not block legacy signup.
+            unifiedDeviceListEvents.fire(.ownRowDeviceInfoFirstWriteFailed(.encryptFailed), error: error)
+            let errorType = String(describing: type(of: error))
+            Logger.sync.error("Sync-UnifiedDevices: failed to encrypt unified device info for signup: \(errorType)")
+            return nil
+        }
+        guard encryptedDeviceInfo.utf8.count <= DeviceInfo.maximumEncryptedLength else {
+            unifiedDeviceListEvents.fire(.ownRowDeviceInfoFirstWriteFailed(.encryptFailed))
+            Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: encrypted payload exceeds the maximum length")
+            return nil
+        }
+        Logger.sync.debug("Sync-UnifiedDevices: prepared account_info key and device_info for signup")
+        return (keys: keys, deviceInfo: encryptedDeviceInfo)
     }
 
     private func login(_ info: ExtractedLoginInfo,

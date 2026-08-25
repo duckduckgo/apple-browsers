@@ -300,6 +300,39 @@ public class SyncErrorHandler: EventMapping<SyncError>, ObservableObject {
     }
 }
 
+private struct UnifiedDeviceListPixel: PixelKit.Event {
+    let name: String
+    let parameters: [String: String]?
+    let standardParameters: [PixelKitStandardParameter]? = [.pixelSource]
+    let error: NSError? = nil
+}
+
+final class UnifiedDeviceListPixelHandler: EventMapping<UnifiedDeviceListEvent> {
+
+    init() {
+        super.init { event, _, _, onComplete in
+            PixelKit.fire(
+                UnifiedDeviceListPixel(name: event.name, parameters: event.parameters),
+                frequency: event.frequency.pixelKitFrequency,
+                options: .unenforcedPrefix)
+            onComplete(nil)
+        }
+    }
+
+    override init(mapping: @escaping EventMapping<UnifiedDeviceListEvent>.Mapping) {
+        fatalError("Use init()")
+    }
+}
+
+private extension UnifiedDeviceListEvent.Frequency {
+    var pixelKitFrequency: PixelKit.Frequency {
+        switch self {
+        case .standard: return .standard
+        case .daily: return .daily
+        }
+    }
+}
+
 extension SyncErrorHandler: SyncErrorHandling {
 
     func syncCredentialsSucceded() {

@@ -19,17 +19,30 @@
 import Foundation
 import os.log
 
+enum UnifiedDeviceListReadObservation: Equatable {
+    enum MissingDeviceInfoFallback: Equatable {
+        case legacy
+        case placeholder
+    }
+
+    case event(UnifiedDeviceListEvent)
+    case ownRowMissingDeviceInfo(MissingDeviceInfoFallback)
+}
+
 struct RegisteredDeviceMappingResult {
     let devices: [RegisteredDevice]
     let needsCurrentDeviceInfoRepair: Bool
+    let unifiedReadObservations: [UnifiedDeviceListReadObservation]
     // Diagnostics for the Sync debug UI only; not used to drive device-list behaviour.
     let debugDevices: [RegisteredDeviceDebugInfo]
 
     init(devices: [RegisteredDevice],
          needsCurrentDeviceInfoRepair: Bool,
+         unifiedReadObservations: [UnifiedDeviceListReadObservation] = [],
          debugDevices: [RegisteredDeviceDebugInfo] = []) {
         self.devices = devices
         self.needsCurrentDeviceInfoRepair = needsCurrentDeviceInfoRepair
+        self.unifiedReadObservations = unifiedReadObservations
         self.debugDevices = debugDevices
     }
 }
@@ -104,6 +117,20 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         let unifiedDeviceInfoFailure: UnifiedDeviceInfoFailure?
     }
 
+    private enum AccountInfoKeyResolution {
+        case notNeeded
+        case cancelled
+        case available(AccountInfoKey)
+        case unavailable(UnifiedDeviceListEvent.AccountInfoKeyUnavailableReason)
+
+        var key: AccountInfoKey? {
+            guard case .available(let key) = self else {
+                return nil
+            }
+            return key
+        }
+    }
+
     let crypter: CryptingInternal
     let scopedAccess: ScopedAccessCredentialManaging?
     let accountInfoKeys: AccountInfoKeyManaging?
@@ -145,27 +172,37 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
                                           isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
-        let accountInfoKey = await accountInfoKeyIfNeeded(for: entries,
-                                                          account: account,
-                                                          isUnifiedReadEnabled: isUnifiedReadEnabled)
+        let accountInfoKeyResolution = await accountInfoKeyIfNeeded(for: entries,
+                                                                    account: account,
+                                                                    isUnifiedReadEnabled: isUnifiedReadEnabled)
         let initialMappings = entries.map {
             registeredDevice(from: $0,
                              account: account,
-                             accountInfoKey: accountInfoKey,
+                             accountInfoKey: accountInfoKeyResolution.key,
                              thirdPartyMainKey: nil,
                              isUnifiedReadEnabled: isUnifiedReadEnabled)
         }
         let finalMappings: [MappingAttempt]
+        var wasAccountInfoKeyRefreshCancelled = false
+        var accountInfoKeyRefreshFailureReason: UnifiedDeviceListEvent.AccountInfoKeyUnavailableReason?
         if initialMappings.contains(where: { $0.unifiedDeviceInfoFailure == .staleKey }),
-           let accountInfoKeys,
-           let refreshedAccountInfoKey = try? await accountInfoKeys.refreshKey(for: account) {
-            Logger.sync.debug("Sync-UnifiedDevices: refreshed account_info key after stale device_info")
-            finalMappings = entries.map {
-                registeredDevice(from: $0,
-                                 account: account,
-                                 accountInfoKey: refreshedAccountInfoKey,
-                                 thirdPartyMainKey: nil,
-                                 isUnifiedReadEnabled: isUnifiedReadEnabled)
+           let accountInfoKeys {
+            do {
+                let refreshedAccountInfoKey = try await accountInfoKeys.refreshKey(for: account)
+                Logger.sync.debug("Sync-UnifiedDevices: refreshed account_info key after stale device_info")
+                finalMappings = entries.map {
+                    registeredDevice(from: $0,
+                                     account: account,
+                                     accountInfoKey: refreshedAccountInfoKey,
+                                     thirdPartyMainKey: nil,
+                                     isUnifiedReadEnabled: isUnifiedReadEnabled)
+                }
+            } catch is CancellationError {
+                wasAccountInfoKeyRefreshCancelled = true
+                finalMappings = initialMappings
+            } catch {
+                accountInfoKeyRefreshFailureReason = UnifiedDeviceListTelemetry.accountInfoKeyUnavailableReason(for: error)
+                finalMappings = initialMappings
             }
         } else {
             finalMappings = initialMappings
@@ -178,6 +215,13 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
             needsCurrentDeviceInfoRepair: needsCurrentDeviceInfoRepair(in: resolvedMappings,
                                                                        entries: entries,
                                                                        account: account),
+            unifiedReadObservations: unifiedReadObservations(mappings: resolvedMappings,
+                                                              entries: entries,
+                                                              account: account,
+                                                              accountInfoKeyResolution: accountInfoKeyResolution,
+                                                              wasAccountInfoKeyRefreshCancelled: wasAccountInfoKeyRefreshCancelled,
+                                                              accountInfoKeyRefreshFailureReason: accountInfoKeyRefreshFailureReason,
+                                                              isUnifiedReadEnabled: isUnifiedReadEnabled),
             debugDevices: resolvedMappings.map {
                 RegisteredDeviceDebugInfo(device: $0.device,
                                           source: $0.source.debugSource,
@@ -285,6 +329,109 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         }
     }
 
+    private func unifiedReadObservations(
+        mappings: [MappingAttempt],
+        entries: [RegisteredDeviceEntry],
+        account: SyncAccount,
+        accountInfoKeyResolution: AccountInfoKeyResolution,
+        wasAccountInfoKeyRefreshCancelled: Bool,
+        accountInfoKeyRefreshFailureReason: UnifiedDeviceListEvent.AccountInfoKeyUnavailableReason?,
+        isUnifiedReadEnabled: Bool
+    ) -> [UnifiedDeviceListReadObservation] {
+        guard isUnifiedReadEnabled else {
+            return []
+        }
+        if case .cancelled = accountInfoKeyResolution {
+            return []
+        }
+        guard !wasAccountInfoKeyRefreshCancelled else {
+            return []
+        }
+
+        var observations: [UnifiedDeviceListReadObservation] = []
+        if case .unavailable(let reason) = accountInfoKeyResolution {
+            observations.append(.event(.accountInfoKeyUnavailable(reason)))
+        }
+        if let accountInfoKeyRefreshFailureReason {
+            append(.event(.accountInfoKeyUnavailable(accountInfoKeyRefreshFailureReason)),
+                   ifMissingFrom: &observations)
+        }
+
+        for (entry, mapping) in zip(entries, mappings) {
+            if entry.id == account.deviceId {
+                appendOwnRowObservation(for: mapping, to: &observations)
+            } else if let credential = credential(for: entry) {
+                appendOtherRowObservations(for: mapping,
+                                           credential: credential,
+                                           to: &observations)
+            }
+        }
+        return observations
+    }
+
+    private func appendOwnRowObservation(for mapping: MappingAttempt,
+                                         to observations: inout [UnifiedDeviceListReadObservation]) {
+        switch mapping.source {
+        case .deviceInfo:
+            append(.event(.ownRowResolvedDeviceInfo), ifMissingFrom: &observations)
+        case .legacy, .placeholder:
+            guard let failure = mapping.unifiedDeviceInfoFailure,
+                  failure != .keyUnavailable else {
+                return
+            }
+            if failure == .missing {
+                let fallback: UnifiedDeviceListReadObservation.MissingDeviceInfoFallback = mapping.source == .legacy
+                    ? .legacy
+                    : .placeholder
+                append(.ownRowMissingDeviceInfo(fallback), ifMissingFrom: &observations)
+                return
+            }
+            let event: UnifiedDeviceListEvent = mapping.source == .legacy
+                ? .ownRowResolvedLegacy(.blobDecryptFailed)
+                : .ownRowResolvedPlaceholder(.blobDecryptFailed)
+            append(.event(event), ifMissingFrom: &observations)
+        }
+    }
+
+    private func appendOtherRowObservations(for mapping: MappingAttempt,
+                                            credential: UnifiedDeviceListEvent.Credential,
+                                            to observations: inout [UnifiedDeviceListReadObservation]) {
+        if mapping.source == .deviceInfo {
+            return
+        }
+
+        guard mapping.unifiedDeviceInfoFailure != .keyUnavailable else {
+            return
+        }
+        if mapping.unifiedDeviceInfoFailure == .staleKey || mapping.unifiedDeviceInfoFailure == .corrupt {
+            append(.event(.otherRowDeviceInfoFailedDecryption(credential)), ifMissingFrom: &observations)
+        }
+        if mapping.source == .placeholder {
+            append(.event(.otherRowResolvedPlaceholder(credential)), ifMissingFrom: &observations)
+        }
+    }
+
+    private func credential(for entry: RegisteredDeviceEntry) -> UnifiedDeviceListEvent.Credential? {
+        switch entry.credentialId {
+        case SyncCredentialID.defaultCredential:
+            return .ddg
+        case SyncCredentialID.thirdParty:
+            return .thirdParty
+        case nil:
+            return UnifiedDeviceListEvent.Credential.none
+        default:
+            return nil
+        }
+    }
+
+    private func append(_ observation: UnifiedDeviceListReadObservation,
+                        ifMissingFrom observations: inout [UnifiedDeviceListReadObservation]) {
+        guard !observations.contains(observation) else {
+            return
+        }
+        observations.append(observation)
+    }
+
     private func readUnifiedDeviceInfo(from entry: RegisteredDeviceEntry,
                                        accountInfoKey: AccountInfoKey?,
                                        isUnifiedReadEnabled: Bool) -> UnifiedDeviceInfoReadResult {
@@ -362,13 +509,21 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     private func accountInfoKeyIfNeeded(for entries: [RegisteredDeviceEntry],
                                         account: SyncAccount,
-                                        isUnifiedReadEnabled: Bool) async -> AccountInfoKey? {
+                                        isUnifiedReadEnabled: Bool) async -> AccountInfoKeyResolution {
         guard isUnifiedReadEnabled,
-              entries.contains(where: { $0.info != nil }),
-              let accountInfoKeys else {
-            return nil
+              entries.contains(where: { $0.info != nil }) else {
+            return .notNeeded
         }
-        return try? await accountInfoKeys.loadKey(for: account)
+        guard let accountInfoKeys else {
+            return .unavailable(.keysFetchFailed)
+        }
+        do {
+            return .available(try await accountInfoKeys.loadKey(for: account))
+        } catch is CancellationError {
+            return .cancelled
+        } catch {
+            return .unavailable(UnifiedDeviceListTelemetry.accountInfoKeyUnavailableReason(for: error))
+        }
     }
 
     private func thirdPartyMainKeyIfNeeded(for entries: [RegisteredDeviceEntry], account: SyncAccount) async -> Data? {

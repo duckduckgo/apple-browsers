@@ -337,6 +337,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         escapeHatchModel = model
+        unifiedSuggestionsHost?.refreshMessages()
         applyEscapeHatchPlacement()
         updateSingleHostTopOffset()
         if isContentActive {
@@ -373,7 +374,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     private func applyEscapeHatchPlacement() {
-        unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel, openedAfterIdle: sessionOpenedAfterIdle)
+        unifiedSuggestionsHost?.setEscapeHatch(embeddedEscapeHatchModel)
     }
 
     /// Keeps the List viewport full-height on modern systems. On iOS 15 the table-backed SwiftUI List

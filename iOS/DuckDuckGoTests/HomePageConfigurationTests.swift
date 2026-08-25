@@ -705,6 +705,34 @@ struct HomePageConfigurationTests {
     }
 
     @available(iOS 16, *)
+    @Test("Legacy focused model refreshes after contextual onboarding", .timeLimit(.minutes(1)))
+    func legacyFocusedModelRefreshesAfterContextualOnboarding() {
+        let notificationCenter = NotificationCenter()
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: makeRemoteMessage(id: "message"))
+        var isStillOnboarding = true
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { isStillOnboarding }
+        )
+        let focusedModel = makeMessagesModel(configuration: configuration, notificationCenter: notificationCenter)
+        focusedModel.load()
+
+        #expect(focusedModel.homeMessageViewModels.isEmpty)
+
+        isStillOnboarding = false
+        let normalModel = makeMessagesModel(configuration: configuration, notificationCenter: notificationCenter)
+        normalModel.load()
+
+        #expect(normalModel.homeMessageViewModels.count == 1)
+        #expect(focusedModel.homeMessageViewModels.isEmpty)
+
+        focusedModel.refresh()
+
+        #expect(focusedModel.homeMessageViewModels.count == 1)
+    }
+
+    @available(iOS 16, *)
     @Test("A dismissal notification cannot acquire the next message", .timeLimit(.minutes(1)))
     func dismissalNotificationWaitsForNextPreparation() async {
         let notificationCenter = NotificationCenter()

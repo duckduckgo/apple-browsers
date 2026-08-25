@@ -62,21 +62,20 @@ final class UnifiedSuggestionsHost {
     private var logoHostingController: UIHostingController<UnifiedSuggestionsLogoView>?
     private var escapeHatch: EscapeHatchModel?
     private var contentInsets: UIEdgeInsets = .zero
-    private var openedAfterIdle = false
     private var cancellables = Set<AnyCancellable>()
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
 
-    func setEscapeHatch(_ model: EscapeHatchModel?, openedAfterIdle: Bool) {
-        if self.openedAfterIdle != openedAfterIdle {
-            self.openedAfterIdle = openedAfterIdle
-            config.messagesModel.refresh()
-        }
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
         guard escapeHatch !== model else { return }
         escapeHatch = model
         rebuildRootView()
+    }
+
+    func refreshMessages() {
+        config.messagesModel.refresh()
     }
 
     func setSyncPromo(_ promo: AnyView?) {

@@ -55,6 +55,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     private let onMove: (_ from: IndexSet, _ to: Int) -> Void
 
     @State private var movedItem: Data?
+    @State private var dragOrder: [Data]?
     @State private var activeDragSessionID: ObjectIdentifier?
 
     init(_ data: [Data],
@@ -102,6 +103,9 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
                 typeIdentifier: metadata.type.identifier,
                 onDragBegan: { sessionID in
                     movedItem = item
+                    if sessionID != nil {
+                        dragOrder = data
+                    }
                     activeDragSessionID = sessionID
                 },
                 canHandleDrop: { sessionID in
@@ -111,6 +115,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
                 onDragEnded: { sessionID in
                     guard activeDragSessionID == sessionID else { return }
                     movedItem = nil
+                    dragOrder = nil
                     activeDragSessionID = nil
                 }
             )
@@ -151,14 +156,17 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     }
 
     private func moveDraggedItem(over item: Data) {
+        var currentOrder = dragOrder ?? data
         guard item != movedItem,
               let current = movedItem,
-              let from = data.firstIndex(of: current),
-              let to = data.firstIndex(of: item)
+              let from = currentOrder.firstIndex(of: current),
+              let to = currentOrder.firstIndex(of: item)
         else { return }
 
         let fromIndices = IndexSet(integer: from)
         let toIndex = to > from ? to + 1 : to
+        currentOrder.move(fromOffsets: fromIndices, toOffset: toIndex)
+        dragOrder = currentOrder
         onMove(fromIndices, toIndex)
     }
 }

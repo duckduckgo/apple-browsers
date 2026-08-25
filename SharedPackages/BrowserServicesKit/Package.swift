@@ -58,7 +58,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.0"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "16.12.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "16.13.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
@@ -642,7 +642,7 @@ let package = Package(
                 "BrowserServicesKitTestsUtils",
                 "SecureStorageTestsUtils",
                 "Subscription",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfigTestsUtils",
                 "WKAbstractions",
             ],
@@ -659,7 +659,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "Crashes",
-                .product(name: "PersistenceTestingUtils", package: "Persistence")
+                .product(name: "Persistence", package: "Persistence")
             ]
         ),
         .testTarget(
@@ -668,7 +668,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "BookmarksTestsUtils",
                 "DDGSync",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfigTestsUtils",
                 "NetworkingTestingUtils"
             ],
@@ -738,14 +738,14 @@ let package = Package(
             name: "DuckAiDataStoreTests",
             dependencies: [
                 "DuckAiDataStore",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
                 "SecureStorage",
             ]
         ),
         .testTarget(
             name: "PrivacyConfigTests",
             dependencies: [
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfig",
                 "PrivacyConfigTestsUtils"
             ],
@@ -760,7 +760,7 @@ let package = Package(
                 "BrowserServicesKitTestsUtils",
                 "RemoteMessaging",
                 "RemoteMessagingTestsUtils",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
             ],
             resources: [
                 .copy("Resources/remote-messaging-config-example.json"),
@@ -788,7 +788,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "Configuration",
                 "NetworkingTestingUtils",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
             ]
         ),
         .testTarget(
@@ -796,7 +796,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "BookmarksTestsUtils",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
                 "SecureStorageTestsUtils",
                 "SyncDataProviders",
             ]
@@ -815,7 +815,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "PrivacyDashboard",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
                 "BrowserServicesKitTestsUtils",
             ]
@@ -828,7 +828,7 @@ let package = Package(
                 "Subscription",
                 "SubscriptionTestingUtilities",
                 "NetworkingTestingUtils",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
             ]
         ),
         .testTarget(
@@ -904,7 +904,7 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "AutoconsentStats",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
             ]
         ),
     ],

@@ -20,7 +20,7 @@
 import AIChat
 import Foundation
 import PrivacyConfig
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import UIKit
 @testable import DuckDuckGo
 

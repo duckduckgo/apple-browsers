@@ -28,7 +28,6 @@ let package = Package(
     ],
     products: [
         .library(name: "Persistence", targets: ["Persistence"]),
-        .library(name: "PersistenceTestingUtils", targets: ["PersistenceTestingUtils"]),
     ],
     dependencies: [
         .package(path: "../Common"),
@@ -43,14 +42,8 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
-            name: "PersistenceTestingUtils",
-            dependencies: [
-                "Persistence"
+            exclude: [
+                "TestingSupport/README.md"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -59,7 +52,7 @@ let package = Package(
         .testTarget(
             name: "PersistenceTests",
             dependencies: [
-                "PersistenceTestingUtils",
+                "Persistence",
             ]
         ),
     ]

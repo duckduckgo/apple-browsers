@@ -19,7 +19,6 @@ name: test_contextual_immediate_uti_pre_submit_toolbar
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.unifiedToggleInput: "true"
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "true"
         ff.aiChatAutoAttachContextByDefault: "false"

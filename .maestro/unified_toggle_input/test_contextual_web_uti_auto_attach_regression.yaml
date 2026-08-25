@@ -19,7 +19,6 @@ name: test_contextual_web_uti_auto_attach_regression
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.unifiedToggleInput: "true"
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "false"
         ff.aiChatAutoAttachContextByDefault: "true"

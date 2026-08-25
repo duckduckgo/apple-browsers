@@ -98,7 +98,7 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
             ]
         ),
         .testTarget(
@@ -119,7 +119,7 @@ let package = Package(
                 "AppUpdaterTestHelpers",
                 .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ]

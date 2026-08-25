@@ -20,7 +20,7 @@
 import XCTest
 import CoreData
 import Bookmarks
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import Core
 @testable import DuckDuckGo
 

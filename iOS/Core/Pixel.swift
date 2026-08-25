@@ -28,7 +28,6 @@ import os.log
 /// *** Deprecated.  Use PixelKit for new pixels. ***
 public struct PixelParameters {
     public static let url = "url"
-    public static let duration = "dur"
     static let test = "test"
     public static let appVersion = "appVersion"
 

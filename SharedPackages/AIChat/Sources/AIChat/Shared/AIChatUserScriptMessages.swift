@@ -81,6 +81,10 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// (expands the input, reveals the model chip).
     case showModelPicker
 
+    case showReasoningPicker
+
+    case openFilePicker
+
     /// Posted by the FE while the subscription recovery card is showing for the active chat.
     case disableChatInput
 

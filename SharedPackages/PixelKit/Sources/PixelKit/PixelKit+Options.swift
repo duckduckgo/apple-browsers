@@ -65,13 +65,28 @@ extension PixelKit {
         /// See `RetryQueue/README.md` for the mechanics.
         public var retryOnFailure: Bool
 
+        /// Whether to append the `atb` parameter, carrying the user's ATB cohort with its variant
+        /// suffix. Off by default.
+        ///
+        /// Deliberately per-pixel rather than PixelKit-wide: ATB is a cohort identifier, so
+        /// attaching it to a pixel adds a correlation vector and is a data-collection decision that
+        /// has to be privacy triaged for that specific pixel. The legacy iOS `Pixel` system gated it
+        /// the same way, through `includedParameters`.
+        ///
+        /// Requires a `PixelKitParameterProviding` to have been injected at `setUp`. Without one the
+        /// parameter is omitted even when a pixel opts in, so a host that has not wired a provider
+        /// keeps its current behaviour rather than sending an empty cohort. With a provider that has
+        /// no ATB yet, the parameter *is* sent with an empty value, matching legacy behaviour.
+        public var includeATB: Bool
+
         public init(headers: [String: String]? = nil,
                     additionalParameters: [String: String]? = nil,
                     namePrefix: String? = nil,
                     allowedQueryReservedCharacters: CharacterSet? = nil,
                     includeAppVersionParameter: Bool = true,
                     enforcePrefix: Bool = true,
-                    retryOnFailure: Bool = false) {
+                    retryOnFailure: Bool = false,
+                    includeATB: Bool = false) {
             self.headers = headers
             self.additionalParameters = additionalParameters
             self.namePrefix = namePrefix
@@ -79,6 +94,7 @@ extension PixelKit {
             self.includeAppVersionParameter = includeAppVersionParameter
             self.enforcePrefix = enforcePrefix
             self.retryOnFailure = retryOnFailure
+            self.includeATB = includeATB
         }
 
         // MARK: - Curated presets
@@ -102,6 +118,10 @@ extension PixelKit {
         /// For pixels whose delivery matters enough to survive a failed send, and that have been
         /// privacy triaged for the retry parameters. See `retryOnFailure`.
         public static let withRetry = Options(retryOnFailure: true)
+
+        /// For pixels that carry the user's ATB cohort, and that have been privacy triaged for it.
+        /// See `includeATB`.
+        public static let withATB = Options(includeATB: true)
 
         /// Attaches extra query parameters.
         public static func parameters(_ parameters: [String: String]) -> Options {

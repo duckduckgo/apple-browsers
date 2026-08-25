@@ -100,11 +100,6 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onDismissPressed: (() -> Void)? { get set }
     var onFirePressed: (() -> Void)? { get set }
 
-    /// Callback triggered when the AI Chat left button is tapped
-    var onAIChatLeftButtonPressed: (() -> Void)? { get set }
-
-    /// Callback triggered when the omnibar branding area is tapped while in AI Chat mode
-    var onAIChatBrandingPressed: (() -> Void)? { get set }
     var longPressMenuProvider: (() -> UIMenu?)? { get set }
     var onLongPressMenuDisplayed: (() -> Void)? { get set }
 
@@ -137,8 +132,9 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     /// Re-asserts the field's resting background for the current position. No-op unless floating UI.
     func restoreFloatingFieldAppearance()
 
-    /// Swaps the omnibar Duck.ai button glyph to reflect whether a contextual surface is open.
-    func updateAIChatButtonForContextualSurface(isPresented: Bool)
+    /// Swaps the omnibar Duck.ai button glyph to reflect a contextual session on this tab: a surface
+    /// on screen, or a chat to return to once it is gone.
+    func updateAIChatButtonForContextualChat(hasContextualSession: Bool)
 
     /// In floating UI minimal chrome, wraps the button groups in their own glass capsules (the field
     /// keeps its glass). Pass `false` to restore the standard per-position appearance.
@@ -181,7 +177,6 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isAIChatButtonHidden: Bool { get set }
     var isSearchLoupeHidden: Bool { get set }
     var isDismissButtonHidden: Bool { get set }
-    var isFullAIChatHidden: Bool { get set }
     var isFireButtonHidden: Bool { get set }
     var isTabSwitcherButtonHidden: Bool { get set }
     var layoutMode: OmniBarLayoutMode { get }

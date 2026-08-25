@@ -27,7 +27,6 @@ import os.log
 import Persistence
 import PrivacyConfig
 import FeatureFlags_iOS
-
 /// Owns the iOS fire-mode Duck.ai native storage handler and rotates it on burn.
 ///
 /// The underlying disk-backed handler lives at
@@ -41,8 +40,9 @@ import FeatureFlags_iOS
 /// Support; see `DuckAiNativeStorageContainerMigration`.
 ///
 /// Conforms to `DuckAiNativeStorageHandling` and `DuckAiNativeChatsObserving` so
-/// consumers don't need to know about rotation; only `FireExecutor` calls
-/// `syncWithCurrentFireModeID()` directly on the concrete type.
+/// the chat-history sheet can observe Fire chats. Consumers don't need to know
+/// about rotation; only `FireExecutor` calls `syncWithCurrentFireModeID()` on
+/// the concrete type.
 final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAiNativeChatsObserving {
 
     private enum Constants {
@@ -68,8 +68,6 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
     private let consentSeedSource: DuckAiNativeStorageHandling?
     private let pixelFiring: DuckAiNativeStoragePixelFiring
     private let keyStoreAccessGroup: String
-    /// Signals subscribers to resubscribe after the inner store rotates to a new fire-mode ID.
-    private let rotationSubject = PassthroughSubject<Void, Never>()
 
     /// Returns `nil` if `aiChatNativeStorage` is off, the required container is
     /// unavailable, or the underlying store can't be opened.
@@ -141,41 +139,28 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
     /// than initiating its own rotation (which would advance the ID twice).
     /// Falls back to clearing the existing store in place if opening a new one fails.
     func syncWithCurrentFireModeID() {
-        var previousID: UUID?
-        var didChange = false
         lock.lock()
+        defer { lock.unlock() }
         let currentID = dataStoreIDManager.currentFireModeID
-        if currentID != openedID {
-            previousID = openedID
-            if let new = Self.makeHandler(in: baseDirectoryURL,
-                                          id: currentID,
-                                          keyStoreAccessGroup: keyStoreAccessGroup,
-                                          pixelFiring: pixelFiring) {
-                _inner = new
-                openedID = currentID
-                didChange = true
-            } else {
-                Logger.aiChat.error("[NativeStorage] Failed to open fire-mode store at id \(currentID); clearing in place instead")
-                try? _inner.deleteAllChats()
-                try? _inner.deleteAllFiles()
-                try? _inner.deleteAllEntries()
-                previousID = nil
-                didChange = true
-            }
+        guard currentID != openedID else { return }
+        let previousID = openedID
+        guard let new = Self.makeHandler(in: baseDirectoryURL,
+                                         id: currentID,
+                                         keyStoreAccessGroup: keyStoreAccessGroup,
+                                         pixelFiring: pixelFiring) else {
+            Logger.aiChat.error("[NativeStorage] Failed to open fire-mode store at id \(currentID); clearing in place instead")
+            try? _inner.deleteAllChats()
+            try? _inner.deleteAllFiles()
+            try? _inner.deleteAllEntries()
+            return
         }
-        lock.unlock()
+        _inner = new
+        openedID = currentID
 
-        // Notify after releasing the lock so subscribers can read `inner` without deadlocking.
-        if didChange {
-            rotationSubject.send()
-        }
-
-        if let previousID {
-            DispatchQueue.global(qos: .utility).async { [baseDirectoryURL, dataStoreIDManager] in
-                let url = baseDirectoryURL.appendingPathComponent(previousID.uuidString)
-                try? FileManager.default.removeItem(at: url)
-                dataStoreIDManager.removePendingRemovalFireModeID(previousID)
-            }
+        DispatchQueue.global(qos: .utility).async { [baseDirectoryURL, dataStoreIDManager] in
+            let url = baseDirectoryURL.appendingPathComponent(previousID.uuidString)
+            try? FileManager.default.removeItem(at: url)
+            dataStoreIDManager.removePendingRemovalFireModeID(previousID)
         }
     }
 
@@ -252,20 +237,11 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
     func getChat(chatId: String) throws -> DuckAiChatRecord? { try inner.getChat(chatId: chatId) }
     func getAllChats() throws -> [DuckAiChatRecord] { try inner.getAllChats() }
     func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
-        rotationSubject
-            .prepend(())
-            .map { [weak self] _ -> AnyPublisher<[DuckAiChatRecord], Error> in
-                guard let self else {
-                    return Empty(completeImmediately: true).setFailureType(to: Error.self).eraseToAnyPublisher()
-                }
-                if let observing = self.inner as? DuckAiNativeChatsObserving {
-                    return observing.chatsPublisher()
-                }
-                return Just((try? self.inner.getAllChats()) ?? [])
-                    .setFailureType(to: Error.self)
-                    .eraseToAnyPublisher()
-            }
-            .switchToLatest()
+        if let observing = inner as? DuckAiNativeChatsObserving {
+            return observing.chatsPublisher()
+        }
+        return Just((try? inner.getAllChats()) ?? [])
+            .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }
     func deleteChat(chatId: String) throws { try inner.deleteChat(chatId: chatId) }

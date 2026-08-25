@@ -706,11 +706,8 @@ private extension AIChatContextualSheetCoordinator {
     }
 
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
-        let storageHandler = DuckAiFireModeStorage.handler(
-            isFireMode: isFireTab,
-            diskHandler: duckAiNativeStorageHandler,
-            fireModeHandler: duckAiFireModeStorageHandler
-        )
+        // Fire tabs must not fall back to persistent storage (`?? disk` would leak chats).
+        let storageHandler = isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
         let reader = SuggestionsReader(
             featureFlagger: featureFlagger,
             privacyConfig: privacyConfigurationManager,

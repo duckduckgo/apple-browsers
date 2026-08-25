@@ -33,13 +33,9 @@ extension AIChatHistoryManager {
                                    nativeStorageHandler: DuckAiNativeStorageHandling?,
                                    fireModeStorageHandler: DuckAiNativeStorageHandling? = nil) -> (AIChatHistoryManager, AIChatSuggestionsViewModel)
     {
-        let storageHandler = DuckAiFireModeStorage.handler(
-            isFireMode: isFireTab,
-            diskHandler: nativeStorageHandler,
-            fireModeHandler: fireModeStorageHandler
-        )
+        // Fire tabs must not fall back to persistent storage (`?? disk` would leak chats).
+        let storageHandler = isFireTab ? fireModeStorageHandler : nativeStorageHandler
         let suggestionsReader: AIChatSuggestionsReading = {
-            // Fire mode with no isolated store must not fall back to persistent chats.
             if isFireTab, storageHandler == nil {
                 return NilSuggestionsReader()
             }

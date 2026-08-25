@@ -6727,11 +6727,8 @@ extension MainViewController: TabDelegate {
         // misleading empty list. Fire mode uses isolated storage so persistent chats
         // cannot leak into a fire session.
         let isFireMode = isCurrentTabFireTab()
-        let storageHandler = DuckAiFireModeStorage.handler(
-            isFireMode: isFireMode,
-            diskHandler: duckAiNativeStorageHandler,
-            fireModeHandler: duckAiFireModeStorageHandler
-        )
+        // Fire tabs must not fall back to persistent storage (`?? disk` would leak chats).
+        let storageHandler = isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
         let reader = ChatHistoryReader(observer: storageHandler as? DuckAiNativeChatsObserving)
         // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`
         // rather than `uniqueKeysWithValues:` — the model list is server-supplied so we

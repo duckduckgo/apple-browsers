@@ -280,6 +280,8 @@ class ToWebViewTransition: WebViewTransition {
         if tabSwitcherSettings.isGridViewEnabled,
            let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewGridCell {
             prepareGridChromeSnapshot(for: cell, initiallyVisible: true)
+        } else if let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewListCell {
+            prepareListChrome(for: cell, initiallyVisible: true)
         }
         
         if !tabSwitcherSettings.isGridViewEnabled {
@@ -301,6 +303,9 @@ class ToWebViewTransition: WebViewTransition {
                                                                                        previewSize: preview?.size)
                 self.imageView.alpha = 1
                 self.solidBackground.alpha = 1
+                if !self.tabSwitcherSettings.isGridViewEnabled {
+                    self.applyListChromePose(isVisible: false)
+                }
             }
 
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.7) {

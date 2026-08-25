@@ -63,7 +63,10 @@ struct SuggestionsListView: View {
         /// List's horizontal content margin (cell edge). Reduced 8pt from the NTP's 24pt regularPadding
         /// to widen the cells in step with the narrower input card.
         static let listHorizontalContentMargin: CGFloat = 16
-        static let suggestionGroupCornerRadius: CGFloat = 10
+        static var suggestionGroupCornerRadius: CGFloat {
+            if #available(iOS 26, *) { return 24 }
+            return 10
+        }
     }
 
     var body: some View {
@@ -262,7 +265,13 @@ struct SuggestionsListView: View {
             ? Color(designSystemColor: .accentPrimary)
             : Color(designSystemColor: .surface)
         if roundsTop {
-            color.cornerRadius(Metrics.suggestionGroupCornerRadius, corners: [.topLeft, .topRight])
+            if #available(iOS 17, *) {
+                color.clipShape(UnevenRoundedRectangle(topLeadingRadius: Metrics.suggestionGroupCornerRadius,
+                                                       topTrailingRadius: Metrics.suggestionGroupCornerRadius,
+                                                       style: .continuous))
+            } else {
+                color.cornerRadius(Metrics.suggestionGroupCornerRadius, corners: [.topLeft, .topRight])
+            }
         } else {
             color
         }
@@ -336,13 +345,9 @@ private struct SectionSpacingModifier: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
-            if let restingSpacing {
-                content.listSectionSpacing(restingSpacing)
-            } else if isFloatingPopover {
-                content.listSectionSpacing(popoverSpacing)
-            } else {
-                content.listSectionSpacing(.compact)
-            }
+            let spacing = restingSpacing.map(ListSectionSpacing.custom)
+                ?? (isFloatingPopover ? .custom(popoverSpacing) : .compact)
+            content.listSectionSpacing(spacing)
         } else {
             content
         }

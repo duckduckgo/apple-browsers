@@ -122,6 +122,8 @@ class BarsAnimator {
                 transitionProgress = 0
                 delegate?.setBarsVisibility(1, animated: false, animationDuration: nil)
             }
+            transitionStartPosY = pageTopY
+            transitionStartProgress = 0
             return
         }
 

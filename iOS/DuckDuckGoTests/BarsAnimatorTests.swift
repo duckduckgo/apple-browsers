@@ -491,6 +491,26 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertTrue(delegate.receivedMessages.isEmpty)
     }
 
+    func testWhenPageTopInterruptsPartialMorphThenNextCollapseStartsFullyRevealed() throws {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+
+        delegate.currentBarsVisibility = 0.6
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+        sut.didScroll(in: scrollView)
+
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1))
+
+        delegate.receivedMessages.removeAll()
+        scrollView.contentOffset.y = travel * 0.1
+        clock.advance(by: 1.0 / 30.0)
+        sut.didScroll(in: scrollView)
+
+        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0.9, accuracy: 0.001)
+        XCTAssertEqual(sut.barsState, .transitioning)
+    }
+
     private func scroll<Offsets: Sequence>(_ sut: BarsAnimator,
                                            _ scrollView: UIScrollView,
                                            _ clock: TestClock,

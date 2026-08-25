@@ -130,12 +130,19 @@ struct DataImportView: ModalView {
                 )
             case .moreInfo:
                 NewImportMoreInfoView()
-            case .getReadPermission(let url):
+            case .getFileReadPermission(let url):
                 RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
                     model.initiateImport()
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
+            case .getDirectoryReadPermission:
+                RequestDirectoryReadPermissionView(source: model.importSource)
+            case .directoryReadPermissionDenied:
+                // Implemented in a Follow-UP
+                Text(verbatim: "Directory access was not granted")
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
             case .passwordEntryHelp:
                 PasswordEntryRetryPromptView(
                     onRetry: {
@@ -447,6 +454,7 @@ extension DataImportViewModel.ButtonType {
         case .submit: .defaultAction
         case .continue: .defaultAction
         case .sync: .defaultAction
+        case .grantDirectoryAccess: .defaultAction
         }
     }
 
@@ -498,6 +506,8 @@ extension DataImportViewModel.ButtonType {
             UserText.importDataCompleteSyncButtonTitle
         case .close:
             UserText.close
+        case .grantDirectoryAccess(let source):
+            UserText.importBrowserDataRequestAccessButton(for: source)
         }
     }
 

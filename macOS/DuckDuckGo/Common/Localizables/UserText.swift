@@ -1689,6 +1689,36 @@ struct UserText {
 
     // MARK: - Login Import & Export
 
+    static func importBrowserDataAccessPanelMessage(for source: DataImport.Source) -> String {
+        let localized = NotLocalizedString("import.access-panel.message",
+                                           value: "Grant access to the %1$@ data folder to allow DuckDuckGo to import your data",
+                                           comment: "Access Panel that grants permissions to import data from another browser")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static let importBrowserDataAccessPanelPrompt = NotLocalizedString("import.access-panel.prompt", value: "Grant Access", comment: "Confirmation button in the folder picker used to grant DuckDuckGo access to another browser's data folder")
+
+    static func importBrowserDataRequestAccessTitle(for source: DataImport.Source) -> String {
+        let localized = NotLocalizedString("import.request-access.title",
+                                           value: "DuckDuckGo needs access to your %1$@ data to finish importing.",
+                                           comment: "Title of the screen asking the user to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static func importBrowserDataRequestAccessDescription(for source: DataImport.Source) -> String {
+        let localized = NotLocalizedString("import.request-access.description",
+                                           value: "Click **Select %1$@ Data** and then select **Grant Access** when the file picker appears.",
+                                           comment: "Instructions on the screen asking the user to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name). Markdown bold marks the two buttons to click.")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static func importBrowserDataRequestAccessButton(for source: DataImport.Source) -> String {
+        let localized = NotLocalizedString("import.request-access.button",
+                                           value: "Select %1$@ Data",
+                                           comment: "Button opening the folder picker used to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)")
+        return String(format: localized, source.importSourceName)
+    }
+
     static let importChooseSourceTitle = NSLocalizedString("import.choose-source.title", value: "Choose where to import from", comment: "Title text for the import dialog, before the user selects a source")
     static let importChooseSourceShowMoreButtonTitle = NSLocalizedString("import.choose-source.more-button.title", value: "More", comment: "Button text for showing more import options in the data import view")
     static let importChooseSourceSyncButtonTitle = NSLocalizedString("import.choose-source.sync-button.title", value: "Using DuckDuckGo on another device?", comment: "Button text for syncing from the data import view")

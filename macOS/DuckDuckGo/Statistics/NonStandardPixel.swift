@@ -28,7 +28,6 @@ enum NonStandardPixel: PixelKit.Event {
     /// every call site that fires this type.
     var namePrefix: PixelKitNamePrefix { .none }
 
-
     case brokenSiteReport
     case brokenSiteReportShown
     case brokenSiteReportSent

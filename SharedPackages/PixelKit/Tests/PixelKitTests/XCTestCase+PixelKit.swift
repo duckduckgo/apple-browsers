@@ -91,7 +91,7 @@ extension XCTestCase {
 
     func fire(_ event: PixelKit.Event,
               frequency: PixelKit.Frequency,
-               and expectations: PixelFireExpectations,
+              and expectations: PixelFireExpectations,
               file: StaticString,
               line: UInt) {
         verifyThat(event, frequency: frequency,
@@ -105,7 +105,7 @@ extension XCTestCase {
     /// This method also checks that there is internal consistency in the expected fields.
     func verifyThat(_ event: PixelKit.Event,
                     frequency: PixelKit.Frequency,
-                           meets expectations: PixelFireExpectations,
+                    meets expectations: PixelFireExpectations,
                     file: StaticString,
                     line: UInt) {
         let expectedPixelNames: [String] = expectedPixelNames(originalName: event.name, frequency: frequency)

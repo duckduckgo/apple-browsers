@@ -107,7 +107,7 @@ public extension XCTestCase {
     @_spi(Testing)
     func verifyThat(_ event: PixelKit.Event,
                     frequency: PixelKit.Frequency,
-                          meets expectations: PixelFireExpectations,
+                    meets expectations: PixelFireExpectations,
                     file: StaticString,
                     line: UInt) {
         let expectedPixelNames: [String] = expectedPixelNames(originalName: event.name, frequency: frequency)

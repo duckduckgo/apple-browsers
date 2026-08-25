@@ -141,7 +141,6 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
     /// every call site that fires this type.
     var namePrefix: PixelKitNamePrefix { .none }
 
-
     enum ParameterKey {
         static let source = "source"
         static let flowVersion = "flow_version"

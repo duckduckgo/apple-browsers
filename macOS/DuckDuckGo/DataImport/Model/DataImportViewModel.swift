@@ -42,7 +42,7 @@ struct DataImportViewModel {
     private let featureFlagger: FeatureFlagger
 
     /// Whether the macOS 27+ data-directory access flow applies.
-    private let directoryAccessAvailability: DirectoryAccessAvailability
+    private let directoryAccessAvailability: DataDirectoryPermissionFixAvailability
 
     let selectableImportTypes: Set<DataType>
 

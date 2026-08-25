@@ -743,7 +743,7 @@ extension NewTabPageViewController {
     /// Zero outside floating UI, which is the only layout that floats the card over the page.
     private var floatingDaxDialogTopInset: CGFloat {
         guard floatingUIManager.isFloatingUIEnabled else { return 0 }
-        return (parent as? MainViewController)?.floatingNewTabPageTopObscuredHeight ?? 0
+        return chromeDelegate?.floatingNewTabPageTopObscuredHeight ?? 0
     }
 
     /// Re-applies the dialog offset after the input card resized — typing, or a Search ↔ Duck.ai

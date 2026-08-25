@@ -422,6 +422,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
             supportsPromoCards: featureFlagger.isFeatureOn(.nativePromoCards) && supportsNativeChatInput,
             supportsSuggestions: supportsSuggestions,
+            supportsNativeUsageWarnings: featureFlagger.isFeatureOn(.utiDuckAIWarnings),
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
         )

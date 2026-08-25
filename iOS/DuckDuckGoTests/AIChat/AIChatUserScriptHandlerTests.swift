@@ -238,6 +238,24 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsPromoCards, false)
     }
 
+    func testWhenUsageWarningsFlagIsOnThenConfigAdvertisesNativeUsageWarnings() {
+        mockFeatureFlagger.enabledFeatureFlags = [.utiDuckAIWarnings]
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeUsageWarnings, true)
+    }
+
+    func testWhenUsageWarningsFlagIsOffThenConfigDoesNotAdvertiseNativeUsageWarnings() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeUsageWarnings, false)
+    }
+
     func testWhenNativePromptEditingFlagIsOffThenEditPromptReturnsCancelled() async throws {
         mockFeatureFlagger.enabledFeatureFlags = []
         let params: [String: Any] = ["prompt": "hi", "hasResponsesToLose": false]

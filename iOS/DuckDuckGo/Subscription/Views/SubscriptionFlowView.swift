@@ -25,21 +25,30 @@ import DataBrokerProtection_iOS
 import PrivacyConfig
 import VPN
 
+/// Atomic sheet payload to avoid SwiftUI staleness when both flag and content come from one tap.
+private struct OnboardingFlowPayload: Identifiable {
+    let id = UUID()
+    let flow: SubscriptionOnboardingFlowViewModel
+}
+
 struct SubscriptionFlowView: View {
 
     @Environment(\.dismiss) var dismiss
-    @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     @StateObject var viewModel: SubscriptionFlowViewModel
-
+    
     @State private var isPurchaseInProgress = false
     @State private var isShowingITR = false
     @State private var isShowingDBP = false
     @State private var isShowingNetP = false
     @Binding var currentView: SubscriptionContainerView.CurrentViewType
-
+    
     // Local View State
     @State private var errorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
     @State private var isPresentingError: Bool = false
+
+    // MARK: - Onboarding state
+
+    @State private var onboardingFlow: OnboardingFlowPayload?
 
     enum Constants {
         static let empty = ""
@@ -173,6 +182,10 @@ struct SubscriptionFlowView: View {
             }
         }
 
+        .sheet(item: $onboardingFlow, onDismiss: { viewModel.onboardingFinished() }) { payload in
+            SubscriptionOnboardingLauncher.launch(flow: payload.flow)
+        }
+        
         .onFirstAppear {
             setUpAppearances()
             Task { await viewModel.onFirstAppear() }
@@ -210,25 +223,22 @@ struct SubscriptionFlowView: View {
 
     private func startOnboarding() {
         guard let persistor = viewModel.onboardingPersistor else { return }
-        let isPIREnabled = viewModel.isPIREnabled
-        let dbpProvider = viewModel.dataBrokerProtectionViewControllerProvider
         Task { @MainActor in
             guard let flow = await SubscriptionOnboardingFlowViewModel.postCheckout(
                 persistor: persistor,
                 isPIRAvailable: viewModel.isPIRAvailable,
                 subscriptionManager: viewModel.subscriptionManager,
-                onFinish: { [weak subscriptionNavigationCoordinator] in subscriptionNavigationCoordinator?.onboardingFlow = nil },
-                pirScreen: { Self.pirDestination(isPIREnabled: isPIREnabled, provider: dbpProvider) }) else { return }
+                onFinish: { onboardingFlow = nil },
+                pirScreen: { pirDestination }) else { return }
             viewModel.didPresentOnboarding()
-            subscriptionNavigationCoordinator.onboardingFlow = flow
-            viewModel.goBackToSettingsForOnboarding()
+            onboardingFlow = OnboardingFlowPayload(flow: flow)
         }
     }
 
     /// Same destination the hidden PIR `NavigationLink` above pushes.
     @ViewBuilder
-    private static func pirDestination(isPIREnabled: Bool, provider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) -> some View {
-        if isPIREnabled, let provider {
+    private var pirDestination: some View {
+        if viewModel.isPIREnabled, let provider = viewModel.dataBrokerProtectionViewControllerProvider {
             DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: provider)
                 .edgesIgnoringSafeArea(.bottom)
         } else {

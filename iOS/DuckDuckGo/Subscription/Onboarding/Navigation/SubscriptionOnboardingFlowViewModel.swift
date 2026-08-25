@@ -28,7 +28,7 @@ final class SubscriptionOnboardingPIRLaunchState: ObservableObject {
 
 /// Drives the onboarding flow, pushing along a frozen sequence of sections.
 @MainActor
-final class SubscriptionOnboardingFlowViewModel: ObservableObject, Identifiable {
+final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 
     // MARK: - Navigation
 

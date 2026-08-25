@@ -67,7 +67,6 @@ struct SettingsState {
     var addressBar: AddressBar
     var showsFullURL: Bool
     var showTrackersBlockedAnimation: Bool
-    var isExperimentalAIChatEnabled: Bool
     var refreshButtonPosition: RefreshButtonPosition
     var mobileCustomization: MobileCustomization.State
     var forceWebsiteDarkMode: Bool
@@ -138,7 +137,6 @@ struct SettingsState {
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
             showTrackersBlockedAnimation: true,
-            isExperimentalAIChatEnabled: false,
             refreshButtonPosition: .addressBar,
             mobileCustomization: .default,
             forceWebsiteDarkMode: false,

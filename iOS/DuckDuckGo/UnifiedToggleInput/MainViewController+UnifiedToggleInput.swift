@@ -79,6 +79,7 @@ extension MainViewController {
             isFireTab: isCurrentTabFireTab(),
             hidesToggleOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage,
             stateStore: stateStore,
@@ -641,22 +642,38 @@ private extension MainViewController {
         NotificationCenter.default.publisher(for: .aiChatShowModelPicker)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] webView in
-                self?.handleShowModelPicker(for: webView)
-            }
+            .sink { [weak self] in self?.handleShowPicker(.model, for: $0) }
+            .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatShowReasoningPicker)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.handleShowPicker(.reasoning, for: $0) }
+            .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatOpenFilePicker)
+            .compactMap { $0.object as? WKWebView }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.handleShowPicker(.attachment, for: $0) }
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    /// Routes the FE's `showModelPicker` to the foreground Duck.ai tab's UTI so the user can pick a
-    /// supported model for the active chat (recovery-card "Switch Model" CTA). No-op when there's no
-    /// foreground Duck.ai UTI.
-    private func handleShowModelPicker(for webView: WKWebView) {
+    private enum AIChatPickerRequest {
+        case model, reasoning, attachment
+    }
+
+    /// Routes an FE picker CTA to the foreground Duck.ai tab's UTI.
+    private func handleShowPicker(_ picker: AIChatPickerRequest, for webView: WKWebView) {
         let isCurrent = tabManager.controller(forWebView: webView) === currentTab
         let isAITab = currentTab?.isAITab == true
         guard isCurrent, isAITab, let coordinator = unifiedToggleInputCoordinator else {
             return
         }
-        coordinator.presentModelPickerForActiveChat()
+        switch picker {
+        case .model: coordinator.presentModelPickerForActiveChat()
+        case .reasoning: coordinator.presentReasoningPickerForActiveChat()
+        case .attachment: coordinator.presentFilePickerForActiveChat()
+        }
     }
 
     /// Updates the foreground tab's UTI to reflect an FE-initiated image-generation chat.
@@ -1207,11 +1224,8 @@ extension MainViewController {
             DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
         }
 
-        // Skipped when `TabURLInterceptor` cancels the navigation and reports the entry from there,
-        // which would otherwise attribute one submission twice.
-        guard !duckAINavigationIsIntercepted else { return }
         // `loadQuery` loads duck.ai in-tab without going through `openAIChat`, so this is the
-        // only place the `direct_url` entry can be reported when the interceptor does not run.
+        // only place the `direct_url` entry can be reported.
         let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
             currentIsAI: currentTab?.isAITab == true,
             currentHasContent: currentTab?.tabModel.link != nil,
@@ -1503,7 +1517,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewTab() {
-        newTab(reuseExisting: false, allowingKeyboard: false)
+        newTab(reuseExisting: false, allowingKeyboard: true)
     }
 
     /// Force-search NTP. Override mode without committing — preserved toggle preference must survive.

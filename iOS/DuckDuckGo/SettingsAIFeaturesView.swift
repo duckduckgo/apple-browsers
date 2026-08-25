@@ -53,10 +53,6 @@ struct SettingsAIFeaturesView: View {
         .onAppear {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,
                                          withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat))
-            // Fire funnel pixel for first time viewing settings page with new input option
-            if let aiChatSettings = viewModel.aiChatSettings as? AIChatSettings {
-                aiChatSettings.processSettingsViewedFunnelStep()
-            }
         }
     }
 
@@ -174,30 +170,28 @@ private extension AIFeaturesSettingsRowProviding {
 
     @ViewBuilder
     var duckAISearchInputRows: some View {
-        if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
-            let pickerRow = HStack {
-                SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
-                    .padding(.vertical, 8)
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
+        let pickerRow = HStack {
+            SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                .padding(.vertical, 8)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
 
-            // Custom row: keep its separator full-width like the standard cells above/below (iOS 16+).
-            if #available(iOS 16.0, *) {
-                pickerRow.alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-            } else {
-                pickerRow
-            }
+        // Custom row: keep its separator full-width like the standard cells above/below (iOS 16+).
+        if #available(iOS 16.0, *) {
+            pickerRow.alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+        } else {
+            pickerRow
+        }
 
-            if viewModel.aiChatSearchInputEnabledBinding.wrappedValue,
-               viewModel.isDefaultOmnibarModeEnabled {
-                SettingsPickerCellView(
-                    label: UserText.settingsDefaultOmnibarModeHeader,
-                    subtitle: UserText.settingsDefaultOmnibarModeFooter,
-                    options: DefaultOmnibarMode.allCases.map { Optional($0) },
-                    selectedOption: viewModel.defaultOmnibarModeBinding
-                )
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+        if viewModel.aiChatSearchInputEnabledBinding.wrappedValue,
+           viewModel.isDefaultOmnibarModeEnabled {
+            SettingsPickerCellView(
+                label: UserText.settingsDefaultOmnibarModeHeader,
+                subtitle: UserText.settingsDefaultOmnibarModeFooter,
+                options: DefaultOmnibarMode.allCases.map { Optional($0) },
+                selectedOption: viewModel.defaultOmnibarModeBinding
+            )
+            .transition(.opacity.combined(with: .move(edge: .top)))
         }
     }
 

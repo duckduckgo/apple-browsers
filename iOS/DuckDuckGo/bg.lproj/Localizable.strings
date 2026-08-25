@@ -403,6 +403,15 @@
 /* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
 "aiChat.history.swipe.unpin.a11y" = "Откачане на чата";
 
+/* Section header for Pro-only models shown to DuckDuckGo Plus subscribers */
+"aichat.model-picker.pro-plan-exclusive" = "Ексклузивно за план Pro";
+
+/* Section header for subscription models shown to users who are not eligible for a free trial */
+"aichat.model-picker.subscriber-exclusive" = "Ексклузивно за абонати";
+
+/* Section header for subscription models shown to free users */
+"aichat.model-picker.try-free" = "Пробвайте безплатно";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "За аналитични задачи";
 
@@ -1912,6 +1921,9 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Изпратено с твоето съобщение до Duck.ai";
 
+/* Row in the contextual chat's chats popup that opens Duck.ai in a new tab */
+"duckai.contextual.open.duckai" = "Отваряне на Duck.ai";
+
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Последни чатове";
 
@@ -2542,14 +2554,17 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Последно използван раздел Fire";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Затваряне на раздела";
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Затваряне на последно използвания раздел";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Изтриване на раздел";
 
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Връщане към раздела";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Скриване на бърза връзка „Връщане към“";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Връщане към последно използвания раздел";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Още опции";
@@ -2562,6 +2577,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Връщане към %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Затвори раздела";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Поверителни раздели";
@@ -4216,11 +4234,11 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Таймер за неактивност";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Последно използван раздел";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Отваряне на последно използвания раздел";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Нов раздел";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Отвори нов раздел";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "След неактивност";
@@ -4528,6 +4546,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Показва връзка за връщане към последно използвания раздел, когато отвориш приложението след неактивност.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Научете повече";
 
@@ -4590,6 +4611,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Позиция на бутона за презареждане";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "Бърза връзка „Върни се към“";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Настройки за търсене";
@@ -5749,3 +5773,26 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Какво искате да импортирате?";
 
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Попитайте Duck.ai";
+
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Търсене";
+
+/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
+"duckai.suggestion.summarize-selection.label" = "Обобщи този избран текст";
+
+/* Suggested prompt submitted text: summarize the attached text selection */
+"duckai.suggestion.summarize-selection.prompt" = "Обобщи този избран текст.";
+
+/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
+"duckai.suggestion.translate-selection.label" = "Преведи този избран текст";
+
+/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-selection.prompt" = "Преведи този избран текст на %@.";
+
+/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Избран текст";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "Можете да добавите до %d избрани текста. Премахнете един, за да добавите друг.";

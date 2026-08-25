@@ -83,12 +83,12 @@ class MaliciousSiteProtectionUITests: UITestCase {
     func testMaliciousSiteProtection_MalwareSite_ShowsWarningAndGoBackWorks() throws {
         setScamBlockerEnabled(true)
         // Establish a known previous page to validate Go Back
-        let safeURL = URL(string: "https://example.com")!
+        let safeURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
-        let exampleContent = webView.staticTexts.containing(\.value, containing: "Example Domain")
+        let githubContent = webView.staticTexts.containing(\.value, containing: "GitHub")
             .firstMatch
-        XCTAssertTrue(exampleContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(githubContent.waitForExistence(timeout: UITests.Timeouts.navigation))
 
         // Navigate to a malware test page
         let malwareURL = URL(string: "http://privacy-test-pages.site/security/badware/malware.html")!
@@ -112,29 +112,29 @@ class MaliciousSiteProtectionUITests: UITestCase {
         leaveSiteButton.click()
 
         // After leaving, explicitly load a known safe page to continue browsing and validate state
-        let safeAfterURL = URL(string: "https://example.com")!
+        let safeAfterURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(safeAfterURL, pressingEnter: true)
         let webViewAfterLeave = app.webViews.firstMatch
-        XCTAssertTrue(webViewAfterLeave.waitForExistence(timeout: UITests.Timeouts.localTestServer))
-        let exampleAfter = webViewAfterLeave.staticTexts
-            .containing(\.value, containing: "Example Domain")
+        XCTAssertTrue(webViewAfterLeave.waitForExistence(timeout: UITests.Timeouts.navigation))
+        let githubAfter = webViewAfterLeave.staticTexts
+            .containing(\.value, containing: "GitHub")
             .firstMatch
-        XCTAssertTrue(exampleAfter.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(githubAfter.waitForExistence(timeout: UITests.Timeouts.navigation))
     }
 
     func testMaliciousSiteProtection_SafeSite_LoadsNormally() throws {
         setScamBlockerEnabled(true)
         // Navigate to a safe site that should load normally
-        let safeURL = URL(string: "https://example.com")!
+        let safeURL = URL(string: "https://github.com")!
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
 
         // Wait for safe site to load
-        let safeContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Safe site should load normally")
+        let safeContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Safe site should load normally")
 
         // Verify we're on the expected safe site
-        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://example.com/", "Should successfully navigate to safe site")
+        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://github.com/", "Should successfully navigate to safe site")
 
         // Verify no malicious site warnings are shown (check only first line of headings)
         let phishingFirstLine = localization.phishingWarningText.title.components(separatedBy: "{newline}").first ?? localization.phishingWarningText.title
@@ -178,12 +178,12 @@ class MaliciousSiteProtectionUITests: UITestCase {
         setScamBlockerEnabled(true)
 
         // Load safe baseline in first tab
-        let safeURL = URL(string: "https://example.com")!
+        let safeURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
-        let safeContent = webView.staticTexts.containing(\.value, containing: "Example Domain")
+        let safeContent = webView.staticTexts.containing(\.value, containing: "GitHub")
             .firstMatch
-        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.navigation))
 
         // Navigate to phishing page to trigger warning
         let phishingURL = URL(string: "http://privacy-test-pages.site/security/badware/phishing.html")!
@@ -195,10 +195,10 @@ class MaliciousSiteProtectionUITests: UITestCase {
         XCTAssertTrue(leaveSiteButton.waitForExistence(timeout: UITests.Timeouts.navigation))
         leaveSiteButton.click()
 
-        // After leaving, a New Tab page should replace the warning tab; total tabs should be 2 (Example + New Tab)
+        // After leaving, a New Tab page should replace the warning tab; total tabs should be 2 (GitHub + New Tab)
         let tabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
         XCTAssertTrue(tabs.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        XCTAssertEqual(tabs.count, 2, "There should be two tabs after leaving: Example and New Tab")
+        XCTAssertEqual(tabs.count, 2, "There should be two tabs after leaving: GitHub and New Tab")
 
         // Wait for the New Tab page to load and assert Customize button exists
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -208,12 +208,12 @@ class MaliciousSiteProtectionUITests: UITestCase {
         setScamBlockerEnabled(true)
 
         // Load safe baseline in first tab
-        let safeURL = URL(string: "https://example.com")!
+        let safeURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
-        let safeContent = webView.staticTexts.containing(\.value, containing: "Example Domain")
+        let safeContent = webView.staticTexts.containing(\.value, containing: "GitHub")
             .firstMatch
-        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.navigation))
 
         // Navigate to scam page to trigger warning
         let scamURL = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
@@ -225,10 +225,10 @@ class MaliciousSiteProtectionUITests: UITestCase {
         XCTAssertTrue(leaveSiteButton.waitForExistence(timeout: UITests.Timeouts.navigation))
         leaveSiteButton.click()
 
-        // After leaving, a New Tab page should replace the warning tab; total tabs should be 2 (Example + New Tab)
+        // After leaving, a New Tab page should replace the warning tab; total tabs should be 2 (GitHub + New Tab)
         let tabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
         XCTAssertTrue(tabs.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        XCTAssertEqual(tabs.count, 2, "There should be two tabs after leaving: Example and New Tab")
+        XCTAssertEqual(tabs.count, 2, "There should be two tabs after leaving: GitHub and New Tab")
 
         // Wait for the New Tab page to load and assert Customize button exists
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -257,14 +257,14 @@ class MaliciousSiteProtectionUITests: UITestCase {
 
     func testMaliciousSiteProtection_BackNavigation_WorksWithProtection() throws {
         setScamBlockerEnabled(true)
-        // Navigate to a safe page first using example.com (known safe)
-        let safeURL = URL(string: "https://example.com")!
+        // Navigate to a safe page first using github.com (known safe)
+        let safeURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
 
         // Wait for safe page to load
-        let safeContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Safe page should load")
+        let safeContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Safe page should load")
 
         // Navigate to another page to test back functionality
         let secondURL = URL(string: "https://duckduckgo.com")!
@@ -287,10 +287,10 @@ class MaliciousSiteProtectionUITests: UITestCase {
         app.typeKey("[", modifierFlags: [.command])
 
         // Should navigate back to safe page
-        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should navigate back to safe page")
+        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Should navigate back to safe page")
 
         // Verify we're back on the original safe page
-        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://example.com/", "Should be back on example.com")
+        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://github.com/", "Should be back on github.com")
     }
 
     // MARK: - Privacy Dashboard Integration Tests
@@ -298,13 +298,13 @@ class MaliciousSiteProtectionUITests: UITestCase {
     func testMaliciousSiteProtection_PrivacyDashboard_ShowsThreatInfo() throws {
         setScamBlockerEnabled(true)
         // Navigate to a test page (safe or protected)
-        let testURL = URL(string: "https://example.com")!
+        let testURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(testURL, pressingEnter: true)
 
         // Wait for page to load
-        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Test page should load")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Test page should load")
 
         // Access privacy dashboard
         let privacyButton = app.buttons.matching(identifier: "AddressBarButtonsViewController.privacyDashboardButton").firstMatch
@@ -329,16 +329,16 @@ class MaliciousSiteProtectionUITests: UITestCase {
         setScamBlockerEnabled(true)
         // Test basic navigation flow with malicious site protection active
         // Start with a known safe page
-        let startURL = URL(string: "https://example.com")!
+        let startURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(startURL, pressingEnter: true)
 
         // Wait for safe page to load
-        let safeContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Safe starting page should load")
+        let safeContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Safe starting page should load")
 
         // Verify we're on the expected safe page
-        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://example.com/", "Should be on example.com")
+        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://github.com/", "Should be on github.com")
 
         // Verify page content is accessible
         XCTAssertTrue(safeContent.exists, "Safe page content should be accessible")
@@ -388,12 +388,12 @@ class MaliciousSiteProtectionUITests: UITestCase {
         leaveSiteButton.click()
 
         // Load a safe page to confirm continued browsing works
-        let safeURL = URL(string: "https://example.com")!
+        let safeURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
-        let safeContent = webView.staticTexts.containing(\.value, containing: "Example Domain")
+        let safeContent = webView.staticTexts.containing(\.value, containing: "GitHub")
             .firstMatch
-        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.navigation))
     }
 
     func testMaliciousSiteProtection_BadSSL_VisitThisSite_BypassesWarning() throws {
@@ -513,15 +513,15 @@ class MaliciousSiteProtectionUITests: UITestCase {
         XCTAssertTrue(phishingContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Phishing page content should load")
 
         // Reset to safe page
-        let safeURL = URL(string: "https://example.com")!
+        let safeURL = URL(string: "https://github.com")!
         app.activateAddressBar()
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
 
-        let safeContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Safe page should load between tests")
+        let safeContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(safeContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Safe page should load between tests")
 
         // Verify final state is clean
-        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://example.com/", "Should end on safe page")
+        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://github.com/", "Should end on safe page")
 
         // Verify safe content is accessible
         XCTAssertTrue(safeContent.exists, "Safe content should be accessible after threat testing")

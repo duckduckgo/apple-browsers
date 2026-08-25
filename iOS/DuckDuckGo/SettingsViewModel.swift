@@ -67,7 +67,6 @@ final class SettingsViewModel: ObservableObject {
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
     lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
-    private lazy var animator: FireButtonAnimator = FireButtonAnimator(appSettings: AppUserDefaults())
     private var legacyViewProvider: SettingsLegacyViewProvider
     private lazy var versionProvider: AppVersion = AppVersion.shared
     private let voiceSearchHelper: VoiceSearchHelperProtocol
@@ -1156,7 +1155,6 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             showTrackersBlockedAnimation: appSettings.showTrackersBlockedAnimation,
-            isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
             forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,

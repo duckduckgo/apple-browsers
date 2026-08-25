@@ -29,7 +29,7 @@ final class FireDialogHistorySitesDeletionUITests: UITestCase, FireDialogUITests
 
     func test_historyView_deleteSingleSite_fromSitesSection() throws {
         let storageURL1 = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
-        let storageURL2 = URL(string: "https://example.com")!
+        let storageURL2 = URL(string: "https://github.com")!
 
         // Visit first site with storage
         app.openURL(storageURL1)
@@ -53,8 +53,8 @@ final class FireDialogHistorySitesDeletionUITests: UITestCase, FireDialogUITests
         // Verify both sites appear in Sites section
         let site1 = historyWebView.staticTexts["privacy-test-pages.site"]
         XCTAssertTrue(site1.waitForExistence(timeout: UITests.Timeouts.elementExistence), "privacy-test-pages.site should be in Sites section")
-        let site2 = historyWebView.staticTexts["example.com"]
-        XCTAssertTrue(site2.exists, "example.com should be in Sites section")
+        let site2 = historyWebView.staticTexts["github.com"]
+        XCTAssertTrue(site2.exists, "github.com should be in Sites section")
 
         // Click on privacy-test-pages.site to select it
         site1.click()
@@ -83,9 +83,9 @@ final class FireDialogHistorySitesDeletionUITests: UITestCase, FireDialogUITests
         fireDialogBurnButton.click()
         waitForFireAnimationToComplete()
 
-        // Verify privacy-test-pages.site deleted from Sites section, example.com preserved
+        // Verify privacy-test-pages.site deleted from Sites section, github.com preserved
         XCTAssertFalse(site1.exists, "privacy-test-pages.site should be deleted from Sites section")
-        XCTAssertTrue(site2.exists, "example.com should still be in Sites section")
+        XCTAssertTrue(site2.exists, "github.com should still be in Sites section")
 
         // Switch back to history view to verify all history for the site is gone
         let showAllHistoryButton = historyWebView.buttons["Show all history"]
@@ -106,15 +106,15 @@ final class FireDialogHistorySitesDeletionUITests: UITestCase, FireDialogUITests
         app.openURL(storageURL1)
         verifyCountersCleared()
 
-        // Verify example.com history is preserved
+        // Verify github.com history is preserved
         app.openHistory()
         XCTAssertTrue(historyWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence), "History view should reopen")
-        XCTAssertTrue(historyWebView.links["Example Domain"].exists, "example.com history should be preserved")
+        XCTAssertTrue(historyWebView.links.element(matching: .keyPath(\.title, contains: "GitHub")).exists, "github.com history should be preserved")
     }
 
     func test_historyView_deleteMultipleSites_fromSitesSection() throws {
         let storageURL1 = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
-        let storageURL2 = URL(string: "https://example.com")!
+        let storageURL2 = URL(string: "https://github.com")!
         let storageURL3 = URL(string: "https://duckduckgo.com")!
 
         // Visit first site with storage
@@ -143,8 +143,8 @@ final class FireDialogHistorySitesDeletionUITests: UITestCase, FireDialogUITests
         // Verify all sites appear in Sites section
         let site1 = historyWebView.staticTexts["privacy-test-pages.site"]
         XCTAssertTrue(site1.waitForExistence(timeout: UITests.Timeouts.elementExistence), "privacy-test-pages.site should be in Sites section")
-        let site2 = historyWebView.staticTexts["example.com"]
-        XCTAssertTrue(site2.exists, "example.com should be in Sites section")
+        let site2 = historyWebView.staticTexts["github.com"]
+        XCTAssertTrue(site2.exists, "github.com should be in Sites section")
         let site3 = historyWebView.staticTexts["duckduckgo.com"]
         XCTAssertTrue(site3.exists, "duckduckgo.com should be in Sites section")
 
@@ -180,7 +180,7 @@ final class FireDialogHistorySitesDeletionUITests: UITestCase, FireDialogUITests
 
         // Verify sites 1 and 2 deleted from Sites section, site 3 preserved
         XCTAssertFalse(site1.exists, "privacy-test-pages.site should be deleted from Sites section")
-        XCTAssertFalse(site2.exists, "example.com should be deleted from Sites section")
+        XCTAssertFalse(site2.exists, "github.com should be deleted from Sites section")
         XCTAssertTrue(site3.exists, "duckduckgo.com should still be in Sites section")
 
         // Switch back to history view to verify deleted sites' history is gone
@@ -190,8 +190,8 @@ final class FireDialogHistorySitesDeletionUITests: UITestCase, FireDialogUITests
 
         XCTAssertFalse(historyWebView.links.element(matching: .keyPath(\.title, contains: "Local Storage")).exists,
                        "privacy-test-pages.site history should be deleted")
-        XCTAssertFalse(historyWebView.links["Example Domain"].exists,
-                       "example.com history should be deleted")
+        XCTAssertFalse(historyWebView.links.element(matching: .keyPath(\.title, contains: "GitHub")).exists,
+                       "github.com history should be deleted")
 
         // Verify duckduckgo.com history is preserved
         XCTAssertTrue(historyWebView.links.element(matching: .keyPath(\.title, contains: "DuckDuckGo")).exists,
@@ -201,8 +201,8 @@ final class FireDialogHistorySitesDeletionUITests: UITestCase, FireDialogUITests
         app.historyMenu.click()
         XCTAssertFalse(app.menuItems.element(matching: .keyPath(\.title, contains: "Local Storage")).exists,
                        "privacy-test-pages.site should not be in history menu")
-        XCTAssertFalse(app.menuItems["Example Domain"].exists,
-                       "example.com should not be in history menu")
+        XCTAssertFalse(app.menuItems.element(matching: .keyPath(\.title, contains: "GitHub")).exists,
+                       "github.com should not be in history menu")
         XCTAssertTrue(app.menuItems.element(matching: .keyPath(\.title, contains: "DuckDuckGo")).exists,
                       "duckduckgo.com should still be in history menu")
         app.historyMenu.typeKey(.escape, modifierFlags: [])

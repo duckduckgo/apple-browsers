@@ -32,7 +32,6 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     let usesExpandedAIChatTextEntryLayout: Bool = true
     /// The UTI uses the new layout metrics (insets / heights), never the legacy ones.
     let usesLegacyLayoutMetrics: Bool = false
-    /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let shouldDisableAutocorrectOnEmpty: Bool = true
     var modeParameters: [String: String] { ["mode": currentToggleState.rawValue] }
@@ -86,6 +85,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     var isVoiceSearchEnabled: Bool {
         didSet {
             guard isVoiceSearchEnabled != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
+    /// Where the button dictates, voice-chat availability must not keep a dead microphone on screen.
+    var prefersDictationOverVoiceChat: Bool = false {
+        didSet {
+            guard prefersDictationOverVoiceChat != oldValue else { return }
             updateButtonState()
         }
     }
@@ -254,6 +261,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     private func updateButtonState() {
         let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
+            && !prefersDictationOverVoiceChat
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 

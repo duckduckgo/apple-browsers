@@ -16,8 +16,6 @@ name: test_search_only_website_active_ai_shortcut_prompt
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
-        ff.experimentalAddressBar: "true"
         ff.contextualDuckAIMode: "true"
 
 - runFlow:

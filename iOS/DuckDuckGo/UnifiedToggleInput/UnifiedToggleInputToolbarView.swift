@@ -137,6 +137,18 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
         return false
     }
+    
+    @discardableResult
+    func presentReasoningPickerMenu() -> Bool {
+        guard reasoningPickerMenu != nil else { return false }
+
+        if #available(iOS 17.4, *) {
+            reasoningButton.performPrimaryAction()
+            return true
+        }
+        return false
+    }
+
 
     var reasoningPickerMenu: UIMenu? {
         get { reasoningButton.menu }

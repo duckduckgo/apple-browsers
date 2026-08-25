@@ -195,18 +195,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         set { searchAreaView.dismissButtonView.isHidden = newValue }
     }
 
-    /// Controls whether the AI Chat mode UI is hidden (false = AI Chat mode, true = regular mode)
-    var isFullAIChatHidden: Bool = true {
-        didSet {
-            guard oldValue != isFullAIChatHidden else { return }
-            if isFullAIChatHidden {
-                hideAIChatOmnibar()
-            } else {
-                showAIChatOmnibar()
-            }
-        }
-    }
-
     /// When true, `safeAreaInsets` returns `.zero` because the parent container
     /// (e.g. `OmniBarCell`) already accounts for safe area via its own layout guide constraints.
     /// This prevents the system-calculated insets from shifting during horizontal scrolling.
@@ -305,11 +293,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var onSearchModePressed: (() -> Void)?
     var onAIChatModePressed: (() -> Void)?
     
-    /// Callback fired when the AI Chat left button is tapped
-    var onAIChatLeftButtonPressed: (() -> Void)?
-
-    /// Callback fired when the omnibar branding area is tapped while in AI Chat mode
-    var onAIChatBrandingPressed: (() -> Void)?
     var longPressMenuProvider: (() -> UIMenu?)? {
         didSet {
             refreshLongPressMenuAvailability()
@@ -345,10 +328,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     let externalRefreshButtonView = BrowserChromeButton()
     let fireButtonView = BrowserChromeButton()
     let tabSwitcherContainerView = UIView()
-
-    private let aiChatLeftButton = BrowserChromeButton()
-    private var aiChatBrandingView: AIChatFullModeOmniBrandingView?
-    private var aiChatModeConstraints: [NSLayoutConstraint] = []
 
     // MARK: - iPad Duck.ai Expanded Search Area (stored properties)
 
@@ -1023,25 +1002,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(selectedToolChipView)
         chromeContentContainerView.addSubview(attachButton)
         chromeContentContainerView.addSubview(attachmentsStripView)
-        chromeContentContainerView.addSubview(aiChatLeftButton)
-
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
-        
-        addAIChatFullModeBrandingView()
-    }
-    
-    private func addAIChatFullModeBrandingView() {
-        let brandingView = AIChatFullModeOmniBrandingView()
-        brandingView.translatesAutoresizingMaskIntoConstraints = false
-        chromeContentContainerView.addSubview(brandingView)
-
-        aiChatBrandingView = brandingView
-
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(aiChatBrandingViewTapped))
-        brandingView.addGestureRecognizer(tapGesture)
-
-        brandingView.isHidden = true
     }
 
     private func setUpConstraints() {
@@ -1131,27 +1093,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         DefaultOmniBarView.activateItemSizeConstraints(for: menuButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: settingsButtonView)
 
-        // AI Chat Full Mode
-        aiChatLeftButton.translatesAutoresizingMaskIntoConstraints = false
-
-        let aiChatButtonConstraints = [
-            aiChatLeftButton.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
-            aiChatLeftButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-        ]
-        NSLayoutConstraint.activate(aiChatButtonConstraints)
-        
-        DefaultOmniBarView.activateItemSizeConstraints(for: aiChatLeftButton)
-
-        // AI Chat mode constraints (inactive by default, activated only in AI Chat mode)
-        if let brandingView = aiChatBrandingView {
-            aiChatModeConstraints = [
-                brandingView.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
-                brandingView.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
-                brandingView.centerYAnchor.constraint(equalTo: chromeContentContainerView.centerYAnchor),
-                chromeContentContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor).withPriority(.defaultHigh)
-            ]
-        }
-
         setUpExpandedSearchAreaConstraints()
     }
 
@@ -1231,10 +1172,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         
         refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
 
-        aiChatLeftButton.setImage(DesignSystemImages.Glyphs.Size24.aiChatHistory, for: .normal)
-        aiChatLeftButton.isHidden = true
-        DefaultOmniBarView.setUpCommonProperties(for: aiChatLeftButton)
-
         progressView?.hide()
 
         setUpExpandedTextViewProperties()
@@ -1281,7 +1218,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         menuButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(menuButtonLongPress)))
         settingsButtonView.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(settingsButtonLongPress)))
 
-        aiChatLeftButton.addTarget(self, action: #selector(aiChatLeftButtonTap), for: .touchUpInside)
         aiChatSendButton.addTarget(self, action: #selector(aiChatSendButtonTap), for: .primaryActionTriggered)
     }
 
@@ -1578,16 +1514,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         onTrackersViewPressed?()
     }
 
-    @objc private func aiChatLeftButtonTap() {
-        onAIChatLeftButtonPressed?()
-    }
-
     @objc private func aiChatSendButtonTap() {
         onAIChatSendPressed?()
-    }
-
-    @objc private func aiChatBrandingViewTapped() {
-        onAIChatBrandingPressed?()
     }
 
     @objc private func fireButtonTap() {
@@ -1818,35 +1746,6 @@ extension DefaultOmniBarView {
         }
         searchAreaShadowView?.applyShadowOpacityMultiplier(1)
         textField.alpha = 1
-    }
-
-    /// Configures the omnibar UI for AI Chat mode. Shows AI Chat buttons, hides search elements.
-    private func showAIChatOmnibar() {
-        aiChatBrandingView?.isHidden = false
-        searchAreaView.textField.isHidden = true
-        aiChatLeftButton.isHidden = false
-        aiChatLeftButton.alpha = 1.0
-        NSLayoutConstraint.activate(aiChatModeConstraints)
-        chromeContentContainerView.bringSubviewToFront(aiChatLeftButton)
-
-        setNeedsLayout()
-    }
-
-    /// Restores the omnibar UI to regular browse mode. Hides AI Chat buttons, shows search elements.
-    private func hideAIChatOmnibar() {
-        aiChatBrandingView?.isHidden = true
-        aiChatLeftButton.isHidden = true
-        aiChatLeftButton.alpha = 0.0
-        NSLayoutConstraint.deactivate(aiChatModeConstraints)
-
-        searchAreaView.textField.isHidden = false
-
-        if !isSearchAreaExpanded {
-            searchAreaView.textField.alpha = 1.0
-            searchAreaView.revealButtons()
-        }
-
-        setNeedsLayout()
     }
 
     // Used to mask shadows going outside of bounds to prevent them covering other content
@@ -2294,8 +2193,8 @@ extension DefaultOmniBarView {
         textField.alpha = hasText ? 0 : 1
     }
 
-    func updateAIChatButtonForContextualSurface(isPresented: Bool) {
-        searchAreaView.aiChatButton.setImage(isPresented
+    func updateAIChatButtonForContextualChat(hasContextualSession: Bool) {
+        searchAreaView.aiChatButton.setImage(hasContextualSession
             ? DesignSystemImages.Glyphs.Size24.aiChatDown
             : DesignSystemImages.Glyphs.Size24.aiChat)
     }

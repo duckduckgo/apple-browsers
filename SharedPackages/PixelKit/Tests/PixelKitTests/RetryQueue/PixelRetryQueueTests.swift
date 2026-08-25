@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import PixelKit
 
 final class PixelRetryQueueTests: XCTestCase {

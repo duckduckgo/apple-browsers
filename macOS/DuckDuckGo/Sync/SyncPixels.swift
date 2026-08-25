@@ -97,6 +97,10 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
 }
 
 enum SyncSwitchAccountPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
+
     case syncAskUserToSwitchAccount
     case syncUserAcceptedSwitchingAccount
     case syncUserCancelledSwitchingAccount
@@ -133,6 +137,10 @@ enum SyncSwitchAccountPixelKitEvent: PixelKit.Event {
 }
 
 enum SyncSetupPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
+
 
     enum ParameterKey {
         static let source = "source"

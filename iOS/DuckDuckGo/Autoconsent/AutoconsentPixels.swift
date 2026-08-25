@@ -20,7 +20,7 @@
 import PixelKit
 import UIKit
 
-enum AutoconsentPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum AutoconsentPixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -127,7 +127,9 @@ enum AutoconsentPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
     }
 
 
-    var namePrefix: String {
+    var namePrefix: PixelKitNamePrefix { .custom(namePrefixLiteral) }
+
+    private var namePrefixLiteral: String {
 #if os(macOS)
         return "m_mac"
 #elseif os(iOS)

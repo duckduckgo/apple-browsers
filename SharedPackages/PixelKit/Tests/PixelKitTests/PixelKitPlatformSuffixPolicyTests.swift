@@ -27,8 +27,8 @@ import XCTest
 /// iOS naming is fully reproducible from a macOS test run.
 final class PixelKitPlatformSuffixPolicyTests: XCTestCase {
 
-    private struct TestEvent: PixelKit.Event, PixelKitEventWithCustomPrefix {
-        let namePrefix = ""
+    private struct TestEvent: PixelKit.Event {
+        let namePrefix: PixelKitNamePrefix = .none
         let name = "m_test_event"
         let parameters: [String: String]? = nil
         let standardParameters: [PixelKitStandardParameter]? = nil
@@ -36,8 +36,8 @@ final class PixelKitPlatformSuffixPolicyTests: XCTestCase {
     }
 
     /// An event that says nothing about naming, to pin down what a newly written pixel gets.
-    private struct UnannotatedEvent: PixelKit.Event, PixelKitEventWithCustomPrefix {
-        let namePrefix = ""
+    private struct UnannotatedEvent: PixelKit.Event {
+        let namePrefix: PixelKitNamePrefix = .none
         let name = "m_test_event"
         let parameters: [String: String]? = nil
         let standardParameters: [PixelKitStandardParameter]? = nil

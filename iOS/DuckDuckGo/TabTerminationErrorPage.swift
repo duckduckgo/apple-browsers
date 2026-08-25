@@ -50,7 +50,7 @@ final class DefaultTabTerminationErrorPageInstrumentation: TabTerminationErrorPa
     }
 }
 
-enum TabTerminationErrorPagePixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum TabTerminationErrorPagePixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -73,7 +73,7 @@ enum TabTerminationErrorPagePixel: PixelKit.Event, PixelKitEventWithCustomPrefix
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 protocol TabTerminationErrorPageSettingsProviding {

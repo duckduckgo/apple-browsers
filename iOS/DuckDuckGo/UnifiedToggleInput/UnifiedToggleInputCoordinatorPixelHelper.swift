@@ -25,7 +25,7 @@ import Subscription
 
 /// The schedule suffix is part of the name, fired with frequencies that append nothing, so PixelKit's
 /// platform suffix lands after it and the wire name stays `..._daily_ios_phone` as the legacy pixel reports it.
-enum ExperimentalOmnibarPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum ExperimentalOmnibarPixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -49,7 +49,7 @@ enum ExperimentalOmnibarPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 /// The UTI surface a pixel is fired from, sent as the `surface` param (`voice_tapped` reuses `source`).

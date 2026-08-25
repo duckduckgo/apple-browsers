@@ -39,20 +39,11 @@ extension PixelKit {
         /// value supplied here wins.
         public var additionalParameters: [String: String]?
 
-        /// Overrides the platform prefix applied to the pixel name.
-        public var namePrefix: String?
-
         /// Characters left unescaped when building the query string.
         public var allowedQueryReservedCharacters: CharacterSet?
 
         /// Whether to append the `appVersion` parameter.
         public var includeAppVersionParameter: Bool
-
-        /// Whether the platform name prefix is enforced.
-        ///
-        /// Note the polarity: this replaces the previous `doNotEnforcePrefix`, so
-        /// `doNotEnforcePrefix: true` becomes `enforcePrefix: false`.
-        public var enforcePrefix: Bool
 
         /// Whether a failed send is persisted and replayed later. Off by default.
         ///
@@ -81,18 +72,14 @@ extension PixelKit {
 
         public init(headers: [String: String]? = nil,
                     additionalParameters: [String: String]? = nil,
-                    namePrefix: String? = nil,
                     allowedQueryReservedCharacters: CharacterSet? = nil,
                     includeAppVersionParameter: Bool = true,
-                    enforcePrefix: Bool = true,
                     retryOnFailure: Bool = false,
                     includeATB: Bool = false) {
             self.headers = headers
             self.additionalParameters = additionalParameters
-            self.namePrefix = namePrefix
             self.allowedQueryReservedCharacters = allowedQueryReservedCharacters
             self.includeAppVersionParameter = includeAppVersionParameter
-            self.enforcePrefix = enforcePrefix
             self.retryOnFailure = retryOnFailure
             self.includeATB = includeATB
         }
@@ -103,14 +90,14 @@ extension PixelKit {
         // Combinations that nobody uses deliberately get no preset: build them with `init`, or
         // start from a preset and mutate, since this is a value type.
         //
-        //     var options = PixelKit.Options.unenforcedPrefix
+        //     var options = PixelKit.Options.withATB
         //     options.additionalParameters = ["source": "menu"]
 
-        /// Everything default: prefix enforced, app version included, nothing extra.
+        /// Everything default: app version included, nothing extra.
+        ///
+        /// Naming is not represented here. A pixel whose name must not gain a platform prefix says
+        /// so on the event, via `PixelKitNamePrefix.none`.
         public static let `default` = Options()
-
-        /// For pixels whose names are already fully qualified and must not gain a platform prefix.
-        public static let unenforcedPrefix = Options(enforcePrefix: false)
 
         /// For pixels that must not carry the `appVersion` parameter, such as crash reports.
         public static let withoutAppVersion = Options(includeAppVersionParameter: false)
@@ -128,15 +115,6 @@ extension PixelKit {
             Options(additionalParameters: parameters)
         }
 
-        /// Overrides the platform name prefix, typically with a per-platform value.
-        public static func namePrefix(_ prefix: String) -> Options {
-            Options(namePrefix: prefix)
-        }
-
-        /// Extra parameters plus a name prefix override.
-        public static func parameters(_ parameters: [String: String], namePrefix: String) -> Options {
-            Options(additionalParameters: parameters, namePrefix: namePrefix)
-        }
     }
 
     /// Whether a `fire` call actually sent a request.

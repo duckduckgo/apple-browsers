@@ -26,11 +26,11 @@ import PixelKit
 /// The PixelKit event shape shared by both EventHub pixel paths on iOS — telemetry and the failure events
 /// below. See `IOSEventHubPixelFiring`'s doc comment for why the empty `namePrefix` is what produces the
 /// names `event_hub.json5` declares.
-private struct EventHubPixelKitEvent: PixelKit.Event, PixelKitEventWithCustomPrefix {
+private struct EventHubPixelKitEvent: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
-    let namePrefix = ""
+    let namePrefix: PixelKitNamePrefix = .none
     let name: String
     let parameters: [String: String]?
     let standardParameters: [PixelKitStandardParameter]? = nil

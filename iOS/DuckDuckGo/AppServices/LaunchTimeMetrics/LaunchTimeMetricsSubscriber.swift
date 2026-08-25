@@ -126,7 +126,7 @@ final class LaunchTimeMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
     }
 }
 
-enum LaunchTimeMetricsPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum LaunchTimeMetricsPixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -156,7 +156,7 @@ enum LaunchTimeMetricsPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 private extension LaunchTimeDataPoint {

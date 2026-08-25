@@ -187,7 +187,7 @@ final class TabTerminationTelemetryOccurrenceStore {
     }
 }
 
-enum TabTerminationTelemetryPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum TabTerminationTelemetryPixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -231,7 +231,7 @@ enum TabTerminationTelemetryPixel: PixelKit.Event, PixelKitEventWithCustomPrefix
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 
     enum OccurrenceBucket: String {
         case one = "1"

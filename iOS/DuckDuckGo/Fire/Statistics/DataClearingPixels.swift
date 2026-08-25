@@ -86,13 +86,13 @@ enum DataClearingCompletionPixels {
 
 // MARK: - PixelKit.Event Protocol
 
-extension DataClearingCompletionPixels: PixelKit.Event, PixelKitEventWithCustomPrefix {
+extension DataClearingCompletionPixels: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     /// Empty: these names already carry their own `m_` prefix. The conformance exists solely for
     /// `platformSuffix`, which appends the form factor.
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 
     var name: String {
         switch self {

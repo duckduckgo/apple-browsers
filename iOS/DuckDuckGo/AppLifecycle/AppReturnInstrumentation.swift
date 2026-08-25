@@ -20,7 +20,7 @@
 import Foundation
 import PixelKit
 
-enum AppReturnPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum AppReturnPixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -32,7 +32,7 @@ enum AppReturnPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "m_" }
+    var namePrefix: PixelKitNamePrefix { .custom("m_") }
 }
 
 protocol AppReturnInstrumentation {

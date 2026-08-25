@@ -22,6 +22,45 @@ Opting in persists a failed send and replays it later, with two extra parameters
 (`originalPixelTimestamp` and `retriedPixel`) that the pixel must be privacy triaged for first. It is
 off by default for exactly that reason. See [RetryQueue/README.md](RetryQueue/README.md).
 
+## Naming lives on the event
+
+A pixel's name is a contract with its definition in `PixelDefinitions` and with whatever queries it,
+so both halves of it are declared on the event, not passed at the call site:
+
+| Property | Controls | Default |
+|---|---|---|
+| `namePrefix` | what goes in front of `name` | `.platformDefault` |
+| `platformSuffixPolicy` | where the iOS platform marker goes | `.standard` |
+
+`PixelKit.Options` carries transport and payload only — headers, extra parameters, retry, ATB. It
+has nothing that can change a pixel's name. That is deliberate: when naming was per-call, two call
+sites firing the same event could disagree about what it was called and nothing caught it, which is
+how both the platform-suffix drift and `GeneralPixel.jsPixel`'s duplicated prefix conditional
+happened.
+
+`PixelKitNamePrefix` has three cases:
+
+| Case | Result on macOS | Result on iOS |
+|---|---|---|
+| `.platformDefault` | `m_mac_` prepended unless the name already starts with it (`m_mac_debug_` for a `DebugEvent`) | nothing prepended |
+| `.none` | nothing prepended | nothing prepended |
+| `.custom("m_")` | `m_` prepended | `m_` prepended |
+
+`.none` is what the old `doNotEnforcePrefix: true` argument meant. It was being repeated at every
+call site of the events that needed it, so it moved onto those events.
+
+### When the prefix depends on the host, not the pixel
+
+`DataBrokerProtectionSharedPixelsHandler` and `OnboardingPixelReporter` each take a `Platform` at
+construction and turn it into `m_mac_` or `m_ios_`. That is a per-process fact the shared event type
+cannot know, but it is still naming, so it does not go back into `Options`. Use the decorator:
+
+```swift
+pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
+```
+
+`prefixed(_:)` returns the same event wearing an explicit prefix, forwarding everything else.
+
 ## Platform and form-factor suffixes
 
 On iOS every pixel name ends in a marker saying which platform and form factor it came from,

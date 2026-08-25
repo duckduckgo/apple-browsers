@@ -1555,7 +1555,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // silently inert. Calling it twice is harmless — it re-checks already-settled state.
         eventHubIntegration.applicationDidBecomeActive()
 
-        PixelKit.fire(GeneralPixel.launch, doNotEnforcePrefix: true)
+        PixelKit.fire(GeneralPixel.launch)
         profilerToken.stop()
     }
 
@@ -1635,23 +1635,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireDailyActiveUserPixels() {
-        PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily, doNotEnforcePrefix: true)
-        PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily, doNotEnforcePrefix: true)
-        PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
+        PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily)
+        PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily)
+        PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)
     }
 
     private func fireDailyFireWindowConfigurationPixels() {
         PixelKit.fire(GeneralPixel.dailyFireWindowConfigurationStartupFireWindowEnabled(
             startupFireWindow: startupPreferences.startupWindowType == .fireWindow
-        ), frequency: .daily, doNotEnforcePrefix: true)
+        ), frequency: .daily)
 
         PixelKit.fire(GeneralPixel.dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(
             openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault
-        ), frequency: .daily, doNotEnforcePrefix: true)
+        ), frequency: .daily)
 
         PixelKit.fire(GeneralPixel.dailyFireWindowConfigurationFireAnimationEnabled(
             fireAnimationEnabled: dataClearingPreferences.isFireAnimationEnabled
-        ), frequency: .daily, doNotEnforcePrefix: true)
+        ), frequency: .daily)
     }
 
     private func fireDailyAIChatEnabledPixel() {
@@ -1686,7 +1686,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAutoClearOnExitEnabledPixel() {
         guard dataClearingPreferences.isAutoClearEnabled else { return }
-        PixelKit.fire(GeneralPixel.dailyAutoClearOnExitEnabled, frequency: .daily, doNotEnforcePrefix: true)
+        PixelKit.fire(GeneralPixel.dailyAutoClearOnExitEnabled, frequency: .daily)
     }
 
     private func fireDailyAdBlockingPixel() {
@@ -2374,7 +2374,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func emailDidSignInNotification(_ notification: Notification) {
-        PixelKit.fire(NonStandardPixel.emailEnabled, doNotEnforcePrefix: true)
+        PixelKit.fire(NonStandardPixel.emailEnabled)
         if AppDelegate.isNewUser {
             PixelKit.fire(GeneralPixel.emailEnabledInitial, frequency: .legacyInitial)
         }
@@ -2385,7 +2385,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func emailDidSignOutNotification(_ notification: Notification) {
-        PixelKit.fire(NonStandardPixel.emailDisabled, doNotEnforcePrefix: true)
+        PixelKit.fire(NonStandardPixel.emailDisabled)
         if let object = notification.object as? EmailManager, let emailManager = syncDataProviders?.settingsAdapter.emailManager, object !== emailManager {
             syncService?.scheduler.notifyDataChanged()
         }

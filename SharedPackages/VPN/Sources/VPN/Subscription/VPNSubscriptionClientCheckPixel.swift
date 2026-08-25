@@ -19,7 +19,7 @@
 import PixelKit
 import Subscription
 
-public enum VPNSubscriptionClientCheckPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+public enum VPNSubscriptionClientCheckPixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -40,7 +40,9 @@ public enum VPNSubscriptionClientCheckPixel: PixelKit.Event, PixelKitEventWithCu
 #endif
     }
 
-    public var namePrefix: String {
+    public var namePrefix: PixelKitNamePrefix { .custom(namePrefixLiteral) }
+
+    private var namePrefixLiteral: String {
         let trigger: Trigger = {
             switch self {
             case .vpnFeatureEnabled(_, let trigger),

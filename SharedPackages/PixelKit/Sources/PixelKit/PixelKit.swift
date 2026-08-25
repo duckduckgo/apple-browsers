@@ -315,9 +315,7 @@ public final class PixelKit {
                      options: Options,
                      onComplete: @escaping CompletionBlock) {
 
-        let resolvedName = self.resolvedName(for: event,
-                                             namePrefix: options.namePrefix,
-                                             doNotEnforcePrefix: !options.enforcePrefix)
+        let resolvedName = self.resolvedName(for: event)
         // Throttling and de-duplication key off the name without the trailing marker, so a pixel
         // whose policy is `.standard` is counted once per device rather than once per form factor.
         let pixelName = resolvedName.base
@@ -380,20 +378,16 @@ public final class PixelKit {
                      frequency: Frequency = .standard,
                      withHeaders headers: [String: String]? = nil,
                      withAdditionalParameters params: [String: String]? = nil,
-                     withNamePrefix namePrefix: String? = nil,
                      allowedQueryReservedCharacters: CharacterSet? = nil,
                      includeAppVersionParameter: Bool = true,
-                     doNotEnforcePrefix: Bool = false,
                      onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         fire(event: event,
              frequency: frequency,
              options: Options(headers: headers,
                               additionalParameters: params,
-                              namePrefix: namePrefix,
                               allowedQueryReservedCharacters: allowedQueryReservedCharacters,
-                              includeAppVersionParameter: includeAppVersionParameter,
-                              enforcePrefix: !doNotEnforcePrefix),
+                              includeAppVersionParameter: includeAppVersionParameter),
              onComplete: onComplete)
     }
 
@@ -427,20 +421,16 @@ public final class PixelKit {
                             frequency: Frequency = .standard,
                             withHeaders headers: [String: String] = [:],
                             withAdditionalParameters parameters: [String: String]? = nil,
-                            withNamePrefix namePrefix: String? = nil,
                             allowedQueryReservedCharacters: CharacterSet? = nil,
                             includeAppVersionParameter: Bool = true,
-                            doNotEnforcePrefix: Bool = false,
                             onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         Self.shared?.fire(event,
                           frequency: frequency,
                           withHeaders: headers,
                           withAdditionalParameters: parameters,
-                          withNamePrefix: namePrefix,
                           allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                           includeAppVersionParameter: includeAppVersionParameter,
-                          doNotEnforcePrefix: doNotEnforcePrefix,
                           onComplete: onComplete)
     }
 
@@ -934,13 +924,18 @@ public final class PixelKit {
     }
 
     /// Builds the prefixed name and decides where this event's platform marker goes.
-    private func resolvedName(for event: PixelKit.Event, namePrefix: String?, doNotEnforcePrefix: Bool = false) -> ResolvedPixelName {
+    ///
+    /// Takes only the event: a pixel's name is a property of the pixel, not of the call site that
+    /// fires it. `Options` carries transport and payload, nothing that changes the name.
+    private func resolvedName(for event: PixelKit.Event) -> ResolvedPixelName {
 
-        if let pixelWithCustomPrefix = event as? PixelKitEventWithCustomPrefix {
-            return splitting(pixelWithCustomPrefix.namePrefix + event.name, per: event.platformSuffixPolicy)
+        // An explicit prefix means the event has stated its complete name, so none of the platform
+        // correction below applies. `.none` is the empty-string case of this.
+        if let prefix = event.namePrefix.literal {
+            return splitting(prefix + event.name, per: event.platformSuffixPolicy)
         }
 
-        let pixelName = (namePrefix ?? "") + event.name
+        let pixelName = event.name
         if pixelName.hasPrefix("experiment") {
             // Experiment names carry their own marker, applied here rather than through the policy.
             // Routing them through `splitting` as well would append a second one.
@@ -961,9 +956,6 @@ public final class PixelKit {
         } else if let debugEvent = event as? DebugEvent {
             // Is a Debug event not already prefixed
             correctedName = "m_mac_debug_\(debugEvent.name)"
-        } else if doNotEnforcePrefix {
-            // For pixels event that don't follow the standard naming conventions
-            correctedName = pixelName
         } else {
             correctedName = "m_mac_\(pixelName)"
         }
@@ -985,8 +977,8 @@ public final class PixelKit {
     }
 
     /// The throttling key for `event`: the resolved name without the trailing marker.
-    private func prefixedAndSuffixedName(for event: PixelKit.Event, namePrefix: String?, doNotEnforcePrefix: Bool = false) -> String {
-        resolvedName(for: event, namePrefix: namePrefix, doNotEnforcePrefix: doNotEnforcePrefix).base
+    private func prefixedAndSuffixedName(for event: PixelKit.Event) -> String {
+        resolvedName(for: event).base
     }
 
     var platformSuffix: String {
@@ -1035,12 +1027,12 @@ public final class PixelKit {
         Self.shared?.cohort(from: cohortLocalDate, dateGenerator: dateGenerator) ?? ""
     }
 
-    public static func pixelLastFireDate(event: PixelKit.Event, frequency: Frequency, namePrefix: String? = nil) throws -> Date? {
-        try Self.shared?.pixelLastFireDate(event: event, frequency: frequency, namePrefix: namePrefix)
+    public static func pixelLastFireDate(event: PixelKit.Event, frequency: Frequency) throws -> Date? {
+        try Self.shared?.pixelLastFireDate(event: event, frequency: frequency)
     }
 
-    public func pixelLastFireDate(event: PixelKit.Event, frequency: Frequency, namePrefix: String? = nil) throws -> Date? {
-        try pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix), frequency: frequency)
+    public func pixelLastFireDate(event: PixelKit.Event, frequency: Frequency) throws -> Date? {
+        try pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event), frequency: frequency)
     }
 
     private func pixelLastFireDate(pixelName: String, frequency: Frequency) throws -> Date? {

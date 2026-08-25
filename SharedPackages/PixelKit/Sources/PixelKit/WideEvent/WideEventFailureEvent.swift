@@ -39,8 +39,10 @@ public enum WideEventFailureEvent {
 /// `wide_pixel.json5`'s own declaration of `["first_daily_count", "platform", "form_factor"]`. The
 /// default policy produces `m_wide_pixel_save_failed_daily_ios_phone`, so the code now matches the
 /// definition that was already correct.
-extension WideEventFailureEvent: PixelKit.Event, PixelKitEventWithCustomPrefix {
-    public var namePrefix: String {
+extension WideEventFailureEvent: PixelKit.Event {
+    public var namePrefix: PixelKitNamePrefix { .custom(namePrefixLiteral) }
+
+    private var namePrefixLiteral: String {
 #if os(macOS)
         return "m_mac_"
 #elseif os(iOS)

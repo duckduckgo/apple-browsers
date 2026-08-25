@@ -25,7 +25,7 @@ import PixelKit
 ///
 /// The `.siteLoadingTiming` case is sourced from `WKPageLoadTiming` via the BSK `Navigation` library and
 /// is therefore only fired on macOS today; iOS only fires`.siteLoadingSuccess` / `.siteLoadingFailure`.
-public enum SiteLoadingPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+public enum SiteLoadingPixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -140,7 +140,9 @@ public enum SiteLoadingPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
         }
     }
 
-    public var namePrefix: String {
+    public var namePrefix: PixelKitNamePrefix { .custom(namePrefixLiteral) }
+
+    private var namePrefixLiteral: String {
 #if os(iOS)
         return "m_"
 #elseif os(macOS)

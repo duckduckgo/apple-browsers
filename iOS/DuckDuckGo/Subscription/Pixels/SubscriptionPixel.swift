@@ -142,7 +142,7 @@ enum SubscriptionPixel: PixelKit.Event {
 // pixels above do not, so the two need different `platformSuffixPolicy` values. New subscription
 // pixels belong here, or in a type of their own on the default `.standard` policy, rather than in
 // the marker-less enum above.
-enum SubscriptionAutomaticSignOutPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum SubscriptionAutomaticSignOutPixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -150,7 +150,7 @@ enum SubscriptionAutomaticSignOutPixel: PixelKit.Event, PixelKitEventWithCustomP
 
     private static let sourceKey = "source"
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 
     var name: String {
         switch self {

@@ -317,6 +317,16 @@ The two `legacy` cases of `PixelKitPlatformSuffixPolicy` freeze pixels that ship
 marker was applied consistently. Never use one on a new pixel. See
 `SharedPackages/PixelKit/Sources/PixelKit/README.md`.
 
+### Name prefixes
+
+The prefix is declared on the event too, as `PixelKitNamePrefix`, and defaults to
+`.platformDefault` (`m_mac_` on macOS, nothing on iOS). Use `.none` when the name is already
+complete, or `.custom("m_")` for a literal prefix.
+
+`PixelKit.Options` cannot change a pixel's name at all — it carries headers, parameters, retry and
+ATB. Do not look for `namePrefix` or `doNotEnforcePrefix` there; both moved onto the event. For a
+shared package whose prefix depends on the host platform, use `event.prefixed(_:)`.
+
 Pixels have some default values, please check the Pixel implementation in the respective platform to determine what those are.
 
 ## Related Files

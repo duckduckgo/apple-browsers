@@ -27,7 +27,7 @@ import FeatureFlags_iOS
 /// Temporary diagnostic pixels for the Search Token (Dindex) experiment (treatment cohort only).
 /// Fired via PixelKit, which appends the `_ios_phone`/`_ios_tablet` platform suffix automatically —
 /// so names are grouped by feature with no `m_` prefix. Both expire 2026-10-12; see search_token.json5.
-enum SearchTokenPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum SearchTokenPixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -54,7 +54,7 @@ enum SearchTokenPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 struct SearchTokenExperiment {

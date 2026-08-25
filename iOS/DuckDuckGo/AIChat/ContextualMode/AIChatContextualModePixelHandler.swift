@@ -356,7 +356,7 @@ enum AIChatContextualSuggestionsSurface: String {
     case sheet
 }
 
-enum AIChatContextualSelectionPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum AIChatContextualSelectionPixel: PixelKit.Event {
     /// Frozen: these names already ship with the marker ahead of the frequency suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
@@ -366,7 +366,7 @@ enum AIChatContextualSelectionPixel: PixelKit.Event, PixelKitEventWithCustomPref
     case promptSubmitted(selectionCount: String)
     case toolDeliveryTimedOut
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 
     var name: String {
         switch self {

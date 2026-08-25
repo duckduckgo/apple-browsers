@@ -48,7 +48,7 @@ enum SafariRedirectPixel {
     var countPixel: SafariRedirectScheduledPixel { SafariRedirectScheduledPixel(name: name + "_count") }
 }
 
-struct SafariRedirectScheduledPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+struct SafariRedirectScheduledPixel: PixelKit.Event {
     /// These already send the correct `..._daily_ios_phone` shape, because `name` bakes the
     /// frequency suffix in (see `dailyPixel` / `countPixel` above) to work around PixelKit placing
     /// the marker before the frequency suffix. Both policies therefore produce the same wire name
@@ -64,7 +64,7 @@ struct SafariRedirectScheduledPixel: PixelKit.Event, PixelKitEventWithCustomPref
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 protocol SafariRedirectHandling: AnyObject {

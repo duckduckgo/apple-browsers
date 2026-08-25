@@ -38,7 +38,12 @@ extension PixelKit {
         /// Defaults to `.standard`, which is what every new pixel wants. Only override it to freeze
         /// a name that shipped before the marker was applied consistently.
         var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { get }
-
+        /// What goes in front of `name`.
+        ///
+        /// Defaults to `.platformDefault`. Together with `platformSuffixPolicy` this is the whole of
+        /// a pixel's naming identity, and it lives here rather than on `Options` so that every call
+        /// site firing this event necessarily agrees on the name.
+        var namePrefix: PixelKitNamePrefix { get }
     }
 }
 
@@ -48,6 +53,34 @@ public extension PixelKit.Event {
     /// `PixelKitPlatformSuffixPolicy` for the legacy cases and why they exist.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .standard }
 
+    /// The host platform's convention, which is what a pixel wants unless its name is already
+    /// complete. See `PixelKitNamePrefix`.
+    var namePrefix: PixelKitNamePrefix { .platformDefault }
+
+    /// This event, wearing an explicit name prefix.
+    ///
+    /// For shared packages whose prefix is picked by the host platform rather than by the pixel:
+    /// `DataBrokerProtectionSharedPixelsHandler` and `OnboardingPixelReporter` each take a
+    /// `Platform` at construction and turn it into `m_mac_` or `m_ios_`. That is a per-process fact
+    /// the event type cannot know, but it is still naming identity, so it belongs on an event value
+    /// rather than in the `Options` of every individual fire call.
+    func prefixed(_ prefix: String) -> PixelKit.Event {
+        PixelKitPrefixedEvent(wrapped: self, namePrefix: .custom(prefix))
+    }
+}
+
+/// An event wearing a different name prefix. See `PixelKit.Event.prefixed(_:)`.
+struct PixelKitPrefixedEvent: PixelKit.Event {
+    let wrapped: PixelKit.Event
+    let namePrefix: PixelKitNamePrefix
+
+    var name: String { wrapped.name }
+    var parameters: [String: String]? { wrapped.parameters }
+    var standardParameters: [PixelKitStandardParameter]? { wrapped.standardParameters }
+    /// Forwarded explicitly: the reflection-based default would inspect this wrapper rather than the
+    /// event it wraps.
+    var error: NSError? { wrapped.error }
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { wrapped.platformSuffixPolicy }
 }
 
 /// Extract Error parameter from the PixelKit.Event, only one error is supported, if multiple errors are found we assert

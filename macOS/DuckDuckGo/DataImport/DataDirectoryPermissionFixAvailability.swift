@@ -42,7 +42,7 @@ struct DataDirectoryPermissionFixAvailability {
 
     /// Returns `true` running `macOS >= 27` and the `dataImportDataDirectoryAccess` Feature Flag is enabled.
     /// Can also be overridden via `isForcingMacOS27PermissionsFix`
-    var isEnabled: Bool {
+    var isAvailable: Bool {
         if mustForcePermissionFix {
             return true
         }

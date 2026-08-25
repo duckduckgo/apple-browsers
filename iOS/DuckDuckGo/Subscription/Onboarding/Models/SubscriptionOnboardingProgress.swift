@@ -35,6 +35,8 @@ protocol SubscriptionOnboardingProgressPersisting {
     var fullyCompletedAt: Date? { get set }
     /// How many times the card has been shown since reaching 100%, for the 2-view cap.
     var completionViewCount: Int { get set }
+    /// When the flow was first opened from the post-checkout entry point.
+    var postCheckoutFlowStartedAt: Date? { get set }
 }
 
 extension SubscriptionOnboardingProgressPersisting {
@@ -67,6 +69,13 @@ extension SubscriptionOnboardingProgressPersisting {
         fullyCompletedAt = now
         return true
     }
+
+    mutating func recordPostCheckoutFlowStartedIfNeeded(now: Date) {
+        progressLock.lock()
+        defer { progressLock.unlock() }
+        guard postCheckoutFlowStartedAt == nil else { return }
+        postCheckoutFlowStartedAt = now
+    }
 }
 
 struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPersisting {
@@ -76,6 +85,7 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
         case cardFirstShownDate = "subscription.onboarding.card-first-shown-date"
         case fullyCompletedAt = "subscription.onboarding.fully-completed-at"
         case completionViewCount = "subscription.onboarding.completion-view-count"
+        case postCheckoutFlowStartedAt = "subscription.onboarding.post-checkout-flow-started-at"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -106,6 +116,11 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
     var completionViewCount: Int {
         get { read(.completionViewCount) ?? 0 }
         set { write(newValue, for: .completionViewCount) }
+    }
+
+    var postCheckoutFlowStartedAt: Date? {
+        get { read(.postCheckoutFlowStartedAt) }
+        set { write(newValue, for: .postCheckoutFlowStartedAt) }
     }
 }
 
@@ -150,6 +165,10 @@ struct SubscriptionOnboardingProgress {
 
     mutating func markComplete(_ item: SubscriptionOnboardingChecklistItem) {
         persistor.markComplete(item)
+    }
+
+    mutating func recordPostCheckoutFlowStartedIfNeeded(now: Date) {
+        persistor.recordPostCheckoutFlowStartedIfNeeded(now: now)
     }
 
     /// Stays up for the rest of the run once complete, capped at 2 views total once complete, and expires 14 days after it first appeared regardless.
@@ -203,6 +222,7 @@ extension SubscriptionOnboardingProgress {
         var cardFirstShownDate: Date?
         var fullyCompletedAt: Date?
         var completionViewCount: Int = 0
+        var postCheckoutFlowStartedAt: Date?
     }
 }
 

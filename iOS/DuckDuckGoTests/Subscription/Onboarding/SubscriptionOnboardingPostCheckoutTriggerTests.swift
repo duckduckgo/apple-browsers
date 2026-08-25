@@ -18,31 +18,59 @@
 //
 
 import XCTest
+import PrivacyConfig
+import FeatureFlags_iOS
+@testable import Subscription
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
 /// The rule deciding whether a purchase flow offers post-checkout onboarding.
 final class SubscriptionOnboardingPostCheckoutTriggerTests: XCTestCase {
 
-    func testWhenAFirstPurchaseCompletesThenOnboardingIsRequested() {
-        XCTAssertTrue(shouldRequest())
+    func testWhenAFirstPurchaseCompletesThenOnboardingIsRequested() async {
+        let result = await shouldRequest()
+
+        XCTAssertTrue(result)
     }
 
-    func testWhenTheFlowIsAPlanUpdateThenOnboardingIsNotRequested() {
-        XCTAssertFalse(shouldRequest(flowType: .planUpdate))
+    func testWhenTheFlowIsAPlanUpdateThenOnboardingIsNotRequested() async {
+        let result = await shouldRequest(flowType: .planUpdate)
+
+        XCTAssertFalse(result)
     }
 
     /// The restore, email, and plan-update flows are built without a store, which is what keeps them out.
-    func testWhenTheFlowHasNoOnboardingStoreThenOnboardingIsNotRequested() {
-        XCTAssertFalse(shouldRequest(hasOnboardingStore: false))
+    func testWhenTheFlowHasNoOnboardingStoreThenOnboardingIsNotRequested() async {
+        let result = await shouldRequest(hasOnboardingStore: false)
+
+        XCTAssertFalse(result)
     }
 
-    func testWhenTheFeatureIsDisabledThenOnboardingIsNotRequested() {
-        XCTAssertFalse(shouldRequest(isFeatureEnabled: false))
+    func testWhenTheFeatureIsDisabledThenOnboardingIsNotRequested() async {
+        let result = await shouldRequest(isFeatureEnabled: false)
+
+        XCTAssertFalse(result)
     }
 
     /// A defensive re-invocation of the purchase-completed hook must not re-offer the flow.
-    func testWhenOnboardingWasAlreadyRequestedThenItIsNotRequestedAgain() {
-        XCTAssertFalse(shouldRequest(didAlreadyRequest: true))
+    func testWhenOnboardingWasAlreadyRequestedThenItIsNotRequestedAgain() async {
+        let result = await shouldRequest(didAlreadyRequest: true)
+
+        XCTAssertFalse(result)
+    }
+
+    /// `isFeatureEnabled` costs a network round trip, so the cheap conditions must be checked first.
+    func testWhenOnboardingWasAlreadyRequestedThenTheFeatureCheckIsNeverEvaluated() async {
+        var wasEvaluated = false
+
+        _ = await SubscriptionFlowViewModel.shouldRequestOnboarding(flowType: .firstPurchase,
+                                                                     hasOnboardingStore: true,
+                                                                     didAlreadyRequest: true) {
+            wasEvaluated = true
+            return true
+        }
+
+        XCTAssertFalse(wasEvaluated)
     }
 
     // MARK: - Helper
@@ -51,10 +79,60 @@ final class SubscriptionOnboardingPostCheckoutTriggerTests: XCTestCase {
     private func shouldRequest(flowType: SubscriptionFlowType = .firstPurchase,
                                hasOnboardingStore: Bool = true,
                                isFeatureEnabled: Bool = true,
-                               didAlreadyRequest: Bool = false) -> Bool {
-        SubscriptionFlowViewModel.shouldRequestOnboarding(flowType: flowType,
-                                                          hasOnboardingStore: hasOnboardingStore,
-                                                          isFeatureEnabled: isFeatureEnabled,
-                                                          didAlreadyRequest: didAlreadyRequest)
+                               didAlreadyRequest: Bool = false) async -> Bool {
+        await SubscriptionFlowViewModel.shouldRequestOnboarding(flowType: flowType,
+                                                                hasOnboardingStore: hasOnboardingStore,
+                                                                didAlreadyRequest: didAlreadyRequest) {
+            isFeatureEnabled
+        }
+    }
+}
+
+final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
+
+    private static let enUS = Locale(identifier: "en_US")
+
+    func testWhenOnFreeTrialAndEnrolledAsTreatmentThenFeatureIsEnabled() async {
+        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true)
+
+        XCTAssertTrue(isEnabled)
+    }
+
+    func testWhenNotOnFreeTrialThenFeatureIsDisabled() async {
+        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: false)
+
+        XCTAssertFalse(isEnabled)
+    }
+
+    func testWhenSubscriptionFetchFailsThenFeatureIsDisabled() async {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultSubscription = .failure(TestError.fetchFailed)
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment,
+                                                               isAlreadyAssigned: false)
+
+        let isEnabled = await SubscriptionFlowViewModel.isOnboardingFeatureEnabled(subscriptionManager: subscriptionManager,
+                                                                                   featureFlagger: featureFlagger,
+                                                                                   locale: Self.enUS)
+
+        XCTAssertFalse(isEnabled)
+    }
+
+    // MARK: - Helper
+
+    private enum TestError: Error {
+        case fetchFailed
+    }
+
+    private func isFeatureEnabled(hasActiveTrialOffer: Bool) async -> Bool {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            activeOffers: hasActiveTrialOffer ? [DuckDuckGoSubscription.Offer(type: .trial)] : []
+        ))
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment,
+                                                               isAlreadyAssigned: false)
+        return await SubscriptionFlowViewModel.isOnboardingFeatureEnabled(subscriptionManager: subscriptionManager,
+                                                                          featureFlagger: featureFlagger,
+                                                                          locale: Self.enUS)
     }
 }

@@ -161,6 +161,11 @@ extension SubscriptionManager {
         try await getSubscription(forceRefresh: false)
     }
 
+    /// Whether the current subscription has an active free-trial offer. `false` on any fetch failure.
+    public func isOnFreeTrial() async -> Bool {
+        (try? await getSubscription())?.hasActiveTrialOffer ?? false
+    }
+
     public func signOut(notifyUI: Bool) async {
         await signOut(notifyUI: notifyUI, userInitiated: false)
     }

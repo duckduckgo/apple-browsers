@@ -32,7 +32,6 @@ import Suggestions
 import AIChat
 import RemoteMessaging
 import FeatureFlags_iOS
-import os.log
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -345,32 +344,20 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
-    enum EscapeHatchPlacement: Equatable {
-        /// Does not display the Escape Hatch.
-        case none
-        /// Embeds the Escape Hatch in the current scrollable content.
-        case embedded
-
-        static func resolve(hasEscapeHatch: Bool,
-                            isFireTab: Bool,
-                            isTyping: Bool) -> EscapeHatchPlacement {
-            guard hasEscapeHatch, !isFireTab, !isTyping else {
-                return .none
-            }
-            return .embedded
-        }
+    static func shouldEmbedEscapeHatch(hasEscapeHatch: Bool,
+                                       isFireTab: Bool,
+                                       isTyping: Bool) -> Bool {
+        hasEscapeHatch && !isFireTab && !isTyping
     }
 
-    private var escapeHatchPlacement: EscapeHatchPlacement {
-        EscapeHatchPlacement.resolve(
+    private var embeddedEscapeHatchModel: EscapeHatchModel? {
+        Self.shouldEmbedEscapeHatch(
             hasEscapeHatch: escapeHatchModel != nil,
             isFireTab: switchBarHandler.isFireTab,
             isTyping: UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
                                                                hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText))
-    }
-
-    private var embeddedEscapeHatchModel: EscapeHatchModel? {
-        escapeHatchPlacement == .embedded ? escapeHatchModel : nil
+            ? escapeHatchModel
+            : nil
     }
 
     private func applyEscapeHatchPlacement() {
@@ -486,7 +473,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// the Dax morph all update — a raw `setToggleState` doesn't propagate the switch at all.
     private lazy var modeSwitchSwipeController = ModeSwitchSwipeGestureController { [weak self] targetMode in
         guard let self, switchBarHandler.currentToggleState != targetMode else { return }
-        Logger.unifiedInputState.debug("[UTITransition] source=swipe current=\(String(describing: self.switchBarHandler.currentToggleState), privacy: .public) target=\(String(describing: targetMode), privacy: .public) insetTop=\(self.requestedContentInset.top, privacy: .public) insetBottom=\(self.requestedContentInset.bottom, privacy: .public)")
         delegate?.unifiedInputEditingStateDidChangeMode(targetMode)
     }
 
@@ -818,8 +804,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     func setContentInset(top: CGFloat, bottom: CGFloat) {
         guard requestedContentInset.top != top || requestedContentInset.bottom != bottom else { return }
-        let hostTop = topBarContentGap
-        Logger.unifiedInputState.debug("[UTITransition] contentInset mode=\(String(describing: self.switchBarHandler.currentToggleState), privacy: .public) oldTop=\(self.requestedContentInset.top, privacy: .public) oldBottom=\(self.requestedContentInset.bottom, privacy: .public) newTop=\(top, privacy: .public) newBottom=\(bottom, privacy: .public) hostTop=\(hostTop, privacy: .public) active=\(self.isContentActive, privacy: .public)")
         requestedContentInset = (top, bottom)
         guard isContentActive else {
             markNeedsVisibleRefresh()

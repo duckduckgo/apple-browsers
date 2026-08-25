@@ -36,7 +36,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     var isShowingSearchContent: Bool {
         !messagesModel.homeMessageViewModels.isEmpty
-            || (newTabPageViewModel.showsFavorites && !favoritesModel.isEmpty && !newTabPageViewModel.isFavoritesHidden)
+            || (!favoritesModel.isEmpty && !newTabPageViewModel.isFavoritesHidden)
     }
 
     /// What the NTP shows at rest (logo vs Search content), independent of the transient
@@ -44,7 +44,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     /// uses these to pick the right handoff while those flags are still mid-transition.
     var restingContentIsLogo: Bool {
         guard messagesModel.homeMessageViewModels.isEmpty else { return false }
-        guard !newTabPageViewModel.showsFavorites || favoritesModel.isEmpty else { return false }
+        guard favoritesModel.isEmpty else { return false }
         if newTabPageViewModel.escapeHatch != nil {
             return view.bounds.width <= view.bounds.height
         }
@@ -52,7 +52,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     var restingContentIsSearchContent: Bool {
-        !messagesModel.homeMessageViewModels.isEmpty || (newTabPageViewModel.showsFavorites && !favoritesModel.isEmpty)
+        !messagesModel.homeMessageViewModels.isEmpty || !favoritesModel.isEmpty
     }
 
     func setLogoHidden(_ hidden: Bool) {
@@ -61,10 +61,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     func setFavoritesHidden(_ hidden: Bool) {
         newTabPageViewModel.isFavoritesHidden = hidden
-    }
-
-    func setShowsFavorites(_ showsFavorites: Bool) {
-        newTabPageViewModel.showsFavorites = showsFavorites
     }
 
     private lazy var borderView = StyledTopBottomBorderView()
@@ -96,7 +92,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     var onViewDidAppear: (() -> Void)?
 
     init(isFocussedState: Bool,
-         initialEscapeHatch: EscapeHatchModel? = nil,
          openedAfterIdle: Bool = false,
          dismissKeyboardOnScroll: Bool,
          tab: Tab,
@@ -133,7 +128,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.contextualContentProvider = contextualContentProvider
 
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
-        newTabPageViewModel.escapeHatch = initialEscapeHatch
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),

@@ -54,7 +54,7 @@ struct NewTabPageView: View {
     }
 
     private var isShowingSections: Bool {
-        viewModel.showsFavorites && !favoritesViewModel.allFavorites.isEmpty && !viewModel.fireTab
+        !favoritesViewModel.allFavorites.isEmpty && !viewModel.fireTab
     }
 
     var body: some View {

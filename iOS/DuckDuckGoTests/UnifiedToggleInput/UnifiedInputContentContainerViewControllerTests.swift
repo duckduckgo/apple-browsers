@@ -29,20 +29,19 @@ import XCTest
 final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
     func testWhenResolvingEscapeHatchPlacementThenEligibleHatchIsAlwaysEmbedded() {
-        typealias Placement = UnifiedInputContentContainerViewController.EscapeHatchPlacement
-
         func resolve(hasEscapeHatch: Bool = true,
                      isFireTab: Bool = false,
-                     isTyping: Bool = false) -> Placement {
-            Placement.resolve(hasEscapeHatch: hasEscapeHatch,
-                              isFireTab: isFireTab,
-                              isTyping: isTyping)
+                     isTyping: Bool = false) -> Bool {
+            UnifiedInputContentContainerViewController.shouldEmbedEscapeHatch(
+                hasEscapeHatch: hasEscapeHatch,
+                isFireTab: isFireTab,
+                isTyping: isTyping)
         }
 
-        XCTAssertEqual(resolve(hasEscapeHatch: false), .none)
-        XCTAssertEqual(resolve(isFireTab: true), .none)
-        XCTAssertEqual(resolve(isTyping: true), .none)
-        XCTAssertEqual(resolve(), .embedded)
+        XCTAssertFalse(resolve(hasEscapeHatch: false))
+        XCTAssertFalse(resolve(isFireTab: true))
+        XCTAssertFalse(resolve(isTyping: true))
+        XCTAssertTrue(resolve())
     }
 
     func testWhenRenderedMessagePublisherBecomesEmptyThenSearchResolverPublishesLogo() {

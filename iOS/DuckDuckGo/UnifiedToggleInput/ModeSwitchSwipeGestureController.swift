@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import os.log
 import UIKit
 
 /// Installs left/right flick recognizers that switch Search↔Duck.ai (Search is the left page),
@@ -59,11 +58,9 @@ final class ModeSwitchSwipeGestureController: NSObject {
 
     @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
         let targetMode: TextEntryMode = gesture.direction == .left ? .aiChat : .search
-        Logger.unifiedInputState.debug("[UTITransition] source=swipe recognized target=\(String(describing: targetMode), privacy: .public)")
         // Let the List's pan recognizer finish before changing its safe-area inset. Updating it from
         // inside the swipe callback can preserve an offset based on the previous UTI height.
         DispatchQueue.main.async { [weak self] in
-            Logger.unifiedInputState.debug("[UTITransition] source=swipe dispatch target=\(String(describing: targetMode), privacy: .public)")
             self?.onSwitch(targetMode)
         }
     }

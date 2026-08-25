@@ -1186,7 +1186,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let didModeChange = inputMode != effectiveMode
         let needsViewSync = viewController.inputMode != effectiveMode
         guard didModeChange || needsViewSync else { return }
-        Logger.unifiedInputState.debug("[UTITransition] modeChange from=\(String(describing: self.inputMode), privacy: .public) requested=\(String(describing: mode), privacy: .public) effective=\(String(describing: effectiveMode), privacy: .public) animated=\(animated, privacy: .public)")
 
         let isDismissingOmnibarNewPromptToolbar = isOmnibarNewAIChatPrompt && effectiveMode == .search
         if isDismissingOmnibarNewPromptToolbar {
@@ -1432,7 +1431,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // constraint) while editing, so the content inset animates in lockstep with the
         // input instead of chasing transient frame values mid-animation.
         let utiHeight = isInputEditing ? editingHeight() : viewController.view.frame.height
-        Logger.unifiedInputState.debug("[UTITransition] pushInsets mode=\(String(describing: self.inputMode), privacy: .public) position=\(String(describing: self.cardPosition), privacy: .public) editing=\(self.isInputEditing, privacy: .public) utiHeight=\(utiHeight, privacy: .public) frameHeight=\(self.viewController.view.frame.height, privacy: .public)")
         if cardPosition == .top {
             contentViewController.setContentInset(top: utiHeight, bottom: 0)
         } else {
@@ -1896,7 +1894,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
-        Logger.unifiedInputState.debug("[UTITransition] source=toggle current=\(String(describing: self.inputMode), privacy: .public) target=\(String(describing: mode), privacy: .public)")
         updateInputMode(mode, animated: true, origin: .userInteraction)
     }
 

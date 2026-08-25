@@ -30,8 +30,6 @@ final class NewTabPageViewModel: ObservableObject {
     var openedAfterIdle: Bool = false
     @Published var sectionTitle: String?
     @Published var isLogoHidden: Bool = false
-    /// False when Duck.ai reuses the NTP scroll surface for its hatch and remote messages.
-    @Published var showsFavorites: Bool = true
     /// Hides the favorites grid (without removing it) so the UTI defocus handoff can keep the embedded
     /// favorites visible during the collapse and reveal these — aligned — only at completion.
     @Published var isFavoritesHidden: Bool = false

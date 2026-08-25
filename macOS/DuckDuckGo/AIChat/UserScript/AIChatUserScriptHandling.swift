@@ -206,6 +206,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// (whose underlying page is attachable) can report true.
     private var hasAttachedPageContext = false
 
+    /// An unstamped chat reports `.unattributed` rather than dropping the parameter.
+    private var pixelConversationSource: AIChatConversationSource { conversationSource ?? .unattributed }
+
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
@@ -317,9 +320,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         // context, trigger a fresh collection and await it so the content is returned directly in
         // this response instead of arriving later via the submit push.
         if payload.reason == "userAction" {
-            let hasAttachedContent = pageContext != nil
-                && pageContext?.attached != false
-                && !(pageContext?.content.isEmpty ?? true)
+            let hasAttachedContent = pageContext?.attached != false
+                && pageContext?.hasAttachedPage == true
             if !hasAttachedContent {
                 let collected = await requestPageContextAndWait()
                 return PageContextResponse(pageContext: collected)
@@ -454,7 +456,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
-        hasAttachedPageContext = pageContext.map { $0.attached != false && !$0.content.isEmpty } ?? false
+        hasAttachedPageContext = pageContext.map { $0.attached != false && $0.hasAttachedPage } ?? false
         pageContextSubject.send(pageContext)
     }
 
@@ -547,7 +549,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Shared by the JS-bridge consumer (`getAIChatTabContent`) and the omnibar's submit
     /// path so both go through the exact same extraction + favicon-enrichment logic.
     @MainActor
-    static func extractPageContext(from tab: Tab, timeout: TimeInterval = 5) async -> AIChatPageContextData? {
+    static func extractPageContext(from tab: Tab,
+                                   timeout: TimeInterval = 5,
+                                   featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) async -> AIChatPageContextData? {
+        // A document tab (PDF) is handed over as bytes — the user script can't read it, so this
+        // bypasses collection entirely. Covers both consumers: the sidebar's `@` picker
+        // (`getAIChatTabContent`) and the omnibar's submit path.
+        if let documentContext = await documentContext(for: tab, timeout: timeout, featureFlagger: featureFlagger) {
+            return documentContext
+        }
+
         // Access the tab's PageContextUserScript via its content blocking assets
         guard let userScripts = tab.userContentController?.contentBlockingAssets?.userScripts as? UserScripts,
               let pageContextScript = userScripts.pageContextUserScript else {
@@ -567,23 +578,42 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let pageContext = await pageContextScript.collectAndWait(timeout: timeout)
 
         // Replace favicon URLs with base64-encoded data to avoid CSP blocking in the sidebar
-        return pageContext.map { ctx -> AIChatPageContextData in
-            guard let pageURL = URL(string: ctx.url),
-                  let favicon = NSApp.delegateTyped.faviconManager.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
-                  let base64 = favicon.base64PNGDataURL else {
-                return ctx
-            }
-            let faviconEntry = AIChatPageContextData.PageContextFavicon(href: base64, rel: "icon")
-            return AIChatPageContextData(
-                title: ctx.title,
-                favicon: [faviconEntry],
-                url: ctx.url,
-                content: ctx.content,
-                truncated: ctx.truncated,
-                fullContentLength: ctx.fullContentLength,
-                attachable: ctx.attachable
-            )
+        return pageContext.map(withEncodedFavicon)
+    }
+
+    /// Builds a document (PDF) context for the tab, or nil when the tab isn't a document — in which
+    /// case the caller falls back to collecting page markdown as usual. A document whose bytes can't
+    /// be read also returns nil: there's nothing to attach either way.
+    @MainActor
+    private static func documentContext(for tab: Tab,
+                                        timeout: TimeInterval,
+                                        featureFlagger: FeatureFlagger) async -> AIChatPageContextData? {
+        guard featureFlagger.isFeatureOn(.aiChatPdfPageContext),
+              case .url(let url, _, _) = tab.content,
+              DocumentPageContextProvider.isSupportedDocument(mimeType: await tab.webView.mimeType, url: url) else {
+            return nil
         }
+
+        switch await DocumentPageContextProvider.makeDocumentContext(webView: tab.webView,
+                                                                     url: url,
+                                                                     title: tab.title ?? "",
+                                                                     timeout: timeout) {
+        case .document(let context), .tooLarge(let context):
+            return withEncodedFavicon(context)
+        case .unavailable:
+            return nil
+        }
+    }
+
+    /// Swaps a context's favicon for base64 data — raw favicon URLs get CSP-blocked in the sidebar.
+    @MainActor
+    private static func withEncodedFavicon(_ context: AIChatPageContextData) -> AIChatPageContextData {
+        guard let pageURL = URL(string: context.url),
+              let favicon = NSApp.delegateTyped.faviconManager.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
+              let base64 = favicon.base64PNGDataURL else {
+            return context
+        }
+        return context.withFavicon([AIChatPageContextData.PageContextFavicon(href: base64, rel: "icon")])
     }
 
     /// Resolves `tabId` to a live `Tab` in the origin scope and extracts its page context, loading the
@@ -976,8 +1006,9 @@ extension AIChatUserScriptHandler {
 
 extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
-    /// Maps each frontend-reported funnel metric to its origin and click flag. Picker/sidebar/browser-upsell
-    /// surfaces are intentionally absent — instrumented natively elsewhere, not via `reportMetric`.
+    /// Maps each frontend-reported funnel metric to its origin and click flag. Native-only
+    /// surfaces (address bar / NTP / prompt bar picker impressions) are intentionally absent —
+    /// instrumented natively elsewhere, not via `reportMetric`.
     private static let funnelMetrics: [AIChatMetricName: (origin: SubscriptionFunnelOrigin, isClick: Bool)] = [
         .userDidViewAiSidebarUpgradeButton: (.duckAIAiSidebar, false),
         .userDidClickAiSidebarUpgradeButton: (.duckAIAiSidebar, true),
@@ -1001,6 +1032,12 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         .userDidClickVoiceChatLimitModalSubscribeButton: (.duckAIVoiceChatLimit, true),
         .userDidViewVoiceChatDurationLimitModal: (.duckAIVoiceChatDurationLimit, false),
         .userDidClickVoiceChatDurationLimitModalSubscribeButton: (.duckAIVoiceChatDurationLimit, true),
+        .userDidViewModelPickerUpgrade: (.duckAIModelPicker, false),
+        .userDidClickModelPickerUpgrade: (.duckAIModelPicker, true),
+        .userDidViewReasoningDropdownUpgrade: (.duckAIReasoningDropdown, false),
+        .userDidClickReasoningDropdownUpgrade: (.duckAIReasoningDropdown, true),
+        .userDidViewSwitchModelUpgrade: (.duckAISwitchModel, false),
+        .userDidClickSwitchModelUpgrade: (.duckAISwitchModel, true),
     ]
 
     /// The modal metrics, each building its pixel from the origin the modal was opened from.
@@ -1057,7 +1094,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: conversationSource?.isAskDuckAiButton ?? false, hasPageContext: hasAttachedPageContext), frequency: .standard)
+            pixelFiring?.fire(
+                AIChatPixel.aiChatMetricStartNewConversation(source: pixelConversationSource,
+                                                             hasPageContext: hasAttachedPageContext),
+                frequency: .standard
+            )
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
@@ -1066,7 +1107,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: conversationSource?.isAskDuckAiButton ?? false, hasPageContext: hasAttachedPageContext), frequency: .standard)
+            pixelFiring?.fire(
+                AIChatPixel.aiChatMetricSentPromptOngoingChat(source: pixelConversationSource,
+                                                              hasPageContext: hasAttachedPageContext),
+                frequency: .standard
+            )
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }

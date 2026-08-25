@@ -1444,27 +1444,52 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelReporter.reportSubmitChangeModel(modelId: modelId)
     }
 
-    /// Surfaces the native model picker on the **active** chat in response to the FE's
-    /// `showModelPicker` (e.g. the recovery card's "Switch Model" CTA). Expands the input and
-    /// reveals the model chip **without starting a new chat** — the chat stays `hasSubmittedPrompt`,
-    /// so a subsequent supported-model selection still emits `submitChangeModelAction`.
+    /// Expands the input if needed, then presents a picker once the toolbar is laid out.
+    private func presentPickerForActiveChat(_ present: @escaping () -> Void) {
+        if isInputPaneExpanded {
+            applyToolbarPresentation()
+            present()
+            return
+        }
+        showExpanded(inputMode: .aiChat)
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isInputPaneExpanded, self.inputMode == .aiChat else { return }
+            present()
+        }
+    }
+
+    /// Surfaces the native model picker on the active chat (FE `showModelPicker` / recovery card).
     func presentModelPickerForActiveChat() {
         isModelPickerForcedVisible = true
-        showExpanded(inputMode: .aiChat)
         if isSubmitBlockedByRecoveryCard,
            let supportedModel = modelStore.selectedModel,
            supportedModel.entityHasAccess {
             isSubmitBlockedByRecoveryCard = false
             notifyFrontendOfActiveChatModelChange(supportedModel.id)
         }
-        // Defer to the next runloop so the toolbar (and the now-revealed chip) is laid out after the
-        // expand animation before we ask the button to open its menu.
-        DispatchQueue.main.async { [weak self] in
+        presentPickerForActiveChat { [weak self] in
             guard let self else { return }
             self.pixelReporter.reportShowModelPicker()
             if self.viewController.presentModelPickerMenu() {
                 self.fireModelPickerShown()
             }
+        }
+    }
+
+    /// Surfaces the native reasoning picker on the active chat (FE `showReasoningPicker`).
+    func presentReasoningPickerForActiveChat() {
+        presentPickerForActiveChat { [weak self] in
+            guard let self else { return }
+            if self.viewController.presentReasoningPickerMenu() {
+                self.pixelReporter.reportReasoningPickerShown()
+            }
+        }
+    }
+
+    /// Opens the system file picker on the active chat (FE `openFilePicker`).
+    func presentFilePickerForActiveChat() {
+        presentPickerForActiveChat { [weak self] in
+            self?.attachmentController.presentFilePicker()
         }
     }
 

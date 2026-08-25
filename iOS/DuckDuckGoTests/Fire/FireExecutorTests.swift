@@ -76,7 +76,7 @@ final class FireExecutorTests: XCTestCase {
         func didFinishBurningAIHistory(fireRequest: FireRequest) {
             didFinishBurningAIHistoryCalled = true
         }
-        
+
         func didFinishBurning(fireRequest: FireRequest) {
             didFinishBurningCalled = true
             didFinishBurningFireRequest = fireRequest
@@ -121,7 +121,7 @@ final class FireExecutorTests: XCTestCase {
         func scheduleRegularCleaning() {}
         func cancelCleaningSchedule() {}
     }
-    
+
     // MARK: - Setup
     
     private var mockTabManager: MockTabManager!
@@ -190,7 +190,8 @@ final class FireExecutorTests: XCTestCase {
     private func makeFireExecutor(
         syncService: DDGSyncing? = nil,
         bookmarksDatabaseCleaner: (any BookmarkDatabaseCleaning)? = nil,
-        fireproofing: Fireproofing? = nil
+        fireproofing: Fireproofing? = nil,
+        clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {}
     ) -> FireExecutor {
         let executor = FireExecutor(
             tabManager: mockTabManager,
@@ -214,7 +215,8 @@ final class FireExecutorTests: XCTestCase {
             },
             appSettings: mockAppSettings,
             aiChatSyncCleaner: mockAIChatSyncCleaner,
-            wideEvent: WideEventMock()
+            wideEvent: WideEventMock(),
+            clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
         )
         executor.delegate = mockDelegate
         return executor
@@ -245,6 +247,61 @@ final class FireExecutorTests: XCTestCase {
         let tab = Tab(uid: "test-tab-with-contextual-chat")
         tab.contextualChatURL = "https://duckduckgo.com/?ia=chat&duckai=4&chatID=\(contextualChatID)"
         return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+
+    // MARK: - App Switcher Snapshot Tests
+
+    func testWhenFeatureIsEnabledAndSingleTabIsBurnedThenAppSwitcherSnapshotCleanupFollowsTabWorkAndPrecedesCompletion() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
+        var didClearSnapshots = false
+        let executor = makeFireExecutor {
+            XCTAssertTrue(self.mockDelegate.didFinishBurningTabsCalled)
+            XCTAssertFalse(self.mockDelegate.didFinishBurningCalled)
+            didClearSnapshots = true
+        }
+
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel())), applicationState: .unknown)
+
+        XCTAssertTrue(didClearSnapshots)
+        XCTAssertTrue(mockDelegate.didFinishBurningCalled)
+    }
+
+    func testWhenFeatureIsDisabledThenBurnDoesNotClearAppSwitcherSnapshots() async {
+        var didClearSnapshots = false
+        let executor = makeFireExecutor {
+            didClearSnapshots = true
+        }
+
+        await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
+
+        XCTAssertFalse(didClearSnapshots)
+    }
+
+    func testWhenFeatureIsEnabledAndDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
+        var cleanupCallCount = 0
+        let executor = makeFireExecutor {
+            cleanupCallCount += 1
+        }
+
+        _ = await executor.burnChat(chatID: "chat", isFireMode: false)
+        _ = await executor.burnChats(chatIDs: ["chat-1", "chat-2"], isFireMode: false)
+        _ = await executor.burnAllChats(isFireMode: false)
+
+        XCTAssertEqual(cleanupCallCount, 3)
+    }
+
+    func testWhenDirectAIChatBurnFailsThenAppSwitcherSnapshotsAreNotCleared() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
+        mockHistoryCleaner.deleteAIChatResult = .failure(NSError(domain: "test", code: 1))
+        var didClearSnapshots = false
+        let executor = makeFireExecutor {
+            didClearSnapshots = true
+        }
+
+        _ = await executor.burnChat(chatID: "chat", isFireMode: false)
+
+        XCTAssertFalse(didClearSnapshots)
     }
 
     private func makeTabViewModel(chatID: String, fireTab: Bool) -> TabViewModel {

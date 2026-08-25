@@ -62,53 +62,62 @@ public final class AIChatPromptHandler: AIChatConsumableDataHandling {
     }
 }
 
-/// The user-facing surface that opened a Duck.ai conversation, attached as `source` to the
-/// conversation pixels. Raw values mirror the `source` enum in `aichat_pixels.json5`.
+/// Sent verbatim as the conversation pixels' `source`. Raw values must match the
+/// `aiChatConversationSource` enum in `macOS/PixelDefinitions/pixels/params_dictionary.json5`.
 public enum AIChatConversationSource: String, CaseIterable {
-    /// Duck.ai tab-bar button — new chat (direct click or the button menu's "New Chat").
     case tabBarButton = "tab-bar-button"
-    /// Tab-bar / main-menu "Ask About Page" — opens the sidebar and attaches the current page.
     case askAboutPage = "ask-about-page"
-    /// Tab-bar Duck.ai sidebar toggle (the "chrome" sidebar button).
     case tabBarSidebar = "tab-bar-sidebar"
-    /// Address-bar Duck.ai button, its context menu, and omnibar text submissions.
-    case addressBar = "address-bar"
-    /// New Tab Page omnibar.
-    case newTabPage = "new-tab-page"
-    /// Duck.ai omnibar panel.
-    case omnibar = "omnibar"
-    /// Floating prompt bar.
-    case promptBar = "prompt-bar"
-    /// File / application main menu.
-    case mainMenu = "main-menu"
-    /// More-options (hamburger) menu.
-    case moreOptionsMenu = "more-options-menu"
-    /// Contextual "Summarize" action.
-    case summarization = "summarization"
-    /// Contextual "Translate" action.
-    case translation = "translation"
-    /// Contextual "Attach selection to Duck.ai" action.
-    case attachSelection = "attach-selection"
-    /// Address-bar button context menu → open in sidebar, and other context-menu entry points.
-    case contextMenu = "context-menu"
-    /// SERP handoff.
-    case serp = "serp"
-    /// Sidebar → "Open in new tab" / handoff to a full tab.
-    case sidebarHandoff = "sidebar-handoff"
-    /// Voice entry points.
-    case voice = "voice"
-    /// Image-generation mode entry points.
-    case imageGeneration = "image"
-    /// Opening a previously saved chat (recent-chat pickers).
-    case recentChat = "recent-chat"
-    /// Settings → AI Features links.
-    case settings = "settings"
-    /// Origin unknown / not instrumented (restored chats, external deep links, etc.).
-    case other = "other"
 
-    /// Whether this surface is a gesture on the title-bar Ask Duck.ai button — its "New Chat"
-    /// (dropdown or middle-click), its "Ask About Page" sidebar entry, or the sidebar toggle.
-    /// This is what the conversation pixels report as `isOpenedFromAskDuckAiButton`.
+    case addressBar = "address-bar"
+    case addressBarSuggestion = "address-bar-suggestion"
+    case addressBarContextMenu = "address-bar-context-menu"
+
+    case newTabPage = "new-tab-page"
+    case newTabPageViewAllChats = "new-tab-page-view-all-chats"
+    case newTabPageVoice = "new-tab-page-voice"
+    case newTabPageRecentChat = "new-tab-page-recent-chat"
+
+    case omnibar = "omnibar"
+    case omnibarViewAllChats = "omnibar-view-all-chats"
+    case omnibarVoice = "omnibar-voice"
+    case omnibarRecentChat = "omnibar-recent-chat"
+
+    case promptBar = "prompt-bar"
+    case promptBarVoice = "prompt-bar-voice"
+
+    case mainMenuFileNewChat = "main-menu-file-new-chat"
+    case mainMenuSidebar = "main-menu-sidebar"
+    case mainMenuOpenDuckAI = "main-menu-open-duck-ai"
+    case mainMenuNewChat = "main-menu-new-chat"
+    case mainMenuViewAllChats = "main-menu-view-all-chats"
+    case mainMenuVoice = "main-menu-voice"
+    case mainMenuImage = "main-menu-image"
+    case mainMenuRecentChat = "main-menu-recent-chat"
+
+    case moreOptionsMenuNewDuckAIChat = "more-options-menu-new-duck-ai-chat"
+    case moreOptionsMenuOpenDuckAI = "more-options-menu-open-duck-ai"
+    case moreOptionsMenuNewChat = "more-options-menu-new-chat"
+    case moreOptionsMenuViewAllChats = "more-options-menu-view-all-chats"
+    case moreOptionsMenuVoice = "more-options-menu-voice"
+    case moreOptionsMenuImage = "more-options-menu-image"
+    case moreOptionsMenuRecentChat = "more-options-menu-recent-chat"
+
+    case contextualSummarize = "contextual-summarize"
+    case contextualTranslate = "contextual-translate"
+    case contextualAttachSelection = "contextual-attach-selection"
+
+    case serp = "serp"
+    case sidebarHandoff = "sidebar-handoff"
+
+    case settings = "settings"
+
+    /// Named for the attribution gap it measures, not "direct": the app cannot tell deliberate
+    /// direct navigation from an entry point nobody has instrumented yet.
+    case unattributed = "unattributed"
+
+    /// Backs the pixels' `isOpenedFromAskDuckAiButton`, now redundant with `source` and kept
+    /// only for continuity with dashboards that predate it.
     public var isAskDuckAiButton: Bool {
         switch self {
         case .tabBarButton, .askAboutPage, .tabBarSidebar:

@@ -147,6 +147,7 @@ private final class FavoriteInteractionView: UIView, UIContextMenuInteractionDel
             hostingController.view.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
         addInteraction(UIContextMenuInteraction(delegate: self))
+        dragInteraction.allowsSimultaneousRecognitionDuringLift = true
         addInteraction(dragInteraction)
         addInteraction(dropInteraction)
         update(favorite: favorite,

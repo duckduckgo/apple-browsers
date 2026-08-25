@@ -20,19 +20,23 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct ReorderableDragConfiguration {
+struct ReorderableInteractionConfiguration {
     let itemProvider: NSItemProvider
-    let onDragBegan: () -> Void
+    let typeIdentifier: String
+    let onDragBegan: (ObjectIdentifier?) -> Void
+    let canHandleDrop: (ObjectIdentifier) -> Bool
+    let onDropEntered: () -> Void
+    let onDragEnded: (ObjectIdentifier) -> Void
 }
 
-private struct ReorderableDragConfigurationKey: EnvironmentKey {
-    static let defaultValue: ReorderableDragConfiguration? = nil
+private struct ReorderableInteractionConfigurationKey: EnvironmentKey {
+    static let defaultValue: ReorderableInteractionConfiguration? = nil
 }
 
 extension EnvironmentValues {
-    var reorderableDragConfiguration: ReorderableDragConfiguration? {
-        get { self[ReorderableDragConfigurationKey.self] }
-        set { self[ReorderableDragConfigurationKey.self] = newValue }
+    var reorderableInteractionConfiguration: ReorderableInteractionConfiguration? {
+        get { self[ReorderableInteractionConfigurationKey.self] }
+        set { self[ReorderableInteractionConfigurationKey.self] = newValue }
     }
 }
 
@@ -44,13 +48,14 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     private let data: [Data]
     private let id: KeyPath<Data, ID>
     private let isReorderingEnabled: Bool
-    private let isDragHandledByContent: Bool
+    private let isReorderingHandledByContent: Bool
 
     private let content: ContentBuilder
     private let preview: PreviewBuilder?
     private let onMove: (_ from: IndexSet, _ to: Int) -> Void
 
     @State private var movedItem: Data?
+    @State private var activeDragSessionID: ObjectIdentifier?
 
     init(_ data: [Data],
          id: KeyPath<Data, ID>,
@@ -59,7 +64,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         self.data = data
         self.id = id
         self.isReorderingEnabled = true
-        self.isDragHandledByContent = false
+        self.isReorderingHandledByContent = false
         self.content = content
         self.preview = nil
         self.onMove = onMove
@@ -68,14 +73,14 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     init(_ data: [Data],
          id: KeyPath<Data, ID>,
          isReorderingEnabled: Bool = true,
-         isDragHandledByContent: Bool = false,
+         isReorderingHandledByContent: Bool = false,
          @ViewBuilder content: @escaping ContentBuilder,
          @ViewBuilder preview: @escaping (Data) -> Preview,
          onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void) {
         self.data = data
         self.id = id
         self.isReorderingEnabled = isReorderingEnabled
-        self.isDragHandledByContent = isDragHandledByContent
+        self.isReorderingHandledByContent = isReorderingHandledByContent
         self.content = content
         self.preview = preview
         self.onMove = onMove
@@ -92,27 +97,40 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         switch item.trait {
 
         case .movable(let metadata) where isReorderingEnabled:
-            let dragConfiguration = ReorderableDragConfiguration(
+            let interactionConfiguration = ReorderableInteractionConfiguration(
                 itemProvider: metadata.itemProvider,
-                onDragBegan: { movedItem = item }
+                typeIdentifier: metadata.type.identifier,
+                onDragBegan: { sessionID in
+                    movedItem = item
+                    activeDragSessionID = sessionID
+                },
+                canHandleDrop: { sessionID in
+                    movedItem != nil && activeDragSessionID == sessionID
+                },
+                onDropEntered: { moveDraggedItem(over: item) },
+                onDragEnded: { sessionID in
+                    guard activeDragSessionID == sessionID else { return }
+                    movedItem = nil
+                    activeDragSessionID = nil
+                }
             )
 
-            if isDragHandledByContent {
-                droppableContent(for: item, metadata: metadata)
-                    .environment(\.reorderableDragConfiguration, dragConfiguration)
+            if isReorderingHandledByContent {
+                content(item)
+                    .environment(\.reorderableInteractionConfiguration, interactionConfiguration)
             } else if let preview {
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {
-                        dragConfiguration.onDragBegan()
-                        return dragConfiguration.itemProvider
+                        interactionConfiguration.onDragBegan(nil)
+                        return interactionConfiguration.itemProvider
                     } preview: {
                         preview(item)
                     }
             } else {
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {
-                        dragConfiguration.onDragBegan()
-                        return dragConfiguration.itemProvider
+                        interactionConfiguration.onDragBegan(nil)
+                        return interactionConfiguration.itemProvider
                     }
             }
 
@@ -130,6 +148,18 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
                 item: item,
                 onMove: onMove,
                 movedItem: $movedItem))
+    }
+
+    private func moveDraggedItem(over item: Data) {
+        guard item != movedItem,
+              let current = movedItem,
+              let from = data.firstIndex(of: current),
+              let to = data.firstIndex(of: item)
+        else { return }
+
+        let fromIndices = IndexSet(integer: from)
+        let toIndex = to > from ? to + 1 : to
+        onMove(fromIndices, toIndex)
     }
 }
 
@@ -172,7 +202,7 @@ extension ReorderableForEach where Data: Identifiable, ID == Data.ID {
         self.data = data
         self.id = \Data.id
         self.isReorderingEnabled = true
-        self.isDragHandledByContent = false
+        self.isReorderingHandledByContent = false
         self.content = content
         self.preview = nil
         self.onMove = onMove
@@ -185,7 +215,7 @@ extension ReorderableForEach where Data: Identifiable, ID == Data.ID {
         self.data = data
         self.id = \Data.id
         self.isReorderingEnabled = true
-        self.isDragHandledByContent = false
+        self.isReorderingHandledByContent = false
         self.content = content
         self.preview = preview
         self.onMove = onMove

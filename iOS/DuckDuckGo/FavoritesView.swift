@@ -40,7 +40,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
                 ReorderableForEach(model.allFavorites,
                                    id: \.id,
                                    isReorderingEnabled: model.canEditFavorites,
-                                   isDragHandledByContent: isolatesContextMenu) { item in
+                                   isReorderingHandledByContent: isolatesContextMenu) { item in
                     viewFor(item)
                         .previewShape()
                         .transition(.opacity)

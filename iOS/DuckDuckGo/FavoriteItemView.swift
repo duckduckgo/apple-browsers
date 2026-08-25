@@ -24,7 +24,7 @@ import UIComponents
 import UIKit
 
 struct FavoriteItemView: View {
-    @Environment(\.reorderableDragConfiguration) private var reorderableDragConfiguration
+    @Environment(\.reorderableInteractionConfiguration) private var reorderableInteractionConfiguration
 
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
@@ -54,7 +54,7 @@ struct FavoriteItemView: View {
             IsolatedFavoriteInteractions(
                 favorite: favorite,
                 faviconLoading: faviconLoading,
-                dragConfiguration: reorderableDragConfiguration,
+                interactionConfiguration: reorderableInteractionConfiguration,
                 onMenuAction: onMenuAction
             )
             .frame(width: NewTabPageGrid.Item.edgeSize,
@@ -97,14 +97,14 @@ struct FavoriteItemView: View {
 private struct IsolatedFavoriteInteractions: UIViewRepresentable {
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
-    let dragConfiguration: ReorderableDragConfiguration?
+    let interactionConfiguration: ReorderableInteractionConfiguration?
     let onMenuAction: ((FavoriteItemView.MenuAction) -> Void)?
 
     func makeUIView(context: Context) -> FavoriteInteractionView {
         FavoriteInteractionView(
             favorite: favorite,
             faviconLoading: faviconLoading,
-            dragConfiguration: dragConfiguration,
+            interactionConfiguration: interactionConfiguration,
             onMenuAction: onMenuAction
         )
     }
@@ -113,25 +113,26 @@ private struct IsolatedFavoriteInteractions: UIViewRepresentable {
         view.update(
             favorite: favorite,
             faviconLoading: faviconLoading,
-            dragConfiguration: dragConfiguration,
+            interactionConfiguration: interactionConfiguration,
             onMenuAction: onMenuAction
         )
     }
 }
 
-private final class FavoriteInteractionView: UIView, UIContextMenuInteractionDelegate, UIDragInteractionDelegate {
+private final class FavoriteInteractionView: UIView, UIContextMenuInteractionDelegate, UIDragInteractionDelegate, UIDropInteractionDelegate {
     private let hostingController = UIHostingController(rootView: AnyView(EmptyView()))
     private var favorite: Favorite
-    private var dragConfiguration: ReorderableDragConfiguration?
+    private var interactionConfiguration: ReorderableInteractionConfiguration?
     private var onMenuAction: ((FavoriteItemView.MenuAction) -> Void)?
     private lazy var dragInteraction = UIDragInteraction(delegate: self)
+    private lazy var dropInteraction = UIDropInteraction(delegate: self)
 
     init(favorite: Favorite,
          faviconLoading: FavoritesFaviconLoading?,
-         dragConfiguration: ReorderableDragConfiguration?,
+         interactionConfiguration: ReorderableInteractionConfiguration?,
          onMenuAction: ((FavoriteItemView.MenuAction) -> Void)?) {
         self.favorite = favorite
-        self.dragConfiguration = dragConfiguration
+        self.interactionConfiguration = interactionConfiguration
         self.onMenuAction = onMenuAction
         super.init(frame: .zero)
 
@@ -147,9 +148,10 @@ private final class FavoriteInteractionView: UIView, UIContextMenuInteractionDel
         ])
         addInteraction(UIContextMenuInteraction(delegate: self))
         addInteraction(dragInteraction)
+        addInteraction(dropInteraction)
         update(favorite: favorite,
                faviconLoading: faviconLoading,
-               dragConfiguration: dragConfiguration,
+               interactionConfiguration: interactionConfiguration,
                onMenuAction: onMenuAction)
     }
 
@@ -160,11 +162,11 @@ private final class FavoriteInteractionView: UIView, UIContextMenuInteractionDel
 
     func update(favorite: Favorite,
                 faviconLoading: FavoritesFaviconLoading?,
-                dragConfiguration: ReorderableDragConfiguration?,
+                interactionConfiguration: ReorderableInteractionConfiguration?,
                 onMenuAction: ((FavoriteItemView.MenuAction) -> Void)?) {
         self.favorite = favorite
-        self.dragConfiguration = dragConfiguration
-        dragInteraction.isEnabled = dragConfiguration != nil
+        self.interactionConfiguration = interactionConfiguration
+        dragInteraction.isEnabled = interactionConfiguration != nil
         self.onMenuAction = onMenuAction
         hostingController.rootView = AnyView(
             FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
@@ -173,9 +175,40 @@ private final class FavoriteInteractionView: UIView, UIContextMenuInteractionDel
     }
 
     func dragInteraction(_ interaction: UIDragInteraction, itemsForBeginning session: UIDragSession) -> [UIDragItem] {
-        guard let dragConfiguration else { return [] }
-        dragConfiguration.onDragBegan()
-        return [UIDragItem(itemProvider: dragConfiguration.itemProvider)]
+        guard let interactionConfiguration else { return [] }
+        interactionConfiguration.onDragBegan(ObjectIdentifier(session))
+        return [UIDragItem(itemProvider: interactionConfiguration.itemProvider)]
+    }
+
+    func dragInteraction(_ interaction: UIDragInteraction, session: UIDragSession, didEndWith operation: UIDropOperation) {
+        interactionConfiguration?.onDragEnded(ObjectIdentifier(session))
+    }
+
+    func dropInteraction(_ interaction: UIDropInteraction, canHandle session: UIDropSession) -> Bool {
+        guard let interactionConfiguration, let sessionID = session.localDragSession.map(ObjectIdentifier.init) else { return false }
+        return interactionConfiguration.canHandleDrop(sessionID)
+            && session.hasItemsConforming(toTypeIdentifiers: [interactionConfiguration.typeIdentifier])
+    }
+
+    func dropInteraction(_ interaction: UIDropInteraction, sessionDidEnter session: UIDropSession) {
+        guard let interactionConfiguration,
+              let sessionID = session.localDragSession.map(ObjectIdentifier.init),
+              interactionConfiguration.canHandleDrop(sessionID)
+        else { return }
+        interactionConfiguration.onDropEntered()
+    }
+
+    func dropInteraction(_ interaction: UIDropInteraction, sessionDidUpdate session: UIDropSession) -> UIDropProposal {
+        guard let interactionConfiguration,
+              let sessionID = session.localDragSession.map(ObjectIdentifier.init),
+              interactionConfiguration.canHandleDrop(sessionID)
+        else { return UIDropProposal(operation: .cancel) }
+        return UIDropProposal(operation: .move)
+    }
+
+    func dropInteraction(_ interaction: UIDropInteraction, performDrop session: UIDropSession) {
+        guard let sessionID = session.localDragSession.map(ObjectIdentifier.init) else { return }
+        interactionConfiguration?.onDragEnded(sessionID)
     }
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,

@@ -322,6 +322,9 @@ extension MainViewController {
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         coordinator.pushContentInsets()
+        // The new tab page's frame doesn't change when the card grows, so it is never marked for
+        // layout — a contextual onboarding dialog offset below the card has to be told directly.
+        newTabPageViewController?.refreshContextualOnboardingDialogLayout()
     }
 
     /// Caps the expandable editing field to the space above the keyboard in landscape (the field

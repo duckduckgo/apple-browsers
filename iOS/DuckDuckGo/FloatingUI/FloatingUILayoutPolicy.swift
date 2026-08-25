@@ -70,6 +70,26 @@ enum FloatingUILayoutPolicy {
         return max(0, topObscuredHeight)
     }
 
+    /// Height at the top of the new tab page obscured by the focused unified toggle input card.
+    ///
+    /// The card is only laid out above the page in the classic layout. Under floating UI the page's
+    /// container is pinned to the physical screen top and the card floats over it, and nothing insets
+    /// the page while the input is active — so page content that has to stay readable below the card
+    /// (the contextual onboarding dialogs) must be offset by this much itself.
+    ///
+    /// Returns `0` when floating UI is disabled, so the classic layout is untouched.
+    /// `cardBottomEdge` is the card's bottom in screen coordinates, taken from its applied constraints
+    /// rather than its measured content height — the applied height is clamped in landscape and the
+    /// card is pushed off-screen when the chrome hides, so the two diverge.
+    static func newTabPageUnifiedInputTopObscuredHeight(isFloatingUIEnabled: Bool,
+                                                        isUnifiedToggleInputActive: Bool,
+                                                        addressBarPosition: AddressBarPosition,
+                                                        cardBottomEdge: CGFloat) -> CGFloat {
+        // A bottom-position card sits below the page, so it obscures nothing at the top.
+        guard isFloatingUIEnabled, isUnifiedToggleInputActive, addressBarPosition == .top else { return 0 }
+        return max(0, cardBottomEdge)
+    }
+
     static func shouldHostOmnibarInFloatingToolbar(isFloatingUIEnabled: Bool,
                                                    addressBarPosition: AddressBarPosition,
                                                    isUnifiedToggleInputVisible: Bool,

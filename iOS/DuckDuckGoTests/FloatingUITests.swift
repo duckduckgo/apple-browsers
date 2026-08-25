@@ -276,6 +276,65 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         XCTAssertEqual(inset, 0, accuracy: 0.001)
     }
 
+    func testWhenUnifiedInputActiveWithTopAddressBarThenNewTabPageTopObscuredHeightIsCardBottomEdge() {
+        let height = FloatingUILayoutPolicy.newTabPageUnifiedInputTopObscuredHeight(
+            isFloatingUIEnabled: true,
+            isUnifiedToggleInputActive: true,
+            addressBarPosition: .top,
+            cardBottomEdge: 191
+        )
+
+        XCTAssertEqual(height, 191, accuracy: 0.001)
+    }
+
+    func testWhenUnifiedInputInactiveThenNewTabPageTopObscuredHeightIsZero() {
+        let height = FloatingUILayoutPolicy.newTabPageUnifiedInputTopObscuredHeight(
+            isFloatingUIEnabled: true,
+            isUnifiedToggleInputActive: false,
+            addressBarPosition: .top,
+            cardBottomEdge: 191
+        )
+
+        XCTAssertEqual(height, 0, accuracy: 0.001)
+    }
+
+    func testWhenBottomAddressBarThenNewTabPageTopObscuredHeightIsZero() {
+        // A bottom-position card sits below the page, so nothing at the top is obscured.
+        let height = FloatingUILayoutPolicy.newTabPageUnifiedInputTopObscuredHeight(
+            isFloatingUIEnabled: true,
+            isUnifiedToggleInputActive: true,
+            addressBarPosition: .bottom,
+            cardBottomEdge: 191
+        )
+
+        XCTAssertEqual(height, 0, accuracy: 0.001)
+    }
+
+    func testWhenFloatingUIDisabledThenNewTabPageTopObscuredHeightIsZero() {
+        // The classic layout puts the card above the page, so the dialog must not be offset.
+        let height = FloatingUILayoutPolicy.newTabPageUnifiedInputTopObscuredHeight(
+            isFloatingUIEnabled: false,
+            isUnifiedToggleInputActive: true,
+            addressBarPosition: .top,
+            cardBottomEdge: 191
+        )
+
+        XCTAssertEqual(height, 0, accuracy: 0.001)
+    }
+
+    func testWhenChromeHiddenPushesCardOffScreenThenNewTabPageTopObscuredHeightIsZero() {
+        // The card's top constant goes negative as the chrome hides; the dialog must not be lifted
+        // above the page's top edge.
+        let height = FloatingUILayoutPolicy.newTabPageUnifiedInputTopObscuredHeight(
+            isFloatingUIEnabled: true,
+            isUnifiedToggleInputActive: true,
+            addressBarPosition: .top,
+            cardBottomEdge: -40
+        )
+
+        XCTAssertEqual(height, 0, accuracy: 0.001)
+    }
+
     func testWhenObscuredTopIsNegativeThenContextualOnboardingTopInsetIsClampedToZero() {
         let inset = FloatingUILayoutPolicy.contextualOnboardingTopInset(
             isFloatingUIEnabled: true,

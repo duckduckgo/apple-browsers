@@ -27,6 +27,7 @@ struct SuggestionsListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool
+    var scrollContentInsetTop: CGFloat = 0
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
     var favoritesViewModel: FavoritesViewModel?
@@ -186,7 +187,7 @@ struct SuggestionsListView: View {
     }
 
     private var listTopContentInset: CGFloat {
-        isFloatingPopover ? Metrics.popoverVerticalInset : (isAddressBarAtBottom ? 0 : Metrics.listTopInset)
+        scrollContentInsetTop + (isFloatingPopover ? Metrics.popoverVerticalInset : (isAddressBarAtBottom ? 0 : Metrics.listTopInset))
     }
 
     private var hasVisibleChromeRows: Bool {

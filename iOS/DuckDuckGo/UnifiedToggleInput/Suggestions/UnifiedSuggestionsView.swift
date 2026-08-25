@@ -76,6 +76,7 @@ struct UnifiedSuggestionsView: View {
     private var listLayer: some View {
         SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
                             isAddressBarAtBottom: isAddressBarAtBottom,
+                            scrollContentInsetTop: viewModel.scrollContentInsetTop,
                             escapeHatch: escapeHatch,
                             syncPromo: activeListKind == .recents ? viewModel.syncPromo : nil,
                             favoritesViewModel: favoritesViewModel,

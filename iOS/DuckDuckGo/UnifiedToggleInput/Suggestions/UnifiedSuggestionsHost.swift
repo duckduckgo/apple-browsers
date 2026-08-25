@@ -174,26 +174,40 @@ final class UnifiedSuggestionsHost {
     func setContentInsets(_ insets: UIEdgeInsets) {
         guard contentInsets != insets else { return }
         contentInsets = insets
+        if #available(iOS 17, *) {
+            viewModel.scrollContentInsetTop = insets.top
+        }
         applyCombinedInsets()
     }
 
     private func applyCombinedInsets() {
-        hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
-            top: contentInsets.top,
+        let hostingTopInset: CGFloat
+        if #available(iOS 17, *) {
+            // Keep a self-sizing List's adjustedContentInset stable while its rows change.
+            hostingTopInset = 0
+        } else {
+            hostingTopInset = contentInsets.top
+        }
+        let hostingInsets = UIEdgeInsets(
+            top: hostingTopInset,
             left: contentInsets.left,
             bottom: contentInsets.bottom,
             right: contentInsets.right
         )
-        logoHostingController?.additionalSafeAreaInsets = UIEdgeInsets(
+        let logoInsets = UIEdgeInsets(
             top: 0,
             left: contentInsets.left,
             bottom: contentInsets.bottom,
             right: contentInsets.right
         )
-        // Flush the safe-area change on the controller whose insets changed (mirrors the legacy
-        // container's layoutIfNeeded) so the content glides inside the UTI's height animation.
-        hostingController?.view.layoutIfNeeded()
-        logoHostingController?.view.layoutIfNeeded()
+        if let hostingController, hostingController.additionalSafeAreaInsets != hostingInsets {
+            hostingController.additionalSafeAreaInsets = hostingInsets
+            hostingController.view.layoutIfNeeded()
+        }
+        if let logoHostingController, logoHostingController.additionalSafeAreaInsets != logoInsets {
+            logoHostingController.additionalSafeAreaInsets = logoInsets
+            logoHostingController.view.layoutIfNeeded()
+        }
     }
 
     func setLogoChromeInsetTop(_ top: CGFloat) {

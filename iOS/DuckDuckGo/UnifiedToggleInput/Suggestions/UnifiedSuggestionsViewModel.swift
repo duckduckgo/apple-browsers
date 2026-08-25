@@ -58,6 +58,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     /// animates. The logo keeps a minimum distance from it — known *during* the resize, so the logo
     /// moves in the same pass, and only when the chrome is actually close (never in Search).
     @Published var chromeInsetTop: CGFloat = 0
+    /// iOS 17+ keeps this in the List's scroll-content margin instead of its adjusted safe-area inset.
+    @Published var scrollContentInsetTop: CGFloat = 0
     /// The search-surface list VM. On the single-host path the duck.ai surface adds its own
     /// (see `duckAIListViewModel`); the view picks between them by content kind.
     let listViewModel: SuggestionsListViewModel

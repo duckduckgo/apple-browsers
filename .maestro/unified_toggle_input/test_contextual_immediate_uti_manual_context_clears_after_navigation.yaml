@@ -19,7 +19,6 @@ name: test_contextual_immediate_uti_manual_context_clears_after_navigation
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.unifiedToggleInput: "true"
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "true"
         ff.aiChatAutoAttachContextByDefault: "false"

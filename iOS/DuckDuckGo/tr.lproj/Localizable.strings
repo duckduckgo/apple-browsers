@@ -2554,14 +2554,17 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "En son kullanılan Fire Sekmesi";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Sekmeyi kapat";
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Son Kullanılan Sekmeyi Kapat";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Sekmeyi Sil";
 
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Sekmeye geri dön";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "‘Geri Dön’ Kısayolunu Gizle";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Son Kullanılan Sekmeye Dön";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Diğer seçenekler";
@@ -2574,6 +2577,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "%1$@, %2$@ bölümüne dönün";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Sekmeyi kapat";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Gizli Sekmeler";
@@ -4228,11 +4234,11 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Hareketsizlik Zamanlayıcısı";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Son Kullanılan Sekme";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Son Kullanılan Sekmeyi Aç";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Yeni Sekme";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Yeni Sekme Aç";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Hareketsizlik Sonrası";
@@ -4540,6 +4546,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klavye";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Hareketsizlikten sonra uygulamayı açtığınızda son kullanılan sekmeye dönmeniz için bir bağlantı gösterir.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Daha Fazla Bilgi";
 
@@ -4602,6 +4611,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Yeniden Yükle Düğmesi Konumu";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "‘Geri Dön’ Kısayolu";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Arama Ayarları";

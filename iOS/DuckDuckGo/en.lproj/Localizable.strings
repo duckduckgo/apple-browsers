@@ -4330,8 +4330,6 @@ Take back control of your personal information with the browser designed for dat
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Learn More";
 
-/* Switch button label. */
-
 /* Settings screen cell text for passwords */
 "settings.logins" = "Passwords & Autofill";
 

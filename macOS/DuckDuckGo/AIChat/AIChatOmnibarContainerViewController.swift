@@ -150,11 +150,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         isUsageWarningVisible ? AIChatUsageWarningCardView.Constants.contentHeight : 0
     }
 
+    /// The card's exposed band. Hosts that draw their own chrome need it so they can stop that
+    /// chrome above the card rather than painting straight through it.
+    var usageWarningBandHeight: CGFloat { usageWarningReservation }
+
     /// How far the card runs up behind the panel. Has to clear the panel's bottom corner radius:
     /// the arc leaves the panel transparent at the very bottom, so an overlap shorter than the
     /// radius lets the card's own top edge show through the notch.
+    ///
+    /// Zero where the host draws the chrome: the overlap exists only to be hidden behind an opaque
+    /// panel, and the card sits above a translucent one, so it would paint over the chrome's bottom
+    /// strip. Those surfaces get a flush footer band instead of the tuck.
     private var usageWarningOverlap: CGFloat {
-        themeManager.theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+        guard !hostDrawsChrome else { return 0 }
+
+        return themeManager.theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
             + Constants.usageWarningOverlapMargin
     }
 
@@ -704,6 +714,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.surface.drawsOwnChrome
     }
 
+    /// The panel outlines itself whenever something sits under it, even where the host paints the
+    /// surface: the stroke and the shadow are the whole reason the card reads as being below. The
+    /// fill stays the host's, so there is still only one blurred surface in the window.
+    private var drawsOwnOutline: Bool {
+        !hostDrawsChrome || isUsageWarningVisible
+    }
+
     /// Sharing the outer radius across a 1pt inset leaves the arcs non-concentric, so the two
     /// strokes drift apart through the corner and read as one thickened line.
     static func innerBorderCornerRadius(for outerRadius: CGFloat) -> CGFloat {
@@ -1128,6 +1145,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         backgroundViewBottomConstraint?.constant = visible
             ? -AIChatUsageWarningCardView.Constants.contentHeight
             : 0
+        // `drawsOwnOutline` just flipped, so the stroke needs repainting and — on a host-drawn
+        // surface, where it was never mounted — the shadow needs adding.
+        applyTheme(theme: themeManager.theme)
+        addShadowToWindow()
         return true
     }
 
@@ -1230,7 +1251,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func addShadowToWindow() {
-        guard !hostDrawsChrome else { return }
+        guard drawsOwnOutline else { return }
         guard shadowView.superview == nil else { return }
         view.window?.contentView?.addSubview(shadowView)
         // Below the panel's shadow, so the panel's cast edge stays on top of the card.
@@ -2271,10 +2292,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
         }
 
-        if hostDrawsChrome {
-            backgroundView.borderColor = .clear
-        } else if let borderColor = NSColor(named: "AddressBarBorderColor") {
+        if let borderColor = NSColor(named: "AddressBarBorderColor"), drawsOwnOutline {
             backgroundView.borderColor = borderColor
+        } else {
+            backgroundView.borderColor = .clear
         }
 
         submitButton.layer?.cornerRadius = Constants.submitButtonCornerRadius
@@ -2313,7 +2334,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
 
-        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(named: "AddressBarInnerBorderColor")
+        innerBorderView.borderColor = drawsOwnOutline ? NSColor(named: "AddressBarInnerBorderColor") : .clear
         innerBorderView.backgroundColor = NSColor.clear
         innerBorderView.cornerRadius = Self.innerBorderCornerRadius(
             for: barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
@@ -2328,6 +2349,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // Radius and overlap both track the panel's corner, so a theme change has to re-push them.
         let panelRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+        usageWarningCardView.apply(hostDrawsChrome ? .hostPaintsSurface : .ownSurface)
         usageWarningCardView.applyThemeStyle()
         usageWarningCardView.applyPanelCornerRadius(panelRadius)
         usageWarningTopConstraint?.constant = -usageWarningOverlap

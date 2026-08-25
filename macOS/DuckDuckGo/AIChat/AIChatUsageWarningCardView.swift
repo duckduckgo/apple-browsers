@@ -160,6 +160,35 @@ final class AIChatUsageWarningCardView: NSView {
     private var closeButtonWidthConstraint: NSLayoutConstraint?
     private var actionCloseSpacingConstraint: NSLayoutConstraint?
 
+    // MARK: - Background style
+
+    /// How the card fills itself, which depends on what sits above it.
+    enum BackgroundStyle {
+        /// Its own surface, distinct from the opaque panel it tucks under.
+        case ownSurface
+        /// No fill at all: the host already paints one continuous surface across the whole bar, and
+        /// a second blur over it never matches — two `.behindWindow` effect views sample the desktop
+        /// at their own positions, which reads as a gradient across the seam. The host marks the
+        /// layering with a stroke and a shadow instead.
+        case hostPaintsSurface
+    }
+
+    private var backgroundStyle: BackgroundStyle = .ownSurface
+
+    func apply(_ style: BackgroundStyle) {
+        backgroundStyle = style
+        switch style {
+        case .ownSurface:
+            backgroundView.isHidden = false
+            backgroundView.material = .popover
+            backgroundView.blendingMode = .withinWindow
+            tintView.isHidden = false
+        case .hostPaintsSurface:
+            backgroundView.isHidden = true
+            tintView.isHidden = true
+        }
+    }
+
     // MARK: - Callbacks
 
     var onAction: (() -> Void)?
@@ -300,6 +329,9 @@ final class AIChatUsageWarningCardView: NSView {
             tintView.backgroundColor = NSColor(designSystemColor: .surfacePrimary)
                 .withAlphaComponent(Constants.tintAlpha)
         }
+        // Re-assert last: this runs on every appearance change and would otherwise repaint a fill
+        // the current style had deliberately hidden.
+        apply(backgroundStyle)
     }
 
     /// Matched to the panel's, so the two silhouettes agree where the card emerges from under it.

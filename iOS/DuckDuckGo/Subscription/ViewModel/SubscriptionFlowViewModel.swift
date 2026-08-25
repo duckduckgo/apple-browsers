@@ -112,7 +112,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                                     provider: dataBrokerProtectionViewControllerProvider)
     }
 
-    /// Latched so a defensive re-invocation of `onPurchaseCompleted` cannot re-offer the flow.
+    /// Latched once the flow is actually presented, so a defensive re-invocation of `onPurchaseCompleted` cannot re-offer it.
     private var didRequestOnboarding = false
 
     /// `nil` unless this flow came from `makeSubscribeFlowV2`.
@@ -145,8 +145,19 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 await Self.isOnboardingFeatureEnabled(subscriptionManager: self.subscriptionManager, featureFlagger: self.featureFlagger)
             }
         guard shouldRequest else { return }
-        didRequestOnboarding = true
         state.shouldPresentOnboarding = true
+    }
+
+    /// Called once the flow has actually been built and is about to be shown.
+    @MainActor
+    func didPresentOnboarding() {
+        didRequestOnboarding = true
+    }
+
+    /// Called once the onboarding flow finishes, so this screen dismisses with it.
+    @MainActor
+    func onboardingFinished() {
+        state.shouldGoBackToSettings = true
     }
 
     /// Returns the subscription URL type based on the current flow type

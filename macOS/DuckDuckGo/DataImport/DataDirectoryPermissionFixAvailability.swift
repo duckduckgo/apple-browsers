@@ -25,7 +25,7 @@ import PrivacyConfig
 ///
 /// macOS 27+ denies apps with `com.apple.security.*` entitlements access to other apps'
 /// `~/Library/Application Support/*` directories (TCC), so browser profiles can't be read until the user grants it.
-struct DirectoryAccessAvailability {
+struct DataDirectoryPermissionFixAvailability {
 
     private static let minimumRequiredMacVersion = 27
 

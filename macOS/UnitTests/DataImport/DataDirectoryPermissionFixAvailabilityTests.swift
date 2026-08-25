@@ -1,5 +1,5 @@
 //
-//  DirectoryAccessAvailabilityTests.swift
+//  DataDirectoryPermissionFixAvailabilityTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -24,9 +24,18 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-final class DirectoryAccessAvailabilityTests: XCTestCase {
+final class DataDirectoryPermissionFixAvailabilityTests: XCTestCase {
 
     private var debugSettings: (any KeyedStoring<DataImportDebugSettings>)!
+
+    /// `isAvailable` gates on `#available(macOS 27.0, *)`, which can't be injected: the OS floor
+    /// can only be asserted relative to the OS the suite happens to run on.
+    private var isRunningMacOS27OrLater: Bool {
+        if #available(macOS 27.0, *) {
+            return true
+        }
+        return false
+    }
 
     override func setUp() {
         super.setUp()
@@ -38,74 +47,60 @@ final class DirectoryAccessAvailabilityTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - isEnabled
+    // MARK: - isAvailable
 
-    func testWhenRunningBelowMacOS27_ThenItIsDisabledEvenWithTheFeatureFlagOn() {
-        let availability = makeAvailability(isFeatureFlagOn: true, majorVersion: 26)
+    func testWhenTheFeatureFlagIsOn_ThenItIsAvailableOnlyOnMacOS27OrLater() {
+        let availability = makeAvailability(isFeatureFlagOn: true)
 
-        XCTAssertFalse(availability.isEnabled)
+        XCTAssertEqual(availability.isAvailable, isRunningMacOS27OrLater)
     }
 
-    func testWhenRunningMacOS27_AndTheFeatureFlagIsOn_ThenItIsEnabled() {
-        let availability = makeAvailability(isFeatureFlagOn: true, majorVersion: 27)
+    func testWhenTheFeatureFlagIsOff_ThenItIsNotAvailable() {
+        let availability = makeAvailability(isFeatureFlagOn: false)
 
-        XCTAssertTrue(availability.isEnabled)
-    }
-
-    func testWhenRunningMacOS27_AndTheFeatureFlagIsOff_ThenItIsDisabled() {
-        let availability = makeAvailability(isFeatureFlagOn: false, majorVersion: 27)
-
-        XCTAssertFalse(availability.isEnabled)
-    }
-
-    func testWhenRunningAboveMacOS27_AndTheFeatureFlagIsOn_ThenItIsEnabled() {
-        let availability = makeAvailability(isFeatureFlagOn: true, majorVersion: 28)
-
-        XCTAssertTrue(availability.isEnabled)
+        XCTAssertFalse(availability.isAvailable)
     }
 
     // MARK: - Debug override
 
-    func testWhenTheDebugOverrideIsOn_ThenItIsEnabledRegardlessOfTheOSVersionAndTheFeatureFlag() {
+    func testWhenTheDebugOverrideIsOn_ThenItIsAvailableRegardlessOfTheOSVersionAndTheFeatureFlag() {
         debugSettings.isForcingMacOS27PermissionsFix = true
-        let availability = makeAvailability(isFeatureFlagOn: false, majorVersion: 15)
+        let availability = makeAvailability(isFeatureFlagOn: false)
 
-        XCTAssertTrue(availability.isEnabled)
+        XCTAssertTrue(availability.isAvailable)
     }
 
     func testWhenTheDebugOverrideIsOn_ThenPermissionFixIsForced() {
         debugSettings.isForcingMacOS27PermissionsFix = true
-        let availability = makeAvailability(isFeatureFlagOn: false, majorVersion: 27)
+        let availability = makeAvailability(isFeatureFlagOn: false)
 
         XCTAssertTrue(availability.mustForcePermissionFix)
     }
 
     func testWhenTheDebugOverrideIsOff_ThenPermissionFixIsNotForced() {
         debugSettings.isForcingMacOS27PermissionsFix = false
-        let availability = makeAvailability(isFeatureFlagOn: true, majorVersion: 27)
+        let availability = makeAvailability(isFeatureFlagOn: true)
 
-        // Enabled, but not *forced*: the flow still keys off the directory's actual access state.
+        // Available on macOS 27+, but never *forced*: the flow still keys off the directory's actual access state.
         XCTAssertFalse(availability.mustForcePermissionFix)
-        XCTAssertTrue(availability.isEnabled)
     }
 
     func testWhenTheDebugOverrideWasNeverSet_ThenPermissionFixIsNotForced() {
-        let availability = makeAvailability(isFeatureFlagOn: false, majorVersion: 27)
+        let availability = makeAvailability(isFeatureFlagOn: false)
 
         XCTAssertFalse(availability.mustForcePermissionFix)
     }
 
     // MARK: - Helpers
 
-    private func makeAvailability(isFeatureFlagOn: Bool, majorVersion: Int) -> DirectoryAccessAvailability {
+    private func makeAvailability(isFeatureFlagOn: Bool) -> DataDirectoryPermissionFixAvailability {
         let featureFlagger = MockFeatureFlagger(
             featuresStub: [FeatureFlag.dataImportDataDirectoryAccess.rawValue: isFeatureFlagOn]
         )
 
-        return DirectoryAccessAvailability(
+        return DataDirectoryPermissionFixAvailability(
             featureFlagger: featureFlagger,
-            debugSettings: debugSettings,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: majorVersion, minorVersion: 0, patchVersion: 0)
+            debugSettings: debugSettings
         )
     }
 }

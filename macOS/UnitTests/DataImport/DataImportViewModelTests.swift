@@ -2808,18 +2808,21 @@ private class ImporterMock: DataImporter {
     }
 }
 
-private extension DirectoryAccessAvailability {
+private extension DataDirectoryPermissionFixAvailability {
 
     /// Deterministic stand-in for the real availability: an in-memory debug store and a stubbed feature flagger,
-    /// so tests never depend on `UserDefaults.standard` or on the OS the suite happens to run on.
-    static func mock(isFeatureFlagOn: Bool = true, isForcingPermissionFix: Bool = false) -> DirectoryAccessAvailability {
+    /// so tests never depend on `UserDefaults.standard`.
+    ///
+    /// Note: `isAvailable` still keys off the running OS via `#available(macOS 27.0, *)`. Tests using this mock
+    /// inject their own `loadProfiles`, which is the only place the view model reads `isAvailable`, so they stay
+    /// OS-independent. Only `mustForcePermissionFix` is exercised through this mock.
+    static func mock(isFeatureFlagOn: Bool = true, isForcingPermissionFix: Bool = false) -> DataDirectoryPermissionFixAvailability {
         let debugSettings: any KeyedStoring<DataImportDebugSettings> = InMemoryKeyValueStore().keyedStoring()
         debugSettings.isForcingMacOS27PermissionsFix = isForcingPermissionFix
 
-        return DirectoryAccessAvailability(
+        return DataDirectoryPermissionFixAvailability(
             featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportDataDirectoryAccess.rawValue: isFeatureFlagOn]),
-            debugSettings: debugSettings,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
+            debugSettings: debugSettings
         )
     }
 }

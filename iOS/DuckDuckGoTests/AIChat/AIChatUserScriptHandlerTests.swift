@@ -208,7 +208,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
     func testWhenPromoCardsFlagIsOnAndNativeChatInputAvailableThenConfigAdvertisesSupport() {
         mockFeatureFlagger.enabledFeatureFlags = [.nativePromoCards]
-        mockAIChatFullModeFeature.isAvailable = true
+        MockDevicePlatform.isIphone = true
         mockUnifiedToggleInputFeature.isAvailable = true
         aiChatUserScriptHandler = makeAIChatUserScriptHandler()
 
@@ -229,7 +229,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
     func testWhenPromoCardsFlagIsOffThenConfigDoesNotAdvertiseSupport() {
         mockFeatureFlagger.enabledFeatureFlags = []
-        mockAIChatFullModeFeature.isAvailable = true
+        MockDevicePlatform.isIphone = true
         mockUnifiedToggleInputFeature.isAvailable = true
         aiChatUserScriptHandler = makeAIChatUserScriptHandler()
 

@@ -45,7 +45,7 @@ struct PromoPresentationCoordinationFeatureFlagTests {
             return
         }
 
-        #expect(subfeature as? iOSPromoQueueSubfeature == .promoPresentationCoordination)
+        #expect(subfeature as? PromoQueueSubfeature == .promoPresentationCoordination)
         #expect(subfeature.rawValue == "promoPresentationCoordination")
     }
 
@@ -67,7 +67,7 @@ struct PromoPresentationCoordinationFeatureFlagTests {
             return
         }
 
-        guard case .disabled(.featureMissing) = privacyConfig.stateFor(iOSPromoQueueSubfeature.promoPresentationCoordination) else {
+        guard case .disabled(.featureMissing) = privacyConfig.stateFor(PromoQueueSubfeature.promoPresentationCoordination) else {
             Issue.record("Expected the embedded privacy config to omit the promo presentation coordination subfeature")
             return
         }

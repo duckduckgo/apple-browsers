@@ -832,6 +832,7 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
     case featureEnabled
+    case promoPresentationCoordination
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

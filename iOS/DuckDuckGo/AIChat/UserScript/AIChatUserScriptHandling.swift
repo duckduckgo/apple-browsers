@@ -217,7 +217,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private let migrationStore = AIChatMigrationStore()
-    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let devicePlatform: DevicePlatformProviding.Type
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
     private var contextualModePixelHandler: AIChatContextualModePixelFiring?
     private let keyValueStore: KeyValueStoring
@@ -245,7 +245,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          featureFlagger: FeatureFlagger,
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
-         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
@@ -260,7 +260,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
         self.promptHandler = promptHandler
-        self.aichatFullModeFeature = aichatFullModeFeature
+        self.devicePlatform = devicePlatform
         self.aichatContextualModeFeature = aichatContextualModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
@@ -386,13 +386,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         switch displayMode {
         case .fullTab:
-            supportsFullMode = aichatFullModeFeature.isAvailable
+            supportsFullMode = devicePlatform.isIphone
             supportsContextualMode = false
         case .contextual:
             supportsFullMode = false
             supportsContextualMode = aichatContextualModeFeature.isAvailable
         case .none:
-            supportsFullMode = aichatFullModeFeature.isAvailable || defaults.supportsAIChatFullMode
+            supportsFullMode = devicePlatform.isIphone || defaults.supportsAIChatFullMode
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 

@@ -154,7 +154,7 @@ struct ReturnToTabCard: View {
 
     @ViewBuilder
     private var menuContentView: some View {
-        Section(header: Text(model.subtitle)) {
+        Section {
             MenuActionButton(
                 text: UserText.escapeHatchMenuReturnToTab,
                 icon: DesignSystemImages.Glyphs.Size16.goBackCircle,

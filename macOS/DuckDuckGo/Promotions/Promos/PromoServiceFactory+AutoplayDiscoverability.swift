@@ -21,17 +21,20 @@ import Foundation
 extension PromoServiceFactory {
 
     /// Builds an Autoplay Discoverability Promo.
-    /// - Note:
-    ///     We're picking the `.inlineTip` PromoType for its `.low` severity: `checkRules` returns early for low severity, so no other visible promo can suppress this promo.
-    ///     A Next Steps card on the New Tab Page blocks every `.medium` promo for as long as it exists.
     @MainActor
     static func autoplayDiscoverability(dependencies: PromoDependencies) -> Promo {
-        let promoType = PromoType(.inlineTip, customTimeoutInterval: AutoplayDiscoverabilityPromoDelegate.displayDuration, customTimeoutResult: .ignored())
+        let promoType = PromoType(.featureTip, customTimeoutInterval: AutoplayDiscoverabilityPromoDelegate.displayDuration, customTimeoutResult: .ignored())
         let identifier = "autoplay-discoverability"
         let delegate = AutoplayDiscoverabilityPromoDelegate(featureFlagger: dependencies.featureFlagger,
                                                             windowControllersManager: dependencies.windowControllersManager,
                                                             isNewUserProvider: dependencies.isNewUserProvider)
 
-        return InternalPromo(id: identifier, triggers: [.autoplayDiscoverability], initiated: .app, promoType: promoType, context: .webPage, delegate: delegate)
+        return InternalPromo(id: identifier,
+                             triggers: [.autoplayDiscoverability],
+                             initiated: .app,
+                             promoType: promoType,
+                             context: .webPage,
+                             respectsGlobalCooldown: false,
+                             delegate: delegate)
     }
 }

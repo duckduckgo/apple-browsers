@@ -1583,6 +1583,7 @@
 		9F465E1E2D3F5C2E00490109 /* Logger+MaliciousSiteProtection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F465E1D2D3F5C2700490109 /* Logger+MaliciousSiteProtection.swift */; };
 		9F465E2A2D41B61900490109 /* MaliciousSiteProtectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F465E292D41B61300490109 /* MaliciousSiteProtectionService.swift */; };
 		9F4CC5172C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4CC5162C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift */; };
+		A1B2C3D40E1F202122232402 /* TabViewControllerGestureArbitrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40E1F202122232401 /* TabViewControllerGestureArbitrationTests.swift */; };
 		9F4CC5272C4E230C006A96EB /* PrivacyIconContextualOnboardingAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4CC5262C4E230C006A96EB /* PrivacyIconContextualOnboardingAnimator.swift */; };
 		9F4D2B202FFC000100A1B2C3 /* OnboardingView+DuckAIQuerySearchContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4D2B1F2FFC000100A1B2C3 /* OnboardingView+DuckAIQuerySearchContent.swift */; };
 		9F5179D82D54598800E40B40 /* DaxDialogsOnboardingMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5179D72D54598800E40B40 /* DaxDialogsOnboardingMigrator.swift */; };
@@ -4532,6 +4533,7 @@
 		9F465E1D2D3F5C2700490109 /* Logger+MaliciousSiteProtection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+MaliciousSiteProtection.swift"; sourceTree = "<group>"; };
 		9F465E292D41B61300490109 /* MaliciousSiteProtectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionService.swift; sourceTree = "<group>"; };
 		9F4CC5162C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerDaxDialogTests.swift; sourceTree = "<group>"; };
+		A1B2C3D40E1F202122232401 /* TabViewControllerGestureArbitrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerGestureArbitrationTests.swift; sourceTree = "<group>"; };
 		9F4CC5262C4E230C006A96EB /* PrivacyIconContextualOnboardingAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyIconContextualOnboardingAnimator.swift; sourceTree = "<group>"; };
 		9F4D2B1F2FFC000100A1B2C3 /* OnboardingView+DuckAIQuerySearchContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView+DuckAIQuerySearchContent.swift"; sourceTree = "<group>"; };
 		9F5179D72D54598800E40B40 /* DaxDialogsOnboardingMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxDialogsOnboardingMigrator.swift; sourceTree = "<group>"; };
@@ -9026,6 +9028,7 @@
 				9795B2142EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift */,
 				9F5E5AB12C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift */,
 				9F4CC5162C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift */,
+				A1B2C3D40E1F202122232401 /* TabViewControllerGestureArbitrationTests.swift */,
 				9F7CFF7C2C89B69A0012833E /* AppIconPickerViewModelTests.swift */,
 				9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */,
 				9795B2122EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift */,
@@ -15304,6 +15307,7 @@
 				6F45B7102F1F8A0000883A86 /* BrowsingMenuHeaderStateProviderTests.swift in Sources */,
 				98E564092DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				9F4CC5172C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift in Sources */,
+				A1B2C3D40E1F202122232402 /* TabViewControllerGestureArbitrationTests.swift in Sources */,
 				CB27DAE92FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift in Sources */,
 				A8452A0101C0DE0000000004 /* HomeScreenTransitionGeometryTests.swift in Sources */,
 				F1A83D872E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,

@@ -206,6 +206,26 @@ def emit_measurement(detail, lcp=-1, offsite=1):
     print("lcp_ms={}".format(lcp))
 
 
+def prepare_web_view(port):
+    request_expect(
+        port,
+        "POST",
+        "/navigate",
+        "done",
+        {"url": "about:blank"},
+        timeout=30,
+    )
+    message = request(
+        port,
+        "POST",
+        "/execute",
+        {"script": "return location.href"},
+        timeout=30,
+    )
+    if decode_json_message(message) != "about:blank":
+        raise RuntimeError("about:blank navigation did not complete")
+
+
 def measure(port, url, settle_ms, load_window_seconds):
     detail = {"error": "measurement did not complete"}
     try:
@@ -214,6 +234,10 @@ def measure(port, url, settle_ms, load_window_seconds):
         request_expect(
             port, "POST", "/clearWebsiteData", "done", timeout=30
         )
+        # Move from the native New Tab Page to a visible web view before the
+        # measured navigation. Otherwise delayed web view presentation makes
+        # navigation-to-LCP include the native-to-web transition.
+        prepare_web_view(port)
         request_expect(
             port, "POST", "/navigate", "done", {"url": url}, timeout=30
         )

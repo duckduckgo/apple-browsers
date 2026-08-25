@@ -448,6 +448,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217806576104027?focus=true
+    case suppressShowBarsGestureRecogniserDelay
+
     case aiChatNativeStorage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215106459483563?focus=true
@@ -879,6 +882,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .bottomBarViewportFixedElementsWorkaround:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.bottomBarViewportFixedElementsWorkaround))
+        case .suppressShowBarsGestureRecogniserDelay:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.suppressShowBarsGestureRecogniserDelay))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage))
         case .duckAINativeStoragePathMigration:

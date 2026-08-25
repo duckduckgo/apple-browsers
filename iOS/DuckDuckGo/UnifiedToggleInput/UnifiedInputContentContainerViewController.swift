@@ -525,14 +525,27 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             showAskAIChat: aiChatSettings.isAIChatEnabled
         )
 
+        let ntpDependencies = dependencies.newTabPageDependencies
+        let messagesModel = NewTabPageMessagesModel(
+            homePageMessagesConfiguration: ntpDependencies.homePageMessagesConfiguration,
+            subscriptionDataReporter: ntpDependencies.subscriptionDataReporting,
+            messageActionHandler: ntpDependencies.remoteMessagingActionHandler,
+            imageLoader: ntpDependencies.remoteMessagingImageLoader,
+            pixelReporter: ntpDependencies.remoteMessagingPixelReporter,
+            isOpenedAfterIdle: { [weak self] in self?.sessionOpenedAfterIdle ?? false })
+        messagesModel.load()
+
         let hasFavorites: () -> Bool = {
             !dependencies.favoritesViewModel.favorites.isEmpty
         }
-        let hasMessages: () -> Bool = {
-            !dependencies.newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
-        }
+        // Use the published value itself: `@Published` emits from `willSet`, so reading the model
+        // again inside this event would still see the message that was just dismissed.
+        let hasMessagesPublisher = messagesModel.$homeMessageViewModels
+            .map { !$0.isEmpty }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
 
-        var searchStateChanged = dependencies.favoritesViewModel.localUpdates
+        let searchStateChanged = dependencies.favoritesViewModel.localUpdates
             .merge(with: dependencies.favoritesViewModel.externalUpdates)
             // Favorites changes fire on the Core Data context queue; marshal here so the merged
             // inputs (and the view model's `@Published content` mutation) stay on main.
@@ -541,17 +554,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             // so the re-resolve it drives stays synchronous, landing before the host becomes visible.
             .merge(with: activationResolveTrigger)
             .eraseToAnyPublisher()
-        let homePageMessagesConfiguration = dependencies.newTabPageDependencies.homePageMessagesConfiguration
-        if homePageMessagesConfiguration.mode == .coordinated {
-            searchStateChanged = searchStateChanged
-                .merge(with: homePageMessagesConfiguration.contentDidChangePublisher)
-                .eraseToAnyPublisher()
-        }
-        let inputsPublisher = makeMergedInputsPublisher(hasFavorites: hasFavorites,
-                                                        hasMessages: hasMessages,
-                                                        searchStateChanged: searchStateChanged)
+        let inputsPublisher = Self.makeMergedInputsPublisher(
+            modePublisher: switchBarHandler.toggleStatePublisher,
+            textPublisher: switchBarHandler.currentTextPublisher,
+            hasUserInteractedWithTextPublisher: switchBarHandler.hasUserInteractedWithTextPublisher,
+            duckAIStatePublisher: duckAIStateRelay.eraseToAnyPublisher(),
+            hasFavorites: hasFavorites,
+            hasMessagesPublisher: hasMessagesPublisher,
+            searchStateChanged: searchStateChanged)
 
-        let ntpDependencies = dependencies.newTabPageDependencies
         let favoritesViewModel = FavoritesViewModel(
             isFocussedState: true,
             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: ntpDependencies.favoritesModel,
@@ -570,15 +581,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         favoritesViewModel.onFavoriteEdit = { [weak self] favorite in
             self?.delegate?.unifiedInputEditingStateDidEditFavorite(favorite)
         }
-
-        let messagesModel = NewTabPageMessagesModel(
-            homePageMessagesConfiguration: ntpDependencies.homePageMessagesConfiguration,
-            subscriptionDataReporter: ntpDependencies.subscriptionDataReporting,
-            messageActionHandler: ntpDependencies.remoteMessagingActionHandler,
-            imageLoader: ntpDependencies.remoteMessagingImageLoader,
-            pixelReporter: ntpDependencies.remoteMessagingPixelReporter,
-            isOpenedAfterIdle: { [weak self] in self?.sessionOpenedAfterIdle ?? false })
-        messagesModel.load()
 
         let config = UnifiedSuggestionsHostConfig(
             source: source,
@@ -673,26 +675,36 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     /// One merged inputs stream feeding the single host: mode + text + search facts (always) +
     /// duck.ai facts (nil while detached). Combines via the pure `UnifiedSuggestionsInputsMerger`.
-    private func makeMergedInputsPublisher(hasFavorites: @escaping () -> Bool,
-                                           hasMessages: @escaping () -> Bool,
-                                           searchStateChanged: AnyPublisher<Void, Never>) -> AnyPublisher<UnifiedSuggestionsInputs, Never> {
-        // `searchStateChanged` re-resolves when favorites/messages change without a text/toggle change
-        // (e.g. a just-added favorite that loads a beat after a new tab opens, or deleting the last
-        // one). The model notifies after refreshing its array, so the reads below are fresh.
-        Publishers.CombineLatest4(
-            switchBarHandler.toggleStatePublisher,
-            Publishers.CombineLatest(switchBarHandler.currentTextPublisher,
-                                     switchBarHandler.hasUserInteractedWithTextPublisher),
-            duckAIStateRelay,
-            searchStateChanged.prepend(())
+    static func makeMergedInputsPublisher(modePublisher: AnyPublisher<TextEntryMode, Never>,
+                                          textPublisher: AnyPublisher<String, Never>,
+                                          hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never>,
+                                          duckAIStatePublisher: AnyPublisher<UnifiedSuggestionsInputsMerger.DuckAIState?, Never>,
+                                          hasFavorites: @escaping () -> Bool,
+                                          hasMessagesPublisher: AnyPublisher<Bool, Never>,
+                                          searchStateChanged: AnyPublisher<Void, Never>) -> AnyPublisher<UnifiedSuggestionsInputs, Never> {
+        // Re-resolve when favorites or the renderable message array changes without a text/toggle
+        // change (e.g. deleting the last favorite or dismissing the last RMF).
+        let searchStatePublisher = Publishers.CombineLatest(
+            searchStateChanged.prepend(()),
+            hasMessagesPublisher
         )
-        .map { mode, textState, duckAIState, _ -> UnifiedSuggestionsInputs in
+        .map { _, hasMessages in
+            UnifiedSuggestionsInputsMerger.SearchState(hasFavorites: hasFavorites(), hasMessages: hasMessages)
+        }
+
+        return Publishers.CombineLatest4(
+            modePublisher,
+            Publishers.CombineLatest(textPublisher, hasUserInteractedWithTextPublisher),
+            duckAIStatePublisher,
+            searchStatePublisher
+        )
+        .map { mode, textState, duckAIState, searchState -> UnifiedSuggestionsInputs in
             let (text, hasUserInteractedWithText) = textState
             return UnifiedSuggestionsInputsMerger.merge(
                 mode: mode,
                 text: text,
                 hasUserInteractedWithText: hasUserInteractedWithText,
-                search: .init(hasFavorites: hasFavorites(), hasMessages: hasMessages()),
+                search: searchState,
                 duckAI: duckAIState)
         }
         .eraseToAnyPublisher()

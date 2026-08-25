@@ -20,6 +20,22 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+struct ReorderableDragConfiguration {
+    let itemProvider: NSItemProvider
+    let onDragBegan: () -> Void
+}
+
+private struct ReorderableDragConfigurationKey: EnvironmentKey {
+    static let defaultValue: ReorderableDragConfiguration? = nil
+}
+
+extension EnvironmentValues {
+    var reorderableDragConfiguration: ReorderableDragConfiguration? {
+        get { self[ReorderableDragConfigurationKey.self] }
+        set { self[ReorderableDragConfigurationKey.self] = newValue }
+    }
+}
+
 struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Preview: View>: View {
 
     typealias ContentBuilder = (Data) -> Content
@@ -28,6 +44,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     private let data: [Data]
     private let id: KeyPath<Data, ID>
     private let isReorderingEnabled: Bool
+    private let isDragHandledByContent: Bool
 
     private let content: ContentBuilder
     private let preview: PreviewBuilder?
@@ -42,6 +59,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         self.data = data
         self.id = id
         self.isReorderingEnabled = true
+        self.isDragHandledByContent = false
         self.content = content
         self.preview = nil
         self.onMove = onMove
@@ -50,12 +68,14 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     init(_ data: [Data],
          id: KeyPath<Data, ID>,
          isReorderingEnabled: Bool = true,
+         isDragHandledByContent: Bool = false,
          @ViewBuilder content: @escaping ContentBuilder,
          @ViewBuilder preview: @escaping (Data) -> Preview,
          onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void) {
         self.data = data
         self.id = id
         self.isReorderingEnabled = isReorderingEnabled
+        self.isDragHandledByContent = isDragHandledByContent
         self.content = content
         self.preview = preview
         self.onMove = onMove
@@ -72,19 +92,27 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         switch item.trait {
 
         case .movable(let metadata) where isReorderingEnabled:
-            if let preview {
+            let dragConfiguration = ReorderableDragConfiguration(
+                itemProvider: metadata.itemProvider,
+                onDragBegan: { movedItem = item }
+            )
+
+            if isDragHandledByContent {
+                droppableContent(for: item, metadata: metadata)
+                    .environment(\.reorderableDragConfiguration, dragConfiguration)
+            } else if let preview {
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {
-                        movedItem = item
-                        return metadata.itemProvider
+                        dragConfiguration.onDragBegan()
+                        return dragConfiguration.itemProvider
                     } preview: {
                         preview(item)
                     }
             } else {
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {
-                        movedItem = item
-                        return metadata.itemProvider
+                        dragConfiguration.onDragBegan()
+                        return dragConfiguration.itemProvider
                     }
             }
 
@@ -144,6 +172,7 @@ extension ReorderableForEach where Data: Identifiable, ID == Data.ID {
         self.data = data
         self.id = \Data.id
         self.isReorderingEnabled = true
+        self.isDragHandledByContent = false
         self.content = content
         self.preview = nil
         self.onMove = onMove
@@ -156,6 +185,7 @@ extension ReorderableForEach where Data: Identifiable, ID == Data.ID {
         self.data = data
         self.id = \Data.id
         self.isReorderingEnabled = true
+        self.isDragHandledByContent = false
         self.content = content
         self.preview = preview
         self.onMove = onMove

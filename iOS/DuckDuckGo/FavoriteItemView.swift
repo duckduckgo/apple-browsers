@@ -24,6 +24,8 @@ import UIComponents
 import UIKit
 
 struct FavoriteItemView: View {
+    @Environment(\.reorderableDragConfiguration) private var reorderableDragConfiguration
+
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
     let isEditable: Bool
@@ -49,9 +51,10 @@ struct FavoriteItemView: View {
     @ViewBuilder
     private var favoriteIcon: some View {
         if isEditable && isolatesContextMenu {
-            IsolatedFavoriteContextMenu(
+            IsolatedFavoriteInteractions(
                 favorite: favorite,
                 faviconLoading: faviconLoading,
+                dragConfiguration: reorderableDragConfiguration,
                 onMenuAction: onMenuAction
             )
             .frame(width: NewTabPageGrid.Item.edgeSize,
@@ -91,37 +94,44 @@ struct FavoriteItemView: View {
     }
 }
 
-private struct IsolatedFavoriteContextMenu: UIViewRepresentable {
+private struct IsolatedFavoriteInteractions: UIViewRepresentable {
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
+    let dragConfiguration: ReorderableDragConfiguration?
     let onMenuAction: ((FavoriteItemView.MenuAction) -> Void)?
 
-    func makeUIView(context: Context) -> FavoriteContextMenuView {
-        FavoriteContextMenuView(
+    func makeUIView(context: Context) -> FavoriteInteractionView {
+        FavoriteInteractionView(
             favorite: favorite,
             faviconLoading: faviconLoading,
+            dragConfiguration: dragConfiguration,
             onMenuAction: onMenuAction
         )
     }
 
-    func updateUIView(_ view: FavoriteContextMenuView, context: Context) {
+    func updateUIView(_ view: FavoriteInteractionView, context: Context) {
         view.update(
             favorite: favorite,
             faviconLoading: faviconLoading,
+            dragConfiguration: dragConfiguration,
             onMenuAction: onMenuAction
         )
     }
 }
 
-private final class FavoriteContextMenuView: UIView, UIContextMenuInteractionDelegate {
+private final class FavoriteInteractionView: UIView, UIContextMenuInteractionDelegate, UIDragInteractionDelegate {
     private let hostingController = UIHostingController(rootView: AnyView(EmptyView()))
     private var favorite: Favorite
+    private var dragConfiguration: ReorderableDragConfiguration?
     private var onMenuAction: ((FavoriteItemView.MenuAction) -> Void)?
+    private lazy var dragInteraction = UIDragInteraction(delegate: self)
 
     init(favorite: Favorite,
          faviconLoading: FavoritesFaviconLoading?,
+         dragConfiguration: ReorderableDragConfiguration?,
          onMenuAction: ((FavoriteItemView.MenuAction) -> Void)?) {
         self.favorite = favorite
+        self.dragConfiguration = dragConfiguration
         self.onMenuAction = onMenuAction
         super.init(frame: .zero)
 
@@ -136,7 +146,11 @@ private final class FavoriteContextMenuView: UIView, UIContextMenuInteractionDel
             hostingController.view.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
         addInteraction(UIContextMenuInteraction(delegate: self))
-        update(favorite: favorite, faviconLoading: faviconLoading, onMenuAction: onMenuAction)
+        addInteraction(dragInteraction)
+        update(favorite: favorite,
+               faviconLoading: faviconLoading,
+               dragConfiguration: dragConfiguration,
+               onMenuAction: onMenuAction)
     }
 
     @available(*, unavailable)
@@ -146,13 +160,22 @@ private final class FavoriteContextMenuView: UIView, UIContextMenuInteractionDel
 
     func update(favorite: Favorite,
                 faviconLoading: FavoritesFaviconLoading?,
+                dragConfiguration: ReorderableDragConfiguration?,
                 onMenuAction: ((FavoriteItemView.MenuAction) -> Void)?) {
         self.favorite = favorite
+        self.dragConfiguration = dragConfiguration
+        dragInteraction.isEnabled = dragConfiguration != nil
         self.onMenuAction = onMenuAction
         hostingController.rootView = AnyView(
             FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
                 .id(favorite.id)
         )
+    }
+
+    func dragInteraction(_ interaction: UIDragInteraction, itemsForBeginning session: UIDragSession) -> [UIDragItem] {
+        guard let dragConfiguration else { return [] }
+        dragConfiguration.onDragBegan()
+        return [UIDragItem(itemProvider: dragConfiguration.itemProvider)]
     }
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,

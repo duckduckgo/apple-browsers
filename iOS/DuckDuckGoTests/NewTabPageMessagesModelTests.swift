@@ -104,6 +104,29 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(second.homeMessageViewModels.count, 1)
     }
 
+    func testCoordinatedSignalRemovesLastRenderedMessage() {
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [.placeholder])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+
+        configuration.homeMessages = []
+        configuration.sendContentDidChange()
+
+        XCTAssertTrue(sut.homeMessageViewModels.isEmpty)
+    }
+
+    func testLegacyDismissRemovesLastRenderedMessage() async throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = DismissingLegacyMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+
+        await viewModel.onDidClose(.close)
+
+        XCTAssertTrue(sut.homeMessageViewModels.isEmpty)
+    }
+
     func testCoordinatedCallbacksRoundTripCapturedPresentationContext() async throws {
         let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
         let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
@@ -396,6 +419,14 @@ final class NewTabPageMessagesModelTests: XCTestCase {
                                 messageActionHandler: remoteMessageActionHandler,
                                 imageLoader: MockRemoteMessagingImageLoader(),
                                 isOpenedAfterIdle: { isOpenedAfterIdle })
+    }
+}
+
+@MainActor
+private final class DismissingLegacyMessagesConfigurationMock: HomePageMessagesConfigurationMock {
+    override func dismissHomeMessage(_ homeMessage: HomeMessage) {
+        super.dismissHomeMessage(homeMessage)
+        homeMessages.removeAll { $0 == homeMessage }
     }
 }
 

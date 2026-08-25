@@ -45,6 +45,32 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         XCTAssertEqual(resolve(), .embedded)
     }
 
+    func testWhenRenderedMessagePublisherBecomesEmptyThenSearchResolverPublishesLogo() {
+        let mode = CurrentValueSubject<TextEntryMode, Never>(.search)
+        let text = CurrentValueSubject<String, Never>("")
+        let hasUserInteractedWithText = CurrentValueSubject<Bool, Never>(false)
+        let duckAIState = CurrentValueSubject<UnifiedSuggestionsInputsMerger.DuckAIState?, Never>(nil)
+        let hasMessages = CurrentValueSubject<Bool, Never>(true)
+        let searchStateChanged = PassthroughSubject<Void, Never>()
+        let inputsPublisher = UnifiedInputContentContainerViewController.makeMergedInputsPublisher(
+            modePublisher: mode.eraseToAnyPublisher(),
+            textPublisher: text.eraseToAnyPublisher(),
+            hasUserInteractedWithTextPublisher: hasUserInteractedWithText.eraseToAnyPublisher(),
+            duckAIStatePublisher: duckAIState.eraseToAnyPublisher(),
+            hasFavorites: { false },
+            hasMessagesPublisher: hasMessages.eraseToAnyPublisher(),
+            searchStateChanged: searchStateChanged.eraseToAnyPublisher())
+        let sut = UnifiedSuggestionsViewModel(
+            inputsPublisher: inputsPublisher,
+            listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
+
+        XCTAssertEqual(sut.content, .favorites)
+
+        hasMessages.send(false)
+
+        XCTAssertEqual(sut.content, .logo)
+    }
+
     func testDuckAISuggestionsDidRequestSyncSetup_RequestsSyncSetupOnDelegate() {
         let delegate = MockUnifiedInputContentContainerDelegate()
         let viewController = UnifiedInputContentContainerViewController(

@@ -75,6 +75,7 @@ final class DuckAISuggestionsSurfaceProvider {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     private struct SettingsGate: Equatable {
         let chatEnabled: Bool
@@ -111,7 +112,8 @@ final class DuckAISuggestionsSurfaceProvider {
          aiChatSyncCleaner: AIChatSyncCleaning?,
          featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling?) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling?,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.switchBarHandler = switchBarHandler
         self.dependencies = dependencies
         self.aiChatSettings = aiChatSettings
@@ -119,6 +121,7 @@ final class DuckAISuggestionsSurfaceProvider {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
     }
 
     /// Builds the duck.ai source with its OWN runner/loaders, wires its state into `stateSubject`,
@@ -134,7 +137,8 @@ final class DuckAISuggestionsSurfaceProvider {
             privacyConfigurationManager: privacyConfigurationManager,
             chatSyncCleaner: aiChatSyncCleaner,
             chatSettings: aiChatSettings,
-            nativeStorageHandler: duckAiNativeStorageHandler)
+            nativeStorageHandler: duckAiNativeStorageHandler,
+            fireModeStorageHandler: duckAiFireModeStorageHandler)
 
         let requestRunner = AutocompleteRequestRunner()
         let dataSource = AutocompleteSuggestionsDataSource(

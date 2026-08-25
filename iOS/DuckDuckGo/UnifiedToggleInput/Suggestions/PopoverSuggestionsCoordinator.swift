@@ -55,6 +55,7 @@ final class PopoverSuggestionsCoordinator {
         let privacyConfigurationManager: PrivacyConfigurationManaging
         let aiChatSyncCleaner: AIChatSyncCleaning?
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+        let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
         let tabsModelProvider: () -> TabsModelManaging?
         let isFireTab: () -> Bool
     }
@@ -142,7 +143,8 @@ final class PopoverSuggestionsCoordinator {
             privacyConfigurationManager: dependencies.privacyConfigurationManager,
             chatSyncCleaner: dependencies.aiChatSyncCleaner,
             chatSettings: dependencies.aiChatSettings,
-            nativeStorageHandler: dependencies.duckAiNativeStorageHandler)
+            nativeStorageHandler: dependencies.duckAiNativeStorageHandler,
+            fireModeStorageHandler: dependencies.duckAiFireModeStorageHandler)
 
         let requestRunner = AutocompleteRequestRunner()
         let dataSource = AutocompleteSuggestionsDataSource(

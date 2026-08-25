@@ -30,17 +30,24 @@ extension AIChatHistoryManager {
                                    privacyConfigurationManager: PrivacyConfigurationManaging,
                                    chatSyncCleaner: AIChatSyncCleaning?,
                                    chatSettings: AIChatSettingsProvider,
-                                   nativeStorageHandler: DuckAiNativeStorageHandling?) -> (AIChatHistoryManager, AIChatSuggestionsViewModel)
+                                   nativeStorageHandler: DuckAiNativeStorageHandling?,
+                                   fireModeStorageHandler: DuckAiNativeStorageHandling? = nil) -> (AIChatHistoryManager, AIChatSuggestionsViewModel)
     {
+        let storageHandler = DuckAiFireModeStorage.handler(
+            isFireMode: isFireTab,
+            diskHandler: nativeStorageHandler,
+            fireModeHandler: fireModeStorageHandler
+        )
         let suggestionsReader: AIChatSuggestionsReading = {
-            if isFireTab {
+            // Fire mode with no isolated store must not fall back to persistent chats.
+            if isFireTab, storageHandler == nil {
                 return NilSuggestionsReader()
             }
 
             let reader = SuggestionsReader(
                 featureFlagger: featureFlagger,
                 privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: nativeStorageHandler,
+                nativeStorageHandler: storageHandler,
                 featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
             )
             let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
@@ -49,7 +56,7 @@ extension AIChatHistoryManager {
 
         let chatDeleter = AIChatDeleter(
             historyCleanerProvider: { _, _ in
-                HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager, nativeStorageHandler: nativeStorageHandler)
+                HistoryCleaner.makeHistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager, nativeStorageHandler: storageHandler)
             },
             aiChatSyncCleaner: chatSyncCleaner ?? NilAIChatSyncCleaner()
         )

@@ -55,7 +55,7 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// Number of chats currently visible (respects the active filter).
     var visibleChatCount: Int { pinned.count + recent.count }
 
-    /// Count of ALL persistent chats, independent of the active search filter. `burnAllChats`
+    /// Count of ALL chats in the current store, independent of the active search filter. `burnAllChats`
     /// clears every chat, so the confirmation must reflect the full scope — not just the matches
     /// currently shown in `pinned`/`recent`.
     private(set) var totalChatCount: Int = 0
@@ -68,6 +68,8 @@ final class AIChatHistoryViewModel: ObservableObject {
     private let instrumentation: AIChatHistoryInstrumentation
     private let source: AIChatHistorySource
     private let featureFlagger: FeatureFlagger
+    /// When true, deletes target isolated fire-mode storage rather than persistent chats.
+    private let isFireMode: Bool
     private var cancellables: Set<AnyCancellable> = []
 
     /// Gates the redesigned Chats UI (overflow menu + multi-select); off keeps the original layout.
@@ -84,6 +86,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         downloader: ChatHistoryDownloading? = nil,
         pinner: ChatPinning? = nil,
         source: AIChatHistorySource = .browserMenu,
+        isFireMode: Bool = false,
         mutationQueue: DispatchQueue = DispatchQueue(label: "chat-history.mutation", qos: .userInitiated),
         instrumentation: AIChatHistoryInstrumentation = DefaultAIChatHistoryInstrumentation()
     ) {
@@ -93,6 +96,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         self.downloader = downloader
         self.pinner = pinner
         self.source = source
+        self.isFireMode = isFireMode
         self.mutationQueue = mutationQueue
         self.instrumentation = instrumentation
 
@@ -216,13 +220,13 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     func deleteChat(chatId: String) {
-        // Sheet only surfaces persistent chats, so never fire-mode.
         guard let fireExecutor else { return }
         instrumentation.chatDeleted()
         Task { @MainActor in
-            let result = await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
+            let result = await fireExecutor.burnChat(chatID: chatId, isFireMode: isFireMode)
             guard case .success = result else { return }
             // Flush the deletion to sync now so the FE doesn't re-pull the chat.
+            // Fire-mode deletes are local-only; scheduleSync is a no-op for those records.
             fireExecutor.scheduleSync()
         }
     }
@@ -245,18 +249,18 @@ final class AIChatHistoryViewModel: ObservableObject {
         guard let fireExecutor else { return }
         // Reached only after the user confirms the delete-all action.
         instrumentation.fireAllConfirmed()
-        let result = await fireExecutor.burnAllChats(isFireMode: false)
+        let result = await fireExecutor.burnAllChats(isFireMode: isFireMode)
         guard case .success = result else { return }
         // Flush the clear to sync now so the FE doesn't re-pull the chats.
         fireExecutor.scheduleSync()
     }
 
-    /// Never fire-mode (sheet only surfaces persistent chats); one batch burn, sync flushed once.
+    /// One batch burn, sync flushed once. `isFireMode` selects isolated vs persistent storage.
     func burnSelectedChats(chatIds: [String]) async {
         guard let fireExecutor, !chatIds.isEmpty else { return }
         // Reached only after the user confirms the multi-select delete action.
         instrumentation.selectionDeleteConfirmed()
-        let result = await fireExecutor.burnChats(chatIDs: chatIds, isFireMode: false)
+        let result = await fireExecutor.burnChats(chatIDs: chatIds, isFireMode: isFireMode)
         guard case .success = result else { return }
         fireExecutor.scheduleSync()
     }

@@ -751,7 +751,8 @@ class MainViewController: UIViewController {
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
         viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
@@ -945,7 +946,8 @@ class MainViewController: UIViewController {
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
                                                       mobileCustomization: mobileCustomization,
-                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                      duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -1070,6 +1072,7 @@ class MainViewController: UIViewController {
                     privacyConfigurationManager: privacyConfigurationManager,
                     aiChatSyncCleaner: aiChatSyncCleaner,
                     duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                    duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                     tabsModelProvider: { [weak self] in self?.tabManager.currentTabsModel },
                     isFireTab: { [weak self] in self?.isCurrentTabFireTab() ?? false }),
                 tray: controller,
@@ -6721,8 +6724,15 @@ extension MainViewController: TabDelegate {
         // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
         // configure at launch the cast yields `nil`, and the reader surfaces a
         // `.storageUnavailable` failure so the screen shows an error rather than a
-        // misleading empty list.
-        let reader = ChatHistoryReader(observer: duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)
+        // misleading empty list. Fire mode uses isolated storage so persistent chats
+        // cannot leak into a fire session.
+        let isFireMode = isCurrentTabFireTab()
+        let storageHandler = DuckAiFireModeStorage.handler(
+            isFireMode: isFireMode,
+            diskHandler: duckAiNativeStorageHandler,
+            fireModeHandler: duckAiFireModeStorageHandler
+        )
+        let reader = ChatHistoryReader(observer: storageHandler as? DuckAiNativeChatsObserving)
         // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`
         // rather than `uniqueKeysWithValues:` — the model list is server-supplied so we
         // can't guarantee unique ids and the latter crashes on duplicates.
@@ -6731,11 +6741,11 @@ extension MainViewController: TabDelegate {
             uniquingKeysWith: { first, _ in first }
         )
         let downloader = ChatHistoryDownloader(
-            storageHandler: duckAiNativeStorageHandler,
+            storageHandler: storageHandler,
             modelDisplays: modelDisplays
         )
-        let pinner: ChatPinning? = duckAiNativeStorageHandler.map { storage in
-            ChatPinner(storageHandler: storage, syncCleaner: aiChatSyncCleaner)
+        let pinner: ChatPinning? = storageHandler.map { storage in
+            ChatPinner(storageHandler: storage, syncCleaner: isFireMode ? nil : aiChatSyncCleaner)
         }
         let viewModel = AIChatHistoryViewModel(
             reader: reader,
@@ -6743,7 +6753,8 @@ extension MainViewController: TabDelegate {
             fireExecutor: fireExecutor,
             downloader: downloader,
             pinner: pinner,
-            source: source
+            source: source,
+            isFireMode: isFireMode
         )
         viewModel.delegate = self
         let content = AIChatHistoryViewController(viewModel: viewModel, fireButtonAnimator: fireButtonAnimator)

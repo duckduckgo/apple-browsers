@@ -31,4 +31,20 @@ public enum DuckAiFireModeStorage {
         guard let handler else { return .unavailable }
         return .available(handler)
     }
+
+    /// Storage to read and write for the current browsing mode.
+    /// Fire mode never falls back to the persistent disk store — `nil` means empty/unavailable
+    /// isolated storage, so persistent chats cannot leak into a fire session.
+    public static func handler(isFireMode: Bool,
+                               diskHandler: DuckAiNativeStorageHandling?,
+                               fireModeHandler: DuckAiNativeStorageHandling?) -> DuckAiNativeStorageHandling? {
+        switch resolve(isFireMode: isFireMode, handler: fireModeHandler) {
+        case .notFireMode:
+            return diskHandler
+        case .unavailable:
+            return nil
+        case .available(let handler):
+            return handler
+        }
+    }
 }

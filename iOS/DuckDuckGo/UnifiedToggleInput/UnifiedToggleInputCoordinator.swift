@@ -359,6 +359,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             syncService: syncService,
             aiChatSyncCleaner: aiChatSyncCleaner,
             recentModalPromptStatusProvider: recentModalPromptStatusProvider

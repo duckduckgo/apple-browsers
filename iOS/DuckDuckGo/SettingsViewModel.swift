@@ -1447,12 +1447,18 @@ extension SettingsViewModel {
 
     private func recordOnboardingActivationsIfNeeded() {
         recordPIRActivationIfNeeded()
+        reportVPNActivatedExperimentMetricIfNeeded()
     }
 
     /// Backfill only: profiles saved from now on record themselves via `BrokerProfileJobEventsHandler.onProfileSaved`.
     private func recordPIRActivationIfNeeded() {
         guard isPIRActivated else { return }
         SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordPIRActivated()
+    }
+
+    private func reportVPNActivatedExperimentMetricIfNeeded() {
+        guard state.networkProtectionConnected else { return }
+        SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: state.subscription.hasActiveSubscription)
     }
 
     @MainActor

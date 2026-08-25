@@ -19,6 +19,9 @@
 
 import AIChat
 import BrowserServicesKitTestsUtils
+import PixelKit
+import PixelExperimentKit
+import PrivacyConfig
 import UIKit
 import UserScript
 import XCTest
@@ -39,6 +42,10 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
 
     override func setUpWithError() throws {
+        PixelKit.configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                         eventTracker: ExperimentEventTracker(),
+                                         fire: { _, _, _ in })
+
         mockSettings = MockAIChatSettingsProvider()
         mockPayloadHandler = AIChatPayloadHandler()
         mockMetricHandler = MockAIChatPixelMetricHandler()

@@ -18,18 +18,19 @@
 //
 
 import Foundation
+import FoundationExtensions
 import PrivacyConfig
 import PixelKit
 import PixelExperimentKit
 import FeatureFlags_iOS
 
-/// The `subscriptionOnboardingJul2026` ABN test (control vs. treatment).
+/// The `subscriptionOnboardingSep2026` ABN test (control vs. treatment)
 ///
 /// Click-through rate per step is not this file's concern — it's read from the existing
 /// `SubscriptionOnboardingInstrumentation` step-funnel pixels, joined against this experiment's
-/// `experiment_enroll_subscriptionOnboardingJul2026_{cohort}` pixel to split by cohort.
+/// `experiment_enroll_subscriptionOnboardingSep2026_{cohort}` pixel to split by cohort.
 enum SubscriptionOnboardingExperiment {
-    private static let subfeatureID = PrivacyProSubfeature.subscriptionOnboardingJul2026.rawValue
+    private static let subfeatureID = PrivacyProSubfeature.subscriptionOnboardingSep2026.rawValue
     private static let conversionWindowDays: ConversionWindow = 0...3
 
     private enum Metric {
@@ -39,10 +40,26 @@ enum SubscriptionOnboardingExperiment {
 
     /// Enrolls the device in the experiment if it isn't already, assigning and reporting a cohort.
     ///
-    /// - Returns: The device's cohort, or `nil` if the experiment isn't currently active for this device.
+    /// - Returns: The device's cohort, or `nil` if the experiment isn't active for this device.
     @discardableResult
-    static func resolveCohort(using featureFlagger: FeatureFlagger) -> FeatureFlag.SubscriptionOnboardingJul2026Cohort? {
-        featureFlagger.resolveCohort(for: FeatureFlag.subscriptionOnboardingJul2026) as? FeatureFlag.SubscriptionOnboardingJul2026Cohort
+    static func resolveCohort(using featureFlagger: FeatureFlagger, isOnFreeTrial: Bool, locale: Locale) -> FeatureFlag.SubscriptionOnboardingSep2026Cohort? {
+        if let assigned = featureFlagger.assignedCohort(for: FeatureFlag.subscriptionOnboardingSep2026) as? FeatureFlag.SubscriptionOnboardingSep2026Cohort {
+            return assigned
+        }
+        guard isOnFreeTrial, locale.isEnglishUnitedStates else { return nil }
+        return featureFlagger.resolveCohort(for: FeatureFlag.subscriptionOnboardingSep2026) as? FeatureFlag.SubscriptionOnboardingSep2026Cohort
+    }
+
+    /// A read-only check for an already-enrolled device. Still subject to the
+    /// experiment's remote kill switch
+    static func isEnrolledInTreatment(using featureFlagger: FeatureFlagger) -> Bool {
+        featureFlagger.assignedCohort(for: FeatureFlag.subscriptionOnboardingSep2026) as? FeatureFlag.SubscriptionOnboardingSep2026Cohort == .treatment
+    }
+
+    /// Whether the Settings re-entry point should show: the flow was already opened from post-checkout,
+    /// the device is still enrolled in treatment, and the subscription still qualifies.
+    static func isSettingsReEntryEnabled(using featureFlagger: FeatureFlagger, hasStartedFlow: Bool, hasActiveSubscription: Bool) -> Bool {
+        hasStartedFlow && isEnrolledInTreatment(using: featureFlagger) && hasActiveSubscription
     }
 
     /// Reports that the VPN was activated while the customer had an active subscription, within the

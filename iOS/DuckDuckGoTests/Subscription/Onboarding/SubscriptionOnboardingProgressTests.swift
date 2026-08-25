@@ -467,6 +467,30 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
         keyValueStore.errorToThrow = nil
         XCTAssertTrue(sut.completedItems.isEmpty)
     }
+
+    // MARK: - Post-checkout flow started
+
+    func testWhenFlowHasNeverStartedThenTheDateIsNil() {
+        XCTAssertNil(sut.postCheckoutFlowStartedAt)
+    }
+
+    func testWhenRecordingFlowStartedThenTheDateIsStored() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+
+        sut.recordPostCheckoutFlowStartedIfNeeded(now: now)
+
+        XCTAssertEqual(sut.postCheckoutFlowStartedAt, now)
+    }
+
+    func testWhenRecordingFlowStartedAgainThenTheOriginalDateIsKept() {
+        let first = Date(timeIntervalSince1970: 1_000_000)
+        let later = Date(timeIntervalSince1970: 2_000_000)
+
+        sut.recordPostCheckoutFlowStartedIfNeeded(now: first)
+        sut.recordPostCheckoutFlowStartedIfNeeded(now: later)
+
+        XCTAssertEqual(sut.postCheckoutFlowStartedAt, first)
+    }
 }
 
 /// A local stub rather than `PersistenceTestingUtils`

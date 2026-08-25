@@ -154,12 +154,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1214798984829406
     case subscriptionPromoForExistingUsers
 
-    /// https://app.asana.com/1/137249556945/task/1213999582715096
-    case subscriptionOnboarding
-
-    /// ABN test on the subscription onboarding flow (control vs. treatment), July 2026.
+    /// ABN test on the subscription onboarding flow (control vs. treatment), September 2026.
+    /// `control` is held back from the flow entirely.
     /// https://app.asana.com/1/137249556945/task/1215581300423035?focus=true
-    case subscriptionOnboardingJul2026
+    case subscriptionOnboardingSep2026
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
@@ -571,8 +569,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    /// Cohorts for the `subscriptionOnboardingJul2026` ABN test.
-    public enum SubscriptionOnboardingJul2026Cohort: String, FeatureFlagCohortDescribing {
+    /// Cohorts for the `subscriptionOnboardingSep2026` ABN test.
+    public enum SubscriptionOnboardingSep2026Cohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -684,10 +682,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionExpirationReminderNotification))
         case .subscriptionPromoForExistingUsers:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
-        case .subscriptionOnboarding:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboarding))
-        case .subscriptionOnboardingJul2026:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingJul2026), cohortType: SubscriptionOnboardingJul2026Cohort.self)
+        case .subscriptionOnboardingSep2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingSep2026), cohortType: SubscriptionOnboardingSep2026Cohort.self)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:

@@ -185,13 +185,13 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     func testWhenStartChatWithAPlusModelThenThePaidUsedMetricFires() async {
         let firedEvents = await firedEventsAfterStartingChat(withModelTier: ["plus"])
 
-        XCTAssertEqual(firedEvents.map(\.name), ["experiment_metrics_subscriptionOnboardingJul2026_treatment"])
+        XCTAssertEqual(firedEvents.map(\.name), ["experiment_metrics_subscriptionOnboardingSep2026_treatment"])
     }
 
     func testWhenStartChatWithAProModelThenThePaidUsedMetricFires() async {
         let firedEvents = await firedEventsAfterStartingChat(withModelTier: ["pro"])
 
-        XCTAssertEqual(firedEvents.map(\.name), ["experiment_metrics_subscriptionOnboardingJul2026_treatment"])
+        XCTAssertEqual(firedEvents.map(\.name), ["experiment_metrics_subscriptionOnboardingSep2026_treatment"])
     }
 
     func testWhenStartChatWithAFreeModelThenThePaidUsedMetricDoesNotFire() async {
@@ -347,11 +347,11 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
     private func firedEventsAfterStartingChat(withModelTier tier: [String]) async -> [PixelKit.Event] {
         var firedEvents: [PixelKit.Event] = []
-        let experimentData = ExperimentData(parentID: PrivacyProSubfeature.subscriptionOnboardingJul2026.parent.rawValue,
+        let experimentData = ExperimentData(parentID: PrivacyProSubfeature.subscriptionOnboardingSep2026.parent.rawValue,
                                             cohortID: "treatment",
                                             enrollmentDate: Date())
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(
-            allActiveExperiments: [PrivacyProSubfeature.subscriptionOnboardingJul2026.rawValue: experimentData])
+            allActiveExperiments: [PrivacyProSubfeature.subscriptionOnboardingSep2026.rawValue: experimentData])
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
                                         eventTracker: ExperimentEventTracker(),
                                         fire: { event, _, _ in firedEvents.append(event) })

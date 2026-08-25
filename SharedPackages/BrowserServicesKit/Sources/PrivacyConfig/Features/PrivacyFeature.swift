@@ -637,8 +637,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
     case monthlyFreeTrialExperiment2
-    case subscriptionOnboarding
-    case subscriptionOnboardingJul2026
+    case subscriptionOnboardingSep2026
     case onboardingSubscriptionUpsellExperiment
 }
 

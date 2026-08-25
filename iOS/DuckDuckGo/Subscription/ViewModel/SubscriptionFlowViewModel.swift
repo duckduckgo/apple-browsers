@@ -121,24 +121,30 @@ final class SubscriptionFlowViewModel: ObservableObject {
         return SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore)
     }
 
-    /// A pure rule so it can be tested
     static func shouldRequestOnboarding(flowType: SubscriptionFlowType,
                                         hasOnboardingStore: Bool,
-                                        isFeatureEnabled: Bool,
-                                        didAlreadyRequest: Bool) -> Bool {
-        !didAlreadyRequest
-            && flowType == .firstPurchase
-            && hasOnboardingStore
-            && isFeatureEnabled
+                                        didAlreadyRequest: Bool,
+                                        isFeatureEnabled: () async -> Bool) async -> Bool {
+        guard !didAlreadyRequest, flowType == .firstPurchase, hasOnboardingStore else { return false }
+        return await isFeatureEnabled()
+    }
+
+    /// Reads the customer's current subscription and reports whether onboarding should be presented for it.
+    static func isOnboardingFeatureEnabled(subscriptionManager: any SubscriptionManager, featureFlagger: FeatureFlagger, locale: Locale = .current) async -> Bool {
+        let isOnFreeTrial = await subscriptionManager.isOnFreeTrial()
+        return SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: isOnFreeTrial, locale: locale) == .treatment
     }
 
     /// Called when the App Store purchase itself completes
-    private func requestOnboardingIfNeeded() {
-        guard Self.shouldRequestOnboarding(
+    @MainActor
+    private func requestOnboardingIfNeeded() async {
+        let shouldRequest = await Self.shouldRequestOnboarding(
             flowType: flowType,
             hasOnboardingStore: onboardingKeyValueStore != nil,
-            isFeatureEnabled: featureFlagger.isFeatureOn(.subscriptionOnboarding),
-            didAlreadyRequest: didRequestOnboarding) else { return }
+            didAlreadyRequest: didRequestOnboarding) {
+                await Self.isOnboardingFeatureEnabled(subscriptionManager: self.subscriptionManager, featureFlagger: self.featureFlagger)
+            }
+        guard shouldRequest else { return }
         didRequestOnboarding = true
         state.shouldPresentOnboarding = true
     }
@@ -224,9 +230,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         }
 
         subFeature.onPurchaseCompleted = {
-            DispatchQueue.main.async {
-                self.requestOnboardingIfNeeded()
-            }
+            Task { await self.requestOnboardingIfNeeded() }
         }
 
          subFeature.onFeatureSelected = { feature in

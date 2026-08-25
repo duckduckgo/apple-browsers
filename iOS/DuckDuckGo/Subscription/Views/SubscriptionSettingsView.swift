@@ -720,9 +720,11 @@ extension SubscriptionSettingsViewV2 {
         SubscriptionOnboardingProgressPersistor(keyValueStore: settingsViewModel.keyValueStore)
     }
 
-    /// Checked here rather than inside the card so the flag (and subscription state) also covers `startOnboarding()`.
+    /// Checked here rather than inside the card so the check (and subscription state) also covers `startOnboarding()`.
     private var isOnboardingEnabled: Bool {
-        settingsViewModel.featureFlagger.isFeatureOn(.subscriptionOnboarding) && hasActiveSubscription
+        SubscriptionOnboardingExperiment.isSettingsReEntryEnabled(using: settingsViewModel.featureFlagger,
+                                                                  hasStartedFlow: onboardingPersistor.postCheckoutFlowStartedAt != nil,
+                                                                  hasActiveSubscription: hasActiveSubscription)
     }
 
     /// An expired or still-activating subscription has nothing left to set up.

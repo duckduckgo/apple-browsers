@@ -1453,7 +1453,7 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
         /// Explicit exit: user selected a saved chat suggestion. Clear the current tab's duck.ai flag.
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setDuckAIMode(false)
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
-        aiChatConversationSourceHandler.setData(.recentChat)
+        aiChatConversationSourceHandler.setData(.omnibarRecentChat)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
     }
 }

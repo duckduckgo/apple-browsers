@@ -626,6 +626,23 @@ final class DDGSyncTests: XCTestCase {
 
         let migrationCall = try XCTUnwrap(migrationCoordinator.calls.first)
         XCTAssertEqual(migrationCall.account.deviceId, SyncAccount.mock.deviceId)
+        XCTAssertTrue(migrationCoordinator.successfulUnifiedWriteCalls.isEmpty)
+    }
+
+    func testWhenAccountCreationPublishesDeviceInfoThenSuccessfulWriteIsRecordedWithoutSchedulingMigration() async throws {
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        accountManager.createAccountStub = AccountCreationResult(account: .mock,
+                                                                  didPublishDeviceInfo: true)
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        try await syncService.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        XCTAssertTrue(migrationCoordinator.calls.isEmpty)
+        XCTAssertEqual(migrationCoordinator.successfulUnifiedWriteCalls.map(\.account.deviceId),
+                       [SyncAccount.mock.deviceId])
     }
 
     func testWhenLoginSucceedsThenCurrentDeviceMigrationIsScheduled() async throws {

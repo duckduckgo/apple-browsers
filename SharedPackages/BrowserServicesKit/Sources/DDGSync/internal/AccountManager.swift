@@ -67,7 +67,7 @@ struct AccountManager: AccountManaging {
         self.canReadUnifiedDeviceList = canReadUnifiedDeviceList
     }
 
-    func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
+    func createAccount(deviceName: String, deviceType: String) async throws -> AccountCreationResult {
         let deviceId = UUID().uuidString
         let userId = UUID().uuidString
         let password = UUID().uuidString
@@ -115,14 +115,16 @@ struct AccountManager: AccountManaging {
                 unifiedDeviceListEvents.fire(.accountInfoKeyCreateSuccess)
                 unifiedDeviceListEvents.fire(.ownRowDeviceInfoFirstWriteSuccess)
             }
-            return SyncAccount(deviceId: deviceId,
-                               deviceName: deviceName,
-                               deviceType: deviceType,
-                               userId: userId,
-                               primaryKey: Data(accountKeys.primaryKey),
-                               secretKey: Data(accountKeys.secretKey),
-                               token: result.token,
-                               state: .active)
+            let account = SyncAccount(deviceId: deviceId,
+                                      deviceName: deviceName,
+                                      deviceType: deviceType,
+                                      userId: userId,
+                                      primaryKey: Data(accountKeys.primaryKey),
+                                      secretKey: Data(accountKeys.secretKey),
+                                      token: result.token,
+                                      state: .active)
+            return AccountCreationResult(account: account,
+                                         didPublishDeviceInfo: deviceInfoFields != nil)
         } catch is CancellationError {
             throw CancellationError()
         } catch {

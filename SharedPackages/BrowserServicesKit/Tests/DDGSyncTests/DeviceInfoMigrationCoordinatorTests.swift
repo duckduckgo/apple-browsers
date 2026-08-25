@@ -325,6 +325,17 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.count, 1)
     }
 
+    func testWhenSuccessfulUnifiedWriteIsRecordedThenMigrationDoesNotPatchCurrentDevice() async {
+        coordinator.recordSuccessfulUnifiedWrite(for: .mock)
+
+        await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)
+
+        XCTAssertTrue(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertTrue(scopedAccess.ensureAccountInfoProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
+        XCTAssertTrue(unifiedDeviceListEvents.events.isEmpty)
+    }
+
     func testWhenMigrationAlreadyCompletedThenRepairStillPatchesCurrentDevice() async {
         await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)
 

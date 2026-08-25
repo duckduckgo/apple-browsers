@@ -112,6 +112,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         }
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func ensureAccountInfoProtectedKeys(for account: SyncAccount) async throws -> [ProtectedKey] {
         guard canWriteUnifiedDeviceList() else {
             return []
@@ -522,6 +523,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         return repairResult.keys
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func repairAccountInfoProtectedKeysIfNeeded(
         _ keys: [ProtectedKey],
         account: SyncAccount,

@@ -64,6 +64,8 @@ struct SuggestionsListView: View {
         /// List's horizontal content margin (cell edge). Reduced 8pt from the NTP's 24pt regularPadding
         /// to widen the cells in step with the narrower input card.
         static let listHorizontalContentMargin: CGFloat = 16
+        /// Remove insetGrouped's legacy first-section gap from custom chrome without moving the List under the UTI.
+        static let legacyFirstSectionTopInset: CGFloat = 28
         static let suggestionGroupCornerRadius: CGFloat = 10
     }
 
@@ -210,7 +212,8 @@ struct SuggestionsListView: View {
     }
 
     private var scrollableChromeTopInset: CGFloat {
-        isAddressBarAtBottom ? Metrics.embeddedHatchBottomBarTopInset : Metrics.embeddedHatchTopBarTopInset
+        let inset = isAddressBarAtBottom ? Metrics.embeddedHatchBottomBarTopInset : Metrics.embeddedHatchTopBarTopInset
+        return inset + legacyFirstSectionTopAdjustment
     }
 
     private var searchContentTopInset: CGFloat {
@@ -223,8 +226,16 @@ struct SuggestionsListView: View {
     }
 
     private var syncPromoTopInset: CGFloat {
-        guard escapeHatch != nil else { return isAddressBarAtBottom ? Metrics.syncPromoBottomBarTopInset : 0 }
+        guard escapeHatch != nil else {
+            let inset = isAddressBarAtBottom ? Metrics.syncPromoBottomBarTopInset : 0
+            return inset + legacyFirstSectionTopAdjustment
+        }
         return Metrics.duckAIAfterHatchTopInset
+    }
+
+    private var legacyFirstSectionTopAdjustment: CGFloat {
+        if #available(iOS 17, *) { return 0 }
+        return -Metrics.legacyFirstSectionTopInset
     }
 
     @ViewBuilder

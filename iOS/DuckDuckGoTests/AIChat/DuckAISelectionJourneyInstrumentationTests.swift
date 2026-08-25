@@ -281,7 +281,7 @@ struct DuckAISelectionJourneyInstrumentationTests {
         #expect(DuckAISelectionJourneyWideEventData.metadata.pixelName == "duckai_selection_journey")
         #expect(DuckAISelectionJourneyWideEventData.metadata.featureName == "duckai-selection-journey")
         #expect(DuckAISelectionJourneyWideEventData.metadata.type == "ios-duckai-selection-journey")
-        #expect(DuckAISelectionJourneyWideEventData.metadata.version == "1.1.0")
+        #expect(DuckAISelectionJourneyWideEventData.metadata.version == "1.2.0")
     }
 
     @available(iOS 16, *)

@@ -245,18 +245,18 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         XCTAssertEqual(host.deactivateInputCount, 1, "resigning happens once per dismissal, not on both sides")
     }
 
-    /// Resigning as the tap lands is what made the keyboard dip out and come straight back when the tap
-    /// focused a page field. Waiting leaves the choice to whatever the page does with focus.
-    func testAPageTapDefersResigningTheInputUntilTheSurfaceHasGone() async {
+    /// Deferring the resign left the keyboard up for the whole slide, so the surface sank behind it and the
+    /// keyboard only dropped afterwards. It goes down with the surface instead.
+    func testAPageTapResignsTheInputAsTheSlideStarts() async {
         let (subject, host, _, _) = makeSubjectWithHostSpy()
 
         subject.simulatePageTapForTesting()
         let slideFinished = expectation(description: "slide finished")
         subject.dismiss { slideFinished.fulfill() }
 
-        XCTAssertEqual(host.deactivateInputCount, 0, "the page has to be given the chance to take the keyboard")
+        XCTAssertEqual(host.deactivateInputCount, 1, "the keyboard has to travel with the surface, not after it")
         await fulfillment(of: [slideFinished], timeout: 3)
-        XCTAssertEqual(host.deactivateInputCount, 1, "the page declined it, so it was still ours to put away")
+        XCTAssertEqual(host.deactivateInputCount, 1, "resigning happens once per dismissal, not on both sides")
     }
 
     /// Pinned before it moves, so a keyboard that stays put or changes height cannot drag the surface

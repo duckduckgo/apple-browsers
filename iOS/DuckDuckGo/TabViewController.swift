@@ -4076,6 +4076,17 @@ extension TabViewController: UIGestureRecognizerDelegate {
             return false
         }
 
+        if featureFlagger.isFeatureOn(.suppressShowBarsGestureRecogniserDelay) {
+            // Claiming priority inserts this recognizer into the failure graph of every other tap
+            // recognizer, including the multi-tap ones WKWebView installs over web content. Those hold
+            // the second tap of a quick two-tap sequence back while they arbitrate, and it is dropped
+            // rather than delivered - so typing on an on-screen keyboard loses alternate keypresses.
+            // Claim nothing unless this tap could actually fire.
+            guard isShowBarsTap(gestureRecognizer) else {
+                return false
+            }
+        }
+
         // Don't delay tap gestures that are inside the onboarding dialog
         if let daxContextualOnboardingController,
            let otherView = otherRecognizer.view,

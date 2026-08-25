@@ -19,8 +19,7 @@
 
 import XCTest
 import Core
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 final class LaunchTimeMetricsSubscriberTests: XCTestCase {

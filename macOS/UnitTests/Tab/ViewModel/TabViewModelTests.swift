@@ -22,7 +22,7 @@ import DesignResourcesKitIcons
 import FeatureFlags_macOS
 import MaliciousSiteProtection
 import Navigation
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities

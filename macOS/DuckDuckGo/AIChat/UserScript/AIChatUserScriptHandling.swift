@@ -206,6 +206,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// (whose underlying page is attachable) can report true.
     private var hasAttachedPageContext = false
 
+    /// An unstamped chat reports `.unattributed` rather than dropping the parameter.
+    private var pixelConversationSource: AIChatConversationSource { conversationSource ?? .unattributed }
+
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
@@ -976,8 +979,9 @@ extension AIChatUserScriptHandler {
 
 extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
-    /// Maps each frontend-reported funnel metric to its origin and click flag. Picker/sidebar/browser-upsell
-    /// surfaces are intentionally absent — instrumented natively elsewhere, not via `reportMetric`.
+    /// Maps each frontend-reported funnel metric to its origin and click flag. Native-only
+    /// surfaces (address bar / NTP / prompt bar picker impressions) are intentionally absent —
+    /// instrumented natively elsewhere, not via `reportMetric`.
     private static let funnelMetrics: [AIChatMetricName: (origin: SubscriptionFunnelOrigin, isClick: Bool)] = [
         .userDidViewAiSidebarUpgradeButton: (.duckAIAiSidebar, false),
         .userDidClickAiSidebarUpgradeButton: (.duckAIAiSidebar, true),
@@ -1001,6 +1005,12 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         .userDidClickVoiceChatLimitModalSubscribeButton: (.duckAIVoiceChatLimit, true),
         .userDidViewVoiceChatDurationLimitModal: (.duckAIVoiceChatDurationLimit, false),
         .userDidClickVoiceChatDurationLimitModalSubscribeButton: (.duckAIVoiceChatDurationLimit, true),
+        .userDidViewModelPickerUpgrade: (.duckAIModelPicker, false),
+        .userDidClickModelPickerUpgrade: (.duckAIModelPicker, true),
+        .userDidViewReasoningDropdownUpgrade: (.duckAIReasoningDropdown, false),
+        .userDidClickReasoningDropdownUpgrade: (.duckAIReasoningDropdown, true),
+        .userDidViewSwitchModelUpgrade: (.duckAISwitchModel, false),
+        .userDidClickSwitchModelUpgrade: (.duckAISwitchModel, true),
     ]
 
     /// The modal metrics, each building its pixel from the origin the modal was opened from.
@@ -1057,7 +1067,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: conversationSource?.isAskDuckAiButton ?? false, hasPageContext: hasAttachedPageContext), frequency: .standard)
+            pixelFiring?.fire(
+                AIChatPixel.aiChatMetricStartNewConversation(source: pixelConversationSource,
+                                                             hasPageContext: hasAttachedPageContext),
+                frequency: .standard
+            )
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
@@ -1066,7 +1080,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: conversationSource?.isAskDuckAiButton ?? false, hasPageContext: hasAttachedPageContext), frequency: .standard)
+            pixelFiring?.fire(
+                AIChatPixel.aiChatMetricSentPromptOngoingChat(source: pixelConversationSource,
+                                                              hasPageContext: hasAttachedPageContext),
+                frequency: .standard
+            )
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }

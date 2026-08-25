@@ -73,7 +73,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
-        start: ContextualInputStart = .expandedOnExistingChat
+        start: ContextualInputStart = .expandedOnExistingChat,
+        footerWarningProvider: UTIFooterWarningProviding? = nil
     ) {
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
@@ -93,16 +94,14 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             duckAIWideEventFlowScope: duckAIWideEventFlowScope,
             contextualStart: start,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
-            placesAttachmentsAboveInput: isFloatingInputAvailable
+            placesAttachmentsAboveInput: isFloatingInputAvailable,
+            footerWarningProvider: footerWarningProvider
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
             initialAttachedContext: initialAttachedContext,
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
-            isAutoAttachEnabled: isAutoAttachEnabled,
-            showsAttachAffordance: { [isFloatingInputAvailable] in
-                isFloatingInputAvailable && !hasActiveChat()
-            }
+            isAutoAttachEnabled: isAutoAttachEnabled
         )
         coordinator.delegate = self
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
@@ -427,7 +426,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         // Back on the start state, so the next prompt is a first prompt again and reports itself.
         hasDeliveredFirstPrompt = false
         clearAttachedContext()
-        chipViewModel.clearReattachOffer()
         if startsPreSubmit, let currentUserScript {
             coordinator.unbind()
             isBoundToUserScript = false
@@ -472,8 +470,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     private func reportFirstPromptSubmission() {
         guard claimFirstPromptSubmission() else { return }
-        // The offer was made on the pre-chat surface; the chat it starts is where it stops applying.
-        chipViewModel.clearReattachOffer()
         onPromptSubmitted?()
         commitDeferredBindIfNeeded()
     }

@@ -4530,7 +4530,7 @@ extension MainViewController: BrowserChromeDelegate {
         static let duration = 0.1
 
         /// Longer than `duration` so the floating capsule morph is legible; the pill grows/moves into
-        static let morphCollapseDuration = 0.20
+        static let morphCollapseDuration = 0.25
         static let morphExpandDuration = 0.34
 
         static let morphCollapseCurve = ChromeMorphAnimator.Curve.easeOutCubic

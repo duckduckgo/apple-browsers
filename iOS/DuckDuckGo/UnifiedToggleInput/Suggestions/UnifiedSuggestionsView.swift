@@ -84,7 +84,6 @@ struct UnifiedSuggestionsView: View {
                             showsRestingContent: !isTypingList,
                             showsFavorites: viewModel.isShowingFavorites,
                             showsSuggestionRows: isShowingList,
-                            showsDuckAITail: activeListKind == .recents,
                             animationModel: viewModel.animationModel)
             .accessibilityHidden(viewModel.isFireTab && !isTypingList)
     }
@@ -181,23 +180,5 @@ struct DismissFade: ViewModifier {
             .opacity(animationModel.isDismissing ? 0 : 1)
             .animation(animationModel.isDismissing ? .easeInOut(duration: 0.2) : nil,
                        value: animationModel.isDismissing)
-    }
-}
-
-/// Fades in only the Duck.ai tail after its rows have been laid out without animation.
-struct DuckAITailFade: ViewModifier {
-    @ObservedObject var animationModel: UnifiedSuggestionsAnimationModel
-    let isEnabled: Bool
-
-    func body(content: Content) -> some View {
-        let isVisible = !isEnabled || animationModel.isDuckAITailVisible
-        content
-            .opacity(isVisible ? 1 : 0)
-            .onAppear {
-                if isEnabled { animationModel.revealDuckAITail() }
-            }
-            .onChange(of: isEnabled) { isEnabled in
-                if isEnabled { animationModel.revealDuckAITail() }
-            }
     }
 }

@@ -35,7 +35,6 @@ struct SuggestionsListView: View {
     var showsRestingContent = false
     var showsFavorites = false
     var showsSuggestionRows = true
-    var showsDuckAITail = false
     var animationModel: UnifiedSuggestionsAnimationModel
     var isFloatingPopover: Bool = false
 
@@ -113,7 +112,6 @@ struct SuggestionsListView: View {
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                             .modifier(DismissFade(animationModel: animationModel))
-                            .modifier(DuckAITailFade(animationModel: animationModel, isEnabled: showsDuckAITail))
                     }
                     if showsSuggestionRows, let firstSection = viewModel.sections.first {
                         if hasVisibleChromeRows, let title = firstSection.title, !title.isEmpty {
@@ -248,7 +246,6 @@ struct SuggestionsListView: View {
                                              roundsTop: roundsFirstRowTop && row.id == section.rows.first?.id))
             .modifier(SeparatorTrailingToContentModifier())
             .modifier(DismissFade(animationModel: animationModel))
-            .modifier(DuckAITailFade(animationModel: animationModel, isEnabled: showsDuckAITail))
             // Pointer hover highlights the row, reusing the keyboard-selection highlight (matches the
             // legacy autocomplete). Touch never fires onHover, so this is pointer-only.
             .onHover { isHovering in

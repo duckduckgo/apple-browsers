@@ -101,14 +101,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     }
 
     /// Mode switches snap the shared state so persistent geometry is never implicitly animated.
-    /// Duck.ai tail opacity is prepared separately before the new rows are published.
     private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool) {
         guard newContent != content else { return }
-        if modeChanged && newContent == .list(.recents) {
-            animationModel.prepareDuckAITailAppearance()
-        } else {
-            animationModel.cancelDuckAITailAppearance()
-        }
         if modeChanged && !Self.sameCategory(content, newContent) {
             withTransaction(Transaction(animation: nil)) { content = newContent }
         } else if Self.isIdleDuckAITailChange(content, newContent) {
@@ -203,7 +197,6 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
 final class UnifiedSuggestionsAnimationModel: ObservableObject {
 
     @Published private(set) var isDismissing = false
-    @Published private(set) var isDuckAITailVisible = true
 
     func beginDismissFade() {
         guard !isDismissing else { return }
@@ -213,24 +206,5 @@ final class UnifiedSuggestionsAnimationModel: ObservableObject {
     func resetDismissFade() {
         guard isDismissing else { return }
         isDismissing = false
-    }
-
-    /// Inserts the Duck.ai rows without a layout animation, then fades only their pixels in.
-    func prepareDuckAITailAppearance() {
-        guard isDuckAITailVisible else { return }
-        isDuckAITailVisible = false
-    }
-
-    /// Called from the inserted tail's appearance lifecycle, after SwiftUI has committed its hidden state.
-    func revealDuckAITail() {
-        guard !isDuckAITailVisible else { return }
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isDuckAITailVisible = true
-        }
-    }
-
-    func cancelDuckAITailAppearance() {
-        guard !isDuckAITailVisible else { return }
-        isDuckAITailVisible = true
     }
 }

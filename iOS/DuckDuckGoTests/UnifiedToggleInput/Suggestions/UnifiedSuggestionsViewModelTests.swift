@@ -69,43 +69,6 @@ final class UnifiedSuggestionsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.content, content)
     }
 
-    func test_switchingFromSearchToDuckAIRecents_preparesTailBeforePublishingContent() {
-        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
-            .init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
-        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
-                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
-
-        inputs.send(.init(mode: .aiChat,
-                          isTyping: false,
-                          hasFavorites: true,
-                          hasMessages: false,
-                          hasRecents: true,
-                          resultsPending: false))
-
-        XCTAssertEqual(sut.content, .list(.recents))
-        XCTAssertFalse(sut.animationModel.isDuckAITailVisible)
-
-        sut.animationModel.revealDuckAITail()
-        XCTAssertTrue(sut.animationModel.isDuckAITailVisible)
-    }
-
-    func test_recentsArrivingWhileAlreadyInDuckAI_keepsExistingContentAnimation() {
-        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
-            .init(mode: .aiChat, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
-        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
-                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
-
-        inputs.send(.init(mode: .aiChat,
-                          isTyping: false,
-                          hasFavorites: false,
-                          hasMessages: false,
-                          hasRecents: true,
-                          resultsPending: false))
-
-        XCTAssertEqual(sut.content, .list(.recents))
-        XCTAssertTrue(sut.animationModel.isDuckAITailVisible)
-    }
-
     func test_beginDismissFade_updatesOnlyNestedAnimationState() {
         let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
             .init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))

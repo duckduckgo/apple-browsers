@@ -44,6 +44,9 @@ let package = Package(
     dependencies: [
         .package(path: "../Infrastructure/DesignResourcesKit"),
         .package(path: "../Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../DDGError"),
+        .package(path: "../Common"),
+        .package(path: "../Persistence"),
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../DebugServer"),
@@ -53,14 +56,15 @@ let package = Package(
         .target(
             name: "AIChat",
             dependencies: [
+                .product(name: "DDGError", package: "DDGError"),
                 "DesignResourcesKit",
                 "DesignResourcesKitIcons",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "DDGSync", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
@@ -94,7 +98,7 @@ let package = Package(
                 "AIChatTestingUtilities",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "NetworkingTestingUtils", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "WKAbstractions", package: "BrowserServicesKit")

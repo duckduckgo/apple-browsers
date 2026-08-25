@@ -19,7 +19,7 @@
 
 import FeatureFlags_iOS
 import Foundation
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 import XCTest
 @testable import DuckDuckGo

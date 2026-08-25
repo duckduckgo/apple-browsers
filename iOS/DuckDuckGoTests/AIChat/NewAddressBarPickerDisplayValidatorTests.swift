@@ -20,11 +20,10 @@
 import XCTest
 import Core
 import FoundationExtensions
-import Persistence
+@_spi(Testing) import Persistence
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
-import PersistenceTestingUtils
 import AIChat
 @testable import DuckDuckGo
 

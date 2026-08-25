@@ -745,6 +745,8 @@ final class BookmarkListViewController: NSViewController {
 
     private func expandAndRestore(selectedNodes: [BookmarkNode]) {
         treeController.visitNodes { node in
+            guard outlineView.rowIfValid(forItem: node) != nil else { return }
+
             if let objectID = (node.representedObject as? BaseBookmarkEntity)?.id {
                 if dataSource.expandedNodesIDs.contains(objectID) {
                     outlineView.expandItem(node)

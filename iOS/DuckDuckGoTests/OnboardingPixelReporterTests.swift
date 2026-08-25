@@ -20,8 +20,7 @@
 import XCTest
 import Core
 import Onboarding
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PixelExperimentKit
 @testable import DuckDuckGo

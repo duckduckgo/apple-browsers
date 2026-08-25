@@ -191,6 +191,10 @@ final class MainCoordinator {
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+        let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
+        let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
+            await appSwitcherSnapshotCleaner.clearSnapshots()
+        }
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
@@ -228,7 +232,8 @@ final class MainCoordinator {
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
-                                eventHub: eventHub)
+                                eventHub: eventHub,
+                                clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -246,7 +251,8 @@ final class MainCoordinator {
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         fireModeStorageController: contentBlockingService.fireModeStorageController,
-                                        wideEvent: wideEvent)
+                                        wideEvent: wideEvent,
+                                        clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,
             syncService: syncService.sync

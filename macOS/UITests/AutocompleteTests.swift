@@ -161,7 +161,7 @@ private extension AutocompleteTests {
 
         addressBarTextField.typeURL(urlForBookmarks)
         XCTAssertTrue(
-            app.windows.webViews[siteTitleForBookmarkedSite].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[siteTitleForBookmarkedSite].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
@@ -227,7 +227,7 @@ private extension AutocompleteTests {
 
         addressBarTextField.typeURL(urlForHistory)
         XCTAssertTrue(
-            app.windows.webViews[siteTitleForHistorySite].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[siteTitleForHistorySite].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         app.enforceSingleWindow()

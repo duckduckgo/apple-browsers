@@ -43,15 +43,15 @@ class HTTPSUpgradeUITests: UITestCase {
 
     func testHTTPSUpgrade_WhenNavigatingToHTTPSite_ShowsHTTPSInAddressBar() throws {
         // Navigate to a test HTTP URL that supports HTTPS upgrade
-        let httpURL = URL(string: "http://example.com")!
+        let httpURL = URL(string: "http://github.com")!
         app.pasteURL(httpURL, pressingEnter: true)
 
         // Wait for page content to load
-        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain") .firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Example.com should load")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "github.com should load")
 
         // Verify HTTPS upgrade in address bar
-        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://example.com/", "Address bar should show HTTPS after upgrade from HTTP")
+        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://github.com/", "Address bar should show HTTPS after upgrade from HTTP")
     }
 
     func testHTTPSUpgrade_WithPrivacyTestPages_UpgradesCorrectly() throws {

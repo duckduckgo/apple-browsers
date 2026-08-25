@@ -104,11 +104,54 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             isToggleEnabled: false,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
-            contextualStartsPreSubmit: true
+            contextualStart: .expandedPreSubmit
         )
 
         XCTAssertFalse(sut.isAITabState)
         XCTAssertEqual(sut.pixelSurface, .contextualChat)
+    }
+
+    // MARK: - Display State: contextual boot
+
+    /// A sheet the user is about to type into brings a keyboard, so its input starts expanded.
+    func test_contextualChat_bootsExpandedPreSubmit() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStart: .expandedPreSubmit
+        )
+
+        XCTAssertEqual(sut.displayState, .contextualChat(.expanded))
+    }
+
+    /// No keyboard on an existing chat, so expanding would leave the toolbar row over nothing.
+    func test_contextualChat_bootsCollapsed_whenOpeningOntoAnExistingChat() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStart: .collapsedOnExistingChat
+        )
+
+        XCTAssertEqual(sut.displayState, .contextualChat(.collapsed))
+        XCTAssertFalse(sut.isInputPaneExpanded)
+    }
+
+    /// The legacy input opens on an existing chat yet still takes focus: the two facts stay separate.
+    func test_contextualChat_bootsExpanded_onAnExistingChatThatTakesFocus() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStart: .expandedOnExistingChat
+        )
+
+        XCTAssertEqual(sut.displayState, .contextualChat(.expanded))
+        XCTAssertTrue(sut.hasSubmittedPrompt, "an existing chat has a prompt in it already")
     }
 
     // MARK: - Display State: showCollapsed
@@ -602,7 +645,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
             switchBarSubmissionMetrics: mockSubmissionMetrics,
-            contextualStartsPreSubmit: true
+            contextualStart: .expandedPreSubmit
         )
         sut.delegate = mockDelegate
         mockPreferences.selectedModelId = "file-model"
@@ -1401,7 +1444,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             isToggleEnabled: false,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
-            contextualStartsPreSubmit: true
+            contextualStart: .expandedPreSubmit
         )
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
 
@@ -1416,7 +1459,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             isToggleEnabled: false,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
-            contextualStartsPreSubmit: true
+            contextualStart: .expandedPreSubmit
         )
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
 
@@ -1433,7 +1476,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             isToggleEnabled: false,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
-            contextualStartsPreSubmit: true
+            contextualStart: .expandedPreSubmit
         )
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
 
@@ -2166,7 +2209,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             isToggleEnabled: false,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
-            contextualStartsPreSubmit: true
+            contextualStart: .expandedPreSubmit
         )
 
         XCTAssertFalse(sut.hasSubmittedPrompt)
@@ -2179,7 +2222,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             isToggleEnabled: false,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
-            contextualStartsPreSubmit: true
+            contextualStart: .expandedPreSubmit
         )
 
         _ = sut.prepareExternalPromptSubmission()

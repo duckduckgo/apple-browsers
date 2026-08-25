@@ -38,6 +38,7 @@ struct ProductionDependencies: SyncDependencies {
     let scheduler: SchedulingInternal
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let errorEvents: EventMapping<SyncError>
+    let unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>
     let shouldPreserveAccountWhenSyncDisabled: () -> Bool
     let syncFeatureFlags: any SyncFeatureFlagProviding
 
@@ -46,6 +47,7 @@ struct ProductionDependencies: SyncDependencies {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         keyValueStore: ThrowingKeyValueStoring,
         errorEvents: EventMapping<SyncError>,
+        unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>? = nil,
         syncFeatureFlags: any SyncFeatureFlagProviding,
         shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool = { false }
     ) {
@@ -56,6 +58,7 @@ struct ProductionDependencies: SyncDependencies {
                   secureStore: SecureStorage(),
                   privacyConfigurationManager: privacyConfigurationManager,
                   errorEvents: errorEvents,
+                  unifiedDeviceListEvents: unifiedDeviceListEvents,
                   syncFeatureFlags: syncFeatureFlags,
                   shouldPreserveAccountWhenSyncDisabled: shouldPreserveAccountWhenSyncDisabled)
     }
@@ -68,6 +71,7 @@ struct ProductionDependencies: SyncDependencies {
         secureStore: SecureStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         errorEvents: EventMapping<SyncError>,
+        unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>? = nil,
         syncFeatureFlags: any SyncFeatureFlagProviding,
         shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool
     ) {
@@ -78,6 +82,9 @@ struct ProductionDependencies: SyncDependencies {
         self.secureStore = secureStore
         self.privacyConfigurationManager = privacyConfigurationManager
         self.errorEvents = errorEvents
+        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? EventMapping { _, _, _, onComplete in
+            onComplete(nil)
+        }
         self.shouldPreserveAccountWhenSyncDisabled = shouldPreserveAccountWhenSyncDisabled
         self.syncFeatureFlags = syncFeatureFlags
 
@@ -90,6 +97,7 @@ struct ProductionDependencies: SyncDependencies {
                                                          api: api,
                                                          crypter: crypter,
                                                          accountInfoKeyFactory: accountInfoKeyFactory,
+                                                         unifiedDeviceListEvents: self.unifiedDeviceListEvents,
                                                          canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
         let accountInfoKeyManager = AccountInfoKeyManager(secureStore: secureStore,
                                                           scopedAccess: scopedAccess,
@@ -110,6 +118,7 @@ struct ProductionDependencies: SyncDependencies {
                                  accountInfoKeys: accountInfoKeyManager,
                                  accountInfoKeyFactory: accountInfoKeyFactory,
                                  deviceInfoCodec: deviceInfoCodec,
+                                 unifiedDeviceListEvents: self.unifiedDeviceListEvents,
                                  isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() },
                                  canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() },
                                  canReadUnifiedDeviceList: { syncFeatureFlags.canReadUnifiedDeviceList() })
@@ -159,7 +168,8 @@ struct ProductionDependencies: SyncDependencies {
                                             api: api,
                                             crypter: crypter,
                                             scopedAccess: scopedAccess,
-                                            account: account)
+                                            account: account,
+                                            unifiedDeviceListEvents: unifiedDeviceListEvents)
     }
 
     func createDeviceInfoMigrationCoordinator() -> DeviceInfoMigrationCoordinating {
@@ -168,6 +178,7 @@ struct ProductionDependencies: SyncDependencies {
                                        crypter: crypter,
                                        secureStore: secureStore,
                                        keyValueStore: keyValueStore,
+                                       unifiedDeviceListEvents: unifiedDeviceListEvents,
                                        canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
     }
 

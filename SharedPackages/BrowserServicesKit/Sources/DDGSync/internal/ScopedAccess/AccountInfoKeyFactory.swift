@@ -22,6 +22,10 @@ protocol AccountInfoKeyFactory {
     func makeProtectedKeys(accountSecretKey: Data, thirdPartyMainKey: Data?) throws -> [ProtectedKey]
 }
 
+enum AccountInfoKeyFactoryError: Error {
+    case thirdPartyWrappingFailed(Error)
+}
+
 struct DefaultAccountInfoKeyFactory: AccountInfoKeyFactory {
 
     private static let keySizeInBits = 3072
@@ -45,9 +49,14 @@ struct DefaultAccountInfoKeyFactory: AccountInfoKeyFactory {
             return [defaultCredentialKey]
         }
 
-        let thirdPartyCredentialKey = try makeThirdPartyCredentialKey(keyMaterial: keyMaterial,
+        let thirdPartyCredentialKey: ProtectedKey
+        do {
+            thirdPartyCredentialKey = try makeThirdPartyCredentialKey(keyMaterial: keyMaterial,
                                                                       keyID: keyID,
                                                                       thirdPartyMainKey: thirdPartyMainKey)
+        } catch {
+            throw AccountInfoKeyFactoryError.thirdPartyWrappingFailed(error)
+        }
         return [defaultCredentialKey, thirdPartyCredentialKey]
     }
 

@@ -77,6 +77,10 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
             Logger.subscription.debug("[Subscription Promo - Existing User] Promo already shown, skipping.")
             return false
         }
+        guard !subscriptionManager.isSubscriptionPresent() else {
+            Logger.subscription.debug("[Subscription Promo - Existing User] User already has a subscription, skipping.")
+            return false
+        }
         let shouldShow = featureFlagger.isFeatureOn(for: FeatureFlag.subscriptionPromoForExistingUsers, allowOverride: true)
             && featureFlagger.isFeatureOn(for: FeatureFlag.privacyProOnboardingPromotion, allowOverride: true)
             && hasCooldownPassed()

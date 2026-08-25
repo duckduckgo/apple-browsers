@@ -543,8 +543,15 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func localTokenState() -> LocalSubscriptionTokenState {
+        localTokenSnapshot().state
+    }
+
+    private func localTokenSnapshot() -> LocalTokenSnapshot {
         do {
-            return try oAuthClient.currentTokenContainer() == nil ? .missing : .present
+            guard let tokenContainer = try oAuthClient.currentTokenContainer() else {
+                return .missing
+            }
+            return .present(tokenContainer)
         } catch {
             return .readError
         }
@@ -600,6 +607,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     @discardableResult public func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         Logger.subscriptionTokensManagement.debug("Get tokens \(policy.description, privacy: .public)")
+        let tokenBeforeAttempt = localTokenSnapshot()
 
         do {
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
@@ -612,41 +620,84 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             // Expected when no tokens are available
             self.updateCachedUserEntitlements([])
             throw SubscriptionManagerError.noTokenAvailable
-        } catch {
-            pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, error))
-            Logger.subscriptionTokensManagement.error("Getting token \(policy, privacy: .public) failed: \(error, privacy: .public)")
+        } catch let tokenRequestError {
+            pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, tokenRequestError))
+            Logger.subscriptionTokensManagement.error("Getting token \(policy, privacy: .public) failed: \(tokenRequestError, privacy: .public)")
 
-            switch error {
+            switch tokenRequestError {
             case OAuthClientError.unknownAccount:
-                await signOut(notifyUI: true, userInitiated: false)
+                let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
+                await automaticallySignOut(recoveryOutcome: .notApplicable,
+                                           failedRequest: failedRequest,
+                                           triggeringError: tokenRequestError,
+                                           notifyUI: true)
                 throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.invalidTokenRequest:
+                let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 pixelHandler.handle(pixel: .invalidRefreshToken)
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
                     return recoveredTokenContainer
-                } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
-                    // No restore ran (no handler, or the platform can't restore): record the refresh
-                    // as a failure whose recovery was never attempted, keeping its invalid-token error.
-                    await signOut(notifyUI: false, userInitiated: false)
+                } catch let recoveryError {
+                    // `tokenRecoveryNotAttempted` means no restore ran (no handler, or the platform
+                    // can't restore), which is a different finding from a restore that ran and
+                    // failed to yield a valid token. Either way the refresh is a failure.
+                    let notAttempted = (recoveryError as? SubscriptionManagerError) == .tokenRecoveryNotAttempted
+                    await automaticallySignOut(recoveryOutcome: notAttempted ? .notAttempted : .failed,
+                                               failedRequest: failedRequest,
+                                               triggeringError: tokenRequestError,
+                                               notifyUI: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
-                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil)
-                    throw SubscriptionManagerError.noTokenAvailable
-                } catch {
-                    // A restore ran but did not yield a valid token.
-                    await signOut(notifyUI: false, userInitiated: false)
-                    pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
-                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .failed, error: error)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(
+                        outcome: notAttempted ? .notAttempted : .failed,
+                        error: notAttempted ? nil : recoveryError)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 
             default:
-                throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
+                throw SubscriptionManagerError.errorRetrievingTokenContainer(error: tokenRequestError)
             }
         }
+    }
+
+    /// The state a failed token request leaves behind, as it stood before any recovery ran.
+    private struct FailedTokenRequestState {
+        let policy: AuthTokensCachePolicy
+        let tokenBeforeAttempt: LocalTokenSnapshot
+        let tokenAfterAttempt: LocalTokenSnapshot
+        let cachedSubscription: DuckDuckGoSubscription?
+        let capturedAt: Date
+    }
+
+    /// Snapshots what the sign-out pixel reports about a failed token request. Call this in the
+    /// `catch`, never at sign-out time: recovery runs in between and rewrites both the stored token
+    /// container and the subscription cache.
+    private func captureFailedTokenRequestState(policy: AuthTokensCachePolicy,
+                                                tokenBeforeAttempt: LocalTokenSnapshot) async -> FailedTokenRequestState {
+        FailedTokenRequestState(policy: policy,
+                                tokenBeforeAttempt: tokenBeforeAttempt,
+                                tokenAfterAttempt: localTokenSnapshot(),
+                                cachedSubscription: await subscriptionCachingService.get(),
+                                capturedAt: Date())
+    }
+
+    private func automaticallySignOut(recoveryOutcome: SubscriptionAutomaticSignOutPixelData.RecoveryOutcome,
+                                      failedRequest: FailedTokenRequestState,
+                                      triggeringError: Error,
+                                      notifyUI: Bool) async {
+        await signOut(notifyUI: notifyUI, userInitiated: false)
+
+        let data = SubscriptionAutomaticSignOutPixelData(recoveryOutcome: recoveryOutcome,
+                                                         policy: failedRequest.policy,
+                                                         tokenBeforeAttempt: failedRequest.tokenBeforeAttempt,
+                                                         tokenAfterAttempt: failedRequest.tokenAfterAttempt,
+                                                         cachedSubscription: failedRequest.cachedSubscription,
+                                                         localTokenStateAfterSignOut: localTokenState(),
+                                                         now: failedRequest.capturedAt)
+        pixelHandler.handle(pixel: .automaticSignOut(data, triggeringError))
     }
 
     func attemptTokenRecovery() async throws -> TokenContainer {

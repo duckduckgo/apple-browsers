@@ -361,8 +361,8 @@ private final class MockFaviconManagement: FaviconManagement {
     var faviconToReturn: Favicon?
 
     /// Favicon returned by the cached lookups; a `nil` value (or one with a `nil` image) simulates the
-    /// lazy off-main decode window before an image is available. `getCachedFavicon(forUrlOrAnySubdomain:)`
-    /// is a protocol-extension method (not a requirement), so it routes through `getCachedFavicon(for:)`.
+    /// lazy off-main decode window before an image is available. The tab favicon resolves through
+    /// `getCachedFavicon(for:)` only — it never borrows a sibling subdomain's icon.
     var getCachedFaviconResult: Favicon?
 
     func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WebKit.WKWebView?) async -> Favicon? {

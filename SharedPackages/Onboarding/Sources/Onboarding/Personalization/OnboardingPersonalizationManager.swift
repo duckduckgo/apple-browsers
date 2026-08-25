@@ -53,9 +53,9 @@ extension OnboardingPersonalizationManager {
             setAIGeneratedImagesHidden(true)
             setDuckAIEnabled(false)
         case .blockAds:
-            // Chose "block ads and pop-ups" → default the cookie step to maximum protection (both toggles on).
+            // Chose "block ads and pop-ups" → enable cookie pop-up protection, but leave
+            // "accept cookies that can't be rejected" off by default.
             setCookiePopUpProtection(true)
-            setPopUpsWithoutOptOuts(true)
         case .browserPrivately, .privateAIChat:
             // Presented toggles already match the app's existing defaults; nothing to override.
             break

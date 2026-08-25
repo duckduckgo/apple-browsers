@@ -98,7 +98,7 @@ extension XCUIApplication {
         static let fireDialogTabsToggle = "FireDialogView.tabsToggle"
         static let fireDialogHistoryToggle = "FireDialogView.historyToggle"
         static let fireDialogCookiesToggle = "FireDialogView.cookiesToggle"
-        static let fireDialogCookiesInfoButton = "FireDialogView.cookiesInfoButton"
+        static let fireDialogCookiesDetailButton = "FireDialogView.cookiesDetailButton"
         static let fireDialogManageFireproofButton = "FireDialogView.manageFireproofButton"
         static let fireDialogIndividualSitesLink = "FireDialogView.individualSitesLink"
         static let fireDialogSitesOverlayCloseButton = "FireDialogView.sitesOverlayCloseButton"
@@ -110,6 +110,9 @@ extension XCUIApplication {
         static let fireButton = "TabBarViewController.fireButton"
         static let fakeFireButton = "FireViewController.fakeFireButton"
         static let homeButton = "NavigationBarViewController.HomeButton"
+
+        static let fireDialogMoreOptionsMenuButton = "FireDialogView.toolbarMoreButton"
+        static let fireDialogManageFireproofSites = "FireDialogView.moreOptions.manageFireproofSites"
     }
 
     static func setUp(environment: [String: String]? = nil,
@@ -328,7 +331,7 @@ extension XCUIApplication {
         addressBar.pasteURL(url, pressingEnter: true)
         Self.dismissLocalNetworkPromptIfPresent()
         XCTAssertTrue(
-            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }
@@ -441,7 +444,7 @@ extension XCUIApplication {
         )
         addressBarTextField.typeURL(url)
         XCTAssertTrue(
-            windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         if bookmarkingViaDialog {
@@ -841,8 +844,8 @@ extension XCUIApplication {
         checkBoxes[AccessibilityIdentifiers.fireDialogCookiesToggle]
     }
 
-    var fireDialogCookiesInfoButton: XCUIElement {
-        buttons[AccessibilityIdentifiers.fireDialogCookiesInfoButton]
+    var fireDialogCookiesDetailButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogCookiesDetailButton]
     }
 
     var fireDialogManageFireproofButton: XCUIElement {
@@ -863,6 +866,14 @@ extension XCUIApplication {
 
     var fireDialogBurnButton: XCUIElement {
         buttons[AccessibilityIdentifiers.fireDialogBurnButton]
+    }
+
+    var fireDialogMoreOptionsMenuButton: XCUIElement {
+        menuButtons[AccessibilityIdentifiers.fireDialogMoreOptionsMenuButton]
+    }
+
+    var fireDialogManageFireproofSitesMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.fireDialogManageFireproofSites]
     }
 
     var fireproofDomainsAddButton: XCUIElement {

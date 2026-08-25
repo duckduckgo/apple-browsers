@@ -20,11 +20,10 @@ import AppKit
 import FeatureFlags_macOS
 import History
 import HistoryView
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import SharedTestUtilities
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

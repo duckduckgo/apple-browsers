@@ -18,8 +18,7 @@
 
 import Foundation
 @testable import NetworkProtectionProxy
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import XCTest
 
 extension TransparentProxyProvider.Event: Hashable {

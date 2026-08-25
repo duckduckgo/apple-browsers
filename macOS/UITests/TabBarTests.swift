@@ -195,7 +195,7 @@ class TabBarTests: UITestCase {
         )
         addressBar.typeURL(url)
         XCTAssertTrue(
-            app.windows.firstMatch.webViews["Privacy Test Pages - Home"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.firstMatch.webViews["Privacy Test Pages - Home"].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }

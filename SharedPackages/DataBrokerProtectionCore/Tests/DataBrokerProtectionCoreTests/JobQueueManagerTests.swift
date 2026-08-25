@@ -141,6 +141,82 @@ final class JobQueueManagerTests: XCTestCase {
         XCTAssertEqual(mockOperationsCreator.isAuthenticatedUser, false)
     }
 
+    func testWhenOperationsComplete_thenDelegateReceivesOneRunLifecycle() {
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        sut.delegate = mockQueueDelegate
+        mockOperationsCreator.operationCollections = [
+            MockBrokerProfileJob(id: 1, jobType: .manualScan, statusReportingDelegate: sut)
+        ]
+
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
+                                                    jobDependencies: mockDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil)
+
+        XCTAssertEqual(mockQueueDelegate.events, [.didStart])
+
+        mockQueue.completeAllOperations()
+
+        XCTAssertEqual(mockQueueDelegate.events, [.didStart, .willEnqueue, .didFinish])
+    }
+
+    func testWhenActiveRunIsReplaced_thenDelegateFinishesOldRunBeforeStartingNewRun() {
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        sut.delegate = mockQueueDelegate
+        mockOperationsCreator.operationCollections = [
+            MockBrokerProfileJob(id: 1, jobType: .manualScan, statusReportingDelegate: sut)
+        ]
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
+                                                    jobDependencies: mockDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil)
+        mockQueue.completeNextBarrierBlock()
+
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
+                                                    jobDependencies: mockDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil)
+
+        XCTAssertEqual(mockQueueDelegate.events, [
+            .didStart, .willEnqueue, .didFinish, .didStart
+        ])
+
+        mockQueue.completeAllOperations()
+
+        XCTAssertEqual(mockQueueDelegate.events, [
+            .didStart, .willEnqueue, .didFinish, .didStart,
+            .willEnqueue, .didFinish
+        ])
+    }
+
+    func testWhenCreatingJobsFails_thenDelegateLifecycleRemainsBalanced() {
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        sut.delegate = mockQueueDelegate
+        mockOperationsCreator.shouldError = true
+
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
+                                                    jobDependencies: mockDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil)
+        XCTAssertEqual(mockQueueDelegate.events, [.didStart, .didFinish])
+    }
+
     func testWhenStartImmediateScan_andScanCompletesWithErrors_thenCompletionIsCalledWithErrors() async throws {
         // Given
         sut = JobQueueManager(jobQueue: mockQueue,
@@ -909,11 +985,27 @@ final class JobQueueManagerTests: XCTestCase {
 }
 
 private final class MockJobQueueManagerDelegate: JobQueueManagerDelegate {
+    enum Event: Equatable {
+        case willEnqueue
+        case didStart
+        case didFinish
+    }
+
     var didEnqueueOperations = false
     var completedIdentifiers: [CompletedJobIdentifier?] = []
+    var events: [Event] = []
 
     func queueManagerWillEnqueueOperations(_ queueManager: any JobQueueManaging) {
         didEnqueueOperations = true
+        events.append(.willEnqueue)
+    }
+
+    func queueManagerDidStartOperations(_ queueManager: any JobQueueManaging) {
+        events.append(.didStart)
+    }
+
+    func queueManagerDidFinishOperations(_ queueManager: any JobQueueManaging) {
+        events.append(.didFinish)
     }
 
     func queueManagerDidCompleteIndividualJob(_ queueManager: any JobQueueManaging, identifier: CompletedJobIdentifier?) {

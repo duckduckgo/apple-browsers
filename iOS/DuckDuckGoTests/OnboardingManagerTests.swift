@@ -18,8 +18,7 @@
 //
 
 import Onboarding
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import Testing
 import class UIKit.UIDevice

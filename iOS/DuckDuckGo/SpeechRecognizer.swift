@@ -25,6 +25,10 @@ protocol SpeechRecognizerDelegate: AnyObject {
     func speechRecognizer(_ speechRecognizer: SpeechRecognizer, availabilityDidChange available: Bool)
 }
 
+enum SpeechRecognizerError: Error {
+    case audioInputUnavailable
+}
+
 final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
     weak var delegate: SpeechRecognizerDelegate?
     private var audioEngine: AVAudioEngine?
@@ -85,6 +89,11 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
         return Array(buffer)
     }
     
+    // AVFAudio raises `IsFormatSampleRateAndChannelCountValid` and aborts when a tap is installed with either value at zero.
+    static func isValidRecordingFormat(_ format: AVAudioFormat) -> Bool {
+        format.sampleRate > 0 && format.channelCount > 0
+    }
+
     func getVolumeLevel(from channelData: UnsafeMutablePointer<Float>) -> Float {
         let channelDataArray = Array(UnsafeBufferPointer(start: channelData, count: 1024))
         guard channelDataArray.count != 0 else { return 0 }
@@ -125,6 +134,10 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
             let inputNode = audioEngine.inputNode
             
             let recordingFormat = inputNode.outputFormat(forBus: 0)
+            guard Self.isValidRecordingFormat(recordingFormat) else {
+                throw SpeechRecognizerError.audioInputUnavailable
+            }
+
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { (buffer: AVAudioPCMBuffer, _) in
                 recognitionRequest.append(buffer)
                 

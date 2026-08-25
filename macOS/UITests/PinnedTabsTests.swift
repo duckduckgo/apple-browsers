@@ -302,7 +302,7 @@ class PinnedTabsTests: UITestCase {
         app.typeKey("[", modifierFlags: [.command, .shift])
         app.typeKey("[", modifierFlags: [.command, .shift])
         XCTAssertTrue(
-            app.staticTexts["Sample text for Page #2"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.staticTexts["Sample text for Page #2"].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Page #2 should exist (line \(#line))",
             file: file,
             line: line
@@ -310,7 +310,7 @@ class PinnedTabsTests: UITestCase {
         /// Goes to Page #1 to check the state
         app.typeKey("]", modifierFlags: [.command, .shift])
         XCTAssertTrue(
-            app.staticTexts["Sample text for Page #3"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.staticTexts["Sample text for Page #3"].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Page #3 should exist (line \(#line))",
             file: file,
             line: line
@@ -354,7 +354,7 @@ class PinnedTabsTests: UITestCase {
 
     private func waitForSite(pageTitle: String, file: StaticString = #file, line: UInt = #line) {
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Web view for '\(pageTitle)' should exist (line \(#line))",
             file: file,
             line: line

@@ -19,8 +19,7 @@
 @testable import Crashes
 import MetricKit
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import Common
 
 class CrashCollectionTests: XCTestCase {

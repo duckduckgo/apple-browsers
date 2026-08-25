@@ -20,6 +20,31 @@ SPEC.loader.exec_module(MODULE)
 
 
 class RunWithWatchdogTests(unittest.TestCase):
+    def test_inaccessible_process_group_is_not_treated_as_owned(self) -> None:
+        original_killpg = MODULE.os.killpg
+        try:
+            def deny_signal(_pid: int, _signal: int) -> None:
+                raise PermissionError
+
+            MODULE.os.killpg = deny_signal
+            self.assertFalse(MODULE.process_group_exists(123))
+        finally:
+            MODULE.os.killpg = original_killpg
+
+    def test_status_atomically_replaces_existing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            status = root / "status.tsv"
+            status.write_text("stale")
+
+            MODULE.write_status(status, "timed_out", 124, "terminated")
+
+            self.assertEqual(
+                status.read_text(),
+                "timed_out\t124\tterminated\n",
+            )
+            self.assertEqual(list(root.iterdir()), [status])
+
     def test_sigterm_race_is_treated_as_already_exited(self) -> None:
         class Process:
             pid = 123
@@ -33,14 +58,15 @@ class RunWithWatchdogTests(unittest.TestCase):
         try:
             MODULE.process_group_exists = lambda _pid: True
 
-            def process_gone(_pid: int, _signal: int) -> None:
-                raise ProcessLookupError
+            for error_type in (ProcessLookupError, PermissionError):
+                def process_gone(_pid: int, _signal: int) -> None:
+                    raise error_type
 
-            MODULE.os.killpg = process_gone
-            self.assertEqual(
-                MODULE.terminate_process_group(Process(), 1),
-                "already_exited",
-            )
+                MODULE.os.killpg = process_gone
+                self.assertEqual(
+                    MODULE.terminate_process_group(Process(), 1),
+                    "already_exited",
+                )
         finally:
             MODULE.process_group_exists = original_exists
             MODULE.os.killpg = original_killpg

@@ -847,8 +847,8 @@ final class NewPermissionViewPopupTests: UITestCase {
         )
         openButton.click()
 
-        // Verify popup window opened
-        let popupWindow = app.windows["Example Domain"]
+        // Verify popup window opened (popup-delayed.html opens github.com)
+        let popupWindow = app.windows.containing(\.title, containing: "GitHub").firstMatch
         XCTAssertTrue(
             popupWindow.waitForExistence(timeout: UITests.Timeouts.navigation),
             "Popup should open after clicking 'Open' button."

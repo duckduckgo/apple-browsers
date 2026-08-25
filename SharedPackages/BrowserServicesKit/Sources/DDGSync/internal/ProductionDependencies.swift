@@ -107,6 +107,7 @@ struct ProductionDependencies: SyncDependencies {
                                  api: api,
                                  crypter: crypter,
                                  registeredDeviceMapper: registeredDeviceMapper,
+                                 accountInfoKeys: accountInfoKeyManager,
                                  accountInfoKeyFactory: accountInfoKeyFactory,
                                  deviceInfoCodec: deviceInfoCodec,
                                  isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() },

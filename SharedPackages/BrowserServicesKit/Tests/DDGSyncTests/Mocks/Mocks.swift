@@ -428,6 +428,19 @@ final class AccountInfoKeyManagingMock: AccountInfoKeyManaging {
         return loadKeyStub
     }
 
+    var preloadKeyCalls: [(protectedKeys: [ProtectedKey], accessCredentials: [AccessCredential], account: SyncAccount)] = []
+    var preloadKeyError: Error?
+    func preloadKey(from protectedKeys: [ProtectedKey],
+                    accessCredentials: [AccessCredential],
+                    for account: SyncAccount) async throws {
+        preloadKeyCalls.append((protectedKeys: protectedKeys,
+                                accessCredentials: accessCredentials,
+                                account: account))
+        if let preloadKeyError {
+            throw preloadKeyError
+        }
+    }
+
     var refreshKeyCalls: [SyncAccount] = []
     var refreshKeyStub: AccountInfoKey?
     var refreshKeyError: Error?

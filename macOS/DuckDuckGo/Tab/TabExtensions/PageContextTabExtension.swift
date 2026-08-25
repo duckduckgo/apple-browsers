@@ -213,7 +213,7 @@ final class PageContextTabExtension {
                 }
                 if isEnabled {
                     /// Proactively collect page context when page context setting was enabled
-                    if let cachedPageContext {
+                    if let cachedPageContext, Self.shouldReuseCachedContext(cachedPageContext) {
                         Task { await self.handle(cachedPageContext) }
                     } else {
                         collectPageContextIfNeeded(trigger: .auto)
@@ -315,6 +315,14 @@ final class PageContextTabExtension {
     static func shouldDeliverCollectionResult(_ result: AIChatPageContextData?, wasForced: Bool, cached: AIChatPageContextData?) -> Bool {
         if result?.hasAttachedPage == true { return true }
         return wasForced && cached?.hasAttachedPage != true
+    }
+
+    /// Whether turning auto-attach on can re-push what's cached instead of collecting afresh. Only
+    /// a cached context that actually carries the page qualifies: a metadata-only payload (the
+    /// document chip shown while auto-attach was off) would otherwise be re-pushed forever and the
+    /// document never read.
+    static func shouldReuseCachedContext(_ cached: AIChatPageContextData) -> Bool {
+        cached.hasAttachedPage
     }
 
     /// This is the main place where page context handling happens.
@@ -766,7 +774,12 @@ final class PageContextTabExtension {
                                                                       title: content.title ?? "",
                                                                       attachable: true,
                                                                       attached: false)
-            Task { @MainActor in await self.handle(metadata) }
+            // Pushed straight to the sidebar rather than through `handle`, which would cache it:
+            // a metadata-only payload in `cachedPageContext` is what the auto-attach toggle would
+            // then re-push instead of reading the document. Mirrors `handleSignalsOnly`.
+            Task { @MainActor [weak self] in
+                self?.aiChatSessionStore.sessions[tabID]?.chatViewController?.setPageContext(metadata)
+            }
             return
         }
         if let reason = preventedAttachReason(for: url) {

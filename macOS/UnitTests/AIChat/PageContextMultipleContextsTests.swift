@@ -692,6 +692,16 @@ struct PageContextCollectionResultDeliveryTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Turning auto-attach on collects afresh when the cache holds only metadata", .timeLimit(.minutes(1)))
+    func metadataOnlyCacheIsNotReused() {
+        let metadataOnly = AIChatPageContextData.document(title: "Spec", url: "https://example.com/spec.pdf", mimeType: AIChatPageContextData.pdfMIMEType, data: nil, attachable: true, attached: false)
+        #expect(PageContextTabExtension.shouldReuseCachedContext(metadataOnly) == false)
+        #expect(PageContextTabExtension.shouldReuseCachedContext(document) == true)
+        #expect(PageContextTabExtension.shouldReuseCachedContext(context(content: "body")) == true)
+        #expect(PageContextTabExtension.shouldReuseCachedContext(context(content: "")) == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A document result counts as an attached page even though its content is empty", .timeLimit(.minutes(1)))
     func documentResultIsDelivered() {
         #expect(PageContextTabExtension.shouldDeliverCollectionResult(document, wasForced: false, cached: nil))

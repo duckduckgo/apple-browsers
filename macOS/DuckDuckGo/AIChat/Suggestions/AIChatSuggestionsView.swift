@@ -144,7 +144,6 @@ final class AIChatSuggestionsView: NSView {
         addTrackingArea(trackingArea)
         viewTrackingArea = trackingArea
 
-        // A resize under a stationary pointer produces no exit, so re-check the highlight here.
         reconcileSelectionWithPointer()
     }
 

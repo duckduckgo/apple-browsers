@@ -97,7 +97,6 @@ final class AIChatUsageWarningCardView: NSView {
         view.blendingMode = .withinWindow
         view.state = .active
         view.wantsLayer = true
-        // Bottom corners only: rounding the top would notch the seam. Layers are unflipped.
         view.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         view.layer?.masksToBounds = true
         return view
@@ -385,6 +384,8 @@ final class AIChatUsageWarningActionButton: NSView {
 
     private var dividerWidthConstraint: NSLayoutConstraint?
     private var pickerRegionWidthConstraint: NSLayoutConstraint?
+    private var leadingPaddingConstraint: NSLayoutConstraint?
+    private var dividerLeadingConstraint: NSLayoutConstraint?
 
     var onAction: (() -> Void)?
     var onOpenModelPicker: (() -> Void)?
@@ -410,7 +411,6 @@ final class AIChatUsageWarningActionButton: NSView {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isBordered = false
         button.title = ""
-        // Transparent: the pill behind it is the visible control.
         button.isTransparent = true
         return button
     }
@@ -436,14 +436,20 @@ final class AIChatUsageWarningActionButton: NSView {
         dividerWidthConstraint = dividerWidth
         let pickerRegionWidth = pickerHitButton.widthAnchor.constraint(equalToConstant: Constants.chevronRegionWidth)
         pickerRegionWidthConstraint = pickerRegionWidth
+        let leadingPadding = titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor,
+                                                                constant: Constants.horizontalPadding)
+        leadingPaddingConstraint = leadingPadding
+        let dividerLeading = dividerView.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor,
+                                                                 constant: Constants.horizontalPadding)
+        dividerLeadingConstraint = dividerLeading
 
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: Constants.height),
 
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            leadingPadding,
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            dividerView.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: Constants.horizontalPadding),
+            dividerLeading,
             dividerWidth,
             dividerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.dividerVerticalInset),
             dividerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.dividerVerticalInset),
@@ -474,6 +480,8 @@ final class AIChatUsageWarningActionButton: NSView {
         titleLabel.stringValue = title
         self.offersModelPicker = offersModelPicker
         isCollapsed = false
+        leadingPaddingConstraint?.constant = Constants.horizontalPadding
+        dividerLeadingConstraint?.constant = Constants.horizontalPadding
 
         dividerView.isHidden = !offersModelPicker
         chevronImageView.isHidden = !offersModelPicker
@@ -484,10 +492,15 @@ final class AIChatUsageWarningActionButton: NSView {
         invalidateIntrinsicContentSize()
     }
 
-    /// Collapses to no width so a message with no CTA leaves no gap. Done here rather than with a
-    /// constraint, which the required compression resistance would fight.
+    /// Collapses to no width, so a message with no CTA leaves no gap at the trailing edge. The
+    /// paddings have to go too, or the label's own chain still reserves them.
     func collapse() {
         isCollapsed = true
+        titleLabel.stringValue = ""
+        leadingPaddingConstraint?.constant = 0
+        dividerLeadingConstraint?.constant = 0
+        dividerWidthConstraint?.constant = 0
+        pickerRegionWidthConstraint?.constant = 0
         invalidateIntrinsicContentSize()
     }
 

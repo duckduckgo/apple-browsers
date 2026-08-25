@@ -35,14 +35,17 @@ final class UTIFooterCardView: UIView {
         static let iconTextGap: CGFloat = 10
         static let textSpacing: CGFloat = 1
         static let actionSpacing: CGFloat = 8
-        static let primaryButtonHeight: CGFloat = 34
-        static let primaryButtonHorizontalPadding: CGFloat = 14
         static let dismissSize: CGFloat = 32
-        static let primaryButtonStrokeWidth: CGFloat = 0.5
     }
 
     var onPrimaryTap: (() -> Void)?
     var onDismissTap: (() -> Void)?
+
+    /// The toolbar's model-picker menu, reused so the card offers the same list. UIKit presents it
+    /// from the chevron, which is what anchors the menu to the control the user tapped.
+    var modelPickerMenu: UIMenu? {
+        didSet { actionButton.modelPickerMenu = modelPickerMenu }
+    }
 
     let contentView = UIView()
 
@@ -50,8 +53,10 @@ final class UTIFooterCardView: UIView {
     private let alertIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.alertRecolorable)
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
-    private let primaryButton = UIButton(type: .system)
+    private let actionButton = UTIFooterActionButton()
     private let dismissButton = UIButton(type: .system)
+
+    private var actionCollapsedWidthConstraint: NSLayoutConstraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -79,12 +84,13 @@ final class UTIFooterCardView: UIView {
         subtitleLabel.isHidden = message.subtitle?.isEmpty ?? true
 
         if let primaryAction = message.primaryAction {
-            primaryButton.isHidden = false
-            primaryButton.configuration?.title = primaryAction.title
+            actionButton.isHidden = false
+            actionButton.configure(title: primaryAction.title, showsModelPicker: primaryAction.showsModelPicker)
         } else {
-            primaryButton.isHidden = true
-            primaryButton.configuration?.title = nil
+            actionButton.isHidden = true
         }
+        // Hidden views still take part in Auto Layout, so the footprint collapses explicitly.
+        actionCollapsedWidthConstraint?.isActive = message.primaryAction == nil
 
         dismissButton.isHidden = !message.isDismissible
     }
@@ -94,10 +100,6 @@ final class UTIFooterCardView: UIView {
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             applyColors()
         }
-    }
-
-    @objc private func primaryTapped() {
-        onPrimaryTap?()
     }
 
     @objc private func dismissTapped() {
@@ -143,12 +145,9 @@ private extension UTIFooterCardView {
         textStack.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(textStack)
 
-        primaryButton.translatesAutoresizingMaskIntoConstraints = false
-                primaryButton.configuration = Self.makePrimaryButtonConfiguration()
-        primaryButton.setContentHuggingPriority(.required, for: .horizontal)
-        primaryButton.setContentCompressionResistancePriority(.required, for: .horizontal)
-        primaryButton.addTarget(self, action: #selector(primaryTapped), for: .primaryActionTriggered)
-        contentView.addSubview(primaryButton)
+        actionButton.translatesAutoresizingMaskIntoConstraints = false
+        actionButton.onPrimaryTap = { [weak self] in self?.onPrimaryTap?() }
+        contentView.addSubview(actionButton)
 
         dismissButton.translatesAutoresizingMaskIntoConstraints = false
         dismissButton.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
@@ -159,6 +158,9 @@ private extension UTIFooterCardView {
 
         let contentTop = contentView.topAnchor.constraint(equalTo: topAnchor, constant: Self.overlap + Constants.contentTopGap)
         contentTop.priority = .defaultHigh
+
+        let actionCollapsedWidth = actionButton.widthAnchor.constraint(equalToConstant: 0)
+        actionCollapsedWidthConstraint = actionCollapsedWidth
 
         NSLayoutConstraint.activate([
             contentTop,
@@ -180,12 +182,11 @@ private extension UTIFooterCardView {
             textStack.topAnchor.constraint(equalTo: contentView.topAnchor),
             textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
 
-            textStack.trailingAnchor.constraint(equalTo: primaryButton.leadingAnchor, constant: -Constants.actionSpacing),
-            primaryButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            primaryButton.heightAnchor.constraint(equalToConstant: Constants.primaryButtonHeight),
-            primaryButton.trailingAnchor.constraint(equalTo: dismissButton.leadingAnchor, constant: -Constants.actionSpacing),
-            primaryButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
-            primaryButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor),
+            textStack.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -Constants.actionSpacing),
+            actionButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            actionButton.trailingAnchor.constraint(equalTo: dismissButton.leadingAnchor, constant: -Constants.actionSpacing),
+            actionButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
+            actionButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor),
 
             dismissButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             dismissButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -198,13 +199,157 @@ private extension UTIFooterCardView {
         applyColors()
     }
 
-    static func makePrimaryButtonConfiguration() -> UIButton.Configuration {
+    func applyColors() {
+        backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
+        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+        subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
+        alertIcon.tintColor = UIColor(designSystemColor: .icons)
+        dismissButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        actionButton.applyColors()
+    }
+}
+
+// MARK: - Action button
+
+/// The card's CTA: a pill with the primary action, and optionally a divider and the chevron that
+/// opens the model picker.
+///
+/// Two hit regions because the view model exposes them separately — the title applies the suggested
+/// model, the chevron offers the whole list.
+final class UTIFooterActionButton: UIView {
+
+    private enum Constants {
+        static let height: CGFloat = 34
+        static let titleHorizontalPadding: CGFloat = 14
+        static let chevronRegionWidth: CGFloat = 28
+        static let chevronSize: CGFloat = 16
+        static let dividerWidth: CGFloat = 1
+        static let dividerVerticalInset: CGFloat = 8
+        static let strokeWidth: CGFloat = 0.5
+    }
+
+    var onPrimaryTap: (() -> Void)?
+
+    /// The chevron stays down without a menu to show: a control that opens nothing is worse than none.
+    var modelPickerMenu: UIMenu? {
+        didSet {
+            pickerButton.menu = modelPickerMenu
+            pickerButton.showsMenuAsPrimaryAction = modelPickerMenu != nil
+            applyPickerVisibility()
+        }
+    }
+
+    private let primaryButton = UIButton(type: .system)
+    private let pickerButton = UIButton(type: .system)
+    private let dividerView = UIView()
+
+    private var showsModelPicker = false
+
+    private var dividerWidthConstraint: NSLayoutConstraint?
+    private var pickerRegionWidthConstraint: NSLayoutConstraint?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func configure(title: String, showsModelPicker: Bool) {
+        primaryButton.configuration?.title = title
+        self.showsModelPicker = showsModelPicker
+        applyPickerVisibility()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.cornerRadius = bounds.height / 2
+    }
+
+    func applyColors() {
+        backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
+        layer.borderColor = UIColor(designSystemColor: .lines).cgColor
+        dividerView.backgroundColor = UIColor(designSystemColor: .lines)
+        primaryButton.configuration?.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        pickerButton.tintColor = UIColor(designSystemColor: .textPrimary)
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            applyColors()
+        }
+    }
+
+    private func setupUI() {
+        clipsToBounds = true
+        layer.cornerCurve = .continuous
+        layer.borderWidth = Constants.strokeWidth
+
+        primaryButton.translatesAutoresizingMaskIntoConstraints = false
+        primaryButton.configuration = Self.makePrimaryConfiguration()
+        // The label gives before the pill does, so a zero-width collapse can't break the layout.
+        primaryButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        primaryButton.addTarget(self, action: #selector(primaryTapped), for: .primaryActionTriggered)
+        addSubview(primaryButton)
+
+        dividerView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(dividerView)
+
+        pickerButton.translatesAutoresizingMaskIntoConstraints = false
+        pickerButton.setImage(DesignSystemImages.Glyphs.Size16.chevronDownMedium, for: .normal)
+        pickerButton.accessibilityLabel = UserText.utiDuckAIWarningsModelPickerAccessibilityLabel
+        addSubview(pickerButton)
+
+        let dividerWidth = dividerView.widthAnchor.constraint(equalToConstant: Constants.dividerWidth)
+        dividerWidthConstraint = dividerWidth
+        let pickerRegionWidth = pickerButton.widthAnchor.constraint(equalToConstant: Constants.chevronRegionWidth)
+        pickerRegionWidthConstraint = pickerRegionWidth
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: Constants.height),
+
+            primaryButton.leadingAnchor.constraint(equalTo: leadingAnchor),
+            primaryButton.topAnchor.constraint(equalTo: topAnchor),
+            primaryButton.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            dividerView.leadingAnchor.constraint(equalTo: primaryButton.trailingAnchor),
+            dividerWidth,
+            dividerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.dividerVerticalInset),
+            dividerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.dividerVerticalInset),
+
+            pickerButton.leadingAnchor.constraint(equalTo: dividerView.trailingAnchor),
+            pickerButton.trailingAnchor.constraint(equalTo: trailingAnchor),
+            pickerButton.topAnchor.constraint(equalTo: topAnchor),
+            pickerButton.bottomAnchor.constraint(equalTo: bottomAnchor),
+            pickerRegionWidth
+        ])
+
+        applyPickerVisibility()
+        applyColors()
+    }
+
+    /// The chevron needs both an offer and a menu; the trailing padding grows back without it, so a
+    /// plain pill keeps its symmetry.
+    private func applyPickerVisibility() {
+        let isVisible = showsModelPicker && modelPickerMenu != nil
+        dividerView.isHidden = !isVisible
+        pickerButton.isHidden = !isVisible
+        dividerWidthConstraint?.constant = isVisible ? Constants.dividerWidth : 0
+        pickerRegionWidthConstraint?.constant = isVisible ? Constants.chevronRegionWidth : 0
+        primaryButton.configuration?.contentInsets = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: Constants.titleHorizontalPadding,
+            bottom: 0,
+            trailing: isVisible ? Constants.titleHorizontalPadding - Constants.chevronRegionWidth / 2 : Constants.titleHorizontalPadding
+        )
+    }
+
+    private static func makePrimaryConfiguration() -> UIButton.Configuration {
         var configuration = UIButton.Configuration.plain()
-        configuration.cornerStyle = .capsule
-        configuration.contentInsets = NSDirectionalEdgeInsets(top: 0,
-                                                              leading: Constants.primaryButtonHorizontalPadding,
-                                                              bottom: 0,
-                                                              trailing: Constants.primaryButtonHorizontalPadding)
         configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
             outgoing.font = .daxFootnoteRegular()
@@ -213,15 +358,7 @@ private extension UTIFooterCardView {
         return configuration
     }
 
-    func applyColors() {
-        backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
-        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
-        alertIcon.tintColor = UIColor(designSystemColor: .icons)
-        dismissButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
-        primaryButton.configuration?.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
-        primaryButton.configuration?.background.backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
-        primaryButton.configuration?.background.strokeColor = UIColor(designSystemColor: .lines)
-        primaryButton.configuration?.background.strokeWidth = Constants.primaryButtonStrokeWidth
+    @objc private func primaryTapped() {
+        onPrimaryTap?()
     }
 }

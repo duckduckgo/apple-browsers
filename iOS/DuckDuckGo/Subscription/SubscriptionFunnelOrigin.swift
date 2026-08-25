@@ -61,6 +61,12 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1216395339071576?focus=true
     case duckAIFreeLabel = "funnel_duckai_ios__freelabel"
 
+    /// User entered the funnel via the CTA on the Duck.ai usage-limit footer card, from the address bar.
+    case addressBarUsageLimit = "funnel_addressbar_ios__usagelimit"
+
+    /// The same card, shown on the Duck.ai tab.
+    case duckAIUsageLimit = "funnel_duckai_ios__usagelimit"
+
     // MARK: - Duck.ai Funnel Origins (frontend-reported)
 
     /// Frontend-reported: the upgrade button in the Duck.ai web sidebar.

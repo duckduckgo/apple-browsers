@@ -252,7 +252,11 @@ final class UnifiedToggleInputView: UIView {
 
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
-        set { toolsToolbar.modelPickerMenu = newValue }
+        set {
+            toolsToolbar.modelPickerMenu = newValue
+            // The usage card's chevron offers the same list, popped from the chevron itself.
+            footerCard.modelPickerMenu = newValue
+        }
     }
 
     @discardableResult

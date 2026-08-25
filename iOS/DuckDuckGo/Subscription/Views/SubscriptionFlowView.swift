@@ -228,8 +228,12 @@ struct SubscriptionFlowView: View {
                 persistor: persistor,
                 isPIRAvailable: viewModel.isPIRAvailable,
                 subscriptionManager: viewModel.subscriptionManager,
-                onFinish: { onboardingFlow = nil },
+                onFinish: {
+                    onboardingFlow = nil
+                    viewModel.onboardingFinished()
+                },
                 pirScreen: { pirDestination }) else { return }
+            viewModel.didPresentOnboarding()
             onboardingFlow = OnboardingFlowPayload(flow: flow)
         }
     }

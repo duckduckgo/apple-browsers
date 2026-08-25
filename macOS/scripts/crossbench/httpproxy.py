@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Local HTTP forward proxy used to route WebKit browsers through tsproxy and WPR.
+"""Local HTTP forward proxy used to route Safari through tsproxy and WPR.
 
-HTTPS uses CONNECT and remains end-to-end between the browser and WPR; HTTP
-requests are converted from proxy absolute-form to origin-form. Upstream
-connections use tsproxy's SOCKS5 endpoint so the original hostname is retained
-for WPR while traffic is shaped.
+Safari is configured with this proxy in its own preferences domain. HTTPS uses
+CONNECT and remains end-to-end between Safari and WPR; HTTP requests are
+converted from proxy absolute-form to origin-form. Upstream connections use
+tsproxy's SOCKS5 endpoint so the original hostname is retained for WPR while
+traffic is shaped.
 """
 
 import select

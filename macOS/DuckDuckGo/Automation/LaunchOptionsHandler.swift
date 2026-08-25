@@ -144,7 +144,7 @@ struct WebViewProxy: Equatable {
 
     init?(_ value: String) {
         guard let components = URLComponents(string: value),
-              components.scheme == "http",
+              components.scheme == "socks5",
               components.user == nil,
               components.password == nil,
               components.path.isEmpty,

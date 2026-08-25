@@ -95,7 +95,7 @@ extension WKWebViewConfiguration {
             port: port
         )
         websiteDataStore.proxyConfigurations = [
-            ProxyConfiguration(httpCONNECTProxy: endpoint)
+            ProxyConfiguration(socksv5Proxy: endpoint)
         ]
     }
 }

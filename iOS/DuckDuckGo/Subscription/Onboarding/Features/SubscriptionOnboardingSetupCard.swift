@@ -72,7 +72,7 @@ struct SubscriptionOnboardingSetupCard: View {
     private var card: some View {
         SubscriptionOnboardingCard(
             CardItem(
-                icon: CardItemIcon(position: .leading, visual: visual, size: .size40, spacing: Metrics.iconSpacing),
+                icon: CardItemIcon(position: percentage < 100 ? .leading : .leadingColumn, visual: visual, size: .size40, spacing: Metrics.iconSpacing),
                 title: CardItemText(title, font: .headline),
                 text: percentage < 100 ? CardItemText(UserText.subscriptionOnboardingSetupCardBody, font: .bodyRegular) : nil,
                 titleTextSpacing: Metrics.titleTextSpacing),

@@ -550,7 +550,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                         target: self)
             aiChatItem.keyEquivalent = "n"
             aiChatItem.keyEquivalentModifierMask = [.command, .option]
-            aiChatItem.image = moreOptionsMenuIconsProvider.newAIChatIcon
+            aiChatItem.withImageOnMacOS26(moreOptionsMenuIconsProvider.newAIChatIcon)
             addItem(aiChatItem)
         }
 
@@ -1200,7 +1200,7 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
                 NSMenuItem.separator()
                 potentialItems
             }
-            favoritesItem.image = moreOptionsMenuIconsProvider.favoritesIcon
+            favoritesItem.withImageOnMacOS26(moreOptionsMenuIconsProvider.favoritesIcon)
 
             addItem(NSMenuItem.separator())
         }

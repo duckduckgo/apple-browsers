@@ -1051,10 +1051,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         sidebarItem.target = self
         if isDuckAIChatPresented {
             sidebarItem.title = UserText.aiChatMenuCloseSidebar
-            sidebarItem.image = Self.closeSidebarMenuIcon()
+            sidebarItem.withImageOnMacOS26(Self.closeSidebarMenuIcon())
         } else {
             sidebarItem.title = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
-            sidebarItem.image = Self.openSidebarMenuIcon()
+            sidebarItem.withImageOnMacOS26(Self.openSidebarMenuIcon())
         }
         // Display-only: mirror the main menu's ⌥⌘L. This transient popup doesn't register the shortcut
         // globally (the main-menu item owns handling); it just shows the glyph for discoverability.
@@ -2909,7 +2909,7 @@ extension TabBarViewController: NSMenuDelegate {
             keyEquivalent: "Y"
         )
         duckAIItem.target = self
-        duckAIItem.image = Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.aiChat)
+        duckAIItem.withImageOnMacOS26(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.aiChat))
         menu.addItem(duckAIItem)
 
         if !isMenuButtonLayout {
@@ -2931,7 +2931,7 @@ extension TabBarViewController: NSMenuDelegate {
             keyEquivalent: ""
         )
         settingsItem.target = self
-        settingsItem.image = Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.settingsAiChat)
+        settingsItem.withImageOnMacOS26(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.settingsAiChat))
         menu.addItem(settingsItem)
     }
 

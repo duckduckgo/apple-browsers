@@ -206,3 +206,109 @@ final class WideEventFailureEventNamingTests: XCTestCase {
                         "\(prefix)wide_pixel_save_failed_count"])
     }
 }
+
+// MARK: - README worked examples
+
+/// Pins the worked-examples table in `README.md` under "How a pixel name is built".
+final class PixelNameBuildingExamplesTests: XCTestCase {
+
+    private struct Event: PixelKit.Event {
+        let name: String
+        let namePrefix: PixelKitNamePrefix
+        let platformSuffixPolicy: PixelKitPlatformSuffixPolicy
+        let parameters: [String: String]? = nil
+        let standardParameters: [PixelKitStandardParameter]? = nil
+    }
+
+    private func firedNames(_ event: PixelKit.Event,
+                            _ frequency: PixelKit.Frequency,
+                            source: PixelKit.Source) -> [String] {
+        let defaults = UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)")!
+        var names: [String] = []
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                source: source.rawValue,
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                defaults: defaults) { name, _, _, _, _, _ in
+            names.append(name)
+        }
+        pixelKit.fire(event, frequency: frequency)
+        return names
+    }
+
+    func testCustomPrefixStandardPolicyDailyAndCount() {
+        let event = Event(name: "example", namePrefix: .custom("m_"), platformSuffixPolicy: .standard)
+
+        XCTAssertEqual(firedNames(event, .dailyAndCount, source: .iOS),
+                       ["m_example_daily_ios_phone", "m_example_count_ios_phone"])
+    }
+
+    func testNoPrefixStandardPolicyDaily() {
+        let event = Event(name: "m_example", namePrefix: .none, platformSuffixPolicy: .standard)
+
+        XCTAssertEqual(firedNames(event, .daily, source: .iOS), ["m_example_daily_ios_phone"])
+    }
+
+    func testNoPrefixOmittedPolicyDaily() {
+        let event = Event(name: "m_example", namePrefix: .none, platformSuffixPolicy: .legacyOmitted)
+
+        XCTAssertEqual(firedNames(event, .daily, source: .iOS), ["m_example_daily"])
+    }
+
+    /// `.platformDefault` is a compile-time branch, so only the current platform's row is checkable.
+    func testPlatformDefaultPrefix() {
+        let event = Event(name: "example", namePrefix: .platformDefault, platformSuffixPolicy: .standard)
+
+#if os(macOS)
+        XCTAssertEqual(firedNames(event, .standard, source: .macDMG), ["m_mac_example"])
+#else
+        XCTAssertEqual(firedNames(event, .standard, source: .iOS), ["example_ios_phone"])
+#endif
+    }
+
+    /// The platform-marker grid in "Step 4 — platform marker".
+    func testPlatformMarkerGrid() {
+        let expected: [PixelKitPlatformSuffixPolicy: [PixelKit.Source: String]] = [
+            .standard: [.macDMG: "m_example_count",
+                        .iOS: "m_example_count_ios_phone",
+                        .iPadOS: "m_example_count_ios_tablet"],
+            .legacyBeforeFrequencySuffix: [.macDMG: "m_example_count",
+                                           .iOS: "m_example_ios_phone_count",
+                                           .iPadOS: "m_example_ios_tablet_count"],
+            .legacyOmitted: [.macDMG: "m_example_count",
+                             .iOS: "m_example_count",
+                             .iPadOS: "m_example_count"]
+        ]
+
+        for (policy, bySource) in expected {
+            let event = Event(name: "m_example", namePrefix: .none, platformSuffixPolicy: policy)
+            for (source, countName) in bySource {
+                let names = firedNames(event, .dailyAndCount, source: source)
+
+                XCTAssertEqual(names.count, 2, "\(policy) / \(source)")
+                XCTAssertEqual(names.last, countName, "\(policy) / \(source)")
+            }
+        }
+    }
+
+    /// The frequency-suffix table in the same section.
+    func testFrequencySuffixes() {
+        let event = Event(name: "m_example", namePrefix: .none, platformSuffixPolicy: .legacyOmitted)
+        let cases: [(PixelKit.Frequency, [String])] = [
+            (.standard, ["m_example"]),
+            (.daily, ["m_example_daily"]),
+            (.monthly, ["m_example_monthly"]),
+            (.dailyAndCount, ["m_example_daily", "m_example_count"]),
+            (.dailyAndStandard, ["m_example_daily", "m_example"]),
+            (.legacyDaily, ["m_example_d"]),
+            (.legacyDailyAndCount, ["m_example_d", "m_example_c"]),
+            (.legacyDailyNoSuffix, ["m_example"]),
+            (.sample(percentage: 100), ["m_example_sample100"])
+        ]
+
+        for (frequency, expected) in cases {
+            XCTAssertEqual(firedNames(event, frequency, source: .iOS), expected, "\(frequency)")
+        }
+    }
+}

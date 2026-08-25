@@ -133,16 +133,21 @@ case .syncLocalTimestampResolutionTriggered(let feature):
 macOS uses the `PixelKit.Event` protocol, typically in feature-specific files. The protocol is declared like this:
 
 ```swift
-// SharedPackages/BrowserServicesKit/Sources/PixelKit/PixelKit+Event.swift
+// SharedPackages/PixelKit/Sources/PixelKit/PixelKit+Event.swift
 extension PixelKit {
     public protocol Event {
         var name: String { get }
         var standardParameters: [PixelKitStandardParameter]? { get }
         var parameters: [String: String]? { get }
         var error: NSError? { get }
+        var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { get }
+        var namePrefix: PixelKitNamePrefix { get }
     }
 }
 ```
+
+`error`, `platformSuffixPolicy` and `namePrefix` all have defaults, so an implementation normally
+declares only `name`, `parameters` and `standardParameters`. See `PixelKit naming` below.
 
 An example implementation of this protocol is:
 
@@ -211,7 +216,7 @@ public protocol PixelFiring {
 ### PixelKit (macOS and shared packages)
 
 ```swift
-// SharedPackages/BrowserServicesKit/Sources/PixelKit/PixelFiring.swift
+// SharedPackages/PixelKit/Sources/PixelKit/PixelFiring.swift
 public protocol PixelFiring {
     func fire(event: PixelKit.Event,
               frequency: PixelKit.Frequency,
@@ -253,7 +258,7 @@ A pixel that fails to send is dropped. `options: .withRetry` (`Options.retryOnFa
 failed send and replays it later, up to 28 days. It is off by default because a replay carries two
 extra parameters, `originalPixelTimestamp` and `retriedPixel`: the pixel must be privacy triaged for
 both, and must declare them in its JSON5 definition, before opting in. See
-`SharedPackages/BrowserServicesKit/Sources/PixelKit/RetryQueue/README.md`.
+`SharedPackages/PixelKit/Sources/PixelKit/RetryQueue/README.md`.
 
 ## Best Practices
 
@@ -306,26 +311,22 @@ Key fields:
 
 Prefer referencing shared suffix/parameter keys where possible to keep definitions consistent and validatable.
 
-### Platform and form-factor suffixes on iOS
+### PixelKit naming
 
-A pixel fired through PixelKit on iOS ends in `_ios_phone` or `_ios_tablet`, appended after any
-frequency suffix. Declare it as `"suffixes": ["first_daily_count", "platform", "form_factor"]` (or
-whichever frequency key applies) and write no code for it: `PixelKit.Event.platformSuffixPolicy`
-defaults to `.standard`, which produces exactly that.
+A pixel name is built as `namePrefix` + `name` + frequency suffix + platform marker. The prefix and
+the marker are declared on the event (`PixelKit.Event.namePrefix` and `platformSuffixPolicy`); the
+frequency suffix comes from the `Frequency` passed to `fire`. `PixelKit.Options` cannot change a
+name.
 
-The two `legacy` cases of `PixelKitPlatformSuffixPolicy` freeze pixels that shipped before the
-marker was applied consistently. Never use one on a new pixel. See
+Both event properties default to what a new pixel wants: `.platformDefault` (`m_mac_` on macOS,
+nothing on iOS) and `.standard` (`..._count_ios_phone` on iOS, nothing on macOS). Declare the pixel
+as `"suffixes": ["first_daily_count", "platform", "form_factor"]` and write no naming code.
+
+Use `.none` when `name` is already complete. Never use a `legacy` case of
+`PixelKitPlatformSuffixPolicy` on a new pixel.
+
+Full reference, including exceptions and throttling keys:
 `SharedPackages/PixelKit/Sources/PixelKit/README.md`.
-
-### Name prefixes
-
-The prefix is declared on the event too, as `PixelKitNamePrefix`, and defaults to
-`.platformDefault` (`m_mac_` on macOS, nothing on iOS). Use `.none` when the name is already
-complete, or `.custom("m_")` for a literal prefix.
-
-`PixelKit.Options` cannot change a pixel's name at all — it carries headers, parameters, retry and
-ATB. Do not look for `namePrefix` or `doNotEnforcePrefix` there; both moved onto the event. For a
-shared package whose prefix depends on the host platform, use `event.prefixed(_:)`.
 
 Pixels have some default values, please check the Pixel implementation in the respective platform to determine what those are.
 
@@ -335,4 +336,4 @@ Pixels have some default values, please check the Pixel implementation in the re
 - `iOS/Core/DailyPixel.swift` - Daily pixel implementation
 - `iOS/Core/UniquePixel.swift` - Unique pixel implementation
 - `iOS/Core/PixelEvent.swift` - iOS pixel event definitions
-- `SharedPackages/BrowserServicesKit/Sources/PixelKit/` - Shared PixelKit implementation
+- `SharedPackages/PixelKit/Sources/PixelKit/` - Shared PixelKit implementation

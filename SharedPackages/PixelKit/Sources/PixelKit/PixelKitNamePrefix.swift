@@ -20,33 +20,23 @@ import Foundation
 
 /// What PixelKit puts in front of a pixel's `name`.
 ///
-/// This lives on the event rather than on `PixelKit.Options` because a pixel's name is a contract
-/// with its definition in `PixelDefinitions` and with whatever queries it. A per-call setting would
-/// let two call sites disagree about what the same event is called, with nothing to catch it — which
-/// is how the platform-suffix drift happened. `Options` is for transport and payload only.
+/// Set on the event, via `PixelKit.Event.namePrefix`. Defaults to `.platformDefault`.
 public enum PixelKitNamePrefix: Equatable {
 
-    /// Let PixelKit apply the host platform's convention: `m_mac_` on macOS (or `m_mac_debug_` for a
-    /// `DebugEvent`), nothing on iOS, where names carry too varied a set of prefixes to correct
-    /// after the fact.
+    /// The host platform's prefix: `m_mac_` on macOS, nothing on iOS.
     ///
-    /// The default, and what a macOS pixel almost always wants.
+    /// On macOS a name already starting with `m_mac_` is left alone, and a `DebugEvent` gets
+    /// `m_mac_debug_` instead.
     case platformDefault
 
-    /// Prepend nothing: `name` is already the complete pixel name.
-    ///
-    /// Equivalent to `.custom("")`. This is what the old `doNotEnforcePrefix: true` argument meant,
-    /// moved from ~170 call sites onto the events that were passing it at every one of them.
+    /// Prepend nothing. `name` is the complete pixel name.
     case none
 
-    /// Prepend a literal string, for example `"m_"`.
-    ///
-    /// For a shared package whose prefix is chosen by the host platform rather than by the pixel,
-    /// prefer `PixelKit.Event.prefixed(_:)` over restating this on every case.
+    /// Prepend a literal, e.g. `.custom("m_")`. Applied on every platform.
     case custom(String)
 
-    /// The string this prefix prepends, or `nil` for `.platformDefault`, where the answer depends on
-    /// the platform PixelKit was built for and is decided during name resolution.
+    /// The string this prefix prepends, or `nil` for `.platformDefault`, which is resolved at fire
+    /// time from the platform PixelKit was built for.
     public var literal: String? {
         switch self {
         case .platformDefault: return nil

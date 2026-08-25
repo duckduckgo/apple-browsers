@@ -33,43 +33,29 @@ extension PixelKit {
         var parameters: [String: String]? { get }
         /// Automatically implemented by the below extension using reflection, please implement the error, if needed as enum parameter
         var error: NSError? { get }
-        /// Where the `_ios_phone` / `_ios_tablet` marker goes in this pixel's name.
-        ///
-        /// Defaults to `.standard`, which is what every new pixel wants. Only override it to freeze
-        /// a name that shipped before the marker was applied consistently.
+        /// Where the iOS platform marker goes. Defaults to `.standard`.
         var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { get }
-        /// What goes in front of `name`.
-        ///
-        /// Defaults to `.platformDefault`. Together with `platformSuffixPolicy` this is the whole of
-        /// a pixel's naming identity, and it lives here rather than on `Options` so that every call
-        /// site firing this event necessarily agrees on the name.
+        /// What precedes `name`. Defaults to `.platformDefault`.
         var namePrefix: PixelKitNamePrefix { get }
     }
 }
 
 public extension PixelKit.Event {
 
-    /// The correct convention, so a new pixel gets it without opting in. See
-    /// `PixelKitPlatformSuffixPolicy` for the legacy cases and why they exist.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .standard }
 
-    /// The host platform's convention, which is what a pixel wants unless its name is already
-    /// complete. See `PixelKitNamePrefix`.
     var namePrefix: PixelKitNamePrefix { .platformDefault }
 
-    /// This event, wearing an explicit name prefix.
+    /// Returns this event with `prefix` in front of its name, overriding `namePrefix`.
     ///
-    /// For shared packages whose prefix is picked by the host platform rather than by the pixel:
-    /// `DataBrokerProtectionSharedPixelsHandler` and `OnboardingPixelReporter` each take a
-    /// `Platform` at construction and turn it into `m_mac_` or `m_ios_`. That is a per-process fact
-    /// the event type cannot know, but it is still naming identity, so it belongs on an event value
-    /// rather than in the `Options` of every individual fire call.
+    /// For shared packages whose prefix is chosen by the host app rather than by the pixel, e.g.
+    /// `pixelKit.fire(event.prefixed(platform.pixelNamePrefix))`.
     func prefixed(_ prefix: String) -> PixelKit.Event {
         PixelKitPrefixedEvent(wrapped: self, namePrefix: .custom(prefix))
     }
 }
 
-/// An event wearing a different name prefix. See `PixelKit.Event.prefixed(_:)`.
+/// See `PixelKit.Event.prefixed(_:)`.
 struct PixelKitPrefixedEvent: PixelKit.Event {
     let wrapped: PixelKit.Event
     let namePrefix: PixelKitNamePrefix
@@ -77,8 +63,7 @@ struct PixelKitPrefixedEvent: PixelKit.Event {
     var name: String { wrapped.name }
     var parameters: [String: String]? { wrapped.parameters }
     var standardParameters: [PixelKitStandardParameter]? { wrapped.standardParameters }
-    /// Forwarded explicitly: the reflection-based default would inspect this wrapper rather than the
-    /// event it wraps.
+    /// Declared so the reflection-based default inspects the wrapped event, not this wrapper.
     var error: NSError? { wrapped.error }
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { wrapped.platformSuffixPolicy }
 }

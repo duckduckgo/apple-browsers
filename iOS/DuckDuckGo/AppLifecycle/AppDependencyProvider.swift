@@ -115,8 +115,11 @@ final class AppDependencyProvider: DependencyProvider {
     private init() {
 
         // Configuring PixelKit
-        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
-        let source = isPhone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS
+        // Only `.pad` counts as a tablet. Every other idiom, including `.unspecified`, reports as a
+        // phone, matching the legacy `Pixel` (`deviceType == .pad ? tablet : phone`) so both systems
+        // put the same `_ios_<formFactor>` marker on a pixel.
+        let isTablet = UIDevice.current.userInterfaceIdiom == .pad
+        let source = isTablet ? PixelKit.Source.iPadOS : PixelKit.Source.iOS
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: source.rawValue,

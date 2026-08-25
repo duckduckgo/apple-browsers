@@ -142,6 +142,12 @@ public final class PixelKit {
         public static let client = "X-DuckDuckGo-Client"
     }
 
+    /// The host this PixelKit instance runs in. Set at `setUp`, and on iOS it also decides the
+    /// `_ios_phone` / `_ios_tablet` marker appended to every pixel name.
+    ///
+    /// Pick `.iPadOS` only for `UIUserInterfaceIdiom.pad`; every other idiom, including
+    /// `.unspecified`, is `.iOS`. That matches the legacy `Pixel`, so the two systems agree on the
+    /// marker.
     public enum Source: String {
         case macStore = "browser-appstore"
         case macDMG = "browser-dmg"

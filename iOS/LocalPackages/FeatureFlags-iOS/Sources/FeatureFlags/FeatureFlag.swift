@@ -820,7 +820,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .showNTPAfterIdleReturn:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
         case .promoPresentationCoordination:
-            Config(defaultValue: .disabled, source: .remoteReleasable(PromoQueueSubfeature.promoPresentationCoordination))
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.promoPresentationCoordination))
         case .uiTestFeatureFlag:
             Config(source: .disabled)
         case .uiTestExperiment:

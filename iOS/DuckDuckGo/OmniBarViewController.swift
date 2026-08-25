@@ -287,12 +287,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onDismissPressed = { [weak self] in
             self?.onDismissPressed()
         }
-        barView.onAIChatLeftButtonPressed = { [weak self] in
-            self?.onAIChatLeftButtonPressed()
-        }
-        barView.onAIChatBrandingPressed = { [weak self] in
-            self?.onAIChatBrandingPressed()
-        }
         expandableBarView?.onSearchModePressed = { [weak self] in
             guard let self else { return }
             self.setSelectedTextEntryMode(.search)
@@ -398,10 +392,6 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     func endEditing() {
         textField.resignFirstResponder()
-    }
-
-    func setEditingStateLogoHidden(_ hidden: Bool) {
-        // Overridden in DefaultOmniBarViewController for the experimental editing state.
     }
 
     /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
@@ -805,9 +795,6 @@ class OmniBarViewController: UIViewController, OmniBar {
 
         if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled == false {
             applyCustomization()
-
-            let shouldShowAIChat = state.showAIChatFullModeBranding
-            barView.isFullAIChatHidden = !shouldShowAIChat
         }
     }
 
@@ -1065,14 +1052,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         Pixel.fire(pixel: .aiChatLegacyOmnibarBackButtonPressed)
         omniDelegate?.onCancelPressed()
         refreshState(state.onEditingStoppedState)
-    }
-
-    private func onAIChatLeftButtonPressed() {
-        omniDelegate?.onAIChatLeftButtonPressed()
-    }
-
-    private func onAIChatBrandingPressed() {
-        omniDelegate?.onAIChatBrandingPressed()
     }
 
     func onAIChatSendPressed() {

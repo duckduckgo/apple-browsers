@@ -288,12 +288,7 @@ private extension ModalPromptCoordinationManager {
         from presenter: ModalPromptPresenter,
         completion: @escaping (() -> Void)
     ) {
-        if let presented = presenter.presentedViewController, presented is OmniBarEditingStateViewController, !presented.isBeingDismissed {
-            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal on top of OmniBarEditingStateViewController")
-            presented.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
-        } else {
-            presenter.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
-        }
+        presenter.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
     }
 
     func releaseCoordinationAttempt() {

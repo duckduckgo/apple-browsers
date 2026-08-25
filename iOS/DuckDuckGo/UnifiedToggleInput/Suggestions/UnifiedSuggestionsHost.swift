@@ -21,6 +21,25 @@ import Combine
 import SwiftUI
 import UIKit
 
+private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView> {
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        if #available(iOS 16, *) { return }
+        guard let tableView = firstTableView(in: view), tableView.sectionHeaderTopPadding != 0 else { return }
+        tableView.sectionHeaderTopPadding = 0
+    }
+
+    private func firstTableView(in view: UIView) -> UITableView? {
+        if let tableView = view as? UITableView { return tableView }
+        for subview in view.subviews {
+            if let tableView = firstTableView(in: subview) { return tableView }
+        }
+        return nil
+    }
+}
+
 /// Hosts the SwiftUI `UnifiedSuggestionsView` for any UTI surface (Duck.ai, Search). Parameterized
 /// by `UnifiedSuggestionsHostConfig` so the host is surface-agnostic. The empty-state logo and fire
 /// screen render inside the view.
@@ -96,7 +115,7 @@ final class UnifiedSuggestionsHost {
             escapeHatch: escapeHatch,
             favoritesViewModel: config.favoritesViewModel,
             messagesModel: config.messagesModel)
-        let hosting = UIHostingController(rootView: view)
+        let hosting = UnifiedSuggestionsHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
 

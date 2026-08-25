@@ -234,14 +234,14 @@ struct DataImportViewModel {
          requestPrimaryPasswordCallback: @escaping @MainActor (Source) -> String? = Self.requestPrimaryPasswordCallback,
          openPanelCallback: @escaping @MainActor ([UTType]) -> URL? = Self.openPanelCallback,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
-         directoryAccessAvailability: DirectoryAccessAvailability? = nil,
+         directoryAccessAvailability: DataDirectoryPermissionFixAvailability? = nil,
          reportSenderFactory: @escaping ReportSenderFactory = { FeedbackSender().sendDataImportReport },
          wideEvent: WideEventManaging = Application.appDelegate.wideEvent,
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
         let directoryAccessAvailability = directoryAccessAvailability
-            ?? DirectoryAccessAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
-        let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessAvailability.isEnabled) }
+            ?? DataDirectoryPermissionFixAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
+        let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessAvailability.isAvailable) }
 
         let filteredAvailableSources = availableImportSources.filter {
             // Filter out CSV and HTML as we're using the new combined file import option

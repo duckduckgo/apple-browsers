@@ -1,5 +1,5 @@
 //
-//  DirectoryAccessAvailability.swift
+//  DataDirectoryPermissionFixAvailability.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -25,20 +25,14 @@ import PrivacyConfig
 ///
 /// macOS 27+ denies apps with `com.apple.security.*` entitlements access to other apps'
 /// `~/Library/Application Support/*` directories (TCC), so browser profiles can't be read until the user grants it.
-struct DirectoryAccessAvailability {
-
-    private static let minimumRequiredMacVersion = 27
+struct DataDirectoryPermissionFixAvailability {
 
     private let featureFlagger: FeatureFlagger
     private let debugSettings: any KeyedStoring<DataImportDebugSettings>
-    private let operatingSystemVersion: OperatingSystemVersion
 
-    init(featureFlagger: FeatureFlagger,
-         debugSettings: any KeyedStoring<DataImportDebugSettings>,
-         operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) {
+    init(featureFlagger: FeatureFlagger, debugSettings: any KeyedStoring<DataImportDebugSettings>) {
         self.featureFlagger = featureFlagger
         self.debugSettings = debugSettings
-        self.operatingSystemVersion = operatingSystemVersion
     }
 
     /// Debug override: run the flow regardless of the OS version, the Feature Flag, and the directory's actual access state.
@@ -48,12 +42,12 @@ struct DirectoryAccessAvailability {
 
     /// Returns `true` running `macOS >= 27` and the `dataImportDataDirectoryAccess` Feature Flag is enabled.
     /// Can also be overridden via `isForcingMacOS27PermissionsFix`
-    var isEnabled: Bool {
+    var isAvailable: Bool {
         if mustForcePermissionFix {
             return true
         }
 
-        if operatingSystemVersion.majorVersion < Self.minimumRequiredMacVersion {
+        guard #available(macOS 27.0, *) else {
             return false
         }
 

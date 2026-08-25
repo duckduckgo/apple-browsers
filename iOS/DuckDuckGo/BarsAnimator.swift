@@ -27,6 +27,8 @@ class BarsAnimator {
         static let legacyTransitionSpeed: CGFloat = 0.5
 
         static let floatingVelocityCommitThreshold: CGFloat = 0.15
+        static let floatingFastStepThreshold: CGFloat = 0.35
+        static let floatingFastStepAnimationDuration: CGFloat = 0.12
     }
 
     weak var delegate: BrowserChromeDelegate?
@@ -128,6 +130,13 @@ class BarsAnimator {
         }
 
         let ratio = calculateTransitionRatio(for: scrollView.contentOffset.y)
+        let ratioMatchesSettledState =
+            ((barsState == .hidden && ratio == 1) || (barsState == .revealed && ratio == 0))
+            && transitionProgress == ratio
+        guard !ratioMatchesSettledState else { return }
+
+        let shouldAnimateFastStep = (ratio == 0 || ratio == 1)
+            && abs(ratio - transitionProgress) >= Metrics.floatingFastStepThreshold
         if ratio >= 1.0 {
             barsState = .hidden
         } else if ratio <= 0.0 {
@@ -136,7 +145,10 @@ class BarsAnimator {
             barsState = .transitioning
         }
         transitionProgress = ratio
-        delegate?.setBarsVisibility(1.0 - ratio, animated: false, animationDuration: nil)
+        delegate?.setBarsVisibility(
+            1.0 - ratio,
+            animated: shouldAnimateFastStep,
+            animationDuration: shouldAnimateFastStep ? Metrics.floatingFastStepAnimationDuration : nil)
     }
 
     private func revealedAndScrolling(in scrollView: UIScrollView) {

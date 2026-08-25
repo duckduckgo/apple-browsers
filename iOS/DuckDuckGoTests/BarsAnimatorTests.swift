@@ -293,7 +293,7 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertLessThan(percent, 0.1, "1pt of overscroll must not reveal a large slice of the chrome")
     }
 
-    func testWhenScrollOffsetAdvancesFullTravelInOneUpdateThenBarsTrackItImmediately() {
+    func testWhenScrollOffsetAdvancesFullTravelInOneUpdateThenBarsAnimateQuicklyToHidden() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
 
@@ -306,6 +306,12 @@ class BarsAnimatorFloatingTests: XCTestCase {
 
         XCTAssertEqual(sut.barsState, .hidden)
         XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0))
+        XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated)
+        XCTAssertEqual(delegate.lastAnimationDuration, BarsAnimator.Metrics.floatingFastStepAnimationDuration)
+
+        let visibilityUpdateCount = delegate.receivedMessages.count
+        sut.didScroll(in: scrollView)
+        XCTAssertEqual(delegate.receivedMessages.count, visibilityUpdateCount)
     }
 
     func testWhenNewDragInterruptsSettlingThenProgressStartsFromRenderedVisibility() throws {
@@ -587,9 +593,11 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
     }
 
     var lastAnimationDuration: CGFloat?
+    var lastVisibilityUpdateWasAnimated = false
 
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
         lastAnimationDuration = animationDuration
+        lastVisibilityUpdateWasAnimated = animated
         setBarsVisibility(percent, animated: animated)
     }
 

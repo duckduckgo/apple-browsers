@@ -180,6 +180,14 @@ private final class FavoriteInteractionView: UIView, UIContextMenuInteractionDel
         return [UIDragItem(itemProvider: interactionConfiguration.itemProvider)]
     }
 
+    func dragInteraction(_ interaction: UIDragInteraction,
+                         previewForLifting item: UIDragItem,
+                         session: UIDragSession) -> UITargetedDragPreview? {
+        let parameters = UIDragPreviewParameters()
+        parameters.visiblePath = UIBezierPath(roundedRect: hostingController.view.bounds, cornerRadius: 12)
+        return UITargetedDragPreview(view: hostingController.view, parameters: parameters)
+    }
+
     func dragInteraction(_ interaction: UIDragInteraction, session: UIDragSession, didEndWith operation: UIDropOperation) {
         interactionConfiguration?.onDragEnded(ObjectIdentifier(session))
     }

@@ -2810,14 +2810,14 @@ private class ImporterMock: DataImporter {
 
 private extension DataDirectoryPermissionFixAvailability {
 
-    /// Deterministic stand-in for the real availability: an in-memory debug store and a stubbed feature flagger,  so tests never depend on `UserDefaults.standard`.
-    static func mock(isFeatureFlagOn: Bool = true, isForcingPermissionFix: Bool = false) -> DataDirectoryPermissionFixAvailability {
+    static func mock(isForcingPermissionFix: Bool = false) -> DataDirectoryPermissionFixAvailability {
         let debugSettings: any KeyedStoring<DataImportDebugSettings> = InMemoryKeyValueStore().keyedStoring()
         debugSettings.isForcingMacOS27PermissionsFix = isForcingPermissionFix
 
         return DataDirectoryPermissionFixAvailability(
-            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportDataDirectoryAccess.rawValue: isFeatureFlagOn]),
-            debugSettings: debugSettings
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportDataDirectoryAccess.rawValue: true]),
+            debugSettings: debugSettings,
+            isOSSupported: true
         )
     }
 }

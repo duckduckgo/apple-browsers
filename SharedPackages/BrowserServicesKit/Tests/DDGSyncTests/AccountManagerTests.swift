@@ -588,7 +588,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(accountInfoKeys.preloadKeyCalls.count, 1)
         XCTAssertEqual(keyLoad.protectedKeys.map(\.kid), ["account-info-key"])
         XCTAssertEqual(keyLoad.accessCredentials.map(\.id), ["3party"])
-        XCTAssertEqual(keyLoad.account.userId, "user-1")
+        XCTAssertEqual(keyLoad.account.userId, result.account.userId)
     }
 
     func testWhenUnifiedReadIsDisabledThenLoginMapsLegacyDevices() async throws {

@@ -1605,6 +1605,7 @@ class MainViewController: UIViewController {
         }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
+        refreshCustomizableButtonMenuHighlightTarget()
         // The omnibar and the domain capsule have swapped screen edges, so their scroll-edge
         // interactions have to be rebuilt against the edge they now sit on.
         updateScrollInteractionIfNeeded()
@@ -8262,19 +8263,7 @@ extension MainViewController {
                 }
             }
 
-            if isFloatingUIEnabled,
-               appSettings.currentAddressBarPosition == .top,
-               let customizableButton = customizableButton as? BrowserChromeButton {
-                customizableButton.menuHighlightTarget = { [weak self, weak customizableButton] in
-                    guard let customizableButton else { return nil }
-                    return self?.customizableButtonMenuAnchorView(over: customizableButton)
-                }
-            } else {
-                (customizableButton as? BrowserChromeButton)?.menuHighlightTarget = nil
-                customizableButtonMenuAnchor?.removeFromSuperview()
-                customizableButtonMenuAnchor = nil
-            }
-
+            refreshCustomizableButtonMenuHighlightTarget()
             customizableButton?.menu = UIMenu(children: [
                 UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
                     self?.segueToCustomizeAddressBarSettings()
@@ -8286,6 +8275,23 @@ extension MainViewController {
             (customizableButton as? BrowserChromeButton)?.menuHighlightTarget = nil
             customizableButtonMenuAnchor?.removeFromSuperview()
             customizableButtonMenuAnchor = nil
+        }
+    }
+
+    private func refreshCustomizableButtonMenuHighlightTarget() {
+        guard mobileCustomization.state.isEnabled,
+              isFloatingUIEnabled,
+              appSettings.currentAddressBarPosition == .top,
+              let customizableButton = omniBar.barView.customizableButton as? BrowserChromeButton else {
+            (omniBar.barView.customizableButton as? BrowserChromeButton)?.menuHighlightTarget = nil
+            customizableButtonMenuAnchor?.removeFromSuperview()
+            customizableButtonMenuAnchor = nil
+            return
+        }
+
+        customizableButton.menuHighlightTarget = { [weak self, weak customizableButton] in
+            guard let customizableButton else { return nil }
+            return self?.customizableButtonMenuAnchorView(over: customizableButton)
         }
     }
 

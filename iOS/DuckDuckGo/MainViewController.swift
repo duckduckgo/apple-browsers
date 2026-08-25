@@ -257,6 +257,7 @@ class MainViewController: UIViewController {
     /// Separates "bound to no tab" from "never bound", so a launch onto a tab-less NTP still refreshes.
     private var hasBoundAIChatChromeChip = false
     var duckAIMenuAnchor: UIView?
+    private var customizableButtonMenuAnchor: UIView?
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
     private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
@@ -316,7 +317,6 @@ class MainViewController: UIViewController {
         guard isFloatingUIEnabled else { return }
         let interfaceStyle = settledFloatingGlassInterfaceStyle
         viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
-        (viewCoordinator.omniBar.barView as? DefaultOmniBarView)?.refreshFloatingGlassAppearance(interfaceStyle: interfaceStyle)
     }
 
     private var settledFloatingGlassInterfaceStyle: UIUserInterfaceStyle {
@@ -7877,7 +7877,11 @@ extension MainViewController {
 
         view.backgroundColor = theme.mainViewBackgroundColor
 
-        viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
+        if floatingUIManager.isFloatingUIEnabled {
+            viewCoordinator.navigationBarContainer.backgroundColor = .clear
+        } else {
+            viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
+        }
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
         viewCoordinator.windowControlsRowBackground?.backgroundColor = theme.tabsBarBackgroundColor
 
@@ -7893,11 +7897,13 @@ extension MainViewController {
         applyFloatingUIIfNeeded()
     }
 
-    private func applyFloatingUIIfNeeded() {
+    func applyFloatingUIIfNeeded() {
         guard floatingUIManager.isFloatingUIEnabled else { return }
         viewCoordinator.setFloatingUIEnabled(floatingUIManager.isFloatingUIEnabled)
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)
+        viewCoordinator.bringFloatingTopNavigationBarToFrontIfNeeded()
+        (viewCoordinator.omniBar as? DefaultOmniBarViewController)?.reconcileShadowClip()
         reconcileAIChromeForCurrentTab()
     }
 
@@ -8412,6 +8418,7 @@ extension MainViewController {
 
     func applyCustomizationForAddressBar(_ state: MobileCustomization.State) {
         omniBar.refreshCustomizableButton()
+        let customizableButton = omniBar.barView.customizableButton
         if state.isEnabled {
             if !isNewTabPageVisible, state.currentAddressBarButton == .vpn, !didFireVPNAddressBarImpressionPixel {
                 didFireVPNAddressBarImpressionPixel = true
@@ -8420,14 +8427,51 @@ extension MainViewController {
                     PixelKit.fire(SubscriptionPixel.subscriptionVPNAddressBarImpression(isSubscriptionActive: isSubscriptionActive), frequency: .dailyAndCount)
                 }
             }
-            omniBar.barView.customizableButton.menu = UIMenu(children: [
+
+            if isFloatingUIEnabled,
+               appSettings.currentAddressBarPosition == .top,
+               let customizableButton = customizableButton as? BrowserChromeButton {
+                customizableButton.menuHighlightTarget = { [weak self, weak customizableButton] in
+                    guard let customizableButton else { return nil }
+                    return self?.customizableButtonMenuAnchorView(over: customizableButton)
+                }
+            } else {
+                (customizableButton as? BrowserChromeButton)?.menuHighlightTarget = nil
+                customizableButtonMenuAnchor?.removeFromSuperview()
+                customizableButtonMenuAnchor = nil
+            }
+
+            customizableButton?.menu = UIMenu(children: [
                 UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
                     self?.segueToCustomizeAddressBarSettings()
                 }
             ])
+            customizableButton?.showsMenuAsPrimaryAction = false
         } else {
-            omniBar.barView.customizableButton.menu = nil
+            customizableButton?.menu = nil
+            (customizableButton as? BrowserChromeButton)?.menuHighlightTarget = nil
+            customizableButtonMenuAnchor?.removeFromSuperview()
+            customizableButtonMenuAnchor = nil
         }
+    }
+
+    /// UIKit reparents a menu preview view into the platter. The customizable button lives in the
+    /// address bar's glass group, so its preview uses a stand-in outside that group.
+    private func customizableButtonMenuAnchorView(over button: UIView) -> UIView? {
+        guard let container: UIView = viewCoordinator.navigationBarContainer else { return nil }
+        let anchor = customizableButtonMenuAnchor ?? {
+            let view = UIView()
+            view.isUserInteractionEnabled = false
+            view.isAccessibilityElement = false
+            customizableButtonMenuAnchor = view
+            return view
+        }()
+        if anchor.superview !== container {
+            container.addSubview(anchor)
+        }
+        container.layoutIfNeeded()
+        anchor.frame = container.convert(button.bounds, from: button)
+        return anchor
     }
 
     @objc private func performCustomizationActionForToolbar() {

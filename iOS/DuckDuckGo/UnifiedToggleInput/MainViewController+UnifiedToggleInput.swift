@@ -254,7 +254,9 @@ extension MainViewController {
         case .standardChrome:
             statusBackgroundPresentation = .standard
             rootBackgroundColor = ThemeManager.shared.currentTheme.mainViewBackgroundColor
-            navigationBarContainerColor = ThemeManager.shared.currentTheme.barBackgroundColor
+            navigationBarContainerColor = isFloatingUIEnabled
+                ? .clear
+                : ThemeManager.shared.currentTheme.barBackgroundColor
             inputContentContainerColor = .clear
             unifiedToggleInputContainerColor = .clear
             webViewBackgroundColor = nil
@@ -1151,6 +1153,7 @@ extension MainViewController {
     private func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         applyUnifiedInputChromeBackground(.standardChrome)
+        applyFloatingUIIfNeeded()
         coordinator.contentViewController.setActive(false)
         newTabPageViewController?.setLogoHidden(false)
         newTabPageViewController?.setFavoritesHidden(false)

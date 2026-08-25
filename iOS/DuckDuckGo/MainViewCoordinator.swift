@@ -209,6 +209,7 @@ class MainViewCoordinator {
             navigationBarContainer.isHidden = false
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
+            bringFloatingTopNavigationBarToFrontIfNeeded()
             // Span content full-bleed to the main view bottom (behind the floating toolbar) so the
             // web scroll edge sits at the screen bottom and content doesn't move when the bars hide.
             setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
@@ -438,9 +439,7 @@ class MainViewCoordinator {
         navigationBarContainer.backgroundColor = .clear
 
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
-        if isFloatingUIEnabled, addressBarPosition.isBottom {
-            superview.bringSubviewToFront(navigationBarContainer)
-        }
+        bringFloatingTopNavigationBarToFrontIfNeeded()
 
         if addressBarPosition == .top {
             setAddressBarBottomActive(false)
@@ -526,7 +525,7 @@ class MainViewCoordinator {
             installOmnibarDismissContentSnapshot(contentSnapshot)
         }
         omnibarDismissInterruptCleanup = interruptCleanup
-        if isFloatingUIEnabled, addressBarPosition.isBottom {
+        if isFloatingUIEnabled {
             hideFocusedStateBackground()
         }
 
@@ -672,6 +671,7 @@ class MainViewCoordinator {
             omniBar?.barView.setIconContainersAlpha(1)
         }
         restoreContentContainerBottomAnchorAfterUnifiedToggleInput()
+        bringFloatingTopNavigationBarToFrontIfNeeded()
     }
 
     func setStandardStatusBackgroundColor(_ color: UIColor) {
@@ -687,6 +687,7 @@ class MainViewCoordinator {
     @MainActor
     func showUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = false
+        unifiedInputContentContainer.isUserInteractionEnabled = true
         superview.insertSubview(statusBackground, belowSubview: unifiedInputContentContainer)
     }
 
@@ -695,9 +696,19 @@ class MainViewCoordinator {
         unifiedInputContentContainer.isHidden = true
         unifiedInputContentContainer.alpha = 1
         unifiedInputContentContainer.transform = .identity
+        unifiedInputContentContainer.isUserInteractionEnabled = false
         hideFocusedStateBackground()
         focusedStateBackground.alpha = 1
         superview.insertSubview(statusBackground, aboveSubview: topSlideContainer)
+        bringFloatingTopNavigationBarToFrontIfNeeded()
+    }
+
+    /// Keeps the top floating omnibar above full-screen UTI layers so menu and customize long-press
+    /// gestures stay tappable after focus/dismiss cycles.
+    func bringFloatingTopNavigationBarToFrontIfNeeded() {
+        guard isFloatingUIEnabled, addressBarPosition == .top else { return }
+        superview.bringSubviewToFront(navigationBarContainer)
+        applyAITabCollapsedTopSeparatorVisibility()
     }
 
     // MARK: - AI Tab Chrome

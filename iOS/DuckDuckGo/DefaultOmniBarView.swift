@@ -882,16 +882,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         makeOpaque()
     }
 
-    func refreshFloatingGlassAppearance(interfaceStyle: UIUserInterfaceStyle) {
-        guard shouldUseFloatingTopGlass else { return }
-        UIView.performWithoutAnimation {
-            glassEffect.removeFromSuperview()
-            glassEffectFireMode = nil
-            makeGlass()
-            glassEffect.overrideUserInterfaceStyle = interfaceStyle
-        }
-    }
-
     func setFloatingMinimalChromeBar(_ enabled: Bool) {
         guard isFloatingUIEnabled, isFloatingMinimalChromeBar != enabled else { return }
         isFloatingMinimalChromeBar = enabled
@@ -1180,7 +1170,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
 
-        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        if !isFloatingUIEnabled {
+            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        }
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
         searchAreaContainerView.layer.cornerCurve = .continuous
 
@@ -1455,13 +1447,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         guard omniBarLongPressInteraction == nil else { return }
 
         let interaction = UIContextMenuInteraction(delegate: self)
-        searchContainer.addInteraction(interaction)
+        // Attach to the URL field, not the whole search container, so customize-button context
+        // menus on trailing chrome controls are not swallowed by this interaction.
+        searchAreaView.textField.addInteraction(interaction)
         omniBarLongPressInteraction = interaction
     }
 
     private func removeOmniBarLongPressInteraction() {
         guard let omniBarLongPressInteraction else { return }
-        searchContainer.removeInteraction(omniBarLongPressInteraction)
+        searchAreaView.textField.removeInteraction(omniBarLongPressInteraction)
         self.omniBarLongPressInteraction = nil
     }
 
@@ -1733,7 +1727,8 @@ private extension DefaultOmniBarView {
 extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
-        guard let menu = longPressMenuProvider?() else { return nil }
+        guard interaction === omniBarLongPressInteraction,
+              let menu = longPressMenuProvider?() else { return nil }
 
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
             menu

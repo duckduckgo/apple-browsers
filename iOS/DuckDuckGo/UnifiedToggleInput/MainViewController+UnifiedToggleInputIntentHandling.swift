@@ -338,6 +338,7 @@ private extension MainViewController {
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
             coordinator?.clearText()
             self?.applyUnifiedInputChromeBackground(.standardChrome)
+            self?.applyFloatingUIIfNeeded()
             if fadesForFloatingBottom {
                 // Hide UTI before revealing NTP chrome so logo/favorites don't flash under the
                 // still-visible focused content (especially seamless logo/favorites handoff).

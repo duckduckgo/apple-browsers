@@ -68,7 +68,6 @@ final class AIChatHistoryViewModel: ObservableObject {
     private let instrumentation: AIChatHistoryInstrumentation
     private let source: AIChatHistorySource
     private let featureFlagger: FeatureFlagger
-    /// When true, deletes target isolated fire-mode storage rather than persistent chats.
     private let isFireMode: Bool
     private var cancellables: Set<AnyCancellable> = []
 
@@ -225,7 +224,6 @@ final class AIChatHistoryViewModel: ObservableObject {
         Task { @MainActor in
             let result = await fireExecutor.burnChat(chatID: chatId, isFireMode: isFireMode)
             guard case .success = result else { return }
-            // Fire-mode chats are local-only and must not enter the sync pipeline.
             guard !isFireMode else { return }
             // Flush the deletion to sync now so the FE doesn't re-pull the chat.
             fireExecutor.scheduleSync()

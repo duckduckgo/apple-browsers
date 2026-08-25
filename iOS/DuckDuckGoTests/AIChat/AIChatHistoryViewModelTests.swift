@@ -242,7 +242,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0)
     }
 
-    func testDeleteChat_inFireMode_burnsIsolatedFireModeStorage() {
+    func testDeleteChat_inFireMode_passesIsFireModeTrueAndDoesNotScheduleSync() {
         let fireExecutor = MockChatHistoryFireExecutor()
         let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: fireExecutor, isFireMode: true)
 
@@ -251,12 +251,12 @@ final class AIChatHistoryViewModelTests: XCTestCase {
 
         XCTAssertEqual(fireExecutor.burnedChatIds, ["p1"])
         XCTAssertEqual(fireExecutor.burnedIsFireMode, [true],
-                       "fire-mode chat history must delete from isolated fire-mode storage")
+                       "fire-mode sheet must pass isFireMode true so the executor can target isolated storage")
         XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0,
                        "fire-mode deletes must not enter the sync pipeline")
     }
 
-    func testBurnAllChats_inFireMode_burnsIsolatedFireModeStorage() {
+    func testBurnAllChats_inFireMode_passesIsFireModeTrueAndDoesNotScheduleSync() {
         let fireExecutor = MockChatHistoryFireExecutor()
         let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: fireExecutor, isFireMode: true)
 
@@ -265,12 +265,12 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         wait(for: [done], timeout: 1)
 
         XCTAssertEqual(fireExecutor.burnedAllChatsIsFireMode, [true],
-                       "fire-mode chat history must clear isolated fire-mode storage")
+                       "fire-mode sheet must pass isFireMode true so the executor can target isolated storage")
         XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0,
                        "fire-mode deletes must not enter the sync pipeline")
     }
 
-    func testBurnSelectedChats_inFireMode_burnsIsolatedFireModeStorage() {
+    func testBurnSelectedChats_inFireMode_passesIsFireModeTrueAndDoesNotScheduleSync() {
         let fireExecutor = MockChatHistoryFireExecutor()
         let sut = makeSUT(chats: [chat(id: "p1", pinned: true), chat(id: "r1", pinned: false)],
                           fireExecutor: fireExecutor,
@@ -282,7 +282,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
 
         XCTAssertEqual(fireExecutor.burnedChatsBatches, [["p1"]])
         XCTAssertEqual(fireExecutor.burnedIsFireMode, [true],
-                       "fire-mode chat history must delete selected chats from isolated fire-mode storage")
+                       "fire-mode sheet must pass isFireMode true so the executor can target isolated storage")
         XCTAssertEqual(fireExecutor.scheduleSyncCallCount, 0,
                        "fire-mode deletes must not enter the sync pipeline")
     }

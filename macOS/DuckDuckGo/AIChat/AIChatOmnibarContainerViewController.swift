@@ -48,6 +48,76 @@ private final class HitTestableContainerView: NSView {
     }
 }
 
+/// Strokes the bottom edge and its two corner arcs, and nothing else.
+///
+/// A plain border traces the whole outline, which on a host-drawn surface shows an edge along the
+/// top and sides where the design wants none. The bottom edge on its own is what tells the user the
+/// panel sits over the usage-limit card, so it gets drawn as a path rather than a border.
+private final class BottomEdgeStrokeView: NSView {
+
+    var cornerRadius: CGFloat = 0 {
+        didSet { needsLayout = true }
+    }
+
+    var strokeColor: NSColor? {
+        didSet { updateStrokeColor() }
+    }
+
+    private let shape: CAShapeLayer = {
+        let shape = CAShapeLayer()
+        shape.fillColor = nil
+        shape.lineWidth = 1
+        return shape
+    }()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        // The 1pt stroke straddles the path, so half of it falls outside these bounds.
+        layer?.masksToBounds = false
+        layer?.addSublayer(shape)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    /// Decoration laid over the panel's controls, so it must never answer a hit test.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    override func layout() {
+        super.layout()
+
+        shape.frame = bounds
+        let radius = min(cornerRadius, min(bounds.width, bounds.height) / 2)
+        let path = CGMutablePath()
+        // AppKit layers are unflipped, so y == 0 is the bottom edge.
+        path.move(to: CGPoint(x: 0, y: radius))
+        path.addArc(tangent1End: CGPoint(x: 0, y: 0),
+                    tangent2End: CGPoint(x: radius, y: 0),
+                    radius: radius)
+        path.addLine(to: CGPoint(x: bounds.maxX - radius, y: 0))
+        path.addArc(tangent1End: CGPoint(x: bounds.maxX, y: 0),
+                    tangent2End: CGPoint(x: bounds.maxX, y: radius),
+                    radius: radius)
+        shape.path = path
+    }
+
+    private func updateStrokeColor() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            shape.strokeColor = strokeColor?.cgColor
+        }
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateStrokeColor()
+    }
+}
+
 final class AIChatOmnibarContainerViewController: NSViewController {
 
     private enum Constants {
@@ -123,6 +193,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Suggestions view - always in hierarchy, height is 0 when no suggestions
     private let suggestionsView = AIChatSuggestionsView()
+
+    /// Marks the panel's bottom edge where the card emerges from under it. Only needed where the
+    /// host paints the surface, since elsewhere the panel's own border already draws that edge.
+    private let panelBottomEdgeStrokeView = BottomEdgeStrokeView()
 
     /// The Duck.ai usage-limit card. Sits *behind* the panel chrome and runs lower than it, so the
     /// panel is drawn over its top edge and only a band shows — the card reads as sliding out from
@@ -714,10 +788,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.surface.drawsOwnChrome
     }
 
-    /// The panel outlines itself whenever something sits under it, even where the host paints the
-    /// surface: the stroke and the shadow are the whole reason the card reads as being below. The
-    /// fill stays the host's, so there is still only one blurred surface in the window.
-    private var drawsOwnOutline: Bool {
+    /// The panel casts its own shadow whenever something sits under it, even where the host paints
+    /// the surface: that cast edge is the whole reason the card reads as being below. The fill and
+    /// the stroke stay the host's, so there is still one surface and one outline in the window.
+    private var castsShadowOverCard: Bool {
         !hostDrawsChrome || isUsageWarningVisible
     }
 
@@ -758,6 +832,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         shadowView.shadowOpacity = 1
         shadowView.shadowOffset = CGSize(width: 0, height: 0)
         shadowView.shadowRadius = themeManager.theme.addressBarStyleProvider.suggestionShadowRadius
+        // `ShadowView` rounds a corner only when both of its sides are listed, so dropping the sides
+        // here would square off the bottom corners the panel is drawn with.
         shadowView.shadowSides = [.left, .right, .bottom]
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -1082,6 +1158,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             topConstraint
         ])
 
+        // Over the chrome, so the edge reads on top of the controls row rather than under it.
+        panelBottomEdgeStrokeView.translatesAutoresizingMaskIntoConstraints = false
+        panelBottomEdgeStrokeView.isHidden = true
+        view.addSubview(panelBottomEdgeStrokeView, positioned: .above, relativeTo: backgroundView)
+        NSLayoutConstraint.activate([
+            panelBottomEdgeStrokeView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
+            panelBottomEdgeStrokeView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
+            panelBottomEdgeStrokeView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
+            panelBottomEdgeStrokeView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor)
+        ])
+
         usageWarningCardView.onAction = { [weak self] in
             self?.omnibarController.usageWarningViewModel?.performAction()
         }
@@ -1140,12 +1227,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         isUsageWarningVisible = visible
         usageWarningCardView.isHidden = !visible
-        usageWarningShadowView.isHidden = !visible
+        usageWarningShadowView.isHidden = !visible || hostDrawsChrome
+        panelBottomEdgeStrokeView.isHidden = !visible || !hostDrawsChrome
         // Lifting the chrome is what exposes the band; the card's own frame follows from it.
         backgroundViewBottomConstraint?.constant = visible
             ? -AIChatUsageWarningCardView.Constants.contentHeight
             : 0
-        // `drawsOwnOutline` just flipped, so the stroke needs repainting and — on a host-drawn
+        // `castsShadowOverCard` just flipped, so the chrome needs repainting and — on a host-drawn
         // surface, where it was never mounted — the shadow needs adding.
         applyTheme(theme: themeManager.theme)
         addShadowToWindow()
@@ -1251,12 +1339,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func addShadowToWindow() {
-        guard drawsOwnOutline else { return }
-        guard shadowView.superview == nil else { return }
-        view.window?.contentView?.addSubview(shadowView)
-        // Below the panel's shadow, so the panel's cast edge stays on top of the card.
-        view.window?.contentView?.addSubview(usageWarningShadowView, positioned: .below, relativeTo: shadowView)
-        usageWarningShadowView.isHidden = !isUsageWarningVisible
+        guard castsShadowOverCard else { return }
+
+        if shadowView.superview == nil {
+            view.window?.contentView?.addSubview(shadowView)
+        }
+        // Mounted separately: gating this on the panel's shadow meant that once that one was up —
+        // which happens on focus, long before any card — this one never got added at all.
+        if usageWarningShadowView.superview == nil {
+            // Below the panel's shadow, so the panel's cast edge stays on top of the card.
+            view.window?.contentView?.addSubview(usageWarningShadowView, positioned: .below, relativeTo: shadowView)
+        }
+        usageWarningShadowView.isHidden = !isUsageWarningVisible || hostDrawsChrome
         layoutShadowView()
     }
 
@@ -2292,7 +2386,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
         }
 
-        if let borderColor = NSColor(named: "AddressBarBorderColor"), drawsOwnOutline {
+        if let borderColor = NSColor(named: "AddressBarBorderColor"), !hostDrawsChrome {
             backgroundView.borderColor = borderColor
         } else {
             backgroundView.borderColor = .clear
@@ -2334,7 +2428,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
 
-        innerBorderView.borderColor = drawsOwnOutline ? NSColor(named: "AddressBarInnerBorderColor") : .clear
+        // Only where the panel also paints its own fill. The two borders sit 1pt apart with slightly
+        // different radii and read as one crisp edge over an opaque surface — over a translucent one
+        // they separate into two visible outlines, so a host-drawn surface gets the outer stroke only.
+        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(named: "AddressBarInnerBorderColor")
         innerBorderView.backgroundColor = NSColor.clear
         innerBorderView.cornerRadius = Self.innerBorderCornerRadius(
             for: barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
@@ -2353,6 +2450,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.applyThemeStyle()
         usageWarningCardView.applyPanelCornerRadius(panelRadius)
         usageWarningTopConstraint?.constant = -usageWarningOverlap
+        panelBottomEdgeStrokeView.cornerRadius = panelRadius
+        panelBottomEdgeStrokeView.strokeColor = NSColor(named: "AddressBarBorderColor")
+        // Re-asserted here because `applyTheme` re-runs on appearance changes: the card is the
+        // bottom-most layer, and where the host paints the surface it owns the outer silhouette, so
+        // a shadow around the card would only fall inside the bar.
+        usageWarningShadowView.isHidden = !isUsageWarningVisible || hostDrawsChrome
+        panelBottomEdgeStrokeView.isHidden = !isUsageWarningVisible || !hostDrawsChrome
         usageWarningShadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         usageWarningShadowView.cornerRadius = panelRadius
 

@@ -39,8 +39,6 @@ struct SuggestionsListView: View {
     var animationModel: UnifiedSuggestionsAnimationModel
     var isFloatingPopover: Bool = false
 
-    @State private var keepsSearchContentMounted = false
-
     private enum Metrics {
         /// Per Figma: the list table sits 6pt below the top-positioned input's bottom margin.
         static let listTopInset: CGFloat = 6
@@ -76,9 +74,8 @@ struct SuggestionsListView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                // Keep the persistent chrome/Search subtree and the first suggestion group in one
-                // section. A hidden zero-height RMF row therefore cannot leave section spacing ahead
-                // of typed suggestions or Duck.ai recents.
+                // Keep scrollable chrome and the first suggestion group in one section so resting
+                // content flows directly into suggestions or Duck.ai recents.
                 Section {
                     if let escapeHatch {
                         EscapeHatchView(model: escapeHatch)
@@ -93,7 +90,7 @@ struct SuggestionsListView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                     }
-                    if hasSearchContent && (keepsSearchContentMounted || isSearchContentVisible) {
+                    if isSearchContentVisible {
                         VStack(spacing: Metrics.searchSectionSpacing) {
                             if hasMessages, let messagesModel {
                                 FocusedNewTabPageMessagesView(messagesModel: messagesModel)
@@ -104,13 +101,8 @@ struct SuggestionsListView: View {
                                     .padding(.horizontal, Metrics.favoritesHorizontalInset)
                             }
                         }
-                        .padding(.top, isSearchContentVisible ? searchContentTopInset : 0)
-                        .padding(.bottom, isSearchContentVisible ? searchContentBottomInset : 0)
-                        .frame(height: isSearchContentVisible ? nil : 0)
-                        .clipped()
-                        .opacity(isSearchContentVisible ? 1 : 0)
-                        .allowsHitTesting(isSearchContentVisible)
-                        .accessibilityHidden(!isSearchContentVisible)
+                        .padding(.top, searchContentTopInset)
+                        .padding(.bottom, searchContentBottomInset)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -172,12 +164,6 @@ struct SuggestionsListView: View {
                 guard let id else { return }
                 withAnimation { proxy.scrollTo(id) }
             }
-            .onAppear {
-                if isSearchContentVisible { keepsSearchContentMounted = true }
-            }
-            .onChange(of: isSearchContentVisible) { isVisible in
-                if isVisible { keepsSearchContentMounted = true }
-            }
         }
     }
 
@@ -196,7 +182,7 @@ struct SuggestionsListView: View {
 
     private var hasRowsBeforeFirstSuggestion: Bool {
         escapeHatch != nil
-            || (hasSearchContent && (keepsSearchContentMounted || isSearchContentVisible))
+            || isSearchContentVisible
             || (showsRestingContent && syncPromo != nil)
     }
 

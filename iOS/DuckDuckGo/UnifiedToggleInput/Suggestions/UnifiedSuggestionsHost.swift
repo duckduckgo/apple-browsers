@@ -27,8 +27,12 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
         super.viewDidLayoutSubviews()
 
         if #available(iOS 16, *) { return }
-        guard let tableView = firstTableView(in: view), tableView.sectionHeaderTopPadding != 0 else { return }
-        tableView.sectionHeaderTopPadding = 0
+        guard let tableView = firstTableView(in: view) else { return }
+        // Match AutocompleteView's legacy insetGrouped top compensation.
+        var contentInset = tableView.contentInset
+        guard contentInset.top != -28 else { return }
+        contentInset.top = -28
+        tableView.contentInset = contentInset
     }
 
     private func firstTableView(in view: UIView) -> UITableView? {

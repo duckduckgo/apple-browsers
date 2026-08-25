@@ -907,6 +907,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     
     func durationSinceLastStage() -> Double { 0.0 }
     func durationSinceStartTime() -> Double { 0.0 }
+    func awakeDurationSinceStartTime() -> Double { 0.0 }
     func fireOptOutStart() {}
     func setEmailPattern(_ emailPattern: String?) {}
     func fireScanStarted() {}

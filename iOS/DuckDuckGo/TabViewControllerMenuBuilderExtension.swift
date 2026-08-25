@@ -55,12 +55,7 @@ extension TabViewController {
 
         if shouldShowAIChatInMenu {
             
-            var chatEntry: BrowsingMenuEntry
-            if aiChatFullModeFeature.isAvailable {
-                chatEntry = buildNewAIChatEntry()
-            } else {
-                chatEntry = buildChatEntry(withSmallIcon: false)
-            }
+            let chatEntry = devicePlatform.isIphone ? buildNewAIChatEntry() : buildChatEntry(withSmallIcon: false)
 
             entries.append(newTabEntry)
             entries.append(chatEntry)
@@ -292,12 +287,7 @@ extension TabViewController {
             }))
 
             if shouldShowAIChatInMenu {
-                var chatEntry: BrowsingMenuEntry
-                if aiChatFullModeFeature.isAvailable {
-                    chatEntry = buildNewAIChatEntry(withSmallIcon: true)
-                } else {
-                    chatEntry = buildChatEntry(withSmallIcon: true)
-                }
+                let chatEntry = devicePlatform.isIphone ? buildNewAIChatEntry(withSmallIcon: true) : buildChatEntry(withSmallIcon: true)
                 entries.append(chatEntry)
             }
 
@@ -1066,7 +1056,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             return buildDuckAIHeaderTile()
         }
 
-        if aiChatFullModeFeature.isAvailable {
+        if devicePlatform.isIphone {
             return buildNewAIChatEntry(withSmallIcon: false)
         } else {
             return buildChatEntry(withSmallIcon: false)

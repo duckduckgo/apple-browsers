@@ -7,9 +7,9 @@ name: test_contextual_web_uti_auto_attach_regression
 
 ---
 
-# Same first-submit web UTI setup as the manual-attach regression, but with automatic
-# context attachment enabled. After navigating and reopening the active contextual
-# chat, the UTI chip should attach the new page automatically.
+# Same first-submit setup as the manual-attach regression, but with automatic context attachment on.
+# The first prompt promotes the floating input to the sheet; after navigating and reopening the active
+# contextual chat, the UTI chip should attach the new page automatically with no prompt to do so.
 
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
@@ -19,7 +19,6 @@ name: test_contextual_web_uti_auto_attach_regression
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.unifiedToggleInput: "true"
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "false"
         ff.aiChatAutoAttachContextByDefault: "true"
@@ -33,21 +32,26 @@ name: test_contextual_web_uti_auto_attach_regression
 - pressKey: Enter
 - assertVisible: ".*Privacy Test Pages.*"
 
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-- assertVisible:
+- runFlow:
+    file: ../shared/open_contextual_duckai_from_address_bar.yaml
+
+- assertNotVisible:
     id: "AIChat.ContextualSheet"
 - assertVisible:
-    id: "AIChatNativeInputView.submitButton"
+    id: "AIChat.Toolbar.Button.Submit"
 
 - tapOn:
-    id: "AIChatNativeInputView.textView"
+    id: "searchEntry"
 - inputText: "First contextual prompt"
 - tapOn:
-    id: "AIChatNativeInputView.submitButton"
+    id: "AIChat.Toolbar.Button.Submit"
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextualSheet"
+    timeout: 15000
 - extendedWaitUntil:
     visible: "We don't track you.*"
     timeout: 30000
@@ -63,10 +67,19 @@ name: test_contextual_web_uti_auto_attach_regression
 - pressKey: Enter
 - assertVisible: ".*Address Bar Spoofing.*"
 
+# A chat exists, so the button reopens the sheet directly rather than offering the menu.
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"
 - assertVisible:
     id: "AIChat.ContextualSheet"
+
+# The attached chip is the positive signal that auto-attach picked up the new page. Expanded first:
+# collapsed, neither the chip nor the attach affordance is on screen and both checks below would
+# pass without auto-attach having done anything.
+- runFlow:
+    file: ../shared/expand_contextual_uti.yaml
 - extendedWaitUntil:
-    notVisible: "Attach Page Content"
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
     timeout: 10000
+- assertNotVisible: "Attach Page Content"

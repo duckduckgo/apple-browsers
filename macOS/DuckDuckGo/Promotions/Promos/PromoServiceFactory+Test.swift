@@ -27,7 +27,7 @@ extension PromoServiceFactory {
         guard includeTestPromos else { return [] }
 
         var testPromoA = InternalPromo(id: "test-promo-a", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .newTabPage)
-        var testPromoB = InternalPromo(id: "test-promo-b", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .webPage)
+        var testPromoB = InternalPromo(id: "test-promo-b", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .newTabPage)
         var testPromoC = InternalPromo(id: "test-promo-c", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal), context: .global)
         var testPromoD = InternalPromo(id: "test-promo-d", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal, customTimeoutInterval: .seconds(3), customTimeoutResult: .ignored()), context: .global)
 

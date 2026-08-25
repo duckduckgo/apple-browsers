@@ -93,8 +93,8 @@ public extension NSMenu {
     /// and macOS 27 dropped icons for system-provided menu actions again, so adding placeholder
     /// images there would incorrectly reserve an icon column. No-op on other OS versions.
     @MainActor
-    func alignItemTextWithIcons() {
-        guard NSMenuItem.isRunningOnMacOS26 else { return }
+    func alignItemTextWithIcons(shouldShowIcons: Bool = NSMenuItem.shouldShowIcons) {
+        guard shouldShowIcons else { return }
         var section: [NSMenuItem] = []
         for item in items {
             if item.isSeparatorItem {

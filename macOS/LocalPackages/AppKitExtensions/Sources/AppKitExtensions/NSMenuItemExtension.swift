@@ -18,13 +18,8 @@
 
 import AppKit
 
-extension NSMenuItem {
-    /// Whether the app is running on macOS 26, the only major OS version where AppKit shows icons
-    /// for system-provided menu actions.
-    static let isRunningOnMacOS26 = ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26
-}
-
 public extension NSMenuItem {
+    static let shouldShowIcons = ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26
 
     private final class NSMenuItemTarget: NSObject {
         let action: (NSMenuItem) -> Void
@@ -130,8 +125,8 @@ public extension NSMenuItem {
     /// Guidelines. Use this instead of ``withImage(_:)`` for icons that were added to match the
     /// macOS 26 menu design, so that menus follow the system look on other OS versions.
     @discardableResult
-    func withImageOnMacOS26(_ image: NSImage?) -> NSMenuItem {
-        if Self.isRunningOnMacOS26 {
+    func withImageOnMacOS26(_ image: NSImage?, shouldShowIcons: Bool = NSMenuItem.shouldShowIcons) -> NSMenuItem {
+        if shouldShowIcons {
             self.image = image
         }
         return self

@@ -27,14 +27,6 @@ protocol AIChatFullModeFeatureProviding {
     var isAvailable: Bool { get }
 }
 
-/// Provides device platform detection.
-protocol DevicePlatformProviding {
-    /// Whether the current device is an iPhone.
-    static var isIphone: Bool { get }
-}
-
-extension DevicePlatform: DevicePlatformProviding {}
-
 /// Determines availability of Duck AI's full chat mode feature.
 struct AIChatFullModeFeature: AIChatFullModeFeatureProviding {
 

@@ -36,6 +36,12 @@ enum SubscriptionSettingsViewConfiguration {
     case trial
 }
 
+/// Atomic sheet payload to avoid SwiftUI staleness when both flag and content come from one tap.
+private struct OnboardingFlowPayload: Identifiable {
+    let id = UUID()
+    let flow: SubscriptionOnboardingFlowViewModel
+}
+
 struct SubscriptionSettingsViewV2: View {
 
     @State var configuration: SubscriptionSettingsViewConfiguration
@@ -65,7 +71,7 @@ struct SubscriptionSettingsViewV2: View {
 
     // MARK: - Onboarding state
 
-    @State private var onboardingFlow: SubscriptionOnboardingFlowViewModel?
+    @State private var onboardingFlow: OnboardingFlowPayload?
     /// Guards against a double-tap starting a second entitlement fetch before the first resolves.
     @State private var isStartingOnboarding = false
     /// Refetched each time `onboardingSetupSection` appears
@@ -482,8 +488,8 @@ struct SubscriptionSettingsViewV2: View {
         .padding(.top, -20)
         .navigationTitle(UserText.settingsPProManageSubscription)
         .applyInsetGroupedListStyle()
-        .sheet(item: $onboardingFlow) { flow in
-            SubscriptionOnboardingLauncher.launch(flow: flow)
+        .sheet(item: $onboardingFlow) { payload in
+            SubscriptionOnboardingLauncher.launch(flow: payload.flow)
         }
         .onChange(of: viewModel.state.shouldDismissView) { value in
             if value {
@@ -700,7 +706,7 @@ extension SubscriptionSettingsViewV2 {
                 subscriptionManager: settingsViewModel.subscriptionManager,
                 onFinish: { onboardingFlow = nil },
                 pirScreen: { pirDestination }) else { return }
-            onboardingFlow = flow
+            onboardingFlow = OnboardingFlowPayload(flow: flow)
         }
     }
 

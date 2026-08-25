@@ -154,6 +154,12 @@ final class SubscriptionFlowViewModel: ObservableObject {
         didRequestOnboarding = true
     }
 
+    /// Called once the onboarding flow finishes, so this screen dismisses with it.
+    @MainActor
+    func onboardingFinished() {
+        state.shouldGoBackToSettings = true
+    }
+
     /// Returns the subscription URL type based on the current flow type
     private var currentSubscriptionURL: SubscriptionURL {
         switch flowType {
@@ -512,18 +518,5 @@ final class SubscriptionFlowViewModel: ObservableObject {
     func clearTransactionError() {
         state.transactionError = nil
     }
-
-}
-
-// MARK: - Post-checkout onboarding
-
-extension SubscriptionFlowViewModel {
-
-    /// Pops this screen once onboarding has been handed off to the Settings root.
-    @MainActor
-    func goBackToSettingsForOnboarding() {
-        DispatchQueue.main.async {
-            self.state.shouldGoBackToSettings = true
-        }
-    }
+    
 }

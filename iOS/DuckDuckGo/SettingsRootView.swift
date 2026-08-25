@@ -34,7 +34,6 @@ struct SettingsRootView: View {
     @State var deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection?
     @State var isShowingSubscribeFlow = false
     @State private var currentRedirectURLComponents: URLComponents?
-    @State private var onboardingFlow: SubscriptionOnboardingFlowViewModel?
 
     private var settingSubscriptionRedirectURLComponents: URLComponents? {
         SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue)
@@ -146,15 +145,6 @@ struct SettingsRootView: View {
             // Clear params for next navigation
             subscriptionNavigationCoordinator.redirectURLComponents = nil
             isShowingSubscribeFlow = shouldPush
-        }
-
-        // MARK: Post-checkout onboarding
-
-        .onReceive(subscriptionNavigationCoordinator.$onboardingFlow) { onboardingFlow = $0 }
-        .sheet(item: $onboardingFlow, onDismiss: {
-            subscriptionNavigationCoordinator.onboardingFlow = nil
-        }) { flow in
-            SubscriptionOnboardingLauncher.launch(flow: flow)
         }
     }
 

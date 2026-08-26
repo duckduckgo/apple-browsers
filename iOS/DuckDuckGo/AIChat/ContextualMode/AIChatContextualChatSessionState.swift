@@ -800,7 +800,7 @@ private extension AIChatContextualChatSessionState {
     }
 
     /// Strips page content / document bytes, keeping metadata + page-type signals so the FE can
-    /// show suggestions (and an unattached PDF chip) without attaching content.
+    /// show suggestions without attaching content.
     func signalsOnlyPayload(from context: AIChatPageContextData) -> AIChatPageContextData {
         AIChatPageContextData(
             title: context.title,

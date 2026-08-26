@@ -1156,33 +1156,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await sut.presentSheet(from: mockPresentingVC)
 
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
-        XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .tabContent)
         XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loading)
-    }
-
-    @MainActor
-    func testPresentFloatingInputCollectsSignalsOnlyWhenAutoAttachOff() async {
-        originatingTabURLSubject.send(URL(string: "https://example.com/spec.pdf")!)
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
-        mockSettings.isAutomaticContextAttachmentEnabled = false
-        mockUnifiedToggleInputFeature.isAvailable = true
-
-        await sut.presentFloatingInput(from: mockPresentingVC)
-
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
-        XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .tabContent)
-    }
-
-    @MainActor
-    func testPresentFloatingInputAutoCollectsWhenAutoAttachOn() async {
-        originatingTabURLSubject.send(URL(string: "https://example.com/spec.pdf")!)
-        mockSettings.isAutomaticContextAttachmentEnabled = true
-        mockUnifiedToggleInputFeature.isAvailable = true
-
-        await sut.presentFloatingInput(from: mockPresentingVC)
-
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
-        XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .auto)
     }
 
     // MARK: - Fresh Context URL Filter Tests

@@ -601,17 +601,21 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let extractionPixels = MockPageContextExtractionPixelFiring()
         let pdfURL = URL(string: "https://example.com/spec.pdf")!
         var didReadDocument = false
+        let document = AIChatPageContextData.document(
+            title: "Spec",
+            url: pdfURL.absoluteString,
+            mimeType: AIChatPageContextData.pdfMIMEType,
+            data: "JVBERi0="
+        )
         let handler = makeHandler(
+            webViewProvider: { WKWebView() },
             userScriptProvider: { mockScript },
             attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
             currentURLProvider: { pdfURL },
             mimeTypeProvider: { _ in "application/pdf" },
             extractionPixelHandler: extractionPixels,
             isDocumentContextEnabled: { true },
-            makeDocumentContext: { _, _, _ in
-                didReadDocument = true
-                return .unavailable
-            }
+            makeDocumentContext: { _, _, _ in .document(document) }
         )
 
         let expectation = XCTestExpectation(description: "Metadata published")
@@ -670,46 +674,6 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertTrue(received?.contextData.hasAttachedPage ?? false)
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .success)
         XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
-    }
-
-    func testWhenDocumentTabAndUserRequestHasNoWebViewThenPublishesNil() {
-        let mockScript = MockPageContextCollecting()
-        let extractionPixels = MockPageContextExtractionPixelFiring()
-        let pdfURL = URL(string: "https://example.com/spec.pdf")!
-        var didReadDocument = false
-        let handler = makeHandler(
-            userScriptProvider: { mockScript },
-            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
-            currentURLProvider: { pdfURL },
-            mimeTypeProvider: { _ in "application/pdf" },
-            extractionPixelHandler: extractionPixels,
-            isDocumentContextEnabled: { true },
-            makeDocumentContext: { _, _, _ in
-                didReadDocument = true
-                return .unavailable
-            }
-        )
-
-        let expectation = XCTestExpectation(description: "Nil published")
-        var received: AIChatPageContext??
-        handler.contextPublisher
-            .dropFirst()
-            .first()
-            .sink { context in
-                received = context
-                expectation.fulfill()
-            }
-            .store(in: &cancellables)
-
-        let didTrigger = handler.triggerContextCollection(trigger: .userRequest)
-        wait(for: [expectation], timeout: 1.0)
-
-        XCTAssertTrue(didTrigger)
-        XCTAssertEqual(mockScript.collectCallCount, 0)
-        XCTAssertFalse(didReadDocument)
-        XCTAssertNotNil(received)
-        XCTAssertNil(received!)
-        XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.noWebView))
     }
 
     func testWhenDocumentTabAndUserRequestIsTooLargeThenPublishesNil() async {

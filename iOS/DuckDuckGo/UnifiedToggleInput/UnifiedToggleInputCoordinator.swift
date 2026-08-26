@@ -1014,8 +1014,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    func deactivateToOmnibar(resetView: Bool = true, animateDismiss: Bool = true) {
-        guard isOmnibarSession else { return }
+    func deactivateToOmnibar(resetView: Bool = true,
+                             animateDismiss: Bool = true,
+                             reattachingOmnibar: Bool = true) {
+        guard completeOmnibarDeactivation(resetView: resetView) else { return }
+        intentSubject.send(.hideOmnibarEditing(animated: animateDismiss, reattachingOmnibar: reattachingOmnibar))
+    }
+
+    @discardableResult
+    func completeOmnibarDeactivation(resetView: Bool = true) -> Bool {
+        guard isOmnibarSession else { return false }
         inputMode = committedInputMode
         keyboardMonitor.disarm()
         displayState = .hidden
@@ -1036,7 +1044,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             applyToolbarPresentation()
             viewController.deactivateInput()
         }
-        intentSubject.send(.hideOmnibarEditing(animated: animateDismiss))
+        return true
     }
 
     func updateToggleEnabled(_ enabled: Bool) {

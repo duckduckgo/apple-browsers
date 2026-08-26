@@ -409,10 +409,16 @@ extension MainViewFactory {
         superview.addSubview(coordinator.suggestionTrayContainer)
     }
 
-    final class UnifiedInputContentContainer: UIView { }
+    final class UnifiedInputContentContainer: UIView {
+        override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            guard !isHidden, isUserInteractionEnabled, alpha > 0.01 else { return nil }
+            return super.hitTest(point, with: event)
+        }
+    }
     private func createUnifiedInputContentContainer() {
         coordinator.unifiedInputContentContainer = UnifiedInputContentContainer()
         coordinator.unifiedInputContentContainer.isHidden = true
+        coordinator.unifiedInputContentContainer.isUserInteractionEnabled = false
         coordinator.unifiedInputContentContainer.backgroundColor = .clear
         superview.addSubview(coordinator.unifiedInputContentContainer)
     }
@@ -421,6 +427,7 @@ extension MainViewFactory {
     private func createFocusedStateBackground() {
         coordinator.focusedStateBackground = FocusedStateBackgroundView()
         coordinator.focusedStateBackground.isHidden = true
+        coordinator.focusedStateBackground.isUserInteractionEnabled = false
         coordinator.focusedStateBackground.backgroundColor = UIColor(designSystemColor: .panel)
         superview.addSubview(coordinator.focusedStateBackground)
     }

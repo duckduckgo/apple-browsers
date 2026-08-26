@@ -281,6 +281,8 @@ extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDele
     }
 
     func sectionDidRequestDuckAIChat(modelID: String?) -> Bool {
-        onRequestDuckAIChat(modelID)
+        guard onRequestDuckAIChat(modelID) else { return false }
+        finish()
+        return true
     }
 }

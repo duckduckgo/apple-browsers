@@ -1813,7 +1813,7 @@ final class NavigationBarViewController: NSViewController {
             if isAIChatButtonInOverflowMenu {
                 let aiChatItem = NSMenuItem(title: ShortcutTooltip.newAIChatTab.value, action: #selector(overflowMenuRequestedAIChat), keyEquivalent: "")
                     .targetting(self)
-                    .withImageOnMacOS26(.aiChat)
+                    .withImage(.aiChat, visibleOnMacOS27: true)
                 overflowButton.menu?.addItem(aiChatItem)
             }
             overflowButton.isHidden = false
@@ -1849,31 +1849,31 @@ final class NavigationBarViewController: NSViewController {
         case .autofill:
             return NSMenuItem(title: UserText.autofill, action: #selector(overflowMenuRequestedLoginsPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImageOnMacOS26(theme.iconsProvider.navigationToolbarIconsProvider.passwordManagerButtonImage)
+                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.passwordManagerButtonImage, visibleOnMacOS27: true)
         case .bookmarks:
             return NSMenuItem(title: UserText.bookmarks, action: #selector(overflowMenuRequestedBookmarkPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImageOnMacOS26(theme.iconsProvider.navigationToolbarIconsProvider.bookmarksButtonImage)
+                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.bookmarksButtonImage, visibleOnMacOS27: true)
         case .downloads:
             return NSMenuItem(title: UserText.downloads, action: #selector(overflowMenuRequestedDownloadsPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImageOnMacOS26(theme.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage)
+                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage, visibleOnMacOS27: true)
         case .feedback:
             return NSMenuItem(title: UserText.feedbackShortcutTooltip, action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
                 .targetting(self)
-                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size16.feedback)
+                .withImage(DesignSystemImages.Glyphs.Size16.feedback, visibleOnMacOS27: true)
         case .share:
             return NSMenuItem(title: UserText.shareMenuItem, action: #selector(overflowMenuRequestedSharePopover), keyEquivalent: "")
                 .targetting(self)
-                .withImageOnMacOS26(theme.iconsProvider.navigationToolbarIconsProvider.shareButtonImage)
+                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.shareButtonImage, visibleOnMacOS27: true)
         case .homeButton:
             return NSMenuItem(title: UserText.homeButtonTooltip, action: #selector(overflowMenuRequestedHomeButton), keyEquivalent: "")
                 .targetting(self)
-                .withImageOnMacOS26(theme.iconsProvider.navigationToolbarIconsProvider.homeButtonImage)
+                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.homeButtonImage, visibleOnMacOS27: true)
         case .networkProtection:
             return NSMenuItem(title: UserText.networkProtection, action: #selector(overflowMenuRequestedNetworkProtectionPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImageOnMacOS26(networkProtectionButton.image)
+                .withImage(networkProtectionButton.image, visibleOnMacOS27: true)
         }
     }
 
@@ -1964,7 +1964,7 @@ extension NavigationBarViewController: NSMenuDelegate {
     public func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let bookmarksMenu = BookmarksBarMenuFactory.makeMenuItem(NSApp.delegateTyped.appearancePreferences)
+        let bookmarksMenu = BookmarksBarMenuFactory.makeMenuItem(NSApp.delegateTyped.appearancePreferences, visibleOnMacOS27: true)
         bookmarksMenu.isEnabled = allowsUserInteraction
         menu.addItem(bookmarksMenu)
 
@@ -1973,30 +1973,30 @@ extension NavigationBarViewController: NSMenuDelegate {
         HomeButtonMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences, pinningManager: pinningManager)
         let shareTitle = pinningManager.shortcutTitle(for: .share)
         menu.addItem(withTitle: shareTitle, action: #selector(toggleSharePanelPinning), keyEquivalent: "")
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.shareApple)
+            .withImage(DesignSystemImages.Glyphs.Size12.shareApple, visibleOnMacOS27: true)
 
         let downloadsTitle = pinningManager.shortcutTitle(for: .downloads)
         menu.addItem(withTitle: downloadsTitle, action: #selector(toggleDownloadsPanelPinning), keyEquivalent: "J")
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.download)
+            .withImage(DesignSystemImages.Glyphs.Size12.download, visibleOnMacOS27: true)
 
         let autofillTitle = pinningManager.shortcutTitle(for: .autofill)
         menu.addItem(withTitle: autofillTitle, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "A")
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.keyLogin)
+            .withImage(DesignSystemImages.Glyphs.Size12.keyLogin, visibleOnMacOS27: true)
 
         let bookmarksTitle = pinningManager.shortcutTitle(for: .bookmarks)
         menu.addItem(withTitle: bookmarksTitle, action: #selector(toggleBookmarksPanelPinning), keyEquivalent: "K")
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.bookmarks)
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks, visibleOnMacOS27: true)
 
         if !isInPopUpWindow && DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager).isVPNVisible() {
             let networkProtectionTitle = pinningManager.shortcutTitle(for: .networkProtection)
             menu.addItem(withTitle: networkProtectionTitle, action: #selector(toggleNetworkProtectionPanelPinning), keyEquivalent: "")
-                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.vpnUnlock)
+                .withImage(DesignSystemImages.Glyphs.Size12.vpnUnlock, visibleOnMacOS27: true)
         }
 
         if !isInPopUpWindow && NSApp.delegateTyped.internalUserDecider.isInternalUser {
             let feedbackTitle = pinningManager.shortcutTitle(for: .feedback)
             menu.addItem(withTitle: feedbackTitle, action: #selector(toggleFeedbackPanelPinning), keyEquivalent: "")
-                .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.feedback)
+                .withImage(DesignSystemImages.Glyphs.Size12.feedback, visibleOnMacOS27: true)
         }
     }
 

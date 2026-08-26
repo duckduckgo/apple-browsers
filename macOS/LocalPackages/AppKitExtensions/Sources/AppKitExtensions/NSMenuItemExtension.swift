@@ -19,8 +19,6 @@
 import AppKit
 
 public extension NSMenuItem {
-    static let shouldShowIcons = ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26
-
     private final class NSMenuItemTarget: NSObject {
         let action: (NSMenuItem) -> Void
         init(action: @escaping (NSMenuItem) -> Void) {
@@ -112,13 +110,17 @@ public extension NSMenuItem {
         return self
     }
 
-    /// Sets the image only when running on macOS 26 – the only major OS version whose design shows
-    /// icons for menu actions (introduced with macOS 26, removed again in macOS 27 per the HIG).
+    /// Sets the image and explicitly controls whether AppKit displays it on macOS 27 and later.
+    ///
+    /// Images remain assigned when hidden so menu items can be copied or reused without losing their assets.
     @discardableResult
-    func withImageOnMacOS26(_ image: NSImage?, shouldShowIcons: Bool = NSMenuItem.shouldShowIcons) -> NSMenuItem {
-        if shouldShowIcons {
-            self.image = image
+    func withImage(_ image: NSImage?, visibleOnMacOS27: Bool = false) -> NSMenuItem {
+        self.image = image
+#if compiler(>=6.4)
+        if #available(macOS 27.0, *) {
+            preferredImageVisibility = visibleOnMacOS27 ? .visible : .hidden
         }
+#endif
         return self
     }
 

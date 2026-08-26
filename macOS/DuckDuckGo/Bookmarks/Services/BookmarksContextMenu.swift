@@ -277,28 +277,28 @@ extension BookmarksContextMenu {
 
     static func openBookmarkInNewTabMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.openInNewTab, action: #selector(BookmarkMenuItemSelectors.openBookmarkInNewTab(_:)), target: target, representedObject: bookmark)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.tabNew)
+            .withImage(DesignSystemImages.Glyphs.Size12.tabNew, visibleOnMacOS27: true)
     }
 
     static func openBookmarkInNewWindowMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.openInNewWindow, action: #selector(BookmarkMenuItemSelectors.openBookmarkInNewWindow(_:)), target: target, representedObject: bookmark)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.windowNew)
+            .withImage(DesignSystemImages.Glyphs.Size12.windowNew, visibleOnMacOS27: true)
     }
 
     static func openBookmarkInNewFireWindowMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.openInNewFireWindow, action: #selector(BookmarkMenuItemSelectors.openBookmarkInNewFireWindow(_:)), target: target, representedObject: bookmark)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.fireWindow)
+            .withImage(DesignSystemImages.Glyphs.Size12.fireWindow, visibleOnMacOS27: true)
     }
 
     static func manageBookmarksMenuItem(target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.bookmarksManageBookmarks, action: #selector(BookmarkMenuItemSelectors.manageBookmarks(_:)), target: target)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.bookmarks)
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks, visibleOnMacOS27: true)
     }
 
     static func addBookmarkToFavoritesMenuItem(isFavorite: Bool, bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
         let title = isFavorite ? UserText.removeFromFavorites : UserText.addToFavorites
         return NSMenuItem(title: title, action: #selector(BookmarkMenuItemSelectors.toggleBookmarkAsFavorite(_:)), target: target, representedObject: bookmark)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.favorite)
+            .withImage(DesignSystemImages.Glyphs.Size12.favorite, visibleOnMacOS27: true)
             .withAccessibilityIdentifier(isFavorite == false ? "ContextualMenu.addBookmarkToFavoritesMenuItem" :
                 "ContextualMenu.removeBookmarkFromFavoritesMenuItem")
     }
@@ -307,39 +307,39 @@ extension BookmarksContextMenu {
         let title = allFavorites ? UserText.removeFromFavorites : UserText.addToFavorites
         let accessibilityValue = allFavorites ? "Favorited" : "Unfavorited"
         return NSMenuItem(title: title, action: #selector(BookmarkMenuItemSelectors.toggleBookmarkAsFavorite(_:)), target: target, representedObject: bookmarks)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.favorite)
+            .withImage(DesignSystemImages.Glyphs.Size12.favorite, visibleOnMacOS27: true)
             .withAccessibilityIdentifier("ContextualMenu.addBookmarksToFavoritesMenuItem").withAccessibilityValue(accessibilityValue)
     }
 
     static func editBookmarkMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.editBookmark, action: #selector(BookmarkMenuItemSelectors.editBookmark(_:)), target: target, representedObject: bookmark)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.edit)
+            .withImage(DesignSystemImages.Glyphs.Size12.edit, visibleOnMacOS27: true)
     }
 
     static func copyBookmarkMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.copyLink, action: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), target: target, representedObject: bookmark)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.copy)
+            .withImage(DesignSystemImages.Glyphs.Size12.copy, visibleOnMacOS27: true)
     }
 
     static func deleteBookmarkMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.bookmarksBarContextMenuDelete, action: #selector(BookmarkMenuItemSelectors.deleteBookmark(_:)), target: target, representedObject: bookmark)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.trash)
+            .withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: true)
             .withAccessibilityIdentifier("ContextualMenu.deleteBookmark")
     }
 
     static func moveToEndMenuItem(entity: BaseBookmarkEntity?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.bookmarksBarContextMenuMoveToEnd, action: #selector(BookmarkMenuItemSelectors.moveToEnd(_:)), target: target, representedObject: entity)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.arrowDown)
+            .withImage(DesignSystemImages.Glyphs.Size12.arrowDown, visibleOnMacOS27: true)
     }
 
     static func reorderByNameMenuItem(folder: BookmarkFolder?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.bookmarksBarContextMenuReorderByName, action: #selector(FolderMenuItemSelectors.reorderByName(_:)), target: target, representedObject: folder)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.arrowUpDown)
+            .withImage(DesignSystemImages.Glyphs.Size12.arrowUpDown, visibleOnMacOS27: true)
     }
 
     static func reorderByNameMenuItem(root: BookmarksRootMenuItem, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.bookmarksBarContextMenuReorderByName, action: #selector(FolderMenuItemSelectors.reorderByName(_:)), target: target, representedObject: root)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.arrowUpDown)
+            .withImage(DesignSystemImages.Glyphs.Size12.arrowUpDown, visibleOnMacOS27: true)
     }
 
     static func showInFolderMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
@@ -350,35 +350,35 @@ extension BookmarksContextMenu {
 
     static func openInNewTabsMenuItem(folder: BookmarkFolder?, target: AnyObject?, enabled: Bool) -> NSMenuItem {
         let item = NSMenuItem(title: UserText.openAllInNewTabs, action: #selector(FolderMenuItemSelectors.openInNewTabs(_:)), target: target, representedObject: folder)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.tabNew)
+            .withImage(DesignSystemImages.Glyphs.Size12.tabNew, visibleOnMacOS27: true)
         item.isEnabled = enabled
         return item
     }
 
     static func openAllInNewWindowMenuItem(folder: BookmarkFolder?, target: AnyObject?, enabled: Bool) -> NSMenuItem {
         let item = NSMenuItem(title: UserText.openAllTabsInNewWindow, action: #selector(FolderMenuItemSelectors.openAllInNewWindow(_:)), target: target, representedObject: folder)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.windowNew)
+            .withImage(DesignSystemImages.Glyphs.Size12.windowNew, visibleOnMacOS27: true)
         item.isEnabled = enabled
         return item
     }
 
     static func openInNewTabsMenuItem(root: BookmarksRootMenuItem, target: AnyObject?, enabled: Bool) -> NSMenuItem {
         let item = NSMenuItem(title: UserText.openAllInNewTabs, action: #selector(FolderMenuItemSelectors.openInNewTabs(_:)), target: target, representedObject: root)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.tabNew)
+            .withImage(DesignSystemImages.Glyphs.Size12.tabNew, visibleOnMacOS27: true)
         item.isEnabled = enabled
         return item
     }
 
     static func openAllInNewWindowMenuItem(root: BookmarksRootMenuItem, target: AnyObject?, enabled: Bool) -> NSMenuItem {
         let item = NSMenuItem(title: UserText.openAllTabsInNewWindow, action: #selector(FolderMenuItemSelectors.openAllInNewWindow(_:)), target: target, representedObject: root)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.windowNew)
+            .withImage(DesignSystemImages.Glyphs.Size12.windowNew, visibleOnMacOS27: true)
         item.isEnabled = enabled
         return item
     }
 
     static func addNewFolderMenuItem(entity: BaseBookmarkEntity?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.addFolder, action: #selector(FolderMenuItemSelectors.newFolder(_:)), target: target, representedObject: entity)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.folderAdd)
+            .withImage(DesignSystemImages.Glyphs.Size12.folderAdd, visibleOnMacOS27: true)
     }
 
     static func showInFolderMenuItem(folder: BookmarkFolder?, target: AnyObject?) -> NSMenuItem {
@@ -387,19 +387,19 @@ extension BookmarksContextMenu {
 
     static func editFolderMenuItem(folder: BookmarkFolder?, target: AnyObject?) -> NSMenuItem {
         return NSMenuItem(title: UserText.editBookmark, action: #selector(FolderMenuItemSelectors.editFolder(_:)), target: target, representedObject: folder)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.edit)
+            .withImage(DesignSystemImages.Glyphs.Size12.edit, visibleOnMacOS27: true)
     }
 
     static func deleteFolderMenuItem(folder: BookmarkFolder?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.bookmarksBarContextMenuDelete, action: #selector(FolderMenuItemSelectors.deleteFolder(_:)), target: target, representedObject: folder)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.trash)
+            .withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: true)
     }
 
     // MARK: - Multi-Item Menu Creation
 
     static func openBookmarksInNewTabsMenuItem(bookmarks: [Bookmark], target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.bookmarksOpenInNewTabs, action: #selector(FolderMenuItemSelectors.openInNewTabs(_:)), target: target, representedObject: bookmarks)
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.tabNew)
+            .withImage(DesignSystemImages.Glyphs.Size12.tabNew, visibleOnMacOS27: true)
     }
 
     static func menuItems(for entities: [BaseBookmarkEntity], target: AnyObject?) -> [NSMenuItem] {
@@ -423,7 +423,7 @@ extension BookmarksContextMenu {
         }
 
         let deleteItem = NSMenuItem(title: UserText.bookmarksBarContextMenuDelete, action: #selector(BookmarkMenuItemSelectors.deleteEntities(_:)), target: target, keyEquivalent: "")
-            .withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.trash)
+            .withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: true)
         deleteItem.representedObject = entities
         menuItems.append(deleteItem)
 

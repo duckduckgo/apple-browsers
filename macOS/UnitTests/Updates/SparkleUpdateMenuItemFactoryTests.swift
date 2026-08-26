@@ -77,14 +77,10 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
 
     // MARK: - Image Test
 
-    func testMenuItemImage_IsUpdateMenuItemIconOnMacOS26Only() {
+    func testMenuItemImage_IsUpdateMenuItemIcon() {
         let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockController)
 
-        if ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26 {
-            XCTAssertEqual(menuItem.image?.pngData(), DesignSystemImages.Glyphs.Size12.updateRecolorable.pngData())
-        } else {
-            XCTAssertNil(menuItem.image)
-        }
+        XCTAssertEqual(menuItem.image?.pngData(), DesignSystemImages.Glyphs.Size12.updateRecolorable.pngData())
     }
 }
 

@@ -48,7 +48,7 @@ final class AIChatMenu: NSMenu {
     private lazy var openDuckAIItem: NSMenuItem = {
         let item = NSMenuItem(title: UserText.aiChatMenuOpenDuckAI, action: #selector(openDuckAITapped), keyEquivalent: "")
         item.target = self
-        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.duckAi)
+        item.withImage(DesignSystemImages.Glyphs.Size12.duckAi, visibleOnMacOS27: origin == .moreOptionsMenu)
         return item
     }()
 
@@ -59,7 +59,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.compose)
+        item.withImage(DesignSystemImages.Glyphs.Size12.compose, visibleOnMacOS27: origin == .moreOptionsMenu)
         return item
     }()
 
@@ -71,7 +71,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.voice)
+        item.withImage(DesignSystemImages.Glyphs.Size12.voice, visibleOnMacOS27: origin == .moreOptionsMenu)
         return item
     }()
 
@@ -82,7 +82,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.images)
+        item.withImage(DesignSystemImages.Glyphs.Size12.images, visibleOnMacOS27: origin == .moreOptionsMenu)
         return item
     }()
 
@@ -94,7 +94,7 @@ final class AIChatMenu: NSMenu {
         if origin == .mainMenu {
             item.keyEquivalentModifierMask = [.command, .option]
         }
-        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.aiChat)
+        item.withImage(DesignSystemImages.Glyphs.Size12.aiChat)
         return item
     }()
 
@@ -107,7 +107,7 @@ final class AIChatMenu: NSMenu {
     private lazy var deleteAllChatsItem: NSMenuItem = {
         let item = NSMenuItem(title: UserText.aiChatMenuDeleteAllChats, action: #selector(deleteAllChatsTapped), keyEquivalent: "")
         item.target = self
-        item.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.fire)
+        item.withImage(DesignSystemImages.Glyphs.Size12.fire, visibleOnMacOS27: origin == .moreOptionsMenu)
         return item
     }()
 
@@ -216,7 +216,10 @@ final class AIChatMenu: NSMenu {
             let item = NSMenuItem(title: chat.title, action: #selector(chatItemTapped(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = chat
-            item.withImageOnMacOS26(chat.isPinned ? DesignSystemImages.Color.Size12.chatPinned : DesignSystemImages.Color.Size12.chat)
+            item.withImage(
+                chat.isPinned ? DesignSystemImages.Color.Size12.chatPinned : DesignSystemImages.Color.Size12.chat,
+                visibleOnMacOS27: true
+            )
             insertItem(item, at: labelIndex + 1 + offset)
             chatItems.append(item)
         }
@@ -225,7 +228,7 @@ final class AIChatMenu: NSMenu {
             let separator = NSMenuItem.separator()
             let viewAllItem = NSMenuItem(title: UserText.aiChatMenuViewAllChats, action: #selector(viewAllChatsTapped), keyEquivalent: "")
             viewAllItem.target = self
-            viewAllItem.withImageOnMacOS26(DesignSystemImages.Glyphs.Size12.aiChatHistory)
+            viewAllItem.withImage(DesignSystemImages.Glyphs.Size12.aiChatHistory, visibleOnMacOS27: true)
             let insertIndex = labelIndex + 1 + chats.count
             insertItem(separator, at: insertIndex)
             insertItem(viewAllItem, at: insertIndex + 1)
@@ -268,12 +271,12 @@ final class AIChatMenu: NSMenu {
         if isChatPresented() {
             // A chat is already open → close it (sidebar or floating) with the sidebar-close icon.
             askAboutPageItem.title = UserText.aiChatMenuCloseSidebar
-            askAboutPageItem.withImageOnMacOS26(TabBarViewController.closeSidebarMenuIcon())
+            askAboutPageItem.withImage(TabBarViewController.closeSidebarMenuIcon())
         } else {
             // "Ask About Page" (attachable) or "Open Sidebar" (nothing to attach), both with the
             // split button's sidebar-open icon.
             askAboutPageItem.title = isCurrentPageAttachable() ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
-            askAboutPageItem.withImageOnMacOS26(TabBarViewController.openSidebarMenuIcon())
+            askAboutPageItem.withImage(TabBarViewController.openSidebarMenuIcon())
         }
         // Hold ⌥⌘L only while shown: a hidden item can still register its key equivalent in AppKit and
         // would then shadow the segmented layout's "Show Duck.ai Sidebar" ⌥⌘L, silently no-opping it.

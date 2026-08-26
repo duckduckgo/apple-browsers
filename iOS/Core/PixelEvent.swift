@@ -145,10 +145,6 @@ extension Pixel {
         case settingsDoNotSellOn
         case settingsDoNotSellOff
         
-        case settingsAutoconsentShown
-        case settingsAutoconsentOn
-        case settingsAutoconsentOff
-
         case autoconsentSettingsShown
         case autoconsentSettingsOn
         case autoconsentSettingsOff
@@ -2167,10 +2163,6 @@ extension Pixel.Event {
         case .settingsDoNotSellOn: return "ms_dns_on"
         case .settingsDoNotSellOff: return "ms_dns_off"
             
-        case .settingsAutoconsentShown: return "m_settings_autoconsent_shown"
-        case .settingsAutoconsentOn: return "m_settings_autoconsent_on"
-        case .settingsAutoconsentOff: return "m_settings_autoconsent_off"
-
         case .autoconsentSettingsShown: return "autoconsent_settings_shown"
         case .autoconsentSettingsOn: return "autoconsent_settings_on"
         case .autoconsentSettingsOff: return "autoconsent_settings_off"

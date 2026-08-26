@@ -36,6 +36,8 @@ final class UTIFooterCardView: UIView {
         static let textSpacing: CGFloat = 1
         static let actionSpacing: CGFloat = 8
         static let dismissSize: CGFloat = 32
+        /// What the dismiss button and its gap take off the trailing edge when the card carries one.
+        static let dismissTrailingFootprint: CGFloat = dismissSize + actionSpacing
     }
 
     var onPrimaryTap: (() -> Void)?
@@ -57,6 +59,7 @@ final class UTIFooterCardView: UIView {
     private let dismissButton = UIButton(type: .system)
 
     private var actionCollapsedWidthConstraint: NSLayoutConstraint?
+    private var actionTrailingConstraint: NSLayoutConstraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -93,6 +96,9 @@ final class UTIFooterCardView: UIView {
         actionCollapsedWidthConstraint?.isActive = message.primaryAction == nil
 
         dismissButton.isHidden = !message.isDismissible
+        // Otherwise the CTA stops short of the trailing edge by the width of a close button that
+        // isn't there.
+        actionTrailingConstraint?.constant = message.isDismissible ? -Constants.dismissTrailingFootprint : 0
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -162,6 +168,12 @@ private extension UTIFooterCardView {
         let actionCollapsedWidth = actionButton.widthAnchor.constraint(equalToConstant: 0)
         actionCollapsedWidthConstraint = actionCollapsedWidth
 
+        // Pinned to the content rather than to the dismiss button, so a hidden dismiss button leaves
+        // no gap behind it.
+        let actionTrailing = actionButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor,
+                                                                   constant: -Constants.dismissTrailingFootprint)
+        actionTrailingConstraint = actionTrailing
+
         NSLayoutConstraint.activate([
             contentTop,
             contentView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.contentLeading),
@@ -184,7 +196,7 @@ private extension UTIFooterCardView {
 
             textStack.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -Constants.actionSpacing),
             actionButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            actionButton.trailingAnchor.constraint(equalTo: dismissButton.leadingAnchor, constant: -Constants.actionSpacing),
+            actionTrailing,
             actionButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
             actionButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor),
 

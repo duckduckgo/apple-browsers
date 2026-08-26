@@ -84,7 +84,59 @@ final class UTIFooterCardViewTests: XCTestCase {
         XCTAssertEqual(actionButtons.first?.bounds.width, 0)
     }
 
+    /// A card with nothing to dismiss must not reserve the close button's room: the CTA takes over
+    /// the trailing edge the close button would have owned.
+    func test_cardWidth_alignsTheActionButtonToTheTrailingEdgeWhenNotDismissible() {
+        let sut = UTIFooterCardView()
+
+        let dismissEdge = trailingEdge(in: sut) { dismissButton(in: sut) }
+        let actionEdge = trailingEdge(in: sut, isDismissible: false) { actionButton(in: sut) }
+
+        XCTAssertEqual(actionEdge, dismissEdge, accuracy: 0.5)
+    }
+
+    func test_cardWidth_keepsTheActionButtonClearOfTheDismissButton() {
+        let sut = UTIFooterCardView()
+        sut.frame = CGRect(x: 0, y: 0, width: phoneWidth, height: 200)
+
+        sut.configure(with: makeMessage(isDismissible: true), animateIcon: false)
+        sut.setNeedsLayout()
+        sut.layoutIfNeeded()
+
+        guard let action = actionButton(in: sut), let dismiss = dismissButton(in: sut) else {
+            return XCTFail("Expected both controls to be part of the card")
+        }
+        XCTAssertLessThanOrEqual(sut.convert(action.bounds, from: action).maxX,
+                                 sut.convert(dismiss.bounds, from: dismiss).minX)
+    }
+
     // MARK: - Helpers
+
+    /// Lays the card out at phone width for `isDismissible` and reports the trailing edge of the
+    /// resolved subview, in the card's own coordinates.
+    private func trailingEdge(in card: UTIFooterCardView,
+                              isDismissible: Bool = true,
+                              of subview: () -> UIView?) -> CGFloat {
+        card.frame = CGRect(x: 0, y: 0, width: phoneWidth, height: 200)
+        card.configure(with: makeMessage(isDismissible: isDismissible), animateIcon: false)
+        card.setNeedsLayout()
+        card.layoutIfNeeded()
+
+        guard let subview = subview() else {
+            XCTFail("Expected the subview to be part of the card")
+            return 0
+        }
+        return card.convert(subview.bounds, from: subview).maxX
+    }
+
+    private func actionButton(in card: UTIFooterCardView) -> UTIFooterActionButton? {
+        card.subviews.flatMap(\.subviews).compactMap { $0 as? UTIFooterActionButton }.first
+    }
+
+    /// The card's only direct `UIButton` child: the action button's own buttons sit one level deeper.
+    private func dismissButton(in card: UTIFooterCardView) -> UIButton? {
+        card.subviews.flatMap(\.subviews).compactMap { $0 as? UIButton }.first
+    }
 
     private func height(of view: UTIFooterCardView) -> CGFloat {
         view.frame = CGRect(x: 0, y: 0, width: phoneWidth, height: 0)
@@ -97,19 +149,22 @@ final class UTIFooterCardViewTests: XCTestCase {
 
     private func makeMessage(title: String = "90% of weekly limit",
                              subtitle: String? = "Resets in 2 days",
-                             showsModelPicker: Bool = false) -> UTIFooterMessage {
+                             showsModelPicker: Bool = false,
+                             isDismissible: Bool = true) -> UTIFooterMessage {
         makeMessage(title: title,
                     subtitle: subtitle,
-                    primaryAction: .init(title: "Switch to 5.4 mini", showsModelPicker: showsModelPicker))
+                    primaryAction: .init(title: "Switch to 5.4 mini", showsModelPicker: showsModelPicker),
+                    isDismissible: isDismissible)
     }
 
     private func makeMessage(title: String = "90% of weekly limit",
                              subtitle: String? = "Resets in 2 days",
-                             primaryAction: UTIFooterMessage.PrimaryAction?) -> UTIFooterMessage {
+                             primaryAction: UTIFooterMessage.PrimaryAction?,
+                             isDismissible: Bool = true) -> UTIFooterMessage {
         UTIFooterMessage(icon: .usageRing(progress: 0.9),
                          title: title,
                          subtitle: subtitle,
                          primaryAction: primaryAction,
-                         isDismissible: true)
+                         isDismissible: isDismissible)
     }
 }

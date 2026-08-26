@@ -191,7 +191,67 @@ class BarsAnimatorTests: XCTestCase {
     }
 }
 
+class BarsAnimatorFloatingTests: XCTestCase {
+
+    func testWhenDraggingUpFromHiddenThenChromeStartsRevealingImmediately() throws {
+        let (sut, delegate) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+
+        sut.hideBars(animated: false)
+        delegate.receivedMessages.removeAll()
+        scrollView.contentOffset.y = 500
+        sut.didStartScrolling(in: scrollView)
+
+        scrollView.contentOffset.y -= BarsAnimator.Metrics.floatingTransitionTravel * 0.1
+        sut.didScroll(in: scrollView)
+
+        let percent = try XCTUnwrap(delegate.receivedMessages.last?.percent)
+        XCTAssertEqual(percent, 0.1, accuracy: 0.01)
+        XCTAssertEqual(sut.barsState, .transitioning)
+    }
+
+    func testWhenRubberBandingAtInsetPageTopThenChromeStaysRevealed() {
+        let (sut, delegate) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+        scrollView.contentInset.top = 90
+        scrollView.contentOffset.y = -90
+        sut.didStartScrolling(in: scrollView)
+
+        scrollView.contentOffset.y = -120
+        sut.didScroll(in: scrollView)
+        scrollView.contentOffset.y = -90
+        sut.didScroll(in: scrollView)
+
+        XCTAssertEqual(sut.barsState, .revealed)
+        XCTAssertTrue(delegate.receivedMessages.isEmpty)
+    }
+
+    func testWhenNewDragInterruptsSettlingThenProgressStartsFromRenderedVisibility() throws {
+        let (sut, delegate) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+        delegate.currentBarsVisibility = 0.6
+        scrollView.contentOffset.y = 500
+
+        sut.didStartScrolling(in: scrollView)
+        scrollView.contentOffset.y += BarsAnimator.Metrics.floatingTransitionTravel * 0.1
+        sut.didScroll(in: scrollView)
+
+        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0.5, accuracy: 0.001)
+        XCTAssertEqual(sut.barsState, .transitioning)
+    }
+}
+
 // MARK: - Helpers
+
+private func makeFloatingSUT() -> (sut: BarsAnimator, delegate: BrowserChromeDelegateMock) {
+    let sut = BarsAnimator()
+    let delegate = BrowserChromeDelegateMock()
+    delegate.isFloatingChromeEnabled = true
+    delegate.toolbarHeight = 128
+    sut.delegate = delegate
+
+    return (sut, delegate)
+}
 
 private func makeSUT() -> (sut: BarsAnimator, delegate: BrowserChromeDelegateMock) {
     let sut = BarsAnimator()
@@ -204,6 +264,14 @@ private func makeSUT() -> (sut: BarsAnimator, delegate: BrowserChromeDelegateMoc
 private func mockScrollView() -> UIScrollView {
     let scrollView = UIScrollView()
     scrollView.contentSize = .init(width: 300, height: 600)
+    scrollView.bounds = .init(x: 0, y: 0, width: 300, height: 300)
+
+    return scrollView
+}
+
+private func mockTallScrollView() -> UIScrollView {
+    let scrollView = UIScrollView()
+    scrollView.contentSize = .init(width: 300, height: 5000)
     scrollView.bounds = .init(x: 0, y: 0, width: 300, height: 300)
 
     return scrollView
@@ -251,6 +319,9 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     func setBarsVisibility(_ percent: CGFloat, animated: Bool) {
         receivedMessages.append(.setBarsVisibility(percent))
+        if !animated {
+            currentBarsVisibility = percent
+        }
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
@@ -267,11 +338,15 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var isToolbarHidden: Bool = false
 
+    var currentBarsVisibility: CGFloat = 1
+
     var toolbarHeight: CGFloat = 0
 
     var barsMaxHeight: CGFloat = 0
 
     var isInMinimalChromeLayout: Bool = false
+
+    var isFloatingChromeEnabled: Bool = false
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
 

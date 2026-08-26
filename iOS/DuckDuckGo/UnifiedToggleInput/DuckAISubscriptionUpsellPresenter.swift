@@ -27,6 +27,9 @@ import Subscription
 protocol DuckAISubscriptionUpselling {
     func presentPurchaseFlow(source: SubscriptionFlowSource, isAITabState: Bool)
     func presentUpgradeFlow(source: SubscriptionFlowSource, isAITabState: Bool)
+    /// For entry points that own their funnel origin outright rather than deriving it from a
+    /// gated-control source — the usage-limit card, for one.
+    func presentPurchaseFlow(origin: SubscriptionFunnelOrigin)
 }
 
 extension DuckAISubscriptionUpselling {

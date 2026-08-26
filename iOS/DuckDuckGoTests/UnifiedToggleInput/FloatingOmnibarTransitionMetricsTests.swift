@@ -54,6 +54,18 @@ final class FloatingOmnibarTransitionMetricsTests: XCTestCase {
         let attached = BrowserToolbarView.totalHeight(withOmnibarHeight: 48, isFloating: true)
         XCTAssertGreaterThan(attached, detached)
     }
+
+    func testWhenMinimalChromeUTIBecomesInactiveThenItAnchorsToScreenBottom() {
+        let anchor = MainViewCoordinator.OmnibarInactiveAnchor.resolve(isMinimalChromeLayout: true)
+
+        XCTAssertEqual(anchor, .screenBottom)
+    }
+
+    func testWhenRegularChromeUTIBecomesInactiveThenItAnchorsToToolbar() {
+        let anchor = MainViewCoordinator.OmnibarInactiveAnchor.resolve(isMinimalChromeLayout: false)
+
+        XCTAssertEqual(anchor, .toolbar)
+    }
 }
 
 final class OmnibarDismissSupersessionTests: XCTestCase {

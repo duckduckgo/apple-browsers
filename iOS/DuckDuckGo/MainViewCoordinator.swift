@@ -35,6 +35,15 @@ class MainViewCoordinator {
         case aiTabChatChromeHidden
     }
 
+    enum OmnibarInactiveAnchor: Equatable {
+        case toolbar
+        case screenBottom
+
+        static func resolve(isMinimalChromeLayout: Bool) -> OmnibarInactiveAnchor {
+            isMinimalChromeLayout ? .screenBottom : .toolbar
+        }
+    }
+
     weak var parentController: UIViewController?
     let superview: UIView
 
@@ -457,10 +466,15 @@ class MainViewCoordinator {
     @MainActor
     func restoreNavBarToToolbarForOmnibarInactive() {
         guard addressBarPosition.isBottom else { return }
-        if !constraints.navigationBarContainerBottom.isActive {
-            constraints.navigationBarContainerBottom.isActive = true
+        switch OmnibarInactiveAnchor.resolve(isMinimalChromeLayout: isInMinimalChromeLayout) {
+        case .screenBottom:
+            applyMinimalChromeBottomLayout(pinnedToScreenBottom: true)
+        case .toolbar:
+            if !constraints.navigationBarContainerBottom.isActive {
+                constraints.navigationBarContainerBottom.isActive = true
+            }
+            setNavBarContainerBottomToToolbar()
         }
-        setNavBarContainerBottomToToolbar()
     }
 
     @MainActor
@@ -627,9 +641,13 @@ class MainViewCoordinator {
     /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.
     func animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: Bool = true) {
         if addressBarPosition.isBottom {
-            setNavBarContainerBottomToToolbar()
-            if reattachingOmnibar, isFloatingUIEnabled {
-                applyAttachedToolbarHeight()
+            if isInMinimalChromeLayout {
+                applyMinimalChromeBottomLayout(pinnedToScreenBottom: true)
+            } else {
+                setNavBarContainerBottomToToolbar()
+                if reattachingOmnibar, shouldHostOmnibarInFloatingToolbarAfterUTIExit {
+                    applyAttachedToolbarHeight()
+                }
             }
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
@@ -649,12 +667,12 @@ class MainViewCoordinator {
             navigationBarCollectionView.alpha = 0
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1
-        } else if isFloatingUIEnabled, addressBarPosition.isBottom {
+        } else if shouldHostOmnibarInFloatingToolbarAfterUTIExit {
             omniBar?.barView.restoreBarChrome()
             omniBar?.barView.setIconContainersAlpha(0)
-            ensureBottomOmnibarAttachedToToolbarIfNeeded()
             unifiedToggleInputContainer.isHidden = true
             unifiedToggleInputContainer.alpha = 1
+            ensureBottomOmnibarAttachedToToolbarIfNeeded()
             UIView.animate(
                 withDuration: MainViewController.Constants.omnibarTransitionDuration(isBottom: true, isFloatingUIEnabled: true)
                     * MainViewController.Constants.omnibarIconFadeInDurationMultiplier,
@@ -672,6 +690,14 @@ class MainViewCoordinator {
         }
         restoreContentContainerBottomAnchorAfterUnifiedToggleInput()
         bringFloatingTopNavigationBarToFrontIfNeeded()
+    }
+
+    private var shouldHostOmnibarInFloatingToolbarAfterUTIExit: Bool {
+        FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            addressBarPosition: addressBarPosition,
+            isUnifiedToggleInputVisible: false,
+            isMinimalChromeLayout: isInMinimalChromeLayout)
     }
 
     func setStandardStatusBackgroundColor(_ color: UIColor) {

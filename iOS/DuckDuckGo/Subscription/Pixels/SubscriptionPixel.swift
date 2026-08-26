@@ -23,6 +23,9 @@ import Networking
 import Subscription
 
 enum SubscriptionPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     // Subscription
     case subscriptionActive
     // Auth
@@ -135,14 +138,16 @@ enum SubscriptionPixel: PixelKit.Event {
     }
 }
 
-// This is a separate definition in order to get the correct platform and form factor suffixes, which the
-// subscription pixels above do not have.
-enum SubscriptionAutomaticSignOutPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+// This is a separate definition in order to get the correct platform and form factor suffixes, which the subscription pixels above do not have.
+enum SubscriptionAutomaticSignOutPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case automaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)
 
     private static let sourceKey = "source"
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 
     var name: String {
         switch self {

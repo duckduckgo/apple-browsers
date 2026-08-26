@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Subscription
 
 /// Represents the origin point from which the user enters the subscription funnel in the macOS app.
 enum SubscriptionFunnelOrigin: String {
@@ -123,6 +124,63 @@ enum SubscriptionFunnelOrigin: String {
 
     /// The frontend opened a modal without attributing it to an entry point.
     case duckAIUnknown = "funnel_duckai_macos__unknown"
+}
+
+extension SubscriptionFunnelOrigin {
+
+    static func purchaseWideEventEntryPoint(for origin: String?) -> SubscriptionPurchaseWideEventData.EntryPoint {
+        guard let origin else { return .web }
+        guard let funnelOrigin = Self(rawValue: origin) else { return .unknown }
+        return funnelOrigin.purchaseWideEventEntryPoint
+    }
+
+    private var purchaseWideEventEntryPoint: SubscriptionPurchaseWideEventData.EntryPoint {
+        switch self {
+        case .winBackNewTabPage,
+                .newTabPageNextStepsCard,
+                .fireWindowPromo,
+                .newTabPageOmnibar,
+                .newTabPageModelPicker,
+                .newTabPageReasoningDropdown:
+            return .newTabPage
+        case .addressBarModelPicker,
+                .addressBarReasoningDropdown,
+                .duckAIModelPicker,
+                .duckAIReasoningDropdown,
+                .promptBarModelPicker,
+                .promptBarReasoningDropdown,
+                .duckAIAiSidebar,
+                .duckAIActivateSubscription,
+                .duckAIFreeLabel,
+                .duckAIFreeLimit,
+                .duckAIImageGenerationLimit,
+                .duckAIPlusLimit,
+                .duckAIPromotionCard,
+                .duckAISettings,
+                .duckAIDisclaimerBanner,
+                .duckAIVoiceChatLimit,
+                .duckAIVoiceChatDurationLimit,
+                .duckAISwitchModel,
+                .duckAIUnknown:
+            return .duckAI
+        case .appMenu,
+                .winBackMenu:
+            return .appMenu
+        case .winBackLaunch:
+            return .appPromotion
+        case .appSettings,
+                .winBackSettings:
+            return .settings
+        case .onboardingSubscriptionUpsell:
+            return .onboarding
+        case .vpnToolbarUpsell,
+                .vpnToolbarRevoked,
+                .vpnMenuBarRevoked:
+            return .vpn
+        case .freeScan:
+            return .personalInformationRemoval
+        }
+    }
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

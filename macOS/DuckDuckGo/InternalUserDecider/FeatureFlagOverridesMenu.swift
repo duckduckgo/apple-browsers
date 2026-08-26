@@ -95,11 +95,16 @@ final class FeatureFlagOverridesMenu: NSMenu {
                     }
                     .sorted { $0.rawValue.lowercased() < $1.rawValue.lowercased() }
                     .map { flag in
-                        NSMenuItem(
+                        let item = NSMenuItem(
                             title: menuItemTitle(for: flag),
                             action: #selector(toggleFeatureFlag(_:)),
                             target: self,
-                            representedObject: flag)
+                            representedObject: flag
+                        )
+                        if #available(macOS 27.0, *) {
+                            item.preferredImageVisibility = .visible
+                        }
+                        return item
                     }
 
                 submenu.items = flagItems
@@ -370,6 +375,9 @@ final class FeatureFlagOverridesMenu: NSMenu {
         legendItem.image = icon
         legendItem.isEnabled = false
         legendItem.indentationLevel = 1
+        if #available(macOS 27.0, *) {
+            legendItem.preferredImageVisibility = .visible
+        }
         return legendItem
     }
 }

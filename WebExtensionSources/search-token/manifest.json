@@ -1,0 +1,20 @@
+{
+    "manifest_version": 3,
+    "name": "DuckDuckGo Search Token",
+    "description": "Attaches the DuckDuckGo search experiment token to search navigations.",
+    "version": "1.0.0",
+    "minimum_chrome_version": "122.0",
+    "browser_specific_settings": {
+        "duckduckgo": {
+            "id": "com.duckduckgo.web-extension.search-token",
+            "appleRequiresExtraction": true
+        }
+    },
+    "permissions": ["declarativeNetRequest", "declarativeNetRequestWithHostAccess"],
+    "host_permissions": ["https://duckduckgo.com/*"],
+    "declarative_net_request": {
+        "rule_resources": [
+            { "id": "token", "enabled": true, "path": "rules/token.json" }
+        ]
+    }
+}

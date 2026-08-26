@@ -150,9 +150,10 @@ final class AIChatOmnibarController {
             subscriptionUpsellPresenter.routeGatedSelection(requiredTier: .plus,
                                                             userTier: userTier,
                                                             origin: surface.usageLimitFunnelOrigin)
-        case .startUsingWeeklyLimit:
-            // The card offers no button for this until web sets the value it needs.
-            Logger.aiChat.debug("Duck.ai usage warning: start-using-weekly-limit tapped, no native action yet")
+        case .startUsingWeeklyLimit(let entries):
+            // Storage-only opt-in: web reads the entry on its next hydration and turns it into the
+            // bypass request header itself, so there is nothing to reload here.
+            usageLimitsStore?.write(entries)
         }
     }
 
@@ -336,7 +337,7 @@ final class AIChatOmnibarController {
 
     private func setUpUsageWarnings() {
         usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
-            tierProvider: { [weak self] in self?.userTier ?? .free },
+            surface: DuckAiUsageWarningSurface(promptSurface: surface),
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
                 currentModelIdProvider: { [weak self] in self?.currentModelId },
@@ -349,6 +350,13 @@ final class AIChatOmnibarController {
             self?.performUsageWarningAction(action)
         }
         // `onOpenModelPicker` is set by the container VC, which owns the anchor the menu pops from.
+
+        // Web publishing a new snapshot mid-session, or a debug seed, refreshes the open surface —
+        // and is what brings a message back after the user has acted on the previous one.
+        usageLimitsStore?.snapshotUpdates?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshUsageWarnings() }
+            .store(in: &cancellables)
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;

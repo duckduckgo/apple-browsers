@@ -33,12 +33,18 @@ extension DuckAiUsageWarning {
             case .daily: return UserText.aiChatUsageWarningsDailyUsage(percent: percent)
             case .weekly: return UserText.aiChatUsageWarningsWeeklyUsage(percent: percent)
             }
-        case .dailyLimitReached:
+        case .dailyReached:
             return UserText.aiChatUsageWarningsDailyLimitReached
-        case .weeklyLimitReached:
+        case .weeklyReached:
             return UserText.aiChatUsageWarningsWeeklyLimitReached
-        case .advancedModelsLimitReached:
+        case .weeklyReachedDegraded:
             return UserText.aiChatUsageWarningsAdvancedModelsLimitReached
+        case .freeReached:
+            // Web sends one id for a free user whichever window ran out, so the window picks the noun.
+            switch window {
+            case .daily: return UserText.aiChatUsageWarningsDailyLimitReached
+            case .weekly: return UserText.aiChatUsageWarningsWeeklyLimitReached
+            }
         }
     }
 
@@ -46,8 +52,7 @@ extension DuckAiUsageWarning {
         UserText.aiChatUsageWarningsResetsIn(resetsIn.shortDescription)
     }
 
-    /// `nil` hides the button. `.startUsingWeeklyLimit` has no native route yet, and a button that
-    /// does nothing is worse than none.
+    /// `nil` hides the button, which is also how a switch with nothing usable to switch to renders.
     var localizedActionTitle: String? {
         guard let action else { return nil }
 
@@ -60,7 +65,7 @@ extension DuckAiUsageWarning {
         case .tryForFree(let isTrialEligible):
             return isTrialEligible ? UserText.aiChatUsageWarningsTryForFree : UserText.aiChatUsageWarningsSubscribe
         case .startUsingWeeklyLimit:
-            return nil
+            return UserText.aiChatUsageWarningsStartUsingWeeklyLimit
         }
     }
 }

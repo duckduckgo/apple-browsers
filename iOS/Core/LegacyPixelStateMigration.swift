@@ -143,3 +143,16 @@ public struct UserDefaultsLegacyPixelStore: LegacyPixelLastFireDateSource {
         defaults.dictionaryRepresentation().compactMapValues { $0 as? Date }
     }
 }
+
+/// A `KeyValueFileStore` as a snapshot source, for the VPN tunnel's file-backed legacy stores.
+public struct KeyValueFileStoreLegacyPixelStore: LegacyPixelLastFireDateSource {
+    private let store: KeyValueFileStore
+
+    public init(_ store: KeyValueFileStore) {
+        self.store = store
+    }
+
+    public func allLastFireDates() throws -> [String: Date] {
+        try store.allObjects().compactMapValues { $0 as? Date }
+    }
+}

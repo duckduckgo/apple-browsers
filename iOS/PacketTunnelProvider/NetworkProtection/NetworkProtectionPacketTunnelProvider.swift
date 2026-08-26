@@ -714,18 +714,17 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         return fileStore
     }
 
-    private static func setupPixelKit(vpnFileStoreDirectory: URL?) {
-        let pixelKitDefaults: ThrowingKeyValueStoring
-        if let vpnFileStoreDirectory,
-           let fileStore = try? KeyValueFileStore(
-               location: vpnFileStoreDirectory,
-               name: "pixelkit",
-               writeOptions: [.atomic, .noFileProtection]
-           ) {
-            pixelKitDefaults = fileStore
-        } else {
-            pixelKitDefaults = UserDefaults.networkProtectionGroupDefaults
+    /// - Returns: the file store PixelKit's `defaults` was set up with, or `nil` when it fell back
+    ///   to `UserDefaults.networkProtectionGroupDefaults`.
+    private static func setupPixelKit(vpnFileStoreDirectory: URL?) -> KeyValueFileStore? {
+        let pixelKitFileStore: KeyValueFileStore? = vpnFileStoreDirectory.flatMap {
+            try? KeyValueFileStore(
+                location: $0,
+                name: "pixelkit",
+                writeOptions: [.atomic, .noFileProtection]
+            )
         }
+        let pixelKitDefaults: ThrowingKeyValueStoring = pixelKitFileStore ?? UserDefaults.networkProtectionGroupDefaults
 
         // Configuring PixelKit
         PixelKit.setUp(
@@ -752,15 +751,31 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 }
             }
         }
+
+        return pixelKitFileStore
     }
 
     private static func configurePixelStorage() {
         do {
             let vpnFileStoreDirectory = try Self.vpnFileStoreDirectory()
-            Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
-            Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
+            let pixelKitStore = Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
+            let legacyStores = Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
+
+            // The tunnel keeps its legacy daily and once-ever pixel state in its own app-group
+            // files, not in the suites the browser migrates, so it runs its own migration here
+            // against whichever store PixelKit actually ended up using. Without it every VPN daily
+            // pixel fires once extra and every VPN once-ever pixel fires a second time on the
+            // release that migrates.
+            let destination: ThrowingKeyValueStoring = pixelKitStore ?? UserDefaults.networkProtectionGroupDefaults
+            LegacyPixelStateMigration(
+                destination: destination,
+                dailyStore: legacyStores.daily.map(KeyValueFileStoreLegacyPixelStore.init),
+                uniqueStore: legacyStores.unique.map(KeyValueFileStoreLegacyPixelStore.init),
+                debounceStore: nil,
+                completionFlagStore: destination
+            ).run()
         } catch {
-            Self.setupPixelKit(vpnFileStoreDirectory: nil)
+            _ = Self.setupPixelKit(vpnFileStoreDirectory: nil)
             Pixel.fire(pixel: .networkProtectionPixelStorageSetupFailure, error: error)
         }
     }
@@ -812,24 +827,28 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         return directory
     }
 
-    private static func configureDailyPixelFileStore(vpnFileStoreDirectory: URL?) {
-        guard let vpnFileStoreDirectory else { return }
+    private static func configureDailyPixelFileStore(vpnFileStoreDirectory: URL?) -> (daily: KeyValueFileStore?, unique: KeyValueFileStore?) {
+        guard let vpnFileStoreDirectory else { return (daily: nil, unique: nil) }
 
-        if let dailyPixelFileStore = try? KeyValueFileStore(
+        let dailyPixelFileStore = try? KeyValueFileStore(
             location: vpnFileStoreDirectory,
             name: "daily-pixel",
             writeOptions: [.atomic, .noFileProtection]
-        ) {
+        )
+        if let dailyPixelFileStore {
             DailyPixel.storage = dailyPixelFileStore
         }
 
-        if let uniquePixelFileStore = try? KeyValueFileStore(
+        let uniquePixelFileStore = try? KeyValueFileStore(
             location: vpnFileStoreDirectory,
             name: "unique-pixel",
             writeOptions: [.atomic, .noFileProtection]
-        ) {
+        )
+        if let uniquePixelFileStore {
             UniquePixel.storage = uniquePixelFileStore
         }
+
+        return (daily: dailyPixelFileStore, unique: uniquePixelFileStore)
     }
 
     private let activationDateStore = DefaultVPNActivationDateStore()

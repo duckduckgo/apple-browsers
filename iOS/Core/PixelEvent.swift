@@ -217,6 +217,7 @@ extension Pixel {
         case shareSheetActivityFindInPage
         case shareSheetActivityPrint
         case shareSheetActivityAddToReadingList
+        case shareSheetActivityAddToHomeScreen
         case shareSheetActivityOther
         
         case tabBarBackPressed
@@ -2277,6 +2278,7 @@ extension Pixel.Event {
         case .shareSheetActivityFindInPage: return "m_sharesheet_activity_findinpage"
         case .shareSheetActivityPrint: return "m_sharesheet_activity_print"
         case .shareSheetActivityAddToReadingList: return "m_sharesheet_activity_addtoreadinglist"
+        case .shareSheetActivityAddToHomeScreen: return "m_sharesheet_activity_addtohomescreen"
         case .shareSheetActivityOther: return "m_sharesheet_activity_other"
             
         case .tabBarBackPressed: return "mt_bk"

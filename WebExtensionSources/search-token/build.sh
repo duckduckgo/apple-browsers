@@ -8,6 +8,6 @@ REPO_ROOT="$(cd "$SRC_DIR/../.." && pwd)"
 OUT="$REPO_ROOT/SharedPackages/WebExtensions/Sources/WebExtensions/BundledWebExtensions/search-token-extension.zip"
 rm -f "$OUT"
 cd "$SRC_DIR"
-zip -q -X -r "$OUT" manifest.json rules
+zip -q -X "$OUT" manifest.json background.js
 echo "Built $OUT"
 unzip -l "$OUT"

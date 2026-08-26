@@ -76,8 +76,8 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// terminal action covers. Idempotent within a session.
     func promptSubmittedInPage()
 
-    /// User navigated within the app by a route that sets no terminal reason — a bookmark, a form
-    /// submission, or browser history. Idempotent within a session.
+    /// User went somewhere else in the app by a route that sets no terminal reason — a bookmark, a
+    /// form submission, browser history, or a native screen. Idempotent within a session.
     func inAppNavigation()
 
     /// Terminal user action ended the session (submission, return-to-page, etc.).

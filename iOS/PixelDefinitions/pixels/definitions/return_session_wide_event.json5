@@ -122,7 +122,7 @@
             {
                 "key": "feature.data.ext.in_app_navigation",
                 "type": "boolean",
-                "description": "Whether the user navigated by a route that sets no status_reason: a bookmark, a form submission, or browser history. Plain link taps are reported by page_engaged instead."
+                "description": "Whether the user went somewhere else in the app: a bookmark, a form submission, browser history, or a native screen such as settings, bookmarks, downloads or the site report. Plain link taps are reported by page_engaged instead."
             }
         ]
     }

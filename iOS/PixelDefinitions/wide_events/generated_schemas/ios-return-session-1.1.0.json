@@ -133,7 +133,7 @@
                                 },
                                 "in_app_navigation": {
                                     "type": "boolean",
-                                    "description": "True if the user navigated within the app by a route that sets no status_reason: selecting a bookmark, submitting a form, or moving through browser history. Excludes plain link taps, which are reported by page_engaged."
+                                    "description": "True if the user went somewhere else in the app during the session: selected a bookmark, submitted a form, moved through browser history, or opened a native screen such as settings, bookmarks, downloads or the site report. Excludes plain link taps, which are reported by page_engaged."
                                 }
                             }
                         }

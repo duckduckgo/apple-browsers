@@ -124,6 +124,7 @@ extension MainViewController {
     func segueToHomeRow() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
+        postIdleSessionInstrumentation.inAppNavigation()
         let storyboard = UIStoryboard(name: "HomeRow", bundle: nil)
         guard let controller = storyboard.instantiateInitialViewController() else {
             assertionFailure()
@@ -161,6 +162,7 @@ extension MainViewController {
 
     private func launchBookmarksViewController(completion: ((BookmarksViewController) -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
+        postIdleSessionInstrumentation.inAppNavigation()
 
         let storyboard = UIStoryboard(name: "Bookmarks", bundle: nil)
         let bookmarks = storyboard.instantiateViewController(identifier: "BookmarksViewController") { coder in
@@ -186,6 +188,7 @@ extension MainViewController {
     func segueToReportBrokenSite(entryPoint: PrivacyDashboardEntryPoint = .report) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
+        postIdleSessionInstrumentation.inAppNavigation()
 
         // Reuse the tab's live PrivacyInfo (with its accumulated tracker/protection state) as the
         // dashboard flow does; only build a fresh one if the tab has none yet.
@@ -218,6 +221,7 @@ extension MainViewController {
     func segueToNegativeFeedbackForm() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
+        postIdleSessionInstrumentation.inAppNavigation()
 
         let feedbackPicker = FeedbackPickerViewController.loadFromStoryboard()
 
@@ -233,6 +237,7 @@ extension MainViewController {
     func segueToDownloads() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
+        postIdleSessionInstrumentation.inAppNavigation()
 
         present(DownloadsListHostingController(), animated: true)
     }
@@ -480,6 +485,7 @@ extension MainViewController {
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,
                         deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil,
                         configure: ((SettingsViewModel, SettingsHostingController) -> Void)? = nil) {
+        postIdleSessionInstrumentation.inAppNavigation()
         let legacyViewProvider = SettingsLegacyViewProvider(syncService: syncService,
                                                             syncDataProviders: syncDataProviders,
                                                             appSettings: appSettings,

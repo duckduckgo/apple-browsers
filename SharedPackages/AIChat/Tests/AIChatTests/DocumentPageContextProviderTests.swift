@@ -16,11 +16,10 @@
 //  limitations under the License.
 //
 
-import AIChat
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
+@testable import AIChat
 
-final class MockMainResourceDataProvider: MainResourceDataProviding {
+private final class MockMainResourceDataProvider: MainResourceDataProviding {
     var data: Data?
 
     init(data: Data?) {
@@ -48,13 +47,17 @@ final class DocumentPageContextProviderTests: XCTestCase {
 
     func testMIMETypeIdentifiesADocument() {
         XCTAssertTrue(DocumentPageContextProvider.isSupportedDocument(mimeType: "application/pdf", url: url))
+        XCTAssertTrue(DocumentPageContextProvider.isSupportedDocument(mimeType: "APPLICATION/PDF", url: url))
         XCTAssertFalse(DocumentPageContextProvider.isSupportedDocument(mimeType: "text/html", url: url),
                        "The MIME type wins over the URL extension when we have one")
+        XCTAssertFalse(DocumentPageContextProvider.isSupportedDocument(mimeType: "application/octet-stream", url: url),
+                       "A non-PDF MIME type is not a document tab even when the URL ends in .pdf")
     }
 
     func testURLExtensionIsUsedWhenMIMETypeIsMissing() {
         XCTAssertTrue(DocumentPageContextProvider.isSupportedDocument(mimeType: nil, url: url))
         XCTAssertTrue(DocumentPageContextProvider.isSupportedDocument(mimeType: "", url: url))
+        XCTAssertTrue(DocumentPageContextProvider.isSupportedDocument(mimeType: nil, url: URL(string: "https://example.com/Spec.PDF")!))
         XCTAssertFalse(DocumentPageContextProvider.isSupportedDocument(mimeType: nil, url: URL(string: "https://example.com/page")!))
     }
 
@@ -77,6 +80,7 @@ final class DocumentPageContextProviderTests: XCTestCase {
         XCTAssertEqual(context.title, "Spec")
         XCTAssertEqual(context.content, "", "Bytes and markdown are exclusive carriers")
         XCTAssertNil(context.attachable)
+        XCTAssertTrue(context.hasAttachedPage)
     }
 
     func testDocumentOverTheCeilingIsRefusedWithoutBytes() async throws {
@@ -93,6 +97,7 @@ final class DocumentPageContextProviderTests: XCTestCase {
         XCTAssertNil(context.data, "A refused document must not ship its bytes across the bridge")
         XCTAssertEqual(context.attachable, false)
         XCTAssertEqual(context.mimeType, AIChatPageContextData.pdfMIMEType)
+        XCTAssertFalse(context.hasAttachedPage)
     }
 
     func testDocumentAtTheCeilingIsAttached() async throws {

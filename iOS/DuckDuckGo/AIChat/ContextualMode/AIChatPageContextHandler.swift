@@ -56,6 +56,10 @@ typealias PageContextURLProvider = () -> URL?
 /// `nil` when unknown (restored / cached / back-forward navigations with no observed response).
 typealias PageContextMIMETypeProvider = (URL) -> String?
 
+/// Reads a document tab into page context. Production uses `DocumentPageContextProvider.makeDocumentContext`;
+/// tests inject a stub so a user-attach can assert bytes without a real WKWebView PDF.
+typealias DocumentContextMaking = @MainActor (MainResourceDataProviding, URL, String) async -> DocumentPageContextProvider.Result
+
 // MARK: - Page Context Collection Protocol
 
 /// Protocol for page context collection, enabling dependency injection and testing.
@@ -116,6 +120,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     private let extractionPixelHandler: PageContextExtractionPixelFiring
 
     private let isDocumentContextEnabled: () -> Bool
+    private let makeDocumentContext: DocumentContextMaking
 
     /// FIFO-pairs collect requests with results so pixels carry the right trigger/latency; reset on navigation.
     private var extractionResolver = PageContextExtractionResolver()
@@ -147,7 +152,8 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
          currentURLProvider: PageContextURLProvider? = nil,
          mimeTypeProvider: @escaping PageContextMIMETypeProvider = { _ in nil },
          extractionPixelHandler: PageContextExtractionPixelFiring = PageContextExtractionPixelHandler(),
-         isDocumentContextEnabled: @escaping () -> Bool = { false }) {
+         isDocumentContextEnabled: @escaping () -> Bool = { false },
+         makeDocumentContext: DocumentContextMaking? = nil) {
         self.webViewProvider = webViewProvider
         self.userScriptProvider = userScriptProvider
         self.faviconProvider = faviconProvider
@@ -157,6 +163,9 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         self.mimeTypeProvider = mimeTypeProvider
         self.extractionPixelHandler = extractionPixelHandler
         self.isDocumentContextEnabled = isDocumentContextEnabled
+        self.makeDocumentContext = makeDocumentContext ?? { webView, url, title in
+            await DocumentPageContextProvider.makeDocumentContext(webView: webView, url: url, title: title)
+        }
     }
 
     @discardableResult
@@ -166,9 +175,8 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         let url = currentURLProvider()
         resetExtractionStateIfNavigated(to: url)
 
-        // A document tab (PDF) is handed over as bytes — except on the signals-only collect
-        // (`.tabContent`, auto-attach off), which has no markup to harvest. Push metadata so
-        // the FE chip can show, and read the bytes when the user attaches (`.userRequest`).
+        // A document tab (PDF) is handed over as bytes —
+        // On the signals-only collect push metadata so the FE chip can show
         if let url, isDocumentTab(url) {
             if trigger == .tabContent {
                 publishDocumentMetadata(for: url)
@@ -261,7 +269,6 @@ private extension AIChatPageContextHandler {
     /// gate and the standalone sheet-open/navigation measurement.
     @discardableResult
     func firePreventedIfNonAttachable(for url: URL?, trigger: PageContextExtractionTrigger) -> Bool {
-        // A document tab is attachable via its bytes — never prevented by the blocklist.
         if let url, isDocumentTab(url) { return false }
         guard let policy = attachabilityPolicyProvider() else { return false }
         let verdict = policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) })
@@ -305,8 +312,8 @@ private extension AIChatPageContextHandler {
         let title = documentTitle(for: url, webView: webView)
         let startedAt = Date()
         Task { @MainActor [weak self] in
-            let result = await DocumentPageContextProvider.makeDocumentContext(webView: webView, url: url, title: title)
             guard let self else { return }
+            let result = await self.makeDocumentContext(webView, url, title)
             let latency = PageContextExtractionLatencyBucket(seconds: Date().timeIntervalSince(startedAt))
 
             // The read is async: the tab may have navigated while it was in flight. Delivering now

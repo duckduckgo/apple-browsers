@@ -88,11 +88,13 @@ final class SubscriptionWideEventTests: XCTestCase {
     // MARK: - Successful Subscription Flow Tests
 
     func testSuccessfulAppStoreSubscriptionFlow() throws {
+        XCTAssertEqual(SubscriptionPurchaseWideEventData.metadata.version, "1.2.0")
+
         let subscriptionData = SubscriptionPurchaseWideEventData(
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
-            funnelName: "funnel_onboarding_ios"
+            entryPoint: .settings
         )
 
         wideEvent.startFlow(subscriptionData)
@@ -145,7 +147,8 @@ final class SubscriptionWideEventTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "10000")
-        XCTAssertEqual(params["feature.data.ext.funnel_name"], "funnel_onboarding_ios")
+        XCTAssertEqual(params["feature.data.ext.entry_point"], "settings")
+        XCTAssertNil(params["feature.data.ext.funnel_name"])
         XCTAssertNil(params["context.name"])
 
         XCTAssertNotNil(params["app.name"])
@@ -162,7 +165,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
-            funnelName: "funnel_onboarding_ios"
+            entryPoint: .duckAI
         )
 
         wideEvent.startFlow(subscriptionData)
@@ -191,7 +194,8 @@ final class SubscriptionWideEventTests: XCTestCase {
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "stripe")
         XCTAssertEqual(params["feature.data.ext.free_trial_eligible"], "false")
-        XCTAssertEqual(params["feature.data.ext.funnel_name"], "funnel_onboarding_ios")
+        XCTAssertEqual(params["feature.data.ext.entry_point"], "duck_ai")
+        XCTAssertNil(params["feature.data.ext.funnel_name"])
         XCTAssertNil(params["context.name"])
     }
 
@@ -202,6 +206,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
@@ -250,6 +255,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
@@ -296,6 +302,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
@@ -327,6 +334,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
@@ -358,6 +366,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
 
@@ -376,6 +385,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
 
@@ -397,6 +407,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
         let start = Date().addingTimeInterval(-SubscriptionPurchaseWideEventData.activationTimeout - 10)
@@ -417,6 +428,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
 
@@ -438,6 +450,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
 
@@ -460,6 +473,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
 

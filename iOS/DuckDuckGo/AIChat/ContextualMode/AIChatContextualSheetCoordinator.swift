@@ -271,16 +271,10 @@ final class AIChatContextualSheetCoordinator {
         clearStaleManualContextIfNeeded()
 
         startObservingContextUpdates()
-        if skippingAutoAttach {
-            collectContextForNewSession(skippingAutoAttach: true)
-        } else {
-            // "Ask About Page" is an explicit attach request, so the page attaches outright rather than
-            // going down the signals-only path an auto-collect would take with auto-attach off.
-            if sessionState.showsSuggestionsStartSurface {
-                sessionState.beginLoadingSuggestions()
-            }
-            requestManualPageContextAttach()
-        }
+        // Same first-open collect as the sheet: auto-attach on reads the page, auto-attach off
+        // stays signals-only. The address-bar "Ask About Page" item opens this surface; attaching
+        // is the chip / + menu, not opening the input.
+        collectContextForNewSession(skippingAutoAttach: skippingAutoAttach)
 
         stopSessionTimer()
 

@@ -17,29 +17,28 @@
 //  limitations under the License.
 //
 
+import AIChat
 import XCTest
 @testable import DuckDuckGo
 
 @MainActor
 final class UTIFooterControllerTests: XCTestCase {
 
-    private var provider: FakeUTIFooterWarningProvider!
+    private var limitsProvider: StubUsageLimitsProvider!
     private var presenter: SpyUTIFooterPresenter!
+    private var viewModel: DuckAiUsageWarningViewModel!
     private var animationCount = 0
     private var sut: UTIFooterController!
 
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
-    private lazy var fiftyPercent = UTIFooterWarning.usageThreshold(window: .weekly, threshold: .fifty, resetsAt: now.addingTimeInterval(172_800))
-    private lazy var seventyFivePercent = UTIFooterWarning.usageThreshold(window: .weekly, threshold: .seventyFive, resetsAt: now.addingTimeInterval(172_800))
-
     override func setUp() {
         super.setUp()
-        provider = FakeUTIFooterWarningProvider()
+        limitsProvider = StubUsageLimitsProvider()
         presenter = SpyUTIFooterPresenter()
         animationCount = 0
-        sut = UTIFooterController(provider: provider,
-                                  dateProvider: { [unowned self] in now },
+        viewModel = makeViewModel()
+        sut = UTIFooterController(viewModel: viewModel,
                                   animator: { [unowned self] changes in
                                       animationCount += 1
                                       changes()
@@ -49,15 +48,16 @@ final class UTIFooterControllerTests: XCTestCase {
 
     override func tearDown() {
         sut = nil
+        viewModel = nil
         presenter = nil
-        provider = nil
+        limitsProvider = nil
         super.tearDown()
     }
 
     // MARK: - Refresh
 
     func test_refresh_presentsAMessageForTheResolvedWarning() {
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
 
         sut.refresh()
 
@@ -66,7 +66,7 @@ final class UTIFooterControllerTests: XCTestCase {
     }
 
     func test_refresh_presentsNothingWhenThereIsNoWarning() {
-        provider.warning = nil
+        limitsProvider.limits = .noData
 
         sut.refresh()
 
@@ -74,7 +74,7 @@ final class UTIFooterControllerTests: XCTestCase {
     }
 
     func test_refresh_doesNotReapplyAnUnchangedMessage() {
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
 
         sut.refresh()
         sut.refresh()
@@ -84,10 +84,10 @@ final class UTIFooterControllerTests: XCTestCase {
     }
 
     func test_refresh_animatesEveryVisibleChange() {
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
-        provider.warning = seventyFivePercent
+        limitsProvider.limits = weeklyUsage(90)
         sut.refresh()
 
         XCTAssertEqual(animationCount, 2)
@@ -96,7 +96,7 @@ final class UTIFooterControllerTests: XCTestCase {
     // MARK: - Dismissal
 
     func test_dismissCurrent_hidesTheFooter() {
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
         sut.dismissCurrent()
@@ -105,7 +105,7 @@ final class UTIFooterControllerTests: XCTestCase {
     }
 
     func test_dismissCurrent_keepsTheSameWarningHiddenOnTheNextRefresh() {
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
         sut.dismissCurrent()
 
@@ -114,21 +114,23 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
     }
 
-    func test_dismissCurrent_doesNotHideADifferentWarning() {
-        provider.warning = fiftyPercent
+    /// The dismissal is recorded against a rung of the redisplay ladder, so crossing the next one
+    /// brings the card back.
+    func test_dismissCurrent_doesNotHideTheNextThreshold() {
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
         sut.dismissCurrent()
 
-        provider.warning = seventyFivePercent
+        limitsProvider.limits = weeklyUsage(90)
         sut.refresh()
 
-        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("75%") ?? false)
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("90%") ?? false)
     }
 
     // MARK: - Suppression
 
     func test_setSuppressed_hidesTheFooterWithoutForgettingTheWarning() {
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
         sut.setSuppressed(true)
@@ -136,21 +138,21 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
     }
 
-    func test_setSuppressed_restoresTheWarningWithoutReadingTheProviderAgain() {
-        provider.warning = fiftyPercent
+    func test_setSuppressed_restoresTheWarningWithoutReadingTheSnapshotAgain() {
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
         sut.setSuppressed(true)
-        provider.readCount = 0
+        limitsProvider.readCount = 0
 
         sut.setSuppressed(false)
 
-        XCTAssertEqual(provider.readCount, 0)
+        XCTAssertEqual(limitsProvider.readCount, 0)
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("50%") ?? false)
     }
 
     func test_refresh_presentsNothingWhileSuppressed() {
         sut.setSuppressed(true)
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
 
         sut.refresh()
 
@@ -160,7 +162,7 @@ final class UTIFooterControllerTests: XCTestCase {
     // MARK: - Pose changes
 
     func test_resetForPoseChange_neverAppliesOrAnimatesAMessage() {
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
         sut.resetForPoseChange()
@@ -170,7 +172,7 @@ final class UTIFooterControllerTests: XCTestCase {
     }
 
     func test_resetForPoseChange_dropsTheViewsPendingMessage() {
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
         sut.resetForPoseChange()
@@ -179,11 +181,11 @@ final class UTIFooterControllerTests: XCTestCase {
     }
 
     func test_refresh_afterAPoseResetWithTheWarningGone_hasNothingLeftToResurrect() {
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
         sut.resetForPoseChange()
 
-        provider.warning = nil
+        limitsProvider.limits = .noData
         sut.refresh()
 
         // No second apply is needed precisely because the reset already dropped the view's pending copy.
@@ -192,8 +194,9 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertNil(sut.currentMessage)
     }
 
+    /// A pose reset is not a dismissal, so the same message comes back.
     func test_resetForPoseChange_reappliesTheWarningOnTheNextRefresh() {
-        provider.warning = fiftyPercent
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
         sut.resetForPoseChange()
 
@@ -205,37 +208,64 @@ final class UTIFooterControllerTests: XCTestCase {
 
     // MARK: - Actions
 
-    func test_performPrimaryAction_forwardsTheMappedAction() {
-        var received: [UTIFooterAction] = []
-        sut.onAction = { received.append($0) }
-        provider.warning = .limitReached(window: .weekly, resetsAt: now.addingTimeInterval(604_800))
+    func test_performPrimaryAction_forwardsTheResolvedAction() {
+        var received: [DuckAiUsageAction] = []
+        viewModel.onAction = { received.append($0) }
+        limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
         sut.performPrimaryAction()
 
-        XCTAssertEqual(received, [.switchModel])
+        XCTAssertEqual(received, [.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini", modelShortName: "5.4 mini"))])
     }
 
     func test_performPrimaryAction_doesNothingWithoutAMessage() {
-        var received: [UTIFooterAction] = []
-        sut.onAction = { received.append($0) }
+        var received: [DuckAiUsageAction] = []
+        viewModel.onAction = { received.append($0) }
 
         sut.performPrimaryAction()
 
         XCTAssertTrue(received.isEmpty)
     }
+
+    // MARK: - Helpers
+
+    private func makeViewModel() -> DuckAiUsageWarningViewModel {
+        DuckAiUsageWarningViewModel(
+            limitsProvider: limitsProvider,
+            tierProvider: { .plus },
+            isInternalUser: { false },
+            dismissalStore: InMemoryDuckAiUsageWarningDismissalStore(),
+            modelSuggester: StubCheaperModelSuggester(),
+            dateProvider: { [unowned self] in now }
+        )
+    }
+
+    private func weeklyUsage(_ percent: Double) -> DuckAiUsageLimits {
+        DuckAiUsageLimits(daily: nil,
+                          weekly: DuckAiUsageLimitWindow(percentUsed: percent,
+                                                         resetsAt: now.addingTimeInterval(172_800)))
+    }
 }
 
 // MARK: - Test doubles
 
-private final class FakeUTIFooterWarningProvider: UTIFooterWarningProviding {
-    var warning: UTIFooterWarning?
+private final class StubUsageLimitsProvider: DuckAiUsageLimitsProviding {
+    var limits: DuckAiUsageLimits = .noData
     var readCount = 0
 
-    func currentWarning() -> UTIFooterWarning? {
+    func currentUsageLimits() -> DuckAiUsageLimits {
         readCount += 1
-        return warning
+        return limits
     }
+}
+
+private struct StubCheaperModelSuggester: DuckAiModelSuggesting {
+    func cheaperModel() -> DuckAiModelSuggestionOutcome {
+        .suggestion(DuckAiModelSuggestion(modelId: "gpt-5.4-mini", modelShortName: "5.4 mini"))
+    }
+
+    func freeModel() -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
 }
 
 @MainActor

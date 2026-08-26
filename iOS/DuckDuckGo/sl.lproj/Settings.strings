@@ -7,9 +7,6 @@
 /* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
 "bIg-0T-UWq.text" = "Vprašaj za požarno zaščito spletnih mest ob vpisu";
 
-/* Class = "UINavigationItem"; title = "Manage Cookie Pop-ups"; ObjectID = "btj-ri-kRr"; */
-"btj-ri-kRr.title" = "Upravljanje pojavnih oken za piškotke";
-
 /* Class = "UILabel"; text = "Global Privacy Control (GPC)"; ObjectID = "cW7-OM-2oW"; */
 "cW7-OM-2oW.text" = "Globalni nadzor zasebnosti (GPC)";
 
@@ -18,9 +15,6 @@
 
 /* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
 "fV3-86-QQj.title" = "Globalni nadzor zasebnosti (GPC)";
-
-/* Class = "UILabel"; text = "Let DuckDuckGo manage cookie consent pop-ups"; ObjectID = "nX1-F1-Frd"; */
-"nX1-F1-Frd.text" = "Naj DuckDuckGo upravlja pojavna okna s soglasjem za piškotke";
 
 /* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
 "OfP-Kw-IOk.text" = "Ni spletnih mest s požarno zaščito";

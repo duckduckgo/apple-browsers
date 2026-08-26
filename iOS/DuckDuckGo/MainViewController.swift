@@ -6506,6 +6506,22 @@ extension MainViewController: TabDelegate {
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
+        openNewTab(from: tab, url: url, openedByPage: openedByPage, inheritedAttribution: attribution)
+    }
+
+    func tab(_ tab: TabViewController,
+             didRequestNewDuckAITabForUrl url: URL,
+             entrySource: AIChatEntryPointSource) {
+        openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
+            $0.duckAIEntrySource = entrySource
+        }
+    }
+
+    private func openNewTab(from tab: TabViewController,
+                            url: URL,
+                            openedByPage: Bool,
+                            inheritedAttribution attribution: AdClickAttributionLogic.State?,
+                            completion: ((Tab) -> Void)? = nil) {
         _ = findInPageView?.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
         tab.aiChatContextualSheetCoordinator.dismissSheet()
@@ -6521,7 +6537,7 @@ extension MainViewController: TabDelegate {
             capturePreviewForTab(tab)
             showBars()
             newTabAnimation {
-                self.loadUrlInNewTab(url, inheritedAttribution: attribution)
+                self.loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
                 self.currentTab?.openedByPage = true
                 self.currentTab?.openingTab = tab
             }
@@ -6532,7 +6548,7 @@ extension MainViewController: TabDelegate {
                 self.omniBarTabSwitcherButton?.tabCount += 1
             }
         } else {
-            loadUrlInNewTab(url, inheritedAttribution: attribution)
+            loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
             self.currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()
             self.currentTab?.openingTab = tab
         }

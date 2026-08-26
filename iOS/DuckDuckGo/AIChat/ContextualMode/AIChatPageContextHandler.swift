@@ -166,9 +166,15 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         let url = currentURLProvider()
         resetExtractionStateIfNavigated(to: url)
 
-        // A document tab (PDF) is handed over as bytes
+        // A document tab (PDF) is handed over as bytes — except on the signals-only collect
+        // (`.tabContent`, auto-attach off), which has no markup to harvest. Push metadata so
+        // the FE chip can show, and read the bytes when the user attaches (`.userRequest`).
         if let url, isDocumentTab(url) {
-            collectDocumentContext(for: url, trigger: trigger)
+            if trigger == .tabContent {
+                publishDocumentMetadata(for: url)
+            } else {
+                collectDocumentContext(for: url, trigger: trigger)
+            }
             return true
         }
 
@@ -274,6 +280,19 @@ private extension AIChatPageContextHandler {
             && DocumentPageContextProvider.isSupportedDocument(mimeType: mimeTypeProvider(url), url: url)
     }
 
+    /// A document context with no bytes: the chip can name the tab, and the bytes follow once
+    /// the user asks for them. Used for the signals-only collect while auto-attach is off.
+    func publishDocumentMetadata(for url: URL) {
+        let context = DocumentPageContextProvider.metadataContext(
+            url: url,
+            title: documentTitle(for: url),
+            attachable: true,
+            attached: false
+        )
+        Logger.aiChat.debug("[PageContext] Document metadata only (deferring bytes until attach)")
+        publishContextUpdate(context)
+    }
+
     /// Reads the document out of the web view and delivers it as page context.
     func collectDocumentContext(for url: URL, trigger: PageContextExtractionTrigger) {
         guard let webView = webViewProvider() else {
@@ -283,8 +302,7 @@ private extension AIChatPageContextHandler {
             return
         }
 
-        let webViewTitle = webView.title ?? ""
-        let title = webViewTitle.isEmpty ? url.lastPathComponent : webViewTitle
+        let title = documentTitle(for: url, webView: webView)
         let startedAt = Date()
         Task { @MainActor [weak self] in
             let result = await DocumentPageContextProvider.makeDocumentContext(webView: webView, url: url, title: title)
@@ -313,6 +331,11 @@ private extension AIChatPageContextHandler {
                 self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency)
             }
         }
+    }
+
+    func documentTitle(for url: URL, webView: WKWebView? = nil) -> String {
+        let webViewTitle = (webView ?? webViewProvider())?.title ?? ""
+        return webViewTitle.isEmpty ? url.lastPathComponent : webViewTitle
     }
 
     /// On navigation to a new URL, drops stale pending collects so they can't mis-attribute the next page's result.

@@ -1,5 +1,5 @@
 //
-//  PixelKitEventWithCustomPrefixTests.swift
+//  PixelKitNamePrefixTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,11 +20,11 @@ import XCTest
 @testable import PixelKit
 import os.log
 
-final class PixelKitEventWithCustomPrefixTests: XCTestCase {
+final class PixelKitNamePrefixTests: XCTestCase {
 
-    enum TestEvent: String, PixelKit.Event, PixelKitEventWithCustomPrefix {
-        /// Both test events are the same but the macOS one adds the "mac" prefix, since prefixes aren't
-        /// centrally managed anymore.
+    enum TestEvent: String, PixelKit.Event {
+        /// Both test events are the same but the macOS one adds the "mac" prefix. The prefix comes
+        /// from the event, so every call site firing it necessarily agrees on the name.
         case macEvent
         case iosEvent
 
@@ -44,12 +44,12 @@ final class PixelKitEventWithCustomPrefixTests: XCTestCase {
             .dailyAndCount
         }
 
-        var namePrefix: String {
+        var namePrefix: PixelKitNamePrefix {
             switch self {
             case .macEvent:
-                return "m_mac_"
+                return .custom("m_mac_")
             case .iosEvent:
-                return "m_"
+                return .custom("m_")
             }
         }
     }

@@ -40,6 +40,20 @@ enum AttributedMetricPixelName: String {
 /// - Send default suffixes such as [phone|tablet]  or [store|direct]
 /// See https://app.asana.com/1/137249556945/project/72649045549333/task/1210849966244847?focus=true
 enum AttributedMetricPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
+    /// The nine metric pixels ship as bare `attributed_metric_*` names; only the error pixel takes
+    /// the platform prefix. This was previously `doNotEnforcePrefix: true` on the nine metric call
+    /// sites in `AttributedMetricManager` and absent on the one in `AttributedMetricErrorHandler`.
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .dataStoreError:
+            return .platformDefault
+        default:
+            return .none
+        }
+    }
 
     // Metrics
     case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int, bucketVersion: Int)

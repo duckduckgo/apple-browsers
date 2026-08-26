@@ -221,6 +221,9 @@ public enum DataBrokerProtectionSharedPixels {
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     public var name: String {
         switch self {
         case .parentChildMatches: return "dbp_parent-child-broker-matches"
@@ -757,26 +760,26 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
         super.init { event, _, parameters, _ in
             switch event {
             case .generateEmailHTTPErrorDaily:
-                pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .legacyDaily)
             case .emptyAccessTokenDaily:
-                pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .legacyDaily)
             case .secureVaultDatabaseRecreated:
-                pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount, withAdditionalParameters: parameters)
             case .httpError(let error, _, _, _, _),
                     .actionFailedError(let error, _, _, _, _, _, _, _),
                     .otherError(let error, _, _, _):
-                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error).prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
             case .databaseError(let error, _),
                     .cocoaError(let error, _),
                     .miscError(let error, _),
                     .userScriptLoadJSFailed(_, let error):
-                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error).prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
                     .secureVaultKeyStoreReadError(let error, _, _),
                     .secureVaultKeyStoreUpdateError(let error),
                     .failedToOpenDatabase(let error):
-                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndStandard, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error).prefixed(platform.pixelNamePrefix), frequency: .dailyAndStandard)
             case .parentChildMatches,
                     .optOutStart,
                     .optOutEmailGenerate,
@@ -836,16 +839,16 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .serviceEmailConfirmationJobSuccess,
                     .updateDataBrokersSuccess:
 
-                pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix))
             case .freemiumPIRMaintenanceScanSkipped:
-                pixelKit.fire(event, frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
             case .firstScan, .freemiumUpsell:
-                pixelKit.fire(event, frequency: .uniqueByName, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .uniqueByName)
             case .updateDataBrokersFailure(_, _, _, let error):
-                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error).prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
 #if os(iOS)
             case .scanStarted:
-                pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event.prefixed(platform.pixelNamePrefix))
 #endif
 
             }

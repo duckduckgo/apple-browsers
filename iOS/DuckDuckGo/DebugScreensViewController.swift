@@ -216,6 +216,14 @@ struct DebugTogglesView: View {
                     Image(systemName: "globe")
                 }
             }
+
+            Toggle(isOn: $model.isSlowAnimationsEnabled) {
+                Label {
+                    Text(verbatim: "Slow Animations")
+                } icon: {
+                    Image(systemName: "tortoise")
+                }
+            }
         }
     }
 

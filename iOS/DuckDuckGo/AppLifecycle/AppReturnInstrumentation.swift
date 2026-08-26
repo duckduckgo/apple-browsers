@@ -20,7 +20,9 @@
 import Foundation
 import PixelKit
 
-enum AppReturnPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum AppReturnPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     case appReturn
 
@@ -31,7 +33,7 @@ enum AppReturnPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "m_" }
+    var namePrefix: PixelKitNamePrefix { .custom("m_") }
 }
 
 protocol AppReturnInstrumentation {

@@ -20,12 +20,12 @@
 import Foundation
 @testable import DuckDuckGo
 
-final class MockLastSearchStateRefresher: RemoteMessagingLastSearchStateRefresher {
-    private(set) var didCallRefreshLastSearchState = false
+final class MockSurveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefreshing {
+    private(set) var didCallRefreshSurveyUsageStates = false
     private(set) var capturedURLPath: String?
     
-    func refreshLastSearchState(forURLPath path: String) -> String {
-        didCallRefreshLastSearchState = true
+    func refreshSurveyUsageStates(forURLPath path: String) -> String {
+        didCallRefreshSurveyUsageStates = true
         capturedURLPath = path
         return path + "&refreshed=true"
     }

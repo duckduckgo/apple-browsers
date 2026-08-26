@@ -66,12 +66,29 @@ final class WebViewTransitionGeometryTests: XCTestCase {
         XCTAssertEqual(frame, CGRect(x: 4, y: 44, width: 172, height: 344))
     }
 
-    func testPreviewFrameFillsCellBoundsWhenGridDisabled() {
+    func testWhenGridPreviewIsWideThenItFillsBodyHeightAndStaysCentered() {
+        let frame = WebViewTransitionGeometry.previewFrame(for: CGSize(width: 180, height: 240),
+                                                           previewSize: CGSize(width: 400, height: 200),
+                                                           isGridViewEnabled: true)
+
+        XCTAssertEqual(frame, CGRect(x: -102, y: 44, width: 384, height: 192))
+    }
+
+    func testWhenGridCellCannotFitPreviewThenFrameFallsBackToCellBounds() {
+        let cellBounds = CGSize(width: 4, height: 40)
+        let frame = WebViewTransitionGeometry.previewFrame(for: cellBounds,
+                                                           previewSize: CGSize(width: 300, height: 600),
+                                                           isGridViewEnabled: true)
+
+        XCTAssertEqual(frame, CGRect(origin: .zero, size: cellBounds))
+    }
+
+    func testPreviewFrameFillsListWidthAndCropsVerticallyWhenGridDisabled() {
         let cellBounds = CGSize(width: 180, height: 240)
         let frame = WebViewTransitionGeometry.previewFrame(for: cellBounds,
                                                            previewSize: CGSize(width: 300, height: 600),
                                                            isGridViewEnabled: false)
-        XCTAssertEqual(frame, CGRect(origin: .zero, size: cellBounds))
+        XCTAssertEqual(frame, CGRect(x: 0, y: 0, width: 180, height: 360))
     }
 
     // MARK: - destinationImageFrame (crash regression guard)
@@ -94,6 +111,30 @@ final class WebViewTransitionGeometryTests: XCTestCase {
         assertFinite(frame)
         XCTAssertEqual(frame.width, 390)
         XCTAssertEqual(frame.height, 780) // 390 * (200/100)
+    }
+
+    func testWebContentFrameInsetsTheContainerBelowTheObscuredTop() {
+        let container = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let frame = WebViewTransitionGeometry.webContentFrame(from: container, topObscuredHeight: 59)
+
+        XCTAssertEqual(frame, CGRect(x: 0, y: 59, width: 390, height: 785))
+    }
+
+    func testWebContentFrameIsUnchangedWhenTopObscuredHeightIsZero() {
+        let container = CGRect(x: 10, y: 20, width: 390, height: 844)
+        XCTAssertEqual(WebViewTransitionGeometry.webContentFrame(from: container, topObscuredHeight: 0), container)
+    }
+
+    func testWebContentFrameIsUnchangedWhenTopObscuredHeightExceedsContainer() {
+        let container = CGRect(x: 0, y: 0, width: 390, height: 50)
+        XCTAssertEqual(WebViewTransitionGeometry.webContentFrame(from: container, topObscuredHeight: 59), container)
+    }
+
+    func testWebContentFrameIsFiniteForNonFiniteTopObscuredHeight() {
+        let container = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let frame = WebViewTransitionGeometry.webContentFrame(from: container, topObscuredHeight: .infinity)
+        assertFinite(frame)
+        XCTAssertEqual(frame, container)
     }
 
     // MARK: - Helpers

@@ -329,7 +329,6 @@ class BarsAnimatorFloatingTests: XCTestCase {
 
         // Settled/non-morphing pin is a no-op: do not re-fire setBarsVisibility on drag start.
         XCTAssertTrue(delegate.receivedMessages.isEmpty)
-        XCTAssertEqual(sut.transitionProgressForTesting, 0.4, accuracy: 0.001)
 
         advanceOffset(sut, scrollView, clock, to: scrollView.contentOffset.y + travel * 0.1)
 

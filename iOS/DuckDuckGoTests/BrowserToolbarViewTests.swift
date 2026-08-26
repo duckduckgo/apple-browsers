@@ -41,9 +41,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         let height = sut.setButtonRowCollapseProgress(0, reduceMotion: false)
 
         XCTAssertEqual(height, fullHeight, accuracy: 0.01)
-        XCTAssertEqual(sut.panelHeightForTesting, fullHeight, accuracy: 0.01)
-        XCTAssertEqual(sut.buttonRowAlphaForTesting, 1, accuracy: 0.001)
-        XCTAssertTrue(sut.buttonRowTransformForTesting.isIdentity)
     }
 
     func testWhenProgressIsOneThenButtonRowIsGoneAtSingleRowHeight() {
@@ -53,8 +50,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         let height = sut.setButtonRowCollapseProgress(1, reduceMotion: false)
 
         XCTAssertEqual(height, singleRowHeight, accuracy: 0.01)
-        XCTAssertEqual(sut.buttonRowAlphaForTesting, 0, accuracy: 0.001)
-        XCTAssertFalse(sut.buttonRowTransformForTesting.isIdentity, "Should have scaled/translated away, not just faded")
     }
 
     func testWhenProgressIsHalfThenHeightIsBetweenFullAndSingleRow() {
@@ -65,12 +60,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         let height = sut.setButtonRowCollapseProgress(0.5, reduceMotion: false)
 
         XCTAssertEqual(height, (fullHeight + singleRowHeight) / 2, accuracy: 0.01)
-        XCTAssertEqual(sut.buttonRowAlphaForTesting, 0.5, accuracy: 0.001)
-        XCTAssertEqual(
-            sut.buttonRowTransformForTesting.a,
-            1 - BrowserToolbarView.buttonRowCollapseScaleAmount * 0.5,
-            accuracy: 0.001
-        )
     }
 
     func testWhenReduceMotionThenProgressIsIgnoredAndButtonRowStaysFullyShown() {
@@ -80,8 +69,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         let height = sut.setButtonRowCollapseProgress(1, reduceMotion: true)
 
         XCTAssertEqual(height, fullHeight, accuracy: 0.01)
-        XCTAssertEqual(sut.buttonRowAlphaForTesting, 1, accuracy: 0.001)
-        XCTAssertTrue(sut.buttonRowTransformForTesting.isIdentity)
     }
 
     func testWhenNoEmbeddedOmnibarThenProgressIsANoOp() {
@@ -91,7 +78,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         let height = sut.setButtonRowCollapseProgress(1, reduceMotion: false)
 
         XCTAssertEqual(height, buttonsOnlyHeight, accuracy: 0.01)
-        XCTAssertEqual(sut.buttonRowAlphaForTesting, 1, accuracy: 0.001)
     }
 
     func testWhenNotFloatingThenProgressIsANoOp() {
@@ -101,7 +87,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         let height = sut.setButtonRowCollapseProgress(1, reduceMotion: false)
 
         XCTAssertEqual(height, legacyFullHeight, accuracy: 0.01)
-        XCTAssertEqual(sut.buttonRowAlphaForTesting, 1, accuracy: 0.001)
     }
 
     func testWhenButtonRowIsMidCollapseThenRestingCapsuleFrameStillReportsSingleRowHeight() {

@@ -44,10 +44,6 @@ class BarsAnimator {
 
     private var bottomRevealGestureState: BottomBounceRevealing = .possible
 
-    #if DEBUG
-    var transitionProgressForTesting: CGFloat { transitionProgress }
-    #endif
-
     private var combinedBarsHeight: CGFloat {
         guard let delegate = delegate else { return 0 }
         return delegate.toolbarHeight + delegate.omniBar.barView.expectedHeight

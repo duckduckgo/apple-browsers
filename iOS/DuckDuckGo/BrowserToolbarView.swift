@@ -286,12 +286,6 @@ final class BrowserToolbarView: UIView {
         buttonStack.arrangedSubviews
     }
 
-    #if DEBUG
-    var buttonRowAlphaForTesting: CGFloat { buttonStack.alpha }
-    var buttonRowTransformForTesting: CGAffineTransform { buttonStack.transform }
-    var panelHeightForTesting: CGFloat { buttonsHeightConstraint.constant }
-    #endif
-
     func setFloatingStyleEnabled(_ enabled: Bool, animated: Bool = false) {
         guard isFloatingStyleEnabled != enabled else { return }
         isFloatingStyleEnabled = enabled

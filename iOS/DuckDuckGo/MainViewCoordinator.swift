@@ -594,27 +594,6 @@ class MainViewCoordinator {
         stopOmnibarDismissAnimatorAtCurrentPosition()
     }
 
-#if DEBUG
-    /// Starts a no-op dismiss animator so tests can supersede it without laying out chrome.
-    @MainActor
-    func startOmnibarDismissForTesting(interruptCleanup: @escaping () -> Void) {
-        stopInFlightOmnibarDismiss(runningInterruptCleanup: false)
-        omnibarDismissInterruptCleanup = interruptCleanup
-        let animator = UIViewPropertyAnimator(duration: 10, curve: .linear) {}
-        animator.addCompletion { [weak self] position in
-            guard let self else { return }
-            self.omnibarDismissAnimator = nil
-            guard position == .end else {
-                self.performOmnibarDismissInterruptCleanup()
-                return
-            }
-            self.omnibarDismissInterruptCleanup = nil
-        }
-        omnibarDismissAnimator = animator
-        animator.startAnimation()
-    }
-#endif
-
     @MainActor
     private func stopOmnibarDismissAnimatorAtCurrentPosition() {
         guard let omnibarDismissAnimator else { return }

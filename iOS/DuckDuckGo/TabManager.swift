@@ -342,6 +342,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
         configuration.mediaTypesRequiringUserActionForPlayback = autoplaySettings.currentAutoplayBlockingMode.mediaTypesRequiringUserAction
 
+        // Tabs only: TabViewController restores the web view's layout when WebKit hands it back after
+        // element fullscreen. Hosts without that restore would render the fullscreen surface blank.
+        if #available(iOS 16.0, *) {
+            configuration.preferences.isElementFullscreenEnabled = true
+        }
+
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
             configuration.webExtensionController = webExtensionManager.controller
         }

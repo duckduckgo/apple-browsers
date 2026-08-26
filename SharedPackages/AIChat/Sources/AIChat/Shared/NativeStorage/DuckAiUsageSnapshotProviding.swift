@@ -1,5 +1,5 @@
 //
-//  DuckAiUsageLimitsProviding.swift
+//  DuckAiUsageSnapshotProviding.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,12 +18,12 @@
 
 import Foundation
 
-public protocol DuckAiUsageLimitsProviding {
-    /// `.noData` rather than an error when the key is absent, unparseable, or every window has expired.
-    func currentUsageLimits() -> DuckAiUsageLimits
+public protocol DuckAiUsageSnapshotProviding {
+    /// `.noData` rather than an error when the key is absent, unparseable, or the notice has expired.
+    func currentSnapshot() -> DuckAiUsageSnapshot
 }
 
-public struct DuckAiUsageLimitsProvider: DuckAiUsageLimitsProviding {
+public struct DuckAiUsageSnapshotProvider: DuckAiUsageSnapshotProviding {
 
     private let storage: DuckAiNativeStorageHandling
     private let pixelFiring: DuckAiNativeStoragePixelFiring
@@ -39,7 +39,7 @@ public struct DuckAiUsageLimitsProvider: DuckAiUsageLimitsProviding {
         self.dateProvider = dateProvider
     }
 
-    public func currentUsageLimits() -> DuckAiUsageLimits {
+    public func currentSnapshot() -> DuckAiUsageSnapshot {
         let value: Any?
         do {
             value = try storage.getEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue)
@@ -48,6 +48,6 @@ public struct DuckAiUsageLimitsProvider: DuckAiUsageLimitsProviding {
             return .noData
         }
         // No pixel for a value that fails to decode: per the contract that's an ordinary "nothing to show" state.
-        return DuckAiUsageLimits.make(entryValue: value, now: dateProvider())
+        return DuckAiUsageSnapshot.make(entryValue: value, now: dateProvider())
     }
 }

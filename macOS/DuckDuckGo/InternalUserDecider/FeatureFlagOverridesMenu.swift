@@ -84,6 +84,11 @@ final class FeatureFlagOverridesMenu: NSMenu {
             .map { category in
                 let menuItem = NSMenuItem(title: category.rawValue)
                 menuItem.representedObject = category
+#if compiler(>=6.4)
+                if #available(macOS 27.0, *) {
+                    menuItem.preferredImageVisibility = .visible
+                }
+#endif
                 let submenu = NSMenu(title: category.rawValue)
                 menuItem.submenu = submenu
 

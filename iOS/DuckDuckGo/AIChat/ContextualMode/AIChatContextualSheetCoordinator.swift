@@ -732,7 +732,7 @@ private extension AIChatContextualSheetCoordinator {
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
             start: start,
-            footerWarningProvider: duckAiFooterWarningProvider
+            usageLimitsStore: duckAiUsageLimitsStore
         )
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
@@ -960,11 +960,11 @@ private extension AIChatContextualSheetCoordinator {
         }
     }
 
-    var duckAiFooterWarningProvider: UTIFooterWarningProviding? {
-        let storageHandler = isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
-        return storageHandler.map {
-            UTIFooterWarningProvider(limitsStore: DuckAiUsageLimitsStore(storageHandler: $0))
-        }
+    /// Fire tabs run an isolated Duck.ai session with no usage worth warning about, so the feature
+    /// never even gets a store there.
+    var duckAiUsageLimitsStore: DuckAiUsageLimitsStore? {
+        guard !isFireTab else { return nil }
+        return duckAiNativeStorageHandler.map { DuckAiUsageLimitsStore(storageHandler: $0) }
     }
     
     /// Starts the session timer after the sheet is dismissed.

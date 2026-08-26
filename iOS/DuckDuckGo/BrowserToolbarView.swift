@@ -90,6 +90,8 @@ final class BrowserToolbarView: UIView {
 
     static let extendedHitWidth: CGFloat = 45
     static let floatingButtonsHeight: CGFloat = 62
+    static let buttonRowCollapseScaleAmount: CGFloat = 0.2
+    static let buttonRowCollapseTranslationY: CGFloat = 8
 
     /// Non-floating (legacy) buttons-only bar height, matching the original `UIToolbar` on `main`.
     /// The floating style uses the taller `buttonsHeight`.
@@ -190,6 +192,7 @@ final class BrowserToolbarView: UIView {
     private weak var hostedOmnibarView: UIView?
     private weak var swipeIncomingOmnibarView: UIView?
     private var swipeIncomingOmnibarConstraints: [NSLayoutConstraint] = []
+    private var isOmnibarMorphing = false
     private let outgoingSwipeMask = CAShapeLayer()
     private let incomingSwipeMask = CAShapeLayer()
     private weak var hostedExpandedContentView: UIView?
@@ -198,6 +201,7 @@ final class BrowserToolbarView: UIView {
     /// floats near the device bottom (see `floatingBottomMargin`). Kept in sync with the host's
     /// safe-area inset in `layoutSubviews`; also widens the hit-test region.
     private var floatingBottomOffset: CGFloat = 0
+    private var standaloneCollapseScale: CGFloat = 1
     /// The tab switcher reuses this bar purely for button-position parity with the browser, but
     /// paints its own backdrop — so in the non-floating style its own background must stay clear.
     private var isLegacyBackgroundTransparent = false
@@ -225,6 +229,10 @@ final class BrowserToolbarView: UIView {
             return targetHeight
         }
         return (verticalContentPadding * 2) + targetHeight + omnibarHeight + omnibarToButtonsSpacing
+    }
+
+    static func singleRowHeight(withOmnibarHeight omnibarHeight: CGFloat) -> CGFloat {
+        (verticalContentPadding * 2) + omnibarHeight
     }
 
     override init(frame: CGRect) {
@@ -306,11 +314,10 @@ final class BrowserToolbarView: UIView {
         endOmnibarSwipe()
         hostedOmnibarView?.removeFromSuperview()
         hostedOmnibarView = nil
+        isOmnibarMorphing = false
         
         guard let view else {
-            omnibarHeightConstraint.constant = 0
-            buttonsHeightConstraint.constant = buttonsOnlyHeight
-            updateCornerStyle()
+            applyOmnibarDetachmentPose()
             return
         }
         
@@ -330,6 +337,37 @@ final class BrowserToolbarView: UIView {
         ])
         
         updateCornerStyle()
+    }
+
+    func prepareForOmnibarDetachment() {
+        endOmnibarSwipe()
+        hostedOmnibarView?.removeFromSuperview()
+        hostedOmnibarView = nil
+        isOmnibarMorphing = true
+    }
+
+    func applyOmnibarDetachmentPose() {
+        omnibarHeightConstraint.constant = 0
+        buttonsHeightConstraint.constant = buttonsOnlyHeight
+        updateCornerStyle()
+    }
+
+    func prepareForOmnibarAttachment(height: CGFloat) {
+        guard isFloatingStyleEnabled, hostedOmnibarView == nil else { return }
+        isOmnibarMorphing = true
+        omnibarHeightConstraint.constant = height
+        buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: true)
+        updateCornerStyle()
+    }
+
+    func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle) {
+        guard isFloatingStyleEnabled else { return }
+        UIView.performWithoutAnimation {
+            materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
+            materialBackgroundView.effect = nil
+            materialBackgroundView.effect = materialEffect()
+            materialBackgroundView.layoutIfNeeded()
+        }
     }
 
     func isHostingOmnibarView(_ view: UIView) -> Bool {
@@ -569,6 +607,12 @@ final class BrowserToolbarView: UIView {
         hasEmbeddedOmnibar ? Self.floatingBottomMarginWithEmbedded : Self.floatingBottomMarginStandalone
     }
 
+    var visibleCapsuleRect: CGRect {
+        guard isFloatingStyleEnabled else { return bounds }
+        let shadowSpill = materialBackgroundView.layer.shadowRadius + materialBackgroundView.layer.shadowOffset.height
+        return bounds.union(materialBackgroundView.frame.insetBy(dx: -shadowSpill, dy: -shadowSpill))
+    }
+
     /// Floating style only; returns `.zero` otherwise.
     func restingCapsuleFrame(in view: UIView) -> CGRect {
         guard isFloatingStyleEnabled else { return .zero }
@@ -576,12 +620,55 @@ final class BrowserToolbarView: UIView {
         let safeBottom = view.safeAreaInsets.bottom
         let insets = Self.floatingBarOuterInsets
         let width = bounds.width - insets.left - insets.right
-        let height = buttonsHeightConstraint.constant
+        let height = hasEmbeddedOmnibar
+            ? Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
+            : buttonsHeightConstraint.constant
         let offset = max(0, safeBottom - floatingBottomMargin)
         let bottom = bounds.maxY - safeBottom + offset
         return CGRect(x: bounds.minX + insets.left, y: bottom - height, width: width, height: height)
     }
-    
+
+    @discardableResult
+    func setButtonRowCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) -> CGFloat {
+        let fullHeight = Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant, isFloating: isFloatingStyleEnabled)
+
+        guard isFloatingStyleEnabled, hasEmbeddedOmnibar, !hasExpandedContent, !reduceMotion else {
+            buttonStack.alpha = 1
+            buttonStack.transform = .identity
+            buttonsHeightConstraint.constant = fullHeight
+            return fullHeight
+        }
+
+        let progress = collapseProgress.clamped(to: 0...1)
+        buttonStack.alpha = 1 - progress
+        let scale = 1 - Self.buttonRowCollapseScaleAmount * progress
+        buttonStack.transform = CGAffineTransform(scaleX: scale, y: scale)
+            .concatenating(CGAffineTransform(translationX: 0, y: Self.buttonRowCollapseTranslationY * progress))
+
+        let singleRowHeight = Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
+        let height = fullHeight - (fullHeight - singleRowHeight) * progress
+        buttonsHeightConstraint.constant = height
+        updateCornerStyle()
+        return height
+    }
+
+    func setStandaloneCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) {
+        guard isFloatingStyleEnabled, !hasEmbeddedOmnibar, !reduceMotion else {
+            standaloneCollapseScale = 1
+            applyMaterialBackgroundTransform()
+            return
+        }
+
+        let progress = collapseProgress.clamped(to: 0...1)
+        standaloneCollapseScale = 1 - Self.buttonRowCollapseScaleAmount * progress
+        applyMaterialBackgroundTransform()
+    }
+
+    private func applyMaterialBackgroundTransform() {
+        materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: floatingBottomOffset)
+            .concatenating(CGAffineTransform(scaleX: standaloneCollapseScale, y: standaloneCollapseScale))
+    }
+
     /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,
     /// leaving `floatingBottomMargin`. Done as a transform (not a constraint change) so it doesn't
     /// disturb the toolbar's layout slot or the runtime chrome hide/show constant logic.
@@ -590,7 +677,7 @@ final class BrowserToolbarView: UIView {
         let target = isFloatingStyleEnabled ? max(0, hostBottomInset - floatingBottomMargin) : 0
         guard target != floatingBottomOffset else { return }
         floatingBottomOffset = target
-        materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: target)
+        applyMaterialBackgroundTransform()
     }
 
     private func updateCornerStyle() {
@@ -599,14 +686,19 @@ final class BrowserToolbarView: UIView {
             return
         }
 
+        // During focus/defocus morph the shell is still tall, so `.capsule()` would read as an
+        // oversized pill. Keep the same concentric corners as the resting combined floating UI
+        // so the round-rect lands without a radius pop.
+        let usesConcentricCorners = isOmnibarMorphing || hasEmbeddedOmnibar || hasExpandedContent
+
         if #available(iOS 26, *) {
-            materialBackgroundView.cornerConfiguration = hasEmbeddedOmnibar || hasExpandedContent
+            materialBackgroundView.cornerConfiguration = usesConcentricCorners
                 ? .corners(radius: UICornerRadius.containerConcentric(minimum: Self.floatingUICornerRadius))
                 : .capsule()
             return
         }
 
-        materialBackgroundView.contentView.layer.cornerRadius = hasEmbeddedOmnibar || hasExpandedContent
+        materialBackgroundView.contentView.layer.cornerRadius = usesConcentricCorners
             ? Self.floatingUICornerRadius
             : materialBackgroundView.contentView.bounds.height / 2
     }
@@ -638,6 +730,18 @@ final class BrowserToolbarView: UIView {
             UIView.animate(withDuration: 0.2, animations: updates)
         } else {
             updates()
+        }
+    }
+
+    /// Rebuilds the glass so it re-resolves against whatever is now behind the capsule. Swapping the
+    /// surface under the bar (web page <-> new tab page) doesn't invalidate the effect on its own, so
+    /// a light page's material survives into a dark NTP and the capsule reads lighter than its backdrop.
+    func refreshMaterialBackdrop() {
+        guard isFloatingStyleEnabled else { return }
+        UIView.performWithoutAnimation {
+            materialBackgroundView.effect = nil
+            materialBackgroundView.effect = materialEffect()
+            materialBackgroundView.layoutIfNeeded()
         }
     }
 

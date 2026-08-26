@@ -74,7 +74,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
-        footerWarningProvider: UTIFooterWarningProviding? = nil
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil
     ) {
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
@@ -95,7 +95,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             contextualStart: start,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
             placesAttachmentsAboveInput: isFloatingInputAvailable,
-            footerWarningProvider: footerWarningProvider
+            usageLimitsStore: usageLimitsStore
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,

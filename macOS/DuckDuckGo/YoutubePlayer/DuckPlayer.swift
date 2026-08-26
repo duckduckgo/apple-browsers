@@ -276,8 +276,8 @@ final class DuckPlayer {
 
     public func handleYoutubeError(params: Any, message: UserScriptMessage) -> Encodable? {
         let (volumePixel, dailyPixel) = getPixelsForYouTubeErrorParams(params)
-        PixelKit.fire(dailyPixel, frequency: .legacyDaily, doNotEnforcePrefix: true)
-        PixelKit.fire(volumePixel, doNotEnforcePrefix: true)
+        PixelKit.fire(dailyPixel, frequency: .legacyDaily)
+        PixelKit.fire(volumePixel)
         return nil
     }
 

@@ -91,12 +91,10 @@ extension XCTestCase {
 
     func fire(_ event: PixelKit.Event,
               frequency: PixelKit.Frequency,
-              doNotEnforcePrefix: Bool = false,
               and expectations: PixelFireExpectations,
               file: StaticString,
               line: UInt) {
         verifyThat(event, frequency: frequency,
-                   doNotEnforcePrefix: doNotEnforcePrefix,
                    meets: expectations,
                    file: file,
                    line: line)
@@ -107,7 +105,6 @@ extension XCTestCase {
     /// This method also checks that there is internal consistency in the expected fields.
     func verifyThat(_ event: PixelKit.Event,
                     frequency: PixelKit.Frequency,
-                    doNotEnforcePrefix: Bool = false,
                     meets expectations: PixelFireExpectations,
                     file: StaticString,
                     line: UInt) {
@@ -158,7 +155,7 @@ extension XCTestCase {
             completion(true, nil)
         }
 
-        pixelKit.fire(event, frequency: frequency, doNotEnforcePrefix: doNotEnforcePrefix)
+        pixelKit.fire(event, frequency: frequency)
         waitForExpectations(timeout: 0.1)
     }
 

@@ -19,32 +19,38 @@
 
 import Testing
 import Foundation
+import BrowserServicesKit
 import RemoteMessaging
 import BrowserServicesKitTestsUtils
 @testable import DuckDuckGo
 
-@Suite("RMF - Survey Last Search State Refresher - Integration Tests")
-struct SurveyLastSearchStateRefresherIntegrationTests {
+@Suite("RMF - Survey Usage State Refresher - Integration Tests")
+struct SurveyUsageStateRefresherIntegrationTests {
 
-    @Test("Check Refresher Correctly Uses Survey URL Builder")
-    func refreshLastSearchStateUsesCorrectlySurveyURLBuilder() throws {
+    @available(iOS 16, *)
+    @Test("Check Refresher Correctly Uses Survey URL Builder", .timeLimit(.minutes(1)))
+    func refreshUsageStatesUsesSurveyURLBuilder() throws {
         // GIVEN
         let testDate = Date(timeIntervalSince1970: 1760054400) // 10 October 2025 12:00:00 AM GMT
         let mockProvider = MockAutofillUsageProvider(searchDauDate: testDate)
+        let mockFeatureDiscovery = MockFeatureDiscovery()
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(0, for: .aiChat)
 
-        let sut = RemoteMessagingSurveyLastSearchStateRefresher(
+        let sut = RemoteMessagingSurveyUsageStateRefresher(
             searchDauDateProvider: mockProvider,
-            refreshLastSearchStateFunction: DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState
+            featureDiscovery: mockFeatureDiscovery,
+            refreshSurveyUsageStatesFunction: DefaultRemoteMessagingSurveyURLBuilder.refreshSurveyUsageStates
         )
-        let testPath = "https://survey.example.com?last_search_state=1760054400"
+        let testPath = "https://survey.example.com?last_search_state=1760054400&last_duck_ai_usage=1760054400"
 
         // WHEN
-        let result = sut.refreshLastSearchState(forURLPath: testPath)
+        let result = sut.refreshSurveyUsageStates(forURLPath: testPath)
 
         // THEN
-        let lastSearchStateQueryPath = try #require(result.components(separatedBy: "last_search_state=").last)
+        let queryItems = try #require(URLComponents(string: result)?.queryItems)
         #expect(result.contains("survey.example.com"))
-        #expect(lastSearchStateQueryPath != "1760054400")
+        #expect(queryItems.first(where: { $0.name == "last_search_state" })?.value != "1760054400")
+        #expect(queryItems.first(where: { $0.name == "last_duck_ai_usage" })?.value == "day")
     }
 
 }

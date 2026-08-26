@@ -1228,7 +1228,7 @@ final class DataImportViewModelTests: XCTestCase {
                 .init(browser: browser, profiles: [BrowserProfile.permissionDenied(fileStore: self.fileStore)(browser)])
             },
             dataImporterFactory: { _, _, _, _ in ImporterMock(importTask: self.importTask) },
-            directoryAccessAvailability: .mock()
+            directoryAccessAvailability: .mockUnavailable()
         )
         XCTAssertEqual(model.screen, .sourceAndDataTypesPicker)
 
@@ -1252,7 +1252,7 @@ final class DataImportViewModelTests: XCTestCase {
                 .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
             },
             dataImporterFactory: { _, _, _, _ in ImporterMock(importTask: self.importTask) },
-            directoryAccessAvailability: .mock()
+            directoryAccessAvailability: .mockUnavailable()
         )
 
         // WHEN
@@ -1274,7 +1274,7 @@ final class DataImportViewModelTests: XCTestCase {
                 .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
             },
             dataImporterFactory: { _, _, _, _ in ImporterMock(importTask: self.importTask) },
-            directoryAccessAvailability: .mock(isForcingPermissionFix: true)
+            directoryAccessAvailability: .mockAvailable()
         )
         XCTAssertEqual(model.selectedProfile?.accessState, .readable)
 
@@ -1298,7 +1298,7 @@ final class DataImportViewModelTests: XCTestCase {
                 .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
             },
             dataImporterFactory: { _, _, _, _ in ImporterMock(importTask: self.importTask) },
-            directoryAccessAvailability: .mock(isForcingPermissionFix: false)
+            directoryAccessAvailability: .mockUnavailable()
         )
 
         // WHEN
@@ -2655,7 +2655,7 @@ final class DataImportViewModelTests: XCTestCase {
             dataImporterFactory: dataImporterFactory ?? { _, _, _, _ in ImporterMock(importTask: self.importTask) },
             requestPrimaryPasswordCallback: requestPrimaryPasswordCallback ?? { _ in nil },
             openPanelCallback: { self.openPanelCallback!($0) },
-            directoryAccessAvailability: .mock()
+            directoryAccessAvailability: .mockUnavailable()
         )
     }
 
@@ -2810,7 +2810,7 @@ private class ImporterMock: DataImporter {
 
 private extension DataDirectoryPermissionFixAvailability {
 
-    static func mock(isForcingPermissionFix: Bool = false) -> DataDirectoryPermissionFixAvailability {
+    private static func mock(isForcingPermissionFix: Bool) -> DataDirectoryPermissionFixAvailability {
         let debugSettings: any KeyedStoring<DataImportDebugSettings> = InMemoryKeyValueStore().keyedStoring()
         debugSettings.isForcingMacOS27PermissionsFix = isForcingPermissionFix
 
@@ -2819,6 +2819,14 @@ private extension DataDirectoryPermissionFixAvailability {
             debugSettings: debugSettings,
             isOSSupported: true
         )
+    }
+
+    static func mockAvailable() -> DataDirectoryPermissionFixAvailability {
+        mock(isForcingPermissionFix: true)
+    }
+
+    static func mockUnavailable() -> DataDirectoryPermissionFixAvailability {
+        mock(isForcingPermissionFix: false)
     }
 }
 

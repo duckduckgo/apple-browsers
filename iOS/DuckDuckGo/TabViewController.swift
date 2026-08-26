@@ -470,7 +470,7 @@ class TabViewController: UIViewController {
     public var link: Core.Link? {
         if isError {
             if let url = url ?? webView.url ?? URL(string: "") {
-                return Link(title: errorText, url: SerpSearchTokenInterceptor.strippingToken(from: url))
+                return Link(title: errorText, url: url)
             }
         }
         
@@ -478,9 +478,7 @@ class TabViewController: UIViewController {
             return tabModel.link
         }
                         
-        // Strip the search-token param so it never surfaces to the user via this link (address bar,
-        // bookmarks, favorites, copy/share all read `link`). The live network request keeps the token.
-        let finalURL = SerpSearchTokenInterceptor.strippingToken(from: duckPlayerNavigationHandler.getDuckURLFor(url))
+        let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
         let activeLink = Link(title: title, url: finalURL)
         guard let storedLink = tabModel.link else {
             return activeLink
@@ -1153,9 +1151,6 @@ class TabViewController: UIViewController {
     
     func updateTabModel() {
         if let url = url {
-            // Strip the search-token param before it persists into `tabModel.link` (read directly by the
-            // tab switcher, autocomplete, and tab restore). Shadow `url` so the comparison below matches.
-            let url = SerpSearchTokenInterceptor.strippingToken(from: url)
             let hasTitle = title != nil && !title!.isEmpty
             let previousTitle = (tabModel.link?.url == url) ? tabModel.link?.title : nil
             let link = Link(title: hasTitle ? title : previousTitle, url: url)
@@ -3128,7 +3123,7 @@ extension TabViewController: WKNavigationDelegate {
             didModifyRequest = true
         }
 
-        // Attach Search Token experiment signals (dindexexp + dindextoken URL params) to SERP navigations.
+        // Attach Search Token experiment signals (dindexexp param + X-DDG-Search-Token header) to SERP navigations.
         // Enrolled devices only, skipping back/forward so we don't wipe forward history.
         if navigationAction.isTargetingMainFrame(),
            navigationAction.navigationType != .backForward,

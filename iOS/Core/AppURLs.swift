@@ -159,7 +159,6 @@ public extension URL {
         static let partialHost = "pv1"
         static let searchHeader = "ko"
         static let kbg = "kbg"
-        // Search Token (Dindex) experiment param. Keep in sync with SerpSearchTokenInterceptor.tokenParam.
         static let searchToken = "dindextoken"
         static let email = "email"
         static let isTablet = "is_tablet"

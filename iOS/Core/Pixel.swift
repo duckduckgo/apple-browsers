@@ -255,11 +255,7 @@ public class Pixel {
         DefaultInternalUserDecider(store: InternalUserStore()).isInternalUser
     }
 
-    public static let defaultPixelUserAgent: String = {
-        // Strip patch version component as per https://app.asana.com/0/69071770703008/1209176655620013/f
-        let trimmedOSVersion = AppVersion.shared.osVersionMajorMinor
-        return DefaultUserAgentManager.duckduckGoUserAgent(for: AppVersion.shared, osVersion: trimmedOSVersion)
-    }()
+    public static let defaultPixelUserAgent: String = PixelUserAgent.default
 
     public enum QueryParameters: Codable {
         case atb

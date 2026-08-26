@@ -117,16 +117,17 @@ final class AppDependencyProvider: DependencyProvider {
         // Configuring PixelKit
         let isTablet = UIDevice.current.userInterfaceIdiom == .pad
         let source = isTablet ? PixelKit.Source.iPadOS : PixelKit.Source.iOS
+        let pixelKitDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: source.rawValue,
                        session: "ios-browser",
                        defaultHeaders: [:],
-                       defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
+                       defaults: pixelKitDefaults,
                        parameterProvider: IOSPixelKitParameterProvider()) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
-            let apiHeaders = APIRequestV2.HeadersV2(userAgent: Pixel.defaultPixelUserAgent, additionalHeaders: headers)
+            let apiHeaders = APIRequestV2.HeadersV2(userAgent: PixelUserAgent.default, additionalHeaders: headers)
             guard let request = APIRequestV2(url: url, method: .get, queryItems: parameters.toQueryItems(), headers: apiHeaders) else {
                 assertionFailure("Invalid Pixel request")
                 onComplete(false, nil)
@@ -141,6 +142,17 @@ final class AppDependencyProvider: DependencyProvider {
                 }
             }
         }
+
+        // Carries the legacy `DailyPixel` / `UniquePixel` / debounce last-fire dates into PixelKit's
+        // throttle store, so migrated pixels do not forget they already fired. Runs once, after
+        // `setUp` so it writes to the same store PixelKit reads. See `LegacyPixelStateMigration`.
+        LegacyPixelStateMigration(
+            destination: pixelKitDefaults,
+            dailyStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.daily.pixel.storage"),
+            uniqueStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.unique.pixel.storage"),
+            debounceStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.pixel.storage"),
+            completionFlagStore: pixelKitDefaults
+        ).run()
 
         let featureFlagOverrideStore = UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: featureFlagOverrideStore,

@@ -49072,7 +49072,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów historii"
+                      "value" : "%arg elem. historii"
                     }
                   }
                 }
@@ -49384,7 +49384,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Elementy historii (%#@items@)** zostaną usunięte"
+            "value" : "Elementy historii (**%#@items@**) zostaną usunięte"
           },
           "substitutions" : {
             "items" : {
@@ -49452,7 +49452,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Из журнала будет удалено **%1$#@items@**"
+            "value" : "Из журнала будет удалено **%#@items@**"
           },
           "substitutions" : {
             "items" : {
@@ -49581,13 +49581,13 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Includere cookie e altri dati"
+            "value" : "Includi cookie e altri dati"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclusief cookies en andere gegevens"
+            "value" : "Inclusief cookies & andere gegevens"
           }
         },
         "pl" : {
@@ -49605,7 +49605,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Также удалить cookie и другие данные"
+            "value" : "Также удалить файлы cookie и прочие данные"
           }
         }
       }
@@ -50794,7 +50794,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Pliki cookie i inne dane witryn (%#@sites@)** zostaną usunięte"
+            "value" : "**Pliki cookie i inne dane z %#@sites@** zostaną usunięte"
           },
           "substitutions" : {
             "sites" : {
@@ -50817,13 +50817,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg"
+                      "value" : "%arg witryna"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg"
+                      "value" : "%arg witryn"
                     }
                   }
                 }
@@ -50885,7 +50885,7 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайта"
+                      "value" : "%arg сайт"
                     }
                   },
                   "other" : {
@@ -64589,8 +64589,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Import abbrechen"
+            "state" : "translated",
+            "value" : "Abbrechen"
           }
         },
         "en" : {
@@ -64601,44 +64601,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cancelar importación"
+            "state" : "translated",
+            "value" : "Cancelar"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Annuler l’importation"
+            "state" : "translated",
+            "value" : "Annuler"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Annulla importazione"
+            "state" : "translated",
+            "value" : "Annulla"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Importeren annuleren"
+            "state" : "translated",
+            "value" : "Annuleren"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Anuluj import"
+            "state" : "translated",
+            "value" : "Anuluj"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cancelar importação"
+            "state" : "translated",
+            "value" : "Cancelar"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Отменить импорт"
+            "state" : "translated",
+            "value" : "Отменить"
           }
         }
       }
@@ -64743,10 +64743,58 @@
       "comment" : "Title of the screen shown when DuckDuckGo still can't read the browser data folder after the user picked one, asking them to try again (%1$@ is the browser name)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas ist schiefgelaufen. DuckDuckGo kann nicht auf deinen %1$@-Datenordner zugreifen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Something went wrong. DuckDuckGo can’t access your %1$@ Data folder."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se ha producido un error. DuckDuckGo no puede acceder a la carpeta de datos de %1$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une erreur s'est produite. DuckDuckGo ne peut pas accéder à votre dossier de données %1$@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si è verificato un errore. DuckDuckGo non riesce ad accedere alla tua cartella dati %1$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er is iets misgegaan. DuckDuckGo heeft geen toegang tot je %1$@-gegevensmap."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wystąpił błąd. DuckDuckGo nie może uzyskać dostępu do folderu danych %1$@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocorreu um erro. O DuckDuckGo não consegue aceder à tua pasta de dados do %1$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что-то пошло не так. DuckDuckGo не может получить доступ к вашей папке данных %1$@."
           }
         }
       }

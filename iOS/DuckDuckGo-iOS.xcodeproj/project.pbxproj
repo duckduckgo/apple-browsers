@@ -1833,16 +1833,12 @@
 		AABB00010001000100010003 /* UTIRenderStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010004 /* UTIRenderStateTests.swift */; };
 		AABB00010001000100010005 /* UTIViewConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010006 /* UTIViewConfig.swift */; };
 		AABB00010001000100010007 /* UTIAttachmentPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010008 /* UTIAttachmentPolicy.swift */; };
-		FC7EF0020000000000000001 /* UTIFooterWarning.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000001 /* UTIFooterWarning.swift */; };
 		FC7EF0020000000000000101 /* UTIFooterCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000101 /* UTIFooterCardView.swift */; };
 		FC7EF0020000000000000102 /* UTIFooterUsageRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000102 /* UTIFooterUsageRingView.swift */; };
-		FC7EF0020000000000000002 /* UTIFooterWarningResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000002 /* UTIFooterWarningResolver.swift */; };
 		FC7EF0020000000000000003 /* UTIFooterMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000003 /* UTIFooterMessage.swift */; };
 		FC7EF0020000000000000004 /* UTIFooterMessageMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000004 /* UTIFooterMessageMapper.swift */; };
-		FC7EF0020000000000000005 /* UTIFooterWarningProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000005 /* UTIFooterWarningProviding.swift */; };
 		FC7EF0020000000000000006 /* DuckAiUsageLimitsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000006 /* DuckAiUsageLimitsStore.swift */; };
 		FC7EF0020000000000000007 /* UTIFooterController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0010000000000000007 /* UTIFooterController.swift */; };
-		FC7EF0040000000000000001 /* UTIFooterWarningResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000001 /* UTIFooterWarningResolverTests.swift */; };
 		FC7EF0040000000000000101 /* UTIFooterCardViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */; };
 		FC7EF0040000000000000002 /* UTIFooterMessageMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */; };
 		FC7EF0040000000000000003 /* UTIFooterControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */; };
@@ -4699,16 +4695,12 @@
 		AABB00010001000100010004 /* UTIRenderStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIRenderStateTests.swift; sourceTree = "<group>"; };
 		AABB00010001000100010006 /* UTIViewConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIViewConfig.swift; sourceTree = "<group>"; };
 		AABB00010001000100010008 /* UTIAttachmentPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIAttachmentPolicy.swift; sourceTree = "<group>"; };
-		FC7EF0010000000000000001 /* UTIFooterWarning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterWarning.swift; sourceTree = "<group>"; };
 		FC7EF0010000000000000101 /* UTIFooterCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterCardView.swift; sourceTree = "<group>"; };
 		FC7EF0010000000000000102 /* UTIFooterUsageRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterUsageRingView.swift; sourceTree = "<group>"; };
-		FC7EF0010000000000000002 /* UTIFooterWarningResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterWarningResolver.swift; sourceTree = "<group>"; };
 		FC7EF0010000000000000003 /* UTIFooterMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterMessage.swift; sourceTree = "<group>"; };
 		FC7EF0010000000000000004 /* UTIFooterMessageMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterMessageMapper.swift; sourceTree = "<group>"; };
-		FC7EF0010000000000000005 /* UTIFooterWarningProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterWarningProviding.swift; sourceTree = "<group>"; };
 		FC7EF0010000000000000006 /* DuckAiUsageLimitsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiUsageLimitsStore.swift; sourceTree = "<group>"; };
 		FC7EF0010000000000000007 /* UTIFooterController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterController.swift; sourceTree = "<group>"; };
-		FC7EF0030000000000000001 /* UTIFooterWarningResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterWarningResolverTests.swift; sourceTree = "<group>"; };
 		FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterCardViewTests.swift; sourceTree = "<group>"; };
 		FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterMessageMapperTests.swift; sourceTree = "<group>"; };
 		FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterControllerTests.swift; sourceTree = "<group>"; };
@@ -10784,13 +10776,10 @@
 		FC7EF0050000000000000001 /* Footer */ = {
 			isa = PBXGroup;
 			children = (
-				FC7EF0010000000000000001 /* UTIFooterWarning.swift */,
 				FC7EF0010000000000000101 /* UTIFooterCardView.swift */,
 				FC7EF0010000000000000102 /* UTIFooterUsageRingView.swift */,
-				FC7EF0010000000000000002 /* UTIFooterWarningResolver.swift */,
 				FC7EF0010000000000000003 /* UTIFooterMessage.swift */,
 				FC7EF0010000000000000004 /* UTIFooterMessageMapper.swift */,
-				FC7EF0010000000000000005 /* UTIFooterWarningProviding.swift */,
 				FC7EF0010000000000000006 /* DuckAiUsageLimitsStore.swift */,
 				FC7EF0010000000000000007 /* UTIFooterController.swift */,
 			);
@@ -10800,7 +10789,6 @@
 		FC7EF0050000000000000002 /* Footer */ = {
 			isa = PBXGroup;
 			children = (
-				FC7EF0030000000000000001 /* UTIFooterWarningResolverTests.swift */,
 				FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */,
 				FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */,
 				FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */,
@@ -14195,13 +14183,10 @@
 				FA57E0030003000300030003 /* UnifiedToggleInputPasteHandler.swift in Sources */,
 				F2B8A10736AA100000C0DE01 /* UnifiedToggleInputAttachment.swift in Sources */,
 				AABB00010001000100010007 /* UTIAttachmentPolicy.swift in Sources */,
-				FC7EF0020000000000000001 /* UTIFooterWarning.swift in Sources */,
 				FC7EF0020000000000000101 /* UTIFooterCardView.swift in Sources */,
 				FC7EF0020000000000000102 /* UTIFooterUsageRingView.swift in Sources */,
-				FC7EF0020000000000000002 /* UTIFooterWarningResolver.swift in Sources */,
 				FC7EF0020000000000000003 /* UTIFooterMessage.swift in Sources */,
 				FC7EF0020000000000000004 /* UTIFooterMessageMapper.swift in Sources */,
-				FC7EF0020000000000000005 /* UTIFooterWarningProviding.swift in Sources */,
 				FC7EF0020000000000000006 /* DuckAiUsageLimitsStore.swift in Sources */,
 				FC7EF0020000000000000007 /* UTIFooterController.swift in Sources */,
 				CB27DAE72FFFE65200EEEADB /* WebViewTransitionGeometry.swift in Sources */,
@@ -15196,7 +15181,6 @@
 				A1B2C3D4E5F60014A1B2C3D4 /* UnifiedToggleInputReasoningTests.swift in Sources */,
 				F101D53CD31E95F9C9FE2AC1 /* UnifiedToggleInputCoordinatorAttachmentLimitsTests.swift in Sources */,
 				AABB00010001000100010009 /* UTIAttachmentPolicyTests.swift in Sources */,
-				FC7EF0040000000000000001 /* UTIFooterWarningResolverTests.swift in Sources */,
 				FC7EF0040000000000000101 /* UTIFooterCardViewTests.swift in Sources */,
 				FC7EF0040000000000000002 /* UTIFooterMessageMapperTests.swift in Sources */,
 				FC7EF0040000000000000003 /* UTIFooterControllerTests.swift in Sources */,

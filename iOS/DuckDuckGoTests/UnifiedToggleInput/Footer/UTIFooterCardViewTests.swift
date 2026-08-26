@@ -57,6 +57,33 @@ final class UTIFooterCardViewTests: XCTestCase {
         XCTAssertGreaterThan(height(of: sut), UTIFooterCardView.overlap + 34)
     }
 
+    func test_cardHeight_isUnchangedByTheModelPickerChevron() {
+        let sut = UTIFooterCardView()
+        sut.modelPickerMenu = UIMenu(children: [UIAction(title: "5.4 mini") { _ in }])
+
+        sut.configure(with: makeMessage(showsModelPicker: false), animateIcon: false)
+        let plain = height(of: sut)
+
+        sut.configure(with: makeMessage(showsModelPicker: true), animateIcon: false)
+        let withChevron = height(of: sut)
+
+        XCTAssertEqual(plain, withChevron, accuracy: 0.5)
+    }
+
+    /// A message with no CTA must leave no gap where the pill would have been.
+    func test_cardWidth_collapsesTheActionButtonWithoutAnAction() {
+        let sut = UTIFooterCardView()
+        sut.frame = CGRect(x: 0, y: 0, width: phoneWidth, height: 200)
+
+        sut.configure(with: makeMessage(primaryAction: nil), animateIcon: false)
+        sut.setNeedsLayout()
+        sut.layoutIfNeeded()
+
+        let actionButtons = sut.subviews.flatMap(\.subviews).compactMap { $0 as? UTIFooterActionButton }
+        XCTAssertEqual(actionButtons.count, 1)
+        XCTAssertEqual(actionButtons.first?.bounds.width, 0)
+    }
+
     // MARK: - Helpers
 
     private func height(of view: UTIFooterCardView) -> CGFloat {
@@ -69,11 +96,20 @@ final class UTIFooterCardViewTests: XCTestCase {
     }
 
     private func makeMessage(title: String = "90% of weekly limit",
-                             subtitle: String? = "Resets in 2 days") -> UTIFooterMessage {
+                             subtitle: String? = "Resets in 2 days",
+                             showsModelPicker: Bool = false) -> UTIFooterMessage {
+        makeMessage(title: title,
+                    subtitle: subtitle,
+                    primaryAction: .init(title: "Switch to 5.4 mini", showsModelPicker: showsModelPicker))
+    }
+
+    private func makeMessage(title: String = "90% of weekly limit",
+                             subtitle: String? = "Resets in 2 days",
+                             primaryAction: UTIFooterMessage.PrimaryAction?) -> UTIFooterMessage {
         UTIFooterMessage(icon: .usageRing(progress: 0.9),
                          title: title,
                          subtitle: subtitle,
-                         primaryAction: .init(title: "Reduce Usage", action: .reduceUsage),
+                         primaryAction: primaryAction,
                          isDismissible: true)
     }
 }

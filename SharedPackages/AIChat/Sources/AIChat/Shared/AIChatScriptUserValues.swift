@@ -125,6 +125,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// `true` when the native side supplies page-type signals so the duck.ai web app can render
     /// page-tailored suggested prompts ("suggestions").
     public let supportsSuggestions: Bool
+    /// `true` when the native app renders the usage-limit messages itself, so the FE suppresses
+    /// its own usage banner.
+    public let supportsNativeUsageWarnings: Bool
     /// `true` when the native app handles the "voice chat start failed" remediation UI
     /// (e.g. surfaces the OS microphone-disabled prompt). When this is `true` the FE
     /// must suppress its own in-page tooltip and post `voiceChatStartFailed` to native
@@ -212,6 +215,7 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsNativePromptEditing: Bool = false,
                 supportsPromoCards: Bool = false,
                 supportsSuggestions: Bool = false,
+                supportsNativeUsageWarnings: Bool = false,
                 supportsNativeVoicePermissionHandler: Bool = false,
                 supportsNativeDictationPermissionHandler: Bool = false,
                 installType: AIChatInstallType = .new,
@@ -239,6 +243,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsNativePromptEditing = supportsNativePromptEditing
         self.supportsPromoCards = supportsPromoCards
         self.supportsSuggestions = supportsSuggestions
+        self.supportsNativeUsageWarnings = supportsNativeUsageWarnings
         self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
         self.supportsNativeDictationPermissionHandler = supportsNativeDictationPermissionHandler
         self.installType = installType

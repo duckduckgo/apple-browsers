@@ -9,6 +9,8 @@
 This document gathers every requirement, decision, constraint, and open question from the Asana project (main task, its comment history, linked tasks, privacy triages, design peer review, tech input) and the Figma design file. It is deliberately implementation-independent; the companion [tech-design.md](tech-design.md) covers the how.
 
 > **Delivery plan:** the work breakdown (one Asana subtask per stacked PR, with estimates) is in [tech-design.md](tech-design.md) §5.
+>
+> **Decision rule for unknowns:** the Asana task — and the approved triage/design artifacts it links — is the source of truth. For edge cases it doesn't settle, follow macOS's shipped behavior unless it doesn't make sense on mobile; then follow Android's. Shipped platform behavior is catalogued with code citations in [platform-precedents.md](platform-precedents.md).
 
 ---
 
@@ -54,7 +56,7 @@ Permission types: **Camera, Microphone, Location (geolocation)** — only these 
 - **Address-bar permission indicator and post-grant banner/sheet** — part of the project's original scope, replaced by the menu entry point after the Design Peer Review (see §4.1).
 - **Per-session live toggles in the on-site sheet** — proposed late, rejected (misleading semantics; mid-session changes likely require a page reload). May be re-evaluated during implementation in a real build.
 - **Duck.ai** — explicit exception (decided 2026-08-26, ratify at kickoff): both the SERP Duck.ai surface and the embedded Duck.ai web view keep their purpose-built microphone behavior in both flag states; the 3-option prompt, stored per-site decisions, and the global Never Allow default do not apply to duck.ai origins.
-- Other permission types (notifications, pop-ups, autoplay, device motion). Tech input confirmed pop-ups/device-motion are feasible and autoplay needs extra plumbing — all future candidates, none in scope.
+- Other permission types: notifications, pop-ups, autoplay, device motion, **DRM/protected media** (a first-class fourth permission on Android), and **screen/display capture**. Tech input confirmed pop-ups/device-motion are feasible and autoplay needs extra plumbing — all future candidates, none in scope.
 - Android work (sibling projects) and the Android-specific voice-search flow.
 - Re-triggering the OS system prompt after denial — **impossible on iOS for every permission type** (hack-phase confirmed).
 - Syncing permission state across devices — privacy triage mandates **local device state only**.
@@ -133,7 +135,7 @@ When a website requests camera, microphone, or location and no applicable stored
   | Microphone | microphone | `“<domain>” website wants to access the microphone` | — |
   | Location on DDG SERP | DuckDuckGo logo | `“duckduckgo.com” wants to access your location` | `We’ll anonymize your location and use it to deliver better results, closer to you.` |
 
-- Semantics: **Allow Once** = ephemeral grant, never persisted (§4.3); **Allow While Using Site** = persistent per-site allow ("Always Allow" in pickers); **Never Allow** = persistent per-site deny.
+- Semantics: **Allow Once** = ephemeral in-memory grant for the current page — it ends on reload or any non-same-document navigation, and is never persisted (§4.3, OQ-9); **Allow While Using Site** = persistent per-site allow ("Always Allow" in pickers); **Never Allow** = persistent per-site deny.
 - No combined camera+microphone request dialogue is designed (see Open Questions OQ-2).
 - Copy note: the main task and older docs say "Always Allow / Allow Once / Never Allow"; **the Figma copy is the source of truth** (peer-review decision).
 
@@ -146,15 +148,15 @@ When a website requests camera, microphone, or location and no applicable stored
 
 ### FR-3: Applying stored and global decisions
 
-On a permission request, precedence (decided 2026-08-26 — global Never Allow is absolute; see FR-9/OQ-8):
+On a permission request, precedence (revised 2026-08-26 to match both shipped platforms — see OQ-8):
 
-1. **Global default for that type = Never Allow** → silently decline; show nothing.
-2. **Stored per-site Never Allow** → decline without prompting.
-3. **Stored per-site Always Allow** → grant without prompting **if** the OS permission allows it; if the OS permission is denied, decline and surface the recovery affordances (FR-5).
-4. **Active Allow Once grant** (within its validity window) → grant without re-prompting.
+1. **Stored per-site Never Allow** → decline without prompting.
+2. **Stored per-site Always Allow** → grant without prompting **if** the OS permission allows it; if the OS permission is denied, decline and surface the recovery affordances (FR-5). Applies even while the global default is Never Allow.
+3. **Active Allow Once grant** (within its validity window) → grant without re-prompting.
+4. **Global default for that type = Never Allow** → silently decline; show nothing. The global control prevents *asking*; it does not disable stored per-site allows or active grants.
 5. Otherwise → show the dialogue (FR-1).
 
-Clarifications: an explicit "Ask Each Time" entry (set by the user in the manager) is not a decision at request time — such requests fall through to steps 4–5; the entry affects only Settings listing. Requests from duck.ai bypass this model entirely (explicit exception, §2).
+Clarifications: an explicit "Ask Each Time" entry (set by the user in the manager) is not a decision at request time — such requests fall through to steps 3–5; the entry affects only Settings listing. A one-time **Deny** suppresses repeated requests for the current page; a completed one-time **Allow** may prompt again after capture ends (macOS model). Combined requests resolve stored state as: any deny wins; all-allow grants; a partial allow+ask prompts. Requests from duck.ai bypass this model entirely (explicit exception, §2).
 
 ### FR-4: On-site permission manager (menu entry + bottom sheet)
 
@@ -179,6 +181,7 @@ Two cases (the original toast design was updated by the hack-phase decision):
 - **Case B — user allows a site's permission but the OS permission was already denied:** show the **reminder dialogue** (Figma set 380:46545): title `DuckDuckGo needs to access your <type>`, body `<Type> permissions are needed if you want to use <type> features on this site.`, buttons `Change Permissions` / `Cancel` (both gray for site variants). `Change Permissions` deep-links to Settings → Apps → DuckDuckGo.
 - The System-Settings link in the sheet is shown only when the user allowed the site but the OS denies it, and disappears once the OS permission is granted (§4.2.4).
 - Our UI can never grant the OS permission; the triggering request is declined and the grant applies from the next request (§3.3).
+- **Invariant (resolving OQ-13):** the site-level decision commits at choice time, and an OS-level denial never converts a stored site Allow into Never Allow — a deliberate divergence from Android, which commits only after OS success and can store a deny. OS state is re-checked on app activation.
 
 ### FR-6: Settings > Site Permissions
 
@@ -209,8 +212,8 @@ Two cases (the original toast design was updated by the hack-phase decision):
 
 ### FR-9: Global "prevent sites from asking"
 
-- Setting any type's global default to Never Allow silently declines all requests of that type with no dialog (validated in the hack phase for location).
-- **Global Never Allow is absolute** (decided 2026-08-26, resolving OQ-8): it silently declines requests even for sites with a stored Always Allow. Per-site rows remain stored and editable in Settings but are inert until the global default returns to Ask Each Time. Exception: duck.ai (§2). To be confirmed with design.
+- Setting a type's global default to Never Allow prevents sites from *asking*: requests with no stored per-site Allow are silently declined with no dialog (validated in the hack phase for location).
+- **Per-site decisions override the global default** (decided 2026-08-26, resolving OQ-8; matches Android's shipped model and macOS's autoplay precedent): a stored Always Allow keeps working while the global default is Never Allow. Per-site rows remain fully functional and editable in Settings. Exception: duck.ai (§2).
 
 ---
 
@@ -239,6 +242,7 @@ Copy-review goals (from the copy task, 1214494688509116): align our dialogue str
 - **Localization:** all new strings localized through the standard pipeline; long-domain truncation must hold across locales.
 - **Privacy:** §4.3 requirements are hard; additionally, analytics must never include domains/hostnames (Desktop permission pixels set the precedent: type + decision only).
 - **Web platform gating preserved:** a stored site grant never authorizes an insecure context, a sandboxed frame, or an iframe not delegated by Permissions Policy. Permission state is keyed by host (scheme and port collapsed, `www.` dropped) — confirm with privacy (OQ-21).
+- **Geolocation from cross-site iframes** (requester and top-level page differ at eTLD+1) is denied outright (Android precedent). Internal, file, and error pages never store or match permission state.
 - **No regressions** to existing special flows: Duck.ai microphone handling, voice search, SERP location behavior (§3.6).
 - **Rollout safety:** feature must be gateable for staged rollout to 100% of iOS users.
 
@@ -260,22 +264,22 @@ New pixels needed (naming per Desktop precedent — type + decision only, no dom
 | OQ-2 | Combined camera+microphone request: no combined dialogue is designed; multi-permission copy flagged TODO. Decide: two sequential dialogs vs new combined design. **Must be resolved before the dialog PR** | Figma TODO sticky |
 | OQ-3 | "Copy for multiple denied location" and the mixed state (running permissions + system-denied reminder simultaneously) — copy TODO | Figma TODO sticky |
 | OQ-4 | Two competing footer phrasings ("needs to access your X" vs "needs access to this device X"); minor title inconsistencies ("the microphone" vs "your camera/location"; DDG variant drops "website"); "Reload the page…" with/without period. Resolve with copy review — **needed before the dialog/geolocation PRs** | Figma inconsistencies |
-| OQ-5 | Menu-entry visibility immediately after site-allow + system-deny: one sticky says "No Site Permissions entry in the menu", yet the recovery sub-flow opens the sheet (reminder-only state) from the menu. Clarify when the entry appears in this state | Figma flow D |
+| OQ-5 | Largely resolved by OQ-13/OQ-17: the site allow commits at choice time, so the menu entry appears and the sheet shows the reminder state. The contradictory Figma sticky ("No Site Permissions entry in the menu") remains to clarify with design | Figma flow D |
 | OQ-6 | Exact placement/target of the grant animation (browsing chrome vs menu button) — annotated ("Show animation") but never visually specified; follow the prototype | Figma + peer review |
 | OQ-7 | Confirm the fireproofing exemption on Fire-Button clearing with privacy (mobile triage summary said "Fire clears all permissions" without addressing fireproofing) | §5 FR-8 |
-| OQ-8 | **Resolved 2026-08-26: global Never Allow is absolute** — declines even sites with stored Always Allow; per-site rows stay stored/editable but inert (confirm with design) | gap → decided |
-| OQ-9 | Exact validity window of "Allow Once" on iOS. The definition must cover: page reload, SPA/same-host navigation, redirects, tab close, web-content-process termination, app termination, and restored tabs. Desktop distinguishes "until reload" vs "until tab closes"; the iOS design only says "Allow Once"/"Allow This Time" | gap vs Desktop triage |
-| OQ-10 | **Provisional default (2026-08-26):** fire-mode tabs never read or write per-site records, but still obey the global defaults (otherwise absolute global Never would be violated); decisions there are session-only. Ratify at kickoff | gap → defaulted |
+| OQ-8 | **Resolved 2026-08-26 (platform-aligned, reversing the earlier absolute rule):** a stored per-site Always Allow overrides the global Never Allow default; the global control only prevents asking. Matches Android's shipped predicate and macOS's autoplay precedent | gap → decided |
+| OQ-9 | **Resolved 2026-08-26 (macOS model):** Allow Once is in-memory and page-scoped — it ends on reload and any non-same-document navigation, on tab close, web-content-process replacement, and app termination; it is never persisted or restored (no Android-style 24h TTL); same-document (SPA history) updates do not end it; a completed one-time capture may prompt again | gap → decided |
+| OQ-10 | **Resolved 2026-08-26 (Android model):** fire-mode tabs read stored decisions and global defaults but never write; decisions made there are session-only. (macOS burner tabs read *and* write the shared store — rejected as unfit for an ephemeral mode) | gap → decided |
 | OQ-11 | Whether permission changes can apply without reload in some cases (mid-session muting exists per §3.5); v1 assumes reload (caption + flow C "Reload" sticky), re-evaluate in a real build | peer review |
 | OQ-12 | Per-site settings page header shows literal `Permissions for site.com` under a real-domain nav title (likely a placeholder oversight) | Figma |
-| OQ-13 | When is a persistent "Allow While Using Site" committed relative to a subsequent OS-prompt denial, and what stored decision remains — this determines whether the menu entry/recovery sheet is reachable (ties to OQ-5) | independent review |
+| OQ-13 | **Resolved 2026-08-26:** the site decision commits at choice time; an OS denial never rewrites it (FR-5 invariant), keeping the menu/recovery sheet reachable. Deliberate divergence from Android's commit-after-OS-success | independent review → decided |
 | OQ-14 | Exact textual/VoiceOver affordance for "currently in use" (a non-color signal is required by §4.1) | independent review |
 | OQ-15 | UX when the OS permission is `restricted` or unavailable (MDM, parental controls, missing hardware) — System Settings cannot fix it, so a "Change Permissions" route would be unusable | independent review |
-| OQ-16 | Precise definition of the "manager change attempted but not completed" friction pixel, measurable without recording domains | independent review |
+| OQ-16 | Precise definition of the "manager change attempted but not completed" friction pixel, measurable without recording domains. Candidate event set (neither platform measures this today): manager open, edit begun, edit committed, dismissal with dirty state, remove/undo, reminder shown, Settings tap | independent review |
 | OQ-17 | Menu-entry membership: does a site whose only record is an explicit Ask Each Time show the `Site Permissions` menu entry? Working default: yes — any stored record or active state | review round 2 |
 | OQ-18 | Which permission rows appear in the on-site sheet ("relevant permissions"): stored, active, requested-this-visit, globally denied? | review round 2 |
 | OQ-19 | Presentation of the `.muted` capture state: does it count as red "in use", a paused non-red state, or something else (with its accessible label)? | review round 2 |
-| OQ-20 | Do Remove Permissions / a global Never change stop an active capture or Allow Once grant immediately, or only on reload/next request? Working default: reload/next request (v1, consistent with OQ-11) | review round 2 |
+| OQ-20 | **Resolved 2026-08-26 (macOS model):** an explicit per-site deny or Remove Permissions immediately revokes active capture (camera/mic via WebKit capture-state APIs; geolocation watches stopped); grants and all other changes apply on reload/next request (the reload caption) | review round 2 → decided |
 | OQ-21 | Host-only permission key collapses scheme and port — confirm with privacy (grants remain restricted to secure contexts by platform gating) | review round 2 |
 
 ## 11. Design & Evidence Index

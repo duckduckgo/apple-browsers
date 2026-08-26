@@ -14,6 +14,7 @@ Scope updates
 - Re-planned delivery after three design reviews: 6 stacked PRs, one subtask per PR, ~21–25d total. The old implementation subtasks will be replaced.
 - Duck.ai stays an explicit exception to the whole model in both flag states (decided; ratify in item 12).
 - Fire Button integration moved into PR 1 so persisted data always has a burn path.
+- Platform-precedents review complete (platform-precedents.md): several defaults revised to match shipped macOS/Android behavior (items 1, 3, 4, 9); Android's tiered prompt and on-site manager are absent from the inspected develop checkout; the privacy-test-pages fixtures already exist.
 - v1 is iOS-standalone: no macOS changes, no shared Permissions package. Convergence deferred until there's proven reusable behavior.
 - Implementation lives in one new local package (`iOS/LocalPackages/SitePermissions`) plus thin app glue.
 - Hack phase is done (geolocation interception validated). No new hack phase needed.
@@ -21,25 +22,22 @@ Scope updates
 
 Discussion items
 
-1/ Global "Never Allow" beats per-site "Always Allow" (decided — ratify)
-Global Never silently declines all requests of that type. Per-site rows stay stored and editable, but inert.
-[Bartosz, recommended] Keep as decided. Simplest model; Figma shows no exception UI.
-Alternative: Chrome-style — per-site Always overrides global Never.
+1/ Global "Never Allow" vs per-site "Always Allow" (decided — ratify)
+Revised after the platform review: a stored per-site Always Allow overrides global Never; the global control only prevents asking. Matches Android's shipped predicate and macOS's autoplay precedent.
+[Bartosz, recommended] Ratify the platform-aligned rule.
 
-2/ Combined camera+microphone request — blocks the dialog PR (PR 3)
-One WebKit decision covers both permissions; no combined dialog is designed.
-Options:
-[Bartosz, recommended] One combined dialog variant (needs design + copy)
-Two sequential dialogs
-Resolve with Sveta before PR 3, or timebox a design decision: 0.25d
+2/ Combined camera+microphone request — copy blocks the dialog PR (PR 3)
+One WebKit decision covers both permissions. Both shipped platforms confirm a single combined dialog (macOS: "Allow "site" to use your camera and microphone once?"; Android: combined title + Remember checkbox).
+Remaining: the 3-option copy for the combined variant.
+Owner: @Sveta @David, before PR 3.
 
-3/ What ends "Allow Once"?
-Must be defined for: reload, SPA/same-host navigation, redirects, tab close, app termination, restored tabs.
-[Bartosz, recommended] Per tab+site; ends on leaving the site or closing the tab; survives reload. (Desktop uses "until reload".)
+3/ What ends "Allow Once"? (decided — ratify)
+macOS model adopted: in-memory and page-scoped — ends on reload and any non-same-document navigation, tab close, process replacement, and app termination; never persisted or restored. Explicitly not Android's persisted 24-hour grant.
+[Bartosz, recommended] Ratify.
 
-4/ Site allowed, then OS prompt denied — Figma is contradictory
-One sticky says no menu entry appears; the recovery flow opens the sheet from the menu. Also unresolved: is the site "allow" committed before the OS answer?
-[Bartosz, recommended] Commit the site decision at choice time; menu entry appears; sheet shows the reminder state.
+4/ Site allowed, then OS prompt denied (decided — ratify; one Figma contradiction open)
+Decided: the site allow commits at choice time; an OS denial never converts it to Never Allow (Android does the opposite — deliberate divergence); the menu entry appears and the sheet shows the reminder state.
+Open for @Sveta: the Figma sticky claiming no menu entry appears in this state.
 
 5/ Copy gaps — needed before PR 3
 Footer phrasing ("access your X" vs "access to this device X"), mic/camera title inconsistency, multi-denied copy, mixed granted+reminder state, per-site header placeholder ("Permissions for site.com").
@@ -58,24 +56,25 @@ Owner: @Sveta + @David.
 System Settings can't fix these, so "Change Permissions" would dead-end.
 [Bartosz, recommended] Show the reminder without the Settings button, with plain copy.
 
-9/ Fire-mode tabs
-[Bartosz, recommended] Session-only: fire-mode tabs never read or write stored permissions.
+9/ Fire-mode tabs (decided — ratify)
+Android model adopted: fire-mode tabs read stored decisions and global defaults but never write; grants there are session-only. (macOS burner tabs read and write the shared store — rejected as unfit for an ephemeral mode.)
 
 10/ Privacy confirmations — needed before PR 1
 Three items to confirm together:
 - Fire keeps fireproofed sites' permissions; manual removal clears everything. The mobile triage summary said "Fire clears all permissions" without addressing fireproofing.
 - Fire and Remove All clear per-site records only; global defaults are preserved.
 - The permission key is host-only (scheme and port collapsed); grants stay secure-context-only via platform gating.
+The platform review confirms all three: both platforms exempt fireproofed sites from Fire, clear per-site rows only, and keep global controls untouched. macOS also drops `www.`; Android keeps it — we follow macOS.
 Confirm with privacy: 0.25d
 
 11/ Friction pixel: "opened manager, attempted a change, didn't complete it"
-Parent KPI needs it. Define precisely, without recording domains.
+Parent KPI needs it. Define precisely, without recording domains. Neither platform measures this today. Candidate events: manager open, edit begun, edit committed, dismissal with dirty state, remove/undo, reminder shown, Settings tap.
 
 12/ Ratify decided defaults
 - The OS prompt is shown directly whenever its state is notDetermined; the reminder dialogue appears only when the OS permission is already denied.
-- Mid-session permission changes (Remove Permissions, global Never) apply on reload/next request, not mid-capture; re-evaluate in a real build.
-- Duck.ai is an explicit exception: both call sites keep today's mic behavior in both flag states; global Never doesn't apply to duck.ai.
-- Fire-mode tabs never read or write per-site records but still obey global defaults.
+- An explicit per-site deny or Remove Permissions revokes active capture immediately (macOS model); grants and other changes apply on reload/next request.
+- Duck.ai is an explicit exception: both call sites keep today's mic behavior in both flag states; global Never doesn't apply to duck.ai. (Android similarly special-cases Duck.ai microphone.)
+- Temporary grants never create Settings rows — a deliberate, privacy-triage-mandated divergence from both shipped platforms.
 - Undo restores only the deleted record, only if the site has no newer record; never restores Allow Once grants.
 
 13/ Does an explicit-Ask-only site show the menu entry?

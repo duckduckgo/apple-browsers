@@ -175,14 +175,21 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
             additionalParameters[ParameterKeys.variant] = variant.rawValue
         }
 
-        pixelFiring?.fire(event,
+        pixelFiring?.fire(event.prefixed(platform.pixelPrefix),
                           frequency: .uniqueByNameAndParameters,
-                          options: .parameters(additionalParameters, namePrefix: platform.pixelPrefix))
+                          options: .parameters(additionalParameters))
     }
 
 }
 
 public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
+    /// The `m_ios_` / `m_mac_` prefix is applied by `OnboardingPixelReporter` via `prefixed(_:)`,
+    /// since it depends on the host platform this shared package was built into rather than on the
+    /// pixel.
+    ///
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     // Linear onboarding events
     case welcome(EngagementEvent)
     case skipOnboarding(EngagementEvent) // iOS only

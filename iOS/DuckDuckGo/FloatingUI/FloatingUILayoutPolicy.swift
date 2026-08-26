@@ -53,30 +53,6 @@ enum FloatingUILayoutPolicy {
         return max(expandedChromeHeight * clampedPercent, topCapsuleObscuredHeight, safeAreaTop)
     }
 
-    /// Top offset for the contextual onboarding dialog in the tab's content stack. Only the web view
-    /// can underflow the chrome (via `obscuredContentInsets`); the dialog is a plain UIKit sibling, so
-    /// it needs the obscured region as an offset or it renders behind the chrome.
-    static func contextualOnboardingTopInset(isFloatingUIEnabled: Bool,
-                                             isContextualOnboardingVisible: Bool,
-                                             topObscuredHeight: CGFloat) -> CGFloat {
-        guard isFloatingUIEnabled, isContextualOnboardingVisible else { return 0 }
-        return max(0, topObscuredHeight)
-    }
-
-    /// Height obscured at the top of the new tab page by the focused unified toggle input card. Only
-    /// floating UI floats the card over the page; the classic layout puts it above.
-    ///
-    /// `cardBottomEdge` must come from the card's applied constraints, not its measured height — those
-    /// diverge under the landscape cap and while the chrome is hidden.
-    static func newTabPageUnifiedInputTopObscuredHeight(isFloatingUIEnabled: Bool,
-                                                        isUnifiedToggleInputActive: Bool,
-                                                        addressBarPosition: AddressBarPosition,
-                                                        cardBottomEdge: CGFloat) -> CGFloat {
-        // A bottom-position card obscures nothing at the top.
-        guard isFloatingUIEnabled, isUnifiedToggleInputActive, addressBarPosition == .top else { return 0 }
-        return max(0, cardBottomEdge)
-    }
-
     static func shouldHostOmnibarInFloatingToolbar(isFloatingUIEnabled: Bool,
                                                    addressBarPosition: AddressBarPosition,
                                                    isUnifiedToggleInputVisible: Bool,

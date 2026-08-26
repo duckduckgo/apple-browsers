@@ -275,6 +275,7 @@ class TabViewController: UIViewController {
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
+    private var contextualOnboardingTopInset: CGFloat = 0
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     lazy var floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger,
@@ -1007,6 +1008,7 @@ class TabViewController: UIViewController {
             borderView.isHidden = false
             borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         }
+        updateContextualOnboardingLayoutForFloatingUIIfNeeded()
         updateWebViewBottomAnchor()
     }
 
@@ -1082,13 +1084,9 @@ class TabViewController: UIViewController {
         // While a dialog is up the obscured top region offsets the stack instead of the web view, or
         // the page gets pushed down twice. Measured at full chrome visibility so the dialog (and the
         // web view frame) holds still through a bars hide/show instead of resizing every frame.
-        let expandedChromeTopObscuredHeight = chromeDelegate?.floatingWebViewObscuredInsets(for: 1.0).top ?? 0
-        let contextualOnboardingTopInset = FloatingUILayoutPolicy.contextualOnboardingTopInset(
-            isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled,
-            isContextualOnboardingVisible: daxContextualOnboardingController != nil,
-            topObscuredHeight: expandedChromeTopObscuredHeight)
-        applyContextualOnboardingTopInset(contextualOnboardingTopInset)
-        obscuredInsets.top = max(0, obscuredInsets.top - contextualOnboardingTopInset)
+        let effectiveContextualOnboardingTopInset = isUnifiedToggleInputAffectingLayout ? 0 : contextualOnboardingTopInset
+        applyContextualOnboardingTopInset(effectiveContextualOnboardingTopInset)
+        obscuredInsets.top = max(0, obscuredInsets.top - effectiveContextualOnboardingTopInset)
 
         let refreshControlTopOffset = appSettings.currentAddressBarPosition == .top
             ? max(0, obscuredInsets.top - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
@@ -1134,7 +1132,12 @@ class TabViewController: UIViewController {
     /// Relayouts after the contextual onboarding dialog is added to or removed from the content stack.
     private func updateContextualOnboardingLayoutForFloatingUIIfNeeded() {
         // A non-current tab has no chrome to measure; it gets laid out again on re-selection.
-        guard floatingUIManager.isFloatingUIEnabled, webView != nil, chromeDelegate != nil else { return }
+        guard floatingUIManager.isFloatingUIEnabled, webView != nil, let chromeDelegate else { return }
+        let inset = daxContextualOnboardingController == nil
+            ? 0
+            : max(0, chromeDelegate.floatingWebViewObscuredInsets(for: 1.0).top)
+        guard contextualOnboardingTopInset != inset else { return }
+        contextualOnboardingTopInset = inset
         applyWebViewLayout(for: lastAppliedBarsVisibilityPercent)
     }
 
@@ -1157,11 +1160,11 @@ class TabViewController: UIViewController {
             .assign(to: \.netPConnectionStatus, onWeaklyHeld: self)
     }
 
-    override func viewSafeAreaInsetsDidChange() {
-        super.viewSafeAreaInsetsDidChange()
-        // The dialog offset comes from the safe area. Covers rotation, which nothing else relayouts.
-        guard daxContextualOnboardingController != nil else { return }
-        updateContextualOnboardingLayoutForFloatingUIIfNeeded()
+    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.updateContextualOnboardingLayoutForFloatingUIIfNeeded()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -1170,6 +1173,7 @@ class TabViewController: UIViewController {
         userScripts?.autofillUserScript.emailDelegate = emailManager
 
         woShownRecently = false // don't fire if the user goes somewhere else first
+        updateContextualOnboardingLayoutForFloatingUIIfNeeded()
         updateWebViewBottomAnchor()
         resetNavigationBar()
         delegate?.tabDidRequestShowingMenuHighlighter(tab: self)

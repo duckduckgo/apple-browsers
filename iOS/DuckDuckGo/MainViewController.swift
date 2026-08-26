@@ -4647,19 +4647,14 @@ extension MainViewController: BrowserChromeDelegate {
     /// Read off the card's applied constraints, so it honours the landscape cap and the hidden-chrome
     /// pose, and can't feed back when read during layout. iPhone-only, hence no tabs-bar offset.
     var floatingNewTabPageTopObscuredHeight: CGFloat {
-        guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.isActive,
+        guard unifiedToggleInputCoordinator?.isActive == true,
               isFloatingUIEnabled,
               // Some poses (the AI-tab collapsed card) swap this out; its constant is stale then.
               viewCoordinator.constraints.navigationBarContainerTop.isActive else { return 0 }
         let cardBottomEdge = view.safeAreaInsets.top
             + viewCoordinator.constraints.navigationBarContainerTop.constant
             + viewCoordinator.constraints.navigationBarContainerHeight.constant
-        return FloatingUILayoutPolicy.newTabPageUnifiedInputTopObscuredHeight(
-            isFloatingUIEnabled: isFloatingUIEnabled,
-            isUnifiedToggleInputActive: coordinator.isActive,
-            addressBarPosition: appSettings.currentAddressBarPosition,
-            cardBottomEdge: cardBottomEdge)
+        return appSettings.currentAddressBarPosition == .top ? max(0, cardBottomEdge) : 0
     }
 
     /// Top region obscured by chrome, shrinking from the omnibar to the resting capsule clearance.

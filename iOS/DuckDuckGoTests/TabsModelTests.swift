@@ -424,8 +424,8 @@ class TabsModelTests: XCTestCase {
                       contextualChatURL: "https://chat.example.com",
                       supportsTabHistory: true,
                       fireTab: false,
-                      unifiedInputState: unifiedState)
-        tab.duckAIEntrySource = .widgetFavorite
+                      unifiedInputState: unifiedState,
+                      duckAIEntrySource: .widgetFavorite)
 
         let snapshot = tab.archivalSnapshot()
 

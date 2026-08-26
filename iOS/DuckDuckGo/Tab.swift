@@ -167,6 +167,7 @@ public class Tab: NSObject, NSCoding {
                 isExternalLaunch: Bool = false,
                 shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
                 unifiedInputState: UnifiedInputTabState = UnifiedInputTabState(),
+                duckAIEntrySource: AIChatEntryPointSource? = nil,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
@@ -180,6 +181,7 @@ public class Tab: NSObject, NSCoding {
         self.isExternalLaunch = isExternalLaunch
         self.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppressTrackerAnimationOnFirstLoad
         self.unifiedInputState = unifiedInputState
+        self.duckAIEntrySource = duckAIEntrySource
         self.aichatDebugSettings = aichatDebugSettings
     }
 
@@ -207,13 +209,12 @@ public class Tab: NSObject, NSCoding {
             selectedReasoningMode: selectedReasoningMode,
             selectedTool: selectedTool
         )
+        let duckAIEntrySourceRaw = decoder.decodeObject(forKey: NSCodingKeys.duckAIEntrySource) as? String
+        let duckAIEntrySource = duckAIEntrySourceRaw.flatMap(AIChatEntryPointSource.init(rawValue:))
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState)
-
-        let duckAIEntrySourceRaw = decoder.decodeObject(forKey: NSCodingKeys.duckAIEntrySource) as? String
-        self.duckAIEntrySource = duckAIEntrySourceRaw.flatMap(AIChatEntryPointSource.init(rawValue:))
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState, duckAIEntrySource: duckAIEntrySource)
     }
 
     public func encode(with coder: NSCoder) {
@@ -238,18 +239,17 @@ public class Tab: NSObject, NSCoding {
 
     /// Returns a frozen deep copy containing only the fields that are persisted via NSCoding.
     func archivalSnapshot() -> Tab {
-        let snapshot = Tab(uid: uid,
-                           link: link?.copy() as? Link,
-                           viewed: viewed,
-                           desktop: isDesktop,
-                           lastViewedDate: lastViewedDate,
-                           daxEasterEggLogoURL: daxEasterEggLogoURL,
-                           contextualChatURL: contextualChatURL,
-                           supportsTabHistory: supportsTabHistory,
-                           fireTab: fireTab,
-                           unifiedInputState: unifiedInputState)
-        snapshot.duckAIEntrySource = duckAIEntrySource
-        return snapshot
+        Tab(uid: uid,
+            link: link?.copy() as? Link,
+            viewed: viewed,
+            desktop: isDesktop,
+            lastViewedDate: lastViewedDate,
+            daxEasterEggLogoURL: daxEasterEggLogoURL,
+            contextualChatURL: contextualChatURL,
+            supportsTabHistory: supportsTabHistory,
+            fireTab: fireTab,
+            unifiedInputState: unifiedInputState,
+            duckAIEntrySource: duckAIEntrySource)
     }
 
     public override func isEqual(_ other: Any?) -> Bool {

@@ -216,7 +216,7 @@ struct LegacyDataImportView: ModalView {
             Button {
                 dismiss.callAsFunction()
                 let source = SyncDeviceButtonTouchpoint.dataImportStart
-                PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
+                PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
                 syncLauncher.startDeviceSyncFlow(source: source) {
                     importFlowLauncher.relaunchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
                 }
@@ -355,7 +355,7 @@ struct LegacyDataImportView: ModalView {
                 Button(UserText.legacyImportDataCompleteSyncButtonTitle) {
                     dismiss.callAsFunction()
                     let source = SyncDeviceButtonTouchpoint.dataImportFinish
-                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": SyncDeviceButtonTouchpoint.dataImportFinish.rawValue], doNotEnforcePrefix: true)
+                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": SyncDeviceButtonTouchpoint.dataImportFinish.rawValue])
                     syncLauncher.startDeviceSyncFlow(source: source, completion: nil)
                 }
             }

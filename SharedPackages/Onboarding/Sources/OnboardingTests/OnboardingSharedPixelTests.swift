@@ -29,7 +29,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
         pixelHandler.fire(.welcome(.shown))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertEqual(event.namePrefix, "m_ios_")
+        XCTAssertEqual(event.pixel.namePrefix, .custom("m_ios_"))
     }
 
     func testWhenFiringmacOSPixelEventThenUsesmacOSNamePrefix() throws {
@@ -39,7 +39,7 @@ final class OnboardingSharedPixelTests: XCTestCase {
         pixelHandler.fire(.welcome(.shown))
 
         let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
-        XCTAssertEqual(event.namePrefix, "m_mac_")
+        XCTAssertEqual(event.pixel.namePrefix, .custom("m_mac_"))
     }
 
     func testWhenFiringPixelEventWithNilParametersThenUsesExpectedNameAndStandardParameters() throws {

@@ -899,8 +899,7 @@ final class EmailOptionsButtonSubMenu: NSMenu {
             self.emailManager.updateLastUseDate()
 
             PixelKit.fire(NonStandardPixel.emailUserCreatedAlias,
-                          withAdditionalParameters: pixelParameters,
-                          doNotEnforcePrefix: true)
+                          withAdditionalParameters: pixelParameters)
 
             NSPasteboard.general.copy(address)
             NotificationCenter.default.post(name: NSNotification.Name.privateEmailCopiedToClipboard, object: nil)

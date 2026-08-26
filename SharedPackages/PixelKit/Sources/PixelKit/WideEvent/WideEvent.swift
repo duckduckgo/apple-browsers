@@ -284,6 +284,9 @@ public final class WideEvent: WideEventManaging {
 }
 
 public struct WideEventPixelKitEvent: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     public let name: String
     public let parameters: [String: String]?
     public let standardParameters: [PixelKitStandardParameter]?

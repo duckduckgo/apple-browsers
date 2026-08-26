@@ -146,7 +146,7 @@ final class FireCoordinator {
                     showIndividualSitesLink: config.showIndividualSitesLink,
                     onConfirm: { response in
                         if case .noAction = response {
-                            pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, options: .unenforcedPrefix)
+                            pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount)
                         }
                         config.onConfirm(response)
                     }
@@ -157,7 +157,7 @@ final class FireCoordinator {
                 viewModel: config.viewModel,
                 onConfirm: { response in
                     if case .noAction = response {
-                        pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, options: .unenforcedPrefix)
+                        pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount)
                     }
                     config.onConfirm(response)
                 }
@@ -401,8 +401,7 @@ extension FireCoordinator {
                         )
                     )
                 ),
-                frequency: .dailyAndCount,
-                options: .unenforcedPrefix
+                frequency: .dailyAndCount
             )
 
             let entity = Fire.BurningEntity.tab(tabViewModel: tabViewModel,
@@ -434,8 +433,7 @@ extension FireCoordinator {
                         )
                     )
                 ),
-                frequency: .dailyAndCount,
-                options: .unenforcedPrefix
+                frequency: .dailyAndCount
             )
 
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
@@ -462,8 +460,7 @@ extension FireCoordinator {
                         )
                     )
                 ),
-                frequency: .dailyAndCount,
-                options: .unenforcedPrefix
+                frequency: .dailyAndCount
             )
 
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
@@ -498,8 +495,8 @@ extension FireCoordinator {
         }
 
         pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
-        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, options: .unenforcedPrefix)
-        pixelFiring?.fire(FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, options: .unenforcedPrefix)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount)
+        pixelFiring?.fire(FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
 
         // Complete wide event tracking
         dataClearingWideEventService?.complete()

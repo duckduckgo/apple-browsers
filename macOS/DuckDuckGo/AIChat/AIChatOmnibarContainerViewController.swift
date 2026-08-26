@@ -2083,8 +2083,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             omnibarController.pixelHandler.fire(.modelPickerShown)
         }
         let menu = buildModelPickerMenu(items: items)
-        // Align menu's trailing edge with the anchor's trailing edge, with a small gap below
-        let point = NSPoint(x: anchor.bounds.width - menu.size.width, y: -5)
+        // Align menu's trailing edge with the anchor's trailing edge, with a small gap below. The y
+        // has to come off the anchor's own geometry: `NSButton` is flipped and `NSView` is not, so a
+        // hardcoded -5 opens below the toolbar's picker but over the card the card's `>` sits in.
+        let gap: CGFloat = 5
+        let belowAnchor = anchor.isFlipped ? anchor.bounds.maxY + gap : anchor.bounds.minY - gap
+        let point = NSPoint(x: anchor.bounds.width - menu.size.width, y: belowAnchor)
 
         // Only a `FocusRingControlling` anchor has a ring modal tracking would leave lit.
         if let focusRingAnchor = anchor as? (NSView & FocusRingControlling) {

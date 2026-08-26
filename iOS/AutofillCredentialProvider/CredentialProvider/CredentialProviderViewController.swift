@@ -24,6 +24,7 @@ import BrowserServicesKit
 import Core
 import Common
 import FoundationExtensions
+import Persistence
 import os.log
 
 class CredentialProviderViewController: ASCredentialProviderViewController {

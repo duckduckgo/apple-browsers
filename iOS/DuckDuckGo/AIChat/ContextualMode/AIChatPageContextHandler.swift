@@ -115,8 +115,6 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     private let mimeTypeProvider: PageContextMIMETypeProvider
     private let extractionPixelHandler: PageContextExtractionPixelFiring
 
-    /// Whether a PDF tab is handed to Duck.ai as document bytes rather than page markdown.
-    /// Gated by the `aiChatPdfPageContext` feature flag, wired in by the app.
     private let isDocumentContextEnabled: () -> Bool
 
     /// FIFO-pairs collect requests with results so pixels carry the right trigger/latency; reset on navigation.
@@ -168,8 +166,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         let url = currentURLProvider()
         resetExtractionStateIfNavigated(to: url)
 
-        // A document tab (PDF) is handed over as bytes: the page-context user script can't read
-        // WebKit's PDF viewer, so this bypasses collection and reads the bytes out of the web view.
+        // A document tab (PDF) is handed over as bytes
         if let url, isDocumentTab(url) {
             collectDocumentContext(for: url, trigger: trigger)
             return true
@@ -205,8 +202,6 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
     func isCurrentPageAttachable() -> Bool {
         let url = currentURLProvider()
-        // A document tab is handed over as bytes, so it's attachable regardless of the blocklist
-        // (which would otherwise prevent the `pdf` category this feature replaces).
         if let url, isDocumentTab(url) { return true }
         guard let policy = attachabilityPolicyProvider() else { return true }
         return policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) }).isAttachable
@@ -279,9 +274,7 @@ private extension AIChatPageContextHandler {
             && DocumentPageContextProvider.isSupportedDocument(mimeType: mimeTypeProvider(url), url: url)
     }
 
-    /// Reads the document out of the web view and delivers it as page context. Bypasses the
-    /// `extractionResolver` (which pairs collects with the user script's result, and a document
-    /// never produces one), so the outcome is measured here instead.
+    /// Reads the document out of the web view and delivers it as page context.
     func collectDocumentContext(for url: URL, trigger: PageContextExtractionTrigger) {
         guard let webView = webViewProvider() else {
             Logger.aiChat.debug("[PageContext] Document collect skipped - no web view available")
@@ -290,8 +283,6 @@ private extension AIChatPageContextHandler {
             return
         }
 
-        // WebKit's PDF viewer usually reports no document title, which would leave the chip blank —
-        // fall back to the file name so the attachment has a readable label.
         let webViewTitle = webView.title ?? ""
         let title = webViewTitle.isEmpty ? url.lastPathComponent : webViewTitle
         let startedAt = Date()
@@ -313,7 +304,6 @@ private extension AIChatPageContextHandler {
                 self.publishContextUpdate(context)
                 self.fireExtractionPixel(.success, trigger: trigger, latency: latency)
             case .tooLarge:
-                // Over the size ceiling: attach nothing, no error state (iOS has no attachable:false path).
                 Logger.aiChat.debug("[PageContext] Document over size ceiling - not attaching")
                 self.contextSubject.send(nil)
                 self.fireExtractionPixel(.prevented(PageContextExtractionOutcome.documentTooLargeCategory), trigger: trigger, latency: latency)

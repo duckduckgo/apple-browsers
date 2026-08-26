@@ -344,7 +344,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
         // Tabs only: TabViewController restores the web view's layout when WebKit hands it back after
         // element fullscreen. Hosts without that restore would render the fullscreen surface blank.
-        if #available(iOS 16.0, *) {
+        // iOS 16 is the floor because that restore observes `fullscreenState`, which is iOS 16+.
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.elementFullscreen) {
             configuration.preferences.isElementFullscreenEnabled = true
         }
 

@@ -2051,9 +2051,9 @@ class TabViewController: UIViewController {
     private func pinWebViewToContainer() {
         webView.translatesAutoresizingMaskIntoConstraints = false
 
-        // Built once and retained: entering element fullscreen moves the web view into WebKit's own
-        // window, which drops these constraints. Re-activating the same objects keeps the bottom constant.
-        if webViewLayoutConstraints.isEmpty {
+        // Retained so the fullscreen round-trip re-activates the same objects, preserving the bottom
+        // constant. Rebuilt when a different web view is attached.
+        if webViewLayoutConstraints.first?.firstItem !== webView {
             let bottomConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
             webViewBottomAnchorConstraint = bottomConstraint
             webViewLayoutConstraints = [
@@ -2093,9 +2093,20 @@ class TabViewController: UIViewController {
         webView.translatesAutoresizingMaskIntoConstraints = true
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
-        if let host = webView.superview {
+        // Seed only when the hand-over zeroed the frame, so a repeat transition cannot shrink content
+        // WebKit has already sized.
+        if webView.frame.isEmpty, let host = webView.superview {
             webView.frame = onScreenWebViewRect(in: host)
         }
+
+        suspendWebViewHostedChrome()
+    }
+
+    /// These are subviews of the web view, so WebKit carries them into the fullscreen window: the border
+    /// would draw over the video, and a pull-down could reload the page behind it.
+    private func suspendWebViewHostedChrome() {
+        borderView.isHidden = true
+        pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
     }
 
     /// Leaving the container zeroes the frame. Seeding the rect it occupied on screen keeps the already
@@ -2109,7 +2120,11 @@ class TabViewController: UIViewController {
     private func restoreWebViewLayoutAfterFullscreen() {
         webViewContainer.addSubview(webView)
         pinWebViewToContainer()
+        updateWebViewBottomAnchor()
         webViewContainer.layoutIfNeeded()
+
+        updateBorderViewForFloatingUIIfNeeded()
+        pullToRefreshViewAdapter?.setRefreshControlEnabled(!isAITab)
     }
 
     private func removeObservers() {
@@ -2120,7 +2135,6 @@ class TabViewController: UIViewController {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.title))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
         fullscreenStateObserver = nil
-        webViewLayoutConstraints.removeAll()
     }
 
     public func makeBreakageAdditionalInfo(webExtensionManager: WebExtensionManaging? = nil) -> PrivacyDashboardViewController.BreakageAdditionalInfo? {

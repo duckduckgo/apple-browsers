@@ -855,6 +855,7 @@
 		853A717620F62FE800FE60BC /* Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853A717520F62FE800FE60BC /* Pixel.swift */; };
 		FC0A7B0B2F00000100AAB001 /* PixelKitParameterProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0A7B0A2F00000100AAB001 /* PixelKitParameterProvider.swift */; };
 		853A717820F645FB00FE60BC /* PixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853A717720F645FB00FE60BC /* PixelTests.swift */; };
+		FAD662FD2B3A69122BE5676E /* PixelEventPixelKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2599BD5044ADBA644797B008 /* PixelEventPixelKitTests.swift */; };
 		853C5F6121C277C7001F7A05 /* global.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853C5F6021C277C7001F7A05 /* global.swift */; };
 		8540BBA22440857A00017FE4 /* FireproofingWorking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8540BBA12440857A00017FE4 /* FireproofingWorking.swift */; };
 		8540BD5423D8D5080057FDD2 /* FireproofingAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8540BD5323D8D5080057FDD2 /* FireproofingAlert.swift */; };
@@ -2276,6 +2277,7 @@
 		CB27DAFD30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAFC30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift */; };
 		CB2A7EEF283D185100885F67 /* RulesCompilationMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A7EEE283D185100885F67 /* RulesCompilationMonitor.swift */; };
 		CB2A7EF128410DF700885F67 /* PixelEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A7EF028410DF700885F67 /* PixelEvent.swift */; };
+		31052848516C942B35E59579 /* PixelEvent+PixelKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107C8E8E2E7058E4C00BFD33 /* PixelEvent+PixelKit.swift */; };
 		CB2A7EF4285383B300885F67 /* AppLastCompiledRulesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A7EF3285383B300885F67 /* AppLastCompiledRulesStore.swift */; };
 		CB3B4D442D5F757A006DAD63 /* StatisticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D432D5F757A006DAD63 /* StatisticsService.swift */; };
 		CB3B4D4A2D5FA4A3006DAD63 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D492D5FA4A3006DAD63 /* AppConfiguration.swift */; };
@@ -3719,6 +3721,7 @@
 		853A717520F62FE800FE60BC /* Pixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pixel.swift; sourceTree = "<group>"; };
 		FC0A7B0A2F00000100AAB001 /* PixelKitParameterProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelKitParameterProvider.swift; sourceTree = "<group>"; };
 		853A717720F645FB00FE60BC /* PixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelTests.swift; sourceTree = "<group>"; };
+		2599BD5044ADBA644797B008 /* PixelEventPixelKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelEventPixelKitTests.swift; sourceTree = "<group>"; };
 		853C5F6021C277C7001F7A05 /* global.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = global.swift; sourceTree = "<group>"; };
 		8540BBA12440857A00017FE4 /* FireproofingWorking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireproofingWorking.swift; sourceTree = "<group>"; };
 		8540BD5123D8C2220057FDD2 /* UserDefaultsFireproofingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserDefaultsFireproofingTests.swift; sourceTree = "<group>"; };
@@ -5163,6 +5166,7 @@
 		CB29792D2AF6D5C1006C461D /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB2A7EEE283D185100885F67 /* RulesCompilationMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesCompilationMonitor.swift; sourceTree = "<group>"; };
 		CB2A7EF028410DF700885F67 /* PixelEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelEvent.swift; sourceTree = "<group>"; };
+		107C8E8E2E7058E4C00BFD33 /* PixelEvent+PixelKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PixelEvent+PixelKit.swift"; sourceTree = "<group>"; };
 		CB2A7EF3285383B300885F67 /* AppLastCompiledRulesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLastCompiledRulesStore.swift; sourceTree = "<group>"; };
 		CB2C47822AF6D55800AEDCD9 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB3B4D432D5F757A006DAD63 /* StatisticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsService.swift; sourceTree = "<group>"; };
@@ -11417,6 +11421,7 @@
 				F1134EAE1F40AB2300B73467 /* Parser */,
 				F1134EA91F3E2BA700B73467 /* Store */,
 				CB2A7EF028410DF700885F67 /* PixelEvent.swift */,
+				107C8E8E2E7058E4C00BFD33 /* PixelEvent+PixelKit.swift */,
 				BDC234F62B27F51100D3C798 /* UniquePixel.swift */,
 				853A717520F62FE800FE60BC /* Pixel.swift */,
 				FC0A7B0A2F00000100AAB001 /* PixelKitParameterProvider.swift */,
@@ -11464,6 +11469,7 @@
 				851B1281221FE64E004781BC /* ImproveOnboardingExperiment1Tests.swift */,
 				F1134ECB1F40EA0300B73467 /* Parser */,
 				853A717720F645FB00FE60BC /* PixelTests.swift */,
+				2599BD5044ADBA644797B008 /* PixelEventPixelKitTests.swift */,
 				83EDCC3F1F86B895005CDFCD /* StatisticsLoaderTests.swift */,
 				F1134ED31F40F12B00B73467 /* Store */,
 				85C11E4020904BBE00BFFEB4 /* VariantManagerTests.swift */,
@@ -14824,6 +14830,7 @@
 				C14073882D8374520087E836 /* AutofillSettingsViewModelTests.swift in Sources */,
 				31C138A427A3352600FFD4B2 /* DownloadTests.swift in Sources */,
 				853A717820F645FB00FE60BC /* PixelTests.swift in Sources */,
+				FAD662FD2B3A69122BE5676E /* PixelEventPixelKitTests.swift in Sources */,
 				C10C39952E44E1B7001410EA /* DaxEasterEggHandlerTests.swift in Sources */,
 				9F254AD92CF605310063B308 /* MockSSLErrorPageNavigationHandler.swift in Sources */,
 				80E2BDB22FDB80AD00441FDF /* DuckAIGridContentResolverTests.swift in Sources */,
@@ -15957,6 +15964,7 @@
 				EE00D2D82DFC3A3300B79E9D /* UserDefaults+Autofill.swift in Sources */,
 				6F03CB092C32F331004179A8 /* PixelFiringAsync.swift in Sources */,
 				CB2A7EF128410DF700885F67 /* PixelEvent.swift in Sources */,
+				31052848516C942B35E59579 /* PixelEvent+PixelKit.swift in Sources */,
 				98B000532915C46E0034BCA0 /* LegacyBookmarksStoreMigration.swift in Sources */,
 				C1C23C3A2D4C349D00B6BDF6 /* DataImportManager.swift in Sources */,
 				1E4DCF4C27B6A4CB00961E25 /* URLFileExtension.swift in Sources */,

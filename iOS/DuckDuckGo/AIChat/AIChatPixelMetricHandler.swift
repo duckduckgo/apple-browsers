@@ -30,6 +30,21 @@ protocol AIChatPixelMetricHandling {
     func firePixelWithMetric(_ metric: AIChatMetric)
 }
 
+/// Maps minutes since the Duck.ai session started into a coarse bucket label,
+/// using the same label dialect as m_app_return's time_away_bucket.
+enum AIChatSessionDeltaBucket {
+    static func bucket(forMinutes minutes: Int) -> String {
+        switch minutes {
+        case ..<5: return "lt_5m"
+        case ..<30: return "5_30m"
+        case ..<60: return "30_60m"
+        case ..<240: return "1_4h"
+        case ..<1440: return "4_24h"
+        default: return "gt_24h"
+        }
+    }
+}
+
 // MARK: - Implementation
 
 final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
@@ -39,7 +54,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
     private let timeElapsedInMinutes: Int?
     private let pixelFiring: PixelFiring.Type
     private let featureDiscovery: FeatureDiscovery
-    private let timestampParameterKey = "delta-timestamp-minutes"
+    private let timestampParameterKey = "delta-timestamp-bucket"
 
     /// The metrics the frontend reports when a prompt is submitted through its own composer.
     private static let promptSubmissionMetrics: Set<AIChatMetricName> = [.userDidSubmitPrompt, .userDidSubmitFirstPrompt]
@@ -141,7 +156,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
     private var timestampParameters: [String: String]? {
         guard let timeElapsed = timeElapsedInMinutes else { return nil }
-        return [timestampParameterKey: "\(timeElapsed)"]
+        return [timestampParameterKey: AIChatSessionDeltaBucket.bucket(forMinutes: timeElapsed)]
     }
 }
 

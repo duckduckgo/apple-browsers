@@ -42,6 +42,8 @@ protocol BrowserChromeDelegate: AnyObject {
 
     var isFloatingChromeEnabled: Bool { get }
 
+    /// Pins any in-flight floating chrome morph to its currently rendered visibility so scroll
+    /// tracking can take over. No-op when not morphing; must not re-fire settled chrome side effects.
     func pinFloatingChromeMorphIfNeeded()
 
     /// Height (from the screen bottom) obscured by the visible bottom chrome at the given chrome
@@ -94,6 +96,8 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
 
     private var scrollToTop = true
     private var pendingFloatingScrollEndVelocity: CGFloat = 0
+    /// Tracks an in-flight user drag/deceleration so passive WebKit scroll settling during page load
+    /// does not drive floating chrome morph updates.
     private var isFloatingUserScrollActive = false
 
     func attach(to scrollView: UIScrollView) {
@@ -178,7 +182,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         guard !scrollView.isZooming else { return }
         guard delegate?.isChromeScrollInteractionDisabled != true else { return }
         guard canHideBars(for: scrollView) else { return }
-        
+
         guard delegate?.isFloatingChromeEnabled == true else {
             animator.didFinishScrolling(in: scrollView, velocity: velocity.y)
             return

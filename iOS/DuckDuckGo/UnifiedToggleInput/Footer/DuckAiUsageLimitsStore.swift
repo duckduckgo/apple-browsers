@@ -24,48 +24,78 @@ import Foundation
 import os.log
 import PrivacyConfig
 
+/// Owns the app-side flag gating so the shared decision logic stays flag-agnostic, and builds the
+/// view model that drives the footer. Mirrors macOS's file of the same name.
 struct DuckAiUsageLimitsStore {
 
 #if DEBUG || ALPHA
     @MainActor static var debugOverride: DuckAiUsageLimits?
 #endif
 
-    private let provider: DuckAiUsageLimitsProviding?
+    private let storageProvider: DuckAiUsageLimitsProviding?
     private let featureFlagger: FeatureFlagger
+    private let dismissalStore: DuckAiUsageWarningDismissalStoring
 
     init(storageHandler: DuckAiNativeStorageHandling?,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         dismissalStore: DuckAiUsageWarningDismissalStoring = DuckAiUsageWarningDismissalStore(),
          dateProvider: @escaping () -> Date = Date.init) {
-        self.provider = storageHandler.map {
+        self.storageProvider = storageHandler.map {
             DuckAiUsageLimitsProvider(storage: $0,
                                       pixelFiring: DuckAiNativeStoragePixelAdapter(),
                                       dateProvider: dateProvider)
         }
         self.featureFlagger = featureFlagger
+        self.dismissalStore = dismissalStore
     }
 
-    func currentLimits() -> DuckAiUsageLimits? {
+    /// `nil` means inactive (flag off, or no storage bridge), which differs from having nothing to show.
+    func makeWarningViewModel(tierProvider: @escaping () -> AIChatUserTier,
+                              modelSuggester: DuckAiModelSuggesting,
+                              isTrialEligible: @escaping () -> Bool,
+                              isFireMode: @escaping () -> Bool) -> DuckAiUsageWarningViewModel? {
         guard featureFlagger.isFeatureOn(.utiDuckAIWarnings) else {
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] store inactive: utiDuckAIWarnings flag is off")
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] inactive: utiDuckAIWarnings flag is off")
             return nil
         }
+        guard let limitsProvider = makeLimitsProvider() else {
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] inactive: no native-storage bridge")
+            return nil
+        }
+        return DuckAiUsageWarningViewModel(
+            limitsProvider: limitsProvider,
+            tierProvider: tierProvider,
+            isInternalUser: { [featureFlagger] in featureFlagger.internalUserDecider.isInternalUser },
+            dismissalStore: dismissalStore,
+            modelSuggester: modelSuggester,
+            isTrialEligible: isTrialEligible,
+            isFireMode: isFireMode
+        )
+    }
+
+    private func makeLimitsProvider() -> DuckAiUsageLimitsProviding? {
 #if DEBUG || ALPHA
-        if let override = MainActor.assumeIsolated({ Self.debugOverride }) {
+        // Wrapped rather than replaced, so "no storage bridge" still reads as inactive here exactly
+        // as it does in Release.
+        return storageProvider.map { DebugOverridableUsageLimitsProvider(wrapped: $0) }
+#else
+        return storageProvider
+#endif
+    }
+}
+
+#if DEBUG || ALPHA
+/// Lets the AI Chat debug menu drive the real decision path from a hand-seeded snapshot.
+private struct DebugOverridableUsageLimitsProvider: DuckAiUsageLimitsProviding {
+
+    let wrapped: DuckAiUsageLimitsProviding
+
+    func currentUsageLimits() -> DuckAiUsageLimits {
+        if let override = MainActor.assumeIsolated({ DuckAiUsageLimitsStore.debugOverride }) {
             Logger.duckAIUsageWarnings.debug("[UsageWarnings] using debug override snapshot")
             return override
         }
-#endif
-        guard let provider else {
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] store inactive: no native-storage bridge")
-            return nil
-        }
-        let limits = provider.currentUsageLimits()
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] limits read: daily=\(Self.describe(limits.daily), privacy: .private) weekly=\(Self.describe(limits.weekly), privacy: .private)")
-        return limits
-    }
-
-    private static func describe(_ usage: DuckAiUsageLimitWindow?) -> String {
-        guard let usage else { return "none" }
-        return "\(usage.percentUsed)% resets \(usage.resetsAt)"
+        return wrapped.currentUsageLimits()
     }
 }
+#endif

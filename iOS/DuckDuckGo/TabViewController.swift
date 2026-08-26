@@ -75,9 +75,11 @@ enum WebViewPreviewSnapshotGeometry {
     }
 
     static func visibleRect(webViewBounds: CGRect, contentInset: UIEdgeInsets, capturesFullBounds: Bool) -> CGRect? {
-        capturesFullBounds
-            ? visibleRect(webViewBounds: webViewBounds)
-            : visibleRect(webViewBounds: webViewBounds, contentInset: contentInset)
+        let cropInset = UIEdgeInsets(top: contentInset.top,
+                                     left: 0,
+                                     bottom: capturesFullBounds ? 0 : contentInset.bottom,
+                                     right: 0)
+        return visibleRect(webViewBounds: webViewBounds, contentInset: cropInset)
     }
 }
 
@@ -2605,14 +2607,15 @@ extension TabViewController: WKNavigationDelegate {
         guard let webView, webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
 
         let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
-        let contentInset = capturesFullBounds ? UIEdgeInsets.zero : webView.scrollView.contentInset
-        let size = CGSize(width: webView.frame.size.width,
-                          height: webView.frame.size.height - contentInset.top - contentInset.bottom)
-        guard size.width > 0, size.height > 0 else { return nil }
+        guard let snapshotRect = WebViewPreviewSnapshotGeometry.visibleRect(
+            webViewBounds: webView.bounds,
+            contentInset: webView.scrollView.contentInset,
+            capturesFullBounds: capturesFullBounds
+        ) else { return nil }
 
-        let renderer = UIGraphicsImageRenderer(size: size)
+        let renderer = UIGraphicsImageRenderer(size: snapshotRect.size)
         return renderer.image { context in
-            context.cgContext.translateBy(x: 0, y: -contentInset.top)
+            context.cgContext.translateBy(x: -snapshotRect.origin.x, y: -snapshotRect.origin.y)
             webView.drawHierarchy(in: webView.bounds, afterScreenUpdates: afterScreenUpdates)
             if let jsAlertView {
                 jsAlertView.drawHierarchy(in: jsAlertView.bounds, afterScreenUpdates: false)

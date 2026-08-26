@@ -64589,55 +64589,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Import abbrechen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Cancel Import"
+            "value" : "Cancel"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Cancelar importación"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Annuler l’importation"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Annulla importazione"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Importeren annuleren"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Anuluj import"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Cancelar importação"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Отменить импорт"
           }
         }
@@ -64699,6 +64699,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Хотите повторить попытку? Для завершения импорта DuckDuckGo нужен доступ к данным вашего %1$@."
+          }
+        }
+      }
+    },
+    "import.request-access-error.step.do-not-navigate" : {
+      "comment" : "Second step of the instructions shown when DuckDuckGo still can't read the browser data folder after the user picked one",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t navigate to another folder"
+          }
+        }
+      }
+    },
+    "import.request-access-error.step.grant-access" : {
+      "comment" : "Third step of the instructions shown when DuckDuckGo still can't read the browser data folder after the user picked one. Markdown bold marks the button to click.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select **Grant Access** in the file picker"
+          }
+        }
+      }
+    },
+    "import.request-access-error.step.select-data" : {
+      "comment" : "First step of the instructions shown when DuckDuckGo still can't read the browser data folder after the user picked one (%1$@ is the browser name). Markdown bold marks the button to click.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click **Select %1$@ Data**"
+          }
+        }
+      }
+    },
+    "import.request-access-error.title" : {
+      "comment" : "Title of the screen shown when DuckDuckGo still can't read the browser data folder after the user picked one, asking them to try again (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something went wrong. DuckDuckGo can’t access your %1$@ Data folder."
           }
         }
       }

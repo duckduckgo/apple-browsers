@@ -32,7 +32,7 @@ final class ReturnSessionWideEventData: WideEventData {
         mobileMetaType: "ios-return-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-return-session",
-        version: "1.0.0"
+        version: "1.1.0"
     )
 
     /// `ntp` is the after-idle NTP; `ntpUserInitiated` is an NTP reached without the treatment.
@@ -73,6 +73,8 @@ final class ReturnSessionWideEventData: WideEventData {
     var openingScreenChanged: Bool
     var closeTabTapped: Bool
     var burnTabTapped: Bool
+    var promptSubmittedInPage: Bool
+    var inAppNavigation: Bool
 
     init(landedOn: LandedOn,
          afterIdle: Bool,
@@ -86,6 +88,8 @@ final class ReturnSessionWideEventData: WideEventData {
          openingScreenChanged: Bool = false,
          closeTabTapped: Bool = false,
          burnTabTapped: Bool = false,
+         promptSubmittedInPage: Bool = false,
+         inAppNavigation: Bool = false,
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
          globalData: WideEventGlobalData = WideEventGlobalData()) {
@@ -102,6 +106,8 @@ final class ReturnSessionWideEventData: WideEventData {
         self.openingScreenChanged = openingScreenChanged
         self.closeTabTapped = closeTabTapped
         self.burnTabTapped = burnTabTapped
+        self.promptSubmittedInPage = promptSubmittedInPage
+        self.inAppNavigation = inAppNavigation
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
@@ -144,6 +150,8 @@ extension ReturnSessionWideEventData {
             (WideEventParameter.ReturnSessionFeature.openingScreenChanged, openingScreenChanged),
             (WideEventParameter.ReturnSessionFeature.closeTabTapped, closeTabTapped),
             (WideEventParameter.ReturnSessionFeature.burnTabTapped, burnTabTapped),
+            (WideEventParameter.ReturnSessionFeature.promptSubmittedInPage, promptSubmittedInPage),
+            (WideEventParameter.ReturnSessionFeature.inAppNavigation, inAppNavigation),
         ])
     }
 }
@@ -178,5 +186,7 @@ extension WideEventParameter {
         static let openingScreenChanged = "feature.data.ext.opening_screen_changed"
         static let closeTabTapped = "feature.data.ext.close_tab_tapped"
         static let burnTabTapped = "feature.data.ext.burn_tab_tapped"
+        static let promptSubmittedInPage = "feature.data.ext.prompt_submitted_in_page"
+        static let inAppNavigation = "feature.data.ext.in_app_navigation"
     }
 }

@@ -113,6 +113,16 @@
                 "key": "feature.data.ext.burn_tab_tapped",
                 "type": "boolean",
                 "description": "Whether the user burned the open tab from the escape hatch's menu during the session."
+            },
+            {
+                "key": "feature.data.ext.prompt_submitted_in_page",
+                "type": "boolean",
+                "description": "Whether the duck.ai frontend reported a prompt submitted from its own input box during the session. Not a navigation, so no status_reason covers it."
+            },
+            {
+                "key": "feature.data.ext.in_app_navigation",
+                "type": "boolean",
+                "description": "Whether the user navigated by a route that sets no status_reason: a bookmark, a form submission, or browser history. Plain link taps are reported by page_engaged instead."
             }
         ]
     }

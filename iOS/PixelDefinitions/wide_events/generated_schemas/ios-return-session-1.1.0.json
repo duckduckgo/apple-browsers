@@ -1,0 +1,145 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent at the end of a return session: every return to the app, whether it got an after-idle treatment (the NTP or LUT shown once the After Inactivity threshold elapses) or was an ordinary return. Captures where the user landed, what they did there, and how the session ended. `ios-post-idle-session` stays scoped to after-idle returns and runs alongside this event.",
+    "$comment": "{\"owners\":[\"Bunn\",\"SabrinaTardio\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "ios-return-session" }, "version": { "const": "1.1.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental", "PacketTunnelProvider"]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["return-session"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "CANCELLED", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "after_idle": {
+                                    "type": "boolean",
+                                    "description": "True when the session was started by an after-idle treatment; false for an ordinary return. Filtering after_idle=true gives the population `ios-post-idle-session` reports on."
+                                },
+                                "landed_on": {
+                                    "type": "string",
+                                    "description": "What the user actually landed on: the after-idle NTP, an NTP reached without the treatment, or the resumed tab's content type",
+                                    "enum": ["ntp", "ntp_user_initiated", "web", "serp", "duck_ai"]
+                                },
+                                "focused": {
+                                    "type": "boolean",
+                                    "description": "True when the landing surface appeared with the address bar focused (keyboard up)"
+                                },
+                                "time_away_ms_bucketed": {
+                                    "type": "string",
+                                    "description": "Time the app spent in the background before this return, bucketed (lower end of bucket, in ms). Absent when there was no prior background date.",
+                                    "enum": ["0", "60000", "300000", "900000", "1800000", "3600000"]
+                                },
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Terminal reason describing how the session ended. SUCCESS uses one of the user-action reasons; CANCELLED uses app_backgrounded; UNKNOWN uses app_terminated when an in-flight session is recovered after an app crash or termination. The three submission reasons are what `ios-post-idle-session` reports as a single bar_used.",
+                                    "enum": [
+                                        "search_submitted",
+                                        "ai_prompt_submitted",
+                                        "url_submitted",
+                                        "return_to_page_tapped",
+                                        "tab_switcher_selected",
+                                        "app_backgrounded",
+                                        "favorite_selected",
+                                        "chat_selected",
+                                        "app_terminated"
+                                    ]
+                                },
+                                "session_duration_ms_bucketed": {
+                                    "type": "string",
+                                    "description": "Total time the landing surface was visible, from session start until the terminal action or background, bucketed (lower end of bucket, in ms). Absent when the session was orphaned (UNKNOWN / app_terminated).",
+                                    "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                                },
+                                "time_to_first_interaction_ms_bucketed": {
+                                    "type": "string",
+                                    "description": "Time from session start to the first user interaction with the landing surface (page engagement, toggle, back, or terminal action), bucketed (lower end of bucket, in ms). Absent if the session ended without any interaction.",
+                                    "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                                },
+                                "page_engaged": {
+                                    "type": "boolean",
+                                    "description": "True if the user scrolled or activated an in-page link on the landing surface during the session"
+                                },
+                                "toggle_used": {
+                                    "type": "boolean",
+                                    "description": "True if the user toggled between Search and Duck.ai during the session"
+                                },
+                                "back_pressed": {
+                                    "type": "boolean",
+                                    "description": "True if the user pressed back / cancel from the landing surface during the session"
+                                },
+                                "opening_screen_changed": {
+                                    "type": "boolean",
+                                    "description": "True if the user changed the Opening Screen option from the escape hatch's settings menu during the session"
+                                },
+                                "close_tab_tapped": {
+                                    "type": "boolean",
+                                    "description": "True if the user closed the open tab from the escape hatch's menu during the session"
+                                },
+                                "burn_tab_tapped": {
+                                    "type": "boolean",
+                                    "description": "True if the user burned the open tab from the escape hatch's menu during the session"
+                                },
+                                "prompt_submitted_in_page": {
+                                    "type": "boolean",
+                                    "description": "True if the duck.ai frontend reported a prompt submitted from its own input box during the session. Prompts sent this way are not navigations, so no status_reason covers them and the session still ends as app_backgrounded."
+                                },
+                                "in_app_navigation": {
+                                    "type": "boolean",
+                                    "description": "True if the user navigated within the app by a route that sets no status_reason: selecting a bookmark, submitting a form, or moving through browser history. Excludes plain link taps, which are reported by page_engaged."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

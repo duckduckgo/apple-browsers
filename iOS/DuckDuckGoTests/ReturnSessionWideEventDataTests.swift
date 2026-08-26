@@ -56,6 +56,8 @@ struct ReturnSessionWideEventDataTests {
         #expect(params["feature.data.ext.opening_screen_changed"] as? Bool == false)
         #expect(params["feature.data.ext.close_tab_tapped"] as? Bool == false)
         #expect(params["feature.data.ext.burn_tab_tapped"] as? Bool == false)
+        #expect(params["feature.data.ext.prompt_submitted_in_page"] as? Bool == false)
+        #expect(params["feature.data.ext.in_app_navigation"] as? Bool == false)
     }
 
     @available(iOS 16, *)
@@ -124,7 +126,9 @@ struct ReturnSessionWideEventDataTests {
                                               backPressed: true,
                                               openingScreenChanged: true,
                                               closeTabTapped: true,
-                                              burnTabTapped: true)
+                                              burnTabTapped: true,
+                                              promptSubmittedInPage: true,
+                                              inAppNavigation: true)
         let params = data.jsonParameters()
         #expect(params["feature.data.ext.page_engaged"] as? Bool == true)
         #expect(params["feature.data.ext.toggle_used"] as? Bool == true)
@@ -132,6 +136,8 @@ struct ReturnSessionWideEventDataTests {
         #expect(params["feature.data.ext.opening_screen_changed"] as? Bool == true)
         #expect(params["feature.data.ext.close_tab_tapped"] as? Bool == true)
         #expect(params["feature.data.ext.burn_tab_tapped"] as? Bool == true)
+        #expect(params["feature.data.ext.prompt_submitted_in_page"] as? Bool == true)
+        #expect(params["feature.data.ext.in_app_navigation"] as? Bool == true)
     }
 
     // MARK: - Durations
@@ -200,6 +206,8 @@ struct ReturnSessionWideEventDataTests {
         original.openingScreenChanged = true
         original.closeTabTapped = true
         original.burnTabTapped = true
+        original.promptSubmittedInPage = true
+        original.inAppNavigation = true
 
         let encoded = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(ReturnSessionWideEventData.self, from: encoded)
@@ -219,5 +227,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(decoded.openingScreenChanged == true)
         #expect(decoded.closeTabTapped == true)
         #expect(decoded.burnTabTapped == true)
+        #expect(decoded.promptSubmittedInPage == true)
+        #expect(decoded.inAppNavigation == true)
     }
 }

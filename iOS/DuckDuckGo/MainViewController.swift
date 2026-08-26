@@ -6513,6 +6513,10 @@ extension MainViewController: TabDelegate {
         postIdleSessionInstrumentation.pageEngaged()
     }
 
+    func tabDidNavigateInApp(_ tab: TabViewController) {
+        postIdleSessionInstrumentation.inAppNavigation()
+    }
+
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {
         duckAIWideEventInstrumentation.pageLoadFailed(scope: .tab(tab.tabModel.uid), error: error)
     }
@@ -7218,6 +7222,9 @@ extension MainViewController: TabSwitcherDelegate {
 extension MainViewController: BookmarksDelegate {
     func bookmarksDidSelect(url: URL) {
         recordNewTabPageSessionAction { $0.selectBookmark() }
+        // The equivalent NTP action ends the session as `.favoriteSelected`; a bookmark is a
+        // programmatic load, so it reaches no navigation-type hook and has to report itself.
+        postIdleSessionInstrumentation.inAppNavigation()
 
         dismissOmniBar()
         if url.isBookmarklet() {
@@ -8033,6 +8040,7 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 
     func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager) {
+        postIdleSessionInstrumentation.promptSubmittedInPage()
         reportDuckAIFrontendSubmissionAcknowledged()
     }
 }
@@ -8061,6 +8069,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
+        postIdleSessionInstrumentation.promptSubmittedInPage()
         reportDuckAIFrontendSubmissionAcknowledged()
     }
 

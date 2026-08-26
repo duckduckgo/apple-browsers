@@ -4,7 +4,7 @@
         "owners": ["Bunn", "SabrinaTardio"],
         "meta": {
             "type": "ios-return-session",
-            "version": "0.0"
+            "version": "1.0"
         },
         "feature": {
             "name": "return-session",
@@ -77,6 +77,14 @@
                     "burn_tab_tapped": {
                         "type": "boolean",
                         "description": "True if the user burned the open tab from the escape hatch's menu during the session"
+                    },
+                    "prompt_submitted_in_page": {
+                        "type": "boolean",
+                        "description": "True if the duck.ai frontend reported a prompt submitted from its own input box during the session. Prompts sent this way are not navigations, so no status_reason covers them and the session still ends as app_backgrounded."
+                    },
+                    "in_app_navigation": {
+                        "type": "boolean",
+                        "description": "True if the user navigated within the app by a route that sets no status_reason: selecting a bookmark, submitting a form, or moving through browser history. Excludes plain link taps, which are reported by page_engaged."
                     }
                 }
             }

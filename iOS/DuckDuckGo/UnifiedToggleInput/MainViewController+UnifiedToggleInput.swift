@@ -1205,9 +1205,9 @@ extension MainViewController {
         postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
         recordNewTabPageSessionAction { $0.hitSubmit() }
         // Stamped via the load completion: the new-tab case has no tab to stamp until `loadQuery` creates it.
-        loadQuery(query) { [weak self] in
+        loadQuery(query) { tab in
             if let duckAIEntrySource {
-                self?.stampDuckAIEntrySourceOnCurrentTab(duckAIEntrySource)
+                tab.duckAIEntrySource = duckAIEntrySource
             }
         }
     }

@@ -2465,21 +2465,26 @@ class MainViewController: UIViewController {
     ///     Timing relative to UI refresh differs by exit path: the URL-reuse branch fires this before
     ///     `refreshOmniBar`/tab-bar refresh; all other branches fire it after. Callers should not rely
     ///     on chrome state being settled inside the closure.
-    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false, completion: (() -> Void)? = nil) {
+    /// `completion` receives the tab hosting the load, so per-tab state is stamped on the right tab
+    /// even when a clear defers the whole load and "current" still points at the outgoing tab.
+    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false, completion: ((Tab) -> Void)? = nil) {
 
         func worker() {
             allowContentUnderflow = false
             viewCoordinator.navigationBarContainer.alpha = 1
             loadViewIfNeeded()
 
+            let hostingTab: Tab
+
             // Check if a specific tab ID should be reused.
             if case .tabWithId(let id) = reuseExisting, let existing = tabManager.first(withId: id) {
                 selectTab(existing)
+                hostingTab = existing
             }
             // Check if an existing tab with the same URL should be reused.
             else if reuseExisting != .none, let existing = tabManager.first(withUrl: url) {
                 selectTab(existing)
-                completion?()
+                completion?(existing)
                 return
             }
             // Check if a tab presenting a New Tab page should be reused.
@@ -2489,10 +2494,11 @@ class MainViewController: UIViewController {
                 }
                 tabManager.select(existing, dismissCurrent: false)
                 loadUrl(url, fromExternalLink: fromExternalLink)
+                hostingTab = existing
             }
             // Add a new tab if no existing tab is reused.
             else {
-                addTab(url: url, inheritedAttribution: inheritedAttribution, fromExternalLink: fromExternalLink, voiceMode: voiceMode)
+                hostingTab = addTab(url: url, inheritedAttribution: inheritedAttribution, fromExternalLink: fromExternalLink, voiceMode: voiceMode)
             }
 
             refreshOmniBar()
@@ -2500,7 +2506,7 @@ class MainViewController: UIViewController {
             refreshControls()
             tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
             swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-            completion?()
+            completion?(hostingTab)
         }
 
         if clearInProgress {
@@ -2522,7 +2528,7 @@ class MainViewController: UIViewController {
         }
     }
 
-    func loadQuery(_ query: String, completion: (() -> Void)? = nil) {
+    func loadQuery(_ query: String, completion: ((Tab) -> Void)? = nil) {
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
             Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.shortDescription ?? "<nil>", privacy: .public)\"")
             return
@@ -2621,7 +2627,8 @@ class MainViewController: UIViewController {
         transitionTo(tab: tab, from: nil)
     }
 
-    private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) {
+    @discardableResult
+    private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) -> Tab {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
@@ -2638,6 +2645,7 @@ class MainViewController: UIViewController {
         dismissOmniBar()
         resetUnifiedToggleInputForTabTransition(to: tab)
         attachTab(tab: tab)
+        return tab.tabModel
     }
 
     private func resetUnifiedToggleInputForTabTransition(to tab: TabViewController) {
@@ -4186,6 +4194,7 @@ class MainViewController: UIViewController {
 
     /// Stamps the entry on the tab hosting the chat, where it persists as the `origin` of
     /// follow-up prompts — surviving restarts and Duck.ai entries made from other tabs.
+    /// New-tab paths stamp the tab handed to their load completion instead.
     func stampDuckAIEntrySourceOnCurrentTab(_ source: AIChatEntryPointSource) {
         tabManager.currentTabsModel.currentTab?.duckAIEntrySource = source
     }
@@ -4236,9 +4245,7 @@ class MainViewController: UIViewController {
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
-            loadUrlInNewTab(voiceURL, inheritedAttribution: nil, voiceMode: true) { [weak self] in
-                self?.stampDuckAIEntrySourceOnCurrentTab(source)
-            }
+            loadUrlInNewTab(voiceURL, inheritedAttribution: nil, voiceMode: true) { $0.duckAIEntrySource = source }
             if fromDeepLink {
                 // Collapse the input that was auto-expanded for the restored tab.
                 // This cancels any pending async activateInput because showCollapsed
@@ -4321,8 +4328,8 @@ class MainViewController: UIViewController {
                 )
                 AIChatPromptHandler.shared.setData(prompt)
             }
-            loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] in
-                self?.stampDuckAIEntrySourceOnCurrentTab(source)
+            loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] tab in
+                tab.duckAIEntrySource = source
                 if let modelId {
                     self?.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
                 }
@@ -4772,9 +4779,9 @@ extension MainViewController: BrowserChromeDelegate {
         showHomeRowReminder()
     }
 
-    /// `completion` runs once the tab hosting the load is current, so callers can stamp per-tab
-    /// state that the new-tab branch could not set up front (the tab does not exist yet).
-    func loadUrlRespectingAIBoundary(_ url: URL, fromExternalLink: Bool = false, completion: (() -> Void)? = nil) {
+    /// `completion` receives the tab hosting the load, so callers can stamp per-tab state that the
+    /// new-tab branch could not set up front (the tab does not exist yet).
+    func loadUrlRespectingAIBoundary(_ url: URL, fromExternalLink: Bool = false, completion: ((Tab) -> Void)? = nil) {
         let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
             currentIsAI: currentTab?.isAITab == true,
             currentHasContent: currentTab?.tabModel.link != nil,
@@ -4791,7 +4798,9 @@ extension MainViewController: BrowserChromeDelegate {
         case .loadInPlace:
             currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
-            completion?()
+            if let currentTab = tabManager.currentTabsModel.currentTab {
+                completion?(currentTab)
+            }
         }
     }
 
@@ -4898,9 +4907,7 @@ extension MainViewController: OmniBarDelegate {
         ) == .openInNewTab
         fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
         // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
-        loadUrlRespectingAIBoundary(url) { [weak self] in
-            self?.stampDuckAIEntrySourceOnCurrentTab(.chatHistoryOpenChat)
-        }
+        loadUrlRespectingAIBoundary(url) { $0.duckAIEntrySource = .chatHistoryOpenChat }
     }
 
     func onViewAllChatsSelected() {

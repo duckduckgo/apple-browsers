@@ -143,7 +143,7 @@ enum SubscriptionPixel: PixelKit.Event {
 // pixels belong here, or in a type of their own on the default `.standard` policy, rather than in
 // the marker-less enum above.
 enum SubscriptionAutomaticSignOutPixel: PixelKit.Event {
-    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     case automaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)

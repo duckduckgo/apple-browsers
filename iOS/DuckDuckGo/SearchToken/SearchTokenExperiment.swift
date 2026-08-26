@@ -28,7 +28,7 @@ import FeatureFlags_iOS
 /// Fired via PixelKit, which appends the `_ios_phone`/`_ios_tablet` platform suffix automatically —
 /// so names are grouped by feature with no `m_` prefix. Both expire 2026-10-12; see search_token.json5.
 enum SearchTokenPixel: PixelKit.Event {
-    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     /// A treatment variant-b SERP navigation the interceptor decorated: whether a token was attached and its length bucket.

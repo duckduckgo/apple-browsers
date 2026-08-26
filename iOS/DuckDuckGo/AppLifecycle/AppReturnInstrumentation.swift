@@ -21,7 +21,7 @@ import Foundation
 import PixelKit
 
 enum AppReturnPixel: PixelKit.Event {
-    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     case appReturn

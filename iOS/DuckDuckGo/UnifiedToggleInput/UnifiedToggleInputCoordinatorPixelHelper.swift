@@ -26,7 +26,7 @@ import Subscription
 /// The schedule suffix is part of the name, fired with frequencies that append nothing, so PixelKit's
 /// platform suffix lands after it and the wire name stays `..._daily_ios_phone` as the legacy pixel reports it.
 enum ExperimentalOmnibarPixel: PixelKit.Event {
-    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     /// `isToggleVisible`: whether the Search/Duck.ai toggle was on screen when the surface appeared.

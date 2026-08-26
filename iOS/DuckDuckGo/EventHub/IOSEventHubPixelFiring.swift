@@ -27,7 +27,7 @@ import PixelKit
 /// below. See `IOSEventHubPixelFiring`'s doc comment for why the empty `namePrefix` is what produces the
 /// names `event_hub.json5` declares.
 private struct EventHubPixelKitEvent: PixelKit.Event {
-    /// Frozen: these names already ship with the marker ahead of the frequency suffix.
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     let namePrefix: PixelKitNamePrefix = .none

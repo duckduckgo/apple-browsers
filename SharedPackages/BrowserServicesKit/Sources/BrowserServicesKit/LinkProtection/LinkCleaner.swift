@@ -145,6 +145,9 @@ private struct PercentEncodedQueryFilter {
             queryRange: queryRange,
             inspection: inspection
         )
+        if cleanedURLString.isEmpty {
+            return URLComponents().url(relativeTo: url.baseURL)
+        }
         return URL(string: cleanedURLString, relativeTo: url.baseURL)
     }
 

@@ -179,4 +179,16 @@ final class URLParameterTests: XCTestCase {
         XCTAssertTrue(linkCleaner.urlParametersRemoved)
     }
 
+    func testURLParamStrippingRemovesOnlyParameterFromQueryOnlyRelativeURL() throws {
+        let baseURL = try XCTUnwrap(URL(string: "https://example.com/root/"))
+        let url = try XCTUnwrap(URL(string: "?utm_source=value", relativeTo: baseURL))
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+
+        let result = try XCTUnwrap(linkCleaner.cleanTrackingParameters(initiator: nil, url: url))
+
+        XCTAssertEqual(result.relativeString, "")
+        XCTAssertEqual(result.baseURL, baseURL)
+        XCTAssertTrue(linkCleaner.urlParametersRemoved)
+    }
+
 }

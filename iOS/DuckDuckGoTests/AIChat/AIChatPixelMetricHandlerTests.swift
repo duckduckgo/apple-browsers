@@ -87,7 +87,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
         XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatOpen.name)
-        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-bucket"], "5_30m")
+        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "5_30m")
     }
 
     func testFireOpenAIChatWithZeroTimeElapsed() {
@@ -100,7 +100,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
         XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatOpen.name)
-        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-bucket"], "lt_5m")
+        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "lt_5m")
     }
 
     // MARK: - firePixelWithMetric Tests
@@ -135,7 +135,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
         XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatMetricStartNewConversation.name)
-        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-bucket"], "5_30m")
+        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "5_30m")
     }
 
     func testFirePixelWithMetricForAllKnownMetrics() {
@@ -318,7 +318,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
 
         // All pixels should have the same timestamp parameter
         for capturedPixel in PixelFiringMock.allPixelsFired {
-            XCTAssertEqual(capturedPixel.params?["delta-timestamp-bucket"], "5_30m")
+            XCTAssertEqual(capturedPixel.params?["delta-timestamp-minutes"], "5_30m")
         }
     }
 

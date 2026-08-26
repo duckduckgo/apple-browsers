@@ -11,7 +11,7 @@
             "appVersion",
             "aichat_first_prompt_new_install",
             {
-                "key": "delta-timestamp-bucket",
+                "key": "delta-timestamp-minutes",
                 "type": "string",
                 "description": "Bucketed minutes since the Duck.ai session started: lt_5m, 5_30m, 30_60m, 1_4h, 4_24h, gt_24h. Absent when no session timer is available."
             }
@@ -26,7 +26,7 @@
             "appVersion",
             "aichat_first_prompt_new_install",
             {
-                "key": "delta-timestamp-bucket",
+                "key": "delta-timestamp-minutes",
                 "type": "string",
                 "description": "Bucketed minutes since the Duck.ai session started: lt_5m, 5_30m, 30_60m, 1_4h, 4_24h, gt_24h. Absent when no session timer is available."
             }

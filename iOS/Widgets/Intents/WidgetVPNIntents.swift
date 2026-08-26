@@ -19,10 +19,21 @@
 
 import AppIntents
 import NetworkExtension
+import Persistence
 import VPN
 import WidgetKit
 import Core
 import VPNWidgetSupport
+
+/// Configures `PixelKit.shared` for the Widgets extension process, exactly once no matter which
+/// App Intent runs first. An intent's `perform()` can be invoked without the widget bundle
+/// (`Widgets.swift`'s `@main`) ever being constructed, so every `perform()` in this file and in
+/// `ControlWidgetVPNIntents.swift` touches this instead of relying on the widget bundle's `init`.
+enum WidgetsPixelKitSetup {
+    static let didSetUp: Void = {
+        PixelKitExtensionSetup.setUp(session: "ios-widgets", defaults: UserDefaults.networkProtectionGroupDefaults)
+    }()
+}
 
 // MARK: - Enable & Disable
 
@@ -43,6 +54,7 @@ struct WidgetDisableVPNIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         do {
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetDisconnectAttempt)
 
@@ -94,6 +106,7 @@ struct WidgetEnableVPNIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         do {
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetConnectAttempt)
 
@@ -132,6 +145,7 @@ struct CancelSnoozeVPNIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         do {
             let managers = try await NETunnelProviderManager.loadAllFromPreferences()
             guard let manager = managers.first, let session = manager.connection as? NETunnelProviderSession else {
@@ -157,6 +171,7 @@ struct CancelSnoozeLiveActivityAppIntent: LiveActivityIntent {
     static var openAppWhenRun: Bool = false
 
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
         guard let manager = managers.first, let session = manager.connection as? NETunnelProviderSession else {
             return .result()

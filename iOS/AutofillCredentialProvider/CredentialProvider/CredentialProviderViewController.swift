@@ -32,6 +32,16 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
         static let openPasswords = AppDeepLinkSchemes.openPasswords.url
     }
 
+    /// Configures `PixelKit.shared` for this process, exactly once no matter which entry point runs
+    /// first. `ASCredentialProviderViewController` has several entry points besides `viewDidLoad`
+    /// (`prepareCredentialList`, `provideCredentialWithoutUserInteraction`, and friends), so every
+    /// override below touches this instead of relying on `viewDidLoad` alone.
+    private static let pixelKitSetup: Void = {
+        if let sharedDefaults = UserDefaults.autofillGroupDefaults {
+            PixelKitExtensionSetup.setUp(session: "ios-credential-provider", defaults: sharedDefaults)
+        }
+    }()
+
     private lazy var authenticator = UserAuthenticator(reason: UserText.credentialProviderListAuthenticationReason,
                                                        cancelTitle: UserText.credentialProviderListAuthenticationCancelButton)
 
@@ -85,16 +95,19 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        _ = Self.pixelKitSetup
         // The extension has no FeatureFlagger to read `.appRebranding`, and the flag has shipped,
         // so opt its visuals into the rebrand unconditionally. Revert this line to restore flag-gating.
         AppRebrand.isAppRebranded = { true }
     }
 
     override func prepareCredentialList(for serviceIdentifiers: [ASCredentialServiceIdentifier]) {
+        _ = Self.pixelKitSetup
         loadCredentialsList(for: serviceIdentifiers)
     }
 
     override func provideCredentialWithoutUserInteraction(for credentialIdentity: ASPasswordCredentialIdentity) {
+        _ = Self.pixelKitSetup
         // A quirk here is calling .canAuthenticate in this one scenario actually triggers the prompt to authentication
         // Calling .authenticate here results in the extension attempting to present a non-existent view controller causing weird UI
         if authenticator.canAuthenticateViaBiometrics() {
@@ -107,6 +120,7 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
 
     @available(iOS 17.0, *)
     override func provideCredentialWithoutUserInteraction(for credentialRequest: any ASCredentialRequest) {
+        _ = Self.pixelKitSetup
         guard credentialRequest.type == .password else {
             self.extensionContext.cancelRequest(withError: NSError(domain: ASExtensionErrorDomain,
                                                                    code: ASExtensionError.credentialIdentityNotFound.rawValue))
@@ -122,6 +136,7 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
     }
 
     override func prepareInterfaceToProvideCredential(for credentialIdentity: ASPasswordCredentialIdentity) {
+        _ = Self.pixelKitSetup
         let hostingController = UIHostingController(rootView: LockScreenView())
         installChildViewController(hostingController)
 
@@ -132,6 +147,7 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
 
     @available(iOS 17.0, *)
     override func prepareInterfaceToProvideCredential(for credentialRequest: any ASCredentialRequest) {
+        _ = Self.pixelKitSetup
         let hostingController = UIHostingController(rootView: LockScreenView())
         installChildViewController(hostingController)
 
@@ -141,6 +157,7 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
     }
 
     override func prepareInterfaceForExtensionConfiguration() {
+        _ = Self.pixelKitSetup
         let viewModel = CredentialProviderActivatedViewModel { [weak self] shouldLaunchApp in
             if shouldLaunchApp {
                 self?.openUrl(Constants.openPasswords)
@@ -163,6 +180,7 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
 
     @available(iOSApplicationExtension 18.0, *)
     override func prepareInterfaceForUserChoosingTextToInsert() {
+        _ = Self.pixelKitSetup
         loadCredentialsList(for: [], shouldProvideTextToInsert: true)
     }
 

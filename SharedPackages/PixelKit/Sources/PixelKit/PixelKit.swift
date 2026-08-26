@@ -693,7 +693,8 @@ public final class PixelKit {
                                            _ retryOnFailure: Bool,
                                            _ onComplete: @escaping CompletionBlock) {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
-        reportErrorIf(pixel: pixelName, endsWith: "_d")
+        // No `_d` check: this frequency exists for pixels whose daily marker is already part of the
+        // name, so a trailing `_d` is expected here rather than a mistake. `.standard` still rejects it.
         if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)

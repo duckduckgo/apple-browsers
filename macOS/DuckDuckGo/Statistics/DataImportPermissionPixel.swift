@@ -24,6 +24,10 @@ import PixelKit
  * See macOS/PixelDefinitions/pixels/definitions/data_import_permission_pixels.json5 for more details.
  */
 enum DataImportPermissionPixel: PixelKit.Event {
+    /// These names are already complete: they carry their own `_macos` marker, so PixelKit must not
+    /// prepend `m_mac_` on top of it.
+    var namePrefix: PixelKitNamePrefix { .none }
+
     case directoryPermissionPromptScreenShown(source: String)
     case directoryPermissionGranted(source: String)
     case directoryPermissionDenied(source: String)

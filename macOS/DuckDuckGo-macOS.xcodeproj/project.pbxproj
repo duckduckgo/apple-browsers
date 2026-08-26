@@ -3225,6 +3225,8 @@
 		B5CCC0712F649BB9003EB0A2 /* TabBackgroundShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */; };
 		B5CF6949300AE5B2003B8D95 /* BurnerAppearanceStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CF6948300AE5B2003B8D95 /* BurnerAppearanceStyle.swift */; };
 		B5CF694A300AE5B2003B8D95 /* BurnerAppearanceStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CF6948300AE5B2003B8D95 /* BurnerAppearanceStyle.swift */; };
+		B5D1F702303CA9870095E425 /* DataImportPermissionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D1F701303CA9870095E425 /* DataImportPermissionPixel.swift */; };
+		B5D1F703303CA9870095E425 /* DataImportPermissionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D1F701303CA9870095E425 /* DataImportPermissionPixel.swift */; };
 		B5D20880300076B100B5671D /* vpn-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = B5D2087F300076B100B5671D /* vpn-animation.json */; };
 		B5D20881300076B100B5671D /* vpn-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = B5D2087F300076B100B5671D /* vpn-animation.json */; };
 		B5D20882300076B100B5671D /* vpn-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = B5D2087F300076B100B5671D /* vpn-animation.json */; };
@@ -6550,6 +6552,7 @@
 		B5CCC06C2F649BAF003EB0A2 /* TabBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBackgroundView.swift; sourceTree = "<group>"; };
 		B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBackgroundShapeView.swift; sourceTree = "<group>"; };
 		B5CF6948300AE5B2003B8D95 /* BurnerAppearanceStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurnerAppearanceStyle.swift; sourceTree = "<group>"; };
+		B5D1F701303CA9870095E425 /* DataImportPermissionPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportPermissionPixel.swift; sourceTree = "<group>"; };
 		B5D2087F300076B100B5671D /* vpn-animation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpn-animation.json"; sourceTree = "<group>"; };
 		B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsExporter.swift; sourceTree = "<group>"; };
 		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
@@ -12630,6 +12633,7 @@
 				CD41A0010000000000100010 /* AutoplayPromoPixel.swift */,
 				A5A7430C39C716A6A3A1F654 /* WebNotificationPixel.swift */,
 				56DB9FE82CD24B47001BEC23 /* ContextualOnboardingPixel.swift */,
+				B5D1F701303CA9870095E425 /* DataImportPermissionPixel.swift */,
 				CC9B678B2E607AD1003353C3 /* SessionRestorePromptPixel.swift */,
 			);
 			path = Statistics;
@@ -16425,6 +16429,7 @@
 				7B2E0C310004A43B009F2F04 /* RebrandedContextualOnboardingDialogs+SubscriptionUpsell.swift in Sources */,
 				CFCB0D03ADA84A06A1B05235 /* ContextualDaxDialogsProvider.swift in Sources */,
 				7BA930AF2E0DA5BF00723574 /* NavigationEngagementPixel.swift in Sources */,
+				B5D1F702303CA9870095E425 /* DataImportPermissionPixel.swift in Sources */,
 				3706FBF3293F65D500E42796 /* PseudoFolder.swift in Sources */,
 				1D26EBAD2B74BECB0002A93F /* NSImageSendable.swift in Sources */,
 				C10529472C9F456C0041E502 /* AutofillCredentialsDebugViewModel.swift in Sources */,
@@ -19193,6 +19198,7 @@
 				BBF17D1A2F7B1309004AFCF4 /* AIChatMenu.swift in Sources */,
 				6994C93E8D134666A5772C83 /* AIChatDeleteChatsDialog.swift in Sources */,
 				38935B87BCB54456BFEBB274 /* AIChatSubscriptionUpsellDialog.swift in Sources */,
+				B5D1F703303CA9870095E425 /* DataImportPermissionPixel.swift in Sources */,
 				C11198312C898AB500F0272C /* FreemiumDBPFirstProfileSavedNotifier.swift in Sources */,
 				AA8EDF2424923E980071C2E8 /* URLExtension.swift in Sources */,
 				B634DBDF293C8F7F00C3C99E /* Tab+UIDelegate.swift in Sources */,

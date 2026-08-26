@@ -174,7 +174,9 @@ extension SubscriptionFunnelOrigin {
                 .duckAISettings,
                 .duckAIDisclaimerBanner,
                 .duckAIVoiceChatLimit,
-                .duckAIVoiceChatDurationLimit:
+                .duckAIVoiceChatDurationLimit,
+                .addressBarUsageLimit,
+                .duckAIUsageLimit:
             return .duckAI
         case .onboarding,
                 .skippedOnboarding:

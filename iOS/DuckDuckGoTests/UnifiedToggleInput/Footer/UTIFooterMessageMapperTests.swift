@@ -37,11 +37,11 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     }
 
     func test_message_reachedHeadlinesMatchTheSpecifiedCopy() {
-        XCTAssertEqual(sut.message(for: warning(.dailyLimitReached, window: .daily)).title,
+        XCTAssertEqual(sut.message(for: warning(.dailyReached, window: .daily)).title,
                        "Daily limit reached")
-        XCTAssertEqual(sut.message(for: warning(.weeklyLimitReached, window: .weekly)).title,
+        XCTAssertEqual(sut.message(for: warning(.weeklyReached, window: .weekly)).title,
                        "Weekly usage limit reached")
-        XCTAssertEqual(sut.message(for: warning(.advancedModelsLimitReached, window: .weekly)).title,
+        XCTAssertEqual(sut.message(for: warning(.weeklyReachedDegraded, window: .weekly)).title,
                        "Advanced AI models limit reached")
     }
 
@@ -54,31 +54,31 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     }
 
     func test_message_reachedShowsTheAlertIcon() {
-        XCTAssertEqual(sut.message(for: warning(.weeklyLimitReached, window: .weekly)).icon, .alert)
-        XCTAssertEqual(sut.message(for: warning(.advancedModelsLimitReached, window: .weekly)).icon, .alert)
+        XCTAssertEqual(sut.message(for: warning(.weeklyReached, window: .weekly)).icon, .alert)
+        XCTAssertEqual(sut.message(for: warning(.weeklyReachedDegraded, window: .weekly)).icon, .alert)
     }
 
     // MARK: - Reset copy
 
     func test_message_subtitleLocalizesWholeDays() {
-        XCTAssertEqual(sut.message(for: warning(.weeklyLimitReached, window: .weekly, resetsIn: .days(2))).subtitle,
+        XCTAssertEqual(sut.message(for: warning(.weeklyReached, window: .weekly, resetsIn: .days(2))).subtitle,
                        "Resets in 2 days")
     }
 
     func test_message_subtitleUsesTheSingularDay() {
-        XCTAssertEqual(sut.message(for: warning(.weeklyLimitReached, window: .weekly, resetsIn: .days(1))).subtitle,
+        XCTAssertEqual(sut.message(for: warning(.weeklyReached, window: .weekly, resetsIn: .days(1))).subtitle,
                        "Resets in 1 day")
     }
 
     func test_message_subtitleFallsBackToHoursWithinADay() {
-        XCTAssertEqual(sut.message(for: warning(.dailyLimitReached, window: .daily, resetsIn: .hours(12))).subtitle,
+        XCTAssertEqual(sut.message(for: warning(.dailyReached, window: .daily, resetsIn: .hours(12))).subtitle,
                        "Resets in 12 hours")
     }
 
     /// Only reachable if the clock moves between read and render, and "Resets in 0 hours" would read
     /// as broken.
     func test_message_subtitleNeverCountsDownToZero() {
-        XCTAssertEqual(sut.message(for: warning(.dailyLimitReached, window: .daily, resetsIn: .hours(0))).subtitle,
+        XCTAssertEqual(sut.message(for: warning(.dailyReached, window: .daily, resetsIn: .hours(0))).subtitle,
                        "Resets in 1 hour")
     }
 
@@ -103,28 +103,36 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     func test_message_freeModelSwitchUsesItsOwnCopyRatherThanTheModelName() {
         let action = DuckAiUsageAction.switchToFreeModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
                                                                               modelShortName: "5.4 mini"))
-        XCTAssertEqual(sut.message(for: warning(.advancedModelsLimitReached, window: .weekly, action: action)).primaryAction?.title,
+        XCTAssertEqual(sut.message(for: warning(.weeklyReachedDegraded, window: .weekly, action: action)).primaryAction?.title,
                        "Switch to a Free Model")
     }
 
     func test_message_upsellCopyFollowsTrialEligibility() {
-        XCTAssertEqual(sut.message(for: warning(.dailyLimitReached, window: .daily,
+        XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: true))).primaryAction?.title,
                        "Try for free")
-        XCTAssertEqual(sut.message(for: warning(.dailyLimitReached, window: .daily,
+        XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: false))).primaryAction?.title,
                        "Subscribe")
     }
 
-    /// The resolver still produces this action so the decision stays visible in the log, but there is
-    /// no native route for it yet, so the card must render no button.
-    func test_message_startUsingWeeklyLimitOffersNoButton() {
-        XCTAssertNil(sut.message(for: warning(.dailyLimitReached, window: .daily,
-                                              action: .startUsingWeeklyLimit)).primaryAction)
+    func test_message_startUsingWeeklyLimitNamesTheHandOff() {
+        let entries = [DuckAiNativeStorageEntry(key: "duckai.fixedCostWindowBypassResetAtById", value: "{}")]
+
+        XCTAssertEqual(sut.message(for: warning(.dailyReached, window: .daily,
+                                                action: .startUsingWeeklyLimit(entries: entries))).primaryAction?.title,
+                       "Start using weekly limit")
     }
 
+    /// Web sends one id for a free user whichever window ran out, so the window picks the noun.
+    func test_message_freeReachedFollowsItsWindow() {
+        XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily)).title, "Daily limit reached")
+        XCTAssertEqual(sut.message(for: warning(.freeReached, window: .weekly)).title, "Weekly usage limit reached")
+    }
+
+    /// How a switch with nothing usable to switch to renders, as well as a notice web sent no cta for.
     func test_message_noActionOffersNoButton() {
-        XCTAssertNil(sut.message(for: warning(.weeklyLimitReached, window: .weekly, action: nil)).primaryAction)
+        XCTAssertNil(sut.message(for: warning(.weeklyReached, window: .weekly, action: nil)).primaryAction)
     }
 
     // MARK: - Chevron and dismissal
@@ -133,7 +141,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         let action = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
                                                                           modelShortName: "5.4 mini"))
         let offered = sut.message(for: warning(.approaching, window: .daily, action: action, offersModelPicker: true))
-        let notOffered = sut.message(for: warning(.dailyLimitReached, window: .daily,
+        let notOffered = sut.message(for: warning(.dailyReached, window: .daily,
                                                   action: .tryForFree(isTrialEligible: true)))
 
         XCTAssertEqual(offered.primaryAction?.showsModelPicker, true)
@@ -142,7 +150,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     func test_message_dismissibilityComesFromTheWarning() {
         XCTAssertTrue(sut.message(for: warning(.approaching, window: .weekly, isDismissible: true)).isDismissible)
-        XCTAssertFalse(sut.message(for: warning(.weeklyLimitReached, window: .weekly, isDismissible: false)).isDismissible)
+        XCTAssertFalse(sut.message(for: warning(.weeklyReached, window: .weekly, isDismissible: false)).isDismissible)
     }
 
     // MARK: - Helpers
@@ -156,7 +164,6 @@ final class UTIFooterMessageMapperTests: XCTestCase {
                          offersModelPicker: Bool = false) -> DuckAiUsageWarning {
         DuckAiUsageWarning(window: window,
                            message: message,
-                           severity: message == .approaching ? .warning : .reached,
                            percent: percent,
                            resetsIn: resetsIn,
                            isDismissible: isDismissible,

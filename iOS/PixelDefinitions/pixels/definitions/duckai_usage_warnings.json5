@@ -1,0 +1,83 @@
+// Duck.ai usage-limit messages in the unified toggle input footer.
+// `notice` and `cta` are the web app's own ids, so these line up with the web banner's numbers for
+// the same message. See https://app.asana.com/1/137249556945/task/1217581604845271
+{
+    "m_aichat_usage_message_shown": {
+        "description": "Fires when a Duck.ai usage-limit message is shown in the input footer. Fired once per notice per reset period per surface, not once per input activation",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "notice",
+                "type": "string",
+                "description": "Which message the web app told native to show",
+                "enum": ["approaching", "freeReached", "dailyReached", "weeklyReachedDegraded", "weeklyReached"]
+            },
+            {
+                "key": "window",
+                "type": "string",
+                "description": "The usage window the message is about",
+                "enum": ["daily", "weekly"]
+            },
+            {
+                "key": "surface",
+                "type": "string",
+                "description": "The input surface the message appeared on",
+                "enum": ["address_bar", "duck_ai", "contextual_chat"]
+            }
+        ]
+    },
+    "m_aichat_usage_message_cta_clicked": {
+        "description": "Fires when the user taps the button on a Duck.ai usage-limit message. Pairs with m_aichat_usage_message_shown for a tap-through rate",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "notice",
+                "type": "string",
+                "description": "The message the button belonged to",
+                "enum": ["approaching", "freeReached", "dailyReached", "weeklyReachedDegraded", "weeklyReached"]
+            },
+            {
+                "key": "cta",
+                "type": "string",
+                "description": "Which action the web app offered: switch to a cheaper model, switch to a free model, subscribe, or keep chatting on another window's allowance",
+                "enum": ["switchToCheaper", "switchToFree", "subscribe", "bypassWeekly"]
+            },
+            {
+                "key": "surface",
+                "type": "string",
+                "description": "The input surface the message appeared on",
+                "enum": ["address_bar", "duck_ai", "contextual_chat"]
+            }
+        ]
+    },
+    "m_aichat_usage_message_dismissed": {
+        "description": "Fires when the user dismisses a Duck.ai usage-limit message with its close button. Only the approaching message is dismissible",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "notice",
+                "type": "string",
+                "description": "The message that was dismissed",
+                "enum": ["approaching", "freeReached", "dailyReached", "weeklyReachedDegraded", "weeklyReached"]
+            },
+            {
+                "key": "surface",
+                "type": "string",
+                "description": "The input surface the message appeared on",
+                "enum": ["address_bar", "duck_ai", "contextual_chat"]
+            }
+        ]
+    }
+}

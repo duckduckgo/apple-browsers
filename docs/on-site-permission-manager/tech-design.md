@@ -3,7 +3,9 @@
 Companion to [requirements.md](requirements.md). This describes *how* we build the feature in the apple-browsers monorepo; the implementation plan (task-by-task) is a separate downstream artifact.
 
 **Asana:** main task https://app.asana.com/1/137249556945/task/1213800892997347
-**Revision note:** updated 2026-08-26 after an independent design review. Headline changes: v1 is iOS-standalone (**no macOS changes, no shared-package extraction**), one package with a single production target, a 7-PR stack, corrected flag-off semantics, and an explicit permission-key contract.
+**Revision note:** updated 2026-08-26 after a second independent review (fact-check round). Headline changes: Fire integration moved into the first write-capable PR, a 6-PR stack, `@MainActor` store with split storage keys, a corrected permission-key contract (top-level site ≠ requesting frame), corrected flag-off matrices, Duck.ai recorded as an explicit exception, and honest estimates (~21–25 person-days).
+
+Decisions of record (DRI, 2026-08-26): iOS-standalone (no macOS changes); implementation in a local package (synchronized buildable folders were evaluated as a viable, slightly cheaper alternative — the package was chosen for isolation and package-level tests); global Never Allow is absolute; user-reset `.ask` rows stay listed; **Duck.ai is an explicit exception to the whole model**; one feature flag (no geolocation subflag).
 
 ---
 
@@ -11,179 +13,169 @@ Companion to [requirements.md](requirements.md). This describes *how* we build t
 
 **iOS is greenfield.** There is no site-permission model on iOS today:
 
-- The only WKUIDelegate permission hook is `iOS/DuckDuckGo/TabViewController.swift:3938` — for ordinary sites it returns `.prompt` (WebKit shows its own per-page system-style alert; nothing is persisted), and for Duck.ai it grants/denies microphone based on `AVCaptureDevice.authorizationStatus`. A second, independent handler lives in `SharedPackages/AIChat/Sources/AIChat/iOS/AIChatWebViewController.swift:267` and **defaults to `.deny`** for ordinary requests. These two call sites intentionally differ; both matrices are shipped behavior.
-- There is zero iOS geolocation code — no `CLLocationManager`, no `navigator.geolocation` shim; `NSLocationWhenInUseUsageDescription` exists in `iOS/DuckDuckGo/Info.plist` only so WebKit can trigger the OS prompt itself.
-- Privacy Dashboard permission hooks are stubbed out on iOS (`iOS/DuckDuckGo/PrivacyDashboard/PrivacyDashboardViewController.swift:278-286`).
+- The only WKUIDelegate permission hook is `iOS/DuckDuckGo/TabViewController.swift:3938-3950`: the Duck.ai branch handles **microphone and camera+microphone by checking audio status only** (authorized grants; any other audio state denies; video status is ignored); everything else — **including Duck.ai camera-only** — returns `.prompt`. The second call site, `SharedPackages/AIChat/Sources/AIChat/iOS/AIChatWebViewController.swift:267-279`, has the same audio-only Duck.ai branch but returns `.deny` for every non-matching request, camera-only included. These exact matrices are shipped behavior and must be frozen in regression tests (including camera-only and audio-authorized/video-denied combined cases) before any routing change.
+- There is zero iOS geolocation code — no `CLLocationManager`, no `navigator.geolocation` shim; only the usage descriptions in `iOS/DuckDuckGo/Info.plist:169-176`. Privacy Dashboard permission callbacks are stubs (`iOS/DuckDuckGo/PrivacyDashboard/PrivacyDashboardViewController.swift:278-286`).
+- Deployment floor is iOS 15; `requestMediaCapturePermissionFor` and the KVO-compliant `cameraCaptureState`/`microphoneCaptureState` are all iOS 15 APIs — no availability fallbacks needed.
 
-**macOS shipped the full model** (Permission Center, Dec 2025) under `macOS/DuckDuckGo/Permissions/` — `PermissionType`, `PersistedPermissionDecision`, `PermissionManager`, Core Data `PermissionStore`, per-tab `PermissionModel`, SwiftUI popovers. It is a useful *reference implementation*, but it is coupled throughout to AppKit/WebKit adapters, Core Data identity (`NSManagedObjectID` in the protocol surface), macOS-only types (`FireproofDomains`), and macOS `.ask`-marker semantics. Review confirmed that only the type identity and decision enums are directly portable — extracting the rest is an API redesign, not a move.
+**macOS shipped the full model** (Permission Center, Dec 2025) under `macOS/DuckDuckGo/Permissions/`. It is a reference implementation only: Core Data identity, `FireproofDomains`/`TLD`, and override seams leak through its protocols, and only the type/decision enums are directly portable (verified twice). v1 does not touch it.
 
-Branch `bartosz/on-site-permissions` is currently identical to `main`; no groundwork has landed.
+Housekeeping: the branch `bartosz/on-site-permissions` is one docs-only commit ahead of `main` and ~31 commits behind — **rebase before implementation starts**.
 
 ## 2. Guiding decisions
 
 ### D1 — iOS-standalone: no macOS changes, no shared-package extraction in v1
 
-v1 defines its own small model inside the iOS package: a permission type enum (camera / microphone / location only), a tri-state decision (`ask` / `allow` / `deny`), and a per-site value record — roughly 100–250 LOC duplicated instead of a cross-platform extraction.
+v1 defines its own small model: a permission type enum (camera / microphone / location), a tri-state decision (`ask` / `allow` / `deny`), and a per-site record — ~100–250 LOC duplicated instead of a cross-platform extraction. Persisted raw values stay byte-identical to macOS's (`"camera"`, `"microphone"`, `"geolocation"`) to keep future convergence cheap. Do **not** reuse BSK's dashboard DTOs (`AllowedPermission`, `PermissionAuthorizationState` — presentation types with `.grant` vocabulary) or `DomainsProtectionStore` (a boolean set; cannot express tri-state per-type).
 
-Rationale (from the independent review, accepted): the extraction would have reused little — the macOS domain layer leaks Core Data identity, exports `FireproofDomains`/`TLD`, carries a `PermissionDecisionOverriding` seam, and even has write semantics worth preserving bug-for-bug (the decision publisher fires from a `defer` even when the store add failed) — while putting shipped, unflagged macOS behavior at risk before iOS ships anything. Convergence is deferred until there is demonstrated reusable behavior; to keep that door open, the persisted type raw values stay byte-identical to macOS's (`"camera"`, `"microphone"`, `"geolocation"`).
+### D2 — Persistence: `@MainActor` store over KeyedStoring, split keys
 
-### D2 — Persistence: KeyedStoring (UserDefaults), actor-owned, plist DTO
+A concrete **`@MainActor final class SitePermissionsStore`** (no actor: every consumer — Fire workers, WK delegates, Settings, menus, SwiftUI — is already main-actor, and `KeyedStoring` is synchronous; an actor would add `await`/Sendable ceremony for nothing). No store protocol.
 
-A single store holding `[site-key: [type: decision]]` via the modern `KeyedStoring` API (`SharedPackages/Persistence/Sources/Persistence/KeyValueStoring.swift`; per-domain-map precedent `iOS/DuckDuckGo/TextZoomStorage.swift`).
-
-- **Wire format:** a stable property-list DTO (dictionary of strings), not direct enum storage — the persisted format outlives the types.
-- **Concurrency:** one actor-owned (or MainActor-owned) read-modify-write path; no concurrent mutation of the map.
-- **Semantics (decided 2026-08-26):** persist `.allow`/`.deny` from explicit choices; persist an explicit `.ask` **only when the user resets a row in the manager** — such rows stay listed in Settings until removed (desktop parity, per the mobile privacy triage). Merely prompting never writes anything.
-- Volume is tiny; no Core Data, no migration burden. No at-rest domain encryption (consistent with fireproofing/text-zoom on iOS) — noted for privacy review.
+- **Two storage keys:** the per-site map and the global defaults are stored separately, so Fire / "Remove All" can clear sites while **preserving global defaults**.
+- **Wire format:** the nested `[String: [String: String]]` map stored directly as a property list (`KeyValueStoring.swift:329-332` stores plist collections natively; a Codable struct would become opaque JSON `Data`). No versioned DTO. Avoid dotted storage keys (they assert in `KeyedStoring`).
+- **Semantics (decided):** persist `.allow`/`.deny` from explicit choices; persist an explicit `.ask` **only when the user resets a row in the manager**. The sparse map is the whole mechanism — no entry = never chosen; `"ask"` entry = user-reset, still listed; Remove Permissions deletes the record; **Undo restores exactly the deleted record, only if the site still has no newer record, and never restores ephemeral grants**. No tombstones, marker sets, or second list.
+- Merely prompting never writes anything. No at-rest encryption (consistent with fireproofing/text-zoom) — noted for privacy review.
 
 ### D3 — Request interception on iOS
 
-- **Camera/mic:** implement `webView(_:requestMediaCapturePermissionFor:initiatedByFrame:type:decisionHandler:)` routing in `TabViewController` behind the flag. **Flag off — and for any path the feature doesn't handle — the current decision matrix executes verbatim**, including the Duck.ai microphone branch. `AIChatWebViewController` (embedded Duck.ai web view) is **not touched in v1**: routing a shared-package web view through the iOS package is plumbing without user value; its `.deny` default stays as is.
-- **Geolocation:** `navigator.geolocation` user-script shim (hack-phase validated), `.atDocumentStart` in the **page content world**, injected into all frames (precedent for page-world/all-frames: `iOS/Core/FullScreenVideoUserScript.swift:23`). The JS ships in the package via `Bundle.module` + `UserScript.loadJS(_:from:)`.
-  **v1 scope (explicit):** Window contexts in the main frame and document iframes only. There is **no WKUserScript injection route into workers/service workers** — worker `navigator.permissions.query` parity is deferred, documented as a known gap. The shim must specify: `permissions.query` returning a `PermissionStatus` with correct `state`/`onchange`/EventTarget behavior; per-frame namespaced callback IDs resolved in the originating frame; `getCurrentPosition` option/timeout/cached-position (`maximumAge`) behavior; `watchPosition` cancellation on navigation and web-content-process replacement. Frame identity comes from `WKScriptMessage.frameInfo.securityOrigin` — never from shim-supplied payloads, and never by touching `WKFrameInfo.request` (known crash risk — see the warning in `iOS/DuckDuckGo/TextSelection/SelectionFrameUserScript.swift:23`).
-  **Rollback semantics:** disabling the flag stops registering the shim for new page loads; a page that already loaded the shim keeps it until reload/navigation. Documented as accepted rollback behavior.
-- **In-use tracking:** KVO on `WKWebView.cameraCaptureState` / `.microphoneCaptureState` for cam/mic; active `watchPosition`/pending requests for location. Feeds the red "in use" state.
+- **Camera/mic:** route `webView(_:requestMediaCapturePermissionFor:...)` in `TabViewController` behind the flag. **Duck.ai is an explicit exception in both flag states** (decided): both call sites keep their current branches verbatim; the 3-option prompt, stored decisions, and global Never Allow do not apply to duck.ai origins. Flag off, the full current matrices run verbatim. `AIChatWebViewController` is untouched entirely.
+- **Geolocation:** a dedicated app-registered `UserScript` (JS in the package via `Bundle.module` + `UserScript.loadJS(_:from:)` — mechanism verified, though this is its first production use), `.atDocumentStart`, page content world, all frames (precedent: `iOS/Core/FullScreenVideoUserScript.swift:35-38`). **Not** built on content-scope-scripts for v1: the pinned C-S-S build has no Apple geolocation feature (an external-repo change/release), and its push API evaluates without an originating frame.
+  - **Message plumbing:** use `WKScriptMessageHandlerWithReply` for one-shot calls (`getCurrentPosition`, `permissions.query`) — registration/forwarding already exists in `UserContentController.swift:297-313`; request IDs only for long-lived `watchPosition`/`clearWatch`; wrap repeated watch callbacks with the safe frame pattern from `iOS/DuckDuckGo/TextSelection/SelectionFrameUserScript.swift:23-42` (never touch `WKFrameInfo.request`).
+  - **v1 scope:** Window contexts in the main frame and document iframes. No worker/service-worker injection route exists — worker parity is a documented gap. Platform gating is preserved: a stored allow never authorizes an insecure context, a sandboxed frame, or an iframe not delegated by Permissions Policy.
+  - **`permissions.query`:** answered immediately from current state (never queued); PR 6 delivers an authoritative `PermissionStatus.state`/`change` transition table covering global Never, stored allow/deny/ask, active allow-once, all OS states, and policy denial.
+  - **Lifecycle:** watches cancel on navigation and web-content-process replacement. The shim must not depend on user-script installation order (assembly order is nondeterministic, `UserScripts.swift:219-233`).
+  - **Rollback:** flag off → shim not registered for new loads; already-loaded pages keep it until reload. This path is **not free**: `UserScripts.userScripts` is lazy and `ContentBlockingUpdating` does not subscribe to flag updates — test ON→OFF→new-navigation explicitly, and test handler-vs-script lifetime (WebKit removes scripts on asset changes but retains handlers).
+  - **Fixtures:** the Asana history records geolocation fixtures added to the external privacy-test-pages repo; they are not in this checkout — verify availability during PR 5 and budget authoring if absent.
+- **In-use tracking:** KVO on `cameraCaptureState`/`microphoneCaptureState`; active watches/pending requests for location. `.muted` presentation is OQ-19.
 
 ### D4 — System-permission layer
 
-`SystemPermissionService` (`AVCaptureDevice` for camera/mic, `CLLocationManager` for location) with states **notDetermined / authorized / denied / restricted / unavailable** — restricted (MDM/parental controls) and unavailable are surfaced distinctly because System Settings cannot fix them (requirements OQ-15); status is refreshed on app activation (the user may return from Settings). Site-first ordering:
+One small injected **system client** (not a service layer): AV status/request plus a **single shared `CLLocationManager` driver used for both authorization and position delivery** (two managers could observe divergent state). States: notDetermined / authorized / denied / **restricted / unavailable** (System Settings cannot fix the last two — OQ-15 UX); refresh on app activation. Site-first ordering as before. **Combined camera+microphone:** one WebKit decision spans two site and two OS decisions — grant only when all allow; any partial denial → deny + recovery (dialog UX pending OQ-2, gates PR 3). Recovery deep link: `UIApplication.openSettingsURLString`.
 
-1. Site dialog → user allows → OS `notDetermined`: trigger the OS request; `authorized`: proceed; `denied`: decline the request and surface recovery (reminder dialog / sheet link + "couldn't give access" toast); `restricted`/`unavailable`: decline with the OQ-15 treatment.
-2. **Combined camera+microphone:** one WebKit decision spans two site decisions and two OS authorizations. v1 rule: grant only when both site decisions and both OS states allow; any partial denial → deny + recovery affordances. Exact UX pending requirements OQ-2 (needed before the dialog PR).
-3. Deep link for recovery: `UIApplication.openSettingsURLString`.
-4. When the persistent site "allow" is committed relative to a subsequent OS denial is an open product question (requirements OQ-13) — it decides recovery reachability and must be settled with OQ-5.
+### D5 — Per-tab coordination: one concrete `@MainActor` coordinator
 
-### D5 — Per-tab coordination: `SitePermissionsCoordinator`
+One `SitePermissionsCoordinator` per tab, owned by `TabViewController`. No coordinator protocol, no separate decision engine, no per-permission subcoordinators.
 
-One per tab (owned by `TabViewController`), holding session state (active grants, allow-once windows, in-use flags, pending query queue). Decision precedence (per requirements FR-3, decided): **global Never (absolute) → stored per-site decision → active allow-once grant → prompt**. Working assumptions pending kick-off: "Allow Once" is valid per (tab, site) until the user leaves the site or the tab closes — the full boundary list is requirements OQ-9; Fire-mode tabs neither read nor write the persistent store (session-only prompting, requirements OQ-10).
+- **Precedence** (per requirements FR-3): global Never (absolute; duck.ai exempt) → stored per-site Never → stored per-site Allow (OS-gated) → active allow-once grant → prompt. An explicit `.ask` entry is **not** a decision at request time — it falls through to the active grant / prompt steps and affects only Settings listing.
+- **Own prompt FIFO.** The existing `WebJSAlert` path does not queue — it declines a request when another presentation is active (`TabViewController.swift:3994-4016`; `JSAlertView` holds one alert). Permission prompts get their own small FIFO; only user-facing requests enter it.
+- **Navigation generation:** before persisting or delivering any late AV/CoreLocation result, verify tab, top-level key, requesting frame, web-content process, and navigation generation still match.
+- Allow-once boundaries per requirements OQ-9; fire-mode tabs **never read or write per-site records but still obey global defaults** (otherwise absolute global Never would be violated) — requirements OQ-10.
+- Manager changes while a page is using a permission apply on reload / next request in v1 (requirements OQ-11/OQ-20).
 
 ### Permission-key contract
 
-The key under which decisions are stored and matched is a **privacy boundary**, defined once:
+The stored/matched key is a privacy boundary, defined once:
 
-- Derived **natively** from the **top-level frame's** `WKSecurityOrigin` host (media capture is already scoped to the main-frame URL by WebKit; geolocation requests from document iframes are attributed to the top-level site — matching the macOS model's domain semantics).
-- Normalization: drop a leading `www.`, keep the rest of the host verbatim (punycode form for IDN); scheme and port are not part of the key; IP literals/localhost are stored as-is.
-- **Never** derived from shim-supplied JavaScript values; JS payloads may carry request IDs only.
-- Display domain for UI = the stored key.
-- **eTLD+1 is used only at the fireproof comparison boundary** (see D8) via the same `TLD` service fireproofing uses — never as the storage key.
+- **Top-level site ≠ requesting frame.** `message.frameInfo.securityOrigin` identifies the *requesting iframe*. The **storage key** derives from the tab's committed main-frame URL (native navigation state); the requesting frame's origin is kept separately for Permissions-Policy/secure-context checks and callback routing. Media capture is already main-frame-scoped by WebKit.
+- Normalization: host with leading `www.` dropped, punycode form for IDN; **scheme and port are collapsed** (host-only key, matching the macOS model) — recorded for privacy confirmation (requirements OQ-21); grants only ever apply in secure contexts, which platform gating enforces.
+- Never derived from shim-supplied JavaScript values; JS payloads carry request IDs only.
+- eTLD+1 is used **only** at the fireproof boundary, via `fireproofing.isAllowed(fireproofDomain:)` — which also preserves the implicit DuckDuckGo/Duck.ai exemptions (`iOS/Core/Fireproofing.swift:85-120`); never compare raw `allowedDomains`.
 
 ### D6 — Feature flag
 
-New `FeatureFlag` case (e.g. `sitePermissions`) in `iOS/LocalPackages/FeatureFlags-iOS/Sources/FeatureFlags/FeatureFlag.swift` with `Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.…), supportsLocalOverriding: true)`. Note: `.remoteReleasable` + `defaultValue: .enabled` would be ON for everyone whenever the subfeature is absent from privacy config — keep the default `.disabled` until rollout completes. Registry task in the Apple Feature Flags Registry is required before adding the flag. (`.cursor/rules/feature-flags-addition.mdc` paths are stale — flags live in the local package now.)
+One flag: `sitePermissions` in `iOS/LocalPackages/FeatureFlags-iOS/Sources/FeatureFlags/FeatureFlag.swift`, `Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.…))` — `.disabled` default and local overriding are already the `Config` defaults; the parent feature kill-switch still applies. **No geolocation subflag** (decided — a staged camera/mic-first release is not planned; the stack still keeps camera/mic coherent internally). Registry task required before PR 1. Flag off preserves today's behavior exactly, per the matrices in §1.
 
 ### D7 — One iOS local package: `iOS/LocalPackages/SitePermissions`
 
-Modeled on `iOS/LocalPackages/SetDefaultBrowser` (the repo's most recent full-feature-in-a-package precedent), but **one production target + one test target**. No `TestSupport` product and no Core/UI target split until a second consumer exists (review: YAGNI — mocks live in the test target). The target holds the model, store, coordinator, system service, geolocation provider + shim JS (`Bundle.module`), the dialog/sheet SwiftUI, and its own `UserText` with `defaultLocalization: "en"` (the Smartling pipeline is package-aware — SetDefaultBrowserUI/SyncUI-iOS already receive 26-locale translations into package resources).
+**Single production target + one test target** — the shape precedent is `iOS/LocalPackages/AppRouting` (SetDefaultBrowser has Core/UI/TestSupport; we deliberately don't copy that). Holds the model, store, coordinator, system client, geolocation provider + shim JS (`Bundle.module`), dialog/sheet SwiftUI, and `UserText` with `defaultLocalization: "en"` (package localization proven: SetDefaultBrowser and SyncUI-iOS each carry 26 `.lproj`s).
 
-Dependencies: `Persistence`, `BrowserServicesKit` (UserScript), `DesignResourcesKit`/`DesignResourcesKitIcons`, `DuckUI`/`UIComponents` as needed — all proven package dependencies.
+Chosen over app-target synchronized buildable folders (both viable; folders are marginally cheaper — ~14 pbxproj lines, tests ride UnitTests) for isolation and package-level tests — DRI decision.
 
-**Why a package:** the iOS project has zero buildable folders, so every app-target file costs 4 pbxproj entries — the dominant merge-conflict source on a stacked-PR train. Registering a package is a one-time ~13-line pbxproj edit + a scheme edit (reference commit `0d63fbb8f3`, AppRouting), after which every file in it is pbxproj-free. Package SwiftUI previews, own `.xcassets`, DesignResourcesKit colors, and `AVCaptureDevice` calls all work in packages (SyncUI-iOS proves each).
+**Stays app-side (thin glue):** WKUIDelegate methods, user-script registration (`iOS/DuckDuckGo/UserScripts.swift`; per-tab wiring at `TabViewController.swift:4204`), menu row builders, the Settings entry and screens (app-only `SettingsViewModel`/`SettingsCell`), the `FireExecutor` worker, the flag check, and pixel firing: the package emits a typed event enum, the app maps it via `EventMapping` (SetDefaultBrowser pattern — but implement the concrete handler with **PixelKit**, not the legacy `Pixel` its handler uses; `pixels.mdc` requires PixelKit for new code).
 
-**Stays app-side (thin glue):** the WKUIDelegate methods and user-script registration (`iOS/DuckDuckGo/UserScripts.swift`, `TabViewController`), menu row builders, the Settings entry **and the settings screens themselves** (in-stack settings pages need app-only `SettingsViewModel`/`SettingsCell`), the `FireExecutor` worker, the `FeatureFlag.sitePermissions` check (by convention no package imports FeatureFlags-iOS; the app checks the flag and wires the package), and pixel definitions (the package emits a typed event enum; the app maps it via `EventMapping` and owns the JSON5 — the `pixels.mdc` pattern, exactly as SetDefaultBrowser does).
+**Discipline:** add the package's `TestableReference` to `iOS Browser.xcscheme` in PR 1 (two existing packages' tests silently never run). Verification: the package imports UIKit/WebKit, so host `swift test` builds for macOS and fails — run tests via iOS Simulator `xcodebuild` (the app scheme); use `swift package resolve` only to catch stale `.package(path:)` references (two packages already carry masked stale paths).
 
-**Seams (kept minimal):** the event enum → `EventMapping` boundary; a small system-clients protocol for tests (AV/CoreLocation wrappers); sheet/dialog actions surfaced as closures so the app presents toasts (`ActionMessageView` is app-only). The store is a concrete actor-owned type — no store protocol.
+### D8 — Fire integration (lands in PR 1, before anything can persist)
 
-**Discipline (both failure modes already exist in the repo):** add the package's `TestableReference` to `iOS Browser.xcscheme` in the scaffold PR — two existing packages' tests silently never run in CI because this was skipped; and keep `.package(path:)` references real (verify with `swift build`/`swift test` from the package directory) — two packages carry stale paths that only resolve because the workspace masks them.
+`PermissionsFireWorker` registered in `iOS/DuckDuckGo/Fire/FireExecutor.swift:206-224`, shipped **with the store** — otherwise "any prefix is releasable" fails the moment the flag turns on and choices persist without a burn path.
 
-### D8 — Fire integration
-
-`PermissionsFireWorker` registered in `iOS/DuckDuckGo/Fire/FireExecutor.swift:206-224`:
-
-- `burnNormalModeData()` clears all stored permissions **except** sites whose key, normalized to eTLD+1 through the same `TLD` service fireproofing uses, matches a fireproofed domain (`iOS/Core/Fireproofing.swift` stores eTLD+1 — a literal host comparison would wrongly burn `sub.example.com` while `example.com` is fireproofed).
-- `burnFireModeData()` is an **explicit no-op** — there is one store and Fire runs normal- and fire-mode methods concurrently for `.all` (`iOS/DuckDuckGo/Fire/FireWorkers/FireExecutorWorker.swift:28`); a naive TextZoom copy would double-burn. All mutations serialize through the store actor.
-- `burnTabData(tabViewModel:domains:)` clears the given domains with the same fireproof exemption.
-- Settings "Remove Permissions"/"Remove All" bypass the fireproof exemption (per requirements FR-8).
-- **The worker burns stored data even while the feature flag is off** — after a rollback, previously stored permissions must not survive a Fire operation (requirements FR-8).
+- `burnNormalModeData()` clears the **per-site map only** (global defaults preserved), excluding sites where `fireproofing.isAllowed(fireproofDomain:)` matches after eTLD+1 normalization through the same `TLD` service.
+- `burnFireModeData()` is an explicit no-op (single store; `.all` runs both methods via `async let` when fire mode is enabled — `FireExecutorWorker.swift:28-52`; everything is `@MainActor`, so the MainActor store serializes naturally).
+- `burnTabData` clears the given domains with the same exemption. Settings "Remove Permissions"/"Remove All" bypass the fireproof exemption but also preserve global defaults.
+- The worker burns stored data **even while the flag is off** (rollback must not strand data).
 - Wide-event instrumentation like the other workers; auto-clear comes free via `FireRequest`.
 
 ## 3. Component map
 
 | # | Component | Where | Notes |
 |---|---|---|---|
-| 1 | Permission model (type, decision, per-site record) | `SitePermissions` package | iOS-standalone (D1); raw values byte-identical to macOS for future convergence |
-| 2 | `SitePermissionsStore` | package | actor-owned concrete type over `KeyedStoring`, plist DTO (D2); no protocol |
-| 3 | `SitePermissionsCoordinator` | package; one per tab, owned by `TabViewController` | D5; no app-type references (closure seams) |
-| 4 | Geolocation shim + `GeolocationProvider` | package (JS in `Bundle.module`); registration app-side in `iOS/DuckDuckGo/UserScripts.swift` + per-tab wiring `TabViewController.swift:4187` | D3 scope; page content world, `.atDocumentStart`, all frames; package-defined app-registered precedent: `SharedPackages/EventHub` `WebEventsHandler` (`UserScripts.swift:178-182`) |
-| 5 | `SystemPermissionService` | package | D4 (incl. restricted/unavailable, refresh on activation); `AVCaptureDevice` in packages proven (`SyncUI-iOS` `ScanOrPasteCodeViewModel.swift:110`); usage-description keys stay in `iOS/DuckDuckGo/Info.plist` |
-| 6 | Site permission dialogs + reminder dialogs | package; presented modally over the tab by app-side glue | 3-option dialog (4 variants incl. DDG SERP) + denied-system reminder dialogs; presentation gating analogous to `WebJSAlert` (`TabViewController.swift:535` `canDisplayJavaScriptAlert`, `iOS/DuckDuckGo/JSAlertView.swift`) so prompts queue and never stack |
-| 7 | Menu entry | app target — **both** menus: legacy `iOS/DuckDuckGo/TabViewControllerMenuBuilderExtension.swift` (`buildLinkEntries`, conditional-entry idiom = `buildKeepSignInEntry` returning `nil`) and sheet menu `iOS/DuckDuckGo/BrowsingMenu/SheetPresentationMenu/BrowsingMenuBuilding.swift` + `BrowsingMenuBuilder.swift` | row visible only when the coordinator reports permanent/active state; note the sheet menu's hard-coded seventh-item preferred detent (`BrowsingMenuBuilder.swift:220`) — adding a row shifts it; update the detent logic and its test |
-| 8 | Per-site bottom sheet | package (view + view model) | three states (permissions / +reminder / reminder-only); reload caption; Remove Permissions; actions surface as closures — the app presents toasts (`ActionMessageView` with Undo is app-only) |
-| 9 | Settings pages | app target: entry in `iOS/DuckDuckGo/SettingsMainSettingsView.swift` + new `SettingsSitePermissionsView` (+ per-site view) | Main Settings entries are **locale-sorted** with `build:` closures returning nil (= hidden) — return nil when the flag is off; page layout follows `SettingsAutoplayView` (`ListBasedPicker`, `.applySettingsListModifiers`); **no deep-link enum work** (YAGNI — no external route required); backed by package store APIs |
-| 10 | `PermissionsFireWorker` | app target: `iOS/DuckDuckGo/Fire/FireWorkers/` | thin; D8 semantics (no-op fire-mode, eTLD+1 fireproof comparison, burns with flag off) |
-| 11 | Grant animation | package, code-built (no Lottie) | per prototype; placement per requirements OQ-6 |
-| 12 | Pixels | typed event enum in the package; app-side `EventMapping` + PixelKit event + `iOS/PixelDefinitions/pixels/definitions/site_permissions.json5` | SetDefaultBrowser pattern (`DefaultBrowserPromptEvent` → app `EventMapping`); mirror macOS naming (`permission_authorization_<type>_<decision>`, `permission_center_changed_…`) minus the `m_mac_` prefix so ClickHouse comparisons work; **never include domains**; validate with `npm run validate-pixel-defs` |
-| 13 | Strings & icons | package `UserText` (+ `defaultLocalization: "en"`); app-side glue strings in `iOS/DuckDuckGo/UserText.swift`; new DRK icons | several required glyphs exist only at macOS sizes (16px) — add 24px variants via the `ddg-drk-add-icon` skill |
-
-pbxproj cost: registering the package is a one-time ~13-line pbxproj + scheme edit; after that, package files need no pbxproj entries. Only the app-side glue files (menu rows, settings views, fire worker, pixel mapping) still need the four-place pattern (see `SettingsAutoplayView.swift`, per `.cursor/rules/project-structure.mdc`).
+| 1 | Permission model (type, decision, per-site record) | `SitePermissions` package | D1; raw values byte-identical to macOS |
+| 2 | `SitePermissionsStore` | package | `@MainActor` concrete class over `KeyedStoring`; split keys; sparse-map `.ask`; snapshot-Undo (D2) |
+| 3 | `SitePermissionsCoordinator` | package; one per tab, owned by `TabViewController` | D5; own prompt FIFO; navigation-generation checks; no app-type references |
+| 4 | Geolocation shim + provider | package (JS via `Bundle.module`); registration app-side (`UserScripts.swift`, per-tab wiring `TabViewController.swift:4204`) | D3; reply-handler one-shots, IDs for watches, safe frame wrapper; order-independent |
+| 5 | System client | package | D4; one seam; shared `CLLocationManager` driver for auth + positions |
+| 6 | Site permission dialogs + reminder dialogs | package; presented by app-side glue | 3-option dialog (4 variants incl. DDG SERP) + denied-system reminder dialogs; presented through the coordinator's own FIFO — the `WebJSAlert` path declines concurrent alerts rather than queueing, so it is not reusable for this |
+| 7 | Menu entry | app target — both menus (`TabViewControllerMenuBuilderExtension.swift` `buildLinkEntries`; sheet menu `BrowsingMenuBuilding.swift` + `BrowsingMenuBuilder.swift`) | visibility default per requirements FR-4/OQ-17; the sheet's preferred detent is hard-coded to item 7 (`BrowsingMenuBuilder.swift:220-228`) — make it dynamic (`base + visible permission row`), and add present/absent tests (none exist today) |
+| 8 | Per-site bottom sheet | package (view + view model) | three states; reload caption; Remove Permissions; actions surface as closures — the app presents toasts (`ActionMessageView` is app-only) |
+| 9 | Settings pages | app target: locale-sorted entry in `SettingsMainSettingsView.swift` (nil `build:` closure when flag off) + new views following `SettingsAutoplayView` (`ListBasedPicker`) | no deep-link work; backed by package store APIs |
+| 10 | `PermissionsFireWorker` | app target: `iOS/DuckDuckGo/Fire/FireWorkers/` | D8; ships in PR 1 |
+| 11 | Grant animation | package, code-built (no Lottie) | ships with the camera/mic flow (PR 3); placement per requirements OQ-6 |
+| 12 | Pixels | event enum in package; app-side `EventMapping` → **PixelKit** event + `iOS/PixelDefinitions/pixels/definitions/site_permissions.json5` | mirror macOS naming minus `m_mac_`; never include domains; `npm run validate-pixel-defs` |
+| 13 | Strings & icons | package `UserText`; app glue strings in `iOS/DuckDuckGo/UserText.swift`; icons | 24px permission glyphs (outline/solid/blocked) **already exist** in DesignResourcesKitIcons — only `Website-Permissions-Color-24` and possibly some convenience accessors are genuinely new |
 
 ## 4. Key flows (condensed)
 
-- **First request (no stored state):** page → WKUIDelegate/geo-shim → coordinator → global default check (global Never = silent decline, absolute) → 3-option dialog → on allow: `SystemPermissionService` gate (skip if authorized; OS prompt if notDetermined; recovery if denied; OQ-15 treatment if restricted/unavailable) → decision to WebKit/shim → persist iff "Allow While Using Site"/"Never Allow" → animation on grant → menu entry becomes visible.
-- **Stored allow + OS denied:** decline, toast ("couldn't give access"), sheet shows reminder state with `Go to System Settings`.
-- **Manager change while page is loaded:** store write → sheet shows reload caption → decision applies on next request/reload.
-- **Fire:** `forgetAllWithAnimation` → `FireExecutor` → `PermissionsFireWorker` (D8).
+- **First request:** page → WKUIDelegate/shim → coordinator → duck.ai exception check → global default (Never = silent decline, absolute) → stored decision → 3-option dialog → on allow: system client gate (skip if authorized; OS prompt if notDetermined; **if OS already denied → Case B reminder dialog** with `Change Permissions`/`Cancel`; restricted/unavailable → OQ-15 treatment) → decision to WebKit/shim → persist iff Allow While Using Site / Never Allow → grant animation → menu entry visible.
+- **Fresh OS denial at the prompt (Case A):** decline + "couldn't give access" toast; sheet gains the reminder state.
+- **Stored allow, OS already denied:** decline + toast; sheet reminder state; next explicit site allow → Case B reminder dialog.
+- **Manager change while the page holds a permission:** store write → reload caption → applies on next request/reload (v1).
+- **Fire:** `FireExecutor` → `PermissionsFireWorker` (D8) — per-site map only, fireproof-exempt, globals preserved.
 
 ## 5. Delivery plan — one Asana subtask per PR (stacked)
 
-One Asana subtask per PR. Target ~1–2k LOC per PR; use `gh stack` so each PR reviews against its parent. Day estimates assume one engineer familiar with the codebase, tests included; total ≈ **17.5 person-days**.
+One Asana subtask per PR; `gh stack`; rebase the branch on `main` first (it is ~31 commits behind). Total ≈ **21–25 person-days** (second review re-estimated 22–26; the accepted simplifications recover ~1–2). PRs 1–4 form a coherent camera/mic milestone internally; everything ships behind the single flag.
 
-**Decision gates:** OQ-8 is resolved (global Never absolute). Combined camera+mic (OQ-2) and final prompt copy (OQ-4) must be settled **before PR 3**; OQ-5/OQ-13 (commit timing / menu reachability) before PR 3's recovery pieces; OQ-9 (allow-once boundaries) before PR 2 lands its coordinator tests.
+**Decision gates:** OQ-7 (privacy: fireproofing + globals-preserved clearing) **before PR 1**; OQ-2 (combined dialog) + OQ-4 (copy) + OQ-1/3/15 (recovery copy/states) + OQ-6 (animation) + OQ-14/19 (in-use affordance, `.muted`) + OQ-16 (friction pixel) **before PR 3**; OQ-12 + OQ-17/18 (Settings header, menu membership, sheet rows) **before PR 4**; OQ-9/10 are defaulted in this design — ratify at kickoff before PR 2 lands coordinator tests.
 
 | PR / subtask | Contents | Depends on | ~LOC | ~Days |
 |---|---|---|---|---|
-| **1. Add `sitePermissions` feature flag and permission icon assets** | Flag case + `iOSBrowserConfigSubfeature` + local override (Feature Flags Registry task first); missing 24px DRK glyph variants (via `ddg-drk-add-icon`) | — | ~300 | 0.5 |
-| **2. iOS core (no UI): `SitePermissions` package — model, store, system service, decision engine** | Package scaffold (single target + tests; one-time pbxproj + scheme `TestableReference`), standalone model, actor-owned `SitePermissionsStore` (plist DTO), global-defaults storage, `SystemPermissionService` (incl. restricted/unavailable + activation refresh), `SitePermissionsCoordinator` precedence + allow-once windows + query queue; unit tests | 1 | ~1.5–2k | 3 |
-| **3. iOS: 3-option dialogs, camera/mic routing, denied-system recovery dialogs** | Dialog UI (camera/mic variants) + presentation queueing; `TabViewController` WKUIDelegate routing behind the flag (legacy matrix verbatim when off; Duck.ai branch preserved; `AIChatWebViewController` untouched); site-first ordering; combined cam+mic rule; in-use KVO; reminder dialogs + "couldn't give access" toasts; package strings | 2 | ~1.8k | 3.5 |
-| **4. iOS: geolocation interception and location dialogs** | `navigator.geolocation` + `permissions.query` shim per D3 scope (main frame + document iframes, per-frame IDs, watch cancellation) + native `CLLocationManager` provider + coordinator wiring + location/DDG-SERP dialog variants + privacy-test-pages integration tests | 3 | ~1.5k | 3 |
-| **5. iOS: Settings > Site Permissions (global defaults + Manage Sites)** | Locale-sorted Main Settings entry (nil when flag off), global 2-option pickers + absolute silent-decline enforcement, System-Settings footer link, Manage Sites list, per-site page, remove one/all + toasts with Undo | 2 | ~1.5–2k | 2.5 |
-| **6. iOS: on-site permission sheet + browser menu entry + reminder states** | Bottom sheet UI/VM (3 states incl. reminder-only, icon states, reload caption, Remove Permissions, `Go to System Settings`) in the package; conditional row in **both** menus + sheet-detent fix + presentation + in-use bindings | 3 | ~1.6k | 3 |
-| **7. iOS: Fire Button integration, grant animation, pixels** | `PermissionsFireWorker` per D8; code-built grant animation; pixels end-to-end (package event enum → `EventMapping` → JSON5 definitions → firing sites) | 5, 6 | ~1.2k | 2 |
+| **1. Foundations: flag, assets, `SitePermissions` package — model, store, global defaults, Fire worker** | Registry task then flag; `Website-Permissions-Color-24` + missing accessors; package scaffold (pbxproj + scheme `TestableReference`); model; `@MainActor` store (split keys, sparse `.ask`, snapshot-Undo); ungated `PermissionsFireWorker` (D8) + tests | — | ~1.5k | 3 |
+| **2. Coordinator + system client** | Concrete `@MainActor` coordinator (precedence incl. duck.ai exemption, allow-once windows, prompt FIFO, navigation generation); system client (AV + shared CLLocationManager driver, restricted/unavailable, activation refresh); tests incl. frozen legacy matrices of both call sites (camera-only and audio-auth/video-denied cases) | 1 | ~1.5k | 2.5 |
+| **3. Camera/mic flow: dialogs, routing, recovery, animation, flow pixels** | 3-option dialog (cam/mic + combined rule) + FIFO presentation; `TabViewController` routing behind the flag (legacy matrix verbatim when off; Duck.ai branch preserved; AIChat untouched); Case A toast + Case B reminder dialog; in-use KVO; grant animation; prompt/decision pixels | 2 | ~1.8k | 4.5 |
+| **4. Management surfaces: Settings, sheet, menus** | Locale-sorted Settings entry + global pickers + absolute-Never enforcement + Manage Sites + per-site page; on-site sheet (3 states); both menu entries + dynamic detent + present/absent tests; remove one/all + Undo (snapshot semantics) + toasts; management pixels | 3 | ~2k | 4.5 |
+| **5. Geolocation: shim, provider, dialogs** | Shim per D3 (reply handlers, watches, frame routing, secure-context/Permissions-Policy gating) + provider + coordinator wiring + location/DDG-SERP dialogs; verify external privacy-test-pages fixtures, author if absent | 3 | ~1.8k | 4 |
+| **6. Geolocation management + hardening** | Sheet/Settings states for location; `PermissionStatus` transition table + `change` events; geo pixels; rollback tests (ON→OFF→navigation, handler lifetime); integration hardening | 4, 5 | ~1.2k | 3.5 |
 
-**Non-PR subtasks** (create alongside, not part of the stack):
-
-- Copy & design QA with Sveta/David — resolves requirements OQ-2/3/4/5/13/14/15; the OQ-2/OQ-4 subset is needed **before PR 3**.
-- Privacy confirmation of the Fire/fireproofing exemption (requirements OQ-7) — before PR 7.
-- Apple Feature Flags Registry entry — before PR 1.
-- Translations finalization (Smartling cherry-pick) — after the UI PRs.
-- Rollout & monitoring — remote-releasable ramp internal → % → 100%, watching prompt-volume and manager-engagement pixels.
+**Non-PR subtasks:** copy & design QA with Sveta/David (OQ-2/3/4/5/6/13/14/15/17/18/19 — the OQ-2/4 subset before PR 3); privacy confirmation (OQ-7 + host-key OQ-21) before PR 1; Feature Flags Registry entry before PR 1; translations finalization after the UI PRs; rollout & monitoring.
 
 ### Merge & release safety
 
-Any prefix of the stack is releasable; no guarding beyond the flag is needed, and **no PR touches macOS**.
+Any prefix of the stack is releasable, with the flag on or off:
 
-- Flag off, each WKUIDelegate call site executes its **current decision matrix verbatim** — the main browser's `.prompt`-for-ordinary-sites *plus* its Duck.ai microphone grant/deny branch (`TabViewController.swift:3938`); `AIChatWebViewController`'s `.deny` default is untouched in v1 entirely. "Blanket `.prompt` when off" would itself be a regression — both matrices are frozen in regression tests before routing changes.
-- The geolocation shim is **not registered/injected** when the flag is off (installing an inert shim would be a flag-off behavior change). Disabling the flag takes effect for new page loads; already-loaded pages keep the shim until reload — documented rollback behavior.
-- Menu and settings entry builders return nil when off.
-- PR 1 defines an unused flag and unused assets; PR 2 is pure additive package code wired to nothing.
-- Deliberate exception: `PermissionsFireWorker` burns stored permission data even when the flag is off (privacy-correct after rollback).
+- Fire ships **with** the store (PR 1), so persisted state always has a burn path — including after a rollback (the worker runs with the flag off, deliberately).
+- Flag off, both WKUIDelegate call sites run their **current matrices verbatim** (per §1, camera-only cases included); regression tests freeze them in PR 2 before PR 3 touches routing. Duck.ai behavior is identical in both flag states (explicit exception).
+- The shim is not registered when the flag is off; already-loaded pages keep it until reload (documented). The ON→OFF path is explicitly tested (lazy `userScripts`, no automatic flag subscription in `ContentBlockingUpdating`, handler-vs-script lifetime).
+- Menu/settings builders return nil when off; the detent stays correct in both states via the dynamic index.
 
 ## 6. Testing
 
-- Package unit tests: store (DTO round-trip, serialized mutation), coordinator precedence table (incl. global-Never-absolute over stored Always), allow-once boundaries per OQ-9's resolved definition, system-service state mapping incl. restricted/unavailable.
-- Package test target added as a `TestableReference` to `iOS Browser.xcscheme` (CI runs exactly that scheme — no test plans); verify with `swift test` from the package directory too, which also catches stale `.package(path:)` references.
-- **Regression tests frozen before any routing change:** the full current decision matrices of both WKUIDelegate call sites (ordinary site / Duck.ai origin × mic / camera+mic × AV status), Voice Search mic flow, SERP "Clear location" behavior.
-- View-model/semantic tests for dialogs and sheet states; snapshot tests are optional locally only — CI disables snapshot assertions (`SKIP_SNAPSHOT_TESTS=1` in `iOS Browser.xcscheme`; see `SharedPackages/SnapshotTestingSupport/README.md`).
-- Sheet-menu detent test updated with the new row count.
-- Fire worker tests: fireproof exemption via eTLD+1 normalization (subdomain case), fire-mode no-op, burn-while-flag-off.
-- Geolocation shim: integration tests against the privacy-test-pages fixtures (already added), incl. iframe attribution and `permissions.query` state transitions.
-- Accessibility checks: non-color in-use affordance (per OQ-14 once resolved), VoiceOver labels on dialogs/pickers.
+- Package tests via the app scheme on an iOS simulator (`TestableReference` added in PR 1; host `swift test` cannot build an iOS-only package). `swift package resolve` guards stale paths.
+- Store: plist round-trip, split-key isolation (Fire preserves globals), sparse `.ask`, Undo snapshot semantics (no restore over a newer record; never ephemeral grants).
+- Coordinator: precedence table (global-Never absolute incl. over stored Always; duck.ai exemption; explicit-ask fall-through), allow-once boundaries (OQ-9 as ratified), FIFO, navigation-generation rejection of late callbacks.
+- **Legacy matrices frozen:** both call sites × {ordinary site, duck.ai} × {mic, camera-only, camera+mic} × AV states, including audio-authorized/video-denied; Voice Search mic flow; SERP "Clear location".
+- Fire worker: fireproof exemption via `isAllowed(fireproofDomain:)` (subdomain + implicit-domain cases), fire-mode no-op, burn-while-flag-off, globals preserved.
+- Geolocation: fixtures (external repo — verify first), iframe attribution, secure-context/Permissions-Policy gating, `permissions.query` transitions, watch cancellation on navigation/process swap, ON→OFF→new-navigation rollback, handler lifetime.
+- Menus: entry present/absent per flag/state; dynamic detent in both layouts (no detent test exists today — add them).
+- **No snapshot tests in v1**: `SKIP_SNAPSHOT_TESTS=1` makes image assertions silently pass locally *and* in CI — semantic/view-model tests instead.
+- Accessibility: non-color in-use affordance (per OQ-14), VoiceOver labels on dialogs/pickers.
 
 ## 7. Risks & mitigations
 
 | Risk | Mitigation |
 |---|---|
-| Geolocation shim web-compat (feature detection, `permissions.query`, iframes) | v1 scope pinned in D3 (main frame + document iframes; workers deferred as a documented gap); full API-surface spec incl. `PermissionStatus` semantics; fixtures in privacy-test-pages; flag allows disable (effective on reload) |
-| Owning `.grant/.deny` makes us responsible for OS-permission edge cases WebKit handled | `SystemPermissionService` centralizes it with explicit denied/restricted/unavailable states and activation refresh; UI tests for the two-step flow |
-| Flag-off regressions at the two shipped WKUIDelegate matrices | matrices frozen in regression tests before PR 3; AIChat call site untouched in v1 |
-| Permission-key mistakes create a privacy hole (iframe attribution, JS-supplied hosts) | single key contract (D5), key always derived natively from the top-level frame's `WKSecurityOrigin`; shim payloads carry request IDs only |
-| Fireproofing granularity mismatch (eTLD+1 vs host) silently burns fireproofed subdomain permissions | D8 normalizes every stored key through the same `TLD` service before comparing; unit-tested with subdomain cases |
-| Concurrent Fire execution double-burning a single store | `burnFireModeData()` no-op + actor-serialized mutations |
-| Two live browsing menus drift | one entry-builder consulted by both; detent logic updated with its test |
-| Duplicated model drifts from macOS, complicating future convergence | raw values kept byte-identical; convergence explicitly deferred until reusable behavior is demonstrated (D1) |
-| Package tests silently skipped in CI (two existing packages already suffer this) | scheme `TestableReference` added in the scaffold PR (PR 2) and checked in review |
-| JS user script shipped from a package has no precedent | mechanism (`Bundle.module` + `UserScript.loadJS(_:from:)`) is proven separately; fall back to keeping the `.js` in `iOS/Core/` if it misbehaves |
-| Design TODOs (combined dialog, copy, commit timing — requirements OQ-2/3/4/5/13) block PR 3 | decision gates scheduled before PR 3, not late |
+| Geolocation shim web-compat (feature detection, `permissions.query`, iframes, Permissions Policy) | D3 scope pinned; platform gating preserved; transition table in PR 6; fixtures verified/authored in PR 5; flag disable effective on reload |
+| Shim rollback not actually reaching loaded/lazy state | explicit ON→OFF→navigation and handler-lifetime tests (PR 6) |
+| Flag-off regressions at the two shipped call-site matrices | matrices frozen in PR 2, camera-only cases included; AIChat untouched; Duck.ai exception identical in both states |
+| Permission-key mistakes (top-level vs requesting frame, JS-supplied hosts, scheme/port collapse) | key contract: top-level from native navigation state, requesting frame kept separately, IDs-only JS payloads; host-only key sent to privacy (OQ-21) |
+| Persisted data without a burn path in a partial rollout | Fire worker ships in PR 1, runs flag-off |
+| Fireproofing granularity/implicit exemptions | `isAllowed(fireproofDomain:)` only; subdomain unit tests |
+| Two menus + hard-coded detent drift | one entry-builder consulted by both; dynamic detent + new tests |
+| Estimate pressure (second review: 22–26d raw) | 21–25d planned; PR 5/6 split keeps the riskiest work isolated at the tail; camera/mic milestone coherent by PR 4 |
+| Duplicated model drifts from macOS | identical raw values; convergence deferred deliberately (D1) |
+| Package tests silently skipped / stale paths | scheme `TestableReference` in PR 1; `swift package resolve` check |
+| `Bundle.module` user-script JS has no production precedent | mechanism verified in BSK tests; fallback: move the `.js` to `iOS/Core/` |
+| Design TODOs block PR 3/4 | decision gates scheduled per §5 |
 
 ## 8. Out of scope (tech)
 
-Any macOS changes (v1); a shared cross-platform Permissions package (deferred until convergence is justified); permission types beyond camera/mic/location; address-bar indicator; per-session toggles / mid-session mute (`setMicrophoneCaptureState` noted for future); worker/service-worker Permissions API parity (no injection route); routing the embedded AIChat web view through the new model; Privacy Dashboard permission wiring on iOS (stays stubbed, matching Desktop's removal of dashboard permission UI); cross-device sync (privacy-prohibited); porting macOS's private geolocation WebKit API.
+Any macOS changes; a shared cross-platform Permissions package; routing Duck.ai (either call site) through the model — explicit exception in both flag states; a geolocation subflag / staged camera-mic-first public release; permission types beyond camera/mic/location; address-bar indicator; per-session toggles / mid-session mute; worker/service-worker Permissions API parity; Privacy Dashboard permission wiring; cross-device sync; porting macOS's private geolocation WebKit API.

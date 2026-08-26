@@ -23,7 +23,7 @@ import Networking
 import Subscription
 
 enum SubscriptionPixel: PixelKit.Event {
-    /// Frozen: these names ship without a platform marker.
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
 
     // Subscription
@@ -138,10 +138,7 @@ enum SubscriptionPixel: PixelKit.Event {
     }
 }
 
-// A separate definition because it sends the platform and form-factor marker and the subscription
-// pixels above do not, so the two need different `platformSuffixPolicy` values. New subscription
-// pixels belong here, or in a type of their own on the default `.standard` policy, rather than in
-// the marker-less enum above.
+// This is a separate definition in order to get the correct platform and form factor suffixes, which the subscription pixels above do not have.
 enum SubscriptionAutomaticSignOutPixel: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }

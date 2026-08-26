@@ -187,7 +187,7 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     /// since it depends on the host platform this shared package was built into rather than on the
     /// pixel.
     ///
-    /// Frozen: these names ship without a platform marker.
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
     public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
 
     // Linear onboarding events

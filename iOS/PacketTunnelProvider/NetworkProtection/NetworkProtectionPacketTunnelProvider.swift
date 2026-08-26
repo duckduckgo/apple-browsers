@@ -727,15 +727,11 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             pixelKitDefaults = UserDefaults.networkProtectionGroupDefaults
         }
 
-        // Only `.pad` counts as a tablet. Every other idiom, including `.unspecified`, reports as a
-        // phone, matching the legacy `Pixel` (`deviceType == .pad ? tablet : phone`) so both systems
-        // put the same `_ios_<formFactor>` marker on a pixel.
-        let isTablet = UIDevice.current.userInterfaceIdiom == .pad
-
+        // Configuring PixelKit
         PixelKit.setUp(
             dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
             appVersion: AppVersion.shared.versionNumber,
-            source: (isTablet ? PixelKit.Source.iPadOS : PixelKit.Source.iOS).rawValue,
+            source: (UIDevice.current.userInterfaceIdiom == .pad ? PixelKit.Source.iPadOS : PixelKit.Source.iOS).rawValue,
             session: "ios-vpn-tunnel",
             defaultHeaders: [:],
             defaults: pixelKitDefaults

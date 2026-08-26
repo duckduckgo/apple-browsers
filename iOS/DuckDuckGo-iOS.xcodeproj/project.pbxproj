@@ -114,7 +114,6 @@
 		1EDE39D22705D4A200C99C72 /* FileSizeDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EDE39D12705D4A100C99C72 /* FileSizeDebugViewController.swift */; };
 		1EE411F728587AC50003FE64 /* PrivacyIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1EE411F628587AC50003FE64 /* PrivacyIcon.xcassets */; };
 		1EE52ABB28FB1D6300B750C1 /* UIImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC51CD828D8C0DF00E9D05A /* UIImageExtension.swift */; };
-		1EE7C299294227EC0026C8CB /* AutoconsentSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EE7C298294227EC0026C8CB /* AutoconsentSettingsViewController.swift */; };
 		1EEBF9122F3E16F500DF90F3 /* WebExtensionHandlerProvider+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEBF9112F3E16F500DF90F3 /* WebExtensionHandlerProvider+iOS.swift */; };
 		1EEC460627A9499600E75FCB /* DownloadsList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEC460527A9499600E75FCB /* DownloadsList.swift */; };
 		1EEF123F2850A68A003DDE57 /* PrivacyInfoContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEF123E2850A68A003DDE57 /* PrivacyInfoContainerView.swift */; };
@@ -3053,7 +3052,6 @@
 		1ECED0902F87B45B00E2C38E /* AdBlockingDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdBlockingDebugView.swift; sourceTree = "<group>"; };
 		1EDE39D12705D4A100C99C72 /* FileSizeDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSizeDebugViewController.swift; sourceTree = "<group>"; };
 		1EE411F628587AC50003FE64 /* PrivacyIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = PrivacyIcon.xcassets; sourceTree = "<group>"; };
-		1EE7C298294227EC0026C8CB /* AutoconsentSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentSettingsViewController.swift; sourceTree = "<group>"; };
 		1EEBF9112F3E16F500DF90F3 /* WebExtensionHandlerProvider+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionHandlerProvider+iOS.swift"; sourceTree = "<group>"; };
 		1EEC460527A9499600E75FCB /* DownloadsList.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DownloadsList.swift; sourceTree = "<group>"; };
 		1EEF123E2850A68A003DDE57 /* PrivacyInfoContainerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrivacyInfoContainerView.swift; sourceTree = "<group>"; };
@@ -8195,7 +8193,6 @@
 			isa = PBXGroup;
 			children = (
 				F176699D1E40BC86003D3222 /* Settings.storyboard */,
-				1EE7C298294227EC0026C8CB /* AutoconsentSettingsViewController.swift */,
 				85449EF423FDA02800512AAF /* KeyboardSettingsViewController.swift */,
 				8540BD5523D9E9C20057FDD2 /* FireproofingSettingsViewController.swift */,
 				8531A08D1F9950E6000484F0 /* UnprotectedSitesViewController.swift */,
@@ -13886,7 +13883,6 @@
 				5644419F2D4D205C003C53B8 /* FeatureFlagsSettingViewModel.swift in Sources */,
 				7B059F112D0387E900371ED0 /* WidgetEducationViewController.swift in Sources */,
 				7B059F122D0387E900371ED0 /* WidgetEducationView.swift in Sources */,
-				1EE7C299294227EC0026C8CB /* AutoconsentSettingsViewController.swift in Sources */,
 				80437D6B2EFACF4500D3E896 /* AutoClearSettingsView.swift in Sources */,
 				1E8AD1D527C2E22900ABA377 /* DownloadsListSectionViewModel.swift in Sources */,
 				EE0798C52B179936000A4F64 /* NetworkProtectionVPNCountryLabelsModel.swift in Sources */,

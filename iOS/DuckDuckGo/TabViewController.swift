@@ -3240,8 +3240,15 @@ extension TabViewController: WKNavigationDelegate {
     private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (WKNavigationActionPolicy) -> Void) {
         let allowPolicy = determineAllowPolicy()
 
-        if navigationAction.navigationType == .linkActivated {
+        switch navigationAction.navigationType {
+        case .linkActivated:
             delegate?.tabDidEngageWithPage(self)
+        case .formSubmitted, .backForward, .reload:
+            // `.other` is deliberately excluded: it also covers programmatic loads and redirects,
+            // which would make the signal mean "something loaded" rather than "the user acted".
+            delegate?.tabDidNavigateInApp(self)
+        default:
+            break
         }
 
         let tld = storageCache.tld

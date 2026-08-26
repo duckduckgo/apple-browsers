@@ -297,6 +297,99 @@ struct PostIdleSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("promptSubmittedInPage sets the flag and marks first interaction", .timeLimit(.minutes(1)))
+    func promptSubmittedInPageSetsFlagAndFirstInteraction() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        clock.advance(by: 0.5)
+        sut.promptSubmittedInPage()
+
+        #expect(lastReturnUpdate(wideEvent)?.promptSubmittedInPage == true)
+        #expect(lastReturnUpdate(wideEvent)?.firstInteractionInterval.end == clock.now)
+    }
+
+    @available(iOS 16, *)
+    @Test("promptSubmittedInPage leaves the post-idle flow untouched", .timeLimit(.minutes(1)))
+    func promptSubmittedInPageDoesNotTouchPostIdleFlow() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: .lut, focused: false)
+        sut.promptSubmittedInPage()
+
+        #expect(lastReturnUpdate(wideEvent)?.promptSubmittedInPage == true)
+        #expect(lastUpdate(wideEvent) == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("promptSubmittedInPage only updates the flow once per session", .timeLimit(.minutes(1)))
+    func promptSubmittedInPageIsIdempotentWithinASession() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        clock.advance(by: 0.5)
+        sut.promptSubmittedInPage()
+        sut.promptSubmittedInPage()
+        sut.promptSubmittedInPage()
+
+        #expect(wideEvent.updates.compactMap { $0 as? ReturnSessionWideEventData }.count == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("promptSubmittedInPage is recorded again after a new session starts", .timeLimit(.minutes(1)))
+    func promptSubmittedInPageResetsBetweenSessions() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        sut.promptSubmittedInPage()
+        sut.sessionEnded(reason: .tabSwitcherSelected)
+
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        sut.promptSubmittedInPage()
+
+        #expect(wideEvent.updates.compactMap { $0 as? ReturnSessionWideEventData }.count == 2)
+    }
+
+    @available(iOS 16, *)
+    @Test("promptSubmittedInPage outside a session does not update any flow", .timeLimit(.minutes(1)))
+    func promptSubmittedInPageOutsideSessionIsIgnored() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.promptSubmittedInPage()
+
+        #expect(wideEvent.updates.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("inAppNavigation sets the flag and marks first interaction", .timeLimit(.minutes(1)))
+    func inAppNavigationSetsFlagAndFirstInteraction() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(landedOn: .web, afterIdleSurface: nil, focused: false)
+        clock.advance(by: 0.5)
+        sut.inAppNavigation()
+
+        #expect(lastReturnUpdate(wideEvent)?.inAppNavigation == true)
+        #expect(lastReturnUpdate(wideEvent)?.firstInteractionInterval.end == clock.now)
+    }
+
+    @available(iOS 16, *)
+    @Test("inAppNavigation only updates the flow once per session", .timeLimit(.minutes(1)))
+    func inAppNavigationIsIdempotentWithinASession() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .web, afterIdleSurface: nil, focused: false)
+        sut.inAppNavigation()
+        sut.inAppNavigation()
+
+        #expect(wideEvent.updates.compactMap { $0 as? ReturnSessionWideEventData }.count == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("The new flags stay false when nothing reports them", .timeLimit(.minutes(1)))
+    func newFlagsDefaultToFalse() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        sut.sessionCancelledByBackground()
+
+        #expect(lastReturnCompletion(wideEvent)?.0.promptSubmittedInPage == false)
+        #expect(lastReturnCompletion(wideEvent)?.0.inAppNavigation == false)
+    }
+
+    @available(iOS 16, *)
     @Test("First interaction is only set once across multiple updates", .timeLimit(.minutes(1)))
     func firstInteractionMarkedOnlyOnce() {
         let (sut, wideEvent, clock) = makeSUT()

@@ -72,6 +72,14 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// User burned the open tab from the escape hatch's menu. Idempotent within a session.
     func burnTabTapped()
 
+    /// The duck.ai frontend reported a prompt submitted from its own input box, which no native
+    /// terminal action covers. Idempotent within a session.
+    func promptSubmittedInPage()
+
+    /// User navigated within the app by a route that sets no terminal reason — a bookmark, a form
+    /// submission, or browser history. Idempotent within a session.
+    func inAppNavigation()
+
     /// Terminal user action ended the session (submission, return-to-page, etc.).
     func sessionEnded(reason: ReturnSessionWideEventData.StatusReason)
 
@@ -87,6 +95,8 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     private var postIdleSessionID: String?
     /// Skips `updateFlow` (synchronous disk I/O) on every scroll tick after the first.
     private var pageEngagedSent = false
+    private var promptSubmittedInPageSent = false
+    private var inAppNavigationSent = false
     private var pendingTimeAwayMs: Int?
 
     init(wideEvent: WideEventManaging,
@@ -124,6 +134,8 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         pendingTimeAwayMs = nil
         returnSessionID = returnData.globalData.id
         pageEngagedSent = false
+        promptSubmittedInPageSent = false
+        inAppNavigationSent = false
         wideEvent.startFlow(returnData)
 
         guard let afterIdleSurface else { return }
@@ -156,6 +168,18 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
 
     func burnTabTapped() {
         recordInteraction { $0.burnTabTapped = true }
+    }
+
+    func promptSubmittedInPage() {
+        guard !promptSubmittedInPageSent else { return }
+        promptSubmittedInPageSent = true
+        recordReturnSessionInteraction { $0.promptSubmittedInPage = true }
+    }
+
+    func inAppNavigation() {
+        guard !inAppNavigationSent else { return }
+        inAppNavigationSent = true
+        recordReturnSessionInteraction { $0.inAppNavigation = true }
     }
 
     func sessionEnded(reason: ReturnSessionWideEventData.StatusReason) {
@@ -215,6 +239,16 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
                 orphan,
                 status: .unknown(reason: PostIdleSessionWideEventData.appTerminatedReason),
                 onComplete: { _, _ in })
+        }
+    }
+
+    /// For fields the older `ios-post-idle-session` payload does not carry, so its schema stays put.
+    private func recordReturnSessionInteraction(_ mutate: @escaping (inout ReturnSessionWideEventData) -> Void) {
+        guard let globalID = returnSessionID else { return }
+        let now = dateProvider()
+        wideEvent.updateFlow(globalID: globalID) { (data: inout ReturnSessionWideEventData) in
+            mutate(&data)
+            markFirstInteractionIfNeeded(on: data, at: now)
         }
     }
 

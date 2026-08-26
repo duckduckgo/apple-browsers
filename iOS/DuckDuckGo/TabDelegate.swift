@@ -150,6 +150,9 @@ protocol TabDelegate: AnyObject {
 
     /// User activated an in-page link in this tab.
     func tabDidEngageWithPage(_ tab: TabViewController)
+
+    /// User navigated this tab by submitting a form, or through browser history.
+    func tabDidNavigateInApp(_ tab: TabViewController)
     
     func tabDidRequestFireButtonPulse(tab: TabViewController)
 

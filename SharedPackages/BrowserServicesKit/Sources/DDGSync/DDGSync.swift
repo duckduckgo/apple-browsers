@@ -259,6 +259,8 @@ public class DDGSync: DDGSyncing {
     }
 
     public func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
+        isDeviceRenameInProgress = true
+        defer { isDeviceRenameInProgress = false }
         await cancelDeviceInfoUpdatesAndWait()
 
         guard let account = try dependencies.secureStore.account() else {
@@ -737,6 +739,7 @@ public class DDGSync: DDGSyncing {
               currentAccount.deviceId == account.deviceId,
               deviceInfoMigrationTask == nil,
               currentDeviceInfoRepairTask == nil,
+              !isDeviceRenameInProgress,
               !hasAttemptedCurrentDeviceInfoRepair else {
             return
         }
@@ -923,5 +926,6 @@ public class DDGSync: DDGSyncing {
     private var deviceInfoMigrationTaskID: UUID?
     private var currentDeviceInfoRepairTask: Task<Void, Never>?
     private var currentDeviceInfoRepairTaskID: UUID?
+    private var isDeviceRenameInProgress = false
     private var hasAttemptedCurrentDeviceInfoRepair = false
 }

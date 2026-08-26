@@ -94,9 +94,13 @@ class AccountManagingMock: AccountManaging {
 
     var refreshTokenStub: LoginResult?
     var refreshTokenError: Error?
+    var refreshTokenHandler: ((SyncAccount, String) async throws -> LoginResult)?
     var refreshTokenCalled: Bool = false
     func refreshToken(_ account: SyncAccount, deviceName: String) async throws -> LoginResult {
         refreshTokenCalled = true
+        if let refreshTokenHandler {
+            return try await refreshTokenHandler(account, deviceName)
+        }
         if let refreshTokenError {
             throw refreshTokenError
         }

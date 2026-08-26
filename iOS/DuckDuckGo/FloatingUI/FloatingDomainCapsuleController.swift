@@ -22,11 +22,9 @@ import UIKit
 
 final class FloatingDomainCapsuleController {
 
-    /// Below this `barsVisibilityPercent` the morph pill is fully opaque and physically resizes
-    /// between the capsule and the bar. Above it, the pill fades out over the short remaining band
-    /// while the real chrome fades in, giving a seamless swap without an obvious mid-transition
-    /// cross-fade. Shared with `MainViewController` for the complementary chrome-alpha ramp.
-    static let handoffStart: CGFloat = 0.85
+    static let handoffStart: CGFloat = 0.60
+
+    static let handoffBandHalfWidth: CGFloat = 0.02
 
     /// Gap between the pill and the edge of the safe area at its resting position.
     static let restEdgePadding: CGFloat = 8
@@ -62,6 +60,7 @@ final class FloatingDomainCapsuleController {
         return label
     }()
     private var centerYConstraint: NSLayoutConstraint?
+    private var hasAppliedGlassStyleAtValidSize = false
     private var widthConstraint: NSLayoutConstraint?
     private var heightConstraint: NSLayoutConstraint?
 
@@ -136,12 +135,13 @@ final class FloatingDomainCapsuleController {
                 expandedFrame: CGRect,
                 reduceMotion: Bool,
                 in view: UIView) {
-        guard FloatingUILayoutPolicy.shouldShowFloatingDomainCapsule(
+        let shouldShow = FloatingUILayoutPolicy.shouldShowFloatingDomainCapsule(
             isFloatingUIEnabled: isFloatingUIEnabled,
             isUnifiedToggleInputActive: isUnifiedToggleInputActive,
             isAITab: isAITab,
             isMinimalChromeLayout: isMinimalChromeLayout
-        ),
+        )
+        guard shouldShow,
               let domain,
               !domain.isEmpty else {
             button.alpha = 0
@@ -177,20 +177,14 @@ final class FloatingDomainCapsuleController {
         }
     }
 
-    /// Opacity of the morph pill. Fully opaque through the resize band (`p <= handoffStart`), then
-    /// ramps to 0 over `[handoffStart, 1]` so the real chrome takes over. Reduce Motion falls back
-    /// to a plain inverse cross-fade.
     private func pillAlpha(for p: CGFloat, reduceMotion: Bool) -> CGFloat {
         if reduceMotion {
             return max(0, min(1, 1 - p))
         }
-        if p >= 1 {
-            return 0
-        }
-        if p <= Self.handoffStart {
-            return 1
-        }
-        return 1 - (p - Self.handoffStart) / (1 - Self.handoffStart)
+        let bandStart = Self.handoffStart - Self.handoffBandHalfWidth
+        let bandEnd = Self.handoffStart + Self.handoffBandHalfWidth
+        guard bandEnd > bandStart else { return p < Self.handoffStart ? 1 : 0 }
+        return 1 - ((p - bandStart) / (bandEnd - bandStart)).clamped(to: 0...1)
     }
 
     /// Interpolates the pill's real width/height/vertical-centre (and capsule corner radius) between
@@ -208,7 +202,7 @@ final class FloatingDomainCapsuleController {
             ? view.safeAreaInsets.top + Self.restEdgePadding + capsuleHeight / 2
             : view.bounds.maxY - view.safeAreaInsets.bottom - Self.restEdgePadding - capsuleHeight / 2
 
-        let morphP = (reduceMotion || expandedFrame.isEmpty) ? 0 : p
+        let morphP = (reduceMotion || expandedFrame.isEmpty) ? 0 : min(1, p / Self.handoffStart)
         let width = capsuleWidth + (expandedFrame.width - capsuleWidth) * morphP
         let height = capsuleHeight + (expandedFrame.height - capsuleHeight) * morphP
         let centerY = restCenterY + (expandedFrame.midY - restCenterY) * morphP
@@ -219,6 +213,11 @@ final class FloatingDomainCapsuleController {
 
         button.layer.cornerRadius = height / 2
         backgroundView.layer.cornerRadius = height / 2
+
+        if !hasAppliedGlassStyleAtValidSize, width > 0, height > 0 {
+            hasAppliedGlassStyleAtValidSize = true
+            applyGlassStyle()
+        }
     }
 
     private func applyGlassStyle() {

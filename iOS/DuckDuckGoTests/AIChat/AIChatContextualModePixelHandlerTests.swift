@@ -495,7 +495,7 @@ final class AIChatContextualModePixelHandlerTests {
             AIChatContextualSelectionPixel.removed.name,
             AIChatContextualSelectionPixel.toolDeliveryTimedOut.name
         ])
-        #expect(AIChatContextualSelectionPixel.attached.namePrefix.isEmpty)
+        #expect(AIChatContextualSelectionPixel.attached.namePrefix == .none)
     }
 
     @Test("Concurrent reset and navigation calls are thread-safe")

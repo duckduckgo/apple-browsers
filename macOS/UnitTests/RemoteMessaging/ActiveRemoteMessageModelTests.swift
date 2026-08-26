@@ -18,6 +18,7 @@
 
 import Foundation
 import XCTest
+import NewTabPage
 import RemoteMessaging
 import RemoteMessagingTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
@@ -238,6 +239,59 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         XCTAssertEqual(store.fetchScheduledRemoteMessageCalls, 1)
         XCTAssertTrue(store.capturedSurfaces!.contains(.newTabPage))
         XCTAssertTrue(store.capturedSurfaces!.contains(.tabBar))
+    }
+
+    func testWhenSurveyActionIsHandledThenUsageStatesAreRefreshedBeforeOpeningURL() async throws {
+        let surveyURL = "https://survey.example.com?last_duck_ai_usage=none"
+        let refreshedSurveyURL = "https://survey.example.com?last_duck_ai_usage=day"
+        var capturedURLToRefresh: String?
+        var openedURL: URL?
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { openedURL = $0 },
+            surveyURLRefresher: { url in
+                capturedURLToRefresh = url
+                return refreshedSurveyURL
+            },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+
+        await model.handleAction(.survey(value: surveyURL), andDismissUsing: .action)
+
+        XCTAssertEqual(capturedURLToRefresh, surveyURL)
+        XCTAssertEqual(openedURL?.absoluteString, refreshedSurveyURL)
+    }
+
+    func testSurveyURLRefresherOnlyReadsRequestedUsageStates() {
+        let expectations = [
+            (url: "https://survey.example.com?param=value", searchReadCount: 0, duckAIReadCount: 0),
+            (url: "https://survey.example.com?last_duck_ai_usage=none", searchReadCount: 0, duckAIReadCount: 1),
+            (url: "https://survey.example.com?last_search_state=none", searchReadCount: 1, duckAIReadCount: 0),
+            (url: "https://survey.example.com?last_search_state=none&last_duck_ai_usage=none", searchReadCount: 1, duckAIReadCount: 1)
+        ]
+
+        for expectation in expectations {
+            var searchReadCount = 0
+            var duckAIReadCount = 0
+
+            _ = ActiveRemoteMessageModel.refreshSurveyURL(
+                expectation.url,
+                lastSearchDateProvider: {
+                    searchReadCount += 1
+                    return Date()
+                },
+                daysSinceDuckAIUsedProvider: {
+                    duckAIReadCount += 1
+                    return 1
+                }
+            )
+
+            XCTAssertEqual(searchReadCount, expectation.searchReadCount)
+            XCTAssertEqual(duckAIReadCount, expectation.duckAIReadCount)
+        }
     }
 
 }

@@ -347,7 +347,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     var shouldClipShadows: Bool {
-        state.isBrowsing
+        guard !isFloatingUIEnabled else { return false }
+        return state.isBrowsing
             && !isSuggestionTrayVisible
     }
 
@@ -362,6 +363,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private func updateShadowAppearanceByApplyingLayerMask() {
         omniBarView.updateMaskLayer(maskTop: dependencies.appSettings.currentAddressBarPosition.isBottom,
                                     clip: shouldClipShadows)
+    }
+
+    /// Re-applies shadow clipping after floating chrome styling changes (e.g. theme decorate).
+    func reconcileShadowClip() {
+        updateShadowAppearanceByApplyingLayerMask()
     }
 
 }

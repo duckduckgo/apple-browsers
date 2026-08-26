@@ -356,14 +356,17 @@ enum AIChatContextualSuggestionsSurface: String {
     case sheet
 }
 
-enum AIChatContextualSelectionPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum AIChatContextualSelectionPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case attached
     case limitReached
     case removed
     case promptSubmitted(selectionCount: String)
     case toolDeliveryTimedOut
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 
     var name: String {
         switch self {

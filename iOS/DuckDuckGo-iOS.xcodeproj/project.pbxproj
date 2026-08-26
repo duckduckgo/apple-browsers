@@ -2102,6 +2102,8 @@
 		C18390C22F4F712A001939B9 /* AIChatBasicNativeInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C12F4F712A001939B9 /* AIChatBasicNativeInputViewController.swift */; };
 		C18390C42F4F73AE001939B9 /* UnifiedToggleInputHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C32F4F73AE001939B9 /* UnifiedToggleInputHandler.swift */; };
 		C18390C72F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C62F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift */; };
+		A8440B0101C0DE0000000002 /* FloatingOmnibarTransitionMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8440B0101C0DE0000000001 /* FloatingOmnibarTransitionMetrics.swift */; };
+		A8440B0101C0DE0000000004 /* FloatingOmnibarTransitionMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8440B0101C0DE0000000003 /* FloatingOmnibarTransitionMetricsTests.swift */; };
 		C18390CA2F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */; };
 		C18390CC2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */; };
 		C18390CE2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */; };
@@ -2268,6 +2270,8 @@
 		CB258D1F29A52B2500DEBA24 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB258D0C29A4CD0500DEBA24 /* Configuration.swift */; };
 		CB27DAE72FFFE65200EEEADB /* WebViewTransitionGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAE62FFFE65200EEEADB /* WebViewTransitionGeometry.swift */; };
 		CB27DAE92FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAE82FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift */; };
+		A8452A0101C0DE0000000002 /* HomeScreenTransitionGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8452A0101C0DE0000000001 /* HomeScreenTransitionGeometry.swift */; };
+		A8452A0101C0DE0000000004 /* HomeScreenTransitionGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8452A0101C0DE0000000003 /* HomeScreenTransitionGeometryTests.swift */; };
 		CB27DAF330063B4600EEEADB /* ToolbarVisibilityDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAF230063B4600EEEADB /* ToolbarVisibilityDecision.swift */; };
 		CB27DAF530063B4A00EEEADB /* AITabChromeDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAF430063B4A00EEEADB /* AITabChromeDecision.swift */; };
 		CB27DAF730063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAF630063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift */; };
@@ -4973,6 +4977,8 @@
 		C18390C12F4F712A001939B9 /* AIChatBasicNativeInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatBasicNativeInputViewController.swift; sourceTree = "<group>"; };
 		C18390C32F4F73AE001939B9 /* UnifiedToggleInputHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputHandler.swift; sourceTree = "<group>"; };
 		C18390C62F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+UnifiedToggleInput.swift"; sourceTree = "<group>"; };
+		A8440B0101C0DE0000000001 /* FloatingOmnibarTransitionMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingOmnibarTransitionMetrics.swift; sourceTree = "<group>"; };
+		A8440B0101C0DE0000000003 /* FloatingOmnibarTransitionMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingOmnibarTransitionMetricsTests.swift; sourceTree = "<group>"; };
 		C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputHandlerTests.swift; sourceTree = "<group>"; };
 		C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputCoordinatorTests.swift; sourceTree = "<group>"; };
 		C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputFeatureTests.swift; sourceTree = "<group>"; };
@@ -5154,6 +5160,8 @@
 		CB258D0F29A4D0FD00DEBA24 /* ConfigurationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationManager.swift; sourceTree = "<group>"; };
 		CB27DAE62FFFE65200EEEADB /* WebViewTransitionGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewTransitionGeometry.swift; sourceTree = "<group>"; };
 		CB27DAE82FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewTransitionGeometryTests.swift; sourceTree = "<group>"; };
+		A8452A0101C0DE0000000001 /* HomeScreenTransitionGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenTransitionGeometry.swift; sourceTree = "<group>"; };
+		A8452A0101C0DE0000000003 /* HomeScreenTransitionGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenTransitionGeometryTests.swift; sourceTree = "<group>"; };
 		CB27DAF230063B4600EEEADB /* ToolbarVisibilityDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarVisibilityDecision.swift; sourceTree = "<group>"; };
 		CB27DAF430063B4A00EEEADB /* AITabChromeDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AITabChromeDecision.swift; sourceTree = "<group>"; };
 		CB27DAF630063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarVisibilityDecisionTests.swift; sourceTree = "<group>"; };
@@ -8091,6 +8099,7 @@
 				BEA13CC2BC37C33434640638 /* WebViewInputAccessoryTests.swift */,
 				CB6EF0502FE020D6000C75BA /* IPadOmnibarFocusModelTests.swift */,
 				CB27DAE82FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift */,
+				A8452A0101C0DE0000000003 /* HomeScreenTransitionGeometryTests.swift */,
 			);
 			name = UnitTests;
 			path = DuckDuckGoTests;
@@ -8284,6 +8293,7 @@
 				855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */,
 				986DA94924884B18004A7E39 /* WebViewTransition.swift */,
 				CB27DAE62FFFE65200EEEADB /* WebViewTransitionGeometry.swift */,
+				A8452A0101C0DE0000000001 /* HomeScreenTransitionGeometry.swift */,
 			);
 			path = Transitions;
 			sourceTree = "<group>";
@@ -10201,6 +10211,7 @@
 				C18390BE2F4F6F5E001939B9 /* UnifiedToggleInputFeature.swift */,
 				4AD56A4878844306BD83E026 /* AIBoundaryNavigationDecision.swift */,
 				C18390C62F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift */,
+				A8440B0101C0DE0000000001 /* FloatingOmnibarTransitionMetrics.swift */,
 				F2B8A10636AA100000C0DE01 /* MainViewController+UnifiedToggleInputIntentHandling.swift */,
 				D18A7DE942EC889067320A83 /* MainViewController+UnifiedToggleInputSwipeTabs.swift */,
 				F2B8A10A36AA100000C0DE01 /* UnifiedToggleInputFileEncoder.swift */,
@@ -10228,6 +10239,7 @@
 			isa = PBXGroup;
 			children = (
 				C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */,
+				A8440B0101C0DE0000000003 /* FloatingOmnibarTransitionMetricsTests.swift */,
 				97D45F4B302B5FC2002388C8 /* UpdatedModelPickerFeatureTests.swift */,
 				C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */,
 				BBA0000000000000000A0003 /* TabInputStateTests.swift */,
@@ -13867,6 +13879,7 @@
 				80DD30342F27F435006E1A78 /* ScopedFireConfirmationView.swift in Sources */,
 				D668D9252B693778008E2FF2 /* SubscriptionITPView.swift in Sources */,
 				C18390C72F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift in Sources */,
+				A8440B0101C0DE0000000002 /* FloatingOmnibarTransitionMetrics.swift in Sources */,
 				F2B8A10336AA100000C0DE01 /* MainViewController+UnifiedToggleInputIntentHandling.swift in Sources */,
 				770F04AEA51E0EF84C52CD53 /* MainViewController+UnifiedToggleInputSwipeTabs.swift in Sources */,
 				C10CB5F32A1A5BDF0048E503 /* AutofillViews.swift in Sources */,
@@ -14205,6 +14218,7 @@
 				FC7EF0020000000000000006 /* DuckAiUsageLimitsStore.swift in Sources */,
 				FC7EF0020000000000000007 /* UTIFooterController.swift in Sources */,
 				CB27DAE72FFFE65200EEEADB /* WebViewTransitionGeometry.swift in Sources */,
+				A8452A0101C0DE0000000002 /* HomeScreenTransitionGeometry.swift in Sources */,
 				AABB0001000100010001000B /* UTIModelStore.swift in Sources */,
 				AABB0001000100010001000F /* UTIToolsController.swift in Sources */,
 				F2B8A10236AA100000C0DE01 /* UnifiedToggleInputModelMenuFactory.swift in Sources */,
@@ -15177,6 +15191,7 @@
 				9F4CC5172C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift in Sources */,
 				A1B2C3D40E1F202122232402 /* TabViewControllerGestureArbitrationTests.swift in Sources */,
 				CB27DAE92FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift in Sources */,
+				A8452A0101C0DE0000000004 /* HomeScreenTransitionGeometryTests.swift in Sources */,
 				F1A83D872E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
 				9FE59CE72E3307AD00C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift in Sources */,
 				F13B4BFB1F18E3D900814661 /* TabsModelPersistenceTests.swift in Sources */,
@@ -15190,6 +15205,7 @@
 				BCC0F7A82FB3000000BDCF05 /* VCardFileReaderTests.swift in Sources */,
 				4BC21A2F27238B7500229F0E /* RunLoopExtensionTests.swift in Sources */,
 				C18390CA2F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift in Sources */,
+				A8440B0101C0DE0000000004 /* FloatingOmnibarTransitionMetricsTests.swift in Sources */,
 				C18390CC2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift in Sources */,
 				BBA0000000000000000A0004 /* TabInputStateTests.swift in Sources */,
 				BBA0000000000000000D0004 /* UnifiedInputStateStoreTests.swift in Sources */,

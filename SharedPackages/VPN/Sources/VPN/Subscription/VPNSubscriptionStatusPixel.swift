@@ -19,7 +19,10 @@
 import PixelKit
 import Subscription
 
-public enum VPNSubscriptionStatusPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+public enum VPNSubscriptionStatusPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case vpnFeatureEnabled(isSubscriptionActive: Bool?,
                     sourceObject: Any?)
     case vpnFeatureDisabled(isSubscriptionActive: Bool?,
@@ -29,7 +32,9 @@ public enum VPNSubscriptionStatusPixel: PixelKit.Event, PixelKitEventWithCustomP
     case signedOut(isSubscriptionActive: Bool?,
                    sourceObject: Any?)
 
-    public var namePrefix: String {
+    public var namePrefix: PixelKitNamePrefix { .custom(namePrefixLiteral) }
+
+    private var namePrefixLiteral: String {
 #if os(macOS)
         return "m_mac_vpn_subs_notification_"
 #elseif os(iOS)

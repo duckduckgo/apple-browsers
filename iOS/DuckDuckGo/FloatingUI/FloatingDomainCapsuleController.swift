@@ -73,6 +73,7 @@ final class FloatingDomainCapsuleController {
         button.layer.cornerCurve = .continuous
         button.layer.cornerRadius = 14
         button.layer.masksToBounds = true
+        button.accessibilityIdentifier = "Browser.FloatingDomainCapsule"
         button.addTarget(self, action: #selector(onCapsuleTapped), for: .touchUpInside)
         return button
     }()

@@ -2633,6 +2633,7 @@
 		F0A1B2C3D4E5F60718293B01 /* FloatingUIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A01 /* FloatingUIManager.swift */; };
 		F0A1B2C3D4E5F60718293B02 /* FloatingUIChromeStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A02 /* FloatingUIChromeStyler.swift */; };
 		F0A1B2C3D4E5F60718293B03 /* FloatingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A03 /* FloatingUITests.swift */; };
+		F0A1B2C3D4E5F60718293B10 /* FloatingUIXCUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C3D4E5F60718293A10 /* FloatingUIXCUITests.swift */; };
 		F0A200012F31000100BAD001 /* NewBadgeVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A200002F31000100BAD001 /* NewBadgeVisibilityManagerTests.swift */; };
 		F1000FEB2FA3B25D00D96ED0 /* Fire.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F1000FEA2FA3B25D00D96ED0 /* Fire.xcassets */; };
 		F101D53CD31E95F9C9FE2AC1 /* UnifiedToggleInputCoordinatorAttachmentLimitsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD3EE389CF6162AB1F6B023 /* UnifiedToggleInputCoordinatorAttachmentLimitsTests.swift */; };
@@ -5571,6 +5572,7 @@
 		F0A1B2C3D4E5F60718293A01 /* FloatingUIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingUIManager.swift; sourceTree = "<group>"; };
 		F0A1B2C3D4E5F60718293A02 /* FloatingUIChromeStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingUIChromeStyler.swift; sourceTree = "<group>"; };
 		F0A1B2C3D4E5F60718293A03 /* FloatingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingUITests.swift; sourceTree = "<group>"; };
+		F0A1B2C3D4E5F60718293A10 /* FloatingUIXCUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingUIXCUITests.swift; sourceTree = "<group>"; };
 		F0A200002F31000100BAD001 /* NewBadgeVisibilityManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewBadgeVisibilityManagerTests.swift; sourceTree = "<group>"; };
 		F0E6B4C53D4E5F6A70819203 /* AIChatRecentChatsMenuViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatRecentChatsMenuViewModelTests.swift; sourceTree = "<group>"; };
 		F1000FEA2FA3B25D00D96ED0 /* Fire.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Fire.xcassets; sourceTree = "<group>"; };
@@ -8555,6 +8557,7 @@
 				85F21DAF210F5E32002631A6 /* AtbIntegrationTests.swift */,
 				85F21DB1210F5E32002631A6 /* Info.plist */,
 				842625613000E9CA001B4B87 /* SubscriptionPromoUITests.swift */,
+				F0A1B2C3D4E5F60718293A10 /* FloatingUIXCUITests.swift */,
 				8551912624746EDC0010FDD0 /* SnapshotHelper.swift */,
 			);
 			path = AtbUITests;
@@ -15590,6 +15593,7 @@
 				4BEE4ACD2DB60FCE0061470B /* SnapshotHelper.swift in Sources */,
 				85F21DB0210F5E32002631A6 /* AtbIntegrationTests.swift in Sources */,
 				842625623000E9CA001B4B87 /* SubscriptionPromoUITests.swift in Sources */,
+				F0A1B2C3D4E5F60718293B10 /* FloatingUIXCUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

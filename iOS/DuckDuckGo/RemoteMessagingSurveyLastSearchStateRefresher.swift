@@ -21,24 +21,29 @@ import Foundation
 import RemoteMessaging
 import BrowserServicesKit
 
-protocol RemoteMessagingLastSearchStateRefresher {
-    func refreshLastSearchState(forURLPath: String) -> String
+protocol RemoteMessagingSurveyUsageStateRefreshing {
+    func refreshSurveyUsageStates(forURLPath: String) -> String
 }
 
-struct RemoteMessagingSurveyLastSearchStateRefresher: RemoteMessagingLastSearchStateRefresher {
+struct RemoteMessagingSurveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefreshing {
     private let searchDauDateProvider: AutofillUsageProvider
-    private let refreshLastSearchStateFunction: (_ path: String, _ lastSearchDate: Date?) -> String
-    
+    private let featureDiscovery: FeatureDiscovery
+    private let refreshSurveyUsageStatesFunction: (_ path: String, _ lastSearchDate: Date?, _ daysSinceDuckAIUsed: Int?) -> String
+
     init(
         searchDauDateProvider: AutofillUsageProvider = AutofillUsageStore(),
-        refreshLastSearchStateFunction: @escaping (String, Date?) -> String = DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+        refreshSurveyUsageStatesFunction: @escaping (String, Date?, Int?) -> String = DefaultRemoteMessagingSurveyURLBuilder.refreshSurveyUsageStates
     ) {
         self.searchDauDateProvider = searchDauDateProvider
-        self.refreshLastSearchStateFunction = refreshLastSearchStateFunction
+        self.featureDiscovery = featureDiscovery
+        self.refreshSurveyUsageStatesFunction = refreshSurveyUsageStatesFunction
     }
-    
-    func refreshLastSearchState(forURLPath path: String) -> String {
-        let lastSearchDate = searchDauDateProvider.searchDauDate
-        return refreshLastSearchStateFunction(path, lastSearchDate)
+
+    func refreshSurveyUsageStates(forURLPath path: String) -> String {
+        let queryItemNames = Set(URLComponents(string: path)?.queryItems?.map(\.name) ?? [])
+        let lastSearchDate = queryItemNames.contains(RemoteMessagingSurveyActionParameter.lastSearchState.rawValue) ? searchDauDateProvider.searchDauDate : nil
+        let daysSinceDuckAIUsed = queryItemNames.contains(RemoteMessagingSurveyActionParameter.lastDuckAIUsage.rawValue) ? featureDiscovery.daysSinceLastUsed(.aiChat) : nil
+        return refreshSurveyUsageStatesFunction(path, lastSearchDate, daysSinceDuckAIUsed)
     }
 }

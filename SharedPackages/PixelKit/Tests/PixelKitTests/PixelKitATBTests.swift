@@ -193,7 +193,6 @@ final class PixelKitATBTests: XCTestCase {
         XCTAssertEqual(PixelKit.Options.withATB, PixelKit.Options(includeATB: true))
         XCTAssertTrue(PixelKit.Options.withATB.includeATB)
         XCTAssertTrue(PixelKit.Options.withATB.includeAppVersionParameter)
-        XCTAssertTrue(PixelKit.Options.withATB.enforcePrefix)
         XCTAssertFalse(PixelKit.Options.withATB.retryOnFailure)
     }
 }

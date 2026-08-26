@@ -117,8 +117,8 @@ final class AIChatNativeConfigValuesTests: XCTestCase {
     }
 
     private func makeConfig(supportsSuggestions: Bool,
-                           supportsNativeUsageWarnings: Bool = false,
-                           attachmentLimits: AIChatNativeAttachmentLimits? = nil) -> AIChatNativeConfigValues {
+                            supportsNativeUsageWarnings: Bool = false,
+                            attachmentLimits: AIChatNativeAttachmentLimits? = nil) -> AIChatNativeConfigValues {
         AIChatNativeConfigValues(
             isAIChatHandoffEnabled: false,
             supportsClosingAIChat: true,

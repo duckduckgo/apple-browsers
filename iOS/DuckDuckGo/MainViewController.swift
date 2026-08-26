@@ -415,20 +415,6 @@ class MainViewController: UIViewController {
                               isFloatingUIEnabled: isFloatingUIEnabled)
     }()
 
-    private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager(privacyConfigurationManager: privacyConfigurationManager,
-                                                  contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-                                                  experimentalAIChatManager: .init(featureFlagger: featureFlagger),
-                                                  featureFlagger: featureFlagger,
-                                                  featureDiscovery: featureDiscovery,
-                                                  aiChatSettings: aiChatSettings,
-                                                  productSurfaceTelemetry: productSurfaceTelemetry,
-                                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
-        manager.delegate = self
-        manager.isFireModeProvider = { [weak self] in self?.tabManager.currentBrowsingMode == .fire }
-        return manager
-    }()
-
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
     let themeManager: ThemeManaging
@@ -7643,9 +7629,7 @@ extension MainViewController: TabManagerFireModeDelegate {
     }
 
     func tabManagerDidChangeBrowsingMode(_ mode: BrowsingMode) {
-        Task {
-            await aiChatViewControllerManager.killSessionAndResetTimer()
-        }
+        // No operation
     }
 }
 
@@ -7741,15 +7725,7 @@ extension MainViewController: FireExecutorDelegate {
     }
     
     func didFinishBurningAIHistory(fireRequest: FireRequest) {
-        switch fireRequest.scope {
-        case .all, .fireMode, .normalMode:
-            Task {
-                await aiChatViewControllerManager.killSessionAndResetTimer()
-            }
-        case .tab:
-            // No custom logic for tab scope
-            return
-        }
+        // No operation
     }
     
     func didFinishBurning(fireRequest: FireRequest) {
@@ -8084,45 +8060,6 @@ extension MainViewController: AutofillLoginListViewControllerDelegate {
 extension MainViewController: OmniBarFocuser {
     func beginSearch() {
         omniBar.beginEditing(animated: true)
-    }
-}
-
-// MARK: - AIChatViewControllerManagerDelegate
-extension MainViewController: AIChatViewControllerManagerDelegate {
-    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
-        if let tabSwitcher = tabSwitcherController {
-            loadUrlInNewTab(url, inheritedAttribution: nil)
-            tabSwitcher.dismiss(animated: true)
-        } else {
-            loadUrlInNewTab(url, inheritedAttribution: nil)
-        }
-    }
-
-    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {
-        self.loadQuery(query)
-    }
-
-    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {
-        segueToDownloads()
-    }
-
-    func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
-        if let controller = tabSwitcherController {
-            controller.dismiss(animated: true) {
-                self.segueToSettingsAIChat()
-            }
-        } else {
-            segueToSettingsAIChat()
-        }
-    }
-
-    func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager) {
-        segueToSettingsSync()
-    }
-
-    func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager) {
-        postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: nil)
-        reportDuckAIFrontendSubmissionAcknowledged()
     }
 }
 

@@ -148,11 +148,10 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
         store.shownCount += 1
     }
 
-    /// Shown only while the Cookie Pop-up Protection setting feature flag is on, at most `maxShowCount` times,
+    /// Shown only while the Cookie Pop-up Protection opt-in dialog feature flag is on, at most `maxShowCount` times,
     /// only ≥ `minDaysSinceInstall` days after install, and never after the user confirms.
     private var isEligibleToShow: Bool {
-        guard featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting),
-              featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
+        guard featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
         // Nothing to offer users already on the most-private setting — it already accepts no-opt-out cookies.
         guard AppUserDefaults().cookiePopupPreference != .max else { return false }
         guard !store.hasConfirmed, store.shownCount < Constants.maxShowCount else { return false }

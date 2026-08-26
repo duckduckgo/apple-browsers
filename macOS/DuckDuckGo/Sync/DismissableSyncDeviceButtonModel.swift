@@ -172,7 +172,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             return
         }
         if !hasFiredImpressionPixel {
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, withAdditionalParameters: ["source": source.pixelSource.rawValue], doNotEnforcePrefix: true)
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, withAdditionalParameters: ["source": source.pixelSource.rawValue])
             hasFiredImpressionPixel = true
         }
         shouldShowSyncButton = true
@@ -180,13 +180,13 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
 
     func syncButtonAction() {
         syncLauncher?.startDeviceSyncFlow(source: source.pixelSource, completion: nil)
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.pixelSource.rawValue], doNotEnforcePrefix: true)
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.pixelSource.rawValue])
     }
 
     func dismissSyncButtonAction() {
         shouldShowSyncButton = false
         keyValueStore.set(true, forKey: source.wasDismissedKey)
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed, withAdditionalParameters: ["source": source.pixelSource.rawValue], doNotEnforcePrefix: true)
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed, withAdditionalParameters: ["source": source.pixelSource.rawValue])
     }
 
     static func resetAllState(from keyValueStore: KeyValueStoring) {

@@ -85,7 +85,7 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
 
     func openVoiceSession(preferringWindowOn screen: NSScreen?) {
         let sourceCollection = windowToReuse(on: screen)?.mainViewController.tabCollectionViewModel
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.voice)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.promptBarVoice)
         aiChatTabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: .newTab(selected: true))
         NSApp.activate(ignoringOtherApps: true)
     }

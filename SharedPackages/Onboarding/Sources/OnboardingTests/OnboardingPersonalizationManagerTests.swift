@@ -222,7 +222,7 @@ struct OnboardingPersonalizationManagerTests {
         #expect(!aiChatSettings.isDuckAIEnabled)
     }
 
-    @Test("applyDefaults for .blockAds turns both cookie toggles on (maximum protection)")
+    @Test("applyDefaults for .blockAds enables cookie pop-up protection but leaves accept-other-cookies off")
     func applyDefaultsBlockAds() {
         // GIVEN
         let appSettings = MockOnboardingAppSettingsStore()
@@ -233,7 +233,7 @@ struct OnboardingPersonalizationManagerTests {
 
         // THEN
         #expect(appSettings.isCookiePopUpProtectionEnabled)
-        #expect(appSettings.isPopUpsWithoutOptOutsEnabled)
+        #expect(!appSettings.isPopUpsWithoutOptOutsEnabled)
     }
 
     @Test(

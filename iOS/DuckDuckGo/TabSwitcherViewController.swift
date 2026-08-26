@@ -167,8 +167,6 @@ class TabSwitcherViewController: UIViewController {
     private let appSettings: AppSettings
     private let initialTrackerCountState: TabSwitcherTrackerCountViewModel.State
     
-    private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
-
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private var pickerViewModel: ImageSegmentedPickerViewModel
@@ -188,7 +186,6 @@ class TabSwitcherViewController: UIViewController {
          tabManager: TabManager,
          aiChatSettings: AIChatSettingsProvider,
          appSettings: AppSettings,
-         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
          privacyStats: PrivacyStatsProviding,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          historyManager: HistoryManaging,
@@ -209,7 +206,6 @@ class TabSwitcherViewController: UIViewController {
         self.tabManager = tabManager
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
-        self.aichatFullModeFeature = aichatFullModeFeature
         self.privacyStats = privacyStats
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.historyManager = historyManager
@@ -465,11 +461,7 @@ class TabSwitcherViewController: UIViewController {
 
         actions.onDuckChatTapped = { [weak self] in
             guard let self else { return }
-            if self.aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
-                self.addNewAIChatTab()
-            } else {
-                self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)
-            }
+            self.addNewAIChatTab()
         }
 
         return actions
@@ -594,9 +586,6 @@ class TabSwitcherViewController: UIViewController {
             PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue
         ])
         dismissIfPossible(forceDismissOnEmpty: true)
-        // This call needs to be after the dismiss to allow OmniBarEditingStateViewController
-        // to present on top of MainVC instead of TabSwitcher.
-        // If these calls are switched it'll be immediately dismissed along with this controller.
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
 

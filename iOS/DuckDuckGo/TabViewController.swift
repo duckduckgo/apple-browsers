@@ -75,9 +75,11 @@ enum WebViewPreviewSnapshotGeometry {
     }
 
     static func visibleRect(webViewBounds: CGRect, contentInset: UIEdgeInsets, capturesFullBounds: Bool) -> CGRect? {
-        capturesFullBounds
-            ? visibleRect(webViewBounds: webViewBounds)
-            : visibleRect(webViewBounds: webViewBounds, contentInset: contentInset)
+        let cropInset = UIEdgeInsets(top: contentInset.top,
+                                     left: 0,
+                                     bottom: capturesFullBounds ? 0 : contentInset.bottom,
+                                     right: 0)
+        return visibleRect(webViewBounds: webViewBounds, contentInset: cropInset)
     }
 }
 
@@ -706,7 +708,7 @@ class TabViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
     let aiChatSettings: AIChatSettingsProvider
-    let aiChatFullModeFeature: AIChatFullModeFeatureProviding
+    let devicePlatform: DevicePlatformProviding.Type
     let sharedSecureVault: (any AutofillSecureVault)?
     let privacyStats: PrivacyStatsProviding
     private let pixelFiring: (any PixelKitFiring)?
@@ -779,8 +781,8 @@ class TabViewController: UIViewController {
          adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
          aiChatSettings: AIChatSettingsProvider,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          privacyStats: PrivacyStatsProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -831,8 +833,8 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
-        self.aiChatFullModeFeature = aiChatFullModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.devicePlatform = devicePlatform
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,
@@ -2551,14 +2553,15 @@ extension TabViewController: WKNavigationDelegate {
         guard let webView, webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
 
         let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
-        let contentInset = capturesFullBounds ? UIEdgeInsets.zero : webView.scrollView.contentInset
-        let size = CGSize(width: webView.frame.size.width,
-                          height: webView.frame.size.height - contentInset.top - contentInset.bottom)
-        guard size.width > 0, size.height > 0 else { return nil }
+        guard let snapshotRect = WebViewPreviewSnapshotGeometry.visibleRect(
+            webViewBounds: webView.bounds,
+            contentInset: webView.scrollView.contentInset,
+            capturesFullBounds: capturesFullBounds
+        ) else { return nil }
 
-        let renderer = UIGraphicsImageRenderer(size: size)
+        let renderer = UIGraphicsImageRenderer(size: snapshotRect.size)
         return renderer.image { context in
-            context.cgContext.translateBy(x: 0, y: -contentInset.top)
+            context.cgContext.translateBy(x: -snapshotRect.origin.x, y: -snapshotRect.origin.y)
             webView.drawHierarchy(in: webView.bounds, afterScreenUpdates: afterScreenUpdates)
             if let jsAlertView {
                 jsAlertView.drawHierarchy(in: jsAlertView.bounds, afterScreenUpdates: false)
@@ -4074,6 +4077,17 @@ extension TabViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherRecognizer: UIGestureRecognizer) -> Bool {
         guard gestureRecognizer == showBarsTapGestureRecogniser else {
             return false
+        }
+
+        if featureFlagger.isFeatureOn(.suppressShowBarsGestureRecogniserDelay) {
+            // Claiming priority inserts this recognizer into the failure graph of every other tap
+            // recognizer, including the multi-tap ones WKWebView installs over web content. Those hold
+            // the second tap of a quick two-tap sequence back while they arbitrate, and it is dropped
+            // rather than delivered - so typing on an on-screen keyboard loses alternate keypresses.
+            // Claim nothing unless this tap could actually fire.
+            guard isShowBarsTap(gestureRecognizer) else {
+                return false
+            }
         }
 
         // Don't delay tap gestures that are inside the onboarding dialog

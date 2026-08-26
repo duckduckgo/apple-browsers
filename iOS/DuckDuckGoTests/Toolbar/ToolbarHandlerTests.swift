@@ -136,3 +136,17 @@ final class MockNavigatable: Navigatable {
         self.canGoForward = canGoForward
     }
 }
+
+// MARK: - FloatingToolbarRevealMetricsTests
+
+final class FloatingToolbarRevealMetricsTests: XCTestCase {
+
+    func testWhenReturningFromTabSwitcherThenLiveToolbarRevealIsShorterThanTheMorph() {
+        XCTAssertGreaterThan(TabSwitcherTransition.Constants.floatingToolbarRevealDuration, 0)
+        XCTAssertLessThan(
+            TabSwitcherTransition.Constants.floatingToolbarRevealDuration,
+            TabSwitcherTransition.Constants.floatingDuration)
+        XCTAssertGreaterThan(TabSwitcherTransition.Constants.floatingToolbarRevealScale, 0)
+        XCTAssertLessThan(TabSwitcherTransition.Constants.floatingToolbarRevealScale, 1)
+    }
+}

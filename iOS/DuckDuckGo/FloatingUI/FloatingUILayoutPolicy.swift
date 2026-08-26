@@ -28,29 +28,46 @@ enum FloatingUILayoutPolicy {
         isFloatingUIEnabled && addressBarPosition == .top && !isUnifiedToggleInputAffectingLayout
     }
 
+    /// Fraction of a bar's slide travel that is still on screen while the domain capsule morph owns the
+    /// transition. The pill morphs out of the bar's *resting* frame, so the bar has to hold that frame
+    /// until the cross-fade has finished — sliding during the fade separates the two and the bar
+    /// visibly creeps away before it disappears. It slides out over `[0, handoffStart]` instead, by
+    /// which point it is no longer drawn.
+    static func chromeOnScreenFraction(barsVisibilityPercent: CGFloat, handoffStart: CGFloat) -> CGFloat {
+        guard handoffStart > 0 else { return barsVisibilityPercent > 0 ? 1 : 0 }
+        let clampedPercent = max(0, min(1, barsVisibilityPercent))
+        return min(1, clampedPercent / handoffStart)
+    }
+
     /// Height obscured by the visible bottom chrome, measured from the web view container's bottom edge
     /// (the screen bottom). The floating web view is resized up by this amount so a page `position: fixed`
     /// footer pins to the top of whatever is on screen at the bottom:
     /// - toolbar shown -> `toolbarSlotHeight` (footer above the toolbar),
+    /// - toolbar still on screen during the morph -> `visibleToolbarHeight` (footer above the live bar),
     /// - toolbar hidden + bottom capsule -> `bottomCapsuleObscuredHeight` (footer above the capsule),
     /// - neither -> `safeAreaBottom` (footer at the safe area).
     ///
-    /// `max` gives a smooth crossover: the shrinking toolbar term dominates while the bars are visible,
-    /// then the (stable) capsule / safe-area term takes over once the bars have hidden.
+    /// `max` gives a smooth crossover: the shrinking toolbar term and the on-screen floor dominate while
+    /// the bars are visible, then the (stable) capsule / safe-area term takes over once the bars have hidden.
     static func webViewBottomObscuredHeight(barsVisibilityPercent: CGFloat,
                                             toolbarSlotHeight: CGFloat,
+                                            visibleToolbarHeight: CGFloat = 0,
                                             bottomCapsuleObscuredHeight: CGFloat,
                                             safeAreaBottom: CGFloat) -> CGFloat {
         let clampedPercent = max(0, min(1, barsVisibilityPercent))
-        return max(toolbarSlotHeight * clampedPercent, bottomCapsuleObscuredHeight, safeAreaBottom)
+        return max(toolbarSlotHeight * clampedPercent, visibleToolbarHeight, bottomCapsuleObscuredHeight, safeAreaBottom)
     }
 
+    /// Top counterpart of `webViewBottomObscuredHeight`. `visibleChromeHeight` is the on-screen floor
+    /// while the top bar is pinned through the capsule hand-off, so a page `position: fixed` header
+    /// stays below the bar the user can still see instead of sliding under it.
     static func webViewTopObscuredHeight(barsVisibilityPercent: CGFloat,
                                          expandedChromeHeight: CGFloat,
+                                         visibleChromeHeight: CGFloat = 0,
                                          topCapsuleObscuredHeight: CGFloat,
                                          safeAreaTop: CGFloat) -> CGFloat {
         let clampedPercent = max(0, min(1, barsVisibilityPercent))
-        return max(expandedChromeHeight * clampedPercent, topCapsuleObscuredHeight, safeAreaTop)
+        return max(expandedChromeHeight * clampedPercent, visibleChromeHeight, topCapsuleObscuredHeight, safeAreaTop)
     }
 
     static func shouldHostOmnibarInFloatingToolbar(isFloatingUIEnabled: Bool,

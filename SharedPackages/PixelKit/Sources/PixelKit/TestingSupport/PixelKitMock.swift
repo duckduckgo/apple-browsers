@@ -40,8 +40,6 @@ public final class PixelKitMock: PixelFiring {
         let fireCall = ExpectedFireCall(pixel: event,
                                         frequency: frequency,
                                         additionalParameters: options.additionalParameters,
-                                        namePrefix: options.namePrefix,
-                                        doNotEnforcePrefix: !options.enforcePrefix,
                                         includeAppVersionParameter: options.includeAppVersionParameter)
         actualFireCalls.append(fireCall)
         onComplete(true, nil)
@@ -53,21 +51,15 @@ public struct ExpectedFireCall: Equatable {
     public let pixel: PixelKit.Event
     public let frequency: PixelKit.Frequency
     public let additionalParameters: [String: String]?
-    public let namePrefix: String?
-    public let doNotEnforcePrefix: Bool
     public let includeAppVersionParameter: Bool
 
     public init(pixel: PixelKit.Event,
                 frequency: PixelKit.Frequency,
                 additionalParameters: [String: String]? = nil,
-                namePrefix: String? = nil,
-                doNotEnforcePrefix: Bool = false,
                 includeAppVersionParameter: Bool = true) {
         self.pixel = pixel
         self.frequency = frequency
         self.additionalParameters = additionalParameters
-        self.namePrefix = namePrefix
-        self.doNotEnforcePrefix = doNotEnforcePrefix
         self.includeAppVersionParameter = includeAppVersionParameter
     }
 
@@ -77,8 +69,7 @@ public struct ExpectedFireCall: Equatable {
         && lhs.pixel.error == rhs.pixel.error
         && lhs.frequency == rhs.frequency
         && lhs.additionalParameters == rhs.additionalParameters
-        && lhs.namePrefix == rhs.namePrefix
-        && lhs.doNotEnforcePrefix == rhs.doNotEnforcePrefix
+        && lhs.pixel.namePrefix == rhs.pixel.namePrefix
         && lhs.includeAppVersionParameter == rhs.includeAppVersionParameter
     }
 }

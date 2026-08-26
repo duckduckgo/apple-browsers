@@ -68,7 +68,7 @@ final class BookmarkListViewController: NSViewController {
             self?.onImportClicked()
         } onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }
         return emptyStateView.embeddedInHostingView()
@@ -601,7 +601,7 @@ final class BookmarkListViewController: NSViewController {
             self?.onImportClicked()
         } onSyncClicked: {
             let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue], doNotEnforcePrefix: true)
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }
         emptyStateHostingView.rootView = emptyStateView

@@ -176,9 +176,6 @@ struct Foreground: ForegroundHandling {
 
         appDependencies.backgroundTaskManager.endBackgroundTask()
 
-        let switchBarRetentionMetrics = SwitchBarRetentionMetrics(aiChatSettings: appDependencies.aiChatSettings)
-        switchBarRetentionMetrics.checkDailyAndSendPixelIfApplicable()
-
         fireAIFeaturesStateDailyPixel()
 
         appReturnInstrumentation.recordAppForeground(

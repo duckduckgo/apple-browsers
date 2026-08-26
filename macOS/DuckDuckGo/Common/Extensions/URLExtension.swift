@@ -817,6 +817,15 @@ extension URL {
 
     // MARK: - File URL
 
+    /// `true` when the receiver is `directoryURL` itself or is located inside it.
+    /// Paths are resolved first so symlinked locations (`/tmp` vs `/private/tmp`) compare equal.
+    func isContained(in directoryURL: URL) -> Bool {
+        let path = self.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+        let directoryPath = directoryURL.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+
+        return path.starts(with: directoryPath)
+    }
+
     var volume: URL? {
         try? self.resourceValues(forKeys: [.volumeURLKey]).volume
     }

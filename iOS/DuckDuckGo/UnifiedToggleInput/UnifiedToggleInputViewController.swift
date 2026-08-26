@@ -198,6 +198,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     func presentModelPickerMenu() -> Bool {
         inputBarView.presentModelPickerMenu()
     }
+    
+    @discardableResult
+    func presentReasoningPickerMenu() -> Bool {
+        inputBarView.presentReasoningPickerMenu()
+    }
 
     var toolsMenu: UIMenu? {
         get { inputBarView.toolsMenu }
@@ -339,6 +344,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func prepareForOmnibarEditingShow() {
         inputBarView.prepareForOmnibarEditingShow()
+    }
+
+    func prepareForOmnibarMaterialTransition(duration: TimeInterval) {
+        inputBarView.prepareForOmnibarMaterialTransition(duration: duration)
     }
 
     func applyOmnibarEditingShowPose() {

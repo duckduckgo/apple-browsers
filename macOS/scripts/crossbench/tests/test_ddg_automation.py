@@ -66,12 +66,14 @@ class DDGAutomationTests(unittest.TestCase):
         self.assertIn("script=return%201%20%2B%201", request.full_url)
         self.assertNotIn("script=return+1", request.full_url)
 
-    def test_measure_clears_state_before_navigation(self):
+    def test_measure_clears_state_and_prepares_web_view_before_navigation(self):
         calls = []
 
         def request(_port, method, path, params=None, timeout=60):
             calls.append((method, path, params))
             if path == "/execute":
+                if params["script"] == "return location.href":
+                    return '"about:blank"'
                 return '{"ms":321,"loc":"https://www.apple.com/"}'
             return "done"
 
@@ -92,10 +94,31 @@ class DDGAutomationTests(unittest.TestCase):
                 ("POST", "/clearWebsiteData"),
                 ("POST", "/navigate"),
                 ("POST", "/execute"),
+                ("POST", "/navigate"),
+                ("POST", "/execute"),
             ],
+        )
+        navigate_calls = [params for _, path, params in calls if path == "/navigate"]
+        self.assertEqual(
+            navigate_calls,
+            [{"url": "about:blank"}, {"url": "https://apple.com"}],
         )
         self.assertIn("landed_offsite=0", stdout.getvalue())
         self.assertIn("lcp_ms=321", stdout.getvalue())
+
+    def test_measure_requires_completed_about_blank_navigation(self):
+        stdout = io.StringIO()
+        with mock.patch.object(
+            DDG_AUTOMATION,
+            "request",
+            side_effect=["done", "done", '"duck://newtab"'],
+        ), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
+            status = DDG_AUTOMATION.measure(
+                "8788", "https://apple.com", 0, 12
+            )
+
+        self.assertEqual(status, 1)
+        self.assertIn("lcp_ms=-1", stdout.getvalue())
 
     def test_check_requires_a_selected_tab_not_just_compiled_rules(self):
         calls = []
@@ -197,6 +220,8 @@ class DDGAutomationTests(unittest.TestCase):
             side_effect=[
                 "done",
                 "done",
+                '"about:blank"',
+                "done",
                 '{"ms":12,"loc":"https://apple.com/","error":"probe failed"}',
             ],
         ), mock.patch.object(
@@ -213,7 +238,13 @@ class DDGAutomationTests(unittest.TestCase):
         with mock.patch.object(
             DDG_AUTOMATION,
             "request",
-            side_effect=["done", "done", '{"ms":5,"loc":"about:blank"}'],
+            side_effect=[
+                "done",
+                "done",
+                '"about:blank"',
+                "done",
+                '{"ms":5,"loc":"about:blank"}',
+            ],
         ), mock.patch.object(
             DDG_AUTOMATION.time, "sleep"
         ), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
@@ -244,6 +275,8 @@ class DDGAutomationTests(unittest.TestCase):
             side_effect=[
                 "done",
                 "done",
+                '"about:blank"',
+                "done",
                 '{"ms":-1,"loc":"https://apple.com/"}',
             ],
         ), mock.patch.object(
@@ -262,6 +295,8 @@ class DDGAutomationTests(unittest.TestCase):
             "request",
             side_effect=[
                 "done",
+                "done",
+                '"about:blank"',
                 "done",
                 '{"ms":-2,"loc":"https://apple.com/"}',
             ],

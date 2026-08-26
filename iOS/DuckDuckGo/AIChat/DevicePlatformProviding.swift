@@ -1,8 +1,8 @@
 //
-//  iOSPromoQueueSubfeature.swift
+//  DevicePlatformProviding.swift
 //  DuckDuckGo
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 //  limitations under the License.
 //
 
-import PrivacyConfig
+import Common
 
-public enum iOSPromoQueueSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .promoQueue
-    }
-
-    case iOSPromoPresentationCoordination
+/// Provides device platform detection.
+protocol DevicePlatformProviding {
+    /// Whether the current device is an iPhone.
+    static var isIphone: Bool { get }
 }
+
+extension DevicePlatform: DevicePlatformProviding {}

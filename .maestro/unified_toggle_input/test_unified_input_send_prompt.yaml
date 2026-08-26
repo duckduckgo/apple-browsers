@@ -20,8 +20,6 @@ name: test_unified_input_send_prompt
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
-        ff.experimentalAddressBar: "true"
 
 # Dismiss any launch-time modal BEFORE navigating the Browsing Menu.
 - runFlow:

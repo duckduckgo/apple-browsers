@@ -99,6 +99,9 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
     case feedbackTipLastShown = "feedbackTipLastShown"
     case feedbackTipButtonClicked = "feedbackTipButtonClicked"
 
+    // MARK: - Data Import Debug
+
+    case dataImportForceMacOS27PermissionsFix = "macos27-force-import-permissions-fix"
 }
 
 // MARK: - StorageKey Extensions

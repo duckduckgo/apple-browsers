@@ -42,7 +42,6 @@ extension AppWidthObserver: LargeWidthProviding {}
 protocol AIChatAddressBarExperienceProviding {
     var shouldShowDuckAIAddressBarButton: Bool { get }
     var shouldShowModeToggle: Bool { get }
-    var shouldUseExperimentalEditingState: Bool { get }
     var isIPadAIToggleExperienceEnabled: Bool { get }
 }
 
@@ -85,10 +84,5 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
     var shouldShowModeToggle: Bool {
         isIPadAIToggleExperienceEnabled
             && aiChatSettings.isAIChatSearchInputUserSettingsEnabled
-    }
-
-    var shouldUseExperimentalEditingState: Bool {
-        aiChatSettings.isAIChatSearchInputUserSettingsEnabled
-            && !isIPadAIToggleExperienceEnabled
     }
 }

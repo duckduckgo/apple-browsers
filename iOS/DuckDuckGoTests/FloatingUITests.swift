@@ -422,6 +422,36 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
         XCTAssertGreaterThan(barView.searchContainer.layer.cornerRadius, 0)
     }
+
+    func testWhenBottomFloatingFieldThenExpectedHeightIsTheFortyEightPointPill() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+
+        XCTAssertEqual(barView.expectedHeight, 48)
+    }
+
+    func testWhenTopFloatingFieldThenExpectedHeightStaysAtTheStandardBarHeight() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = false
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+    }
+
+    func testWhenBottomFloatingLandscapeChromeThenExpectedHeightStaysAtTheStandardBarHeight() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.setLayoutMode(.expandedPhone, animated: false)
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+    }
+
+    func testWhenBottomFloatingPadChromeThenExpectedHeightStaysAtTheStandardBarHeight() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.setLayoutMode(.expandedPad, animated: false)
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+    }
 }
 
 final class FloatingDomainCapsuleControllerTests: XCTestCase {

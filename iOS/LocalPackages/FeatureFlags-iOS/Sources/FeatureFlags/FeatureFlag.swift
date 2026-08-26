@@ -146,9 +146,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711861627
     case scamSiteProtection
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470028133
-    case experimentalAddressBar
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712841283
     case privacyProOnboardingPromotion
 
@@ -242,9 +239,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
-    case fullDuckAIMode
-
     /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
     case attributedMetrics
@@ -320,18 +314,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
     case showWhatsNewPromptOnDemand
 
-    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
-    case unifiedToggleInput
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217271232291839
     case updatedModelPicker
-
-    /// Forward-only new-user cutoff for the unified toggle input rollout. On by default; ship a
-    /// privacy-config entry disabling it to stop *new* (un-granted) users from receiving UTI
-    /// without revoking it from anyone already granted. Distinct from `unifiedToggleInput`, which
-    /// is the full kill switch. See `UnifiedToggleInputFeature`.
-    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
-    case unifiedToggleInputIncludeNewUsers
 
     /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
     /// default; ship a privacy-config entry to roll back. See
@@ -439,11 +423,17 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case duckAIVoiceShortcut
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true
+    case appSwitcherSnapshotClearing
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217806576104027?focus=true
+    case suppressShowBarsGestureRecogniserDelay
 
     case aiChatNativeStorage
 
@@ -488,11 +478,12 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216000794365770?focus=true
     case iPadDuckAIBarControls
 
+    /// Warns Duck.ai users in the unified toggle input as they approach their usage limits, using the
+    /// snapshot the web app writes into the reserved `usageLimits` native-storage entry.
+    case utiDuckAIWarnings
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUIAugust2026
-
-    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true
-    case removeChatHistory
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
     case aiChatTabSwitcherRichCard
@@ -540,6 +531,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216352541195038?focus=true
     case nativeAIPromptEditing
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217671927314542
+    case nativePromoCards
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -672,8 +666,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(MaliciousSiteProtectionSubfeature.onByDefault))
         case .scamSiteProtection:
             Config(source: .remoteReleasable(MaliciousSiteProtectionSubfeature.scamProtection))
-        case .experimentalAddressBar:
-            Config(source: .remoteReleasable(AIChatSubfeature.experimentalAddressBar), supportsLocalOverriding: false)
         case .privacyProOnboardingPromotion:
             Config(source: .remoteReleasable(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .subscriptionPromoForReinstallers:
@@ -734,10 +726,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
-        case .fullDuckAIMode:
-            Config(source: .remoteReleasable(AIChatSubfeature.fullDuckAIMode))
         case .iPadDuckAIBarControls:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadDuckAIBarControls))
+        case .utiDuckAIWarnings:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .onboardingDuckAIFlow:
@@ -788,20 +780,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
-        case .unifiedToggleInput:
-            Config(source: .remoteReleasable(AIChatSubfeature.unifiedToggleInput))
         case .updatedModelPicker:
             Config(source: .remoteReleasable(AIChatSubfeature.updatedModelPicker))
-        case .unifiedToggleInputIncludeNewUsers:
-            Config(defaultValue: .enabled,
-                   source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputIncludeNewUsers),
-                   supportsLocalOverriding: false)
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
         case .aiChatContextualFloatingInput:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .freeTrialConversionWideEvent:
@@ -811,7 +797,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .showNTPAfterIdleReturn:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
         case .promoPresentationCoordination:
-            Config(defaultValue: .disabled, source: .remoteReleasable(iOSPromoQueueSubfeature.iOSPromoPresentationCoordination))
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.promoPresentationCoordination))
         case .uiTestFeatureFlag:
             Config(source: .disabled)
         case .uiTestExperiment:
@@ -864,10 +850,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:
             Config(source: .remoteReleasable(AIChatSubfeature.voiceShortcut))
+        case .appSwitcherSnapshotClearing:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appSwitcherSnapshotClearing))
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .bottomBarViewportFixedElementsWorkaround:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.bottomBarViewportFixedElementsWorkaround))
+        case .suppressShowBarsGestureRecogniserDelay:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.suppressShowBarsGestureRecogniserDelay))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage))
         case .duckAINativeStoragePathMigration:
@@ -896,8 +886,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .floatingUIAugust2026:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIAugust2026))
-        case .removeChatHistory:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.removeChatHistory))
         case .aiChatTabSwitcherRichCard:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .syncScopedAccessCredentials:
@@ -920,6 +908,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
+        case .nativePromoCards:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromoCards))
         }
     }
 

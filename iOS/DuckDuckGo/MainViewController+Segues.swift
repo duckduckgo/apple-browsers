@@ -595,13 +595,7 @@ extension MainViewController {
             }
         }
 
-        if let controller = self.presentedViewController as? OmniBarEditingStateViewController {
-            controller.dismissAnimated {
-                doLaunch()
-            }
-        } else {
-            doLaunch()
-        }
+        doLaunch()
     }
 
     private func launchDebugSettings(completion: ((DebugScreensViewController) -> Void)? = nil) {

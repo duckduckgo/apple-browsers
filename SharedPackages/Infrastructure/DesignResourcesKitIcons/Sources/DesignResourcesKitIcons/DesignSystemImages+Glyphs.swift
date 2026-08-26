@@ -200,6 +200,7 @@ public extension DesignSystemImages {
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle16) }
             public static var chat: DesignSystemImage { .init(resource: .chat16) }
             public static var checkGray: DesignSystemImage { .init(resource: .checkGray16) }
+            public static var chevronCircleDown: DesignSystemImage { .init(resource: .chevronCircleDown16) }
             public static var chevronDoubleRight: DesignSystemImage { .init(resource: .chevronDoubleRight16) }
             public static var chevronDownMedium: DesignSystemImage { .init(resource: .chevronDownMedium16) }
             public static var chevronRight: DesignSystemImage { .init(resource: .chevronRight16) }
@@ -238,6 +239,7 @@ public extension DesignSystemImages {
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation16) }
             public static var exclamationRecolorable: DesignSystemImage { .init(resource: .exclamationRecolorable16) }
             public static var exclamationRecolorableInvert: DesignSystemImage { .init(resource: .exclamationRecolorableInvert16) }
+            public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid16) }
             public static var expand: DesignSystemImage { .init(resource: .expand16) }
             public static var export: DesignSystemImage { .init(resource: .export16) }
             public static var exportRight: DesignSystemImage { .init(resource: .exportRight16) }

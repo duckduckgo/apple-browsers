@@ -93,7 +93,7 @@ private extension NextStepsListUITests {
     }
 
     var nextStepsSection: XCUIElement {
-        webView.staticTexts["Next Steps"]
+        webView.staticTexts.containing(\.value, containing: "NEXT STEPS").firstMatch
     }
 
     var nextStepsCardDismissButton: XCUIElement {

@@ -62,7 +62,6 @@ extension Pixel {
         case forgetAllPressedTabSwitching
         case forgetAllPressedSettings
         case forgetAllExecuted
-        case forgetAllDataCleared
         
         case forgetAllPressedBrowsingDaily
         case forgetAllPressedTabSwitcherDaily
@@ -70,7 +69,6 @@ extension Pixel {
 
         // MARK: Single Tab Burn
         case singleTabBurnExecuted
-        case singleTabDataCleared
         
         case privacyDashboardOpened
         case privacyDashboardFirstTimeOpenedUnique
@@ -1768,20 +1766,12 @@ extension Pixel {
         case aiChatExperimentalOmnibarQuerySubmitted
         case aiChatExperimentalOmnibarModeSwitched
         case aiChatExperimentalOmnibarSessionBothModes
-        case aiChatExperimentalOmnibarFirstSettingsViewed
-        case aiChatExperimentalOmnibarFirstEnabled
-        case aiChatExperimentalOmnibarFirstInteraction
-        case aiChatExperimentalOmnibarFirstSearchSubmission
-        case aiChatExperimentalOmnibarFirstPromptSubmission
-        case aiChatExperimentalOmnibarFullConversionUser
         case aiChatExperimentalOmnibarTextAreaFocused
         case aiChatExperimentalOmnibarClearButtonPressed
         case aiChatExperimentalOmnibarBackButtonPressed
         case aiChatExperimentalOmnibarKeyboardGoPressed
-        case aiChatExperimentalOmnibarFloatingSubmitPressed
         case aiChatExperimentalOmnibarFloatingReturnPressed
         case aiChatExperimentalOmnibarSessionSummary
-        case aiChatExperimentalOmnibarDailyRetention
         case aiChatLegacyOmnibarShown
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
@@ -2091,8 +2081,6 @@ extension Pixel {
         case tabSwitcherModeToggled
         case fireModeBurnExecuted
         case normalModeBurnExecuted
-        case fireModeDataCleared
-        case normalModeDataCleared
         case fireModeLastTabClosedBurn
         case fireModeEmptyStateNewTab
         case linkLongPressMenuShown
@@ -2133,7 +2121,6 @@ extension Pixel.Event {
         case .forgetAllPressedTabSwitching: return "mf_tp"
         case .forgetAllPressedSettings: return "m_forget-all-pressed_settings"
         case .forgetAllExecuted: return "mf"
-        case .forgetAllDataCleared: return "mf_dc"
         
         case .forgetAllPressedBrowsingDaily: return "m_forget-all-pressed_browsing_daily"
         case .forgetAllPressedTabSwitcherDaily: return "m_forget-all-pressed_tab-switcher_daily"
@@ -2141,7 +2128,6 @@ extension Pixel.Event {
 
         // MARK: Single Tab Burn
         case .singleTabBurnExecuted: return "m_single-tab-burn_executed"
-        case .singleTabDataCleared: return "m_single-tab-data_cleared"
             
         case .privacyDashboardOpened: return "mp"
         case .privacyDashboardFirstTimeOpenedUnique: return "m_privacy_dashboard_first_time_used_unique"
@@ -3691,20 +3677,12 @@ extension Pixel.Event {
         case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
         case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
         case .aiChatExperimentalOmnibarSessionBothModes: return "m_aichat_experimental_omnibar_session_both_modes"
-        case .aiChatExperimentalOmnibarFirstSettingsViewed: return "m_aichat_experimental_omnibar_first_settings_viewed"
-        case .aiChatExperimentalOmnibarFirstEnabled: return "m_aichat_experimental_omnibar_first_enabled"
-        case .aiChatExperimentalOmnibarFirstInteraction: return "m_aichat_experimental_omnibar_first_interaction"
-        case .aiChatExperimentalOmnibarFirstSearchSubmission: return "m_aichat_experimental_omnibar_first_search_submission"
-        case .aiChatExperimentalOmnibarFirstPromptSubmission: return "m_aichat_experimental_omnibar_first_prompt_submission"
-        case .aiChatExperimentalOmnibarFullConversionUser: return "m_aichat_experimental_omnibar_full_conversion_user"
         case .aiChatExperimentalOmnibarTextAreaFocused: return "m_aichat_experimental_omnibar_text_area_focused"
         case .aiChatExperimentalOmnibarClearButtonPressed: return "m_aichat_experimental_omnibar_clear_button_pressed"
         case .aiChatExperimentalOmnibarBackButtonPressed: return "m_aichat_experimental_omnibar_back_button_pressed"
         case .aiChatExperimentalOmnibarKeyboardGoPressed: return "m_aichat_experimental_omnibar_keyboard_go_pressed"
-        case .aiChatExperimentalOmnibarFloatingSubmitPressed: return "m_aichat_experimental_omnibar_floating_submit_pressed"
         case .aiChatExperimentalOmnibarFloatingReturnPressed: return "m_aichat_experimental_omnibar_floating_return_pressed"
         case .aiChatExperimentalOmnibarSessionSummary: return "m_aichat_experimental_omnibar_session_summary"
-        case .aiChatExperimentalOmnibarDailyRetention: return "m_aichat_experimental_omnibar_daily_retention"
         case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
@@ -3791,7 +3769,6 @@ extension Pixel.Event {
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
         case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"
-
         // MARK: Unified Toggle Input (UTI)
         case .unifiedToggleInputImageGenerationSelected: return "m_aichat_unified_input_image_generation_selected"
         case .unifiedToggleInputImageGenerationDeselected: return "m_aichat_unified_input_image_generation_deselected"
@@ -4072,8 +4049,6 @@ extension Pixel.Event {
         case .tabSwitcherModeToggled: return "m_tab-switcher_mode-toggled"
         case .fireModeBurnExecuted: return "m_fire-mode_burn_executed"
         case .normalModeBurnExecuted: return "m_normal-mode_burn_executed"
-        case .fireModeDataCleared: return "m_fire-mode_data-cleared"
-        case .normalModeDataCleared: return "m_normal-mode_data-cleared"
         case .fireModeLastTabClosedBurn: return "m_fire-mode_last-tab-closed_burn"
         case .fireModeEmptyStateNewTab: return "m_fire-mode_empty-state_new-tab"
         case .linkLongPressMenuShown: return "m_link-long-press_menu-shown"

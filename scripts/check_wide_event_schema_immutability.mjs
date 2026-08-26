@@ -1,52 +1,70 @@
 #!/usr/bin/env node
-// Schema immutability check.
+// Generated schema consistency and immutability check.
 //
 // `validate-ddg-pixel-defs` regenerates `wide_events/generated_schemas/*.json`
-// from each `wide_events/definitions/*.json5` source. The filename includes the
-// composed `<base>.<event_major>.<event_minor>` version, so any version bump
-// produces a brand new file and leaves the previous one alone.
+// immediately before this script runs. The generated directory must therefore
+// be clean relative to HEAD. This catches both stale tracked schemas and new,
+// untracked schemas that were not committed.
 //
-// Therefore: a generated schema whose content differs from the PR base branch
-// under the SAME filename (a MODIFIED, not added, file) is a sign that someone
-// changed the source definition's `feature.data.ext` without bumping
-// `meta.version`. That class of change has shipped past the validator before
-// (see post-idle-session 1.0.0 incident, May 2026) - the fix is to fail CI here
-// so the developer is forced to bump the version, which yields a new filename.
+// Generated schemas are also versioned artifacts. The filename includes the
+// composed `<base>.<event_major>.<event_minor>` version, so changing generator
+// inputs should produce a new file by bumping the appropriate source version,
+// rather than modifying an existing file in place.
 //
-// "Modified" is measured against the merge-base with the PR base branch
-// (origin/$GITHUB_BASE_REF, else origin/main), so only this branch's changes
-// count: a versioned schema that already existed on the base branch must not be
-// edited in place. TWO diffs against that base are unioned, because the preceding
-// `validate-ddg-pixel-defs` step regenerates generated_schemas/ in the working
-// tree from the committed sources before this check runs:
-//   - base vs WORKING TREE catches a source whose `feature.data.ext` shape changed
-//     with no `meta.version` bump even if the developer never committed the
-//     regenerated schema - regeneration materializes the change in the working tree.
-//   - base vs committed HEAD catches a generated schema hand-edited and COMMITTED
-//     with no source change - regeneration reverts it in the working tree, hiding it
-//     from the first diff, so the committed state must be inspected separately.
-// Falls back to HEAD as the base when no base branch is available, e.g. a local run
-// with uncommitted changes (the HEAD-vs-HEAD diff is then empty, leaving just the
-// working-tree diff). New (added) files are fine: they represent a new schema version.
+// There is one safe exception: a branch may commit regenerated output for inputs
+// that were already stale on its base branch. If validation leaves the generated
+// directory clean and no generation inputs changed on the branch, an in-place
+// schema modification is a repair of pre-existing drift rather than a new schema
+// change. New (added) files remain valid because they represent new versions.
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
 
-const ROOT = process.argv[2];
-if (!ROOT) {
+const rootArgument = process.argv[2];
+if (!rootArgument) {
     console.error('usage: check_wide_event_schema_immutability.mjs <PixelDefinitions dir>');
     process.exit(2);
 }
 
-const SCHEMAS_DIR = path.join(ROOT, 'wide_events', 'generated_schemas');
+const ROOT = path.resolve(rootArgument);
+const REPO_ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+
+function repoRelative(file) {
+    const relative = path.relative(REPO_ROOT, file);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+        throw new Error(`${file} is outside the Git repository`);
+    }
+    return relative;
+}
+
+const WIDE_EVENTS_DIR = path.join(ROOT, 'wide_events');
+const SCHEMAS_DIR = repoRelative(path.join(WIDE_EVENTS_DIR, 'generated_schemas'));
+const PROJECT_DIR = path.dirname(ROOT);
+const GENERATOR_INPUTS = [
+    repoRelative(path.join(WIDE_EVENTS_DIR, 'definitions')),
+    repoRelative(path.join(WIDE_EVENTS_DIR, 'base_event.json')),
+    repoRelative(path.join(WIDE_EVENTS_DIR, 'props_dictionary.json')),
+    repoRelative(path.join(PROJECT_DIR, 'package.json')),
+    repoRelative(path.join(PROJECT_DIR, 'package-lock.json')),
+    repoRelative(path.join(REPO_ROOT, 'package.json')),
+    repoRelative(path.join(REPO_ROOT, 'package-lock.json')),
+];
+
+function git(args, options = {}) {
+    return execFileSync('git', args, {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+        ...options,
+    });
+}
 
 // Diff base: the merge-base with the PR base branch, so only this branch's
 // changes count. Falls back to HEAD (working tree) when the base is unavailable.
 function resolveBase() {
     const baseRef = process.env.GITHUB_BASE_REF ? `origin/${process.env.GITHUB_BASE_REF}` : 'origin/main';
     try {
-        const mergeBase = execSync(`git merge-base ${baseRef} HEAD`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+        const mergeBase = git(['merge-base', baseRef, 'HEAD'], { stdio: ['ignore', 'pipe', 'ignore'] }).trim();
         if (mergeBase) return mergeBase;
     } catch {
         // base branch not fetched (e.g. a shallow checkout); fall back to the working tree
@@ -60,41 +78,70 @@ function resolveBase() {
     return 'HEAD';
 }
 
-// In-place modifications (--diff-filter=M excludes adds, deletes, renames) between
-// the given revs, restricted to the generated_schemas dir. With one rev, git diffs
-// that rev against the working tree; with two, it diffs the two revs.
-function modifiedSchemas(...revs) {
-    const out = execSync(`git diff --name-only --diff-filter=M ${revs.join(' ')} -- ${SCHEMAS_DIR}`, {
-        cwd: process.cwd(),
-        encoding: 'utf8',
-    });
-    return out
+function lines(output) {
+    return output
         .split('\n')
-        .map((f) => f.trim())
+        .map((line) => line.trim())
         .filter(Boolean);
+}
+
+function changedPaths(revs, paths, diffFilter) {
+    const args = ['diff', '--name-only'];
+    if (diffFilter) args.push(`--diff-filter=${diffFilter}`);
+    args.push(...revs, '--', ...paths);
+    return lines(git(args));
+}
+
+function generatedWorkingTreeChanges() {
+    return lines(git(['status', '--short', '--untracked-files=all', '--', SCHEMAS_DIR]));
+}
+
+let workingTreeChanges;
+try {
+    workingTreeChanges = generatedWorkingTreeChanges();
+} catch (err) {
+    console.error(`Could not inspect generated schemas in ${SCHEMAS_DIR}: ${err.message}`);
+    process.exit(2);
+}
+
+if (workingTreeChanges.length > 0) {
+    console.error('Wide-event generated schemas do not match the committed output after validation:');
+    for (const change of workingTreeChanges) console.error(`  ${change}`);
+    console.error('\nRun the pixel-definition validator and commit every generated schema change, including newly created files.');
+    process.exit(1);
 }
 
 const base = resolveBase();
 
-let modifiedFiles;
+let modifiedSchemas;
+let changedGeneratorInputs;
 try {
-    // Union of base-vs-working-tree and base-vs-committed-HEAD (see header): the
-    // first catches changes the regenerator materializes, the second catches a
-    // committed in-place edit the regenerator would scrub from the working tree.
-    modifiedFiles = [...new Set([...modifiedSchemas(base), ...modifiedSchemas(base, 'HEAD')])].sort();
+    // A modified file existed on the base branch under the same versioned
+    // filename. Added schemas are valid new versions and are intentionally
+    // excluded from this check.
+    modifiedSchemas = changedPaths([base, 'HEAD'], [SCHEMAS_DIR], 'M');
+    changedGeneratorInputs = changedPaths([base, 'HEAD'], GENERATOR_INPUTS);
 } catch (err) {
-    console.error(`Could not run git diff against ${SCHEMAS_DIR}: ${err.message}`);
+    console.error(`Could not compare wide-event schemas with ${base}: ${err.message}`);
     process.exit(2);
 }
 
-if (modifiedFiles.length === 0) {
-    console.log('Wide-event schema immutability check passed (no in-place modifications).');
+if (modifiedSchemas.length === 0) {
+    console.log('Wide-event generated schema check passed (output is committed and existing versions are unchanged).');
     process.exit(0);
 }
 
-console.error('Wide-event generated schemas have been modified in place:');
-for (const f of modifiedFiles) console.error(`  - ${f}`);
+if (changedGeneratorInputs.length === 0) {
+    console.log('Wide-event generated schema check passed (committed output repairs pre-existing generated-schema drift):');
+    for (const file of modifiedSchemas) console.log(`  - ${file}`);
+    process.exit(0);
+}
+
+console.error('Wide-event generated schemas have been modified in place while schema-generation inputs changed:');
+for (const file of modifiedSchemas) console.error(`  - ${file}`);
+console.error('Changed schema-generation inputs:');
+for (const file of changedGeneratorInputs) console.error(`  - ${file}`);
 console.error(
-    '\nGenerated schemas are versioned artifacts and must not change content under a fixed filename. If you changed a wide-event source definition, bump `meta.version` in the source `.json5` so the regenerator produces a NEW schema file. If you did not intend any change, revert the diff in the generated_schemas/ directory.',
+    '\nGenerated schemas are versioned artifacts and must not change content under a fixed filename. Bump the appropriate version in the wide-event source so the regenerator produces a new schema file.',
 );
 process.exit(1);

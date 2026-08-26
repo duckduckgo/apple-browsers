@@ -70,7 +70,7 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
         // Rendered only to pre-existing users, otherwise we'll retire the promo
         if !force, isNewUserProvider() {
-            return .ignored()
+            return .retired
         }
 
         guard let addressBarButtonsViewController else {

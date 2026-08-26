@@ -18,7 +18,7 @@
 
 import XCTest
 import Common
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import PixelKit
 
 final class OSDistributionPixelTests: XCTestCase {

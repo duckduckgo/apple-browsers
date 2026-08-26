@@ -930,12 +930,11 @@ struct UserText {
 
     static let aiChatModelPickerButtonTooltip = NSLocalizedString("aichat.model-picker-button.tooltip", value: "Choose model", comment: "Tooltip for the model picker button in AI chat omnibar")
     static let aiChatModelPickerAdvancedModelsSectionHeader = NSLocalizedString("aichat.model-picker.advanced-models-section-header", value: "Advanced Models", comment: "Section header in the model picker menu for advanced models when user has an active subscription")
-    static let aiChatModelPickerSubscriberExclusive = NSLocalizedString("aichat.model-picker.subscriber-exclusive", value: "Subscriber Exclusive", comment: "Label above the gated (subscriber-only) models in the model picker menu, shown to free users where the gated models are a mix of Plus and Pro")
-    static let aiChatModelPickerProExclusive = NSLocalizedString("aichat.model-picker.pro-exclusive", value: "Pro Exclusive", comment: "Label above the gated models in the model picker menu, shown to Plus subscribers — they're already a subscriber, so the gated models (all Pro-only) are called out specifically rather than reusing the generic 'Subscriber Exclusive' label")
-    static let aiChatModelPickerTryForFree = NSLocalizedString("aichat.model-picker.try-for-free", value: "TRY FOR FREE", comment: "Text of the yellow badge in the model picker and reasoning-effort picker that opens the subscription purchase flow, shown to free users")
-    static let aiChatModelPickerUpgrade = NSLocalizedString("aichat.model-picker.upgrade", value: "UPGRADE", comment: "Text of the yellow badge in the model picker and reasoning-effort picker that opens the subscription upgrade flow, shown to Plus subscribers")
-    static let aiChatModelPickerTierBadgePlus = NSLocalizedString("aichat.model-picker.tier-badge.plus", value: "PLUS", comment: "Trailing badge on a model picker row for a model that requires a Plus subscription")
-    static let aiChatModelPickerTierBadgePro = NSLocalizedString("aichat.model-picker.tier-badge.pro", value: "PRO", comment: "Trailing badge on a model picker row for a model that requires a Pro subscription")
+    static let aiChatModelPickerLabelEverydayUse = NSLocalizedString("aichat.model-picker.label.everyday-use", value: "Best for everyday use", comment: "Subtitle beneath a recommended model in the model picker")
+    static let aiChatModelPickerLabelUsesLimitsFaster = NSLocalizedString("aichat.model-picker.label.uses-limits-faster", value: "Solid but hits limits sooner", comment: "Subtitle beneath a recommended model in the model picker that consumes usage limits faster")
+    static let aiChatModelPickerTryFreeSectionHeader = NSLocalizedString("aichat.model-picker.section.try-free", value: "Try for Free", comment: "Section header above gated models in the model picker, shown when a free trial is available")
+    static let aiChatModelPickerAvailableWithProSectionHeader = NSLocalizedString("aichat.model-picker.section.available-with-pro", value: "Pro Plan Exclusive", comment: "Section header above Pro-only models in the model picker, shown to a Plus subscriber")
+    static let aiChatModelPickerAvailableWithPaidPlansSectionHeader = NSLocalizedString("aichat.model-picker.section.available-with-paid-plans", value: "Subscriber Exclusive", comment: "Section header above gated models in the model picker, shown to a non-subscriber who is no longer eligible for the free trial — the models below span both paid plans")
 
     static let aiChatSubscriptionUpsellDialogTitle = NSLocalizedString("aichat.subscription-upsell-dialog.title", value: "Upgrade Duck.ai with a DuckDuckGo subscription", comment: "Title of the dialog shown when the user taps a gated reasoning effort")
     static let aiChatSubscriptionUpsellDialogMessage = NSLocalizedString("aichat.subscription-upsell-dialog.message", value: "Get access to advanced AI models in Duck.ai, our VPN, and other premium protections by subscribing to DuckDuckGo.", comment: "Body text of the dialog shown when the user taps a gated reasoning effort")
@@ -1689,6 +1688,52 @@ struct UserText {
     static let termsOfService = NSLocalizedString("preferences.about.terms-of-service", value: "Terms of Service", comment: "Link to Terms of Service page")
 
     // MARK: - Login Import & Export
+
+    static func importBrowserDataAccessPanelMessage(for source: DataImport.Source) -> String {
+        let localized = NSLocalizedString("import.access-panel.message",
+                                          value: "Grant access to the %1$@ data folder to allow DuckDuckGo to import your data",
+                                          comment: "Access Panel that grants permissions to import data from another browser")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static let importBrowserDataAccessPanelPrompt = NSLocalizedString("import.access-panel.prompt", value: "Grant Access", comment: "Confirmation button in the folder picker used to grant DuckDuckGo access to another browser's data folder")
+
+    static func importBrowserDataRequestAccessTitle(for source: DataImport.Source) -> String {
+        let localized = NSLocalizedString("import.request-access.title",
+                                          value: "DuckDuckGo needs access to your %1$@ data to finish importing.",
+                                          comment: "Title of the screen asking the user to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static func importBrowserDataRequestAccessDescription(for source: DataImport.Source) -> String {
+        let localized = NSLocalizedString("import.request-access.description",
+                                          value: "Click **Select %1$@ Data** and then select **Grant Access** when the file picker appears.",
+                                          comment: "Instructions on the screen asking the user to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name). Markdown bold marks the two buttons to click.")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static func importBrowserDataRequestAccessButton(for source: DataImport.Source) -> String {
+        let localized = NSLocalizedString("import.request-access.button",
+                                          value: "Select %1$@ Data",
+                                          comment: "Button opening the folder picker used to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static func importBrowserDataRequestAccessDeniedTitle(for source: DataImport.Source) -> String {
+        let localized = NSLocalizedString("import.request-access-denied.title",
+                                          value: "Want to try again? DuckDuckGo needs access to your %1$@ data to finish importing.",
+                                          comment: "Title of the screen shown after the user declined to grant DuckDuckGo access to another browser's data folder, asking them to try again (%1$@ is the browser name)")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static let importBrowserDataRequestAccessDeniedCancelTitle = NSLocalizedString("import.request-access-denied.cancel.title", value: "Cancel Import", comment: "Button that aborts the data import flow and closes the import dialog")
+
+    static func importBrowserDataRequestAccessErrorTitle(for source: DataImport.Source) -> String {
+        let localized = NotLocalizedString("import.request-access-error.title",
+                                           value: "Something went wrong. DuckDuckGo can’t access your %1$@ Data folder.",
+                                           comment: "Title of the screen shown when DuckDuckGo still can't read the browser data folder after the user picked one, asking them to try again (%1$@ is the browser name)")
+        return String(format: localized, source.importSourceName)
+    }
 
     static let importChooseSourceTitle = NSLocalizedString("import.choose-source.title", value: "Choose where to import from", comment: "Title text for the import dialog, before the user selects a source")
     static let importChooseSourceShowMoreButtonTitle = NSLocalizedString("import.choose-source.more-button.title", value: "More", comment: "Button text for showing more import options in the data import view")

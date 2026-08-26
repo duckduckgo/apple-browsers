@@ -225,6 +225,7 @@ final class WideEventServiceTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "test",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             activateAccountDuration: activateAccountDuration,
             contextData: WideEventContextData(),
             appData: WideEventAppData(),

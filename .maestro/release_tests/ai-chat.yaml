@@ -15,7 +15,6 @@ tags:
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
 
 # NTP: tap Duck.ai button — opens chat tab
 - assertVisible:

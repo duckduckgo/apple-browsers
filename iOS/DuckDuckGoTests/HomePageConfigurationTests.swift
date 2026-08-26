@@ -956,7 +956,7 @@ struct HomePageConfigurationTests {
             homePageMessagesConfiguration: configuration,
             notificationCenter: notificationCenter,
             messageActionHandler: RemoteMessagingActionHandler(
-                lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher()
+                surveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefresher()
             ),
             imageLoader: MockRemoteMessagingImageLoader()
         )

@@ -43,7 +43,6 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
 
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
-            aiChatSettings: MockAIChatSettingsProvider(),
             aiChatDeleter: StubAIChatDeleter(),
             viewModel: chatViewModel,
             isFireTab: false
@@ -92,7 +91,6 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         let chatViewModel = AIChatSuggestionsViewModel()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
-            aiChatSettings: MockAIChatSettingsProvider(),
             aiChatDeleter: StubAIChatDeleter(),
             viewModel: chatViewModel,
             isFireTab: false
@@ -120,7 +118,6 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         let chatViewModel = AIChatSuggestionsViewModel()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
-            aiChatSettings: MockAIChatSettingsProvider(),
             aiChatDeleter: StubAIChatDeleter(),
             viewModel: chatViewModel,
             isFireTab: false
@@ -149,7 +146,6 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         let chatViewModel = AIChatSuggestionsViewModel()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
-            aiChatSettings: MockAIChatSettingsProvider(),
             aiChatDeleter: StubAIChatDeleter(),
             viewModel: chatViewModel,
             isFireTab: false
@@ -176,7 +172,6 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         let chatViewModel = AIChatSuggestionsViewModel()
         let chatManager = AIChatHistoryManager(
             suggestionsReader: NilSuggestionsReader(),
-            aiChatSettings: MockAIChatSettingsProvider(),
             aiChatDeleter: StubAIChatDeleter(),
             viewModel: chatViewModel,
             isFireTab: false

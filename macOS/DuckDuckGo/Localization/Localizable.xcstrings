@@ -7821,9 +7821,129 @@
         }
       }
     },
+    "aichat.model-picker.label.everyday-use" : {
+      "comment" : "Subtitle beneath a recommended model in the model picker",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideal für den täglichen Gebrauch"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Best for everyday use"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideal para el uso diario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idéal pour une utilisation quotidienne"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideale per l'uso quotidiano"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideaal voor dagelijks gebruik"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najlepsze do codziennego użytku"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideal para o dia a dia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Идеально подходит для повседневного использования"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.label.uses-limits-faster" : {
+      "comment" : "Subtitle beneath a recommended model in the model picker that consumes usage limits faster",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solide, erreicht Limits aber früher"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Solid but hits limits sooner"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran calidad, pero llega a los límites antes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Performant, mais atteint les limites plus tôt"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solido, ma raggiunge i limiti prima"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solide, maar bereikt limieten sneller"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solidny, ale szybciej zużywa limity"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eficaz, mas atinge os limites mais depressa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Работает стабильно, но быстрее исчерпывает лимиты"
+          }
+        }
+      }
+    },
     "aichat.model-picker.pro-exclusive" : {
       "comment" : "Label above the gated models in the model picker menu, shown to Plus subscribers — they're already a subscriber, so the gated models (all Pro-only) are called out specifically rather than reusing the generic 'Subscriber Exclusive' label",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7881,9 +8001,189 @@
         }
       }
     },
+    "aichat.model-picker.section.available-with-paid-plans" : {
+      "comment" : "Section header above gated models in the model picker, shown to a non-subscriber who is no longer eligible for the free trial — the models below span both paid plans",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exklusiv für Abonnenten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscriber Exclusive"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo para suscriptores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réservé aux abonnés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esclusiva per abbonati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen voor abonnees"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko dla subskrybentów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo para subscritores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эксклюзивно для подписчиков"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.section.available-with-pro" : {
+      "comment" : "Section header above Pro-only models in the model picker, shown to a Plus subscriber",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exklusiv für Pro-Abonnenten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pro Plan Exclusive"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo del plan Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusif au forfait Pro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piano Pro Esclusivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusief voor Pro"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko dla planu Pro"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo do Plano Pro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эксклюзивно для тарифа Pro"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.section.try-free" : {
+      "comment" : "Section header above gated models in the model picker, shown when a free trial is available",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenlos testen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try for Free"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probar gratis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer gratuitement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova gratuitamente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer gratis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj bezpłatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimentar gratuitamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробовать бесплатно"
+          }
+        }
+      }
+    },
     "aichat.model-picker.subscriber-exclusive" : {
       "comment" : "Label above the gated (subscriber-only) models in the model picker menu, shown to free users where the gated models are a mix of Plus and Pro",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7943,127 +8243,127 @@
     },
     "aichat.model-picker.tier-badge.plus" : {
       "comment" : "Trailing badge on a model picker row for a model that requires a Plus subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS"
+            "value" : "Plus"
           }
         }
       }
     },
     "aichat.model-picker.tier-badge.pro" : {
       "comment" : "Trailing badge on a model picker row for a model that requires a Pro subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO"
+            "value" : "Pro"
           }
         }
       }
     },
     "aichat.model-picker.try-for-free" : {
       "comment" : "Text of the yellow badge in the model picker and reasoning-effort picker that opens the subscription purchase flow, shown to free users",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8123,7 +8423,7 @@
     },
     "aichat.model-picker.upgrade" : {
       "comment" : "Text of the yellow badge in the model picker and reasoning-effort picker that opens the subscription upgrade flow, shown to Plus subscribers",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -56903,6 +57203,126 @@
         }
       }
     },
+    "import.access-panel.message" : {
+      "comment" : "Access Panel that grants permissions to import data from another browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gewähre Zugriff auf den Datenordner %1$@, damit DuckDuckGo deine Daten importieren kann"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Grant access to the %1$@ data folder to allow DuckDuckGo to import your data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concede acceso a la carpeta de datos de %1$@ para permitir que DuckDuckGo importe tus datos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accordez l’accès au dossier %1$@ pour permettre à DuckDuckGo d’importer vos données"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concedi l'accesso alla cartella dati di %1$@ per consentire a DuckDuckGo di importare i tuoi dati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geef toegang tot de %1$@ gegevensmap, zodat DuckDuckGo je gegevens kan importeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przyznaj dostęp do folderu danych %1$@, aby DuckDuckGo mogło zaimportować Twoje dane"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concede acesso à pasta de dados %1$@ para permitir que o DuckDuckGo importe os teus dados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предоставьте доступ к папке данных %1$@, чтобы DuckDuckGo мог импортировать ваши данные"
+          }
+        }
+      }
+    },
+    "import.access-panel.prompt" : {
+      "comment" : "Confirmation button in the folder picker used to grant DuckDuckGo access to another browser's data folder",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zugriff gewähren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Grant Access"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conceder acceso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accorder l'accès"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concedi accesso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toegang verlenen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przyznaj dostęp"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conceder acesso"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предоставить доступ"
+          }
+        }
+      }
+    },
     "import.bookmarks.bookmarks" : {
       "comment" : "Title text for the Bookmarks import option",
       "extractionState" : "extracted_with_value",
@@ -64159,6 +64579,306 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пароли импортируются (%d)…"
+          }
+        }
+      }
+    },
+    "import.request-access-denied.cancel.title" : {
+      "comment" : "Button that aborts the data import flow and closes the import dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import abbrechen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel Import"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar importación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler l’importation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annulla importazione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importeren annuleren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anuluj import"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar importação"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить импорт"
+          }
+        }
+      }
+    },
+    "import.request-access-denied.title" : {
+      "comment" : "Title of the screen shown after the user declined to grant DuckDuckGo access to another browser's data folder, asking them to try again (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Möchtest du es erneut versuchen? DuckDuckGo benötigt Zugriff auf deine %1$@-Daten, um den Import abzuschließen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Want to try again? DuckDuckGo needs access to your %1$@ data to finish importing."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quieres intentarlo de nuevo? DuckDuckGo necesita acceder a tus datos de %1$@ para finalizar la importación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous souhaitez réessayer ? DuckDuckGo a besoin d’accéder à vos données %1$@ pour terminer l’importation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuoi riprovare? DuckDuckGo ha bisogno di accedere ai tuoi dati di %1$@ per completare l'importazione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wil je het opnieuw proberen? DuckDuckGo heeft toegang tot je %1$@-gegevens nodig om het importeren te voltooien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chcesz spróbować ponownie? DuckDuckGo potrzebuje dostępu do Twoich danych %1$@, aby dokończyć importowanie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Queres tentar novamente? O DuckDuckGo precisa de aceder aos teus dados do %1$@ para terminar a importação."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хотите повторить попытку? Для завершения импорта DuckDuckGo нужен доступ к данным вашего %1$@."
+          }
+        }
+      }
+    },
+    "import.request-access.button" : {
+      "comment" : "Button opening the folder picker used to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@-Daten auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select %1$@ Data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleccionar datos de %1$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélectionner les données %1$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleziona i dati di %1$@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecteer %1$@ gegevens"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz dane %1$@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecionar dados do %1$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать данные %1$@"
+          }
+        }
+      }
+    },
+    "import.request-access.description" : {
+      "comment" : "Instructions on the screen asking the user to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name). Markdown bold marks the two buttons to click.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klicke auf **%1$@-Daten auswählen** und dann auf **Zugriff gewähren**, sobald die Dateiauswahl erscheint."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click **Select %1$@ Data** and then select **Grant Access** when the file picker appears."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz clic en **Seleccionar datos de %1$@** y luego selecciona **Conceder acceso** cuando aparezca el selector de archivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cliquez sur **Sélectionner les données %1$@**, puis sélectionnez **Accorder l’accès** lorsque la fenêtre de sélection de fichiers s’affiche."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fai clic su **Seleziona i dati di %1$@** e poi seleziona **Concedi accesso** quando appare il selettore file."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klik op **Selecteer %1$@-gegevens** en selecteer vervolgens **Toegang verlenen** wanneer de bestandskiezer verschijnt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kliknij **Wybierz dane %1$@**, a następnie wybierz **Przyznaj dostęp** po wyświetleniu selektora plików."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clica em **Selecionar dados do %1$@** e depois seleciona **Conceder acesso** quando aparecer o seletor de ficheiros."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите **Выбрать данные %1$@** и, когда появится окно выбора файла, нажмите **Предоставить доступ**."
+          }
+        }
+      }
+    },
+    "import.request-access.title" : {
+      "comment" : "Title of the screen asking the user to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo benötigt Zugriff auf deine %1$@-Daten, um den Import abzuschließen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo needs access to your %1$@ data to finish importing."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo necesita acceder a tus datos de %1$@ para finalizar la importación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo a besoin d’accéder à vos données %1$@ pour terminer l’importation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo ha bisogno di accedere ai tuoi dati di %1$@ per completare l'importazione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo heeft toegang tot je %1$@-gegevens nodig om het importeren te voltooien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo potrzebuje dostępu do Twoich danych %1$@, aby dokończyć importowanie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O DuckDuckGo precisa de aceder aos teus dados do %1$@ para terminar a importação."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для завершения импорта DuckDuckGo нужен доступ к данным вашего %1$@."
           }
         }
       }

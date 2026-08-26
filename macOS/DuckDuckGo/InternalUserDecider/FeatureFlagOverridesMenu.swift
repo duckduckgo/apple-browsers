@@ -101,9 +101,10 @@ final class FeatureFlagOverridesMenu: NSMenu {
                             target: self,
                             representedObject: flag
                         )
-                        if #available(macOS 27.0, *) {
-                            item.preferredImageVisibility = .visible
-                        }
+                        // Enable this when we switch to macOS 27 to fix image visibility
+//                        if #available(macOS 27.0, *) {
+//                            item.preferredImageVisibility = .visible
+//                        }
                         return item
                     }
 
@@ -375,9 +376,10 @@ final class FeatureFlagOverridesMenu: NSMenu {
         legendItem.image = icon
         legendItem.isEnabled = false
         legendItem.indentationLevel = 1
-        if #available(macOS 27.0, *) {
-            legendItem.preferredImageVisibility = .visible
-        }
+        // Enable this when we switch to macOS 27 to fix image visibility
+//        if #available(macOS 27.0, *) {
+//            legendItem.preferredImageVisibility = .visible
+//        }
         return legendItem
     }
 }

@@ -49,15 +49,14 @@ public struct DuckAiChatCapabilityRequirements: Equatable {
     }
 }
 
-/// Carried so the rule chain stays observable in the log while there is no UI.
+/// Carried so the rule chain stays observable in the log.
 public enum DuckAiModelSuggestionUnavailableReason: String {
-    case recentlySteppedDown
-    case unknownCurrentModel
-    case currentModelIsNotCostly
-    case noEverydayUseModelAvailable
-    case everydayUseModelMissingCapability
-    case noFreeModelAvailable
-    case freeModelMissingCapability
+    /// Web offered nothing for the model the native picker is on — it is already the cheapest one.
+    case noTargetForSelectedModel
+    /// Web's targets aren't in the native model list, or the entity can't access them.
+    case targetModelUnavailable
+    /// Web's targets can't handle what is already in the draft (an image, a file type, a tool).
+    case targetModelMissingCapability
     case notApplicable
 }
 
@@ -72,87 +71,68 @@ public enum DuckAiModelSuggestionOutcome: Equatable {
 }
 
 public protocol DuckAiModelSuggesting {
-    /// A lower-cost model to head off an approaching limit.
-    func cheaperModel() -> DuckAiModelSuggestionOutcome
-    /// A free-tier model to fall back to once an advanced-model allowance is spent.
-    func freeModel() -> DuckAiModelSuggestionOutcome
+    /// Resolves the model a switch CTA should offer, or why it can't offer one.
+    func resolve(_ cta: DuckAiUsageCta) -> DuckAiModelSuggestionOutcome
 }
 
 public struct NullDuckAiModelSuggester: DuckAiModelSuggesting {
     public init() {}
-    public func cheaperModel() -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
-    public func freeModel() -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
+    public func resolve(_ cta: DuckAiUsageCta) -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
 }
 
-/// Driven by `AIChatModelLabel` rather than a hardcoded ladder: a name-matched ladder got it actively
-/// wrong, stepping `gpt-5.4` down to `gpt-5.4-mini`, which is itself `usesLimitsFaster`.
+/// Web picks the models; native only checks they are actually usable here. Native has no ladder of
+/// its own any more — an earlier name-matched one got it actively wrong, stepping `gpt-5.4` down to
+/// `gpt-5.4-mini`, which is itself a fast-limit model.
+///
+/// What native still has to contribute: web cannot see the draft on this surface, so a target that
+/// can't take the attached image would switch the user into a broken state; and only native knows
+/// which model its own picker is on, which is what `byModelId` exists to retarget.
 public struct DuckAiModelSuggester: DuckAiModelSuggesting {
 
     private let modelsProvider: () -> [AIChatModel]
     private let currentModelIdProvider: () -> String?
     private let requirementsProvider: () -> DuckAiChatCapabilityRequirements
-    private let didRecentlyStepDown: () -> Bool
 
     public init(modelsProvider: @escaping () -> [AIChatModel],
                 currentModelIdProvider: @escaping () -> String?,
-                requirementsProvider: @escaping () -> DuckAiChatCapabilityRequirements = { .plainText },
-                didRecentlyStepDown: @escaping () -> Bool = { false }) {
+                requirementsProvider: @escaping () -> DuckAiChatCapabilityRequirements = { .plainText }) {
         self.modelsProvider = modelsProvider
         self.currentModelIdProvider = currentModelIdProvider
         self.requirementsProvider = requirementsProvider
-        self.didRecentlyStepDown = didRecentlyStepDown
     }
 
-    public func cheaperModel() -> DuckAiModelSuggestionOutcome {
-        let models = modelsProvider()
-        let current = models.first { $0.id == currentModelIdProvider() }
-        let outcome = resolveCheaper(current: current, in: models)
+    public func resolve(_ cta: DuckAiUsageCta) -> DuckAiModelSuggestionOutcome {
+        let currentModelId = currentModelIdProvider()
+        let outcome = resolve(cta, currentModelId: currentModelId)
 
-        // Labels are believed to be per-tier; the anonymous payload only shows the free-tier split, so
-        // logging the current one is how that gets confirmed against a real account.
         Logger.aiChat.debug("""
-            Duck.ai cheaper model: current=\(current?.id ?? "none", privacy: .public) \
-            label=\(current?.label?.rawValue ?? "none", privacy: .public) \
+            Duck.ai usage CTA target: cta=\(cta.id.rawValue, privacy: .public) \
+            picker=\(currentModelId ?? "none", privacy: .public) \
             outcome=\(Self.describe(outcome), privacy: .public)
             """)
         return outcome
     }
 
-    /// `isAdvanced` is `!accessTier.contains("free")`, so a non-advanced model is one the free tier gets.
-    public func freeModel() -> DuckAiModelSuggestionOutcome {
+    private func resolve(_ cta: DuckAiUsageCta, currentModelId: String?) -> DuckAiModelSuggestionOutcome {
+        let target = cta.target(forSelectedModelId: currentModelId)
+        guard !target.isEmpty else { return .none(reason: .noTargetForSelectedModel) }
+
         let models = modelsProvider()
-        let current = models.first { $0.id == currentModelIdProvider() }
-        let candidates = models.filter { $0.entityHasAccess && $0.id != current?.id && !$0.isAdvanced }
-        guard !candidates.isEmpty else { return .none(reason: .noFreeModelAvailable) }
+        // `modelIds` never includes the id it is keyed against, but the top-level target is keyed to
+        // web's model, not ours — so the picker's own model is filtered out here.
+        let available = target.candidateModelIds
+            .filter { $0 != currentModelId }
+            .compactMap { id in models.first { $0.id == id && $0.entityHasAccess } }
+        guard !available.isEmpty else { return .none(reason: .targetModelUnavailable) }
 
-        let capable = candidates.filter { Self.model($0, covers: requirementsProvider()) }
-        guard let target = capable.first else { return .none(reason: .freeModelMissingCapability) }
-
-        return .suggestion(DuckAiModelSuggestion(
-            modelId: target.id,
-            modelShortName: target.shortName.isEmpty ? nil : target.shortName
-        ))
-    }
-
-    private func resolveCheaper(current: AIChatModel?, in models: [AIChatModel]) -> DuckAiModelSuggestionOutcome {
-        guard !didRecentlyStepDown() else { return .none(reason: .recentlySteppedDown) }
-        guard let current else { return .none(reason: .unknownCurrentModel) }
-
-        // An unlabelled model is not known to be costly, and nudging off it could raise usage.
-        guard current.label == .usesLimitsFaster else { return .none(reason: .currentModelIsNotCostly) }
-
-        let candidates = models.filter { $0.entityHasAccess && $0.id != current.id && $0.label == .everydayUse }
-        guard !candidates.isEmpty else { return .none(reason: .noEverydayUseModelAvailable) }
-
-        let capable = candidates.filter { Self.model($0, covers: requirementsProvider()) }
-        guard !capable.isEmpty else { return .none(reason: .everydayUseModelMissingCapability) }
-
-        // Staying with the same provider makes for a smaller change than crossing to another.
-        let target = capable.first { $0.provider == current.provider } ?? capable[0]
+        let requirements = requirementsProvider()
+        guard let model = available.first(where: { Self.model($0, covers: requirements) }) else {
+            return .none(reason: .targetModelMissingCapability)
+        }
 
         return .suggestion(DuckAiModelSuggestion(
-            modelId: target.id,
-            modelShortName: target.shortName.isEmpty ? nil : target.shortName
+            modelId: model.id,
+            modelShortName: model.shortName.isEmpty ? nil : model.shortName
         ))
     }
 

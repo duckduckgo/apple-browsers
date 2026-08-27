@@ -197,16 +197,34 @@ final class BrowserToolbarView: UIView {
         omnibarContainer.setContentHuggingPriority(.required, for: .vertical)
         return constraint
     }()
-    private lazy var buttonsHeightConstraint = materialBackgroundView.heightAnchor.constraint(equalToConstant: Self.legacyButtonsHeight)
+    /// Hosts the glass so the home-indicator shift can be applied to a plain view. Transforming
+    /// `UIVisualEffectView` itself makes Liquid Glass interpolate independently of `contentView`.
+    private let chromeContainer: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
+        return view
+    }()
+    /// Icons sit here as a sibling of the glass, not inside `UIVisualEffectView.contentView`. Nested
+    /// glass interpolates on a different clock from `contentView` descendants when the pill moves.
+    private let chromeContentHost: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
+        view.clipsToBounds = true
+        view.layer.cornerCurve = .continuous
+        return view
+    }()
+    private lazy var buttonsHeightConstraint = chromeContainer.heightAnchor.constraint(equalToConstant: Self.legacyButtonsHeight)
     private lazy var buttonRowHeightConstraint: NSLayoutConstraint = {
         let constraint = buttonStack.heightAnchor.constraint(equalToConstant: 0)
         constraint.isActive = false
         return constraint
     }()
     private lazy var expandedContentHeightConstraint = expandedContentContainer.heightAnchor.constraint(equalToConstant: 0)
-    private lazy var materialBackgroundTopConstraint = materialBackgroundView.topAnchor.constraint(equalTo: topAnchor)
-    private lazy var contentStackTopConstraint = contentStack.topAnchor.constraint(equalTo: materialBackgroundView.contentView.topAnchor, constant: Self.defaultVerticalContentPadding)
-    private lazy var contentStackBottomConstraint = contentStack.bottomAnchor.constraint(equalTo: materialBackgroundView.contentView.bottomAnchor, constant: -Self.defaultVerticalContentPadding)
+    private lazy var materialBackgroundTopConstraint = chromeContainer.topAnchor.constraint(equalTo: topAnchor)
+    private lazy var contentStackTopConstraint = contentStack.topAnchor.constraint(equalTo: chromeContentHost.topAnchor, constant: Self.defaultVerticalContentPadding)
+    private lazy var contentStackBottomConstraint = contentStack.bottomAnchor.constraint(equalTo: chromeContentHost.bottomAnchor, constant: -Self.defaultVerticalContentPadding)
     private var materialBackgroundLeadingConstraint: NSLayoutConstraint!
     private var materialBackgroundTrailingConstraint: NSLayoutConstraint!
     private var materialBackgroundBottomConstraint: NSLayoutConstraint!
@@ -224,7 +242,9 @@ final class BrowserToolbarView: UIView {
     /// floats near the device bottom (see `floatingBottomMargin`). Kept in sync with the host's
     /// safe-area inset in `layoutSubviews`; also widens the hit-test region.
     private var floatingBottomOffset: CGFloat = 0
-    private var standaloneCollapseScale: CGFloat = 1
+    /// Extra translation applied while the split (top address bar) pill hides. The layout slot stays
+    /// put so we can slide a plain container instead of moving `UIVisualEffectView` via Auto Layout.
+    private var standaloneHideProgress: CGFloat = 0
     /// 0 = button row fully in layout, 1 = button row and field-to-buttons gap collapsed out of layout
     /// so the address field keeps its height while the chrome shrinks around it.
     private var buttonRowCollapseProgress: CGFloat = 0
@@ -300,12 +320,15 @@ final class BrowserToolbarView: UIView {
         super.init(frame: frame)
         backgroundColor = .clear
 
-        addSubview(materialBackgroundView)
-        materialBackgroundView.contentView.addSubview(contentStack)
+        addSubview(chromeContainer)
+        chromeContainer.addSubview(materialBackgroundView)
+        chromeContainer.addSubview(chromeContentHost)
+        chromeContentHost.addSubview(contentStack)
         contentStack.addArrangedSubview(expandedContentContainer)
         contentStack.addArrangedSubview(omnibarContainer)
         contentStack.addArrangedSubview(buttonStack)
 
+        chromeContainer.clipsToBounds = false
         materialBackgroundView.clipsToBounds = false
         expandedContentContainer.isHidden = true
 
@@ -317,13 +340,21 @@ final class BrowserToolbarView: UIView {
         materialBackgroundView.layer.shadowRadius = 10
         materialBackgroundView.layer.shadowOffset = CGSize(width: 0, height: 4)
 
-        materialBackgroundLeadingConstraint = materialBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.legacyBarOuterInsets.left)
-        materialBackgroundTrailingConstraint = materialBackgroundView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.legacyBarOuterInsets.right)
-        materialBackgroundBottomConstraint = materialBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Self.legacyBarOuterInsets.bottom)
-        contentStackLeadingConstraint = contentStack.leadingAnchor.constraint(equalTo: materialBackgroundView.contentView.leadingAnchor, constant: Self.horizontalEdgePadding)
-        contentStackTrailingConstraint = contentStack.trailingAnchor.constraint(equalTo: materialBackgroundView.contentView.trailingAnchor, constant: -Self.horizontalEdgePadding)
+        materialBackgroundLeadingConstraint = chromeContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.legacyBarOuterInsets.left)
+        materialBackgroundTrailingConstraint = chromeContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.legacyBarOuterInsets.right)
+        materialBackgroundBottomConstraint = chromeContainer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Self.legacyBarOuterInsets.bottom)
+        contentStackLeadingConstraint = contentStack.leadingAnchor.constraint(equalTo: chromeContentHost.leadingAnchor, constant: Self.horizontalEdgePadding)
+        contentStackTrailingConstraint = contentStack.trailingAnchor.constraint(equalTo: chromeContentHost.trailingAnchor, constant: -Self.horizontalEdgePadding)
 
         NSLayoutConstraint.activate([
+            materialBackgroundView.topAnchor.constraint(equalTo: chromeContainer.topAnchor),
+            materialBackgroundView.leadingAnchor.constraint(equalTo: chromeContainer.leadingAnchor),
+            materialBackgroundView.trailingAnchor.constraint(equalTo: chromeContainer.trailingAnchor),
+            materialBackgroundView.bottomAnchor.constraint(equalTo: chromeContainer.bottomAnchor),
+            chromeContentHost.topAnchor.constraint(equalTo: chromeContainer.topAnchor),
+            chromeContentHost.leadingAnchor.constraint(equalTo: chromeContainer.leadingAnchor),
+            chromeContentHost.trailingAnchor.constraint(equalTo: chromeContainer.trailingAnchor),
+            chromeContentHost.bottomAnchor.constraint(equalTo: chromeContainer.bottomAnchor),
             materialBackgroundLeadingConstraint,
             materialBackgroundTrailingConstraint,
             materialBackgroundTopConstraint,
@@ -732,7 +763,7 @@ final class BrowserToolbarView: UIView {
     var visibleCapsuleRect: CGRect {
         guard isFloatingStyleEnabled else { return bounds }
         let shadowSpill = materialBackgroundView.layer.shadowRadius + materialBackgroundView.layer.shadowOffset.height
-        return bounds.union(materialBackgroundView.frame.insetBy(dx: -shadowSpill, dy: -shadowSpill))
+        return bounds.union(chromeContainer.frame.insetBy(dx: -shadowSpill, dy: -shadowSpill))
     }
 
     /// Floating style only; returns `.zero` otherwise.
@@ -778,21 +809,18 @@ final class BrowserToolbarView: UIView {
         return height
     }
 
-    func setStandaloneCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) {
-        guard isFloatingStyleEnabled, !hasEmbeddedOmnibar, !reduceMotion else {
-            standaloneCollapseScale = 1
-            applyMaterialBackgroundTransform()
-            return
-        }
-
-        let progress = collapseProgress.clamped(to: 0...1)
-        standaloneCollapseScale = 1 - Self.buttonRowCollapseScaleAmount * progress
+    func setStandaloneCollapseProgress(_ progress: CGFloat, reduceMotion: Bool) {
+        standaloneHideProgress = reduceMotion ? 0 : progress.clamped(to: 0...1)
         applyMaterialBackgroundTransform()
     }
 
+    private var standaloneHideTranslation: CGFloat {
+        let slideDistance = bounds.height + (superview?.safeAreaInsets.bottom ?? 0)
+        return slideDistance * standaloneHideProgress
+    }
+
     private func applyMaterialBackgroundTransform() {
-        materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: floatingBottomOffset)
-            .concatenating(CGAffineTransform(scaleX: standaloneCollapseScale, y: standaloneCollapseScale))
+        chromeContainer.transform = CGAffineTransform(translationX: 0, y: floatingBottomOffset + standaloneHideTranslation)
     }
 
     /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,
@@ -809,6 +837,7 @@ final class BrowserToolbarView: UIView {
     private func updateCornerStyle() {
         guard isFloatingStyleEnabled else {
             materialBackgroundView.contentView.layer.cornerRadius = 0
+            chromeContentHost.layer.cornerRadius = 0
             return
         }
 
@@ -817,6 +846,11 @@ final class BrowserToolbarView: UIView {
         // so the round-rect lands without a radius pop.
         let usesConcentricCorners = isOmnibarMorphing || hasEmbeddedOmnibar || hasExpandedContent
 
+        let radius = usesConcentricCorners
+            ? Self.floatingUICornerRadius
+            : max(chromeContentHost.bounds.height, materialBackgroundView.bounds.height) / 2
+        chromeContentHost.layer.cornerRadius = radius
+
         if #available(iOS 26, *) {
             materialBackgroundView.cornerConfiguration = usesConcentricCorners
                 ? .corners(radius: UICornerRadius.containerConcentric(minimum: Self.floatingUICornerRadius))
@@ -824,9 +858,7 @@ final class BrowserToolbarView: UIView {
             return
         }
 
-        materialBackgroundView.contentView.layer.cornerRadius = usesConcentricCorners
-            ? Self.floatingUICornerRadius
-            : materialBackgroundView.contentView.bounds.height / 2
+        materialBackgroundView.contentView.layer.cornerRadius = radius
     }
 
     private func applyCurrentStyle(animated: Bool) {
@@ -880,7 +912,7 @@ final class BrowserToolbarView: UIView {
         // The glass is shifted down by `floatingBottomOffset`, so the interactive region is the
         // bounds offset by the same amount (this also lets the now-empty strip above the capsule
         // pass touches through to the content behind it).
-        let interactiveRect = bounds.offsetBy(dx: 0, dy: floatingBottomOffset)
+        let interactiveRect = bounds.offsetBy(dx: 0, dy: floatingBottomOffset + standaloneHideTranslation)
         if interactiveRect.contains(point) {
             return true
         }

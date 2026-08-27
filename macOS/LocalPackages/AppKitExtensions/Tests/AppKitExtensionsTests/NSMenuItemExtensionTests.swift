@@ -22,27 +22,35 @@ import XCTest
 
 final class NSMenuItemExtensionTests: XCTestCase {
 
-    func testWithImageAssignsImage() {
+    func testWithImageAppliesDefaultVisibilityPolicy() {
         let image = NSImage(size: NSSize(width: 12, height: 12))
 
         let item = NSMenuItem().withImage(image)
 
+#if compiler(>=6.4)
         XCTAssertIdentical(item.image, image)
+        if #available(macOS 27.0, *) {
+            XCTAssertEqual(item.preferredImageVisibility, .hidden)
+        }
+#else
+        if #available(macOS 27.0, *) {
+            XCTAssertNil(item.image)
+        } else {
+            XCTAssertIdentical(item.image, image)
+        }
+#endif
     }
 
-#if compiler(>=6.4)
-    func testWithImageExplicitlySetsMacOS27Visibility() throws {
-        guard #available(macOS 27.0, *) else {
-            throw XCTSkip("preferredImageVisibility is available on macOS 27 and later")
-        }
-
+    func testWithImageKeepsImageWhenVisibleOnMacOS27IsRequested() {
         let image = NSImage(size: NSSize(width: 12, height: 12))
 
-        let hiddenItem = NSMenuItem().withImage(image)
-        let visibleItem = NSMenuItem().withImage(image, visibleOnMacOS27: true)
+        let item = NSMenuItem().withImage(image, visibleOnMacOS27: true)
 
-        XCTAssertEqual(hiddenItem.preferredImageVisibility, .hidden)
-        XCTAssertEqual(visibleItem.preferredImageVisibility, .visible)
-    }
+        XCTAssertIdentical(item.image, image)
+#if compiler(>=6.4)
+        if #available(macOS 27.0, *) {
+            XCTAssertEqual(item.preferredImageVisibility, .visible)
+        }
 #endif
+    }
 }

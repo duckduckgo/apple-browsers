@@ -110,17 +110,21 @@ public extension NSMenuItem {
         return self
     }
 
-    /// Sets the image and explicitly controls whether AppKit displays it on macOS 27 and later.
-    ///
-    /// Images remain assigned when hidden so menu items can be copied or reused without losing their assets.
+    /// Sets the image and controls whether AppKit displays it on macOS 27 and later.
     @discardableResult
     func withImage(_ image: NSImage?, visibleOnMacOS27: Bool = false) -> NSMenuItem {
         self.image = image
+
 #if compiler(>=6.4)
         if #available(macOS 27.0, *) {
             preferredImageVisibility = visibleOnMacOS27 ? .visible : .hidden
         }
+#else
+        if #available(macOS 27.0, *), visibleOnMacOS27 == false {
+            self.image = nil
+        }
 #endif
+
         return self
     }
 

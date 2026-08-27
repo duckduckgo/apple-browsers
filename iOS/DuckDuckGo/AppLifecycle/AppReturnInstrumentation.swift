@@ -20,17 +20,20 @@
 import Foundation
 import PixelKit
 
-enum AppReturnPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum AppReturnPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     case appReturn
 
     var name: String { "app_return" }
 
-    var parameters: [String: String]? { nil }
+    // Self-tags the pixel to route through the PETAL (timestamp-randomization) pipeline.
+    var parameters: [String: String]? { ["petal": "randomize"] }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "m_" }
+    var namePrefix: PixelKitNamePrefix { .custom("m_") }
 }
 
 protocol AppReturnInstrumentation {

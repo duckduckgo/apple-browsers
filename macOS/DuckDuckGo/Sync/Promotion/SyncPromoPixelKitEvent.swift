@@ -20,6 +20,10 @@ import Foundation
 import PixelKit
 
 enum SyncPromoPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
+
     case syncPromoDisplayed
     case syncPromoConfirmed
     case syncPromoDismissed

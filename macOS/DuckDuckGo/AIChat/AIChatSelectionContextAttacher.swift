@@ -99,7 +99,7 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
         // Append the selection, then reveal the sidebar; the tab extension flushes it once the chat VC is up.
         currentPageContextProvider()?.appendSelectionContext(selection)
         if !isChatAlreadyPresented {
-            aiChatConversationSourceHandler.setData(.attachSelection)
+            aiChatConversationSourceHandler.setData(.contextualAttachSelection)
         }
         aiChatCoordinator.revealChat()
     }

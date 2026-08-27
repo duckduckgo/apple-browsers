@@ -323,7 +323,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func newAiChat(_ sender: NSMenuItem) {
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.moreOptionsMenu)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.moreOptionsMenuNewDuckAIChat)
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
         PixelKit.fire(AIChatPixel.aichatApplicationMenuAppClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
@@ -561,7 +561,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     private func makeAIChatMenu() -> AIChatMenu {
         let actions = AIChatMenu.Actions.makeDefault(
-            conversationSource: .moreOptionsMenu,
+            conversationSources: .moreOptionsMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: NSApp.delegateTyped.aiChatHistoryCleaner,
@@ -900,8 +900,7 @@ final class EmailOptionsButtonSubMenu: NSMenu {
             self.emailManager.updateLastUseDate()
 
             PixelKit.fire(NonStandardPixel.emailUserCreatedAlias,
-                          withAdditionalParameters: pixelParameters,
-                          doNotEnforcePrefix: true)
+                          withAdditionalParameters: pixelParameters)
 
             NSPasteboard.general.copy(address)
             NotificationCenter.default.post(name: NSNotification.Name.privateEmailCopiedToClipboard, object: nil)

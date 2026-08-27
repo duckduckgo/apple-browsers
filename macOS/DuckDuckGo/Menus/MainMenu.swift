@@ -940,6 +940,8 @@ final class MainMenu: NSMenu {
 
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
+            NSMenuItem(title: "Data Import")
+                .submenu(DataImportDebugMenu(title: "Data Import"))
             NSMenuItem(title: "Favicons") {
                 NSMenuItem(title: "Clear In-Memory Cache", action: #selector(AppDelegate.debugClearFaviconsCache)).withAccessibilityIdentifier("MainMenu.clearFaviconsCache")
                 NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
@@ -1328,7 +1330,7 @@ final class MainMenu: NSMenu {
 
     @MainActor private func makeAIChatMenu() -> AIChatMenu {
         let actions = AIChatMenu.Actions.makeDefault(
-            conversationSource: .mainMenu,
+            conversationSources: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: aiChatHistoryCleaner,

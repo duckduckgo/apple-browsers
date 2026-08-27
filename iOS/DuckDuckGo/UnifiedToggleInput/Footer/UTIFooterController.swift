@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import os.log
 import UIKit
@@ -28,6 +29,8 @@ protocol UTIFooterPresenting: AnyObject {
     func clearPendingFooterMessage()
 }
 
+/// Presents the shared usage-limit view model on the Duck.ai input's footer slot. The view model
+/// decides what to say; this decides when the card can be on screen, and animates it.
 @MainActor
 final class UTIFooterController {
 
@@ -40,38 +43,33 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
 
-    var onAction: ((UTIFooterAction) -> Void)?
-
-    private let provider: UTIFooterWarningProviding
+    private let viewModel: DuckAiUsageWarningViewModel
     private let mapper: UTIFooterMessageMapper
-    private let dateProvider: () -> Date
     private let animator: Animator
 
-    private var lastWarning: UTIFooterWarning?
-    private var dismissedWarnings: Set<UTIFooterWarning> = []
     private var isSuppressed = false
 
     private(set) var currentMessage: UTIFooterMessage?
 
-    init(provider: UTIFooterWarningProviding,
+    init(viewModel: DuckAiUsageWarningViewModel,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
-         dateProvider: @escaping () -> Date = Date.init,
          animator: Animator? = nil) {
-        self.provider = provider
+        self.viewModel = viewModel
         self.mapper = mapper
-        self.dateProvider = dateProvider
         self.animator = animator ?? Self.springAnimator
     }
 
+    /// Synchronous: a lookup in the already-loaded entries blob.
     func refresh() {
-        lastWarning = provider.currentWarning()
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller refresh → warning=\(String(describing: self.lastWarning), privacy: .public) suppressed=\(self.isSuppressed, privacy: .public)")
+        viewModel.refresh()
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller refresh → warning=\(self.viewModel.warning == nil ? "none" : "present", privacy: .public) suppressed=\(self.isSuppressed, privacy: .public)")
         applyCurrentState()
     }
 
     func resetForPoseChange() {
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller reset for pose change")
-        lastWarning = nil
+        // Not a dismissal: the next refresh re-reads the snapshot and the message comes back.
+        viewModel.clear()
         currentMessage = nil
         // Keeps the view's copy in lockstep — otherwise a later refresh that resolves to no
         // warning no-ops (nil == nil) and the view resurrects the stale card on the next expand.
@@ -85,16 +83,18 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
+    /// Persisted by the view model, so the message stays down until the window resets or the user
+    /// crosses the next redisplay threshold.
     func dismissCurrent() {
-        guard let lastWarning else { return }
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller dismissed \(String(describing: lastWarning), privacy: .public)")
-        dismissedWarnings.insert(lastWarning)
+        viewModel.dismiss()
         applyCurrentState()
     }
 
     func performPrimaryAction() {
-        guard let action = currentMessage?.primaryAction?.action else { return }
-        onAction?(action)
+        guard currentMessage?.primaryAction != nil else { return }
+        viewModel.performAction()
+        // The CTA can change what there is left to offer — a model switch retires its own suggestion.
+        applyCurrentState()
     }
 
     private func applyCurrentState() {
@@ -115,12 +115,8 @@ final class UTIFooterController {
             Logger.duckAIUsageWarnings.debug("[UsageWarnings] nothing to show: suppressed (editing or Search mode)")
             return nil
         }
-        guard let lastWarning else { return nil }
-        guard !dismissedWarnings.contains(lastWarning) else {
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] nothing to show: warning was dismissed this session")
-            return nil
-        }
-        return mapper.message(for: lastWarning, now: dateProvider())
+        guard let warning = viewModel.warning else { return nil }
+        return mapper.message(for: warning)
     }
 
     static let springAnimator: Animator = { changes in

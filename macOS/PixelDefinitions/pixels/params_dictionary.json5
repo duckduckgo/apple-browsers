@@ -356,6 +356,11 @@
         "type": "number",
         "description": "Total duration of the opt-out attempt in milliseconds"
     },
+    "dbpAwakeDuration": {
+        "key": "awake_duration",
+        "type": "number",
+        "description": "Total duration excluding machine sleep in milliseconds"
+    },
     "dbpConfirmationAttemptNumber": {
         "key": "attempt_number",
         "type": "integer",
@@ -471,5 +476,50 @@
         "description": "The mode of the consent heuristic feature: '', off, reject, tier1, tier2",
         "type": "string",
         "enum": ["", "off", "reject", "tier1", "tier2"]
+    },
+    "aiChatConversationSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The user-facing surface that opened the Duck.ai conversation this prompt was submitted in. Recorded just before the chat opens and consumed once when it loads, so for an ongoing chat it describes how that chat was originally opened, not where this particular prompt came from. Values name the specific control that was used, down to the individual menu item, so a voice, image-generation or resumed-chat start stays attributable to the surface it came from (e.g. 'new-tab-page-voice', 'main-menu-image', 'omnibar-recent-chat'). The 'contextual-*' values are page actions on the current page or selection; 'address-bar-context-menu' is the right-click menu on the address-bar Duck.ai button and is unrelated to them. 'unattributed' means no surface was recorded \u2014 direct navigation to duck.ai, a session restored at startup, a bookmark or external link, or an entry point not yet instrumented \u2014 so it measures the attribution gap rather than naming a real entry point. Mirrors AIChatConversationSource in SharedPackages/AIChat.",
+        "enum": [
+            "tab-bar-button",
+            "ask-about-page",
+            "tab-bar-sidebar",
+            "address-bar",
+            "address-bar-suggestion",
+            "address-bar-context-menu",
+            "new-tab-page",
+            "new-tab-page-view-all-chats",
+            "new-tab-page-voice",
+            "new-tab-page-recent-chat",
+            "omnibar",
+            "omnibar-view-all-chats",
+            "omnibar-voice",
+            "omnibar-recent-chat",
+            "prompt-bar",
+            "prompt-bar-voice",
+            "main-menu-file-new-chat",
+            "main-menu-sidebar",
+            "main-menu-open-duck-ai",
+            "main-menu-new-chat",
+            "main-menu-view-all-chats",
+            "main-menu-voice",
+            "main-menu-image",
+            "main-menu-recent-chat",
+            "more-options-menu-new-duck-ai-chat",
+            "more-options-menu-open-duck-ai",
+            "more-options-menu-new-chat",
+            "more-options-menu-view-all-chats",
+            "more-options-menu-voice",
+            "more-options-menu-image",
+            "more-options-menu-recent-chat",
+            "contextual-summarize",
+            "contextual-translate",
+            "contextual-attach-selection",
+            "serp",
+            "sidebar-handoff",
+            "settings",
+            "unattributed"
+        ]
     }
 }

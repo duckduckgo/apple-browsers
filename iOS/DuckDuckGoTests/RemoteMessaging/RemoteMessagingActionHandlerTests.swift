@@ -127,14 +127,15 @@ struct RemoteMessagingActionHandlerTests {
         #expect(!mockURLOpener.didCallOpenURL)
     }
 
-    @Test("Check Survey Action Refreshes Last Search State And Opens Browser Tab")
-    func surveyActionRefreshesSearchStateAndOpensTab() async throws {
+    @available(iOS 16, *)
+    @Test("Check Survey Action Refreshes Usage States And Opens Browser Tab", .timeLimit(.minutes(1)))
+    func surveyActionRefreshesUsageStatesAndOpensTab() async throws {
         // GIVEN
         let mockPresenter = MockRemoteMessagingPresenter()
-        let mockLastSearchStateRefresher = MockLastSearchStateRefresher()
+        let mockSurveyUsageStateRefresher = MockSurveyUsageStateRefresher()
         let mockTabOpener = MockBrowserTabURLOpener()
         let sut = RemoteMessagingActionHandler(
-            lastSearchStateRefresher: mockLastSearchStateRefresher,
+            surveyUsageStateRefresher: mockSurveyUsageStateRefresher,
             browserTabUrlOpener: mockTabOpener.open
         )
         let surveyAction = RemoteAction.survey(value: "https://survey.example.com?param=value")
@@ -143,8 +144,8 @@ struct RemoteMessagingActionHandlerTests {
         await sut.handleAction(surveyAction, context: .init(presenter: mockPresenter))
 
         // THEN
-        #expect(mockLastSearchStateRefresher.didCallRefreshLastSearchState)
-        #expect(mockLastSearchStateRefresher.capturedURLPath == "https://survey.example.com?param=value")
+        #expect(mockSurveyUsageStateRefresher.didCallRefreshSurveyUsageStates)
+        #expect(mockSurveyUsageStateRefresher.capturedURLPath == "https://survey.example.com?param=value")
         #expect(mockTabOpener.openedURL == "https://survey.example.com?param=value&refreshed=true")
     }
 
@@ -179,11 +180,11 @@ struct RemoteMessagingActionHandlerTests {
     func dismissActionDoesNothing() async throws {
         // GIVEN
         let mockPresenter = MockRemoteMessagingPresenter()
-        let mockRefresher = MockLastSearchStateRefresher()
+        let mockRefresher = MockSurveyUsageStateRefresher()
         let mockTabOpener = MockBrowserTabURLOpener()
         let mockURLOpener = MockURLOpener()
         let sut = RemoteMessagingActionHandler(
-            lastSearchStateRefresher: mockRefresher,
+            surveyUsageStateRefresher: mockRefresher,
             urlOpener: mockURLOpener,
             browserTabUrlOpener: mockTabOpener.open
         )
@@ -192,7 +193,7 @@ struct RemoteMessagingActionHandlerTests {
         await sut.handleAction(.dismiss, context: .init(presenter: mockPresenter))
 
         // THEN
-        #expect(!mockRefresher.didCallRefreshLastSearchState)
+        #expect(!mockRefresher.didCallRefreshSurveyUsageStates)
         #expect(!mockPresenter.didCallPresentActivitySheet)
         #expect(!mockPresenter.didCallPresentEmbeddedWebView)
         #expect(!mockURLOpener.didCallCanOpenURL)

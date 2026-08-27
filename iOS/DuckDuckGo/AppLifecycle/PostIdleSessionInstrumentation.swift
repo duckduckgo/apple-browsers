@@ -73,10 +73,19 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     func burnTabTapped()
 
     /// Terminal user action ended the session (submission, return-to-page, etc.).
-    func sessionEnded(reason: ReturnSessionWideEventData.StatusReason)
+    /// `promptOrigin` identifies what triggered an `.aiPromptSubmitted` terminal and is
+    /// ignored for every other reason.
+    func sessionEnded(reason: ReturnSessionWideEventData.StatusReason, promptOrigin: AIChatEntryPointSource?)
 
     /// App was backgrounded with a session still active. Completes as CANCELLED.
     func sessionCancelledByBackground()
+}
+
+extension PostIdleSessionInstrumentation {
+
+    func sessionEnded(reason: ReturnSessionWideEventData.StatusReason) {
+        sessionEnded(reason: reason, promptOrigin: nil)
+    }
 }
 
 final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentation {
@@ -158,12 +167,13 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         recordInteraction { $0.burnTabTapped = true }
     }
 
-    func sessionEnded(reason: ReturnSessionWideEventData.StatusReason) {
+    func sessionEnded(reason: ReturnSessionWideEventData.StatusReason, promptOrigin: AIChatEntryPointSource?) {
         let now = dateProvider()
 
         if let globalID = returnSessionID,
            let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID) {
             data.statusReason = reason
+            data.promptOrigin = reason == .aiPromptSubmitted ? promptOrigin?.rawValue : nil
             data.sessionInterval.end = now
             markFirstInteractionIfNeeded(on: data, at: now)
             wideEvent.completeFlow(data, status: .success(reason: reason.rawValue), onComplete: { _, _ in })

@@ -47,7 +47,7 @@ enum UnifiedToggleInputIntent: Equatable {
     case showOmnibarEditing(expandedHeight: CGFloat, pendingExpandedHeight: CGFloat? = nil)
     case showOmnibarInactive
     case showOmnibarActive
-    case hideOmnibarEditing(animated: Bool)
+    case hideOmnibarEditing(animated: Bool, reattachingOmnibar: Bool)
     case hide
 }
 

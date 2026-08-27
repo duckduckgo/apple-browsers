@@ -16,8 +16,6 @@ name: test_search_only_website_active_ai_shortcut_prompt
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
-        ff.experimentalAddressBar: "true"
         ff.contextualDuckAIMode: "true"
 
 - runFlow:
@@ -60,13 +58,16 @@ name: test_search_only_website_active_ai_shortcut_prompt
 - pressKey: Enter
 - assertVisible: ".*Privacy Test Pages.*"
 
-# A direct web-page shortcut tap should still open the contextual sheet.
+# On a web page the shortcut offers the menu; Ask About Page opens the floating contextual input.
+- runFlow:
+    file: ../shared/open_contextual_duckai_from_address_bar.yaml
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+- assertNotVisible:
+    id: "AIChat.ContextualSheet"
+# Tapping the Duck.ai button again dismisses whichever contextual surface is showing.
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"
-- assertVisible:
-    id: "AIChat.ContextualSheet"
-- tapOn:
-    id: "AIChat.ContextualSheet.CloseButton"
 - waitForAnimationToEnd:
     timeout: 3000
 

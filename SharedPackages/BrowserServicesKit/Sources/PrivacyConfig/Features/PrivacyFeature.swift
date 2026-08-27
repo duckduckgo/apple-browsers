@@ -300,9 +300,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Single "Ask Duck.ai" menu button (New Chat / Ask About Page) replacing the two-part split button.
     case chromeMenuButton
 
-    /// Experimental address bar with duck.ai
-    case experimentalAddressBar
-
     /// Global switch to disable all AI Chat related functionality
     case globalToggle
 
@@ -332,9 +329,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Allows user to clear AI Chat history with the fire button or auto-clear
     case clearAIChatHistory
 
-    /// Signals that the iOS app should display duck.ai chats in "full mode" i.e in a tab, not a sheet
-    case fullDuckAIMode
-
     /// Enables native-side support for standalone migration flows in AI Chat
     case standaloneMigration
 
@@ -353,15 +347,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the default omnibar toggle position setting for AI Chat
     case omnibarDefaultPosition
 
-    case unifiedToggleInput
-
     case updatedModelPicker
-
-    /// Forward-only lever for the unified toggle input rollout. When disabled, *new* (un-granted)
-    /// users stop receiving the unified toggle input; users who have already been granted it keep
-    /// it. Independent of the master `unifiedToggleInput` flag (which revokes from everyone when
-    /// turned off). See `UnifiedToggleInputFeature`.
-    case unifiedToggleInputIncludeNewUsers
 
     /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
@@ -420,6 +406,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables support for adding multiple page contexts to a single chat session
     case multiplePageContexts
+
+    /// Enables handing a PDF tab to Duck.ai as page context (bytes instead of markdown)
+    case pdfPageContext
 
     /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
     case sidebarAttachMoreTabs
@@ -631,7 +620,6 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
-    case cookiePopupPreferenceSetting
     case cookiePopupOptInDialog
     case cookiePopupOptInDialogExperiment
 }

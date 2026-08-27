@@ -1101,9 +1101,15 @@ extension MainViewController {
         let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
+        // A bottom List relayout briefly moves its live Favorites presentation during collapse.
+        // Freeze only the favorites-only NTP handoff; RMF and the other completed paths stay live.
+        let snapshotsBottomNTPFavorites = coordinator.cardPosition.isBottom
+            && isSearchContentToSearchContent
+            && newTabPageViewController?.restingContentIsFavoritesOnly == true
         let contentContainer = viewCoordinator.unifiedInputContentContainer
         let stationaryContentSnapshot = makeStationaryFocusedContentSnapshotIfNeeded(
-            keepsFocusedContentStationary: keepsFocusedContentStationary,
+            keepsFocusedContentStationary: keepsFocusedContentStationary
+                && (!isNewTabPageVisible || snapshotsBottomNTPFavorites),
             contentContainer: contentContainer
         )
         if isLogoToLogo {
@@ -1175,12 +1181,15 @@ extension MainViewController {
 
     private func makeStationaryFocusedContentSnapshotIfNeeded(keepsFocusedContentStationary: Bool,
                                                               contentContainer: UIView?) -> UIView? {
-        guard keepsFocusedContentStationary, !isNewTabPageVisible,
+        guard keepsFocusedContentStationary,
               let contentContainer,
               let snapshot = contentContainer.snapshotView(afterScreenUpdates: false),
               let superview = contentContainer.superview else {
             return nil
         }
+#if DEBUG
+        snapshot.accessibilityIdentifier = "UTIBottomDismissContentSnapshot"
+#endif
         snapshot.frame = contentContainer.convert(contentContainer.bounds, to: superview)
         snapshot.isUserInteractionEnabled = false
         superview.insertSubview(snapshot, aboveSubview: contentContainer)
@@ -1283,6 +1292,7 @@ extension MainViewController {
             + "ntp=\(viewLayoutSummary(restingRoot)) "
             + "ntpSearchVisible=\(newTabPageViewController?.isShowingSearchContent ?? false) "
             + "isNewTabPageVisible=\(isNewTabPageVisible) isOmnibarSession=\(coordinator.isOmnibarSession) "
+            + "snapshot=\(viewLayoutSummary(descendantViews(in: view).first { $0.accessibilityIdentifier == "UTIBottomDismissContentSnapshot" })) "
             + "\(favoritesProbeSummary(named: "focusedFavorites", in: focusedRoot)) "
             + "\(favoritesProbeSummary(named: "restingFavorites", in: restingRoot)) "
             + "\(scrollViewLayoutSummary(named: "focusedScroll", in: focusedRoot)) "

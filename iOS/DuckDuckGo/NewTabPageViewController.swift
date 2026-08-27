@@ -55,6 +55,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         !messagesModel.homeMessageViewModels.isEmpty || !favoritesModel.isEmpty
     }
 
+    var restingContentIsFavoritesOnly: Bool {
+        messagesModel.homeMessageViewModels.isEmpty && !favoritesModel.isEmpty
+    }
+
     func setLogoHidden(_ hidden: Bool) {
         newTabPageViewModel.isLogoHidden = hidden
     }

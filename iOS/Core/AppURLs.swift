@@ -66,6 +66,7 @@ public extension URL {
     static let assistSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)#aifeatures"))!
 
     static let aiFeaturesLearnMore = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/duckai/approach-to-ai"))!
+    static let aiChatAccessSubscriberModels = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/duckai/access-subscriber-AI-models"))!
     static let autofillHelpPageLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/sync-and-backup/password-manager-security/"))!
     static let maliciousSiteProtectionLearnMore = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/privacy/phishing-and-malware-protection/"))!
     static let webTrackingProtection = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/privacy/web-tracking-protections/"))!

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import DesignResourcesKit
 import UIKit
 
@@ -32,6 +33,7 @@ final class UTIFooterUsageRingView: UIView {
     private let progressLayer = CAShapeLayer()
 
     private var progress: Double = 0
+    private var severity: DuckAiUsageSeverity = .info
 
     override var intrinsicContentSize: CGSize {
         CGSize(width: Constants.size, height: Constants.size)
@@ -55,7 +57,11 @@ final class UTIFooterUsageRingView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setProgress(_ progress: Double, animated: Bool) {
+    func setProgress(_ progress: Double, severity: DuckAiUsageSeverity, animated: Bool) {
+        if severity != self.severity {
+            self.severity = severity
+            applyColors()
+        }
         let clamped = min(max(progress, 0), 1)
         guard clamped != self.progress else { return }
         self.progress = clamped
@@ -97,6 +103,16 @@ final class UTIFooterUsageRingView: UIView {
 
     private func applyColors() {
         trackLayer.strokeColor = UIColor(designSystemColor: .lines).cgColor
-        progressLayer.strokeColor = UIColor(designSystemColor: .icons).cgColor
+        progressLayer.strokeColor = UIColor(designSystemColor: Self.progressColor(for: severity)).cgColor
+    }
+
+    /// The rung the user is on, not the raw percentage: neutral while it is only informational, then
+    /// amber and red as the limit closes in.
+    private static func progressColor(for severity: DuckAiUsageSeverity) -> DesignSystemColor {
+        switch severity {
+        case .info: return .icons
+        case .warning: return .alertYellow
+        case .critical, .reached: return .destructivePrimary
+        }
     }
 }

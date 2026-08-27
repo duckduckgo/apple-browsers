@@ -47,6 +47,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapFooterPrimaryAction(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapFooterLink(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -468,6 +469,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         barView.onFooterDismissTapped = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputVCDidDismissFooter(self)
+        }
+        barView.onFooterLinkTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidTapFooterLink(self)
         }
         let containerView = UnifiedToggleInputContainerView(inputView: barView)
         containerView.cardPosition = barView.cardPosition

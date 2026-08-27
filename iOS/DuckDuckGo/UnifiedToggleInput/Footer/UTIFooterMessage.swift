@@ -23,21 +23,43 @@ import Foundation
 struct UTIFooterMessage: Equatable {
 
     enum Icon: Equatable {
-        case usageRing(progress: Double)
+        /// No leading glyph: the high-usage notice reads as a sentence, not an alert.
+        case none
+        /// The severity colours the ring; the progress fills it.
+        case usageRing(progress: Double, severity: DuckAiUsageSeverity)
         case alert
     }
 
     struct PrimaryAction: Equatable {
         let title: String
-        /// The chevron beside the title, which opens the model picker. Only a model switch offers it.
-        let showsModelPicker: Bool
+    }
+
+    /// Appended to the title as a tappable run. Only the high-usage notice carries one.
+    struct Link: Equatable {
+        let text: String
+        let url: URL
     }
 
     let icon: Icon
     let title: String
     let subtitle: String?
+    let link: Link?
     let primaryAction: PrimaryAction?
     let isDismissible: Bool
+
+    init(icon: Icon,
+         title: String,
+         subtitle: String?,
+         link: Link? = nil,
+         primaryAction: PrimaryAction?,
+         isDismissible: Bool) {
+        self.icon = icon
+        self.title = title
+        self.subtitle = subtitle
+        self.link = link
+        self.primaryAction = primaryAction
+        self.isDismissible = isDismissible
+    }
 }
 
 /// Localizes the interval the shared resolver already bucketed, so "Resets in" reads as

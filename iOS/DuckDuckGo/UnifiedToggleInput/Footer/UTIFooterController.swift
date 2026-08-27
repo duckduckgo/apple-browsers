@@ -44,7 +44,9 @@ final class UTIFooterController {
     weak var presenter: UTIFooterPresenting?
 
     private let viewModel: DuckAiUsageWarningViewModel
+    private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let mapper: UTIFooterMessageMapper
+    private let urlOpener: URLOpener
     private let animator: Animator
 
     private var isSuppressed = false
@@ -52,16 +54,21 @@ final class UTIFooterController {
     private(set) var currentMessage: UTIFooterMessage?
 
     init(viewModel: DuckAiUsageWarningViewModel,
+         highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
+         urlOpener: URLOpener = UIApplication.shared,
          animator: Animator? = nil) {
         self.viewModel = viewModel
+        self.highUsageNotice = highUsageNotice
         self.mapper = mapper
+        self.urlOpener = urlOpener
         self.animator = animator ?? Self.springAnimator
     }
 
     /// Synchronous: a lookup in the already-loaded entries blob.
     func refresh() {
         viewModel.refresh()
+        highUsageNotice?.refresh()
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller refresh → warning=\(self.viewModel.warning == nil ? "none" : "present", privacy: .public) suppressed=\(self.isSuppressed, privacy: .public)")
         applyCurrentState()
     }
@@ -70,6 +77,7 @@ final class UTIFooterController {
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller reset for pose change")
         // Not a dismissal: the next refresh re-reads the snapshot and the message comes back.
         viewModel.clear()
+        highUsageNotice?.clear()
         currentMessage = nil
         // Keeps the view's copy in lockstep — otherwise a later refresh that resolves to no
         // warning no-ops (nil == nil) and the view resurrects the stale card on the next expand.
@@ -83,10 +91,14 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    /// Persisted by the view model, so the message stays down until the window resets or the user
-    /// crosses the next redisplay threshold.
+    /// Routed to whichever message owns the slot: the two dismissals are recorded separately, so
+    /// closing a usage warning must not also spend the notice's.
     func dismissCurrent() {
-        viewModel.dismiss()
+        if viewModel.warning != nil {
+            viewModel.dismiss()
+        } else {
+            highUsageNotice?.dismissCurrent()
+        }
         applyCurrentState()
     }
 
@@ -95,6 +107,12 @@ final class UTIFooterController {
         viewModel.performAction()
         // The CTA can change what there is left to offer — a model switch retires its own suggestion.
         applyCurrentState()
+    }
+
+    func performLinkAction() {
+        guard let url = currentMessage?.link?.url else { return }
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] footer link opened")
+        urlOpener.open(url)
     }
 
     private func applyCurrentState() {
@@ -110,13 +128,19 @@ final class UTIFooterController {
         }
     }
 
+    /// A usage warning is actionable and the notice is only informational, so the warning takes the slot.
     private func resolveMessage() -> UTIFooterMessage? {
         guard !isSuppressed else {
             Logger.duckAIUsageWarnings.debug("[UsageWarnings] nothing to show: suppressed (editing or Search mode)")
             return nil
         }
-        guard let warning = viewModel.warning else { return nil }
-        return mapper.message(for: warning)
+        if let warning = viewModel.warning {
+            return mapper.message(for: warning)
+        }
+        if let notice = highUsageNotice?.notice {
+            return mapper.message(for: notice)
+        }
+        return nil
     }
 
     static let springAnimator: Animator = { changes in
@@ -130,5 +154,52 @@ final class UTIFooterController {
                        initialSpringVelocity: 0,
                        options: [.beginFromCurrentState, .allowUserInteraction],
                        animations: changes)
+    }
+}
+
+// MARK: - High-usage model notice
+
+/// Owns the high-usage-model notice for the footer slot: applies the shared resolver to whichever
+/// model is selected now, and remembers dismissals per model.
+@MainActor
+final class UTIFooterHighUsageNoticeSource {
+
+    private let resolver: DuckAiHighUsageModelNoticeResolver
+    private let dismissalStore: DuckAiHighUsageNoticeDismissalStoring
+    /// Re-read per refresh, so switching models mid-session is picked up.
+    private let modelProvider: () -> (id: String?, shortName: String?)
+
+    private(set) var notice: DuckAiHighUsageModelNotice?
+
+    init(dismissalStore: DuckAiHighUsageNoticeDismissalStoring = DuckAiHighUsageNoticeDismissalStore(),
+         modelProvider: @escaping () -> (id: String?, shortName: String?)) {
+        self.dismissalStore = dismissalStore
+        self.resolver = DuckAiHighUsageModelNoticeResolver(dismissalStore: dismissalStore)
+        self.modelProvider = modelProvider
+    }
+
+    func refresh() {
+        let model = modelProvider()
+        switch resolver.resolve(modelId: model.id, modelShortName: model.shortName) {
+        case .notice(let notice):
+            self.notice = notice
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] high-usage notice: model=\(notice.modelId, privacy: .public)")
+        case .none(let reason):
+            notice = nil
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] high-usage notice: none — reason=\(reason.rawValue, privacy: .public)")
+        }
+    }
+
+    /// One-time per model: there is no reset window to expire against.
+    func dismissCurrent() {
+        guard let notice else { return }
+        dismissalStore.setDismissed(modelId: notice.modelId)
+        self.notice = nil
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] high-usage notice dismissed: model=\(notice.modelId, privacy: .public)")
+    }
+
+    /// Teardown: drops the notice without recording a dismissal.
+    func clear() {
+        notice = nil
     }
 }

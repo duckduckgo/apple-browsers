@@ -904,7 +904,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewModel.onAction = { [weak self] action in
             self?.handleUsageWarningAction(action)
         }
-        footerController = UTIFooterController(viewModel: viewModel)
+        footerController = UTIFooterController(viewModel: viewModel,
+                                              highUsageNotice: makeHighUsageNoticeSource())
         footerController?.presenter = viewController
     }
 
@@ -917,6 +918,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             requiredMimeTypes: attachments.compactMap { $0.fileAttachment?.mimeType },
             requiredTools: toolsController.selectedTool.map { [$0] } ?? []
         )
+    }
+
+    /// The persisted id, not the live one: before a chat starts it is what a prompt would use, which
+    /// is the same model the warning's own suggester reasons about.
+    private func makeHighUsageNoticeSource() -> UTIFooterHighUsageNoticeSource {
+        UTIFooterHighUsageNoticeSource(modelProvider: { [weak self] in
+            guard let self, let id = persistedModelId else { return (nil, nil) }
+            return (id, models.first { $0.id == id }?.shortName)
+        })
     }
 
     private func handleUsageWarningAction(_ action: DuckAiUsageAction) {
@@ -1855,6 +1865,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController) {
         footerController?.dismissCurrent()
+    }
+
+    func unifiedToggleInputVCDidTapFooterLink(_ vc: UnifiedToggleInputViewController) {
+        footerController?.performLinkAction()
     }
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {

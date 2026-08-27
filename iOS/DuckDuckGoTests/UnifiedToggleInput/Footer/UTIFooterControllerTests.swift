@@ -27,6 +27,8 @@ final class UTIFooterControllerTests: XCTestCase {
     private var limitsProvider: StubUsageLimitsProvider!
     private var presenter: SpyUTIFooterPresenter!
     private var viewModel: DuckAiUsageWarningViewModel!
+    private var urlOpener: SpyURLOpener!
+    private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
     private var animationCount = 0
     private var sut: UTIFooterController!
 
@@ -36,9 +38,13 @@ final class UTIFooterControllerTests: XCTestCase {
         super.setUp()
         limitsProvider = StubUsageLimitsProvider()
         presenter = SpyUTIFooterPresenter()
+        urlOpener = SpyURLOpener()
+        selectedModel = (nil, nil)
         animationCount = 0
         viewModel = makeViewModel()
         sut = UTIFooterController(viewModel: viewModel,
+                                  highUsageNotice: makeNoticeSource(),
+                                  urlOpener: urlOpener,
                                   animator: { [unowned self] changes in
                                       animationCount += 1
                                       changes()
@@ -49,6 +55,7 @@ final class UTIFooterControllerTests: XCTestCase {
     override func tearDown() {
         sut = nil
         viewModel = nil
+        urlOpener = nil
         presenter = nil
         limitsProvider = nil
         super.tearDown()
@@ -228,7 +235,96 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(received.isEmpty)
     }
 
+    // MARK: - High-usage model notice
+
+    func test_refresh_presentsTheHighUsageNoticeWhenThereIsNoWarning() {
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        limitsProvider.limits = .noData
+
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
+    }
+
+    /// A usage warning is actionable and the notice is only informational, so the warning owns the slot.
+    func test_refresh_prefersTheUsageWarningOverTheNotice() {
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        limitsProvider.limits = weeklyUsage(50)
+
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("50%") ?? false)
+    }
+
+    func test_refresh_presentsNothingForAModelThatIsNotHighUsage() {
+        selectedModel = (id: "gpt-5.4-mini", shortName: "5.4 mini")
+        limitsProvider.limits = .noData
+
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.isEmpty)
+    }
+
+    /// Re-read per refresh, so switching onto a high-usage model mid-session surfaces the notice.
+    func test_refresh_picksUpAModelChange() {
+        limitsProvider.limits = .noData
+        sut.refresh()
+
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
+    }
+
+    func test_dismissCurrent_keepsTheNoticeHiddenOnTheNextRefresh() {
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        limitsProvider.limits = .noData
+        sut.refresh()
+
+        sut.dismissCurrent()
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    /// The two dismissals are separate records: closing the warning must not also spend the notice's.
+    func test_dismissCurrent_dismissesTheWarningWithoutSpendingTheNoticesDismissal() {
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+
+        sut.dismissCurrent()
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
+    }
+
+    // MARK: - Link
+
+    func test_performLinkAction_opensTheMessagesLink() {
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        sut.refresh()
+
+        sut.performLinkAction()
+
+        XCTAssertEqual(urlOpener.opened, [URL.aiChatAccessSubscriberModels])
+    }
+
+    func test_performLinkAction_doesNothingWithoutALink() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+
+        sut.performLinkAction()
+
+        XCTAssertTrue(urlOpener.opened.isEmpty)
+    }
+
     // MARK: - Helpers
+
+    private func makeNoticeSource() -> UTIFooterHighUsageNoticeSource {
+        UTIFooterHighUsageNoticeSource(dismissalStore: InMemoryDuckAiHighUsageNoticeDismissalStore(),
+                                       modelProvider: { [unowned self] in selectedModel })
+    }
 
     private func makeViewModel() -> DuckAiUsageWarningViewModel {
         DuckAiUsageWarningViewModel(
@@ -266,6 +362,13 @@ private struct StubCheaperModelSuggester: DuckAiModelSuggesting {
     }
 
     func freeModel() -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
+}
+
+private final class SpyURLOpener: URLOpener {
+    private(set) var opened: [URL] = []
+
+    func canOpenURL(_ url: URL) -> Bool { true }
+    func open(_ url: URL) { opened.append(url) }
 }
 
 @MainActor

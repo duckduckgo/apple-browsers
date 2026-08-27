@@ -251,11 +251,7 @@ final class UnifiedToggleInputView: UIView {
 
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
-        set {
-            toolsToolbar.modelPickerMenu = newValue
-            // The usage card's chevron offers the same list, popped from the chevron itself.
-            footerCard.modelPickerMenu = newValue
-        }
+        set { toolsToolbar.modelPickerMenu = newValue }
     }
 
     @discardableResult
@@ -361,6 +357,7 @@ final class UnifiedToggleInputView: UIView {
     var onAIChatShortcutTapped: (() -> Void)?
     var onFooterPrimaryTapped: (() -> Void)?
     var onFooterDismissTapped: (() -> Void)?
+    var onFooterLinkTapped: (() -> Void)?
 
     // MARK: - Attachment API
 
@@ -1752,6 +1749,7 @@ private extension UnifiedToggleInputView {
         footerCard.alpha = 0
         footerCard.onPrimaryTap = { [weak self] in self?.onFooterPrimaryTapped?() }
         footerCard.onDismissTap = { [weak self] in self?.onFooterDismissTapped?() }
+        footerCard.onLinkTap = { [weak self] in self?.onFooterLinkTapped?() }
         insertSubview(footerCard, belowSubview: cardView)
         addSubview(aiTabCollapsedFireButton)
         addSubview(aiTabCollapsedMenuButton)

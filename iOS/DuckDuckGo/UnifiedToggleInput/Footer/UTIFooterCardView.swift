@@ -42,12 +42,8 @@ final class UTIFooterCardView: UIView {
 
     var onPrimaryTap: (() -> Void)?
     var onDismissTap: (() -> Void)?
-
-    /// The toolbar's model-picker menu, reused so the card offers the same list. UIKit presents it
-    /// from the chevron, which is what anchors the menu to the control the user tapped.
-    var modelPickerMenu: UIMenu? {
-        didSet { actionButton.modelPickerMenu = modelPickerMenu }
-    }
+    /// Fired by the notice's copy, whose trailing run is a help link.
+    var onLinkTap: (() -> Void)?
 
     let contentView = UIView()
 
@@ -57,9 +53,17 @@ final class UTIFooterCardView: UIView {
     private let subtitleLabel = UILabel()
     private let actionButton = UTIFooterActionButton()
     private let dismissButton = UIButton(type: .system)
+    private lazy var linkTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(linkTapped))
 
     private var actionCollapsedWidthConstraint: NSLayoutConstraint?
     private var actionTrailingConstraint: NSLayoutConstraint?
+    /// The icon slot and its gap collapse together, so a message with no icon starts at the leading edge.
+    private var iconSlotWidthConstraint: NSLayoutConstraint?
+    private var iconTextGapConstraint: NSLayoutConstraint?
+
+    /// Kept so a theme change can rebuild the notice's attributed copy.
+    private var currentTitle = ""
+    private var currentLink: UTIFooterMessage.Link?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -73,22 +77,40 @@ final class UTIFooterCardView: UIView {
 
     func configure(with message: UTIFooterMessage, animateIcon: Bool) {
         switch message.icon {
-        case .usageRing(let progress):
+        case .none:
+            usageRing.isHidden = true
+            alertIcon.isHidden = true
+        case .usageRing(let progress, let severity):
             usageRing.isHidden = false
             alertIcon.isHidden = true
-            usageRing.setProgress(progress, animated: animateIcon)
+            usageRing.setProgress(progress, severity: severity, animated: animateIcon)
         case .alert:
             usageRing.isHidden = true
             alertIcon.isHidden = false
         }
+        let hasIcon = message.icon != UTIFooterMessage.Icon.none
+        iconSlotWidthConstraint?.constant = hasIcon ? Constants.iconSize : 0
+        iconTextGapConstraint?.constant = hasIcon ? Constants.iconTextGap : 0
 
-        titleLabel.text = message.title
+        // Without a reset line the copy has the second line to use, so it wraps rather than truncates.
+        titleLabel.numberOfLines = message.subtitle == nil ? 2 : 1
+        currentTitle = message.title
+        currentLink = message.link
+        if let link = message.link {
+            titleLabel.attributedText = Self.attributedTitle(message.title, link: link)
+        } else {
+            titleLabel.attributedText = nil
+            titleLabel.font = .daxFootnoteSemibold()
+            titleLabel.text = message.title
+        }
+        linkTapRecognizer.isEnabled = message.link != nil
+
         subtitleLabel.text = message.subtitle
         subtitleLabel.isHidden = message.subtitle?.isEmpty ?? true
 
         if let primaryAction = message.primaryAction {
             actionButton.isHidden = false
-            actionButton.configure(title: primaryAction.title, showsModelPicker: primaryAction.showsModelPicker)
+            actionButton.configure(title: primaryAction.title)
         } else {
             actionButton.isHidden = true
         }
@@ -110,6 +132,26 @@ final class UTIFooterCardView: UIView {
 
     @objc private func dismissTapped() {
         onDismissTap?()
+    }
+
+    @objc private func linkTapped() {
+        onLinkTap?()
+    }
+
+    /// The whole sentence is the target, not just the trailing run: it is two lines of copy whose
+    /// only purpose is the link, and precise glyph hit-testing buys nothing here.
+    private static func attributedTitle(_ title: String, link: UTIFooterMessage.Link) -> NSAttributedString {
+        let result = NSMutableAttributedString(
+            string: title + " ",
+            attributes: [.font: UIFont.daxFootnoteRegular(),
+                         .foregroundColor: UIColor(designSystemColor: .textPrimary)]
+        )
+        result.append(NSAttributedString(
+            string: link.text,
+            attributes: [.font: UIFont.daxFootnoteRegular(),
+                         .foregroundColor: UIColor(designSystemColor: .accentTextPrimary)]
+        ))
+        return result
     }
 }
 
@@ -144,6 +186,10 @@ private extension UTIFooterCardView {
         titleLabel.font = .daxFootnoteSemibold()
         subtitleLabel.font = .daxCaption1()
 
+        titleLabel.isUserInteractionEnabled = true
+        linkTapRecognizer.isEnabled = false
+        titleLabel.addGestureRecognizer(linkTapRecognizer)
+
         let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         textStack.axis = .vertical
         textStack.alignment = .leading
@@ -174,6 +220,12 @@ private extension UTIFooterCardView {
                                                                    constant: -Constants.dismissTrailingFootprint)
         actionTrailingConstraint = actionTrailing
 
+        let iconSlotWidth = usageRing.widthAnchor.constraint(equalToConstant: Constants.iconSize)
+        iconSlotWidthConstraint = iconSlotWidth
+        let iconTextGap = textStack.leadingAnchor.constraint(equalTo: usageRing.trailingAnchor,
+                                                            constant: Constants.iconTextGap)
+        iconTextGapConstraint = iconTextGap
+
         NSLayoutConstraint.activate([
             contentTop,
             contentView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.contentLeading),
@@ -182,7 +234,7 @@ private extension UTIFooterCardView {
 
             usageRing.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             usageRing.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
-            usageRing.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            iconSlotWidth,
             usageRing.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             alertIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
@@ -190,7 +242,7 @@ private extension UTIFooterCardView {
             alertIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             alertIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
-            textStack.leadingAnchor.constraint(equalTo: usageRing.trailingAnchor, constant: Constants.iconTextGap),
+            iconTextGap,
             textStack.topAnchor.constraint(equalTo: contentView.topAnchor),
             textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
 
@@ -218,47 +270,28 @@ private extension UTIFooterCardView {
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
         dismissButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
         actionButton.applyColors()
+        // `textColor` doesn't reach an attributed string, so the notice's runs are rebuilt instead.
+        if let link = currentLink {
+            titleLabel.attributedText = Self.attributedTitle(currentTitle, link: link)
+        }
     }
 }
 
 // MARK: - Action button
 
-/// The card's CTA: a pill with the primary action, and optionally a divider and the chevron that
-/// opens the model picker.
-///
-/// Two hit regions because the view model exposes them separately — the title applies the suggested
-/// model, the chevron offers the whole list.
+/// The card's CTA: a plain pill with the primary action. The model picker lives in the toolbar, so
+/// the card offers one tap and no chevron.
 final class UTIFooterActionButton: UIView {
 
     private enum Constants {
         static let height: CGFloat = 34
         static let titleHorizontalPadding: CGFloat = 14
-        static let chevronRegionWidth: CGFloat = 28
-        static let chevronSize: CGFloat = 16
-        static let dividerWidth: CGFloat = 1
-        static let dividerVerticalInset: CGFloat = 8
         static let strokeWidth: CGFloat = 0.5
     }
 
     var onPrimaryTap: (() -> Void)?
 
-    /// The chevron stays down without a menu to show: a control that opens nothing is worse than none.
-    var modelPickerMenu: UIMenu? {
-        didSet {
-            pickerButton.menu = modelPickerMenu
-            pickerButton.showsMenuAsPrimaryAction = modelPickerMenu != nil
-            applyPickerVisibility()
-        }
-    }
-
     private let primaryButton = UIButton(type: .system)
-    private let pickerButton = UIButton(type: .system)
-    private let dividerView = UIView()
-
-    private var showsModelPicker = false
-
-    private var dividerWidthConstraint: NSLayoutConstraint?
-    private var pickerRegionWidthConstraint: NSLayoutConstraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -270,10 +303,8 @@ final class UTIFooterActionButton: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configure(title: String, showsModelPicker: Bool) {
+    func configure(title: String) {
         primaryButton.configuration?.title = title
-        self.showsModelPicker = showsModelPicker
-        applyPickerVisibility()
     }
 
     override func layoutSubviews() {
@@ -284,9 +315,7 @@ final class UTIFooterActionButton: UIView {
     func applyColors() {
         backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
         layer.borderColor = UIColor(designSystemColor: .lines).cgColor
-        dividerView.backgroundColor = UIColor(designSystemColor: .lines)
         primaryButton.configuration?.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
-        pickerButton.tintColor = UIColor(designSystemColor: .textPrimary)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -308,60 +337,24 @@ final class UTIFooterActionButton: UIView {
         primaryButton.addTarget(self, action: #selector(primaryTapped), for: .primaryActionTriggered)
         addSubview(primaryButton)
 
-        dividerView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(dividerView)
-
-        pickerButton.translatesAutoresizingMaskIntoConstraints = false
-        pickerButton.setImage(DesignSystemImages.Glyphs.Size16.chevronDownMedium, for: .normal)
-        pickerButton.accessibilityLabel = UserText.utiDuckAIWarningsModelPickerAccessibilityLabel
-        addSubview(pickerButton)
-
-        let dividerWidth = dividerView.widthAnchor.constraint(equalToConstant: Constants.dividerWidth)
-        dividerWidthConstraint = dividerWidth
-        let pickerRegionWidth = pickerButton.widthAnchor.constraint(equalToConstant: Constants.chevronRegionWidth)
-        pickerRegionWidthConstraint = pickerRegionWidth
-
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: Constants.height),
 
             primaryButton.leadingAnchor.constraint(equalTo: leadingAnchor),
+            primaryButton.trailingAnchor.constraint(equalTo: trailingAnchor),
             primaryButton.topAnchor.constraint(equalTo: topAnchor),
-            primaryButton.bottomAnchor.constraint(equalTo: bottomAnchor),
-
-            dividerView.leadingAnchor.constraint(equalTo: primaryButton.trailingAnchor),
-            dividerWidth,
-            dividerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.dividerVerticalInset),
-            dividerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.dividerVerticalInset),
-
-            pickerButton.leadingAnchor.constraint(equalTo: dividerView.trailingAnchor),
-            pickerButton.trailingAnchor.constraint(equalTo: trailingAnchor),
-            pickerButton.topAnchor.constraint(equalTo: topAnchor),
-            pickerButton.bottomAnchor.constraint(equalTo: bottomAnchor),
-            pickerRegionWidth
+            primaryButton.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
 
-        applyPickerVisibility()
         applyColors()
-    }
-
-    /// The chevron needs both an offer and a menu; the trailing padding grows back without it, so a
-    /// plain pill keeps its symmetry.
-    private func applyPickerVisibility() {
-        let isVisible = showsModelPicker && modelPickerMenu != nil
-        dividerView.isHidden = !isVisible
-        pickerButton.isHidden = !isVisible
-        dividerWidthConstraint?.constant = isVisible ? Constants.dividerWidth : 0
-        pickerRegionWidthConstraint?.constant = isVisible ? Constants.chevronRegionWidth : 0
-        primaryButton.configuration?.contentInsets = NSDirectionalEdgeInsets(
-            top: 0,
-            leading: Constants.titleHorizontalPadding,
-            bottom: 0,
-            trailing: isVisible ? Constants.titleHorizontalPadding - Constants.chevronRegionWidth / 2 : Constants.titleHorizontalPadding
-        )
     }
 
     private static func makePrimaryConfiguration() -> UIButton.Configuration {
         var configuration = UIButton.Configuration.plain()
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 0,
+                                                              leading: Constants.titleHorizontalPadding,
+                                                              bottom: 0,
+                                                              trailing: Constants.titleHorizontalPadding)
         configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
             outgoing.font = .daxFootnoteRegular()

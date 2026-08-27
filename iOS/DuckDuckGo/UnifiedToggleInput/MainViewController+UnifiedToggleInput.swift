@@ -1123,7 +1123,9 @@ extension MainViewController {
                 guard let self, let coordinator else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.superview.layoutIfNeeded()
-                coordinator.pushContentInsets(forInputHeight: self.viewCoordinator.standardNavigationBarContainerHeight)
+                if !coordinator.cardPosition.isBottom || !keepsFocusedContentStationary {
+                    coordinator.pushContentInsets(forInputHeight: self.viewCoordinator.standardNavigationBarContainerHeight)
+                }
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }

@@ -150,6 +150,7 @@ struct SuggestionsListView: View {
             .hideScrollContentBackground()
             .background(Color(designSystemColor: .background))
             .scrollDismissesKeyboardIfAvailable()
+            .ignoresSafeArea(.keyboard, edges: .bottom)
             // Pointer (trackpad/mouse) leaving the list clears the hover highlight. Touch never fires onHover.
             .onHover { isHovering in
                 if !isHovering { viewModel.selectedRowID = nil }

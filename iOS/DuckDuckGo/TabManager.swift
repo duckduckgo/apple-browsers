@@ -342,10 +342,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
         configuration.mediaTypesRequiringUserActionForPlayback = autoplaySettings.currentAutoplayBlockingMode.mediaTypesRequiringUserAction
 
-        // Tabs only: TabViewController restores the web view's layout when WebKit hands it back after
-        // element fullscreen. Hosts without that restore would render the fullscreen surface blank.
-        // iOS 16 is the floor because that restore observes `fullscreenState`, which is iOS 16+.
-        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.elementFullscreen) {
+        // iPad tabs only: iPhone's mobile YouTube enters fullscreen via `webkitEnterFullscreen()`
+        // regardless, so it gains nothing and would only lose the native player on other sites.
+        // iOS 16 is the floor because the layout restore observes `fullscreenState`, which is iOS 16+.
+        if #available(iOS 16.0, *), isPad, featureFlagger.isFeatureOn(.elementFullscreen) {
             configuration.preferences.isElementFullscreenEnabled = true
         }
 

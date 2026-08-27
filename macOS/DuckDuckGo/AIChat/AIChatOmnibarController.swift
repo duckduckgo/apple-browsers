@@ -446,6 +446,12 @@ final class AIChatOmnibarController {
     }
 
     private func refreshUsageWarnings() {
+        // Only while this surface is actually showing Duck.ai. `cleanup()` runs on the switch back to
+        // search and clears the message, but a snapshot published after that — web writing one, or a
+        // debug seed — would re-resolve it and leave the card's band and window shadow sitting under a
+        // search omnibar.
+        guard hasBeenActivated else { return }
+
         usageWarningViewModel?.refresh()
     }
 

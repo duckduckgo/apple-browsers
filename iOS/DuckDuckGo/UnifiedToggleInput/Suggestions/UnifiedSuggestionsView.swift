@@ -48,7 +48,6 @@ struct UnifiedSuggestionsView: View {
         if viewModel.isFireTab {
             let showsFire = !isTypingList
             FireModeEmptyStateView(type: .tab)
-                .padding(.top, viewModel.scrollContentInsetTop)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(designSystemColor: .background))
                 .opacity(showsFire ? 1 : 0)

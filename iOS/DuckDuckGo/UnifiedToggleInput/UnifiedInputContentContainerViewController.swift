@@ -263,7 +263,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                !switchBarHandler.isFireTab {
                 homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil)
             }
-            unifiedSuggestionsHost?.refreshMessages()
             unifiedSuggestionsHost?.setIsFireTab(switchBarHandler.isFireTab)
             unifiedSuggestionsHost?.setLandscape(isLandscapeOrientation)
             unifiedSuggestionsHost?.prepareForActivation()
@@ -337,6 +336,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         escapeHatchModel = model
+        unifiedSuggestionsHost?.refreshMessages()
         applyEscapeHatchPlacement()
         updateSingleHostTopOffset()
         if isContentActive {

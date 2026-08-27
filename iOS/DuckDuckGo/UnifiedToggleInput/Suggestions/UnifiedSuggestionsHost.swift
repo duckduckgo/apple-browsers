@@ -161,7 +161,9 @@ final class UnifiedSuggestionsHost {
 
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
     func setIsFireTab(_ value: Bool) {
+        guard viewModel.isFireTab != value else { return }
         viewModel.setFireTab(value)
+        applyCombinedInsets()
     }
 
     /// iPhone landscape suppresses the empty state (no room) — matches the unfocused NTP.
@@ -196,9 +198,6 @@ final class UnifiedSuggestionsHost {
     func setContentInsets(_ insets: UIEdgeInsets) {
         guard contentInsets != insets else { return }
         contentInsets = insets
-        if #available(iOS 17, *) {
-            viewModel.scrollContentInsetTop = insets.top
-        }
         applyCombinedInsets()
     }
 
@@ -206,7 +205,8 @@ final class UnifiedSuggestionsHost {
         let hostingTopInset: CGFloat
         if #available(iOS 17, *) {
             // Keep a self-sizing List's adjustedContentInset stable while its rows change.
-            hostingTopInset = 0
+            hostingTopInset = viewModel.isFireTab ? contentInsets.top : 0
+            viewModel.scrollContentInsetTop = viewModel.isFireTab ? 0 : contentInsets.top
         } else {
             hostingTopInset = contentInsets.top
         }

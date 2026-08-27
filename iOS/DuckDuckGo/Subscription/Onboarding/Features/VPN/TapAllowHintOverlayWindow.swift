@@ -107,7 +107,7 @@ final class TapAllowHintOverlayWindow {
 
     /// Layers the hint over the frontmost scene.
     func show() {
-        guard window == nil, let scene = Self.foregroundWindowScene else { return }
+        guard window == nil, let scene = UIApplication.shared.foregroundWindowScene else { return }
         let hostingController = UIHostingController(rootView: Self.hintView)
         hostingController.view.backgroundColor = .clear
         let window = UIWindow(windowScene: scene)
@@ -139,11 +139,5 @@ final class TapAllowHintOverlayWindow {
                           y: proxy.size.height / 2 + Metrics.hintOffsetY + Metrics.bubbleHeight)
         }
         .ignoresSafeArea()
-    }
-
-    private static var foregroundWindowScene: UIWindowScene? {
-        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        return scenes.first { $0.activationState == .foregroundActive }
-            ?? scenes.first { $0.activationState == .foregroundInactive }
     }
 }

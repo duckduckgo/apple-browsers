@@ -24,8 +24,17 @@ import Common
 
     let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
+    static let defaultOrientationMask: UIInterfaceOrientationMask = .allButUpsideDown
+
+    /// Tightened while content needing a fixed orientation is on screen — see `SubscriptionOnboardingLauncher`.
+    static var orientationLock = defaultOrientationMask
+
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+    }
+
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        Self.orientationLock
     }
 
     /// See: `Launching.swift`

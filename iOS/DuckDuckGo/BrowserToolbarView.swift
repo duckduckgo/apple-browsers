@@ -115,8 +115,7 @@ final class BrowserToolbarView: UIView {
     private static let floatingUICornerRadius: CGFloat = 40
 
     static let floatingEmbeddedHorizontalInset: CGFloat = 16
-    /// Outer side inset of the standalone top-address-bar toolbar. 24pt is the spec; 28pt was the
-    /// fallback if we needed to match another bar — the combined bottom chrome stays at 16pt.
+    /// Outer side inset of the standalone top-address-bar toolbar.
     static let floatingStandaloneHorizontalInset: CGFloat = 24
     private static let floatingEmbeddedBarOuterInsets = UIEdgeInsets(top: 0, left: floatingEmbeddedHorizontalInset, bottom: 0, right: floatingEmbeddedHorizontalInset)
     private static let floatingStandaloneBarOuterInsets = UIEdgeInsets(top: 0, left: floatingStandaloneHorizontalInset, bottom: 0, right: floatingStandaloneHorizontalInset)

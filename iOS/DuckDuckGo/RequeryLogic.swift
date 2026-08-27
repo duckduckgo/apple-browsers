@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import Networking
+import PixelKit
 
 class RequeryLogic {
     
@@ -75,7 +76,8 @@ class RequeryLogic {
             pixel = .serpRequeryNew
         }
         
-        let headers = APIRequest.Headers(userAgent: userAgentManager.userAgent(isDesktop: false))
-        Pixel.fire(pixel: pixel, forDeviceType: nil, withHeaders: headers, onComplete: { _ in })
+        // Sent with the webview's User-Agent, not the pixel one, and without the platform suffix.
+        let headers = [HTTPHeaderKey.userAgent: userAgentManager.userAgent(isDesktop: false)]
+        PixelKit.fire(pixel.withoutPlatformSuffix, options: PixelKit.Options(headers: headers))
     }
 }

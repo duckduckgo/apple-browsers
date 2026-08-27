@@ -719,7 +719,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             defaults: pixelKitDefaults
         ) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
             let url = URL.pixelUrl(forPixelNamed: pixelName)
-            let apiHeaders = APIRequestV2.HeadersV2(userAgent: Pixel.defaultPixelUserAgent, additionalHeaders: headers)
+            // A `User-Agent` in `PixelKit.Options.headers` wins. `HeadersV2` merges
+            // `additionalHeaders` with old-wins, so passing one there alone has no effect.
+            let apiHeaders = APIRequestV2.HeadersV2(userAgent: headers[HTTPHeaderKey.userAgent] ?? PixelUserAgent.default,
+                                                    additionalHeaders: headers)
             guard let request = APIRequestV2(url: url, method: .get, queryItems: parameters.toQueryItems(), headers: apiHeaders) else {
                 onComplete(false, nil)
                 return

@@ -24,6 +24,10 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?)
     /// Nothing to deliver, only the moment — reported before the keyboard takes the surface with it.
     func unifiedToggleInputDidSubmitPromptToBoundChat()
+    /// A prompt was delivered with nothing navigating behind it to report the submission — the
+    /// contextual sheet, or the chat already bound to this input. `origin` matches the `origin`
+    /// the submission pixels carry.
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?)
     func unifiedToggleInputDidSubmitQuery(_ query: String)
     func unifiedToggleInputDidRequestVoiceSearch()
     func unifiedToggleInputDidRequestAIVoiceChat()
@@ -43,6 +47,7 @@ protocol UnifiedToggleInputDelegate: AnyObject {
 
 extension UnifiedToggleInputDelegate {
     func unifiedToggleInputDidSubmitPromptToBoundChat() {}
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {}
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot { .empty }
     func unifiedToggleInputDidTapClearText() {}
     func unifiedToggleInputDidTapToActivate() {}

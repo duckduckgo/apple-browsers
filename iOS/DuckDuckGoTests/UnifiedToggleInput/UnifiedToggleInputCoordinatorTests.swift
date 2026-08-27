@@ -380,6 +380,26 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
                       "Empty model list ⇒ no access-checked selectedModel ⇒ block must remain")
     }
 
+    // MARK: - Bound-chat prompt submission reporting
+
+    func testWhenPromptGoesToBoundChatThenTheSubmissionIsReportedOnce() {
+        sut.duckAIEntrySourceProvider = { .addressBarIcon }
+        let userScript = makeBridgeReadyUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+
+        XCTAssertEqual(mockDelegate.duckAIPromptSubmissionOrigins.count, 1)
+        XCTAssertNil(mockDelegate.submittedPrompt, "A bound chat takes the prompt directly, without navigation")
+    }
+
+    func testWhenNoChatIsBoundThenTheSubmissionIsNotReportedAsBoundChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "a new prompt", mode: .aiChat)
+
+        XCTAssertTrue(mockDelegate.duckAIPromptSubmissionOrigins.isEmpty)
+        XCTAssertEqual(mockDelegate.submittedPrompt, "a new prompt")
+    }
+
     // MARK: - Recovery Picker Session Pixels
 
     func test_recoveryPickerSession_fullFunnel_smokeTest() {
@@ -3021,6 +3041,10 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     }
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() { didRequestAppMenuCount += 1 }
+    var duckAIPromptSubmissionOrigins: [AIChatEntryPointSource?] = []
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
+        duckAIPromptSubmissionOrigins.append(origin)
+    }
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

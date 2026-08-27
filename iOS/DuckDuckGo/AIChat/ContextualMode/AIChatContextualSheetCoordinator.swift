@@ -71,6 +71,10 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user requests a new Duck.ai voice chat.
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator)
+
+    /// Called when the sheet's input submits a prompt. Nothing navigates, so the browser reports it.
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -752,6 +756,10 @@ private extension AIChatContextualSheetCoordinator {
         }
         host.onPromptDelivered = { [weak self] in
             self?.sessionState.markUTIContextDelivered()
+        }
+        host.onDuckAIPromptSubmitted = { [weak self] origin in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: origin)
         }
         host.onAttachmentsChanged = { [weak self] in
             self?.sessionState.refreshForAttachmentChange()

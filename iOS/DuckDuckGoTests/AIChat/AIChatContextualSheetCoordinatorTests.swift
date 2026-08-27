@@ -131,6 +131,13 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator) {
             newVoiceChatCallCount += 1
         }
+
+        var submittedPromptOrigins: [AIChatEntryPointSource?] = []
+
+        func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                              didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
+            submittedPromptOrigins.append(origin)
+        }
     }
 
     private final class MockPresentingViewController: UIViewController {

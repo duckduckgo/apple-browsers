@@ -1295,6 +1295,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
         // The app-wide last-used is written through `UnifiedInputStateStore.commitToggleMode` on submit, which fires this delegate.
     }
 
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
+        postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: origin)
+    }
+
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
         // Recorded before the branches below, which end the visit on their own terminals.
         recordNewTabPageSessionAction { $0.hitSubmit() }

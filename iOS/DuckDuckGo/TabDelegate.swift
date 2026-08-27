@@ -191,6 +191,10 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController)
 
     func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController)
+
+    /// A Duck.ai prompt was submitted from this tab's contextual sheet. `origin` is the entry
+    /// point the submission pixels report.
+    func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
 extension TabDelegate {
@@ -204,6 +208,8 @@ extension TabDelegate {
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
+
+    func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {}
 
     func searchToken(for tab: TabViewController) -> String? { nil }
 

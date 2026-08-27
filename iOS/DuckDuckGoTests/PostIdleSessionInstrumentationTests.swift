@@ -366,6 +366,75 @@ struct PostIdleSessionInstrumentationTests {
         #expect(lastReturnCompletion(wideEvent)?.0.promptOrigin == nil)
     }
 
+    // MARK: - Prompt submissions with no navigation
+
+    @available(iOS 16, *)
+    @Test("promptSubmittedWithoutNavigation ends the return session with the origin", .timeLimit(.minutes(1)))
+    func promptSubmittedWithoutNavigationEndsReturnSessionWithOrigin() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        clock.advance(by: 3)
+        sut.promptSubmittedWithoutNavigation(origin: .addressBarIcon)
+
+        guard let completion = lastReturnCompletion(wideEvent) else {
+            Issue.record("Expected a return-session completion")
+            return
+        }
+        #expect(completion.0.statusReason == .aiPromptSubmitted)
+        #expect(completion.0.promptOrigin == "address_bar_icon")
+        #expect(completion.0.sessionInterval.end == clock.now)
+        if case .success(let reason) = completion.1 {
+            #expect(reason == "ai_prompt_submitted")
+        } else {
+            Issue.record("Expected .success status, got \(completion.1)")
+        }
+    }
+
+    @available(iOS 16, *)
+    @Test("promptSubmittedWithoutNavigation leaves the post-idle flow running", .timeLimit(.minutes(1)))
+    func promptSubmittedWithoutNavigationLeavesPostIdleFlowRunning() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: .lut, focused: false)
+        sut.promptSubmittedWithoutNavigation(origin: .addressBarIcon)
+
+        #expect(lastCompletion(wideEvent) == nil)
+
+        sut.sessionCancelledByBackground()
+        #expect(lastCompletion(wideEvent)?.0.statusReason == .appBackgrounded)
+    }
+
+    @available(iOS 16, *)
+    @Test("promptSubmittedWithoutNavigation omits the origin when the caller has none", .timeLimit(.minutes(1)))
+    func promptSubmittedWithoutNavigationOmitsOriginWhenAbsent() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        sut.promptSubmittedWithoutNavigation(origin: nil)
+
+        #expect(lastReturnCompletion(wideEvent)?.0.statusReason == .aiPromptSubmitted)
+        #expect(lastReturnCompletion(wideEvent)?.0.promptOrigin == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("A second no-navigation submission in the same session is a no-op", .timeLimit(.minutes(1)))
+    func secondPromptSubmittedWithoutNavigationIsNoop() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        sut.promptSubmittedWithoutNavigation(origin: .addressBarIcon)
+        sut.promptSubmittedWithoutNavigation(origin: .contextualChat)
+
+        let returnCompletions = wideEvent.completions.filter { $0.0 is ReturnSessionWideEventData }
+        #expect(returnCompletions.count == 1)
+        #expect(lastReturnCompletion(wideEvent)?.0.promptOrigin == "address_bar_icon")
+    }
+
+    @available(iOS 16, *)
+    @Test("When no active session then promptSubmittedWithoutNavigation is a no-op", .timeLimit(.minutes(1)))
+    func promptSubmittedWithoutNavigationWithoutActiveSessionIsNoop() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.promptSubmittedWithoutNavigation(origin: .addressBarIcon)
+        #expect(wideEvent.completions.isEmpty)
+    }
+
     @available(iOS 16, *)
     @Test("The post-idle flow collapses the submission split back onto bar_used", .timeLimit(.minutes(1)))
     func postIdleFlowCollapsesSubmissionsOntoBarUsed() {

@@ -249,6 +249,13 @@ final class UTIPixelReporter {
         }
     }
 
+    /// The origin the submission pixels report, so anything else measuring the same submission
+    /// resolves it identically. Nil once the coordinator is gone.
+    func currentPromptOrigin() -> AIChatEntryPointSource? {
+        guard let context = context() else { return nil }
+        return Self.promptOrigin(for: context)
+    }
+
     static func promptOrigin(for context: UTIPixelContext) -> AIChatEntryPointSource? {
         switch context.surface {
         case .addressBar: return .addressBarPrompt

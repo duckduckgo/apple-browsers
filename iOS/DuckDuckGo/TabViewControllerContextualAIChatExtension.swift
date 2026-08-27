@@ -139,4 +139,9 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator) {
         delegate?.tabDidRequestNewVoiceChat(self)
     }
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
+        delegate?.tab(self, didSubmitDuckAIPromptWithOrigin: origin)
+    }
 }

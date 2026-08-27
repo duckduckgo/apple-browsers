@@ -37,7 +37,8 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
 
     /// `nil` for events this surface can't produce, per `DuckAIPromptSurface`: page context (tab and
     /// `@`-mention attachments), Customize Responses and the subscription upsell are all off on the
-    /// Prompt Bar, so counting them would define a pixel that never fires.
+    /// Prompt Bar, so counting them would define a pixel that never fires. Gated picker rows aren't
+    /// interactive here either, so gated-row clicks aren't reported.
     static func promptBarPixel(for event: DuckAIPromptPixelEvent) -> PromptBarPixel? {
         switch event {
         case .promptSubmitted: .submitPrompt
@@ -67,6 +68,7 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
                 .tabPickerCanceled,
                 .customizeResponsesOpened,
                 .subscriptionUpsellShown,
+                .gatedRowClick,
                 .subscriptionUpsellTriggered:
             nil
         }

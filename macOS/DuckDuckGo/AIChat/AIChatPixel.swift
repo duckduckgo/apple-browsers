@@ -328,6 +328,12 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: The address bar's reasoning picker opened showing at least one gated effort.
     case aiChatAddressBarReasoningPickerShown(origin: String)
 
+    /// Event Trigger: User taps a gated model or reasoning effort in the address bar picker.
+    case aiChatAddressBarGatedRowClick(origin: String)
+
+    /// Event Trigger: User taps a gated model or reasoning effort in the New Tab Page picker.
+    case aiChatNtpGatedRowClick(origin: String)
+
     // MARK: - Duck.ai Subscription Funnel (frontend-reported)
 
     /// Event Trigger: A Duck.ai subscription-funnel entry point is shown in the web frontend, reported over the `reportMetric` bridge. `origin` is the entry point.
@@ -732,6 +738,10 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_addressbar_model_picker_shown"
         case .aiChatAddressBarReasoningPickerShown:
             return "aichat_addressbar_reasoning_picker_shown"
+        case .aiChatAddressBarGatedRowClick:
+            return "aichat_addressbar_gated_row_click"
+        case .aiChatNtpGatedRowClick:
+            return "aichat_ntp_gated_row_click"
         case .aiChatSubscriptionFunnelImpression:
             return "aichat_subscription-funnel_impression"
         case .aiChatSubscriptionFunnelClick:
@@ -977,6 +987,8 @@ enum AIChatPixel: PixelKit.Event {
             return ["origin": origin]
         case .aiChatAddressBarModelPickerShown(let origin),
                 .aiChatAddressBarReasoningPickerShown(let origin),
+                .aiChatAddressBarGatedRowClick(let origin),
+                .aiChatNtpGatedRowClick(let origin),
                 .aiChatNtpModelPickerShown(let origin),
                 .aiChatNtpModelPickerTryForFreeShown(let origin),
                 .aiChatNtpModelPickerUpgradeShown(let origin),
@@ -1146,6 +1158,8 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpSubscriptionUpsellShown,
                 .aiChatAddressBarModelPickerShown,
                 .aiChatAddressBarReasoningPickerShown,
+                .aiChatAddressBarGatedRowClick,
+                .aiChatNtpGatedRowClick,
                 .aiChatNtpModelPickerShown,
                 .aiChatNtpModelPickerTryForFreeShown,
                 .aiChatNtpModelPickerUpgradeShown,
@@ -1213,6 +1227,16 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return [.pixelSource]
+        }
+    }
+
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .aiChatAddressBarGatedRowClick,
+                .aiChatNtpGatedRowClick:
+            return .none
+        default:
+            return .platformDefault
         }
     }
 

@@ -582,7 +582,9 @@ final class MainCoordinator {
             enabledTypes.insert(.adBlockingExtension)
         }
         let searchTokenCohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort
-        if searchTokenCohort == .treatment {
+        // The search-token extension pulls its token over native messaging,
+        // so skipping this extension builds without that support (Alpha)
+        if searchTokenCohort == .treatment, nativeMessagingSupport.isSupported {
             enabledTypes.insert(.searchToken)
         }
         return enabledTypes

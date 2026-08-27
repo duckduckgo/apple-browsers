@@ -6814,6 +6814,7 @@ extension MainViewController: TabDelegate {
     func tabDidRequestNewAIChatTab(tab: TabViewController) {
         let source: AIChatEntryPointSource = tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage
         fireAIChatEntryPointPixel(source: source, opensNewTab: true, hasPrompt: false)
+        postIdleSessionInstrumentation.duckAIOpenedWithoutPrompt()
         tab.openNewChatInNewTab(source: source)
     }
 

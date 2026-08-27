@@ -1010,8 +1010,9 @@ extension MainViewController: TabsBarDelegate {
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {
         // Chrome button always opens Duck.ai in a new tab unless current tab is blank — matches macOS.
         if let currentTab, currentTab.tabModel.link != nil {
-            // Bypasses `openAIChat`, so fire the entry pixel directly.
+            // Bypasses `openAIChat`, so report the entry pixel and post-idle completion directly.
             fireAIChatEntryPointPixel(source: .tabsBarButton, opensNewTab: true, hasPrompt: false)
+            postIdleSessionInstrumentation.duckAIOpenedWithoutPrompt()
             currentTab.openNewChatInNewTab(source: .tabsBarButton)
         } else {
             openAIChat(source: .tabsBarButton)

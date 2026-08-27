@@ -60,6 +60,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func setFavoritesHidden(_ hidden: Bool, animationDuration: TimeInterval? = nil) {
+        guard newTabPageViewModel.isFavoritesHidden != hidden else { return }
         if let animationDuration {
             withAnimation(.easeInOut(duration: animationDuration)) {
                 newTabPageViewModel.isFavoritesHidden = hidden

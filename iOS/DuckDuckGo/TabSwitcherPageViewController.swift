@@ -56,7 +56,6 @@ enum TabSwitcherGridLayoutGeometry {
         max(0, floor(columnWidth(for: availableWidth)) - TabViewGridCell.Constants.previewHorizontalInset)
     }
 
-    /// Keeps previews sharp after rotation without snapshotting at the full web view width.
     static func maximumPreviewWidth(for availableSize: CGSize) -> CGFloat {
         max(previewWidth(for: availableSize.width), previewWidth(for: availableSize.height))
     }

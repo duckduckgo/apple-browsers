@@ -20,6 +20,7 @@
 import UIKit.UIApplication
 import Core
 import Persistence
+import PixelKit
 
 enum TerminationError: Error {
 
@@ -67,7 +68,7 @@ struct Terminating: TerminatingHandling {
         var additionalParams: [String: String] = [:]
 
         guard let error = error as? TerminationError else {
-            DailyPixel.fireDailyAndCount(pixel: .appDidTerminateWithUnhandledError, error: error)
+            PixelKit.fire(Pixel.Event.appDidTerminateWithUnhandledError.withError(error), frequency: .dailyAndCount)
             Thread.sleep(forTimeInterval: 1)
             fatalError("Unhandled error: \(error)")
         }
@@ -161,10 +162,9 @@ struct Terminating: TerminatingHandling {
             mode = .immediately(debugMessage: "TabsModelPersistence init failed: \(error)")
         }
 
-        DailyPixel.fireDailyAndCount(pixel: pixel,
-                                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                     error: errorToReport,
-                                     withAdditionalParameters: additionalParams)
+        PixelKit.fire(pixel.withError(errorToReport),
+                      frequency: .dailyAndStandard,
+                      options: .parameters(additionalParams))
 
         switch mode {
         case .immediately(let debugMessage):

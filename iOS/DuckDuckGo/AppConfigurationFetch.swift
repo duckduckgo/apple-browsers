@@ -22,6 +22,7 @@ import BackgroundTasks
 import Core
 import BrowserServicesKit
 import Configuration
+import PixelKit
 
 typealias AppConfigurationFetchCompletion = (ConfigurationManager.UpdateResult) -> Void
 
@@ -170,7 +171,7 @@ class AppConfigurationFetch: AppConfigurationFetching {
         do {
             try BGTaskScheduler.shared.submit(task)
         } catch {
-            Pixel.fire(pixel: .backgroundTaskSubmissionFailed, error: error, withAdditionalParameters: [PixelParameters.backgroundTaskCategory: "appConfiguration"])
+            PixelKit.fire(Pixel.Event.backgroundTaskSubmissionFailed.withError(error), options: .parameters([PixelParameters.backgroundTaskCategory: "appConfiguration"]))
         }
         #endif
     }

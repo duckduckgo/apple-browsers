@@ -26,6 +26,7 @@ import Common
 import FoundationExtensions
 import Persistence
 import os.log
+import PixelKit
 
 class CredentialProviderViewController: ASCredentialProviderViewController {
 
@@ -82,9 +83,9 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
             eventMapping: EventMapping<AutofillPixelEvent> { event, _, params, _ in
                 switch event {
                 case .autofillActiveUser:
-                    Pixel.fire(pixel: .autofillActiveUser, withAdditionalParameters: params ?? [:])
+                    PixelKit.fire(Pixel.Event.autofillActiveUser, options: .parameters(params ?? [:]))
                 case .autofillLoginsStacked:
-                    Pixel.fire(pixel: .autofillLoginsStacked, withAdditionalParameters: params ?? [:])
+                    PixelKit.fire(Pixel.Event.autofillLoginsStacked, options: .parameters(params ?? [:]))
                 default:
                     break
                 }
@@ -176,7 +177,7 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
             }
         }
 
-        Pixel.fire(pixel: .autofillExtensionEnabled)
+        PixelKit.fire(Pixel.Event.autofillExtensionEnabled)
     }
 
     @available(iOSApplicationExtension 18.0, *)
@@ -229,12 +230,12 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
         guard let passwordCredential = vaultCredentialManager.fetchCredential(for: credentialIdentity) else {
             self.extensionContext.cancelRequest(withError: NSError(domain: ASExtensionErrorDomain,
                                                                    code: ASExtensionError.credentialIdentityNotFound.rawValue))
-            Pixel.fire(pixel: .autofillExtensionQuickTypeCancelled)
+            PixelKit.fire(Pixel.Event.autofillExtensionQuickTypeCancelled)
             return
         }
 
         self.extensionContext.completeRequest(withSelectedCredential: passwordCredential)
-        Pixel.fire(pixel: .autofillExtensionQuickTypeConfirmed)
+        PixelKit.fire(Pixel.Event.autofillExtensionQuickTypeConfirmed)
         reportFillEvent()
     }
 
@@ -242,12 +243,12 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
         guard let passwordCredential = vaultCredentialManager.fetchCredential(for: credentialIdentity) else {
             self.extensionContext.cancelRequest(withError: NSError(domain: ASExtensionErrorDomain,
                                                                    code: ASExtensionError.credentialIdentityNotFound.rawValue))
-            Pixel.fire(pixel: .autofillExtensionQuickTypeCancelled)
+            PixelKit.fire(Pixel.Event.autofillExtensionQuickTypeCancelled)
             return
         }
 
         self.extensionContext.completeRequest(withSelectedCredential: passwordCredential)
-        Pixel.fire(pixel: .autofillExtensionQuickTypeConfirmed)
+        PixelKit.fire(Pixel.Event.autofillExtensionQuickTypeConfirmed)
         reportFillEvent()
     }
 

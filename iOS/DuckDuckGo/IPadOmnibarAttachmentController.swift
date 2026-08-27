@@ -21,6 +21,7 @@ import AIChat
 import Core
 import UIKit
 import UniformTypeIdentifiers
+import PixelKit
 
 /// Drives the Duck.ai attachment picker shown on the far left of the iPad address bar's expanded
 /// AI-chat input area, and the strip of pending attachments displayed above the toolbar row.
@@ -171,10 +172,9 @@ final class IPadOmnibarAttachmentController {
 
     private func addFileAttachment(_ fileAttachment: AIChatFileAttachment, sourceURL: URL?) {
         if let validationError = attachmentPolicy.fileValidationError(for: fileAttachment) {
-            DailyPixel.fireDailyAndCount(
-                pixel: .unifiedToggleInputFileValidationFailed,
-                withAdditionalParameters: ["reason": validationError.reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]
-            )
+            PixelKit.fire(Pixel.Event.unifiedToggleInputFileValidationFailed,
+                          frequency: .dailyAndCount,
+                          options: .parameters(["reason": validationError.reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
             attachmentsStripView?.addAttachment(.invalidFile(
                 UnifiedToggleInputInvalidFileAttachment(
                     id: fileAttachment.id,
@@ -188,7 +188,7 @@ final class IPadOmnibarAttachmentController {
             return
         }
 
-        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileAttached, withAdditionalParameters: ["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"])
+        PixelKit.fire(Pixel.Event.unifiedToggleInputFileAttached, frequency: .dailyAndCount, options: .parameters(["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
         attachmentsStripView?.addAttachment(.file(fileAttachment))
     }
 
@@ -207,10 +207,9 @@ final class IPadOmnibarAttachmentController {
         } else {
             reason = .other
         }
-        DailyPixel.fireDailyAndCount(
-            pixel: .unifiedToggleInputFileValidationFailed,
-            withAdditionalParameters: ["reason": reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]
-        )
+        PixelKit.fire(Pixel.Event.unifiedToggleInputFileValidationFailed,
+                      frequency: .dailyAndCount,
+                      options: .parameters(["reason": reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
         attachmentsStripView?.addAttachment(.invalidFile(
             UnifiedToggleInputInvalidFileAttachment(
                 fileName: metadata.fileName,

@@ -27,6 +27,7 @@ import PrivacyConfig
 import Networking
 import Persistence
 import FeatureFlags_iOS
+import PixelKit
 
 /// Status for the cancel-downgrade overlay
 enum CancelDowngradeOverlayStatus {
@@ -155,9 +156,9 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
         // Fire appropriate pixel
         if tier != nil {
-            Pixel.fire(pixel: .subscriptionUpgradeClick)
+            PixelKit.fire(Pixel.Event.subscriptionUpgradeClick)
         } else {
-            Pixel.fire(pixel: .subscriptionViewAllPlansClick)
+            PixelKit.fire(Pixel.Event.subscriptionViewAllPlansClick)
         }
 
         switch platform {
@@ -314,7 +315,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             state.cancelDowngradeTransactionStatus = .planChangeInProgress
             state.cancelDowngradeError = nil
             cancelDowngradeError = nil
-            Pixel.fire(pixel: .subscriptionCancelPendingDowngradeClick)
+            PixelKit.fire(Pixel.Event.subscriptionCancelPendingDowngradeClick)
             Task { await self.runCancelHandler() }
         case .google:
             displayGoogleView(true)

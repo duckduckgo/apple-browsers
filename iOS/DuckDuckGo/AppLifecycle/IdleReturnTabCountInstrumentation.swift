@@ -18,6 +18,7 @@
 //
 
 import Core
+import PixelKit
 
 /// Daily tab-count snapshot on app foreground, segmented by NTP-after-idle setting.
 /// Reuses `TabSwitcherOpenDailyPixel` buckets to be comparable with `m_tab_manager_opened_daily`.
@@ -34,7 +35,7 @@ final class DefaultIdleReturnTabCountInstrumentation: IdleReturnTabCountInstrume
 
     init(eligibilityManager: IdleReturnEligibilityManaging,
          fireDaily: @escaping (Pixel.Event, [String: String]) -> Void = { event, params in
-             DailyPixel.fireDaily(event, withAdditionalParameters: params)
+             PixelKit.fire(event, frequency: .legacyDailyNoSuffix, options: .parameters(params))
          }) {
         self.eligibilityManager = eligibilityManager
         self.fireDaily = fireDaily

@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import AIChat
 import Core
+import PixelKit
 
 final class NewAddressBarPickerViewController: UIViewController {
     
@@ -44,7 +45,7 @@ final class NewAddressBarPickerViewController: UIViewController {
         super.viewDidLoad()
         
         setupContentView()
-        DailyPixel.fireDailyAndCount(pixel: .aiChatNewAddressBarPickerV2Displayed)
+        PixelKit.fire(Pixel.Event.aiChatNewAddressBarPickerV2Displayed, frequency: .dailyAndCount)
     }
     
     private func setupContentView() {

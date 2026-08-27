@@ -21,6 +21,7 @@ import Foundation
 import Core
 import LocalAuthentication
 import UIKit
+import PixelKit
 
 struct AutofillSettingStatus {
 
@@ -83,7 +84,7 @@ struct AutofillSettingStatus {
 
         guard LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
             if let error = error as? LAError, error.code == .passcodeNotSet {
-                DailyPixel.fire(pixel: .autofillDeviceCapabilityDeviceAuthDisabled)
+                PixelKit.fire(Pixel.Event.autofillDeviceCapabilityDeviceAuthDisabled, frequency: .legacyDailyNoSuffix)
                 return .noPasscodeSet
             }
             return .otherFailure

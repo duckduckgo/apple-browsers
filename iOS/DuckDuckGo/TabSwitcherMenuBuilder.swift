@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import DesignResourcesKitIcons
+import PixelKit
 
 // MARK: - State
 
@@ -106,7 +107,7 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
                             actions: TabSwitcherMultiSelectMenuActions) -> UIMenu {
         let items = multiSelectionMenuItems(state: state, actions: actions)
         let deferredElement = UIDeferredMenuElement.uncached { completion in
-            Pixel.fire(pixel: .tabSwitcherSelectModeMenuClicked)
+            PixelKit.fire(Pixel.Event.tabSwitcherSelectModeMenuClicked)
             completion(items)
         }
         return UIMenu(title: "", children: [deferredElement])
@@ -115,7 +116,7 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
     func editMenu(actions: TabSwitcherEditMenuActions) -> UIMenu {
         let items = editMenuItems(actions: actions)
         let deferredElement = UIDeferredMenuElement.uncached { completion in
-            Pixel.fire(pixel: .tabSwitcherEditMenuClicked)
+            PixelKit.fire(Pixel.Event.tabSwitcherEditMenuClicked)
             completion(items)
         }
         return UIMenu(children: [deferredElement])

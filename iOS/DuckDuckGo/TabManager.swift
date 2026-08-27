@@ -33,6 +33,7 @@ import AIChat
 import Combine
 import PrivacyConfig
 import WebExtensions
+import PixelKit
 
 protocol TabManaging {
     var currentTabsModel: TabsModelManaging { get }
@@ -315,10 +316,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         _currentBrowsingMode = mode
         fireModeDelegate?.tabManagerDidChangeBrowsingMode(mode)
-        Pixel.fire(pixel: .browsingModeSwitched, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.browsingModeSwitched, options: .parameters([
             PixelParameters.browsingMode: mode.pixelParamValue,
             PixelParameters.source: source.rawValue
-        ])
+        ]))
     }
 
     func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
@@ -729,10 +730,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             }
 
             if reloadCurrent {
-                DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                PixelKit.fire(Pixel.Event.webKitTerminationDidReloadCurrentTab, frequency: .dailyAndStandard)
 
                 if controller.url?.isDuckAIURL == true {
-                    DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+                    PixelKit.fire(Pixel.Event.aiChatTabDidReloadAfterTermination, frequency: .dailyAndCount)
                 }
 
                 current()?.reload()
@@ -1049,9 +1050,9 @@ extension TabManager {
         let totalTabs = allTabsModel.tabs.count
 
         if let storedPreviews = totalStoredPreviews, storedPreviews > totalTabs {
-            Pixel.fire(pixel: .cachedTabPreviewsExceedsTabCount, withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.cachedTabPreviewsExceedsTabCount, options: .parameters([
                 PixelParameters.tabPreviewCountDelta: "\(storedPreviews - totalTabs)"
-            ])
+            ]))
             Task(priority: .utility) {
                 _ = previewsSource.removePreviewsWithIdNotIn(Set(allTabsModel.tabs.map { $0.uid }))
             }

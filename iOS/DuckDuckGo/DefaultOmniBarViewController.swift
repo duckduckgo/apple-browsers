@@ -22,6 +22,7 @@ import PrivacyDashboard
 import AIChat
 import Core
 import FeatureFlags_iOS
+import PixelKit
 
 final class DefaultOmniBarViewController: OmniBarViewController {
 
@@ -388,11 +389,11 @@ extension DefaultOmniBarViewController {
             omniBarView.updateAIChatSendButton(hasText: false)
 
             if URL.isValidAddressBarURLInput(query) {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadToggleURLSubmitted)
+                PixelKit.fire(Pixel.Event.aiChatIPadToggleURLSubmitted, frequency: .dailyAndCount)
                 dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted)
+                PixelKit.fire(Pixel.Event.aiChatIPadTogglePromptSubmitted, frequency: .dailyAndCount)
                 fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty)
                 /// Collapse and resign instantly so a quick re-tap doesn't race the post-submit
                 /// collapse animation.

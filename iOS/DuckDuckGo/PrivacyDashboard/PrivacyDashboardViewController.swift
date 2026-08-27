@@ -28,6 +28,7 @@ import Common
 import FoundationExtensions
 import os.log
 import PixelExperimentKit
+import PixelKit
 
 final class PrivacyDashboardViewController: UIViewController {
 
@@ -64,9 +65,9 @@ final class PrivacyDashboardViewController: UIViewController {
         case .reportBrokenSiteSent: domainEvent = .reportBrokenSiteSent
         }
         if let parameters {
-            Pixel.fire(pixel: domainEvent, withAdditionalParameters: parameters)
+            PixelKit.fire(domainEvent, options: .parameters(parameters))
         } else {
-            Pixel.fire(pixel: domainEvent)
+            PixelKit.fire(domainEvent)
         }
     }
 
@@ -146,7 +147,7 @@ final class PrivacyDashboardViewController: UIViewController {
         if state.isProtected {
             privacyConfiguration.userEnabledProtection(forDomain: domain)
             ActionMessageView.present(message: UserText.messageProtectionEnabled.format(arguments: domain))
-            Pixel.fire(pixel: .dashboardProtectionAllowlistRemove, withAdditionalParameters: pixelParam)
+            PixelKit.fire(Pixel.Event.dashboardProtectionAllowlistRemove, options: .parameters(pixelParam))
         } else {
             privacyConfiguration.userDisabledProtection(forDomain: domain)
             if didSendReport {
@@ -154,10 +155,10 @@ final class PrivacyDashboardViewController: UIViewController {
             } else {
                 ActionMessageView.present(message: UserText.messageProtectionDisabled.format(arguments: domain))
             }
-            Pixel.fire(pixel: .dashboardProtectionAllowlistAdd, withAdditionalParameters: pixelParam)
+            PixelKit.fire(Pixel.Event.dashboardProtectionAllowlistAdd, options: .parameters(pixelParam))
             let tdsEtag = AppDependencyProvider.shared.configurationStore.loadEtag(for: .trackerDataSet) ?? ""
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
-                UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
+                PixelKit.fire(Pixel.Event.debugBreakageExperiment, frequency: .uniqueByName, options: .parameters(parameters))
             }
         }
         

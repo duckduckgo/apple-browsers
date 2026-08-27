@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import PixelKit
 
 struct EmailProtectionView: View {
 
@@ -57,11 +58,11 @@ struct EmailProtectionView: View {
             shouldShowEmailAlert = value
         }
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsEmailProtectionOpen,
-                       withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.settingsEmailProtectionOpen,
+                          options: .parameters([
                         "is_signed_in": viewModel.emailManager.isSignedIn ? "1" : "0",
                         "subscribed": String(viewModel.subscriptionManager.isUserAuthenticated)
-                       ])
+                       ]))
         }
     }
 }
@@ -99,7 +100,7 @@ struct EmailProtectionViewSettings: View {
                 SettingsCellView(label: UserText.enableEmailProtection,
                                  action: {
                     viewModel.openEmailProtection()
-                    Pixel.fire(pixel: .settingsEmailProtectionEnable)
+                    PixelKit.fire(Pixel.Event.settingsEmailProtectionEnable)
                                  },
                                  webLinkIndicator: true,
                                  isButton: true)

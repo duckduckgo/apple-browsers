@@ -30,6 +30,7 @@ import DDGSync
 import os.log
 import DataBrokerProtection_iOS
 import VPN
+import PixelKit
 
 struct VPNEntryPoint {
     let screenSource: VPNConnectionWideEventData.ScreenSource
@@ -558,7 +559,7 @@ extension MainViewController {
                 self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
             }
         }
-        Pixel.fire(pixel: .settingsPresented)
+        PixelKit.fire(Pixel.Event.settingsPresented)
 
         func doLaunch() {
             if let navigationController = self.presentedViewController as? UINavigationController,

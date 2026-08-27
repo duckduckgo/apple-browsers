@@ -26,6 +26,7 @@ import DesignResourcesKit
 import Foundation
 import SecureStorage
 import SwiftUI
+import PixelKit
 
 protocol AutofillLoginDetailsViewModelDelegate: AnyObject {
     func autofillLoginDetailsViewModelDidSave()
@@ -245,11 +246,11 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
         case .username:
             message = UserText.autofillCopyToastUsernameCopied
             UIPasteboard.general.string = username
-            Pixel.fire(pixel: .autofillManagementCopyUsername)
+            PixelKit.fire(Pixel.Event.autofillManagementCopyUsername)
         case .password:
             message = UserText.autofillCopyToastPasswordCopied
             UIPasteboard.general.string = password
-            Pixel.fire(pixel: .autofillManagementCopyPassword)
+            PixelKit.fire(Pixel.Event.autofillManagementCopyPassword)
         case .address:
             message = UserText.autofillCopyToastAddressCopied
             UIPasteboard.general.string = address
@@ -280,7 +281,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
                 }
             }
         } catch {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
         }
     }
 
@@ -365,7 +366,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
                 delegate?.autofillLoginDetailsViewModelDidAttemptToSaveDuplicateLogin()
             }
         } else {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
         }
     }
 

@@ -25,6 +25,7 @@ import Foundation
 import FoundationExtensions
 import RemoteMessaging
 import os.log
+import PixelKit
 
 @MainActor
 final class HomePageConfiguration: HomePageMessagesConfiguration {
@@ -358,15 +359,15 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private func reportRemoteMessageShown(_ remoteMessage: RemoteMessageModel) {
         Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
         if remoteMessage.isMetricsEnabled {
-            Pixel.fire(pixel: .remoteMessageShown,
-                       withAdditionalParameters: additionalParameters(for: remoteMessage.id))
+            PixelKit.fire(Pixel.Event.remoteMessageShown,
+                          options: .parameters(additionalParameters(for: remoteMessage.id)))
         }
 
         if !remoteMessagingStore.hasShownRemoteMessage(withID: remoteMessage.id) {
             Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
-                Pixel.fire(pixel: .remoteMessageShownUnique,
-                           withAdditionalParameters: additionalParameters(for: remoteMessage.id))
+                PixelKit.fire(Pixel.Event.remoteMessageShownUnique,
+                              options: .parameters(additionalParameters(for: remoteMessage.id)))
             }
             Task {
                 await remoteMessagingStore.updateRemoteMessage(withID: remoteMessage.id, asShown: true)

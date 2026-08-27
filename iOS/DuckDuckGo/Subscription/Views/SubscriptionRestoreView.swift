@@ -24,6 +24,7 @@ import DesignResourcesKitIcons
 import Core
 import PrivacyConfig
 import MetricBuilder
+import PixelKit
 
 struct SubscriptionRestoreView: View {
 
@@ -144,8 +145,8 @@ struct SubscriptionRestoreView: View {
                         image: Image(uiImage: DesignSystemImages.Glyphs.Size16.email),
                         buttonTitle: UserText.subscriptionActivateViaEmailButton,
                         buttonAction: {
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseEmailStart,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseEmailStart,
+                          frequency: .legacyDailyAndCount)
             viewModel.showActivationFlow(true)
         })
     }

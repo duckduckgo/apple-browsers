@@ -358,7 +358,7 @@ extension UsageSegmentation {
                 return
             }
 
-            Pixel.fire(pixel: .usageSegments, withAdditionalParameters: params)
+            PixelKit.fire(Pixel.Event.usageSegments, options: .parameters(params))
         }
     }
 }

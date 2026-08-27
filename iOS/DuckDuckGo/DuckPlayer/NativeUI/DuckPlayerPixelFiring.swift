@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import PixelKit
 
 /// Protocol defining the interface for firing DuckPlayer-related pixels
 public protocol DuckPlayerPixelFiring {
@@ -75,12 +76,12 @@ public final class DuckPlayerPixelHandler: DuckPlayerPixelFiring {
     public static func fire(_ pixel: Pixel.Event,
                             withAdditionalParameters parameters: [String: String],
                             debounceTime: Int) {
-        Pixel.fire(pixel: pixel, withAdditionalParameters: parameters, debounce: debounceTime)
+        PixelKit.fire(pixel, frequency: .debounce(seconds: debounceTime), options: .parameters(parameters))
     }
 
     public static func fireDaily(_ pixel: Pixel.Event,
                                  withAdditionalParameters parameters: [String: String],
                                  debounceTime: Int) {
-        DailyPixel.fire(pixel: pixel, withAdditionalParameters: parameters)
+        PixelKit.fire(pixel, frequency: .legacyDailyNoSuffix, options: .parameters(parameters))
     }
 }

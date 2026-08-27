@@ -20,6 +20,7 @@
 import Core
 import AuthenticationServices
 import BrowserServicesKit
+import PixelKit
 
 final class AutofillUsageMonitor {
 
@@ -41,7 +42,7 @@ final class AutofillUsageMonitor {
                 self?.autofillExtensionEnabled = true
             } else {
                 if self?.autofillExtensionEnabled == true {
-                    Pixel.fire(pixel: .autofillExtensionDisabled)
+                    PixelKit.fire(Pixel.Event.autofillExtensionDisabled)
                     self?.autofillExtensionEnabled = false
                 }
             }

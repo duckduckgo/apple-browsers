@@ -25,6 +25,7 @@ import FoundationExtensions
 import ContentBlocking
 import PrivacyConfig
 import PixelExperimentKit
+import PixelKit
 
 public final class ContentBlocking {
     
@@ -123,7 +124,7 @@ public final class ContentBlocking {
             
             let tmpDirectory = FileManager.default.temporaryDirectory
             if !FileManager.default.fileExists(atPath: tmpDirectory.path) {
-                Pixel.fire(pixel: .contentBlockingCompilationFailedMissingTmpDir)
+                PixelKit.fire(Pixel.Event.contentBlockingCompilationFailedMissingTmpDir)
             }
 
         case .contentBlockingLookupRulesSucceeded:
@@ -217,7 +218,7 @@ public final class ContentBlocking {
             domainEvent = .adAttributionLogicWrongVendorOnFailedCompilation
         }
 
-        Pixel.fire(pixel: domainEvent, includedParameters: [])
+        PixelKit.fire(domainEvent, options: .withoutAppVersion)
     }
 
 }

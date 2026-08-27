@@ -21,6 +21,7 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import DuckUI
+import PixelKit
 
 struct SettingsDuckPlayerView: View {
     private static let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duck-player/")!
@@ -40,7 +41,7 @@ struct SettingsDuckPlayerView: View {
                         viewModel.openDuckPlayerContingencyMessageSite()
                     }.onAppear {
                         if !hasFiredSettingsDisplayedPixel {
-                            Pixel.fire(pixel: .duckPlayerContingencySettingsDisplayed)
+                            PixelKit.fire(Pixel.Event.duckPlayerContingencySettingsDisplayed)
                             hasFiredSettingsDisplayedPixel = true
                         }
                     }
@@ -112,8 +113,9 @@ struct SettingsDuckPlayerView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onAppear {
-            DailyPixel.fireDailyAndCount(pixel: .duckPlayerSettingsOpen,
-                                         withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .duckPlayer))
+            PixelKit.fire(Pixel.Event.duckPlayerSettingsOpen,
+                          frequency: .dailyAndCount,
+                          options: .parameters(viewModel.featureDiscovery.addToParams([:], forFeature: .duckPlayer)))
         }
         .alert(UserText.duckPlayerTabAlertTitle, isPresented: $showNewTabAlert) {
             Button(UserText.duckPlayerTabAlertOK, role: .cancel) { }

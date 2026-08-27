@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import AIChat
+import PixelKit
 
 protocol AIChatDeepLinkPresenting: UIViewController {
     func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource)
@@ -99,7 +100,7 @@ struct AIChatDeepLinkHandler {
 
     private func fireAIVoiceChatPixel(_ url: URL) {
         if let source = url.getParameter(named: WidgetSourceType.sourceKey) {
-            Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: source])
+            PixelKit.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source]))
         }
     }
 
@@ -112,13 +113,13 @@ struct AIChatDeepLinkHandler {
         if let sourceItem = queryItems?.first(where: { $0.name == WidgetSourceType.sourceKey }) {
             switch sourceItem.value {
             case WidgetSourceType.quickActions.rawValue:
-                DailyPixel.fireDailyAndCount(pixel: .openAIChatFromWidgetQuickAction)
+                PixelKit.fire(Pixel.Event.openAIChatFromWidgetQuickAction, frequency: .dailyAndCount)
             case WidgetSourceType.favorite.rawValue:
-                DailyPixel.fireDailyAndCount(pixel: .openAIChatFromWidgetFavorite)
+                PixelKit.fire(Pixel.Event.openAIChatFromWidgetFavorite, frequency: .dailyAndCount)
             case WidgetSourceType.lockscreenComplication.rawValue:
-                DailyPixel.fireDailyAndCount(pixel: .openAIChatFromWidgetLockScreenComplication)
+                PixelKit.fire(Pixel.Event.openAIChatFromWidgetLockScreenComplication, frequency: .dailyAndCount)
             case WidgetSourceType.controlCenter.rawValue:
-                DailyPixel.fireDailyAndCount(pixel: .openAIChatFromWidgetControlCenter)
+                PixelKit.fire(Pixel.Event.openAIChatFromWidgetControlCenter, frequency: .dailyAndCount)
             default:
                 break
             }

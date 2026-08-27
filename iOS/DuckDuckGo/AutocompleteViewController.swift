@@ -33,6 +33,7 @@ import PrivacyConfig
 import SwiftUI
 import AIChat
 import FeatureFlags_iOS
+import PixelKit
 
 class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
@@ -218,19 +219,19 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         }
 
         if bookmark {
-            Pixel.fire(pixel: .autocompleteDisplayedLocalBookmark)
+            PixelKit.fire(Pixel.Event.autocompleteDisplayedLocalBookmark)
         }
 
         if favorite {
-            Pixel.fire(pixel: .autocompleteDisplayedLocalFavorite)
+            PixelKit.fire(Pixel.Event.autocompleteDisplayedLocalFavorite)
         }
 
         if history {
-            Pixel.fire(pixel: .autocompleteDisplayedLocalHistory)
+            PixelKit.fire(Pixel.Event.autocompleteDisplayedLocalHistory)
         }
 
         if openTab {
-            Pixel.fire(pixel: .autocompleteDisplayedOpenedTab)
+            PixelKit.fire(Pixel.Event.autocompleteDisplayedOpenedTab)
         }
 
     }
@@ -330,26 +331,26 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
     func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
         switch suggestion {
         case .bookmark(_, _, let isFavorite, _):
-            Pixel.fire(pixel: isFavorite ? .autocompleteClickFavorite : .autocompleteClickBookmark)
+            PixelKit.fire(isFavorite ? .autocompleteClickFavorite : .autocompleteClickBookmark)
 
         case .historyEntry(_, let url, _):
-            Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
+            PixelKit.fire(url.isDuckDuckGoSearch ? .autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
 
         case .phrase:
-            Pixel.fire(pixel: .autocompleteClickPhrase)
+            PixelKit.fire(Pixel.Event.autocompleteClickPhrase)
 
         case .website:
-            Pixel.fire(pixel: .autocompleteClickWebsite)
+            PixelKit.fire(Pixel.Event.autocompleteClickWebsite)
 
         case .openTab:
-            Pixel.fire(pixel: .autocompleteClickOpenTab)
+            PixelKit.fire(Pixel.Event.autocompleteClickOpenTab)
 
         case .askAIChat:
             let params = featureDiscovery.addToParams([:], forFeature: .aiChat)
             if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-                DailyPixel.fireDailyAndCount(pixel: .autocompleteAskAIChatExperimentalExperience, withAdditionalParameters: params)
+                PixelKit.fire(Pixel.Event.autocompleteAskAIChatExperimentalExperience, frequency: .dailyAndCount, options: .parameters(params))
             } else {
-                DailyPixel.fireDailyAndCount(pixel: .autocompleteAskAIChatLegacyExperience, withAdditionalParameters: params)
+                PixelKit.fire(Pixel.Event.autocompleteAskAIChatLegacyExperience, frequency: .dailyAndCount, options: .parameters(params))
             }
 
         default:
@@ -383,8 +384,8 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         requestSuggestions(query: self.query)
         delegate?.autocomplete(deletedSuggestion: suggestion)
 
-        Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
-        DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
+        PixelKit.fire(Pixel.Event.autocompleteDeleteHistoryEntry)
+        PixelKit.fire(Pixel.Event.autocompleteDeleteHistoryEntryDaily, frequency: .legacyDailyNoSuffix)
     }
 
     private func createPixelIndexParam(for index: Int?) -> [String: String] {

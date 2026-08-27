@@ -88,7 +88,7 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
                 PixelKit.fire(SERPSettingsPixel.serpSettingsKeyValueStoreWriteError, frequency: .dailyAndCount)
             case .unrecognizedValue:
                 // Daily-only, no params: the SERP getters run on every read, so a count variant would spam.
-                DailyPixel.fire(pixel: .serpSettingsUnrecognizedValue)
+                PixelKit.fire(Pixel.Event.serpSettingsUnrecognizedValue, frequency: .legacyDailyNoSuffix)
             }
         }
     }

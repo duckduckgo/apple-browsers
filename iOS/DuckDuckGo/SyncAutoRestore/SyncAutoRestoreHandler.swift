@@ -20,6 +20,7 @@
 import Core
 import DDGSync
 import SyncUI_iOS
+import PixelKit
 
 enum SyncAutoRestorePixelSource: String {
     case onboarding
@@ -74,9 +75,9 @@ final class SyncAutoRestoreHandler: SyncAutoRestoreHandling {
     func restoreFromPreservedAccount(source: SyncAutoRestorePixelSource) async throws {
         do {
             try await syncService.enableSyncFromPreservedAccount()
-            Pixel.fire(pixel: .syncAutoRestoreSuccess, withAdditionalParameters: [PixelParameters.source: source.rawValue])
+            PixelKit.fire(Pixel.Event.syncAutoRestoreSuccess, options: .parameters([PixelParameters.source: source.rawValue]))
         } catch {
-            Pixel.fire(pixel: .syncAutoRestoreFailure, error: error, withAdditionalParameters: [PixelParameters.source: source.rawValue])
+            PixelKit.fire(Pixel.Event.syncAutoRestoreFailure.withError(error), options: .parameters([PixelParameters.source: source.rawValue]))
             throw error
         }
     }

@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import PixelKit
 import class Common.EventMapping
 import class Core.DailyPixel
 import SetDefaultBrowserCore
@@ -28,13 +29,13 @@ final class DefaultBrowserPromptManagerDebugPixelHandler: EventMapping<DefaultBr
         super.init { event, error, _, _ in
             switch event {
             case .successfulResult:
-                DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserSuccessfulResult)
+                PixelKit.fire(Pixel.Event.debugSetAsDefaultBrowserSuccessfulResult, frequency: .dailyAndCount)
             case .rateLimitReached:
-                DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure)
+                PixelKit.fire(Pixel.Event.debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure, frequency: .dailyAndCount)
             case .rateLimitReachedNoExistingResultPersisted:
-                DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure)
+                PixelKit.fire(Pixel.Event.debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure, frequency: .dailyAndCount)
             case .unknownError:
-                DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserUnknownFailure, error: error)
+                PixelKit.fire(Pixel.Event.debugSetAsDefaultBrowserUnknownFailure.withError(error), frequency: .dailyAndCount)
             }
         }
     }

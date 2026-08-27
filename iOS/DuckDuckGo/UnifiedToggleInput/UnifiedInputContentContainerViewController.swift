@@ -32,6 +32,7 @@ import Suggestions
 import AIChat
 import RemoteMessaging
 import FeatureFlags_iOS
+import PixelKit
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -1050,8 +1051,8 @@ extension UnifiedInputContentContainerViewController {
 
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion) {
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
-        DailyPixel.fireDailyAndCount(pixel: pixel)
-        Pixel.fire(pixel: .autocompleteDuckAIClickChatHistory)
+        PixelKit.fire(pixel, frequency: .dailyAndCount)
+        PixelKit.fire(Pixel.Event.autocompleteDuckAIClickChatHistory)
 
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.unifiedInputEditingStateDidSelectChatHistory(url: url)
@@ -1063,7 +1064,7 @@ extension UnifiedInputContentContainerViewController {
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
-        Pixel.fire(pixel: .autocompleteDuckAIClickSearchDuckDuckGo)
+        PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo)
         // Symmetric with Search-side "Ask privately" (which calls openAIChat with autoSend:true):
         // flip toggle to Search and submit the query in one step.
         switchBarHandler.setToggleState(.search)
@@ -1087,13 +1088,13 @@ extension UnifiedInputContentContainerViewController {
     private func fireDuckAISuggestionClickPixel(for suggestion: Suggestion) {
         switch suggestion {
         case .website:
-            Pixel.fire(pixel: .autocompleteDuckAIClickWebsite)
+            PixelKit.fire(Pixel.Event.autocompleteDuckAIClickWebsite)
         case .bookmark(_, _, let isFavorite, _):
-            Pixel.fire(pixel: isFavorite ? .autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
+            PixelKit.fire(isFavorite ? .autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
         case .historyEntry(_, let url, _):
-            Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
+            PixelKit.fire(url.isDuckDuckGoSearch ? .autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
         case .openTab:
-            Pixel.fire(pixel: .autocompleteDuckAIClickSwitchToTab)
+            PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSwitchToTab)
         case .phrase, .internalPage, .unknown, .askAIChat:
             break
         }

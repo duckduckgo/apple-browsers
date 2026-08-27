@@ -26,6 +26,7 @@ import Persistence
 import Common
 import FoundationExtensions
 import os.log
+import PixelKit
 
 final class ConfigurationManager: DefaultConfigurationManager {
 
@@ -70,9 +71,9 @@ final class ConfigurationManager: DefaultConfigurationManager {
         }
 
         if let error = error {
-            Pixel.fire(pixel: domainEvent, error: error)
+            PixelKit.fire(domainEvent.withError(error))
         } else {
-            Pixel.fire(pixel: domainEvent)
+            PixelKit.fire(domainEvent)
         }
     }
 

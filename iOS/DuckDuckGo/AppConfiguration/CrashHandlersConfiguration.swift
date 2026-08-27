@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import Crashes
+import PixelKit
 
 final class CrashHandlersConfiguration {
 
@@ -36,7 +37,7 @@ final class CrashHandlersConfiguration {
 
     static func handleCrashDuringCrashHandlersSetup() {
         if didCrashDuringCrashHandlersSetUp {
-            Pixel.fire(pixel: .crashOnCrashHandlersSetUp)
+            PixelKit.fire(Pixel.Event.crashOnCrashHandlersSetUp)
             didCrashDuringCrashHandlersSetUp = false
         }
     }

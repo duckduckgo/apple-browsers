@@ -22,6 +22,7 @@ import SwiftUI
 import UIKit
 import DesignResourcesKit
 import UIComponents
+import PixelKit
 
 // MARK: - Layout Constants
 
@@ -113,7 +114,7 @@ struct WebTrackingProtectionView: View {
             
         }
         .onForwardNavigationAppear {
-            Pixel.fire(pixel: .settingsWebTrackingProtectionOpen)
+            PixelKit.fire(Pixel.Event.settingsWebTrackingProtectionOpen)
         }
     }
 }

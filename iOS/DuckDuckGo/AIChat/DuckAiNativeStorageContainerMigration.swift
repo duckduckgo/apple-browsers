@@ -22,6 +22,7 @@ import Foundation
 import Persistence
 import UIKit
 import os.log
+import PixelKit
 
 /// One-time move of a Duck.ai container from the shared App Group into the
 /// app's Application Support directory.
@@ -330,23 +331,23 @@ struct DuckAiNativeStorageContainerMigrationPixelAdapter: DuckAiNativeStorageCon
     func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {
         switch event {
         case .notNeeded(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationNotNeeded(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationNotNeeded(label: label.rawValue))
         case .success(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationSuccess(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationSuccess(label: label.rawValue))
         case .attemptFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationAttemptFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationAttemptFailed(label: label.rawValue).withError(error))
         case .gaveUp(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationGaveUp(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationGaveUp(label: label.rawValue).withError(error))
         case .protectionFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectionFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationProtectionFailed(label: label.rawValue).withError(error))
         case .destinationConflict(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationDestinationConflict(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationDestinationConflict(label: label.rawValue))
         case .excludeFromBackupFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: label.rawValue).withError(error))
         case .protectedDataUnavailable(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: label.rawValue))
         case .keyValueStoreReadFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(label: label.rawValue).withError(error))
         }
     }
 }

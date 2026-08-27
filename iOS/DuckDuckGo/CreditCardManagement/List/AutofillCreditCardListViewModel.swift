@@ -23,6 +23,7 @@ import SwiftUI
 import Combine
 import Core
 import DDGSync
+import PixelKit
 
 protocol AutofillCreditCardListViewModelDelegate: AnyObject {
     func autofillCreditCardListViewModelDidSelectCard(_ viewModel: AutofillCreditCardListViewModel, card: SecureVaultModels.CreditCard)
@@ -74,11 +75,11 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
 
         if let count = try? secureVault?.creditCardsCount() {
             authenticationNotRequired = count == 0
-            Pixel.fire(pixel: .autofillCardsManagementOpened,
-                       withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.autofillCardsManagementOpened,
+                          options: .parameters([
                         PixelParameters.source: source.rawValue,
                         "has_cards_saved": "\(count > 0 ? 1 : 0)"
-                       ])
+                       ]))
         }
         refreshData()
         setupCancellables()
@@ -108,7 +109,7 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
             presentDeleteConfirmation()
             syncService.scheduler.notifyDataChanged()
         } catch {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
         }
     }
     
@@ -197,7 +198,7 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
             clearUndoCache()
             fetchCreditCards()
         } catch {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
         }
     }
     
@@ -213,7 +214,7 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
             self.undoLastDelete()
         }, onDidDismiss: {
             self.clearUndoCache()
-            Pixel.fire(pixel: .autofillCardsManagementDeleteCard)
+            PixelKit.fire(Pixel.Event.autofillCardsManagementDeleteCard)
         })
     }
 }

@@ -21,6 +21,7 @@ import UIKit
 import BrowserServicesKit
 import Core
 import SwiftUI
+import PixelKit
 
 protocol SaveCreditCardViewControllerDelegate: AnyObject {
     func saveCreditCardViewController(_ viewController: SaveCreditCardViewController, didSaveCreditCard card: SecureVaultModels.CreditCard)
@@ -62,7 +63,7 @@ class SaveCreditCardViewController: UIViewController {
 
 extension SaveCreditCardViewController: UISheetPresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        Pixel.fire(pixel: .autofillCardsSaveCardInlineDismissed)
+        PixelKit.fire(Pixel.Event.autofillCardsSaveCardInlineDismissed)
     }
 }
 

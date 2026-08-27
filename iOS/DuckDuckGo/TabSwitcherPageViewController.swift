@@ -35,6 +35,7 @@ import BrowserServicesKit
 import PrivacyConfig
 import AIChat
 import UIComponents
+import PixelKit
 
 protocol TabSwitcherPageDelegate: AnyObject {
     func page(_ page: TabSwitcherPageViewController, didSelectTabAt index: Int)
@@ -190,7 +191,7 @@ class TabSwitcherPageViewController: UIViewController {
     private func setupFireModeEmptyState() {
         guard browsingMode == .fire, isFireModeEnabled else { return }
         let emptyStateView = FireModeEmptyStateView(type: .tabSwitcher(onNewFireTab: { [weak self] in
-            Pixel.fire(pixel: .fireModeEmptyStateNewTab)
+            PixelKit.fire(Pixel.Event.fireModeEmptyStateNewTab)
             self?.onNewFireTab?()
         }))
         let hostingController = UIHostingController(rootView: emptyStateView)
@@ -275,7 +276,7 @@ class TabSwitcherPageViewController: UIViewController {
                                       preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountKeepAction, style: .cancel))
         alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountHideAction, style: .default) { [weak self] _ in
-            Pixel.fire(pixel: .tabSwitcherTrackerCountHidden)
+            PixelKit.fire(Pixel.Event.tabSwitcherTrackerCountHidden)
             self?.trackerCountViewModel?.hide()
         })
         present(alert, animated: true)
@@ -447,19 +448,19 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if pageDelegate?.isEditing == true {
-            Pixel.fire(pixel: .tabSwitcherTabSelected)
+            PixelKit.fire(Pixel.Event.tabSwitcherTabSelected)
             (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
             pageDelegate?.page(self, didSelectTabAt: indexPath.row)
         } else {
             currentSelection = indexPath.row
-            Pixel.fire(pixel: .tabSwitcherSwitchTabs, withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.tabSwitcherSwitchTabs, options: .parameters([
                 PixelParameters.browsingMode: browsingMode.pixelParamValue
-            ])
+            ]))
             if let tab = tabsModel.get(tabAt: indexPath.row) {
                 if tab.isAITab {
-                    DailyPixel.fireDailyAndCount(pixel: .tabManagerSwitchToAITab)
+                    PixelKit.fire(Pixel.Event.tabManagerSwitchToAITab, frequency: .dailyAndCount)
                 } else {
-                    DailyPixel.fireDailyAndCount(pixel: .tabManagerSwitchToWebTab)
+                    PixelKit.fire(Pixel.Event.tabManagerSwitchToWebTab, frequency: .dailyAndCount)
                 }
             }
             pageDelegate?.pageDidRequestDismiss(self)
@@ -469,7 +470,7 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
         pageDelegate?.page(self, didDeselectTab: ())
-        Pixel.fire(pixel: .tabSwitcherTabDeselected)
+        PixelKit.fire(Pixel.Event.tabSwitcherTabDeselected)
     }
 
     func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
@@ -491,8 +492,8 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
         let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             guard let self else { return nil }
             let modeParam = [PixelParameters.browsingMode: self.browsingMode.pixelParamValue]
-            Pixel.fire(pixel: .tabSwitcherLongPress, withAdditionalParameters: modeParam)
-            DailyPixel.fire(pixel: .tabSwitcherLongPressDaily, withAdditionalParameters: modeParam)
+            PixelKit.fire(Pixel.Event.tabSwitcherLongPress, options: .parameters(modeParam))
+            PixelKit.fire(Pixel.Event.tabSwitcherLongPressDaily, frequency: .legacyDailyNoSuffix, options: .parameters(modeParam))
             return self.pageDelegate?.page(self, contextMenuForTabsAt: indexPaths)
         }
         return configuration
@@ -575,7 +576,7 @@ extension TabSwitcherPageViewController: TabObserver {
             return
         }
         guard cell.tab?.uid == tab.uid else {
-            DailyPixel.fireDaily(.debugTabSwitcherDidChangeInvalidState)
+            PixelKit.fire(Pixel.Event.debugTabSwitcherDidChangeInvalidState, frequency: .legacyDailyNoSuffix)
             return
         }
         configure(cell, with: tab)

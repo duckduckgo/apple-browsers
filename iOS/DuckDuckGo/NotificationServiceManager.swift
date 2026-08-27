@@ -23,6 +23,7 @@ import UIKit
 import NotificationCenter
 import Core
 import DataBrokerProtection_iOS
+import PixelKit
 
 protocol NotificationServiceManaging: UNUserNotificationCenterDelegate {}
 
@@ -105,7 +106,7 @@ extension NotificationServiceManager {
         switch actionIdentifier {
         case UNNotificationDefaultActionIdentifier:
             stateStore.recordInteraction()
-            Pixel.fire(pixel: .inactiveUserProvisionalPushNotificationTapped, withAdditionalParameters: [daysInactiveKey: String(daysInactive)])
+            PixelKit.fire(Pixel.Event.inactiveUserProvisionalPushNotificationTapped, options: .parameters([daysInactiveKey: String(daysInactive)]))
             // no special navigation
         case UNNotificationDismissActionIdentifier:
             stateStore.recordInteraction()
@@ -136,10 +137,10 @@ private extension NotificationServiceManager {
     func handleSubscriptionExpirationReminder(actionIdentifier: String) {
         switch actionIdentifier {
         case UNNotificationDefaultActionIdentifier:
-            Pixel.fire(pixel: .subscriptionExpirationReminderNotificationTapped)
+            PixelKit.fire(Pixel.Event.subscriptionExpirationReminderNotificationTapped)
             mainCoordinator.segueToSubscriptionWelcome()
         case UNNotificationDismissActionIdentifier:
-            Pixel.fire(pixel: .subscriptionExpirationReminderNotificationDismissed)
+            PixelKit.fire(Pixel.Event.subscriptionExpirationReminderNotificationDismissed)
         default:
             break
         }
@@ -162,7 +163,7 @@ private extension NotificationServiceManager {
         case .goToMarketFirstScan:
             pixel = .dbpNotificationOpenedGoToMarketFirstScan
         }
-        Pixel.fire(pixel: pixel)
+        PixelKit.fire(pixel)
 
         mainCoordinator.presentDataBrokerProtectionDashboard()
     }

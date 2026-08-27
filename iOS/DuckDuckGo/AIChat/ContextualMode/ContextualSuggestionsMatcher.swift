@@ -21,6 +21,7 @@ import AIChat
 import Core
 import Foundation
 import os.log
+import PixelKit
 
 struct SuggestionCatalog: Decodable {
     struct Entry: Decodable {
@@ -346,7 +347,7 @@ struct DefaultContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProv
 
     init(catalog: SuggestionCatalog? = SuggestionCatalog.bundled,
          fireCatalogLoadFailedPixel: @escaping () -> Void = {
-             DailyPixel.fireDailyAndCount(pixel: .aiChatContextualSuggestionsCatalogLoadFailed)
+             PixelKit.fire(Pixel.Event.aiChatContextualSuggestionsCatalogLoadFailed, frequency: .dailyAndCount)
          }) {
         self.catalog = catalog
         self.fireCatalogLoadFailedPixel = fireCatalogLoadFailedPixel

@@ -31,6 +31,7 @@ import DDGSync
 import Core
 import Persistence
 import FeatureFlags_iOS
+import PixelKit
 
 /// The current display mode of the AI Chat interface.
 enum AIChatDisplayMode {
@@ -358,7 +359,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             let pixel: Pixel.Event = syncHandler.isSyncTurnedOn()
                 ? .aiChatTermsAcceptedDuplicateSyncOn
                 : .aiChatTermsAcceptedDuplicateSyncOff
-            DailyPixel.fireDailyAndCount(pixel: pixel)
+            PixelKit.fire(pixel, frequency: .dailyAndCount)
         }
 
         keyValueStore.set(true, forKey: Self.hasAcceptedTermsAndConditionsKey)
@@ -602,7 +603,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
         // `object` carries the source webView so listeners can route per-tab (matches macOS).
         NotificationCenter.default.post(name: .aiChatVoiceSessionStarted, object: message.messageWebView)
-        Pixel.fire(pixel: .voiceSessionStarted)
+        PixelKit.fire(Pixel.Event.voiceSessionStarted)
         return nil
     }
 
@@ -815,13 +816,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     private func fireSyncAiChatActiveDailyIfNeeded() {
-        DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+        PixelKit.fire(Pixel.Event.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
     }
 
     @MainActor
     private func fireSyncDailyAndCountPixel(_ pixel: Pixel.Event,
                                             withAdditionalParameters params: [String: String]) {
-        DailyPixel.fireDailyAndCount(pixel: pixel, withAdditionalParameters: params)
+        PixelKit.fire(pixel, frequency: .dailyAndCount, options: .parameters(params))
     }
 }
 // swiftlint:enable inclusive_language

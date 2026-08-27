@@ -187,7 +187,7 @@ final class DataImportViewModel: ObservableObject {
     struct BrowserImportState {
         var browser: BrowserInstructions {
             didSet {
-                Pixel.fire(pixel: .importInstructionsToggled, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+                PixelKit.fire(Pixel.Event.importInstructionsToggled, options: .parameters([PixelParameters.source: importScreen.rawValue]))
             }
         }
         let importScreen: ImportScreen
@@ -444,7 +444,7 @@ final class DataImportViewModel: ObservableObject {
             return
         }
 
-        Pixel.fire(pixel: pixel, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+        PixelKit.fire(pixel, options: .parameters([PixelParameters.source: state.importScreen.rawValue]))
     }
 
 }

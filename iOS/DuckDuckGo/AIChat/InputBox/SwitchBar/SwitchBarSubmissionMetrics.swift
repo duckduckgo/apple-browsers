@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import BrowserServicesKit
+import PixelKit
 
 /// Privacy-safe text length categorization for input analysis
 enum SwitchBarTextBucket: String, CaseIterable {
@@ -78,10 +79,10 @@ struct SwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
         
         switch submissionMode {
         case .search:
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarQuerySubmitted, withAdditionalParameters: additionalParams)
+            PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarQuerySubmitted, frequency: .dailyAndCount, options: .parameters(additionalParams))
         case .aiChat:
             let mergedParams = additionalParams.merging(featureDiscovery.addToParams([:], forFeature: .aiChat)) { (_, new) in new }
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted, withAdditionalParameters: mergedParams)
+            PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarPromptSubmitted, frequency: .dailyAndCount, options: .parameters(mergedParams))
             featureDiscovery.setWasUsedBefore(.aiChat)
         }
     }

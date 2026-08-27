@@ -22,6 +22,7 @@ import Core
 import Suggestions
 import PrivacyConfig
 import DesignResourcesKitIcons
+import PixelKit
 
 protocol BlankSnapshotViewRecoveringDelegate: AnyObject {
     
@@ -185,7 +186,7 @@ class BlankSnapshotViewController: UIViewController {
     }
     
     @IBAction func userInteractionDetected() {
-        Pixel.fire(pixel: .blankOverlayNotDismissed)
+        PixelKit.fire(Pixel.Event.blankOverlayNotDismissed)
         delegate?.recoverFromPresenting(controller: self)
     }
 }

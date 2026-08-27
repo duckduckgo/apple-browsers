@@ -23,6 +23,7 @@ import Core
 import Crashes
 import PrivacyConfig
 import FeatureFlags_iOS
+import PixelKit
 
 final class CrashCollectionService {
 
@@ -64,9 +65,9 @@ final class CrashCollectionService {
                 // If for some reason the parameter can't be found, fall back to the current version.
                 if let crashAppVersion = params[.appVersion] {
                     let dailyParameters = [PixelParameters.appVersion: crashAppVersion]
-                    DailyPixel.fireDaily(.dbCrashDetectedDaily(appIdentifier: appIdentifier), withAdditionalParameters: dailyParameters)
+                    PixelKit.fire(Pixel.Event.dbCrashDetectedDaily(appIdentifier: appIdentifier), frequency: .legacyDailyNoSuffix, options: .parameters(dailyParameters))
                 } else {
-                    DailyPixel.fireDaily(.dbCrashDetectedDaily(appIdentifier: appIdentifier))
+                    PixelKit.fire(Pixel.Event.dbCrashDetectedDaily(appIdentifier: appIdentifier), frequency: .legacyDailyNoSuffix)
                 }
             }
 

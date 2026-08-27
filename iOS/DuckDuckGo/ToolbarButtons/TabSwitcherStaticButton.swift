@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import DesignResourcesKitIcons
+import PixelKit
 
 final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
 
@@ -138,24 +139,24 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
         removeGestureRecognizer(longPressRecognizer)
         let menu = UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
-                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
+                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
                     PixelParameters.source: "toolbar"
-                ])
+                ]))
                 completion([
                     UIAction(title: UserText.actionNewFireTab,
                              image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
                                  guard let self else { return }
-                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
+                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
                                      PixelParameters.source: "toolbar"
-                                 ])
+                                 ]))
                                  delegate?.launchNewFireTab(self)
                              },
                     UIAction(title: UserText.actionNewTab,
                              image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
                                  guard let self else { return }
-                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
+                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
                                      PixelParameters.source: "toolbar"
-                                 ])
+                                 ]))
                                  delegate?.launchNewNormalTab(self)
                              }
                 ])

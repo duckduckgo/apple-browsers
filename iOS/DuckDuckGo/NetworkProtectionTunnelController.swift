@@ -314,14 +314,13 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         do {
             try await tunnelManager?.removeFromPreferences()
 
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionVPNConfigurationRemoved,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         withAdditionalParameters: [PixelParameters.reason: reason.rawValue])
+            PixelKit.fire(Pixel.Event.networkProtectionVPNConfigurationRemoved,
+                          frequency: .legacyDailyAndCount,
+                          options: .parameters([PixelParameters.reason: reason.rawValue]))
         } catch {
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionVPNConfigurationRemovalFailed,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         error: error,
-                                         withAdditionalParameters: [PixelParameters.reason: reason.rawValue])
+            PixelKit.fire(Pixel.Event.networkProtectionVPNConfigurationRemovalFailed.withError(error),
+                          frequency: .legacyDailyAndCount,
+                          options: .parameters([PixelParameters.reason: reason.rawValue]))
         }
     }
 
@@ -431,7 +430,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
             freeTrialConversionService.markVPNActivated()
         } catch {
             completeAtStepWithFailure(.tunnelStart, with: error, description: error.contextualizedDescription())
-            Pixel.fire(pixel: .networkProtectionActivationRequestFailed, error: error)
+            PixelKit.fire(Pixel.Event.networkProtectionActivationRequestFailed.withError(error))
             throw StartError.startVPNFailed(error)
         }
     }

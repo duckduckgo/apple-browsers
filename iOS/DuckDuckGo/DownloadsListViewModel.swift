@@ -23,6 +23,7 @@ import Common
 import FoundationExtensions
 import Core
 import os.log
+import PixelKit
 
 class DownloadsListViewModel: ObservableObject {
 
@@ -53,12 +54,12 @@ class DownloadsListViewModel: ObservableObject {
     // MARK: - Intents
     
     func cancelDownload(for rowModel: OngoingDownloadRowViewModel) {
-        Pixel.fire(pixel: .downloadsListOngoingDownloadCancelled)
+        PixelKit.fire(Pixel.Event.downloadsListOngoingDownloadCancelled)
         dataSource.cancelDownloadWithIdentifier(rowModel.id)
     }
     
     func deleteDownload(at offsets: IndexSet, in sectionIndex: Int) {
-        Pixel.fire(pixel: .downloadsListCompleteDownloadDeleted)
+        PixelKit.fire(Pixel.Event.downloadsListCompleteDownloadDeleted)
         guard let rowIndex = offsets.first else { return }
         
         let item = sections[sectionIndex].rows[rowIndex]
@@ -76,7 +77,7 @@ class DownloadsListViewModel: ObservableObject {
     }
     
     func deleteAllDownloads() {
-        Pixel.fire(pixel: .downloadsListAllCompleteDownloadsDeleted)
+        PixelKit.fire(Pixel.Event.downloadsListAllCompleteDownloadsDeleted)
         dataSource.deleteAllDownloads { result in
             switch result {
             case .success(let undoHandler):
@@ -98,7 +99,7 @@ class DownloadsListViewModel: ObservableObject {
     
     func showActivityView(for rowModel: CompleteDownloadRowViewModel, from sourceRect: CGRect) {
         guard let handler = self.requestActivityViewHandler else { return }
-        Pixel.fire(pixel: .downloadsListSharePressed)
+        PixelKit.fire(Pixel.Event.downloadsListSharePressed)
         handler(rowModel.fileURL, sourceRect)
     }
 }

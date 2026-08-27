@@ -22,6 +22,7 @@ import FoundationExtensions
 import Core
 import Foundation
 import SecureStorage
+import PixelKit
 
 final class SecureVaultReporter: SecureVaultReporting {
 
@@ -34,11 +35,11 @@ final class SecureVaultReporter: SecureVaultReporting {
 
         switch error {
         case .initFailed(let error):
-            DailyPixel.fire(pixel: .secureVaultInitFailedError, error: error, withAdditionalParameters: pixelParams)
+            PixelKit.fire(Pixel.Event.secureVaultInitFailedError.withError(error), frequency: .legacyDailyNoSuffix, options: .parameters(pixelParams))
         case .failedToOpenDatabase(let error):
-            DailyPixel.fire(pixel: .secureVaultFailedToOpenDatabaseError, error: error, withAdditionalParameters: pixelParams)
+            PixelKit.fire(Pixel.Event.secureVaultFailedToOpenDatabaseError.withError(error), frequency: .legacyDailyNoSuffix, options: .parameters(pixelParams))
         default:
-            DailyPixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error), frequency: .legacyDailyNoSuffix)
         }
     }
 

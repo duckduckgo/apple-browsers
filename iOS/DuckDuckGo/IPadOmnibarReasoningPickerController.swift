@@ -20,6 +20,7 @@
 import AIChat
 import Core
 import UIKit
+import PixelKit
 
 /// Drives the Duck.ai reasoning-level picker
 @MainActor
@@ -108,7 +109,7 @@ final class IPadOmnibarReasoningPickerController {
 
     private func select(_ mode: AIChatReasoningMode) {
         store.updateSelectedReasoningMode(mode)
-        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortSelected, withAdditionalParameters: ["effort_level": mode.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue])
+        PixelKit.fire(Pixel.Event.unifiedToggleInputReasoningEffortSelected, options: .parameters(["effort_level": mode.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue]))
         onReasoningUpdated?()
     }
 

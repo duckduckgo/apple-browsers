@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import PixelKit
 
 // To remove after Settings experiment
 final class AutoconsentSettingsViewController: UITableViewController {
@@ -50,7 +51,7 @@ final class AutoconsentSettingsViewController: UITableViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        Pixel.fire(pixel: .settingsAutoconsentShown)
+        PixelKit.fire(Pixel.Event.settingsAutoconsentShown)
     }
 
     override func viewDidLayoutSubviews() {
@@ -70,12 +71,12 @@ final class AutoconsentSettingsViewController: UITableViewController {
     
     @IBAction private func onAutoconsentValueChanged(_ sender: Any) {
         appSettings.autoconsentEnabled = autoconsentToggle.isOn
-        Pixel.fire(pixel: autoconsentToggle.isOn ? .settingsAutoconsentOn : .settingsAutoconsentOff)
+        PixelKit.fire(autoconsentToggle.isOn ? .settingsAutoconsentOn : .settingsAutoconsentOff)
 
         if appSettings.autoconsentEnabled {
-            Pixel.fire(pixel: .settingsAutoconsentOn)
+            PixelKit.fire(Pixel.Event.settingsAutoconsentOn)
         } else {
-            Pixel.fire(pixel: .settingsAutoconsentOff)
+            PixelKit.fire(Pixel.Event.settingsAutoconsentOff)
         }
     }
     

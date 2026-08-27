@@ -45,7 +45,7 @@
             "required": ["name", "status", "data"],
             "additionalProperties": false,
             "properties": {
-                "name": { "type": "string", "description": "The feature name for this event", "enum": ["return_session"] },
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["return-session"] },
                 "status": {
                     "type": "string",
                     "description": "The overall status of the operation",

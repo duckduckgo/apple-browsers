@@ -31,7 +31,7 @@ struct ReturnSessionWideEventDataTests {
     @Test("Metadata exposes expected pixel and feature names", .timeLimit(.minutes(1)))
     func metadataExposesExpectedNames() {
         #expect(ReturnSessionWideEventData.metadata.pixelName == "return_session")
-        #expect(ReturnSessionWideEventData.metadata.featureName == "return_session")
+        #expect(ReturnSessionWideEventData.metadata.featureName == "return-session")
         #expect(ReturnSessionWideEventData.metadata.type == "ios-return-session")
         #expect(ReturnSessionWideEventData.metadata.version == "1.2.0")
     }

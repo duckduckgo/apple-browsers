@@ -34,6 +34,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private lazy var omniBarView = DefaultOmniBarView.create(isFloatingUIEnabled: isFloatingUIEnabled)
     private var isSuppressingKeyboardTransfer = false
 
+    override var isExpandedPhone: Bool {
+        didSet {
+            omniBarView.isExpandedPhoneLayout = isExpandedPhone
+        }
+    }
+
     weak var unifiedToggleInputOmnibarActivating: UnifiedToggleInputOmnibarActivating?
 
     /// Manages shared text state for the iPad duck.ai ↔ search mode toggle.

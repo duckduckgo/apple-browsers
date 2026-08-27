@@ -437,6 +437,62 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
     }
 
+    func testWhenTopFloatingFieldThenInputIsFortyEightPointsHighWithTwoPointInternalSpacing() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+
+        barView.layoutIfNeeded()
+
+        let searchView = try XCTUnwrap(firstSubview(of: DefaultOmniBarSearchView.self, in: barView.searchContainer))
+        let searchViewFrame = barView.searchContainer.convert(searchView.bounds, from: searchView)
+        let loupe = try XCTUnwrap(barView.searchLoupe)
+        let loupeFrame = barView.searchContainer.convert(loupe.bounds, from: loupe)
+        XCTAssertEqual(barView.searchContainer.frame.height, 48, accuracy: 0.01)
+        XCTAssertEqual(barView.searchContainer.frame.midX, barView.bounds.midX, accuracy: 0.01)
+        XCTAssertEqual(barView.searchContainer.frame.midY, barView.bounds.midY, accuracy: 0.01)
+        XCTAssertEqual(searchViewFrame.minY, 2, accuracy: 0.01)
+        XCTAssertEqual(barView.searchContainer.bounds.maxY - searchViewFrame.maxY, 2, accuracy: 0.01)
+        XCTAssertEqual(loupeFrame.midY, barView.searchContainer.bounds.midY - 2, accuracy: 0.01)
+    }
+
+    func testWhenTopFloatingLandscapeChromeThenInputHeightStaysUnchanged() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+        barView.isExpandedPhoneLayout = true
+        barView.setLayoutMode(.expandedPhone, animated: false)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
+    func testWhenTopFloatingLandscapeEditingThenCompactModeKeepsInputHeightUnchanged() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+        barView.isExpandedPhoneLayout = true
+        barView.setLayoutMode(.compact, animated: false)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
+    func testWhenNonFloatingTopFieldThenInputHeightStaysUnchanged() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
     func testWhenBottomFloatingLandscapeChromeThenExpectedHeightStaysAtTheStandardBarHeight() {
         let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true
@@ -451,6 +507,13 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         barView.setLayoutMode(.expandedPad, animated: false)
 
         XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+    }
+
+    private func firstSubview<View: UIView>(of type: View.Type, in view: UIView) -> View? {
+        if let view = view as? View {
+            return view
+        }
+        return view.subviews.lazy.compactMap { firstSubview(of: type, in: $0) }.first
     }
 }
 

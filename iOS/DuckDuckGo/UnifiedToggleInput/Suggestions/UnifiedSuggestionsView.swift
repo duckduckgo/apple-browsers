@@ -26,7 +26,7 @@ struct UnifiedSuggestionsView: View {
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
     let escapeHatch: EscapeHatchModel?
-    let favoritesViewModel: FavoritesViewModel
+    @ObservedObject var favoritesViewModel: FavoritesViewModel
     @ObservedObject var messagesModel: NewTabPageMessagesModel
 
     var body: some View {
@@ -48,6 +48,7 @@ struct UnifiedSuggestionsView: View {
         if viewModel.isFireTab {
             let showsFire = !isTypingList
             FireModeEmptyStateView(type: .tab)
+                .padding(.top, viewModel.scrollContentInsetTop)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(designSystemColor: .background))
                 .opacity(showsFire ? 1 : 0)

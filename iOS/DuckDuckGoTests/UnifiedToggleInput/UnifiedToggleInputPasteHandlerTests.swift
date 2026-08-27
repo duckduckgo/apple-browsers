@@ -96,6 +96,31 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         XCTAssertTrue(delegate.presentedErrors.isEmpty)
     }
 
+    /// A full conversation truncates at a zero allowance before any decode, so no add is refused — it must still read as capacity, not truncation.
+    func testApplyReportsCapacityWhenNoImageCouldBeLoadedAtAll() {
+        let delegate = MockPasteDelegate()
+        let handler = makeHandler(delegate)
+        var result = makeResult()
+        result.imagesTruncated = true
+
+        handler.applyLoadedAttachments(result)
+
+        XCTAssertEqual(delegate.imageRejectionReasons, [.capacityReached])
+    }
+
+    /// Some images fit and the rest were dropped — that is genuine truncation.
+    func testApplyReportsTruncationWhenSomeImagesWereLoaded() {
+        let delegate = MockPasteDelegate()
+        let handler = makeHandler(delegate)
+        var result = makeResult(images: 2)
+        result.imagesTruncated = true
+
+        handler.applyLoadedAttachments(result)
+
+        XCTAssertEqual(delegate.addedImages, 2)
+        XCTAssertEqual(delegate.imageRejectionReasons, [.allowanceTruncated])
+    }
+
     func testApplyWithinImageHeadroomShowsNoCapacityMessage() {
         let delegate = MockPasteDelegate()
         delegate.imageHeadroom = 5

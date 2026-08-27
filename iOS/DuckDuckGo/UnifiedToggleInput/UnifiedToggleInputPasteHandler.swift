@@ -182,7 +182,9 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
         }
 
         if didExceedImageLimit || result.imagesTruncated {
-            delegate.reportRejectedPastedImages(reason: didExceedImageLimit ? .capacityReached : .allowanceTruncated)
+            // Nothing attachable at all — a zero allowance truncates before the first decode, so no add is ever refused.
+            let capacityWasFull = didExceedImageLimit || result.images.isEmpty
+            delegate.reportRejectedPastedImages(reason: capacityWasFull ? .capacityReached : .allowanceTruncated)
             if let message = delegate.imageCapacityMessage() {
                 delegate.presentPasteError(message)
             }

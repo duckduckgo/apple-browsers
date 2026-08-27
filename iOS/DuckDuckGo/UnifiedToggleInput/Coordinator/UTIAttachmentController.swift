@@ -542,7 +542,7 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
     }
 
     /// Reports a load-time-rejected paste as an error banner (no chip, no revalidation) using the reason the loader recorded, so the message and pixel reflect why it was actually rejected.
-    func reportRejectedPaste(reason: PasteRejectionReason) {
+    func reportRejectedPastedFiles(reason: PasteFileRejectionReason) {
         let files = environment.attachmentLimits()?.files
         let message: String
         let pixelReason: String

@@ -351,7 +351,7 @@ private final class MockPasteDelegate: UnifiedToggleInputPasteDelegate {
     private(set) var callLog: [String] = []
     private(set) var addedImages = 0
     private(set) var addedFiles = 0
-    private(set) var rejectionReasons: [PasteRejectionReason] = []
+    private(set) var rejectionReasons: [PasteFileRejectionReason] = []
     private(set) var imageRejectionReasons: [PasteImageRejectionReason] = []
     private(set) var presentedErrors: [String] = []
 
@@ -374,7 +374,7 @@ private final class MockPasteDelegate: UnifiedToggleInputPasteDelegate {
         callLog.append("file")
     }
 
-    func reportRejectedPaste(reason: PasteRejectionReason) {
+    func reportRejectedPastedFiles(reason: PasteFileRejectionReason) {
         rejectionReasons.append(reason)
         callLog.append("rejected")
     }

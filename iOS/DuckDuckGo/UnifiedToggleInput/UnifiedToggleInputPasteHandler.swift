@@ -49,7 +49,7 @@ enum AttachmentPasteRouting {
 }
 
 /// Why a pasted file couldn't be attached, carried from the loader so the error is reported for the actual reason (not recomputed against later state).
-enum PasteRejectionReason: Equatable {
+enum PasteFileRejectionReason: Equatable {
     case fileTooLarge
     case filesExceedTotalSize
     case fileCountLimit
@@ -110,7 +110,7 @@ protocol UnifiedToggleInputPasteDelegate: AnyObject {
     @discardableResult func addPastedImage(_ image: UIImage, fileName: String) -> Bool
     func addPastedFile(_ file: AIChatFileAttachment)
     /// Reports a file rejected during load (over size/count/total) with an error for the given reason; never adds an attachment.
-    func reportRejectedPaste(reason: PasteRejectionReason)
+    func reportRejectedPastedFiles(reason: PasteFileRejectionReason)
     /// Reports pasted images that couldn't be attached, for the limit that was actually hit.
     func reportRejectedPastedImages(reason: PasteImageRejectionReason)
     func presentPasteError(_ message: String)
@@ -170,7 +170,7 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
         }
 
         if let rejection = result.rejection {
-            delegate.reportRejectedPaste(reason: rejection)
+            delegate.reportRejectedPastedFiles(reason: rejection)
         }
 
         var didExceedImageLimit = false
@@ -239,14 +239,14 @@ enum PasteboardAttachmentReader {
         var images: [(image: UIImage, fileName: String)] = []
         var files: [AIChatFileAttachment] = []
         /// The reason the first over-budget file was rejected; capped at one so an exhausted capacity can't flood the strip.
-        var rejection: PasteRejectionReason?
+        var rejection: PasteFileRejectionReason?
         /// More image providers were present than the allowance, so some were dropped without decoding.
         var imagesTruncated = false
     }
 
     private enum LoadedFile {
         case read(AIChatFileAttachment)
-        case rejected(PasteRejectionReason)
+        case rejected(PasteFileRejectionReason)
     }
 
     /// Metadata-only probe (no byte reads, so no paste banner) that mirrors `loadAttachments`' per-provider classification, so a "yes" here means the loader will actually find something.
@@ -343,7 +343,7 @@ enum PasteboardAttachmentReader {
         return result
     }
 
-    private static func recordRejection(_ reason: PasteRejectionReason, in result: inout Result) {
+    private static func recordRejection(_ reason: PasteFileRejectionReason, in result: inout Result) {
         if result.rejection == nil {
             result.rejection = reason
         }

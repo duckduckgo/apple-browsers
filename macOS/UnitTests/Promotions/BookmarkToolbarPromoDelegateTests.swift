@@ -45,9 +45,6 @@ final class BookmarkToolbarPromoDelegateTests: XCTestCase {
 
     // MARK: - Eligibility
 
-    /// There's no externally-owned condition to reflect here (unlike e.g. Sync Favicons); every
-    /// gate that determines whether anything is actually shown lives inside `show()` instead, so
-    /// history/eligibility permanence isn't duplicated outside PromoService's own record.
     func testIsEligibleIsAlwaysTrue() {
         XCTAssertTrue(sut.isEligible)
     }
@@ -62,17 +59,12 @@ final class BookmarkToolbarPromoDelegateTests: XCTestCase {
 
     // MARK: - show()
 
-    /// No window to anchor the popover to: the promo must end its session rather than leave the
-    /// queue waiting on an unresolved continuation.
     func testWhenThereIsNoKeyWindowThenShowReturnsNoChange() async {
         let result = await sut.show(history: PromoHistoryRecord(id: PromoServiceFactory.bookmarkToolbarPromoID), force: false)
 
         XCTAssertEqual(result, .noChange)
     }
 
-    /// Migration: a user who already saw (and dismissed, either way) the pre-Promo-Queue popover
-    /// must not see it again. `.retired` permanently disables the promo without consuming the
-    /// global cooldown, since nothing is actually shown.
     func testWhenLegacyPopoverWasAlreadyShownThenShowRetiresThePromo() async {
         UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false).wrappedValue = true
 
@@ -81,9 +73,6 @@ final class BookmarkToolbarPromoDelegateTests: XCTestCase {
         XCTAssertEqual(result, .retired)
     }
 
-    /// Force Show (debug menu) must still let engineers preview the migrated promo even for a
-    /// user who already saw the legacy popover. With no window present here, bypassing the
-    /// retirement check falls through to the ordinary no-window path rather than `.retired`.
     func testWhenLegacyPopoverWasAlreadyShownThenForceShowBypassesRetirement() async {
         UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false).wrappedValue = true
 
@@ -94,23 +83,9 @@ final class BookmarkToolbarPromoDelegateTests: XCTestCase {
 
     // MARK: - hide()
 
-    /// `PromoService` calls `hide()` unconditionally after recording any result, including for
-    /// sessions that never showed; it must be a no-op rather than crash.
     func testHideBeforeShowingDoesNothing() {
         sut.hide()
         sut.hide()
-    }
-
-    // MARK: - Resolution paths (the one-shot/permanent-history semantics)
-
-    /// Matches the legacy popover: it is shown at most once ever, so *both* outcomes retire it
-    /// permanently -- unlike a typical recurring promo, dismissing must not use a cooldown here.
-    func testResolutionResult_whenAccepted_returnsActioned() {
-        XCTAssertEqual(BookmarkToolbarPromoDelegate.resolutionResult(accepted: true), .actioned)
-    }
-
-    func testResolutionResult_whenDismissed_returnsBareIgnored() {
-        XCTAssertEqual(BookmarkToolbarPromoDelegate.resolutionResult(accepted: false), .ignored())
     }
 
     // MARK: - Trigger wiring

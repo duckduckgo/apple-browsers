@@ -204,15 +204,21 @@ final class BookmarksBarViewController: NSViewController {
         frameDidChangeNotification()
     }
 
-    /// Presents the "Show Bookmarks Bar?" popover, reporting the user's choice via `onResolved` once
-    /// it closes (whether by an explicit button tap or an implicit dismissal). Returns the popover so
-    /// the caller can force it closed early if needed.
-    @discardableResult
-    func showBookmarksBarPrompt(onResolved: @escaping (_ accepted: Bool) -> Void) -> BookmarksBarPromptPopover {
+    private var bookmarksBarPrompt: BookmarksBarPromptPopover?
+
+    func showBookmarksBarPrompt(onDismiss: @escaping (PromoResult) -> Void) {
         let popover = BookmarksBarPromptPopover()
-        popover.viewController.rootView.model.onResolved = onResolved
+        popover.viewController.rootView.model.onDismiss = { [weak self] result in
+            self?.bookmarksBarPrompt = nil
+            onDismiss(result)
+        }
+        bookmarksBarPrompt = popover
         popover.show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
-        return popover
+    }
+
+    func retractBookmarksBarPromptIfNeeded() {
+        bookmarksBarPrompt?.retract()
+        bookmarksBarPrompt = nil
     }
 
     func userInteraction(prevented: Bool) {

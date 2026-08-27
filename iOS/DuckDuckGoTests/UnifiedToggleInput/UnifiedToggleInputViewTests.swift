@@ -50,6 +50,16 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
     }
 
+    func testWhenExpandedInputHidesToggleThenModeSyncDoesNotShowOutline() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        sut.setInputMode(.aiChat, animated: false)
+
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
     func test_searchModeTextSubmitStaysEnabledWhenInvalidDuckAIAttachmentIsHidden() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)

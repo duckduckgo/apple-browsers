@@ -1528,7 +1528,7 @@ final class UnifiedToggleInputView: UIView {
         if isToggleEnabled {
             toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         }
-        updateExpandedBorderVisibility(isToggleEnabled)
+        updateExpandedBorderVisibility(currentLayout.showsToggle)
         updateAttachmentsStripLayout()
 
         guard animated else {

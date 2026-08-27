@@ -4778,7 +4778,8 @@ extension MainViewController: BrowserChromeDelegate {
         }
         return floatingDomainCapsuleController.restObscuredHeightFromScreenEdge(
             for: .top,
-            safeAreaInsets: view.safeAreaInsets)
+            safeAreaInsets: view.safeAreaInsets,
+            expandedFrame: floatingBarExpandedFrame())
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 

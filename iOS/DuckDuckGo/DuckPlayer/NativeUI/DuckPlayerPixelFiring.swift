@@ -76,7 +76,7 @@ public final class DuckPlayerPixelHandler: DuckPlayerPixelFiring {
     public static func fire(_ pixel: Pixel.Event,
                             withAdditionalParameters parameters: [String: String],
                             debounceTime: Int) {
-        PixelKit.fire(pixel, frequency: .debounce(seconds: debounceTime), options: .parameters(parameters))
+        PixelKit.fire(pixel, frequency: .debounce(seconds: TimeInterval(debounceTime)), options: .parameters(parameters))
     }
 
     public static func fireDaily(_ pixel: Pixel.Event,

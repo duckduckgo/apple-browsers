@@ -52,6 +52,15 @@ extension DuckAiUsageWarning {
         UserText.aiChatUsageWarningsResetsIn(resetsIn.shortDescription)
     }
 
+    /// Only a model switch takes the swap glyph, matching Windows: there is nothing to swap for an
+    /// upsell or a hand-off to another window.
+    var actionSwapsModel: Bool {
+        switch action {
+        case .switchToModel, .switchToFreeModel: return true
+        case .tryForFree, .startUsingWeeklyLimit, .none: return false
+        }
+    }
+
     /// `nil` hides the button, which is also how a switch with nothing usable to switch to renders.
     var localizedActionTitle: String? {
         guard let action else { return nil }
@@ -284,7 +293,9 @@ final class AIChatUsageWarningCardView: NSView {
         let actionTitle = warning.localizedActionTitle
         actionButton.isHidden = actionTitle == nil
         if let actionTitle {
-            actionButton.configure(title: actionTitle, offersModelPicker: warning.offersModelPicker)
+            actionButton.configure(title: actionTitle,
+                                   offersModelPicker: warning.offersModelPicker,
+                                   showsSwapIcon: warning.actionSwapsModel)
         } else {
             actionButton.collapse()
         }
@@ -353,6 +364,8 @@ final class AIChatUsageWarningActionButton: NSView {
         static let cornerRadius: CGFloat = 14
         static let horizontalPadding: CGFloat = 12
         static let fontSize: CGFloat = 12
+        static let iconSize: CGFloat = 12
+        static let iconTitleSpacing: CGFloat = 6
         static let chevronSize: CGFloat = 16
         static let chevronRegionWidth: CGFloat = 26
         static let dividerWidth: CGFloat = 1
@@ -376,6 +389,16 @@ final class AIChatUsageWarningActionButton: NSView {
         return view
     }()
 
+    /// Only a model switch shows it, matching Windows: there is nothing to swap for an upsell or a
+    /// hand-off to another window.
+    private let iconImageView: NSImageView = {
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.image = DesignSystemImages.Glyphs.Size12.swap
+        return imageView
+    }()
+
     private let chevronImageView: NSImageView = {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -391,6 +414,8 @@ final class AIChatUsageWarningActionButton: NSView {
     private var pickerRegionWidthConstraint: NSLayoutConstraint?
     private var leadingPaddingConstraint: NSLayoutConstraint?
     private var dividerLeadingConstraint: NSLayoutConstraint?
+    private var iconWidthConstraint: NSLayoutConstraint?
+    private var iconTitleSpacingConstraint: NSLayoutConstraint?
 
     var onAction: (() -> Void)?
     var onOpenModelPicker: (() -> Void)?
@@ -399,6 +424,7 @@ final class AIChatUsageWarningActionButton: NSView {
     var pickerAnchor: NSView { pickerHitButton }
 
     private var offersModelPicker = false
+    private var showsSwapIcon = false
     private var isCollapsed = false
 
     override init(frame frameRect: NSRect) {
@@ -431,6 +457,7 @@ final class AIChatUsageWarningActionButton: NSView {
         pickerHitButton.action = #selector(pickerClicked)
         pickerHitButton.setAccessibilityLabel(UserText.aiChatUsageWarningsModelPickerAccessibilityLabel)
 
+        addSubview(iconImageView)
         addSubview(titleLabel)
         addSubview(dividerView)
         addSubview(chevronImageView)
@@ -441,9 +468,16 @@ final class AIChatUsageWarningActionButton: NSView {
         dividerWidthConstraint = dividerWidth
         let pickerRegionWidth = pickerHitButton.widthAnchor.constraint(equalToConstant: Constants.chevronRegionWidth)
         pickerRegionWidthConstraint = pickerRegionWidth
-        let leadingPadding = titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor,
-                                                                constant: Constants.horizontalPadding)
+        // The icon leads, and the label hangs off it: with no icon both its width and the spacing
+        // collapse, which leaves the label exactly where it sat before.
+        let leadingPadding = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor,
+                                                                    constant: Constants.horizontalPadding)
         leadingPaddingConstraint = leadingPadding
+        let iconWidth = iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize)
+        iconWidthConstraint = iconWidth
+        let iconTitleSpacing = titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor,
+                                                                  constant: Constants.iconTitleSpacing)
+        iconTitleSpacingConstraint = iconTitleSpacing
         let dividerLeading = dividerView.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor,
                                                                  constant: Constants.horizontalPadding)
         dividerLeadingConstraint = dividerLeading
@@ -452,6 +486,11 @@ final class AIChatUsageWarningActionButton: NSView {
             heightAnchor.constraint(equalToConstant: Constants.height),
 
             leadingPadding,
+            iconWidth,
+            iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+            iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            iconTitleSpacing,
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             dividerLeading,
@@ -481,12 +520,18 @@ final class AIChatUsageWarningActionButton: NSView {
     }
 
     /// - Parameter offersModelPicker: when false the divider and `>` collapse, leaving a plain pill.
-    func configure(title: String, offersModelPicker: Bool) {
+    /// - Parameter showsSwapIcon: the swap glyph before a "Switch to …" label.
+    func configure(title: String, offersModelPicker: Bool, showsSwapIcon: Bool) {
         titleLabel.stringValue = title
         self.offersModelPicker = offersModelPicker
+        self.showsSwapIcon = showsSwapIcon
         isCollapsed = false
         leadingPaddingConstraint?.constant = Constants.horizontalPadding
         dividerLeadingConstraint?.constant = Constants.horizontalPadding
+
+        iconImageView.isHidden = !showsSwapIcon
+        iconWidthConstraint?.constant = showsSwapIcon ? Constants.iconSize : 0
+        iconTitleSpacingConstraint?.constant = showsSwapIcon ? Constants.iconTitleSpacing : 0
 
         dividerView.isHidden = !offersModelPicker
         chevronImageView.isHidden = !offersModelPicker
@@ -501,7 +546,11 @@ final class AIChatUsageWarningActionButton: NSView {
     /// paddings have to go too, or the label's own chain still reserves them.
     func collapse() {
         isCollapsed = true
+        showsSwapIcon = false
         titleLabel.stringValue = ""
+        iconImageView.isHidden = true
+        iconWidthConstraint?.constant = 0
+        iconTitleSpacingConstraint?.constant = 0
         leadingPaddingConstraint?.constant = 0
         dividerLeadingConstraint?.constant = 0
         dividerWidthConstraint?.constant = 0
@@ -514,6 +563,9 @@ final class AIChatUsageWarningActionButton: NSView {
         guard !isCollapsed else { return NSSize(width: 0, height: Constants.height) }
 
         var width = Constants.horizontalPadding + titleLabel.intrinsicContentSize.width + Constants.horizontalPadding
+        if showsSwapIcon {
+            width += Constants.iconSize + Constants.iconTitleSpacing
+        }
         if offersModelPicker {
             width += Constants.dividerWidth + Constants.chevronRegionWidth
         }
@@ -545,6 +597,7 @@ final class AIChatUsageWarningActionButton: NSView {
             backgroundLayer.backgroundColor = fill.cgColor
             dividerView.backgroundColor = NSColor(designSystemColor: .lines)
             titleLabel.textColor = NSColor(designSystemColor: .textPrimary)
+            iconImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)
             chevronImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)
         }
         CATransaction.commit()

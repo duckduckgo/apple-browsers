@@ -1214,9 +1214,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         backgroundViewBottomConstraint?.constant = visible
             ? -AIChatUsageWarningCardView.Constants.contentHeight
             : 0
-        // `castsShadowOverCard` just flipped, so repaint the chrome and mount the shadow.
+        // `castsShadowOverCard` just flipped, so repaint the chrome and mount the shadow — but only
+        // while the panel's own shadow is up. `cleanup()` takes that down and then hides the card,
+        // and `addShadowToWindow` mounts both: without this guard teardown puts the panel's shadow
+        // straight back on the window, where it sits under a search omnibar with nothing inside it.
         applyTheme(theme: themeManager.theme)
-        addShadowToWindow()
+        if shadowView.superview != nil {
+            addShadowToWindow()
+        }
         return true
     }
 

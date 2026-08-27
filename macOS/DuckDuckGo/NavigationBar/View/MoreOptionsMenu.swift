@@ -504,7 +504,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         if StandardApplicationBuildType().isSparkleBuild,
            let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem {
-            releaseNotes.withImage(releaseNotes.image, visibleOnMacOS27: true)
+            releaseNotes.withImage(DesignSystemImages.Glyphs.Size12.note, visibleOnMacOS27: true)
             addItem(releaseNotes)
         }
 
@@ -1378,20 +1378,20 @@ final class HelpSubMenu: NSMenu, NSMenuDelegate {
         removeAllItems()
 
         let about = (NSApp.mainMenuTyped.aboutMenuItem.copy() as? NSMenuItem)!
-            .withImage(NSApp.mainMenuTyped.aboutMenuItem.image, visibleOnMacOS27: true)
+            .withImage(DesignSystemImages.Glyphs.Size12.info, visibleOnMacOS27: true)
         addItem(about)
 
         if StandardApplicationBuildType().isSparkleBuild,
            let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem,
            let whatIsNew = (NSApp.mainMenuTyped.whatIsNewMenuItem.copy() as? NSMenuItem) {
-            releaseNotes.withImage(releaseNotes.image, visibleOnMacOS27: true)
-            whatIsNew.withImage(whatIsNew.image, visibleOnMacOS27: true)
+            releaseNotes.withImage(DesignSystemImages.Glyphs.Size12.note, visibleOnMacOS27: true)
+            whatIsNew.withImage(DesignSystemImages.Glyphs.Size12.news, visibleOnMacOS27: true)
             addItem(releaseNotes)
             addItem(whatIsNew)
         }
 
         let feedback = (NSApp.mainMenuTyped.sendFeedbackMenuItem.copy() as? NSMenuItem)!
-            .withImage(NSApp.mainMenuTyped.sendFeedbackMenuItem.image, visibleOnMacOS27: true)
+            .withImage(DesignSystemImages.Glyphs.Size12.feedback, visibleOnMacOS27: true)
         addItem(feedback)
     }
 

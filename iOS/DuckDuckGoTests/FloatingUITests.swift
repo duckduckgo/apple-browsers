@@ -526,7 +526,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         if let view = view as? View {
             return view
         }
-        return view.subviews.lazy.compactMap { firstSubview(of: type, in: $0) }.first
+        return view.subviews.lazy.compactMap { self.firstSubview(of: type, in: $0) }.first
     }
 }
 

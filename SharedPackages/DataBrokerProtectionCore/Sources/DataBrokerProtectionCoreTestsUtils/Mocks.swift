@@ -1585,6 +1585,7 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
 
     public var durationSinceLastStageCalled = false
     public var durationSinceStartTimeCalled = false
+    public var awakeDurationSinceStartTimeCalled = false
     public var fireOptOutStartCalled = false
     public var fireOptOutEmailGenerateCalled = false
     public var fireOptOutCaptchaParseCalled = false
@@ -1621,6 +1622,11 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
 
     public func durationSinceStartTime() -> Double {
         durationSinceStartTimeCalled = true
+        return 0.0
+    }
+
+    public func awakeDurationSinceStartTime() -> Double {
+        awakeDurationSinceStartTimeCalled = true
         return 0.0
     }
 
@@ -1729,6 +1735,7 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         self.stage = nil
         durationSinceLastStageCalled = false
         durationSinceStartTimeCalled = false
+        awakeDurationSinceStartTimeCalled = false
         fireOptOutStartCalled = false
         fireOptOutEmailGenerateCalled = false
         fireOptOutCaptchaParseCalled = false

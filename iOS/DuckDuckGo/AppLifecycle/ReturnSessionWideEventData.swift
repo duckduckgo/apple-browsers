@@ -32,7 +32,7 @@ final class ReturnSessionWideEventData: WideEventData {
         mobileMetaType: "ios-return-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-return-session",
-        version: "1.0.0"
+        version: "1.1.0"
     )
 
     /// `ntp` is the after-idle NTP; `ntpUserInitiated` is an NTP reached without the treatment.
@@ -65,6 +65,9 @@ final class ReturnSessionWideEventData: WideEventData {
     var timeAwayMs: Int?
     var focused: Bool
     var statusReason: StatusReason?
+    /// What triggered the prompt submission (an `AIChatEntryPointSource` raw value). Set only
+    /// when `statusReason` is `.aiPromptSubmitted`. Optional so old pending flows decode.
+    var promptOrigin: String?
     var sessionInterval: WideEvent.MeasuredInterval
     var firstInteractionInterval: WideEvent.MeasuredInterval
     var pageEngaged: Bool
@@ -136,6 +139,7 @@ extension ReturnSessionWideEventData {
             (WideEventParameter.ReturnSessionFeature.timeAwayMsBucketed, timeAwayMs.map { String(Self.timeAwayBucketMs($0)) }),
             (WideEventParameter.ReturnSessionFeature.focused, focused),
             (WideEventParameter.Feature.statusReason, statusReason?.rawValue),
+            (WideEventParameter.ReturnSessionFeature.promptOrigin, promptOrigin),
             (WideEventParameter.ReturnSessionFeature.sessionDurationMsBucketed, sessionInterval.stringValue(bucket)),
             (WideEventParameter.ReturnSessionFeature.timeToFirstInteractionMsBucketed, firstInteractionInterval.stringValue(bucket)),
             (WideEventParameter.ReturnSessionFeature.pageEngaged, pageEngaged),
@@ -170,6 +174,7 @@ extension WideEventParameter {
         static let afterIdle = "feature.data.ext.after_idle"
         static let timeAwayMsBucketed = "feature.data.ext.time_away_ms_bucketed"
         static let focused = "feature.data.ext.focused"
+        static let promptOrigin = "feature.data.ext.prompt_origin"
         static let sessionDurationMsBucketed = "feature.data.ext.session_duration_ms_bucketed"
         static let timeToFirstInteractionMsBucketed = "feature.data.ext.time_to_first_interaction_ms_bucketed"
         static let pageEngaged = "feature.data.ext.page_engaged"

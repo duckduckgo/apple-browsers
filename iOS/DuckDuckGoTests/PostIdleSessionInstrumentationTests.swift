@@ -337,6 +337,36 @@ struct PostIdleSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("sessionEnded stores the prompt origin for an AI prompt submission", .timeLimit(.minutes(1)))
+    func sessionEndedStoresPromptOriginForAIPromptSubmission() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: nil, focused: false)
+        sut.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: .addressBarPrompt)
+
+        #expect(lastReturnCompletion(wideEvent)?.0.promptOrigin == "address_bar_prompt")
+    }
+
+    @available(iOS 16, *)
+    @Test("sessionEnded ignores the prompt origin for non-prompt reasons", .timeLimit(.minutes(1)))
+    func sessionEndedIgnoresPromptOriginForOtherReasons() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: nil, focused: false)
+        sut.sessionEnded(reason: .searchSubmitted, promptOrigin: .addressBarPrompt)
+
+        #expect(lastReturnCompletion(wideEvent)?.0.promptOrigin == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("sessionEnded leaves the prompt origin empty when the caller has none", .timeLimit(.minutes(1)))
+    func sessionEndedLeavesPromptOriginEmptyWhenAbsent() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: nil, focused: false)
+        sut.sessionEnded(reason: .aiPromptSubmitted)
+
+        #expect(lastReturnCompletion(wideEvent)?.0.promptOrigin == nil)
+    }
+
+    @available(iOS 16, *)
     @Test("The post-idle flow collapses the submission split back onto bar_used", .timeLimit(.minutes(1)))
     func postIdleFlowCollapsesSubmissionsOntoBarUsed() {
         for reason in [ReturnSessionWideEventData.StatusReason.searchSubmitted, .aiPromptSubmitted, .urlSubmitted] {

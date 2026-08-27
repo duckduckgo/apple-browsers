@@ -165,6 +165,27 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
         XCTAssertEqual(warning.message, .advancedModelsLimitReached)
     }
 
+    /// The free-model CTA is still a model switch, so it carries the `>` into the native picker.
+    func testAdvancedModelsReachedOffersTheFreeModelSwitchAndThePicker() {
+        let resolver = DuckAiUsageWarningResolver(
+            dismissalStore: dismissalStore,
+            modelSuggester: StubFreeModelSuggester(
+                free: .suggestion(DuckAiModelSuggestion(modelId: "gpt-5.4-mini", modelShortName: "5.4 mini"))
+            )
+        )
+        let outcome = resolver.resolve(limits: limits(weekly: 100),
+                                       tier: .pro,
+                                       isInternalUser: false,
+                                       isTrialEligible: false,
+                                       advancedModelsWindow: .weekly,
+                                       now: now)
+        guard case .warning(let warning, _) = outcome else { return XCTFail("expected a warning") }
+
+        XCTAssertEqual(warning.action, .switchToFreeModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
+                                                                               modelShortName: "5.4 mini")))
+        XCTAssertTrue(warning.offersModelPicker)
+    }
+
     // MARK: - Reset copy
 
     func testResetCopyComesFromTheWinningWindow() {
@@ -197,4 +218,11 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
             weekly: weekly.map { DuckAiUsageLimitWindow(percentUsed: $0, resetsAt: resetsAt) }
         )
     }
+}
+
+private struct StubFreeModelSuggester: DuckAiModelSuggesting {
+    let free: DuckAiModelSuggestionOutcome
+
+    func cheaperModel() -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
+    func freeModel() -> DuckAiModelSuggestionOutcome { free }
 }

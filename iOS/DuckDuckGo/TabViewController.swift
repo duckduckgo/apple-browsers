@@ -2106,7 +2106,7 @@ class TabViewController: UIViewController {
     /// would draw over the video, and a pull-down could reload the page behind it.
     private func suspendWebViewHostedChrome() {
         borderView.isHidden = true
-        pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
+        pullToRefreshViewAdapter?.setPullSuspended(true)
     }
 
     /// Leaving the container zeroes the frame. Seeding the rect it occupied on screen keeps the already
@@ -2120,11 +2120,10 @@ class TabViewController: UIViewController {
     private func restoreWebViewLayoutAfterFullscreen() {
         webViewContainer.addSubview(webView)
         pinWebViewToContainer()
-        updateWebViewBottomAnchor()
         webViewContainer.layoutIfNeeded()
 
         updateBorderViewForFloatingUIIfNeeded()
-        pullToRefreshViewAdapter?.setRefreshControlEnabled(!isAITab)
+        pullToRefreshViewAdapter?.setPullSuspended(false)
     }
 
     private func removeObservers() {

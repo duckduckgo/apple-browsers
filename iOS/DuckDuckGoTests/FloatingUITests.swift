@@ -124,6 +124,49 @@ final class FloatingUIManagerTests: XCTestCase {
 
 }
 
+final class FloatingGlassAppearancePolicyTests: XCTestCase {
+
+    func testWhenFireModeIsActiveThenInterfaceStyleIsDarkRegardlessOfDeviceAndPageAppearance() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: true,
+            traitCollection: UITraitCollection(userInterfaceStyle: .light),
+            pageBackgroundColor: .white)
+
+        XCTAssertEqual(interfaceStyle, .dark)
+    }
+
+    func testWhenNormalModeUsesDarkDeviceAppearanceThenInterfaceStyleIsDark() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: false,
+            traitCollection: UITraitCollection(userInterfaceStyle: .dark),
+            pageBackgroundColor: .white)
+
+        XCTAssertEqual(interfaceStyle, .dark)
+    }
+
+    func testWhenNormalModeUsesLightDeviceAppearanceThenInterfaceStyleFollowsPageAppearance() {
+        let traitCollection = UITraitCollection(userInterfaceStyle: .light)
+
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .black),
+                       .dark)
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .white),
+                       .light)
+    }
+
+    func testWhenNormalModeHasNoPageColorThenInterfaceStyleIsLight() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: false,
+            traitCollection: UITraitCollection(userInterfaceStyle: .light),
+            pageBackgroundColor: nil)
+
+        XCTAssertEqual(interfaceStyle, .light)
+    }
+}
+
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
     func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
@@ -171,6 +214,18 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         XCTAssertEqual(height, 70, accuracy: 0.001)
     }
 
+    func testWhenVisibleToolbarIsTallerThanTheInterpolatedSlotThenBottomObscuredHeightUsesTheVisibleChrome() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0.8,
+            toolbarSlotHeight: 100,
+            visibleToolbarHeight: 90,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 90, accuracy: 0.001)
+    }
+
     func testWhenBarsVisibleThenTopObscuredHeightIsExpandedChrome() {
         let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
             barsVisibilityPercent: 1,
@@ -213,6 +268,38 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         )
 
         XCTAssertEqual(height, 91, accuracy: 0.001)
+    }
+
+    func testWhenVisibleTopChromeIsTallerThanTheInterpolatedChromeThenTopObscuredHeightUsesTheVisibleChrome() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0.8,
+            expandedChromeHeight: 111,
+            visibleChromeHeight: 105,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 105, accuracy: 0.001)
+    }
+
+    func testWhenBarsVisibleAboveTheHandoffThenChromeStaysFullyOnScreen() {
+        for percent in [1.0, 0.9, 0.75, 0.6] as [CGFloat] {
+            let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: percent, handoffStart: 0.6)
+
+            XCTAssertEqual(fraction, 1, accuracy: 0.001, "expected no slide at \(percent)")
+        }
+    }
+
+    func testWhenBarsVisibleBelowTheHandoffThenChromeSlidesOutProportionally() {
+        let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: 0.3, handoffStart: 0.6)
+
+        XCTAssertEqual(fraction, 0.5, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenThenChromeIsFullyOffScreen() {
+        let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: 0, handoffStart: 0.6)
+
+        XCTAssertEqual(fraction, 0, accuracy: 0.001)
     }
 
     func testWhenFloatingBottomAddressBarAndNotMinimalChromeThenOmnibarIsHostedInToolbar() {
@@ -451,14 +538,24 @@ final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
         XCTAssertNil(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset))
     }
 
-    func testWhenCapturingFullBoundsThenContentInsetsDoNotCropTheViewport() {
+    func testWhenCapturingFullBoundsThenOnlyTheTopInsetIsCropped() {
         let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
         let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
 
         XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds,
                                                                   contentInset: contentInset,
                                                                   capturesFullBounds: true),
-                       bounds)
+                       CGRect(x: 0, y: 50, width: 320, height: 590))
+    }
+
+    func testWhenNotCapturingFullBoundsThenTopAndBottomInsetsAreCropped() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds,
+                                                                  contentInset: contentInset,
+                                                                  capturesFullBounds: false),
+                       CGRect(x: 0, y: 50, width: 320, height: 560))
     }
 }
 
@@ -748,5 +845,62 @@ final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
         XCTAssertNil(outgoingView.layer.mask)
         XCTAssertNil(incomingView.layer.mask)
         XCTAssertNil(incomingView.superview)
+    }
+}
+
+final class ChromeMorphAnimatorCurveTests: XCTestCase {
+
+    private let expandCurve = MainViewController.ChromeAnimationConstants.morphExpandCurve
+    private let collapseCurve = MainViewController.ChromeAnimationConstants.morphCollapseCurve
+
+    func testWhenCurveIsSmoothstepThenItEasesInAndOutSymmetrically() {
+        let curve = ChromeMorphAnimator.Curve.smoothstep
+
+        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 0.5), 0.5, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
+    }
+
+    func testWhenCurveIsEaseOutCubicThenItStartsFastAndDecelerates() {
+        let curve = ChromeMorphAnimator.Curve.easeOutCubic
+
+        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 0.5), 0.875, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
+        XCTAssertGreaterThan(curve.value(at: 0.25), 0.5)
+    }
+
+    func testWhenCollapsingThenTheCurveNeverOvershoots() {
+        for step in 0...100 {
+            let value = collapseCurve.value(at: CGFloat(step) / 100)
+            XCTAssertLessThanOrEqual(value, 1.0, "Collapse must not overshoot at t = \(CGFloat(step) / 100)")
+        }
+    }
+
+    func testWhenExpandingThenTheSpringSettlesByTheEndOfItsDuration() {
+        XCTAssertEqual(expandCurve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(expandCurve.value(at: 1),
+                       1,
+                       accuracy: 0.001,
+                       "Residual at the cutoff becomes a snap. Raise naturalFrequency or the damping ratio.")
+    }
+
+    func testWhenExpandingThenOvershootStaysBelowOnePointFivePercent() {
+        var peak: CGFloat = 0
+        for step in 0...200 {
+            peak = max(peak, expandCurve.value(at: CGFloat(step) / 200))
+        }
+
+        XCTAssertGreaterThan(peak, 1.0, "A lightly damped spring is expected to overshoot slightly")
+        XCTAssertLessThan(peak, 1.015, "Overshoot on a bar that clips the screen edge reads as a glitch")
+    }
+
+    func testWhenSpringIsCriticallyDampedThenItNeverOvershoots() {
+        let curve = ChromeMorphAnimator.Curve.spring(dampingRatio: 1, naturalFrequency: 8.84)
+
+        for step in 0...100 {
+            XCTAssertLessThanOrEqual(curve.value(at: CGFloat(step) / 100), 1.0)
+        }
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.01)
     }
 }

@@ -7716,14 +7716,6 @@ extension MainViewController: FireExecutorDelegate {
         self.postClear = nil
     }
 
-    func willStartBurningAIHistory(fireRequest: FireRequest) {
-        // No operation
-    }
-    
-    func didFinishBurningAIHistory(fireRequest: FireRequest) {
-        // No operation
-    }
-    
     func didFinishBurning(fireRequest: FireRequest) {
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing

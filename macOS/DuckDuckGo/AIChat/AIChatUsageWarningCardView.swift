@@ -52,6 +52,14 @@ extension DuckAiUsageWarning {
         UserText.aiChatUsageWarningsResetsIn(resetsIn.shortDescription)
     }
 
+    /// The `>` beside "Switch to a Free Model" lists the free models and nothing else: that message
+    /// is shown *because* the advanced allowance is spent, so offering an advanced model — or the
+    /// gated upsell section — would contradict the sentence it hangs off.
+    var modelPickerOffersFreeModelsOnly: Bool {
+        if case .switchToFreeModel = action { return true }
+        return false
+    }
+
     /// Only a model switch takes the swap glyph, matching Windows: there is nothing to swap for an
     /// upsell or a hand-off to another window.
     var actionSwapsModel: Bool {

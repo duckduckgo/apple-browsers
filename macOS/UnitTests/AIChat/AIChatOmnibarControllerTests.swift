@@ -2179,6 +2179,49 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(gated.allSatisfy(\.routesToUpsell), "With the upsell on, a gated row opens the purchase dialog")
     }
 
+    /// The usage card's "Switch to a Free Model" chevron. That message means the advanced allowance
+    /// is spent, so the menu behind it must not list the models it was spent on.
+    func testModelPickerItems_freeModelsOnly_listsOnlyModelsTheFreeTierGets() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "basic", accessTier: ["free", "plus"]),
+            makeRemoteModel(id: "plus-only", accessTier: ["plus"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: .plus, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil, freeModelsOnly: true)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a", "basic"])
+        XCTAssertTrue(gatedRows(items).isEmpty, "A paid model is exactly what this menu exists to avoid")
+    }
+
+    /// A paid model the user *can* select is still the wrong offer here — their allowance for it is gone.
+    func testModelPickerItems_freeModelsOnly_dropsPaidModelsTheUserHasAccessTo() async {
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: .pro, trialEligible: false)
+
+        let items = controller.modelPickerItems(selectedModelId: nil, freeModelsOnly: true)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"])
+        XCTAssertEqual(separatorCount(items), 0, "Nothing to divide off — there is no second section")
+    }
+
+    /// The toolbar's own picker is unchanged: it still offers everything, gated section included.
+    func testModelPickerItems_withoutTheFreeOnlyFlag_stillOffersPaidModels() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        XCTAssertEqual(gatedRows(items).map(\.id), ["pro-only"])
+    }
+
     /// The gated section is exactly `[separator, header, gated…]`, in that order, at the end.
     func testModelPickerItems_gatedSectionOrdering() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true

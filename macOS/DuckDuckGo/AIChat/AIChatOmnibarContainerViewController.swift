@@ -1164,7 +1164,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
             guard let self else { return }
-            presentModelPicker(anchoredTo: usageWarningCardView.modelPickerAnchor)
+            let offersFreeModelsOnly = omnibarController.usageWarningViewModel?.warning?
+                .modelPickerOffersFreeModelsOnly ?? false
+            presentModelPicker(anchoredTo: usageWarningCardView.modelPickerAnchor,
+                               freeModelsOnly: offersFreeModelsOnly)
         }
 
         subscribeToUsageWarnings()
@@ -2074,10 +2077,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     /// Anchored, so a menu raised from the card's `>` lands under the control the user clicked.
-    private func presentModelPicker(anchoredTo anchor: NSView) {
+    private func presentModelPicker(anchoredTo anchor: NSView, freeModelsOnly: Bool = false) {
         // Resolved once and passed on: `modelPickerItems` records a free-trial badge impression, so
         // asking for it twice per open would burn through the badge's view cap at double speed.
-        let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId)
+        let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId,
+                                                       freeModelsOnly: freeModelsOnly)
         // Only a picker that actually shows a gated row is a subscription-funnel impression.
         if items.contains(where: { if case .gatedModel = $0 { return true } else { return false } }) {
             omnibarController.pixelHandler.fire(.modelPickerShown)

@@ -1613,8 +1613,13 @@ struct AIChatReasoningPickerItem {
 
 extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
-    func modelPickerItems(selectedModelId: String?) -> [AIChatModelPickerItem] {
-        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
+    ///
+    /// - Parameter freeModelsOnly: for the usage card's "Switch to a Free Model" chevron. That message
+    ///   is shown because the advanced-model allowance is spent, so listing advanced models there —
+    ///   let alone a gated upsell section — would offer exactly what the user can no longer use.
+    func modelPickerItems(selectedModelId: String?, freeModelsOnly: Bool = false) -> [AIChatModelPickerItem] {
+        let source = freeModelsOnly ? models.filter { !$0.isAdvanced } : models
+        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: source)
         // Recommended = backend-labelled models, shown first with the label as a subtitle.
         let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
 
@@ -1627,7 +1632,7 @@ extension AIChatOmnibarController {
             .model(model, isSelected: model.id == selectedModelId)
         }
 
-        guard !gated.isEmpty else { return items }
+        guard !gated.isEmpty, !freeModelsOnly else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {

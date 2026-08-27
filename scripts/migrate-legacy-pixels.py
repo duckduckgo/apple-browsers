@@ -55,10 +55,10 @@ statically is reported rather than guessed.
 
 `Pixel.fire(_:)`, `DailyPixel.fireDaily(_:)` and `DailyPixel.fireDailyAndCount(_:error:…)` take
 the event positionally. They are `PixelFiring` / `DailyPixelFiring` forwarders to the labelled
-form, so they fire at the same frequency as their labelled twin. They are not in the task brief's
-table and are counted under their own rules so they can be accepted or rejected separately. See
-the comment in `classify` for why a positional argument to `Pixel.fire` is accepted only when it
-is provably a `Pixel.Event` case.
+form, so they fire at the same frequency as their labelled twin. They are not in the frequency
+table above. Each is counted under its own rule, so a reviewer can accept or reject it on its
+own. See the comment in `classify` for why a positional argument to `Pixel.fire` is accepted only
+when it is provably a `Pixel.Event` case.
 
 Argument mapping
 ----------------
@@ -74,8 +74,8 @@ composed `Options` value rather than a preset, so it is reported. So is any `onC
 `onDailyComplete:`, `onCountComplete:`, trailing closure, `forDeviceType:`, `withHeaders:`,
 `allowedQueryReservedCharacters:`, `pixelFiring:` or `dailyPixelStore:`.
 
-Two things the rewrite must do that the brief's table does not mention
----------------------------------------------------------------------
+Two things the rewrite must do beyond the frequency mapping above
+-----------------------------------------------------------------
 * The event expression is qualified as `Pixel.Event.<case>`. `PixelKit.fire` takes
   `PixelKit.Event`, a protocol existential, so implicit-member syntax does not apply and
   `PixelKit.fire(.appLaunch)` fails to compile with "type 'any PixelKit.Event' has no member".
@@ -851,9 +851,9 @@ def classify(site: CallSite, names: PixelEventNameTable):
         # `DailyPixelFiring.fireDaily` is a two-line forwarder in
         # `iOS/Core/DailyPixelFiring.swift`: `fireDaily(_:)` calls `fire(pixel:)` and
         # `fireDaily(_:withAdditionalParameters:)` calls `fire(pixel:withAdditionalParameters:)`.
-        # So it fires at exactly `DailyPixel.fire`'s frequency. This rule is *not* in the task
-        # brief's transformation table, which lists only `fire` and `fireDailyAndCount`; it is
-        # counted separately below so a reviewer can accept or reject it on its own.
+        # So it fires at exactly `DailyPixel.fire`'s frequency. This rule is not in the module
+        # docstring's frequency table above, which lists only `fire` and `fireDailyAndCount`.
+        # It is counted separately below, so a reviewer can accept or reject it on its own.
         frequency = ".legacyDailyNoSuffix"
         rule = "DailyPixel.fireDaily-legacyDailyNoSuffix"
         tags.append("fireDaily-beyond-brief")

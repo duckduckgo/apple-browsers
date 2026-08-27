@@ -99,14 +99,15 @@ extension NotificationServiceManager {
 
     static func handleInactivityNotification(actionIdentifier: String,
                                              userInfo: [AnyHashable: Any],
-                                             stateStore: InactivityNotificationStateStoring) {
+                                             stateStore: InactivityNotificationStateStoring,
+                                             pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         let daysInactiveKey = InactivityNotificationSchedulerService.Settings.daysInactive.rawValue
         let daysInactive = userInfo[daysInactiveKey] as? Int ?? InactivityNotificationSchedulerService.Settings.daysInactive.defaultValue
 
         switch actionIdentifier {
         case UNNotificationDefaultActionIdentifier:
             stateStore.recordInteraction()
-            PixelKit.fire(Pixel.Event.inactiveUserProvisionalPushNotificationTapped, options: .parameters([daysInactiveKey: String(daysInactive)]))
+            pixelFiring?.fire(Pixel.Event.inactiveUserProvisionalPushNotificationTapped, options: .parameters([daysInactiveKey: String(daysInactive)]))
             // no special navigation
         case UNNotificationDismissActionIdentifier:
             stateStore.recordInteraction()

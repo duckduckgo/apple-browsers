@@ -18,6 +18,7 @@
 //
 
 import Core
+import PixelKit
 
 /// Where the chat history screen was opened from. Sent as the `source` parameter on the
 /// screen-shown impression pixel.
@@ -51,16 +52,16 @@ protocol AIChatHistoryInstrumentation {
 
 final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
 
-    private let dailyPixelFiring: DailyPixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
-    init(dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
-        self.dailyPixelFiring = dailyPixelFiring
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
     }
 
     func screenShown(source: AIChatHistorySource) {
-        dailyPixelFiring.fireDailyAndCount(.aiChatHistoryScreenShown,
-                                           error: nil,
-                                           withAdditionalParameters: [PixelParameters.source: source.rawValue])
+        pixelFiring?.fire(Pixel.Event.aiChatHistoryScreenShown,
+                          frequency: .legacyDailyAndCount,
+                          options: .parameters([PixelParameters.source: source.rawValue]))
     }
 
     func chatOpened() {
@@ -136,6 +137,6 @@ final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
     }
 
     private func fire(_ pixel: Pixel.Event, error: Error? = nil) {
-        dailyPixelFiring.fireDailyAndCount(pixel, error: error, withAdditionalParameters: [:])
+        pixelFiring?.fire(pixel.withError(error), frequency: .legacyDailyAndCount)
     }
 }

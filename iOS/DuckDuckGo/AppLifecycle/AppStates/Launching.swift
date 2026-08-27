@@ -192,7 +192,7 @@ struct Launching: LaunchingHandling {
         let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
 
-        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
                                                 userDefaults: UserDefaults.app,

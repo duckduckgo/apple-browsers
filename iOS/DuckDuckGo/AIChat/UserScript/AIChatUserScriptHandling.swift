@@ -123,28 +123,28 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
         static let failureReason = "failureReason"
     }
 
-    init(dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         super.init { event, _, _, _ in
             switch event {
             case .reportMetricDecodingFailed(let error, let failureReason):
-                dailyPixelFiring.fireDailyAndCount(
-                    .aiChatReportMetricDecodeError,
-                    error: error,
-                    withAdditionalParameters: [Parameters.failureReason: failureReason.rawValue]
+                pixelFiring?.fire(
+                    Pixel.Event.aiChatReportMetricDecodeError.withError(error),
+                    frequency: .legacyDailyAndCount,
+                    options: .parameters([Parameters.failureReason: failureReason.rawValue])
                 )
             case .responseStateDecodingFailed(let error, let failureReason):
-                dailyPixelFiring.fireDailyAndCount(
-                    .aiChatResponseStateDecodeError,
-                    error: error,
-                    withAdditionalParameters: [Parameters.failureReason: failureReason.rawValue]
+                pixelFiring?.fire(
+                    Pixel.Event.aiChatResponseStateDecodeError.withError(error),
+                    frequency: .legacyDailyAndCount,
+                    options: .parameters([Parameters.failureReason: failureReason.rawValue])
                 )
             }
         }
     }
 
-    @available(*, unavailable, message: "Use init(dailyPixelFiring:) instead")
+    @available(*, unavailable, message: "Use init(pixelFiring:) instead")
     override init(mapping: @escaping EventMapping<AIChatUserScriptErrorEvent>.Mapping) {
-        fatalError("Use init(dailyPixelFiring:) instead")
+        fatalError("Use init(pixelFiring:) instead")
     }
 }
 

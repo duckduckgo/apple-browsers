@@ -24,6 +24,7 @@ import Common
 import FoundationExtensions
 import Core
 import os.log
+import PixelKit
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -173,7 +174,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.userAgentManager = userAgentManager
         self.utiHostInstaller = utiHostInstaller
 
-        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,

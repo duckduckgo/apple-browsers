@@ -18,20 +18,23 @@
 //
 
 import Core
+import PixelKit
 import SystemSettingsPiPTutorial
 
 final class SystemSettingsPiPTutorialPixelHandler: SystemSettingsPiPTutorialEventMapper {
     private static let regex = #"([a-zA-Z\-]+\.lproj/[^/]+)$"#
 
-    private let dailyPixelFiring: DailyPixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
-    init(dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
-        self.dailyPixelFiring = dailyPixelFiring
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
     }
 
     func fireFailedToLoadPiPTutorialEvent(error: (any Error)?, urlPath: String?) {
         let parameters = extractVideoUrlPath(from: urlPath).flatMap { ["video_url_path": $0] } ?? [:]
-        dailyPixelFiring.fireDailyAndCount(.systemSettingsPiPTutorialFailedToLoadVideo, error: error, withAdditionalParameters: parameters)
+        pixelFiring?.fire(Pixel.Event.systemSettingsPiPTutorialFailedToLoadVideo.withError(error),
+                          frequency: .legacyDailyAndCount,
+                          options: .parameters(parameters))
     }
 
     private func extractVideoUrlPath(from path: String?) -> String? {

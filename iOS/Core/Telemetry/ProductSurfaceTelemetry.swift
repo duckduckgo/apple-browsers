@@ -19,6 +19,7 @@
 
 import PrivacyConfig
 import FeatureFlags_iOS
+import PixelKit
 
 /// Product surface telemetry sends anonymous pixels about areas of the app that are being used so that we can we make future product decisions.  These pixels are not linked to any identifiable data.  The pixels are also enabled / disabled by config and we only enable them during the periods of product roadmap development in order to assist decision making.
 public protocol ProductSurfaceTelemetry {
@@ -69,42 +70,42 @@ public protocol ProductSurfaceTelemetry {
 public struct PixelProductSurfaceTelemetry: ProductSurfaceTelemetry {
 
     private let featureFlagger: FeatureFlagger
-    private let dailyPixelFiring: DailyPixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
-    public init(featureFlagger: FeatureFlagger, dailyPixelFiring: DailyPixelFiring.Type) {
+    public init(featureFlagger: FeatureFlagger, pixelFiring: (any PixelKitFiring)?) {
         self.featureFlagger = featureFlagger
-        self.dailyPixelFiring = dailyPixelFiring
+        self.pixelFiring = pixelFiring
     }
 
     public func menuUsed() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageMenu, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageMenu, frequency: .legacyDailyAndCount)
     }
 
     public func dailyActiveUser() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDaily(.productTelemeterySurfaceUsageDAU)
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageDAU, frequency: .legacyDaily)
     }
 
     public func iPadUsed(isPad: Bool) {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage),
               isPad else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageIPad, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageIPad, frequency: .legacyDailyAndCount)
     }
 
     public func landscapeModeUsed() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageLandscapeMode, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageLandscapeMode, frequency: .legacyDailyAndCount)
     }
 
     public func keyboardActive() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageKeyboardActive, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageKeyboardActive, frequency: .legacyDailyAndCount)
     }
 
     public func autocompleteUsed() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageAutocomplete, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageAutocomplete, frequency: .legacyDailyAndCount)
     }
 
     public func navigationCompleted(url: URL?) {
@@ -112,45 +113,45 @@ public struct PixelProductSurfaceTelemetry: ProductSurfaceTelemetry {
               let url else { return }
 
         if url.isDuckDuckGoSearch {
-            dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageSERP, error: nil, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageSERP, frequency: .legacyDailyAndCount)
         } else {
             // Regular DDG pages count as a websites too
-            dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageWebsite, error: nil, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageWebsite, frequency: .legacyDailyAndCount)
         }
     }
 
     public func duckAIUsed() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageDuckAI, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageDuckAI, frequency: .legacyDailyAndCount)
     }
 
     public func tabManagerUsed() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageTabManager, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageTabManager, frequency: .legacyDailyAndCount)
     }
 
     public func dataClearingUsed() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageDataClearing, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageDataClearing, frequency: .legacyDailyAndCount)
     }
 
     public func newTabPageUsed() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageNewTabPage, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageNewTabPage, frequency: .legacyDailyAndCount)
     }
 
     public func settingsUsed() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageSettings, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageSettings, frequency: .legacyDailyAndCount)
     }
 
     public func bookmarksPageUsed() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageBookmarksPage, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsageBookmarksPage, frequency: .legacyDailyAndCount)
     }
 
     public func passwordsPageUsed() {
         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsagePasswordsPage, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.productTelemeterySurfaceUsagePasswordsPage, frequency: .legacyDailyAndCount)
     }
 }

@@ -20,6 +20,7 @@
 import Contacts
 import ContactsUI
 import Core
+import PixelKit
 import UIKit
 import UIKitExtensions
 
@@ -30,7 +31,7 @@ enum ContactCardFactory {
                                 delegate: CNContactViewControllerDelegate,
                                 cancelTarget: Any,
                                 cancelAction: Selector,
-                                pixelFiring: PixelFiring.Type) -> UINavigationController {
+                                pixelFiring: (any PixelKitFiring)?) -> UINavigationController {
         let contactViewController = CNContactViewController(forUnknownContact: contact)
         contactViewController.contactStore = CNContactStore()
         contactViewController.allowsActions = true
@@ -45,17 +46,17 @@ enum ContactCardFactory {
         // is app-owned and reliably exposed. Distinguishes the card from the browser omnibar's Cancel.
         cancelButton.accessibilityIdentifier = "contactPreviewCancelButton"
         contactViewController.navigationItem.leftBarButtonItem = cancelButton
-        pixelFiring.fire(.vcardContactEditorPresented, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.vcardContactEditorPresented)
         return UINavigationController(rootViewController: contactViewController)
     }
 }
 
 final class ContactCardCompletion {
 
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private var didComplete = false
 
-    init(pixelFiring: PixelFiring.Type) {
+    init(pixelFiring: (any PixelKitFiring)?) {
         self.pixelFiring = pixelFiring
     }
 
@@ -65,7 +66,7 @@ final class ContactCardCompletion {
     func recordCompletion(saved: Bool) -> Bool {
         guard !didComplete else { return false }
         didComplete = true
-        pixelFiring.fire(saved ? .vcardContactEditorSaved : .vcardContactEditorCancelled, withAdditionalParameters: [:])
+        pixelFiring?.fire(saved ? Pixel.Event.vcardContactEditorSaved : .vcardContactEditorCancelled)
         return true
     }
 }
@@ -80,15 +81,15 @@ final class ContactPreviewHelper: NSObject, FilePreview {
 
     private let filePath: URL
     private weak var viewController: UIViewController?
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private weak var presentedNavigationController: UINavigationController?
     private let completion: ContactCardCompletion
 
     required convenience init(_ filePath: URL, viewController: UIViewController) {
-        self.init(filePath, viewController: viewController, pixelFiring: Pixel.self)
+        self.init(filePath, viewController: viewController, pixelFiring: PixelKit.shared)
     }
 
-    init(_ filePath: URL, viewController: UIViewController, pixelFiring: PixelFiring.Type) {
+    init(_ filePath: URL, viewController: UIViewController, pixelFiring: (any PixelKitFiring)?) {
         self.filePath = filePath
         self.viewController = viewController
         self.pixelFiring = pixelFiring
@@ -108,13 +109,13 @@ final class ContactPreviewHelper: NSObject, FilePreview {
 
     private func handleParseResult(_ result: VCardFileReader.Result?) {
         guard let result else {
-            pixelFiring.fire(.vcardContactFallbackParseFailure, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.vcardContactFallbackParseFailure)
             reportParseFailure()
             return
         }
         if result.wasTruncated {
             // Present the first contact and silently ignore the rest.
-            pixelFiring.fire(.vcardContactMultipleContactsTruncated, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.vcardContactMultipleContactsTruncated)
         }
         presentContactCard(for: result.contact)
     }

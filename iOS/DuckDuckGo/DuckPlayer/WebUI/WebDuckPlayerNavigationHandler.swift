@@ -28,6 +28,7 @@ import DuckPlayer
 import os.log
 import Combine
 import FeatureFlags_iOS
+import PixelKit
 
 /// Handles navigation and interactions related to Duck Player within the app.
 final class WebDuckPlayerNavigationHandler: NSObject {
@@ -48,8 +49,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     var appSettings: AppSettings
 
     /// Pixel firing utility for analytics.
-    var pixelFiring: PixelFiring.Type
-    let dailyPixelFiring: DailyPixelFiring.Type
+    var pixelFiring: (any PixelKitFiring)?
 
     /// Keeps track of the last YouTube video watched.
     var lastWatchInYoutubeVideo: String?
@@ -118,20 +118,17 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     ///   - featureFlagger: The feature flag manager.
     ///   - appSettings: The application settings.
     ///   - pixelFiring: The pixel firing utility for analytics.
-    ///   - dailyPixelFiring: The daily pixel firing utility for analytics.
     ///   - tabNavigationHandler: The tab navigation handler delegate.
     init(duckPlayer: DuckPlayerControlling,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          appSettings: AppSettings,
-         pixelFiring: PixelFiring.Type = Pixel.self,
-         dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          tabNavigationHandler: DuckPlayerTabNavigationHandling? = nil,
          duckPlayerOverlayUsagePixels: DuckPlayerOverlayPixelFiring? = DuckPlayerOverlayUsagePixels()) {
         self.duckPlayer = duckPlayer
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
         self.pixelFiring = pixelFiring
-        self.dailyPixelFiring = dailyPixelFiring
         self.tabNavigationHandler = tabNavigationHandler
         self.duckPlayerOverlayUsagePixels = duckPlayerOverlayUsagePixels
 
@@ -318,28 +315,28 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     private func fireDuckPlayerPixels(webView: WKWebView) {
 
         // First daily unique user Duck Player view
-        dailyPixelFiring.fireDaily(.duckPlayerDailyUniqueView, withAdditionalParameters: ["settings": duckPlayerMode.stringValue])
+        pixelFiring?.fire(Pixel.Event.duckPlayerDailyUniqueView, frequency: .legacyDaily, options: .parameters(["settings": duckPlayerMode.stringValue]))
 
         // Duck Player viewed with Always setting, referred from YouTube (automatic)
         if (referrer == .youtube) && duckPlayerMode == .enabled {
-            pixelFiring.fire(.duckPlayerViewFromYoutubeAutomatic, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.duckPlayerViewFromYoutubeAutomatic)
         }
 
         // Duck Player viewed from SERP
         if referrer == .serp {
-            pixelFiring.fire(.duckPlayerViewFromSERP, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.duckPlayerViewFromSERP)
         }
 
         // Other referrers
         if referrer == .other || referrer == .undefined {
-            pixelFiring.fire(.duckPlayerViewFromOther, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.duckPlayerViewFromOther)
         }
 
     }
 
     /// Fires an analytics pixel when the user opts to watch a video on YouTube instead.
     private func fireOpenInYoutubePixel() {
-        pixelFiring.fire(.duckPlayerWatchOnYoutube, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.duckPlayerWatchOnYoutube)
     }
 
     /// Cancels JavaScript-triggered navigation by stopping the load and going back if possible.

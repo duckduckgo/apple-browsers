@@ -23,17 +23,12 @@ import PassKit
 import Testing
 import UIKit
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @Suite("PassKitPreviewHelper", .serialized)
 final class PassKitPreviewHelperTests {
 
-    init() {
-        PixelFiringMock.tearDown()
-    }
-
-    deinit {
-        PixelFiringMock.tearDown()
-    }
+    private let pixelKitMock = PixelKitMock()
 
     // MARK: - failureReason categorisation
 
@@ -108,14 +103,14 @@ final class PassKitPreviewHelperTests {
             .appendingPathComponent(UUID().uuidString + ".pkpass")
         let helper = PassKitPreviewHelper(nonExistent,
                                           viewController: UIViewController(),
-                                          pixelFiring: PixelFiringMock.self)
+                                          pixelFiring: pixelKitMock)
 
         // WHEN
         helper.preview()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.walletPassPreviewFailed.name)
-        #expect(PixelFiringMock.lastParams?[PassKitPreviewHelper.reasonParameterKey] == "no_data_supplied")
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.walletPassPreviewFailed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PassKitPreviewHelper.reasonParameterKey] == "no_data_supplied")
     }
 
     @available(iOS 16, *)
@@ -130,13 +125,13 @@ final class PassKitPreviewHelperTests {
 
         let helper = PassKitPreviewHelper(emptyFile,
                                           viewController: UIViewController(),
-                                          pixelFiring: PixelFiringMock.self)
+                                          pixelFiring: pixelKitMock)
 
         // WHEN
         helper.preview()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.walletPassPreviewFailed.name)
-        #expect(PixelFiringMock.lastParams?[PassKitPreviewHelper.reasonParameterKey] == "no_data_supplied")
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.walletPassPreviewFailed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PassKitPreviewHelper.reasonParameterKey] == "no_data_supplied")
     }
 }

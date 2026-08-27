@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Core
 import Foundation
+import PixelKit
 import PrivacyConfig
 import Subscription
 import FeatureFlags_iOS
@@ -77,7 +78,7 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     private let subscriptionManager: any SubscriptionManager
 
     /// The pixel firing service used to track user interactions with the promotion.
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
     /// The statistics store used to determine if the user is a returning user.
     private let statisticsStore: StatisticsStore
@@ -91,7 +92,7 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     ///   - statisticsStore: The statistics store. Defaults to StatisticsUserDefaults.
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
-         pixelFiring: PixelFiring.Type = Pixel.self,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
         self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager
@@ -125,17 +126,17 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
 
     /// Fires a pixel when the onboarding promotion is shown to the user.
     func fireImpressionPixel() {
-        pixelFiring.fire(.subscriptionOnboardingPromotionImpression, withAdditionalParameters: pixelParameters)
+        pixelFiring?.fire(Pixel.Event.subscriptionOnboardingPromotionImpression, options: .parameters(pixelParameters))
     }
 
     /// Fires a pixel when the onboarding promotion is tapped by the user.
     func fireTapPixel() {
-        pixelFiring.fire(.subscriptionOnboardingPromotionTap, withAdditionalParameters: pixelParameters)
+        pixelFiring?.fire(Pixel.Event.subscriptionOnboardingPromotionTap, options: .parameters(pixelParameters))
     }
 
     /// Fires a pixel when the onboarding promotion is dismissed by the user.
     func fireDismissPixel() {
-        pixelFiring.fire(.subscriptionOnboardingPromotionDismiss, withAdditionalParameters: pixelParameters)
+        pixelFiring?.fire(Pixel.Event.subscriptionOnboardingPromotionDismiss, options: .parameters(pixelParameters))
     }
 
     // MARK: - Private

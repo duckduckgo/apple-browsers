@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Core
 import Foundation
+import PixelKit
 import PrivacyConfig
 import FeatureFlags_iOS
 
@@ -70,9 +71,9 @@ struct NavigationResponseRouter {
     }
 
     private let featureFlagger: FeatureFlagger
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
-    init(featureFlagger: FeatureFlagger, pixelFiring: PixelFiring.Type = Pixel.self) {
+    init(featureFlagger: FeatureFlagger, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
     }
@@ -85,12 +86,11 @@ struct NavigationResponseRouter {
         if FilePreviewHelper.canAutoPreview(mimeType: shape.mimeType,
                                             url: shape.url,
                                             filename: shape.suggestedFilename) {
-            pixelFiring.fire(.downloadStarted,
-                             withAdditionalParameters: [PixelParameters.canAutoPreviewMIMEType: "1"])
+            pixelFiring?.fire(Pixel.Event.downloadStarted,
+                              options: .parameters([PixelParameters.canAutoPreviewMIMEType: "1"]))
 
             if shape.mimeType == .passbook || shape.mimeType == .multipass {
-                pixelFiring.fire(.walletPassPreviewRequested,
-                                 withAdditionalParameters: [:])
+                pixelFiring?.fire(Pixel.Event.walletPassPreviewRequested)
             }
 
             let shouldPersist = FilePreviewHelper.shouldPersistInDownloads(mimeType: shape.mimeType,

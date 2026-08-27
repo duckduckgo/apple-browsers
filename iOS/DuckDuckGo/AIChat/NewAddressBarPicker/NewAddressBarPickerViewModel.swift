@@ -20,21 +20,22 @@
 import Combine
 import AIChat
 import Core
+import PixelKit
 
 final class NewAddressBarPickerViewModel: ObservableObject {
     @Published var isDuckAISelected: Bool
 
     private let aiChatSettings: AIChatSettingsProvider
-    private let dailyPixelFiring: DailyPixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private let onConfirm: (Bool) -> Void
 
     init(
         aiChatSettings: AIChatSettingsProvider,
-        dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
         onConfirm: @escaping (_ isDuckAISelected: Bool) -> Void
     ) {
         self.aiChatSettings = aiChatSettings
-        self.dailyPixelFiring = dailyPixelFiring
+        self.pixelFiring = pixelFiring
         self.onConfirm = onConfirm
         self.isDuckAISelected = true
     }
@@ -50,10 +51,10 @@ private extension NewAddressBarPickerViewModel {
 
     func fireConfirmPixel() {
         let selectionValue = isDuckAISelected ? "search_and_ai" : "search_only"
-        dailyPixelFiring.fireDailyAndCount(
-            .aiChatNewAddressBarPickerV2Confirmed,
-            error: nil,
-            withAdditionalParameters: [PixelParameters.selection: selectionValue]
+        pixelFiring?.fire(
+            Pixel.Event.aiChatNewAddressBarPickerV2Confirmed,
+            frequency: .legacyDailyAndCount,
+            options: .parameters([PixelParameters.selection: selectionValue])
         )
     }
 }

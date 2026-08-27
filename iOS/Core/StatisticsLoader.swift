@@ -42,7 +42,7 @@ public class StatisticsLoader {
     private let fireAppRetentionExperimentPixels: () -> Void
     private let fireNewAIPromptExperimentPixels: () -> Void
     private let fireOSDistributionPixel: (OSDistributionPixel.Metric) -> Void
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private var isDuckAIRetentionRequestInProgress = false
     private let isPad: Bool
 
@@ -61,7 +61,7 @@ public class StatisticsLoader {
          },
          fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels,
          fireOSDistributionPixel: @escaping (OSDistributionPixel.Metric) -> Void = PixelKit.fireOSDistributionPixel(metric:),
-         pixelFiring: PixelFiring.Type = Pixel.self,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
         self.statisticsStore = statisticsStore
         self.returnUserMeasurement = returnUserMeasurement
@@ -182,7 +182,7 @@ public class StatisticsLoader {
             "locale": formattedLocale,
             "reinstall": isReinstall
         ]
-        pixelFiring.fire(.appInstall, withAdditionalParameters: parameters, includedParameters: [.appVersion], onComplete: { error in
+        pixelFiring?.fire(event: Pixel.Event.appInstall, frequency: .standard, options: .parameters(parameters), onComplete: { _, error in
             if let error {
                 Logger.general.error("Install pixel failed with error: \(error.localizedDescription, privacy: .public)")
             }

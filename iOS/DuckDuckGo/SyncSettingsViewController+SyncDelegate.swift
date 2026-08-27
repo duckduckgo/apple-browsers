@@ -468,10 +468,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             PixelKit.fire(Pixel.Event.settingsSyncAnotherDevicePromptOptionTapped,
                           options: .parameters(parameters))
         case .anotherDevicePromptDismissed:
-            pixelFiring.fire(.settingsSyncAnotherDevicePromptDismissed,
-                             withAdditionalParameters: uiVersionParameters,
-                             includedParameters: [.appVersion],
-                             onComplete: { _ in })
+            pixelFiring?.fire(Pixel.Event.settingsSyncAnotherDevicePromptDismissed,
+                              options: .parameters(uiVersionParameters))
         }
     }
 
@@ -892,7 +890,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             PixelParameters.uiVersion: syncUIVersion
         ]
         parameters[PixelParameters.source] = source ?? scanSetupSource?.rawValue
-        pixelFiring.fire(pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion], onComplete: { _ in })
+        pixelFiring?.fire(pixel, options: .parameters(parameters))
     }
 
     func codeCopied(_ code: String, source: CodeCollectionSource) {

@@ -22,9 +22,8 @@ import XCTest
 import Core
 import Combine
 @testable import DDGSync
-import OHHTTPStubs
-import OHHTTPStubsSwift
 import Persistence
+import PixelKit
 import Common
 import FoundationExtensions
 import SyncUI_iOS
@@ -301,28 +300,31 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         )
         configure(connectionController, failure)
         vc.connectionController = connectionController
-        let pixelExpectation = expectation(description: "fires Pairing V2 presenter start failure pixel")
-        let wasDryRun = Pixel.isDryRun
-        Pixel.isDryRun = false
-        stub(condition: isHost("improving.duckduckgo.com")) { request in
-            let parameters = request.url?.queryParameters()
-            if request.url?.path.contains(Pixel.Event.syncSetupEndedFailed.name) == true,
-               parameters?[PixelParameters.reason] == SyncSetupFailureReason.relayChannelFailure,
-               parameters?[PixelParameters.source] == source.rawValue,
-               parameters?["my_role"] == myRole,
-               parameters?["pairing_failure_stage"] == "presenter_open_own_channel",
-               parameters?["pairing_failure_kind"] == "http_error" {
-                pixelExpectation.fulfill()
-            }
-            return HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
+
+        // PixelKit.fire delivers through whatever PixelKit.shared was configured with, not through
+        // this class's own injected pixelFiring, so the pixel is observed by configuring a real
+        // PixelKit instance with a capturing fireRequest rather than by mocking a dependency.
+        var firedPixels: [(name: String, parameters: [String: String])] = []
+        let pixelKitDefaults = UserDefaults(suiteName: "test_\(UUID().uuidString)")!
+        PixelKit.setUp(dryRun: false,
+                       appVersion: "1.0.0",
+                       session: "test",
+                       defaultHeaders: [:],
+                       defaults: pixelKitDefaults) { firedPixelName, _, firedParameters, _, _, completion in
+            firedPixels.append((firedPixelName, firedParameters))
+            completion(true, nil)
         }
-        defer {
-            Pixel.isDryRun = wasDryRun
-            HTTPStubs.removeAllStubs()
-        }
+        defer { PixelKit.tearDown() }
 
         vc.showSyncWithAnotherDevice()
-        await fulfillment(of: [pixelExpectation], timeout: 5)
+
+        let pixel = firedPixels.first { $0.name.contains(Pixel.Event.syncSetupEndedFailed.name) }
+        XCTAssertNotNil(pixel, "fires Pairing V2 presenter start failure pixel")
+        XCTAssertEqual(pixel?.parameters[PixelParameters.reason], SyncSetupFailureReason.relayChannelFailure)
+        XCTAssertEqual(pixel?.parameters[PixelParameters.source], source.rawValue)
+        XCTAssertEqual(pixel?.parameters["my_role"], myRole)
+        XCTAssertEqual(pixel?.parameters["pairing_failure_stage"], "presenter_open_own_channel")
+        XCTAssertEqual(pixel?.parameters["pairing_failure_kind"], "http_error")
     }
 
     @MainActor

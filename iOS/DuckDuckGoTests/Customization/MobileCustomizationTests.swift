@@ -25,6 +25,7 @@ import DesignResourcesKitIcons
 @_spi(Testing) import Persistence
 import VPN
 import VPNTestUtils
+@_spi(Testing) import PixelKit
 
 @Suite("Mobile Customization Tests", .serialized)
 final class MobileCustomizationTests {
@@ -35,23 +36,24 @@ final class MobileCustomizationTests {
     @Test("Validate expected pixels with parameters are sent")
     func pixels() {
         let keyValueStore = MockThrowingKeyValueStore()
+        let pixelKitMock = PixelKitMock()
         let customization = MobileCustomization(keyValueStore: keyValueStore,
                                                 isPad: false,
                                                 postChangeNotification: { _ in },
-                                                pixelFiring: PixelFiringMock.self)
+                                                pixelFiring: pixelKitMock)
 
         customization.fireToolbarCustomizationStartedPixel()
-        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationToolbarStarted.name)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.customizationToolbarStarted.name)
 
         customization.fireAddressBarCustomizationStartedPixel()
-        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationAddressBarStarted.name)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.customizationAddressBarStarted.name)
 
         // So far two pixels fired
-        #expect(PixelFiringMock.allPixelsFired.count == 2)
+        #expect(pixelKitMock.actualFireCalls.count == 2)
 
         // Check no pixel fired if the state is the same
         customization.fireToolbarCustomizationSelectedPixel(oldValue: MobileCustomization.toolbarDefault)
-        #expect(PixelFiringMock.allPixelsFired.count == 2)
+        #expect(pixelKitMock.actualFireCalls.count == 2)
 
         var state = customization.state
         state.currentToolbarButton = .zoom
@@ -59,13 +61,13 @@ final class MobileCustomizationTests {
         customization.persist(state)
 
         customization.fireToolbarCustomizationSelectedPixel(oldValue: MobileCustomization.toolbarDefault)
-        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationToolbarSelected.name)
-        #expect(PixelFiringMock.lastPixelInfo?.params?["selected"] == MobileCustomization.Button.zoom.rawValue)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.customizationToolbarSelected.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?["selected"] == MobileCustomization.Button.zoom.rawValue)
 
         customization.fireAddressBarCustomizationSelectedPixel(oldValue: MobileCustomization.addressBarDefault)
-        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationAddressBarSelected.name)
-        #expect(PixelFiringMock.lastPixelInfo?.params?["selected"] == MobileCustomization.Button.passwords.rawValue)
-        #expect(PixelFiringMock.allPixelsFired.count == 4)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.customizationAddressBarSelected.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?["selected"] == MobileCustomization.Button.passwords.rawValue)
+        #expect(pixelKitMock.actualFireCalls.count == 4)
 
     }
 
@@ -338,10 +340,6 @@ final class MobileCustomizationTests {
     func duckAIVoiceHasIcons() {
         #expect(MobileCustomization.Button.duckAIVoice.largeIcon != nil)
         #expect(MobileCustomization.Button.duckAIVoice.smallIcon != nil)
-    }
-
-    deinit {
-        PixelFiringMock.tearDown()
     }
 
 }

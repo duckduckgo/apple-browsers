@@ -172,7 +172,7 @@ final class UTIFooterController {
 @MainActor
 final class UTIFooterHighUsageNoticeSource {
 
-    private let resolver: DuckAiHighUsageModelNoticeResolver
+    private let resolver: DuckAIHighUsageModelNoticeResolver
     private let dismissalStore: DuckAiHighUsageNoticeDismissalStoring
     /// Re-read per refresh, so switching models mid-session is picked up.
     private let modelProvider: () -> (id: String?, shortName: String?)
@@ -182,7 +182,7 @@ final class UTIFooterHighUsageNoticeSource {
     init(dismissalStore: DuckAiHighUsageNoticeDismissalStoring = DuckAiHighUsageNoticeDismissalStore(),
          modelProvider: @escaping () -> (id: String?, shortName: String?)) {
         self.dismissalStore = dismissalStore
-        self.resolver = DuckAiHighUsageModelNoticeResolver(dismissalStore: dismissalStore)
+        self.resolver = DuckAIHighUsageModelNoticeResolver(dismissalStore: dismissalStore)
         self.modelProvider = modelProvider
     }
 

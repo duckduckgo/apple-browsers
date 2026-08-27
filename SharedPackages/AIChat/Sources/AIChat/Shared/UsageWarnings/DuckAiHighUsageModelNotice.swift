@@ -89,7 +89,7 @@ public final class InMemoryDuckAiHighUsageNoticeDismissalStore: DuckAiHighUsageN
 
 // MARK: - Resolver
 
-public struct DuckAiHighUsageModelNoticeResolver {
+public struct DuckAIHighUsageModelNoticeResolver {
 
     /// Reported so each gate stays observable in the log.
     public enum NoNoticeReason: String {

@@ -1,5 +1,5 @@
 //
-//  DuckAiHighUsageModelNoticeResolverTests.swift
+//  DuckAIHighUsageModelNoticeResolverTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,15 +19,15 @@
 import XCTest
 @testable import AIChat
 
-final class DuckAiHighUsageModelNoticeResolverTests: XCTestCase {
+final class DuckAIHighUsageModelNoticeResolverTests: XCTestCase {
 
     private var dismissalStore: InMemoryDuckAiHighUsageNoticeDismissalStore!
-    private var sut: DuckAiHighUsageModelNoticeResolver!
+    private var sut: DuckAIHighUsageModelNoticeResolver!
 
     override func setUp() {
         super.setUp()
         dismissalStore = InMemoryDuckAiHighUsageNoticeDismissalStore()
-        sut = DuckAiHighUsageModelNoticeResolver(dismissalStore: dismissalStore)
+        sut = DuckAIHighUsageModelNoticeResolver(dismissalStore: dismissalStore)
     }
 
     override func tearDown() {

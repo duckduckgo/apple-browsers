@@ -562,6 +562,18 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
         presentTransientValidationError(message)
     }
 
+    /// Recorded even when there is no capacity message to show, so a silently dropped paste is still visible in metrics.
+    func reportRejectedPastedImages(reason: PasteImageRejectionReason) {
+        let pixelReason: String
+        switch reason {
+        case .capacityReached:
+            pixelReason = "count_exceeded"
+        case .allowanceTruncated:
+            pixelReason = "paste_truncated"
+        }
+        pixelReporter.reportImageValidationFailed(reason: pixelReason, source: "paste")
+    }
+
     func presentPasteError(_ message: String) {
         presentTransientValidationError(message)
     }

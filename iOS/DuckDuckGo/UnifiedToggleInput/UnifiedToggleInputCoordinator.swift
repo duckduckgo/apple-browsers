@@ -1593,6 +1593,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.clearAttachments()
     }
 
+    func reportRejectedPastedImages(reason: PasteImageRejectionReason) {
+        attachmentController.reportRejectedPastedImages(reason: reason)
+    }
+
     func presentPasteError(_ message: String) {
         attachmentController.presentPasteError(message)
     }

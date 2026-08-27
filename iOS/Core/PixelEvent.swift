@@ -1875,6 +1875,7 @@ extension Pixel {
         case unifiedToggleInputReasoningEffortPickerShown
         case unifiedToggleInputImageAttached
         case unifiedToggleInputImageRemoved
+        case unifiedToggleInputImageValidationFailed
         case unifiedToggleInputFileAttached
         case unifiedToggleInputFileRemoved
         case unifiedToggleInputFileValidationFailed
@@ -3783,6 +3784,7 @@ extension Pixel.Event {
         case .unifiedToggleInputReasoningEffortPickerShown: return "m_aichat_unified_input_reasoning_effort_picker_shown"
         case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"
         case .unifiedToggleInputImageRemoved: return "m_aichat_unified_input_image_removed"
+        case .unifiedToggleInputImageValidationFailed: return "m_aichat_unified_input_image_validation_failed"
         case .unifiedToggleInputFileAttached: return "m_aichat_unified_input_file_attached"
         case .unifiedToggleInputFileRemoved: return "m_aichat_unified_input_file_removed"
         case .unifiedToggleInputFileValidationFailed: return "m_aichat_unified_input_file_validation_failed"

@@ -55,6 +55,14 @@ enum PasteRejectionReason: Equatable {
     case fileCountLimit
 }
 
+/// Why pasted images couldn't all be attached, so the rejection is reported with the limit that was actually hit.
+enum PasteImageRejectionReason: Equatable {
+    /// The conversation's image capacity was already full, so a pasted image was refused.
+    case capacityReached
+    /// The paste held more images than the allowance, so the extras were dropped without decoding.
+    case allowanceTruncated
+}
+
 /// What the current model accepts plus the remaining headroom, snapshotted once per paste so the loader can preflight sizes/counts.
 struct UnifiedToggleInputPasteSupport {
     let isEnabled: Bool
@@ -103,6 +111,8 @@ protocol UnifiedToggleInputPasteDelegate: AnyObject {
     func addPastedFile(_ file: AIChatFileAttachment)
     /// Reports a file rejected during load (over size/count/total) with an error for the given reason; never adds an attachment.
     func reportRejectedPaste(reason: PasteRejectionReason)
+    /// Reports pasted images that couldn't be attached, for the limit that was actually hit.
+    func reportRejectedPastedImages(reason: PasteImageRejectionReason)
     func presentPasteError(_ message: String)
 }
 
@@ -171,8 +181,11 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
             }
         }
 
-        if didExceedImageLimit || result.imagesTruncated, let message = delegate.imageCapacityMessage() {
-            delegate.presentPasteError(message)
+        if didExceedImageLimit || result.imagesTruncated {
+            delegate.reportRejectedPastedImages(reason: didExceedImageLimit ? .capacityReached : .allowanceTruncated)
+            if let message = delegate.imageCapacityMessage() {
+                delegate.presentPasteError(message)
+            }
         }
     }
 }

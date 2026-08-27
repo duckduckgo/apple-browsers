@@ -78,7 +78,22 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         handler.applyLoadedAttachments(makeResult(images: 3))
 
         XCTAssertEqual(delegate.addedImages, 1)
+        XCTAssertEqual(delegate.imageRejectionReasons, [.capacityReached])
         XCTAssertEqual(delegate.presentedErrors, ["You can only attach 3 images at a time."])
+    }
+
+    /// The gap this closes: no banner to show, but the drop must still be visible in metrics.
+    func testApplyRecordsImageRejectionEvenWithoutACapacityMessage() {
+        let delegate = MockPasteDelegate()
+        delegate.imageHeadroom = 0
+        delegate.capacityMessage = nil
+        let handler = makeHandler(delegate)
+
+        handler.applyLoadedAttachments(makeResult(images: 2))
+
+        XCTAssertEqual(delegate.addedImages, 0)
+        XCTAssertEqual(delegate.imageRejectionReasons, [.capacityReached])
+        XCTAssertTrue(delegate.presentedErrors.isEmpty)
     }
 
     func testApplyWithinImageHeadroomShowsNoCapacityMessage() {
@@ -136,6 +151,7 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         handler.applyLoadedAttachments(result)
 
         XCTAssertEqual(delegate.addedImages, 1)
+        XCTAssertEqual(delegate.imageRejectionReasons, [.allowanceTruncated])
         XCTAssertEqual(delegate.presentedErrors, ["You can only attach 3 images at a time."])
     }
 
@@ -311,6 +327,7 @@ private final class MockPasteDelegate: UnifiedToggleInputPasteDelegate {
     private(set) var addedImages = 0
     private(set) var addedFiles = 0
     private(set) var rejectionReasons: [PasteRejectionReason] = []
+    private(set) var imageRejectionReasons: [PasteImageRejectionReason] = []
     private(set) var presentedErrors: [String] = []
 
     var pasteAttachmentSupport: UnifiedToggleInputPasteSupport { support }
@@ -335,6 +352,10 @@ private final class MockPasteDelegate: UnifiedToggleInputPasteDelegate {
     func reportRejectedPaste(reason: PasteRejectionReason) {
         rejectionReasons.append(reason)
         callLog.append("rejected")
+    }
+
+    func reportRejectedPastedImages(reason: PasteImageRejectionReason) {
+        imageRejectionReasons.append(reason)
     }
 
     func presentPasteError(_ message: String) {

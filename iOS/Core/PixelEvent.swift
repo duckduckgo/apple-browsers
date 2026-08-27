@@ -4047,9 +4047,9 @@ extension Pixel.Event {
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
         case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
 
-        case .webExtensionSearchTokenInstalled: return "m_web_extension_search_token_installed"
-        case .webExtensionSearchTokenUpgraded: return "m_web_extension_search_token_upgraded"
-        case .webExtensionSearchTokenInstallError: return "m_web_extension_search_token_install_error"
+        case .webExtensionSearchTokenInstalled: return "web_extension_search_token_installed"
+        case .webExtensionSearchTokenUpgraded: return "web_extension_search_token_upgraded"
+        case .webExtensionSearchTokenInstallError: return "web_extension_search_token_install_error"
         case .webExtensionSearchTokenNotLoaded: return "web_extension_search_token_not_loaded"
 
         case .webExtensionScriptletFetchSuccess: return "m_web_extension_scriptlet_fetch_success"

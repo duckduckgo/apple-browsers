@@ -213,6 +213,7 @@ extension Pixel {
         case shareSheetActivityFindInPage
         case shareSheetActivityPrint
         case shareSheetActivityAddToReadingList
+        case shareSheetActivityAddToHomeScreen
         case shareSheetActivityOther
         
         case tabBarBackPressed
@@ -2031,8 +2032,6 @@ extension Pixel {
         case webExtensionUninstallAllError
         case webExtensionLoaded
         case webExtensionLoadError
-        case webExtensionDeferredProtectedDataUnavailable
-        case webExtensionResumedProtectedDataAvailable
         case webExtensionEmbeddedInstalled
         case webExtensionEmbeddedUpgraded
         case webExtensionEmbeddedInstallError
@@ -2269,6 +2268,7 @@ extension Pixel.Event {
         case .shareSheetActivityFindInPage: return "m_sharesheet_activity_findinpage"
         case .shareSheetActivityPrint: return "m_sharesheet_activity_print"
         case .shareSheetActivityAddToReadingList: return "m_sharesheet_activity_addtoreadinglist"
+        case .shareSheetActivityAddToHomeScreen: return "m_sharesheet_activity_addtohomescreen"
         case .shareSheetActivityOther: return "m_sharesheet_activity_other"
             
         case .tabBarBackPressed: return "mt_bk"
@@ -3996,8 +3996,6 @@ extension Pixel.Event {
         case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
         case .webExtensionLoaded: return "m_web_extension_loaded"
         case .webExtensionLoadError: return "m_web_extension_load_error"
-        case .webExtensionDeferredProtectedDataUnavailable: return "m_web_extension_deferred_protected_data_unavailable"
-        case .webExtensionResumedProtectedDataAvailable: return "m_web_extension_resumed_protected_data_available"
         case .webExtensionEmbeddedInstalled: return "m_web_extension_embedded_installed"
         case .webExtensionEmbeddedUpgraded: return "m_web_extension_embedded_upgraded"
         case .webExtensionEmbeddedInstallError: return "m_web_extension_embedded_install_error"

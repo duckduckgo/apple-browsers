@@ -513,8 +513,6 @@ final class MainCoordinator {
     @available(iOS 18.4, *)
     private func deferUntilProtectedDataAvailable(_ operation: @escaping () -> Void) {
         pendingProtectedDataWork.append(operation)
-        DailyPixel.fireDailyAndCount(pixel: .webExtensionDeferredProtectedDataUnavailable,
-                                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
 
         guard protectedDataCancellable == nil else { return }
         protectedDataCancellable = NotificationCenter.default
@@ -526,8 +524,6 @@ final class MainCoordinator {
                     let pendingWork = self.pendingProtectedDataWork
                     self.pendingProtectedDataWork.removeAll()
                     guard !pendingWork.isEmpty else { return }
-                    DailyPixel.fireDailyAndCount(pixel: .webExtensionResumedProtectedDataAvailable,
-                                                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
                     pendingWork.forEach { $0() }
                 }
             }

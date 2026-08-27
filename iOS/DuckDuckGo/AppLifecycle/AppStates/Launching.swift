@@ -111,6 +111,9 @@ struct Launching: LaunchingHandling {
             statisticsStore: StatisticsUserDefaults()
         )
 
+        // Pre-mark existing installs (before statistics load) so first_prompt_new_install can only fire on brand-new installs.
+        DuckAIFirstPromptNewInstallCohort.assignIfNeeded(statisticsStore: StatisticsUserDefaults())
+
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services
         // These services are instantiated early in the app lifecycle for two main reasons:

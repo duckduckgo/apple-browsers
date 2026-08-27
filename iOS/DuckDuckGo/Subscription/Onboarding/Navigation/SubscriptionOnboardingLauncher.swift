@@ -20,6 +20,7 @@
 import Subscription
 import SwiftUI
 import DataBrokerProtection_iOS
+import UIKit
 import os.log
 
 enum SubscriptionOnboardingEntryPoint {
@@ -41,7 +42,38 @@ enum SubscriptionOnboardingLauncher {
             SubscriptionOnboardingFlowView(flow: flow,
                                            factory: SubscriptionOnboardingViewFactory(flow: flow,
                                                                                        forcedTrialLengthDays: forcedTrialLengthDays))
-                .graphicLottieRenderer(.app))
+                .graphicLottieRenderer(.app)
+                .onAppear { lockToPortrait() }
+                .onDisappear { unlockOrientation() })
+    }
+}
+
+// MARK: - Orientation lock
+
+private extension SubscriptionOnboardingLauncher {
+
+    static func lockToPortrait() {
+        setOrientationLock(.portrait, snapTo: .portrait)
+    }
+
+    /// Re-triggers a query, or the relaxed mask goes unnoticed and the screen stays portrait-locked.
+    static func unlockOrientation() {
+        setOrientationLock(AppDelegate.defaultOrientationMask)
+    }
+
+    /// Forces an immediate snap — the mask alone only constrains future rotation attempts.
+    static func setOrientationLock(_ mask: UIInterfaceOrientationMask, snapTo orientation: UIInterfaceOrientation? = nil) {
+        AppDelegate.orientationLock = mask
+        guard let windowScene = UIApplication.shared.foregroundWindowScene else { return }
+        if #available(iOS 16.0, *) {
+            windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: mask))
+            windowScene.keyWindow?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+        } else {
+            if let orientation {
+                UIDevice.current.setValue(orientation.rawValue, forKey: "orientation")
+            }
+            UIViewController.attemptRotationToDeviceOrientation()
+        }
     }
 }
 

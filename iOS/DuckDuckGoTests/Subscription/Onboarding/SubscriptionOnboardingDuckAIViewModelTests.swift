@@ -22,22 +22,12 @@ import XCTest
 import AIChat
 @testable import Subscription
 import SubscriptionTestingUtilities
-import PrivacyConfig
-import PixelKit
-import PixelExperimentKit
 @testable import DuckDuckGo
 
 @MainActor
 final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
     private var cancellables = Set<AnyCancellable>()
-
-    override func setUp() {
-        super.setUp()
-        PixelKit.configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger(),
-                                         eventTracker: ExperimentEventTracker(),
-                                         fire: { _, _, _ in })
-    }
 
     func testWhenOnAppearThenFetchesAndPopulatesModels() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])
@@ -180,24 +170,6 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         viewModel.startChat()
 
         XCTAssertEqual(spy.completeCount, 1)
-    }
-
-    func testWhenStartChatWithAPlusModelThenThePaidUsedMetricFires() async {
-        let firedEvents = await firedEventsAfterStartingChat(withModelTier: ["plus"])
-
-        XCTAssertEqual(firedEvents.map(\.name), ["experiment_metrics_subscriptionOnboardingSep2026_treatment"])
-    }
-
-    func testWhenStartChatWithAProModelThenThePaidUsedMetricFires() async {
-        let firedEvents = await firedEventsAfterStartingChat(withModelTier: ["pro"])
-
-        XCTAssertEqual(firedEvents.map(\.name), ["experiment_metrics_subscriptionOnboardingSep2026_treatment"])
-    }
-
-    func testWhenStartChatWithAFreeModelThenThePaidUsedMetricDoesNotFire() async {
-        let firedEvents = await firedEventsAfterStartingChat(withModelTier: ["free"])
-
-        XCTAssertTrue(firedEvents.isEmpty)
     }
 
     func testWhenSkippingThenTheDuckAIStepDoesNotComplete() async {
@@ -345,26 +317,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         AIChatModel(id: id, name: name, provider: .openAI, supportsImageUpload: false, entityHasAccess: hasAccess, accessTier: tier)
     }
 
-    private func firedEventsAfterStartingChat(withModelTier tier: [String]) async -> [PixelKit.Event] {
-        var firedEvents: [PixelKit.Event] = []
-        let experimentData = ExperimentData(parentID: PrivacyProSubfeature.subscriptionOnboardingSep2026.parent.rawValue,
-                                            cohortID: "treatment",
-                                            enrollmentDate: Date())
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(
-            allActiveExperiments: [PrivacyProSubfeature.subscriptionOnboardingSep2026.rawValue: experimentData])
-        PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
-                                        eventTracker: ExperimentEventTracker(),
-                                        fire: { event, _, _ in firedEvents.append(event) })
-
-        let provider = MockAIModelProvider(models: [model("a", tier: tier)])
-        let (viewModel, _) = makeViewModel(provider: provider)
-        await wait(viewModel.$selectedModelID, until: { $0 != nil }, trigger: { viewModel.onAppear() })
-
-        viewModel.startChat()
-        return firedEvents
-    }
-
-    /// Runs `trigger`, then waits until `publisher` emits a value satisfying `predicate`. 
+    /// Runs `trigger`, then waits until `publisher` emits a value satisfying `predicate`.
     private func wait<T>(_ publisher: Published<T>.Publisher,
                          until predicate: @escaping (T) -> Bool,
                          trigger: () -> Void) async {

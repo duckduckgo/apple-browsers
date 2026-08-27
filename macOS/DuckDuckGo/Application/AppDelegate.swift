@@ -1469,7 +1469,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                 windowControllersManager: windowControllersManager,
                 syncService: syncService,
-                syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter
+                syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
+                appearancePreferences: appearancePreferences,
+                onboardingStateUpdater: onboardingContextualDialogsManager,
+                autoconsentStats: autoconsentStats
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1637,8 +1640,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defaultBrowserAndDockPromptService.applicationDidBecomeActive()
         eventHubIntegration.applicationDidBecomeActive()
 
-        Task { @MainActor in
-            await autoconsentStatsPopoverCoordinator.checkAndShowDialogIfNeeded()
+        // Migrated to the Promo Queue (see PromoServiceFactory+CookiePopupsBlocked.swift); keep this path
+        // for users outside the promoQueue rollout, since PromoService only exists when the flag is on.
+        if !featureFlagger.isFeatureOn(.promoQueue) {
+            Task { @MainActor in
+                await autoconsentStatsPopoverCoordinator.checkAndShowDialogIfNeeded()
+            }
         }
     }
 

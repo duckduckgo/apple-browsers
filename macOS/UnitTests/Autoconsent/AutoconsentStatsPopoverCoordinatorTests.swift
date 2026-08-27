@@ -40,10 +40,16 @@ final class MockAutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresent
         return isPopoverBeingPresentedValue
     }
 
-    func showPopover(viewController: PopoverMessageViewController) {
+    var showPopoverReturnValue = true
+
+    @discardableResult
+    func showPopover(viewController: PopoverMessageViewController) -> Bool {
         showPopoverCalled = true
         showPopoverViewController = viewController
-        isPopoverBeingPresentedValue = true
+        if showPopoverReturnValue {
+            isPopoverBeingPresentedValue = true
+        }
+        return showPopoverReturnValue
     }
 
     func dismissPopover() {

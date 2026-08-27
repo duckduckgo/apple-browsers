@@ -46,11 +46,15 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
     private let presenter: AutoconsentStatsPopoverPresenting
     private let onboardingStateUpdater: ContextualOnboardingStateUpdater
 
-    private enum StorageKey {
+    /// Not private: shared with `AutoconsentStatsPopoverPromoDelegate`, which reads the same key as a
+    /// one-time migration bridge for users who already saw this popover before it moved to the Promo Queue.
+    enum StorageKey {
         static let blockedCookiesPopoverSeen = "com.duckduckgo.autoconsent.blocked.cookies.popover.seen"
     }
 
-    private enum Constants {
+    /// Not private: `threshold` and `minimumDaysSinceInstallation` are shared with `AutoconsentStatsPopoverPromoDelegate`
+    /// so both paths use the same numbers. `autoDismissDuration` stays legacy-only.
+    enum Constants {
         static let threshold = 5
         static let minimumDaysSinceInstallation = 2
         static let autoDismissDuration: TimeInterval = 8.0

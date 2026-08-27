@@ -166,7 +166,15 @@ extension PromoServiceFactoryTests {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
             windowControllersManager: WindowControllersManagerMock(),
             syncService: nil,
-            syncBookmarksAdapter: nil
+            syncBookmarksAdapter: nil,
+            appearancePreferences: AppearancePreferences(
+                persistor: AppearancePreferencesPersistorMock(),
+                privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
+            ),
+            onboardingStateUpdater: MockOnboardingStateUpdater(),
+            autoconsentStats: MockAutoconsentStats()
         )
     }
 }

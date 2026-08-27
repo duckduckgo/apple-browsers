@@ -581,7 +581,7 @@ final class MainCoordinator {
         if controller.adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
         }
-        let searchTokenCohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV3) as? FeatureFlag.SearchTokenExperimentCohort
+        let searchTokenCohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort
         if searchTokenCohort == .treatment {
             enabledTypes.insert(.searchToken)
         }

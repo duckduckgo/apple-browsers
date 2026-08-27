@@ -522,7 +522,7 @@ public enum FeatureFlag: String {
 
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperimentV3
+    case searchTokenExperimentV4
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -825,8 +825,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .uiTestExperiment:
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
-        case .searchTokenExperimentV3:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV3), cohortType: SearchTokenExperimentCohort.self)
+        case .searchTokenExperimentV4:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV4), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment), cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment2:

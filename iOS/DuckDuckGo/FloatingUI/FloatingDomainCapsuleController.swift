@@ -45,6 +45,11 @@ final class FloatingDomainCapsuleController {
         max(0, safeAreaBottom + restEdgePadding - restBottomInsetReduction)
     }
 
+    static func expandedFieldFrame(restingBarFrame: CGRect, fieldFrameInBar: CGRect) -> CGRect {
+        guard !fieldFrameInBar.isEmpty else { return restingBarFrame }
+        return fieldFrameInBar.offsetBy(dx: restingBarFrame.minX, dy: restingBarFrame.minY)
+    }
+
     static func restCenterY(addressBarPosition: AddressBarPosition,
                             expandedFrame: CGRect,
                             boundsMaxY: CGFloat,

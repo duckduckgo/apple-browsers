@@ -1678,9 +1678,7 @@ class MainViewController: UIViewController {
         )
     }
 
-    /// The bar's stable resting rect (in `view` coordinates) that the floating domain capsule morphs
-    /// from/to. Computed from layout metrics rather than the live bar frame so it stays fixed while
-    /// the bar slides off-screen during the transition.
+    /// The chrome's stable resting rect in `view` coordinates, independent of its live sliding frame.
     private func floatingBarExpandedFrame() -> CGRect {
         // Match the correct size for the capsule.
         if appSettings.currentAddressBarPosition.isBottom, viewCoordinator.isOmnibarInToolbar {
@@ -1690,8 +1688,9 @@ class MainViewController: UIViewController {
             }
         }
 
-        let expectedHeight = viewCoordinator.omniBar.barView.expectedHeight
-        let width = viewCoordinator.omniBar.barView.frame.width
+        let barView = viewCoordinator.omniBar.barView
+        let expectedHeight = barView.expectedHeight
+        let width = barView.frame.width
         let centerX = view.bounds.midX
         let centerY: CGFloat
         switch appSettings.currentAddressBarPosition {
@@ -1700,7 +1699,15 @@ class MainViewController: UIViewController {
         case .bottom:
             centerY = view.bounds.maxY - view.safeAreaInsets.bottom - expectedHeight / 2
         }
-        return CGRect(x: centerX - width / 2, y: centerY - expectedHeight / 2, width: width, height: expectedHeight)
+        let restingBarFrame = CGRect(x: centerX - width / 2, y: centerY - expectedHeight / 2, width: width, height: expectedHeight)
+        guard appSettings.currentAddressBarPosition == .top,
+              let searchContainer = barView.searchContainer else {
+            return restingBarFrame
+        }
+        let fieldFrameInBar = searchContainer.convert(searchContainer.bounds, to: barView)
+        return FloatingDomainCapsuleController.expandedFieldFrame(
+            restingBarFrame: restingBarFrame,
+            fieldFrameInBar: fieldFrameInBar)
     }
 
     private func chromeAlpha(for percent: CGFloat) -> CGFloat {

@@ -603,6 +603,15 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertEqual(capsuleButton?.alpha ?? 0, 1, accuracy: 0.001)
     }
 
+    func testWhenMorphReachesHandoffThenPillMatchesExpandedFrame() {
+        let button = update(barsVisibilityPercent: FloatingDomainCapsuleController.handoffStart)
+
+        XCTAssertEqual(button?.frame.minX ?? 0, expandedFrame.minX, accuracy: 0.5)
+        XCTAssertEqual(button?.frame.minY ?? 0, expandedFrame.minY, accuracy: 0.5)
+        XCTAssertEqual(button?.frame.width ?? 0, expandedFrame.width, accuracy: 0.5)
+        XCTAssertEqual(button?.frame.height ?? 0, expandedFrame.height, accuracy: 0.5)
+    }
+
     func testWhenBarsFullyVisibleThenPillIsHidden() {
         update(barsVisibilityPercent: 1)
 
@@ -641,6 +650,17 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
 }
 
 final class FloatingDomainCapsuleGeometryTests: XCTestCase {
+
+    func testWhenTopMorphTargetIsResolvedThenItMatchesTheVisibleAddressField() {
+        let barFrame = CGRect(x: 16, y: 59, width: 398, height: 60)
+        let fieldFrameInBar = CGRect(x: 8, y: 6, width: 382, height: 48)
+
+        let frame = FloatingDomainCapsuleController.expandedFieldFrame(
+            restingBarFrame: barFrame,
+            fieldFrameInBar: fieldFrameInBar)
+
+        XCTAssertEqual(frame, CGRect(x: 24, y: 65, width: 382, height: 48))
+    }
 
     func testWhenHomeIndicatorIsPresentThenBottomRestPaddingIsReducedByTwelvePoints() {
         let safeAreaBottom: CGFloat = 34

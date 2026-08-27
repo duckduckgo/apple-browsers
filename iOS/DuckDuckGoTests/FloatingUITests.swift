@@ -447,15 +447,14 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         let searchContainer = try XCTUnwrap(barView.searchContainer)
         let searchContainerFrame = barView.convert(searchContainer.bounds, from: searchContainer)
         let searchView = try XCTUnwrap(firstSubview(of: DefaultOmniBarSearchView.self, in: searchContainer))
-        let searchViewFrame = searchContainer.convert(searchView.bounds, from: searchView)
         let loupe = try XCTUnwrap(barView.searchLoupe)
-        let loupeFrame = searchContainer.convert(loupe.bounds, from: loupe)
+        let loupeFrame = searchView.convert(loupe.bounds, from: loupe)
         XCTAssertEqual(searchContainerFrame.height, 48, accuracy: 0.01)
         XCTAssertEqual(searchContainerFrame.midX, barView.bounds.midX, accuracy: 0.01)
         XCTAssertEqual(searchContainerFrame.midY, barView.bounds.midY, accuracy: 0.01)
-        XCTAssertEqual(searchViewFrame.minY, 2, accuracy: 0.01)
-        XCTAssertEqual(searchContainer.bounds.maxY - searchViewFrame.maxY, 2, accuracy: 0.01)
-        XCTAssertEqual(loupeFrame.midY, searchContainer.bounds.midY - 2, accuracy: 0.01)
+        XCTAssertEqual(searchView.bounds.height, 44, accuracy: 0.01)
+        XCTAssertEqual((searchContainerFrame.height - searchView.bounds.height) / 2, 2, accuracy: 0.01)
+        XCTAssertEqual(loupeFrame.midY, searchView.bounds.midY - 2, accuracy: 0.01)
     }
 
     func testWhenTopFloatingLandscapeChromeThenInputHeightStaysUnchanged() {

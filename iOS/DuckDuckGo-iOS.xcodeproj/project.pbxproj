@@ -6702,13 +6702,6 @@
 			path = LaunchTimeMetrics;
 			sourceTree = "<group>";
 		};
-		562BE5642E1C26F80064F305 /* AiChat */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = AiChat;
-			sourceTree = "<group>";
-		};
 		563A3CFC2D37B8E3001966FD /* Configuration */ = {
 			isa = PBXGroup;
 			children = (
@@ -7838,7 +7831,6 @@
 			isa = PBXGroup;
 			children = (
 				9F60CBAC2E989551004D2367 /* RemoteMessaging */,
-				562BE5642E1C26F80064F305 /* AiChat */,
 				563A3CFC2D37B8E3001966FD /* Configuration */,
 				1E1D8B5F29950FB300C96994 /* Autoconsent */,
 				9F387DF12EA8AA8B006861F8 /* ModalPromptCoordination */,

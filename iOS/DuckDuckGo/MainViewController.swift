@@ -7627,10 +7627,6 @@ extension MainViewController: TabManagerFireModeDelegate {
             await fireExecutor.burn(request: request, applicationState: .unknown)
         }
     }
-
-    func tabManagerDidChangeBrowsingMode(_ mode: BrowsingMode) {
-        // No operation
-    }
 }
 
 extension MainViewController: FireExecutorDelegate {

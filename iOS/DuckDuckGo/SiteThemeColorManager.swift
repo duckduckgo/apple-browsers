@@ -24,6 +24,7 @@ final class SiteThemeColorManager {
     private let viewCoordinator: MainViewCoordinator
     private let themeManager: ThemeManaging
     private let appSettings: AppSettings
+    private let isFloatingUIEnabled: Bool
     private let currentTabViewController: () -> TabViewController?
 
     private weak var tabViewController: TabViewController?
@@ -33,10 +34,12 @@ final class SiteThemeColorManager {
     init(viewCoordinator: MainViewCoordinator,
          currentTabViewController: @autoclosure @escaping () -> TabViewController?,
          appSettings: AppSettings,
-         themeManager: ThemeManaging) {
+         themeManager: ThemeManaging,
+         isFloatingUIEnabled: Bool) {
         self.viewCoordinator = viewCoordinator
         self.appSettings = appSettings
         self.themeManager = themeManager
+        self.isFloatingUIEnabled = isFloatingUIEnabled
         self.currentTabViewController = currentTabViewController
     }
 
@@ -149,7 +152,7 @@ final class SiteThemeColorManager {
         }
         viewCoordinator.setStandardStatusBackgroundColor(statusBackgroundColor)
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
-        tabViewController?.webView?.underPageBackgroundColor = newColor
+        tabViewController?.webView?.underPageBackgroundColor = isFloatingUIEnabled ? UIColor(designSystemColor: .surfaceCanvas) : newColor
         tabViewController?.webView?.scrollView.backgroundColor = newColor
     }
 

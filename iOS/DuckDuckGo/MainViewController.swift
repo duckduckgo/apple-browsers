@@ -458,6 +458,12 @@ class MainViewController: UIViewController {
                                   windowProvider: { settings.refreshWindow },
                                   onFetchResult: { result in
             PixelKit.fire(SearchTokenPixel.fetch(result: result.rawValue), frequency: .dailyAndCount)
+        }, onTokenRefreshed: { [weak self] in
+            // Fired from the fetcher's background context; the refresh is MainActor + iOS 18.4-only.
+            Task { @MainActor in
+                guard #available(iOS 18.4, *) else { return }
+                self?.webExtensionManager?.performSearchTokenRefresh()
+            }
         })
     }()
 
@@ -8525,4 +8531,11 @@ extension MainViewController {
         guard let scope = currentDuckAIWideEventFlowScope else { return }
         duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
     }
+}
+
+// MARK: - SearchTokenProviding
+
+@available(iOS 18.4, *)
+extension MainViewController: SearchTokenProviding {
+    func currentToken() -> String? { searchTokenFetcher.retrieveToken() }
 }

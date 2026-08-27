@@ -62,6 +62,7 @@ final class UnifiedSuggestionsHost {
     private var logoHostingController: UIHostingController<UnifiedSuggestionsLogoView>?
     private var escapeHatch: EscapeHatchModel?
     private var contentInsets: UIEdgeInsets = .zero
+    private var usesHostingTopInsetForDismissal = false
     private var cancellables = Set<AnyCancellable>()
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
@@ -184,7 +185,17 @@ final class UnifiedSuggestionsHost {
 
     /// Resets the dismiss/morph state on each focus.
     func prepareForActivation() {
+        if usesHostingTopInsetForDismissal {
+            usesHostingTopInsetForDismissal = false
+            applyCombinedInsets()
+        }
         viewModel.prepareForActivation()
+    }
+
+    func prepareForDismissAnimation() {
+        guard #available(iOS 17, *), !viewModel.isFireTab, !usesHostingTopInsetForDismissal else { return }
+        usesHostingTopInsetForDismissal = true
+        applyCombinedInsets()
     }
 
     /// Updates the tap-ahead arrow direction to match the UTI's current position.
@@ -205,8 +216,9 @@ final class UnifiedSuggestionsHost {
         let hostingTopInset: CGFloat
         if #available(iOS 17, *) {
             // Keep a self-sizing List's adjustedContentInset stable while its rows change.
-            hostingTopInset = viewModel.isFireTab ? contentInsets.top : 0
-            viewModel.scrollContentInsetTop = viewModel.isFireTab ? 0 : contentInsets.top
+            let usesHostingTopInset = viewModel.isFireTab || usesHostingTopInsetForDismissal
+            hostingTopInset = usesHostingTopInset ? contentInsets.top : 0
+            viewModel.scrollContentInsetTop = usesHostingTopInset ? 0 : contentInsets.top
         } else {
             hostingTopInset = contentInsets.top
         }

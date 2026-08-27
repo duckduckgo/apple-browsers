@@ -316,6 +316,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost?.beginDismissFade()
     }
 
+    func prepareForDismissAnimation() {
+        unifiedSuggestionsHost?.prepareForDismissAnimation()
+    }
+
     /// Logo→logo collapse: morph the focused logo to the Dax mark and keep it visible, so it hands
     /// off to the (identical) NTP logo without crossfading two different logos. Sped up to finish
     /// within the bar's `collapseDuration`.

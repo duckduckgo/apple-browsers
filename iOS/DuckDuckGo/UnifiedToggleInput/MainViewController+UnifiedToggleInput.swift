@@ -1108,6 +1108,8 @@ extension MainViewController {
         }
         if coordinator.inputMode == .aiChat {
             newTabPageViewController?.setFavoritesHidden(false, animationDuration: min(duration, 0.2))
+        } else {
+            coordinator.contentViewController.prepareForDismissAnimation()
         }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()

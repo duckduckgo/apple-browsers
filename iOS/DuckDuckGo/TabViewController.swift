@@ -81,6 +81,13 @@ enum WebViewPreviewSnapshotGeometry {
     }
 }
 
+enum WebViewPreviewSnapshotPolicy {
+
+    static func shouldCapture(isLoading: Bool) -> Bool {
+        !isLoading
+    }
+}
+
 enum WebViewScrollViewInsetUpdater {
 
     struct AdjustmentBehavior {
@@ -2489,6 +2496,11 @@ extension TabViewController: WKNavigationDelegate {
 
         DispatchQueue.main.async { [weak self] in
             guard let self, let webView else {
+                completion(nil)
+                return
+            }
+
+            guard WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: webView.isLoading) else {
                 completion(nil)
                 return
             }

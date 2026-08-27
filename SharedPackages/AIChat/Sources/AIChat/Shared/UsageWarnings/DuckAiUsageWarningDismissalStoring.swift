@@ -19,15 +19,13 @@
 import Foundation
 import Persistence
 
-/// A dismissed notice, scoped to the reset period it was dismissed in: once `resetsAt` moves on the
-/// record is stale and the message comes back. Native equivalent of web's `duckaiUsageLimitBannerDismissal`.
+/// Scoped to the reset period it was dismissed in, so the message comes back once `resetsAt` moves on.
 public struct DuckAiUsageWarningDismissal: Equatable, Codable {
 
-    /// The raw notice id, so a message web adds later can still be recorded as dismissed.
+    /// Raw, so a message web adds later can still be recorded as dismissed.
     public let noticeID: String
 
-    /// Whole seconds, not a `Date`: this is compared for exact equality, and `Codable` can drift a
-    /// `Date` by a fraction of a second.
+    /// Whole seconds: this is compared for equality, and `Codable` can drift a `Date`.
     public let resetsAtEpochSeconds: Int
 
     public init(noticeID: String, resetsAt: Date) {
@@ -48,8 +46,7 @@ public struct DuckAiUsageWarningDismissal: Equatable, Codable {
     }
 }
 
-/// The notice whose CTA the user has already run, against the exact snapshot it was offered from.
-/// The contract's rule: do not re-show until `usageLimits` itself changes.
+/// The contract's rule: do not re-show a notice the user acted on until `usageLimits` itself changes.
 public struct DuckAiUsageWarningActedSnapshot: Equatable, Codable {
 
     public let noticeID: String
@@ -60,8 +57,7 @@ public struct DuckAiUsageWarningActedSnapshot: Equatable, Codable {
         self.signature = signature
     }
 
-    /// An unsigned snapshot can't be compared, so it is never suppressed — showing the message again
-    /// is the safe failure.
+    /// An unsigned snapshot can't be compared, and showing the message again is the safe failure.
     public func applies(to notice: DuckAiUsageNotice, signature: String?) -> Bool {
         guard let signature else { return false }
         return noticeID == notice.id.rawValue && self.signature == signature

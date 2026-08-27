@@ -18,7 +18,7 @@
 
 import Foundation
 
-/// One key/value pair to write into the entries namespace, named by the web app rather than by us.
+/// Web names both the key and the value, so native writes them verbatim.
 public struct DuckAiNativeStorageEntry: Equatable {
 
     public let key: String
@@ -30,12 +30,11 @@ public struct DuckAiNativeStorageEntry: Equatable {
     }
 }
 
-/// The message to show, decided web-side. Native maps `id` to copy and renders the rest; it never
-/// re-derives which message this is from percentages, tier or model rank.
+/// Decided web-side: native maps `id` to copy rather than re-deriving the message from percentages,
+/// tier or model rank, which is how the two ended up disagreeing.
 public struct DuckAiUsageNotice: Equatable {
 
-    /// Unknown ids are dropped rather than guessed at, so a message web adds later shows nothing
-    /// here instead of the wrong copy.
+    /// Unknown ids are dropped: a message web adds later should show nothing rather than the wrong copy.
     public enum ID: String {
         case approaching
         case freeReached
@@ -46,10 +45,9 @@ public struct DuckAiUsageNotice: Equatable {
 
     public let id: ID
     public let window: DuckAiUsageWindow
-    /// The percentage to display, already capped web-side (99 until the limit is reached).
+    /// Already capped web-side (99 until reached), so native shows it as sent.
     public let percentUsed: Int
     public let resetsAt: Date
-    /// Hard limit rather than a warning.
     public let reached: Bool
     public let dismissible: Bool
 
@@ -63,7 +61,6 @@ public struct DuckAiUsageNotice: Equatable {
     }
 }
 
-/// The button to offer beside the notice, and what running it does.
 public struct DuckAiUsageCta: Equatable {
 
     public enum ID: String {
@@ -73,7 +70,7 @@ public struct DuckAiUsageCta: Equatable {
         case subscribe
     }
 
-    /// The models to offer for a switch. `modelIds` never includes the id it is keyed against.
+    /// `modelIds` never includes the id it is keyed against.
     public struct Target: Equatable {
         public let modelId: String?
         public let modelIds: [String]
@@ -82,7 +79,6 @@ public struct DuckAiUsageCta: Equatable {
 
         public var isEmpty: Bool { modelId == nil && modelIds.isEmpty }
 
-        /// Preferred first, then the rest, deduplicated.
         public var candidateModelIds: [String] {
             var seen = Set<String>()
             return ([modelId].compactMap { $0 } + modelIds).filter { seen.insert($0).inserted }
@@ -95,11 +91,10 @@ public struct DuckAiUsageCta: Equatable {
     }
 
     public let id: ID
-    /// The target for the model web believes is selected.
     public let target: Target
-    /// Retarget table for when the native picker is on a different model than web is.
+    /// For when the native picker is on a different model than web is.
     public let byModelId: [String: Target]
-    /// `bypassWeekly` only: written verbatim, because web owns both the key and the value.
+    /// `bypassWeekly` only: web owns the key and the value, so they are written verbatim.
     public let putEntries: [DuckAiNativeStorageEntry]
 
     public init(id: ID,
@@ -112,25 +107,21 @@ public struct DuckAiUsageCta: Equatable {
         self.putEntries = putEntries
     }
 
-    /// The models to offer given what the *native* picker is on, which is not necessarily web's model.
-    /// A CTA can carry a retarget table and no top-level target: web is already on the cheapest model,
-    /// but other picker models still have somewhere to go.
+    /// A retarget table with no top-level target is web saying it is already on the cheapest model,
+    /// while other picker models still have somewhere to go.
     public func target(forSelectedModelId modelId: String?) -> Target {
         guard let modelId, let retarget = byModelId[modelId] else { return target }
         return retarget
     }
 }
 
-/// Usage snapshot the Duck.ai web app writes into the reserved `usageLimits` entry.
-///
-/// The `daily` / `weekly` windows web still writes for older clients are deliberately not read:
-/// per the contract they are no longer required, and a missing window means "no data", not 0%.
+/// The `daily` / `weekly` windows web still writes are deliberately not read: they are for older
+/// clients, and a missing window means "no data", not 0%.
 public struct DuckAiUsageSnapshot: Equatable {
 
     public let notice: DuckAiUsageNotice?
     public let cta: DuckAiUsageCta?
-    /// The entry value this was decoded from, so "has web published a new snapshot since the user
-    /// acted on this one?" is answerable without keeping the whole payload around.
+    /// So "has web published a new snapshot since the user acted on this one?" is answerable.
     public let signature: String?
 
     public static let noData = DuckAiUsageSnapshot(notice: nil, cta: nil, signature: nil)
@@ -143,12 +134,12 @@ public struct DuckAiUsageSnapshot: Equatable {
         self.signature = signature
     }
 
-    /// Anything unexpected degrades to no-data, so a malformed snapshot can't be told apart from an
-    /// absent one. A notice past its reset is dropped: it would warn on after the limit lifted.
+    /// Anything unexpected degrades to no-data, and a notice past its reset is dropped — it would
+    /// warn on after the limit lifted.
     public static func make(entryValue: Any?, now: Date) -> DuckAiUsageSnapshot {
         guard let root = rootObject(from: entryValue) else { return .noData }
 
-        // A CTA without a notice has nothing to hang off, so it goes with it.
+        // A CTA has nothing to hang off without a notice.
         guard let notice = notice(from: root["notice"], now: now) else {
             return DuckAiUsageSnapshot(notice: nil, cta: nil, signature: signature(for: entryValue))
         }
@@ -166,11 +157,10 @@ public struct DuckAiUsageSnapshot: Equatable {
               let resetsAt = date(from: object["resetsAt"]),
               resetsAt > now else { return nil }
 
-        // The ids already say whether this is a hard limit; the flags are trusted when sent and
-        // fall back to that rather than to a guess.
+        // The ids already say whether this is a hard limit, so absent flags fall back to them.
         let reached = bool(from: object["reached"]) ?? (id != .approaching)
         let percentUsed = percent(from: object["percentUsed"])
-        // An approaching message with no percentage would read "0% of daily limit".
+        // Otherwise an approaching message reads "0% of daily limit".
         guard let percentUsed = percentUsed ?? (reached ? 100 : nil) else { return nil }
 
         return DuckAiUsageNotice(id: id,
@@ -200,9 +190,7 @@ public struct DuckAiUsageSnapshot: Equatable {
         return DuckAiUsageCta.Target(modelId: object["modelId"] as? String, modelIds: modelIds)
     }
 
-    /// Both documented shapes: a list of `{key, value}` items, and — defensively — a single object
-    /// mapping keys to values. Anything that isn't a string pair is dropped rather than coerced,
-    /// because these go straight into the entries blob the web app parses.
+    /// A non-string pair is dropped rather than coerced: these go straight into the blob web parses.
     private static func entries(from value: Any?) -> [DuckAiNativeStorageEntry] {
         switch value {
         case let items as [Any]:
@@ -218,7 +206,7 @@ public struct DuckAiUsageSnapshot: Equatable {
                 guard let value = value as? String, !key.isEmpty else { return nil }
                 return DuckAiNativeStorageEntry(key: key, value: value)
             }
-            // Sorted, so the same payload always produces the same write order.
+            // So the same payload always produces the same write order.
             .sorted { $0.key < $1.key }
         default:
             return []
@@ -227,8 +215,8 @@ public struct DuckAiUsageSnapshot: Equatable {
 
     // MARK: - Primitives
 
-    /// The entries namespace mirrors the web app's `localStorage`, so the value is a JSON-encoded string.
-    /// A dictionary is accepted defensively, in case a future writer stores the object directly.
+    /// The entries namespace mirrors web's `localStorage`, so the value is a JSON-encoded string;
+    /// a dictionary is accepted in case a future writer stores the object directly.
     private static func rootObject(from value: Any?) -> [String: Any]? {
         switch value {
         case let json as String:
@@ -242,8 +230,7 @@ public struct DuckAiUsageSnapshot: Equatable {
         }
     }
 
-    /// The string as written, so two reads of the same snapshot compare equal. The dictionary case
-    /// is re-serialized with sorted keys for the same reason.
+    /// The string as written, so two reads of the same snapshot compare equal.
     private static func signature(for value: Any?) -> String? {
         switch value {
         case let json as String:
@@ -264,7 +251,7 @@ public struct DuckAiUsageSnapshot: Equatable {
         return Int(min(max(percent, 0), 100).rounded())
     }
 
-    /// Only a real JSON boolean: a `1` here more likely means a payload we don't understand.
+    /// A `1` here more likely means a payload we don't understand.
     private static func bool(from value: Any?) -> Bool? {
         guard let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else { return nil }
         return number.boolValue

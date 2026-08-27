@@ -19,15 +19,9 @@
 import Combine
 import Foundation
 
-/// Reactive view over the *reserved* entry keys — the handful that carry a contract with the web
-/// app. Reserved only: the entries namespace is the web app's `localStorage`, so publishing every
-/// key would fire on unrelated writes on every page load.
-///
-/// Emits whoever wrote the key, so a native write (a debug seed, a CTA) refreshes the same surfaces
-/// a web write does.
-///
-/// Separate from `DuckAiNativeStorageHandling` so backends that can't observe aren't forced to conform.
+/// Reserved keys only: the entries namespace is web's `localStorage`, so publishing every key would
+/// fire on unrelated writes on every page load. Emits whoever wrote it, native writes included.
 public protocol DuckAiNativeEntriesObserving {
-    /// The reserved key that changed. No initial value: subscribers already read on activation.
+    /// No initial value: subscribers already read on activation.
     var reservedEntryUpdatesPublisher: AnyPublisher<DuckAiNativeStorageReservedEntryKeys, Never> { get }
 }

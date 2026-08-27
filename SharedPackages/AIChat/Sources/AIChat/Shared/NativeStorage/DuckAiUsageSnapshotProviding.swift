@@ -19,7 +19,7 @@
 import Foundation
 
 public protocol DuckAiUsageSnapshotProviding {
-    /// `.noData` rather than an error when the key is absent, unparseable, or the notice has expired.
+    /// `.noData` rather than an error when the key is absent, unparseable, or expired.
     func currentSnapshot() -> DuckAiUsageSnapshot
 }
 
@@ -47,7 +47,7 @@ public struct DuckAiUsageSnapshotProvider: DuckAiUsageSnapshotProviding {
             pixelFiring.fire(.settingsGetError(error))
             return .noData
         }
-        // No pixel for a value that fails to decode: per the contract that's an ordinary "nothing to show" state.
+        // A value that fails to decode is an ordinary "nothing to show" state, not an error.
         return DuckAiUsageSnapshot.make(entryValue: value, now: dateProvider())
     }
 }

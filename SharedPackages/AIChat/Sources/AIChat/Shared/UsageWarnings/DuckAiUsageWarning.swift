@@ -52,8 +52,7 @@ public enum DuckAiUsageResetInterval: Equatable {
     private static let secondsPerDay: TimeInterval = 24 * 60 * 60
 }
 
-/// Which of the specified messages this is, named after the web app's notice ids so mapping copy
-/// stays a lookup. Never derived from percentages, tier, or model rank — web decides.
+/// Named after web's notice ids so mapping copy stays a lookup rather than a derivation.
 public typealias DuckAiUsageMessage = DuckAiUsageNotice.ID
 
 public enum DuckAiUsageAction: Equatable {
@@ -61,7 +60,7 @@ public enum DuckAiUsageAction: Equatable {
     case switchToFreeModel(DuckAiModelSuggestion)
     /// `isTrialEligible` picks the copy; both route to the same upsell.
     case tryForFree(isTrialEligible: Bool)
-    /// Carries the entries web named for this hand-off; native writes them verbatim and sends no header.
+    /// Native writes these verbatim and sends no header — web builds that from the entry itself.
     case startUsingWeeklyLimit(entries: [DuckAiNativeStorageEntry])
 
     /// The `>` modifies a model switch, so it never pairs with the upsell or the weekly hand-off.
@@ -85,14 +84,8 @@ public enum DuckAiUsageAction: Equatable {
         }
     }
 
-    /// Whether taking this action stands its message down until web publishes a new snapshot.
-    ///
-    /// True for anything that changes what the user is about to spend: the weekly hand-off writes an
-    /// opt-in, a switch moves them onto a cheaper or free model. The payload can't reflect either
+    /// True for anything that changes what the user is about to spend: the payload can't reflect it
     /// until web republishes, so leaving the message up would read as the tap having done nothing.
-    ///
-    /// The upsell is the exception — it opens a flow the user may never finish, and their usage is
-    /// exactly as it was until they do.
     var suppressesNoticeUntilSnapshotChanges: Bool {
         switch self {
         case .switchToModel, .switchToFreeModel, .startUsingWeeklyLimit: return true
@@ -100,7 +93,7 @@ public enum DuckAiUsageAction: Equatable {
         }
     }
 
-    /// For pixels and the debug log: the web app's cta id this action came from.
+    /// The web app's cta id this action came from, for the debug log.
     var ctaID: DuckAiUsageCta.ID {
         switch self {
         case .switchToModel: return .switchToCheaper
@@ -115,7 +108,7 @@ public struct DuckAiUsageWarning: Equatable {
 
     public let window: DuckAiUsageWindow
     public let message: DuckAiUsageMessage
-    /// The display percentage, as sent: capped at 99 web-side until the limit is reached.
+    /// As sent: capped at 99 web-side until the limit is reached.
     public let percent: Int
     public let resetsIn: DuckAiUsageResetInterval
     public let isDismissible: Bool
@@ -142,22 +135,20 @@ public struct DuckAiUsageWarning: Equatable {
 
 extension DuckAiUsageWarning {
 
-    /// Whether the `>` beside the action should list free models and nothing else. It should for the
-    /// free-model switch: that message is shown *because* the advanced allowance is spent, so offering
-    /// an advanced model there contradicts the sentence it hangs off.
+    /// The free-model message is shown *because* the advanced allowance is spent, so offering an
+    /// advanced model behind its `>` contradicts the sentence it hangs off.
     public var modelPickerOffersFreeModelsOnly: Bool {
         if case .switchToFreeModel = action { return true }
         return false
     }
 
-    /// For the debug log only, so a decision reads straight across against the web banner. iOS and
-    /// macOS deliberately drop web's "Reduce usage with a more efficient model" subtitle.
+    /// Debug log only, so a decision reads straight across against the web banner.
     var messagePreview: (title: String, button: String?) {
         let headline: String
         switch message {
         case .approaching: headline = "\(percent)% of \(window.rawValue) limit"
         case .dailyReached: headline = "Daily limit reached"
-        // Free users see the reached copy for whichever window ran out.
+        // One id whichever window ran out, so the window picks the noun.
         case .freeReached: headline = window == .daily ? "Daily limit reached" : "Weekly usage limit reached"
         case .weeklyReached: headline = "Weekly usage limit reached"
         case .weeklyReachedDegraded: headline = "Advanced AI models limit reached"

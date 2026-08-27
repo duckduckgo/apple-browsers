@@ -888,9 +888,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func setUpUsageWarnings(subscriptionManager: any SubscriptionManager) {
         let viewModel = usageLimitsStore?.makeWarningViewModel(
-            // Resolved per fire: this coordinator serves the omnibar, the Duck.ai tab and the
-            // contextual sheet, and which of those is on screen changes while it lives.
-            surfaceProvider: { [weak self] in self?.pixelSurface ?? .addressBar },
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
                 // The persisted id, not the live one: before a chat starts it is what a prompt would use.
@@ -910,8 +907,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         footerController = UTIFooterController(viewModel: viewModel)
         footerController?.presenter = viewController
 
-        // The card's chevron lists only free models behind "Switch to a Free Model", so the menu has
-        // to follow which message is up.
+        // The card's chevron filters its menu, so it has to follow which message is up.
         viewModel.$warning
             .receive(on: DispatchQueue.main)
             .sink { [weak self] warning in
@@ -921,8 +917,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             }
             .store(in: &cancellables)
 
-        // Web publishing a new snapshot mid-session, or a debug seed, refreshes the open input — and
-        // is what brings a message back after the user has acted on the previous one.
+        // Also what brings a message back after the user has acted on the previous one.
         usageLimitsStore?.snapshotUpdates?
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.footerController?.refresh() }
@@ -948,8 +943,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case .tryForFree:
             subscriptionUpsellPresenter.presentPurchaseFlow(origin: usageWarningFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
-            // Storage-only opt-in: web reads the entry before its next /status and /chat and turns it
-            // into the bypass request header itself, so there is nothing to reload here.
+            // Web reads the entry before its next /status and /chat, so there is nothing to reload.
             usageLimitsStore?.write(entries)
         }
     }

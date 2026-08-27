@@ -36,6 +36,6 @@ public enum DuckAiNativeStorageReservedEntryKeys: String, CaseIterable {
     /// Native-written, web-read: the web app reconciles deletions it did not itself initiate. Value: `[String]`.
     case locallyDeletedChatIds
 
-    /// Web-written, native-read. Value: JSON-encoded `String`; decode with `DuckAiUsageSnapshot.make`.
+    /// Web-written, native-read. JSON-encoded `String`; decode with `DuckAiUsageSnapshot.make`.
     case usageLimits
 }

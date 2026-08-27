@@ -18,12 +18,8 @@
 
 import Foundation
 
-/// Turns the web app's snapshot into the message to render. Pure: every input is a parameter or an
-/// injected collaborator, so the rule set is testable without UI.
-///
-/// Deliberately thin. Web owns which message this is, which percentage to show, whether it is
-/// dismissible, and which models to offer; native decides only whether the user has already dealt
-/// with this notice, and whether an offered model is usable on this surface.
+/// Deliberately thin: web owns which message this is and what it offers, so native decides only
+/// whether the user has already dealt with it, and whether an offered model works on this surface.
 public struct DuckAiUsageWarningResolver {
 
     /// Reported so each gate stays observable in the log.
@@ -56,8 +52,7 @@ public struct DuckAiUsageWarningResolver {
             return .none(reason: .dismissedUntilReset)
         }
 
-        // Running a CTA stands the message down until web publishes a new snapshot: the payload it
-        // was resolved from still says the limit is hit, and re-showing the same drawer would read
+        // The payload it was resolved from still says the limit is hit, so re-showing it would read
         // as the button having done nothing.
         if let acted = dismissalStore.actedSnapshot(), acted.applies(to: notice, signature: snapshot.signature) {
             return .none(reason: .actedOnThisSnapshot)
@@ -78,8 +73,8 @@ public struct DuckAiUsageWarningResolver {
         return .warning(warning, modelSuggestion: suggestion)
     }
 
-    /// `nil` hides the button and keeps the notice. That is the payload's own "already on the
-    /// cheapest model" case, and also what happens when nothing web offered fits this draft.
+    /// `nil` hides the button and keeps the notice — the payload's own "already on the cheapest
+    /// model" case, and what happens when nothing web offered fits this draft.
     private func action(for cta: DuckAiUsageCta?,
                         suggestion: DuckAiModelSuggestionOutcome,
                         isTrialEligible: Bool) -> DuckAiUsageAction? {

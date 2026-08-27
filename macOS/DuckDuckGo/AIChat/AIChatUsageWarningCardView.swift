@@ -40,7 +40,7 @@ extension DuckAiUsageWarning {
         case .weeklyReachedDegraded:
             return UserText.aiChatUsageWarningsAdvancedModelsLimitReached
         case .freeReached:
-            // Web sends one id for a free user whichever window ran out, so the window picks the noun.
+            // One id whichever window ran out, so the window picks the noun.
             switch window {
             case .daily: return UserText.aiChatUsageWarningsDailyLimitReached
             case .weekly: return UserText.aiChatUsageWarningsWeeklyLimitReached
@@ -52,8 +52,7 @@ extension DuckAiUsageWarning {
         UserText.aiChatUsageWarningsResetsIn(resetsIn.shortDescription)
     }
 
-    /// Only a model switch takes the swap glyph, matching Windows: there is nothing to swap for an
-    /// upsell or a hand-off to another window.
+    /// Nothing to swap for an upsell or a hand-off to another window.
     var actionSwapsModel: Bool {
         switch action {
         case .switchToModel, .switchToFreeModel: return true
@@ -61,7 +60,7 @@ extension DuckAiUsageWarning {
         }
     }
 
-    /// `nil` hides the button, which is also how a switch with nothing usable to switch to renders.
+    /// `nil` hides the button, which is also how a switch with nothing to switch to renders.
     var localizedActionTitle: String? {
         guard let action else { return nil }
 
@@ -389,8 +388,6 @@ final class AIChatUsageWarningActionButton: NSView {
         return view
     }()
 
-    /// Only a model switch shows it, matching Windows: there is nothing to swap for an upsell or a
-    /// hand-off to another window.
     private let iconImageView: NSImageView = {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -468,8 +465,7 @@ final class AIChatUsageWarningActionButton: NSView {
         dividerWidthConstraint = dividerWidth
         let pickerRegionWidth = pickerHitButton.widthAnchor.constraint(equalToConstant: Constants.chevronRegionWidth)
         pickerRegionWidthConstraint = pickerRegionWidth
-        // The icon leads, and the label hangs off it: with no icon both its width and the spacing
-        // collapse, which leaves the label exactly where it sat before.
+        // With no icon both its width and the spacing collapse, leaving the label where it was.
         let leadingPadding = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor,
                                                                     constant: Constants.horizontalPadding)
         leadingPaddingConstraint = leadingPadding
@@ -519,8 +515,7 @@ final class AIChatUsageWarningActionButton: NSView {
         updateTrackingAreas()
     }
 
-    /// - Parameter offersModelPicker: when false the divider and `>` collapse, leaving a plain pill.
-    /// - Parameter showsSwapIcon: the swap glyph before a "Switch to …" label.
+    /// `offersModelPicker` false collapses the divider and `>`, leaving a plain pill.
     func configure(title: String, offersModelPicker: Bool, showsSwapIcon: Bool) {
         titleLabel.stringValue = title
         self.offersModelPicker = offersModelPicker

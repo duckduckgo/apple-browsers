@@ -313,17 +313,6 @@ enum AIChatPixel: PixelKit.Event {
     /// New Tab Page omnibar.
     case aiChatNtpSubscriptionUpsellShown(origin: String)
 
-    /// Event Trigger: A Duck.ai usage-limit message was shown on a native input surface. `notice` is
-    /// the web app's own notice id, so these line up with the web banner's numbers for the same
-    /// message. One per notice per reset period per surface, not one per input activation.
-    case aiChatUsageMessageShown(notice: String, window: String, surface: String)
-
-    /// Event Trigger: The button on a usage-limit message was clicked. `cta` is the web app's cta id.
-    case aiChatUsageMessageCtaClicked(notice: String, cta: String, surface: String)
-
-    /// Event Trigger: A usage-limit message was dismissed with its close button.
-    case aiChatUsageMessageDismissed(notice: String, surface: String)
-
     /// Event Trigger: The New Tab Page omnibar reported a picker impression over `telemetryEvent`.
     /// The `tryForFree`/`upgrade` variants mean the gated section carried that CTA.
     case aiChatNtpModelPickerShown(origin: String)
@@ -727,12 +716,6 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_addressbar_subscription_upsell_shown"
         case .aiChatNtpSubscriptionUpsellShown:
             return "aichat_ntp_subscription_upsell_shown"
-        case .aiChatUsageMessageShown:
-            return "aichat_usage_message_shown"
-        case .aiChatUsageMessageCtaClicked:
-            return "aichat_usage_message_cta_clicked"
-        case .aiChatUsageMessageDismissed:
-            return "aichat_usage_message_dismissed"
         case .aiChatNtpModelPickerShown:
             return "aichat_ntp_model_picker_shown"
         case .aiChatNtpModelPickerTryForFreeShown:
@@ -992,12 +975,6 @@ enum AIChatPixel: PixelKit.Event {
         case .aiChatAddressBarSubscriptionUpsellShown(let origin),
                 .aiChatNtpSubscriptionUpsellShown(let origin):
             return ["origin": origin]
-        case .aiChatUsageMessageShown(let notice, let window, let surface):
-            return ["notice": notice, "window": window, "surface": surface]
-        case .aiChatUsageMessageCtaClicked(let notice, let cta, let surface):
-            return ["notice": notice, "cta": cta, "surface": surface]
-        case .aiChatUsageMessageDismissed(let notice, let surface):
-            return ["notice": notice, "surface": surface]
         case .aiChatAddressBarModelPickerShown(let origin),
                 .aiChatAddressBarReasoningPickerShown(let origin),
                 .aiChatNtpModelPickerShown(let origin),
@@ -1167,9 +1144,6 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatAddressBarSubscriptionUpsellTriggered,
                 .aiChatAddressBarSubscriptionUpsellShown,
                 .aiChatNtpSubscriptionUpsellShown,
-                .aiChatUsageMessageShown,
-                .aiChatUsageMessageCtaClicked,
-                .aiChatUsageMessageDismissed,
                 .aiChatAddressBarModelPickerShown,
                 .aiChatAddressBarReasoningPickerShown,
                 .aiChatNtpModelPickerShown,

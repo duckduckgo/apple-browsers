@@ -67,9 +67,7 @@ final class AIChatDebugMenu: NSMenu {
 
     // MARK: - Duck.ai Usage Warnings
 
-    /// Seeds the reserved `usageLimits` entry — the same one the web app writes — so the real read
-    /// path drives the message. Needs the `aiChatUsageWarnings` flag on; with the entries publisher
-    /// wired, an open omnibar updates as soon as a seed lands.
+    /// Seeds the same entry the web app writes, so the real read path drives the message.
     private var usageWarningsMenuItem: NSMenuItem {
         let item = NSMenuItem(title: "Duck.ai Usage Warnings")
         let submenu = NSMenu()
@@ -120,8 +118,7 @@ final class AIChatDebugMenu: NSMenu {
         writeUsageSnapshot(seed)
     }
 
-    /// A fresh reset time makes a new signature, which is what releases a message the user has
-    /// already acted on — and what a real republish from web looks like.
+    /// A fresh reset time makes a new signature, which is what releases an acted-on message.
     @objc private func reseedLastUsageSnapshot() {
         guard let lastSeededCase else {
             showAlert("Nothing to re-seed", "Pick a case first.")
@@ -152,8 +149,7 @@ final class AIChatDebugMenu: NSMenu {
             return
         }
 
-        // Resolved from the live model list, so the switch CTAs offer something the picker can
-        // actually select. Async, because the models come from the network.
+        // From the live model list, so the switch CTAs offer something the picker can select.
         Task { @MainActor in
             let models = await accessibleModelIds()
             let selectedModelId = NSApp.delegateTyped.aiChatPreferencesPersistor.selectedModelId
@@ -176,8 +172,7 @@ final class AIChatDebugMenu: NSMenu {
         }
     }
 
-    /// Best effort: an empty list seeds the hidden-button case rather than failing the seed. Resolved
-    /// against the *free* tier deliberately — every account can select those, so a seeded switch never
+    /// Resolved against the free tier: every account can select those, so a seeded switch never
     /// offers a model the picker would refuse.
     private func accessibleModelIds() async -> [String] {
         do {
@@ -193,7 +188,7 @@ final class AIChatDebugMenu: NSMenu {
         }
     }
 
-    /// Same unavailable-handler alert as the storage server, which is the other item needing the bridge.
+    /// Same alert as the storage server, the other item needing the bridge.
     private func storageHandlerOrAlert() -> DuckAiNativeStorageHandling? {
         guard let handler = NSApp.delegateTyped.duckAiNativeStorageHandler else {
             showAlert("Native storage is not available",

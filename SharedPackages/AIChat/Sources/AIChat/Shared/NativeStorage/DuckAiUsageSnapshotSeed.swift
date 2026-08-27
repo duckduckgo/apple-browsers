@@ -18,16 +18,8 @@
 
 import Foundation
 
-/// Hand-seeded `usageLimits` payloads, one per message a tester needs to see, split by the account
-/// tier that gets it. Both platforms' debug menus and the decoding tests build from this, so a case
-/// a tester can pick always has an asserted decode.
-///
-/// The payload edge cases — unknown ids, a stale reset, the legacy windows-only shape — are covered
-/// by `DuckAiUsageSnapshotTests` rather than by a menu item: they all render nothing, so there is
-/// nothing to look at.
-///
-/// Not `#if DEBUG`: the app targets build this module in Release too, and gating it would mean the
-/// debug menus couldn't see it in the very builds (Alpha, internal) the feature is tested in.
+/// Shared by both debug menus and the decoding tests, so a case a tester can pick always has an
+/// asserted decode. Not `#if DEBUG`: Alpha and internal builds are where this gets tested.
 public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
 
     // Free
@@ -40,7 +32,7 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
     case weeklyReachedDegraded
     case weeklyReached
 
-    /// Grouped the way the debug menus present them: what a free account sees, and what a paid one does.
+    /// Grouped as the debug menus present them: what a free account sees, and what a paid one does.
     public static let freeSeeds: [Self] = [.freeDailyReached]
 
     public static let paidSeeds: [Self] = [
@@ -58,7 +50,7 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
         }
     }
 
-    /// What the tester should expect to see, so a surprise reads as a bug rather than as the seed.
+    /// So a surprise reads as a bug rather than as the seed.
     public var expectation: String {
         switch self {
         case .freeDailyReached:
@@ -76,17 +68,13 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
         }
     }
 
-    /// - Parameters:
-    ///   - switchTargets: accessible model ids from the live model list, so the switch CTAs resolve
-    ///     to something the picker can actually select. Seeding without them exercises the
-    ///     hidden-button path instead.
-    ///   - selectedModelId: what the native picker is on, so a seed never offers the model in use.
+    /// `switchTargets` come from the live model list so the CTAs resolve to something selectable;
+    /// without them the seeds exercise the hidden-button path instead.
     public func entryValue(now: Date = Date(),
                            switchTargets: [String] = [],
                            selectedModelId: String? = nil) -> String {
         let object = payload(now: now, switchTargets: switchTargets, selectedModelId: selectedModelId)
-        // `.sortedKeys` so re-seeding the same case produces the same signature, which is what
-        // decides whether an acted-on notice stays suppressed.
+        // `.sortedKeys` so re-seeding produces the same signature, which decides suppression.
         guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys]),
               let json = String(data: data, encoding: .utf8) else { return "{}" }
         return json
@@ -164,11 +152,11 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
         return ["id": id, "modelId": first, "modelIds": modelIds]
     }
 
-    // Two different resets, so a message that picked the wrong window's time is visible.
+    // Two different resets, so a message using the wrong window's time is visible.
     private static func daily(_ now: Date) -> Date { now.addingTimeInterval(5 * 60 * 60) }
     private static func weekly(_ now: Date) -> Date { now.addingTimeInterval(3 * 24 * 60 * 60) }
 
-    /// Byte-identical to the web app's `Date.toISOString()`.
+    /// Byte-identical to web's `Date.toISOString()`, which is what it is compared against.
     private static func iso(_ date: Date) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

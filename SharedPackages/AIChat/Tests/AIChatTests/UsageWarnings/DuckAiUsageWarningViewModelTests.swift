@@ -24,19 +24,16 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_755_000_000) // 2025-08-12T12:00:00Z
     private var snapshotProvider: StubUsageSnapshotProvider!
     private var dismissalStore: InMemoryDuckAiUsageWarningDismissalStore!
-    private var pixelFiring: SpyUsageWarningPixelFiring!
 
     override func setUp() {
         super.setUp()
         snapshotProvider = StubUsageSnapshotProvider()
         dismissalStore = InMemoryDuckAiUsageWarningDismissalStore()
-        pixelFiring = SpyUsageWarningPixelFiring()
     }
 
     override func tearDown() {
         snapshotProvider = nil
         dismissalStore = nil
-        pixelFiring = nil
         super.tearDown()
     }
 
@@ -114,7 +111,6 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
 
         XCTAssertNil(sut.warning)
         XCTAssertEqual(dismissalStore.dismissal()?.noticeID, "approaching")
-        XCTAssertEqual(pixelFiring.events.last, .noticeDismissed(noticeID: .approaching))
     }
 
     func testDismissIsANoOpForAStickyMessage() {
@@ -142,7 +138,6 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         sut.performAction()
 
         XCTAssertEqual(performed, [.startUsingWeeklyLimit(entries: entries)])
-        XCTAssertEqual(pixelFiring.events.last, .ctaTapped(ctaID: .bypassWeekly, noticeID: .dailyReached))
     }
 
     /// The hand-off writes an opt-in the payload can't reflect until web republishes, so the same
@@ -244,55 +239,6 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertEqual(opened, 0)
     }
 
-    // MARK: - Impressions
-
-    /// The message is re-resolved every time the user opens the input; counting those would say more
-    /// about how often they open it than about the message.
-    func testAMessageIsReportedShownOncePerNotice() {
-        snapshotProvider.snapshot = snapshot(notice(id: .approaching))
-        let sut = makeSUT()
-
-        sut.refresh()
-        sut.refresh()
-        sut.refresh()
-
-        XCTAssertEqual(pixelFiring.events, [.noticeShown(noticeID: .approaching, window: .daily)])
-    }
-
-    func testANewNoticeIsReportedShownAgain() {
-        snapshotProvider.snapshot = snapshot(notice(id: .approaching))
-        let sut = makeSUT()
-        sut.refresh()
-
-        snapshotProvider.snapshot = snapshot(notice(id: .dailyReached, reached: true))
-        sut.refresh()
-
-        XCTAssertEqual(pixelFiring.events, [.noticeShown(noticeID: .approaching, window: .daily),
-                                            .noticeShown(noticeID: .dailyReached, window: .daily)])
-    }
-
-    /// The same notice in the next reset period is a new impression.
-    func testTheSameNoticeInANewPeriodIsReportedShownAgain() {
-        snapshotProvider.snapshot = snapshot(notice(id: .approaching))
-        let sut = makeSUT()
-        sut.refresh()
-
-        snapshotProvider.snapshot = snapshot(notice(id: .approaching,
-                                                    resetsAt: now.addingTimeInterval(2 * 24 * 3600)))
-        sut.refresh()
-
-        XCTAssertEqual(pixelFiring.events.count, 2)
-    }
-
-    func testNothingIsReportedWhenThereIsNoMessage() {
-        snapshotProvider.snapshot = .noData
-        let sut = makeSUT()
-
-        sut.refresh()
-
-        XCTAssertTrue(pixelFiring.events.isEmpty)
-    }
-
     // MARK: - Helpers
 
     private func makeSUT(isFeatureActive: Bool = true,
@@ -313,7 +259,6 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
             snapshotProvider: isFeatureActive ? snapshotProvider : nil,
             dismissalStore: dismissalStore,
             modelSuggester: StubModelSuggester(outcome: suggestion),
-            pixelFiring: pixelFiring,
             isTrialEligible: { isTrialEligible },
             isFireMode: isFireMode,
             dateProvider: { self.now }
@@ -346,13 +291,5 @@ private final class StubUsageSnapshotProvider: DuckAiUsageSnapshotProviding {
     func currentSnapshot() -> DuckAiUsageSnapshot {
         readCount += 1
         return snapshot
-    }
-}
-
-private final class SpyUsageWarningPixelFiring: DuckAiUsageWarningPixelFiring {
-    private(set) var events: [DuckAiUsageWarningEvent] = []
-
-    func fire(_ event: DuckAiUsageWarningEvent) {
-        events.append(event)
     }
 }

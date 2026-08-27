@@ -104,7 +104,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, Duck
     }
     public func replaceAllEntries(_ entries: [String: Any]) throws {
         try backing.replaceAllEntries(entries)
-        // Every reserved key is potentially different now, including the ones the new blob dropped.
+        // Every reserved key is potentially different, including ones the new blob dropped.
         DuckAiNativeStorageReservedEntryKeys.allCases.forEach(reservedEntryUpdatesSubject.send)
     }
 

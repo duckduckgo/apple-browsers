@@ -297,7 +297,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         let store = DuckAiUsageLimitsStore(storageHandler: duckAiStorageHandlerProvider(burnerMode),
                                            featureFlagger: featureFlagger)
         usageWarningViewModel = store.makeWarningViewModel(
-            surface: .newTabPageOmnibar,
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: availableModelsProvider,
                 currentModelIdProvider: { [aiChatPreferencesPersistor] in aiChatPreferencesPersistor.selectedModelId }
@@ -312,12 +311,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
                 self?.aiChatPreferencesPersistor.selectedModelId = suggestion.modelId
                 self?.aiChatPreferencesPersistor.selectedModelShortName = suggestion.modelShortName
             case .startUsingWeeklyLimit(let entries):
-                // The captured store carries this refresh's burner-aware handler, so the opt-in lands
-                // in the same session the message was read from.
+                // The captured store carries this refresh's burner-aware handler.
                 store.write(entries)
             case .tryForFree:
-                // The NTP omnibar is web-rendered, so this message is the frontend's to show; there is
-                // no native card here to route an upsell from.
+                // The NTP omnibar is web-rendered, so there is no native card to route an upsell from.
                 break
             }
         }

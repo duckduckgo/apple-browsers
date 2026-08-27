@@ -20,8 +20,7 @@
 import AIChat
 import Foundation
 
-/// The card's copy. `DuckAiUsageWarning` has already decided what to say and what to offer; the
-/// module's own `messagePreview` is debug-log-only, so the user-facing strings come from here.
+/// The module's `messagePreview` is debug-log-only, so the user-facing strings come from here.
 struct UTIFooterMessageMapper {
 
     private let resetDescriber: UTIFooterResetDescriber
@@ -40,7 +39,7 @@ struct UTIFooterMessageMapper {
         )
     }
 
-    /// The ring tracks the real percentage; a reached limit reads as an alert rather than a full ring.
+    /// A reached limit reads as an alert rather than a full ring.
     private static func icon(for warning: DuckAiUsageWarning) -> UTIFooterMessage.Icon {
         switch warning.message {
         case .approaching:
@@ -64,7 +63,7 @@ struct UTIFooterMessageMapper {
         case .weeklyReachedDegraded:
             return UserText.utiDuckAIWarningsAdvancedModelsLimitReached
         case .freeReached:
-            // Web sends one id for a free user whichever window ran out, so the window picks the noun.
+            // One id whichever window ran out, so the window picks the noun.
             switch warning.window {
             case .daily: return UserText.utiDuckAIWarningsDailyLimitReached
             case .weekly: return UserText.utiDuckAIWarningsWeeklyLimitReached
@@ -77,7 +76,7 @@ struct UTIFooterMessageMapper {
         return UTIFooterMessage.PrimaryAction(title: title, showsModelPicker: warning.offersModelPicker)
     }
 
-    /// `nil` hides the button, which is also how a switch with nothing usable to switch to renders.
+    /// `nil` hides the button, which is also how a switch with nothing to switch to renders.
     private static func actionTitle(for action: DuckAiUsageAction?) -> String? {
         switch action {
         case .none:

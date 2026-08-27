@@ -51,11 +51,11 @@ public struct DuckAiChatCapabilityRequirements: Equatable {
 
 /// Carried so the rule chain stays observable in the log.
 public enum DuckAiModelSuggestionUnavailableReason: String {
-    /// Web offered nothing for the model the native picker is on — it is already the cheapest one.
+    /// Web offered nothing for the model this picker is on — it is already the cheapest.
     case noTargetForSelectedModel
-    /// Web's targets aren't in the native model list, or the entity can't access them.
+    /// Not in the native model list, or the entity can't access them.
     case targetModelUnavailable
-    /// Web's targets can't handle what is already in the draft (an image, a file type, a tool).
+    /// Can't handle what is already in the draft (an image, a file type, a tool).
     case targetModelMissingCapability
     case notApplicable
 }
@@ -80,13 +80,8 @@ public struct NullDuckAiModelSuggester: DuckAiModelSuggesting {
     public func resolve(_ cta: DuckAiUsageCta) -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
 }
 
-/// Web picks the models; native only checks they are actually usable here. Native has no ladder of
-/// its own any more — an earlier name-matched one got it actively wrong, stepping `gpt-5.4` down to
-/// `gpt-5.4-mini`, which is itself a fast-limit model.
-///
-/// What native still has to contribute: web cannot see the draft on this surface, so a target that
-/// can't take the attached image would switch the user into a broken state; and only native knows
-/// which model its own picker is on, which is what `byModelId` exists to retarget.
+/// No ladder of its own: an earlier name-matched one stepped `gpt-5.4` down to `gpt-5.4-mini`, which
+/// is itself a fast-limit model. Web can't see this surface's draft, and only native knows its picker.
 public struct DuckAiModelSuggester: DuckAiModelSuggesting {
 
     private let modelsProvider: () -> [AIChatModel]
@@ -118,8 +113,7 @@ public struct DuckAiModelSuggester: DuckAiModelSuggesting {
         guard !target.isEmpty else { return .none(reason: .noTargetForSelectedModel) }
 
         let models = modelsProvider()
-        // `modelIds` never includes the id it is keyed against, but the top-level target is keyed to
-        // web's model, not ours — so the picker's own model is filtered out here.
+        // The top-level target is keyed to web's model, not ours, so it can name the one we are on.
         let available = target.candidateModelIds
             .filter { $0 != currentModelId }
             .compactMap { id in models.first { $0.id == id && $0.entityHasAccess } }

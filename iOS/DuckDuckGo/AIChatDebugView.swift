@@ -376,8 +376,7 @@ private struct AIChatUsageWarningsSection: View {
         }
     }
 
-    /// Model ids come from the live list so the switch CTAs offer something the picker can actually
-    /// select; with none available the seeds render as the hidden-button case instead.
+    /// Model ids come from the live list so the switch CTAs offer something selectable.
     private func seed(_ seed: DuckAiUsageSnapshotSeed) {
         lastSeededCase = seed
         status = "Seeding \(seed.displayName)…"
@@ -406,8 +405,7 @@ private struct AIChatUsageWarningsSection: View {
         }
     }
 
-    /// Best effort, and resolved against the *free* tier deliberately: every account can select those,
-    /// so a seeded switch never offers a model the picker would refuse.
+    /// Resolved against the free tier: every account can select those, so a seed is never refused.
     private func accessibleModelIds() async -> [String] {
         do {
             let response = try await AIChatModelsService().fetchModels()

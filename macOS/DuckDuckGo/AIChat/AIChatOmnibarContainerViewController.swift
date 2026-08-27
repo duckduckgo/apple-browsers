@@ -1214,10 +1214,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         backgroundViewBottomConstraint?.constant = visible
             ? -AIChatUsageWarningCardView.Constants.contentHeight
             : 0
-        // `castsShadowOverCard` just flipped, so repaint the chrome and mount the shadow — but only
-        // while the panel's own shadow is up. `cleanup()` takes that down and then hides the card,
-        // and `addShadowToWindow` mounts both: without this guard teardown puts the panel's shadow
-        // straight back on the window, where it sits under a search omnibar with nothing inside it.
+        // Only while the panel's own shadow is up: `cleanup()` takes it down and then hides the card,
+        // so without this guard teardown puts it straight back on the window.
         applyTheme(theme: themeManager.theme)
         if shadowView.superview != nil {
             addShadowToWindow()
@@ -2092,9 +2090,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             omnibarController.pixelHandler.fire(.modelPickerShown)
         }
         let menu = buildModelPickerMenu(items: items)
-        // Align menu's trailing edge with the anchor's trailing edge, with a small gap below. The y
-        // has to come off the anchor's own geometry: `NSButton` is flipped and `NSView` is not, so a
-        // hardcoded -5 opens below the toolbar's picker but over the card the card's `>` sits in.
+        // The y comes off the anchor's geometry because `NSButton` is flipped and `NSView` is not:
+        // a hardcoded -5 opens below the toolbar's picker but over the card.
         let gap: CGFloat = 5
         let belowAnchor = anchor.isFlipped ? anchor.bounds.maxY + gap : anchor.bounds.minY - gap
         let point = NSPoint(x: anchor.bounds.width - menu.size.width, y: belowAnchor)
@@ -2126,16 +2123,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 self?.refreshForSelectedModel()
             }
 
-        // A switch the user didn't make through the picker — today the usage card's CTA — has to
-        // land on the panel the same way, or the label keeps naming the model we just left.
+        // Or a switch made outside the picker leaves the label naming the model we just left.
         omnibarController.onSelectedModelChanged = { [weak self] in
             self?.refreshForSelectedModel()
         }
     }
 
-    /// Everything on the panel that depends on which model is selected: the picker's label and
-    /// visibility, the image-upload button, the tool chips (the tools button would otherwise pop an
-    /// empty menu for a model that supports none of them), and the reasoning picker.
+    /// Everything keyed off the selected model — the tools button would otherwise pop an empty menu
+    /// for a model that supports none of them.
     private func refreshForSelectedModel() {
         modelPickerButton.isHidden = !shouldShowModelPicker
         modelPickerButton.modelName = persistedModelShortName
@@ -2215,8 +2210,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func modelSelected(_ sender: NSMenuItem) {
         guard let model = sender.representedObject as? AIChatModel else { return }
-        // `updateSelectedModel` calls back into `refreshForSelectedModel`, so the panel follows the
-        // new selection whichever route changed it.
+        // `updateSelectedModel` calls back into `refreshForSelectedModel`, whichever route changed it.
         omnibarController.updateSelectedModel(model.id)
         omnibarController.pixelHandler.fire(.modelSelected)
     }

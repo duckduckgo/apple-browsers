@@ -22,17 +22,15 @@ import Foundation
 /// their own app targets.
 public enum DuckAiUsageWarningViewModelFactory {
 
-    /// `nil` when the feature is inactive: flag off, or no storage bridge on this surface.
-    /// No tier or internal-user input: which message a user qualifies for is web's decision now,
-    /// and native rendering it a second time is how the two ended up disagreeing.
+    /// `nil` when the feature is inactive: flag off, or no storage bridge on this surface. No tier
+    /// input — which message a user qualifies for is web's decision now.
     public static func make(isFeatureEnabled: Bool,
                             storage: DuckAiNativeStorageHandling?,
                             dismissalStore: DuckAiUsageWarningDismissalStoring,
                             modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
                             isTrialEligible: @escaping () -> Bool = { false },
                             isFireMode: @escaping () -> Bool = { false },
-                            storagePixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring(),
-                            usagePixelFiring: DuckAiUsageWarningPixelFiring = NullDuckAiUsageWarningPixelFiring()
+                            storagePixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
     ) -> DuckAiUsageWarningViewModel? {
         guard isFeatureEnabled, let storage else { return nil }
 
@@ -40,7 +38,6 @@ public enum DuckAiUsageWarningViewModelFactory {
             snapshotProvider: DuckAiUsageSnapshotProvider(storage: storage, pixelFiring: storagePixelFiring),
             dismissalStore: dismissalStore,
             modelSuggester: modelSuggester,
-            pixelFiring: usagePixelFiring,
             isTrialEligible: isTrialEligible,
             isFireMode: isFireMode
         )

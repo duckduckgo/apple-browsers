@@ -141,9 +141,8 @@ final class AIChatOmnibarController {
     /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
-    /// Fired whenever the selection changes, including from a programmatic switch such as the usage
-    /// card's CTA. The panel's label, image-upload button, tool chips and reasoning picker all key off
-    /// the selected model, and the picker menu is not the only thing that can change it.
+    /// The panel's label, image-upload button, tool chips and reasoning picker all key off the
+    /// selected model, and the picker menu is not the only thing that can change it.
     var onSelectedModelChanged: (() -> Void)?
 
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
@@ -156,8 +155,7 @@ final class AIChatOmnibarController {
                                                             userTier: userTier,
                                                             origin: surface.usageLimitFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
-            // Storage-only opt-in: web reads the entry on its next hydration and turns it into the
-            // bypass request header itself, so there is nothing to reload here.
+            // Web reads the entry on its next hydration, so there is nothing to reload here.
             usageLimitsStore?.write(entries)
         }
     }
@@ -342,7 +340,6 @@ final class AIChatOmnibarController {
 
     private func setUpUsageWarnings() {
         usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
-            surface: DuckAiUsageWarningSurface(promptSurface: surface),
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
                 currentModelIdProvider: { [weak self] in self?.currentModelId },
@@ -356,8 +353,7 @@ final class AIChatOmnibarController {
         }
         // `onOpenModelPicker` is set by the container VC, which owns the anchor the menu pops from.
 
-        // Web publishing a new snapshot mid-session, or a debug seed, refreshes the open surface —
-        // and is what brings a message back after the user has acted on the previous one.
+        // Also what brings a message back after the user has acted on the previous one.
         usageLimitsStore?.snapshotUpdates?
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.refreshUsageWarnings() }
@@ -451,10 +447,8 @@ final class AIChatOmnibarController {
     }
 
     private func refreshUsageWarnings() {
-        // Only while this surface is actually showing Duck.ai. `cleanup()` runs on the switch back to
-        // search and clears the message, but a snapshot published after that — web writing one, or a
-        // debug seed — would re-resolve it and leave the card's band and window shadow sitting under a
-        // search omnibar.
+        // `cleanup()` clears the message on the switch back to search; without this a snapshot
+        // published after that would re-resolve it under a search omnibar.
         guard hasBeenActivated else { return }
 
         usageWarningViewModel?.refresh()
@@ -1613,10 +1607,7 @@ struct AIChatReasoningPickerItem {
 
 extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
-    ///
-    /// - Parameter freeModelsOnly: for the usage card's "Switch to a Free Model" chevron. That message
-    ///   is shown because the advanced-model allowance is spent, so listing advanced models there —
-    ///   let alone a gated upsell section — would offer exactly what the user can no longer use.
+    /// `freeModelsOnly` is the free-model CTA's chevron: advanced models are what it has run out of.
     func modelPickerItems(selectedModelId: String?, freeModelsOnly: Bool = false) -> [AIChatModelPickerItem] {
         let source = freeModelsOnly ? models.filter { !$0.isAdvanced } : models
         let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: source)

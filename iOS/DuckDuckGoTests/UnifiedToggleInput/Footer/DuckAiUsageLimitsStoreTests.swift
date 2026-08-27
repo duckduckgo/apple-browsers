@@ -38,8 +38,7 @@ final class DuckAiUsageLimitsStoreTests: XCTestCase {
     func test_makeWarningViewModel_isNilWhenTheFeatureFlagIsOff() {
         let sut = makeStore(storage: seededStorage(weeklyPercent: 80), isFeatureOn: false)
 
-        XCTAssertNil(sut.makeWarningViewModel(surfaceProvider: { .addressBar },
-                                              modelSuggester: NullDuckAiModelSuggester(),
+        XCTAssertNil(sut.makeWarningViewModel(modelSuggester: NullDuckAiModelSuggester(),
                                               isTrialEligible: { false },
                                               isFireMode: { false }))
     }
@@ -47,8 +46,7 @@ final class DuckAiUsageLimitsStoreTests: XCTestCase {
     func test_makeWarningViewModel_isNilWhenThereIsNoStorageBridge() {
         let sut = makeStore(storage: nil)
 
-        XCTAssertNil(sut.makeWarningViewModel(surfaceProvider: { .addressBar },
-                                              modelSuggester: NullDuckAiModelSuggester(),
+        XCTAssertNil(sut.makeWarningViewModel(modelSuggester: NullDuckAiModelSuggester(),
                                               isTrialEligible: { false },
                                               isFireMode: { false }))
     }
@@ -141,8 +139,7 @@ final class DuckAiUsageLimitsStoreTests: XCTestCase {
 
     private func makeViewModel(storage: DuckAiNativeStorageHandling?,
                                isFireMode: Bool = false) -> DuckAiUsageWarningViewModel? {
-        makeStore(storage: storage).makeWarningViewModel(surfaceProvider: { .addressBar },
-                                                        modelSuggester: NullDuckAiModelSuggester(),
+        makeStore(storage: storage).makeWarningViewModel(modelSuggester: NullDuckAiModelSuggester(),
                                                         isTrialEligible: { false },
                                                         isFireMode: { isFireMode })
     }

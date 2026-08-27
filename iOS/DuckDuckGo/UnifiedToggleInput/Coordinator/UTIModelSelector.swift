@@ -264,8 +264,8 @@ final class UTIModelSelector {
         updateFooterModelPickerMenu()
     }
 
-    /// The usage card's chevron gets its own menu because "Switch to a Free Model" must not offer the
-    /// models whose allowance the message says are spent — the toolbar's picker still offers everything.
+    /// "Switch to a Free Model" must not offer the models whose allowance is spent; the toolbar's
+    /// picker still offers everything.
     func setFooterMenuOffersFreeModelsOnly(_ freeModelsOnly: Bool) {
         guard footerMenuOffersFreeModelsOnly != freeModelsOnly else { return }
         footerMenuOffersFreeModelsOnly = freeModelsOnly
@@ -277,9 +277,8 @@ final class UTIModelSelector {
                                                           freeModelsOnly: footerMenuOffersFreeModelsOnly))
     }
 
-    /// - Parameter freeModelsOnly: "free" is the model's own `isAdvanced`, so it means what the free
-    ///   tier gets rather than what this account can reach: a paid user's advanced models are exactly
-    ///   the ones they have just run out of.
+    /// "Free" is the model's own `isAdvanced`, not what this account can reach: a paid user's advanced
+    /// models are exactly the ones they have run out of.
     private func makeModelPickerMenu(selectedId: String?, freeModelsOnly: Bool = false) -> UIMenu? {
         let models = freeModelsOnly ? modelStore.models.filter { !$0.isAdvanced } : modelStore.models
         guard !models.isEmpty else { return nil }

@@ -559,6 +559,17 @@ final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
     }
 }
 
+final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
+
+    func testWhenPageIsLoadingThenSnapshotIsSkipped() {
+        XCTAssertFalse(WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: true))
+    }
+
+    func testWhenPageIsNotLoadingThenSnapshotIsCaptured() {
+        XCTAssertTrue(WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: false))
+    }
+}
+
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
 
     func testWhenManagingInsetsThenAutomaticAdjustmentIsDisabledAndCanBeRestored() {

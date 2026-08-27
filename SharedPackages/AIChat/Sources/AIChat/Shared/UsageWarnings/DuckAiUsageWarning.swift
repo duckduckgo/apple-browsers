@@ -85,13 +85,19 @@ public enum DuckAiUsageAction: Equatable {
         }
     }
 
-    /// Only the weekly hand-off consumes its notice: it writes an opt-in that the payload can't
-    /// reflect until web republishes, so re-showing the same drawer would read as the tap doing
-    /// nothing. A model switch or an upsell leaves the notice true — and a switch drops its own
-    /// button anyway, because the picker then *is* the target.
+    /// Whether taking this action stands its message down until web publishes a new snapshot.
+    ///
+    /// True for anything that changes what the user is about to spend: the weekly hand-off writes an
+    /// opt-in, a switch moves them onto a cheaper or free model. The payload can't reflect either
+    /// until web republishes, so leaving the message up would read as the tap having done nothing.
+    ///
+    /// The upsell is the exception — it opens a flow the user may never finish, and their usage is
+    /// exactly as it was until they do.
     var suppressesNoticeUntilSnapshotChanges: Bool {
-        if case .startUsingWeeklyLimit = self { return true }
-        return false
+        switch self {
+        case .switchToModel, .switchToFreeModel, .startUsingWeeklyLimit: return true
+        case .tryForFree: return false
+        }
     }
 
     /// For pixels and the debug log: the web app's cta id this action came from.

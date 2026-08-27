@@ -170,21 +170,43 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertEqual(sut.warning?.message, .weeklyReached)
     }
 
-    /// A model switch leaves the notice true — and drops its own button, because the picker then *is*
-    /// the target, which is the suggester's job rather than a suppression rule.
-    func testAModelSwitchDoesNotStandItsMessageDown() {
+    /// Switching is the whole point of the message, so leaving it up would read as the tap having done
+    /// nothing — the payload still says 75% until web republishes against the new model.
+    func testAModelSwitchStandsItsMessageDown() {
         let suggestion = DuckAiModelSuggestion(modelId: "haiku", modelShortName: "Haiku")
         snapshotProvider.snapshot = snapshot(notice(id: .approaching),
-                                             cta: DuckAiUsageCta(id: .switchToCheaper))
+                                             cta: DuckAiUsageCta(id: .switchToCheaper),
+                                             signature: "snapshot-1")
+        let sut = makeSUT(suggestion: .suggestion(suggestion))
+        sut.refresh()
+
+        sut.performAction()
+        XCTAssertNil(sut.warning)
+
+        // Still nothing on the next activation, and back when web publishes against the new model.
+        sut.refresh()
+        XCTAssertNil(sut.warning)
+
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching), signature: "snapshot-2")
+        sut.refresh()
+        XCTAssertEqual(sut.warning?.message, .approaching)
+    }
+
+    /// The free-model switch behaves the same way.
+    func testTheFreeModelSwitchStandsItsMessageDown() {
+        let suggestion = DuckAiModelSuggestion(modelId: "mistral-small", modelShortName: "Mistral Small")
+        snapshotProvider.snapshot = snapshot(notice(id: .weeklyReachedDegraded, window: .weekly, reached: true),
+                                             cta: DuckAiUsageCta(id: .switchToFree))
         let sut = makeSUT(suggestion: .suggestion(suggestion))
         sut.refresh()
 
         sut.performAction()
 
-        XCTAssertEqual(sut.warning?.message, .approaching)
-        XCTAssertNil(dismissalStore.actedSnapshot())
+        XCTAssertNil(sut.warning)
     }
 
+    /// The upsell opens a flow the user may never finish, and their usage is exactly as it was until
+    /// they do.
     func testTheUpsellDoesNotStandItsMessageDown() {
         snapshotProvider.snapshot = snapshot(notice(id: .freeReached, reached: true),
                                              cta: DuckAiUsageCta(id: .subscribe))

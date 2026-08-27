@@ -1118,9 +1118,7 @@ extension MainViewController {
                 guard let self, let coordinator else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.superview.layoutIfNeeded()
-                if !keepsFocusedContentStationary {
-                    coordinator.pushContentInsets()
-                }
+                coordinator.contentViewController.setContentInset(top: 0, bottom: 0)
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }

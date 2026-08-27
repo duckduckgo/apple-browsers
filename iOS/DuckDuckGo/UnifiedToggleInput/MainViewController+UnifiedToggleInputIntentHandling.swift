@@ -329,9 +329,9 @@ private extension MainViewController {
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         let isLogoToLogo = coordinator?.contentViewController.isShowingLogoContent == true
             && newTabPageViewController?.restingContentIsLogo == true
-        let isFavoritesToFavorites = coordinator?.contentViewController.isShowingFavoritesContent == true
-            && newTabPageViewController?.restingContentIsFavorites == true
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSearchContentToSearchContent = coordinator?.contentViewController.isShowingFavoritesContent == true
+            && newTabPageViewController?.restingContentIsSearchContent == true
+        let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
@@ -364,7 +364,7 @@ private extension MainViewController {
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
             if isLogoToLogo {
                 coordinator?.contentViewController.morphLogoHomeForDismiss(matching: duration)
-            } else if !isFavoritesToFavorites {
+            } else if !isSearchContentToSearchContent {
                 coordinator?.contentViewController.beginDismissFade()
             }
             let additionalAnimations: () -> Void = {

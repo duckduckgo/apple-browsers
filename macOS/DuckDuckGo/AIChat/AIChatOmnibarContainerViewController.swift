@@ -2114,18 +2114,25 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelsCancellable = omnibarController.$models
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                modelPickerButton.isHidden = !shouldShowModelPicker
-                // Refresh button label once models arrive
-                modelPickerButton.modelName = persistedModelShortName
-                // Refresh image upload visibility with updated supportsImageUpload
-                updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
-                // Refresh tool button visibility so the Web Search chip reflects the loaded
-                // model's `supportedTools` (belt-and-braces — the controller also clears
-                // `activeToolMode` when the persisted model doesn't support web search).
-                updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
-                updateReasoningPickerVisibility()
+                self?.refreshForSelectedModel()
             }
+
+        // A switch the user didn't make through the picker — today the usage card's CTA — has to
+        // land on the panel the same way, or the label keeps naming the model we just left.
+        omnibarController.onSelectedModelChanged = { [weak self] in
+            self?.refreshForSelectedModel()
+        }
+    }
+
+    /// Everything on the panel that depends on which model is selected: the picker's label and
+    /// visibility, the image-upload button, the tool chips (the tools button would otherwise pop an
+    /// empty menu for a model that supports none of them), and the reasoning picker.
+    private func refreshForSelectedModel() {
+        modelPickerButton.isHidden = !shouldShowModelPicker
+        modelPickerButton.modelName = persistedModelShortName
+        updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
+        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
+        updateReasoningPickerVisibility()
     }
 
     private func buildModelPickerMenu(items: [AIChatModelPickerItem]) -> NSMenu {
@@ -2199,14 +2206,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func modelSelected(_ sender: NSMenuItem) {
         guard let model = sender.representedObject as? AIChatModel else { return }
+        // `updateSelectedModel` calls back into `refreshForSelectedModel`, so the panel follows the
+        // new selection whichever route changed it.
         omnibarController.updateSelectedModel(model.id)
-        modelPickerButton.modelName = model.shortName
-        updateImageUploadVisibility(supportsImageUpload: model.supportsImageUpload)
-        // Refresh tool button visibility so the tools button disappears / reappears when the
-        // new model changes what the menu would show (e.g. only Web Search is flag-enabled and
-        // the newly selected model doesn't support it — the button would otherwise pop an empty menu).
-        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
-        updateReasoningPickerVisibility()
         omnibarController.pixelHandler.fire(.modelSelected)
     }
 

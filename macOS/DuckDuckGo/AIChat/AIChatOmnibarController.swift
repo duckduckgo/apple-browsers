@@ -141,6 +141,11 @@ final class AIChatOmnibarController {
     /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
+    /// Fired whenever the selection changes, including from a programmatic switch such as the usage
+    /// card's CTA. The panel's label, image-upload button, tool chips and reasoning picker all key off
+    /// the selected model, and the picker menu is not the only thing that can change it.
+    var onSelectedModelChanged: (() -> Void)?
+
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
@@ -855,6 +860,7 @@ final class AIChatOmnibarController {
         clearStaleReasoningEffortIfNeeded()
         deactivateWebSearchIfUnsupported()
         deactivateImageGenerationIfUnsupported()
+        onSelectedModelChanged?()
     }
 
     /// Clears Web Search mode if the currently selected model doesn't support the WebSearch tool.

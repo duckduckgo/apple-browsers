@@ -27,9 +27,6 @@ import Suggestions
 import UIKit
 import WebKit
 import FeatureFlags_iOS
-#if DEBUG
-import os.log
-#endif
 
 // MARK: - Unified Toggle Input Setup
 
@@ -1085,10 +1082,8 @@ extension MainViewController {
             return
         }
         applyUnifiedInputChromeBackground(.standardChrome)
-        logBottomSearchDismissLayout(stage: "before-deactivate", coordinator: coordinator)
         // Resign up-front so the keyboard descent runs concurrent with the bar collapse.
         coordinator.viewController.deactivateInput()
-        logBottomSearchDismissLayout(stage: "after-deactivate", coordinator: coordinator)
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
@@ -1117,25 +1112,15 @@ extension MainViewController {
             // Render the pixel-aligned NTP favorites behind the opaque focused List before their final handoff.
             if coordinator.cardPosition.isBottom, isSearchContentToSearchContent {
                 newTabPageViewController?.setFavoritesHidden(false)
-                logBottomSearchDismissLayout(stage: "after-prerender", coordinator: coordinator)
             }
             coordinator.contentViewController.prepareForDismissAnimation()
         }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
-        let finishDismiss: () -> Void = { [weak self, weak coordinator] in
-            guard let self else { return }
-            if let coordinator {
-                self.logBottomSearchDismissLayout(stage: "completion-before-handoff", coordinator: coordinator)
-            }
-            self.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
-            if let coordinator {
-                self.logBottomSearchDismissLayout(stage: "completion-after-handoff", coordinator: coordinator)
-                self.scheduleBottomSearchPostHandoffLayoutLogs(coordinator: coordinator)
-            }
+        let finishDismiss: () -> Void = { [weak self] in
+            self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
         }
 
-        scheduleBottomSearchDismissLayoutLogs(coordinator: coordinator, duration: duration)
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             contentSnapshot: stationaryContentSnapshot,
             additionalAnimations: { [weak self, weak coordinator] in
@@ -1211,94 +1196,6 @@ extension MainViewController {
         reconcileFloatingLayoutAfterUTIExit()
         completion?()
     }
-
-    private func scheduleBottomSearchDismissLayoutLogs(coordinator: UnifiedToggleInputCoordinator, duration: TimeInterval) {
-#if DEBUG
-        guard coordinator.cardPosition.isBottom, coordinator.inputMode == .search else { return }
-        for progress in [0.1, 0.25, 0.5, 0.75, 0.95] {
-            DispatchQueue.main.asyncAfter(deadline: .now() + duration * progress) { [weak self, weak coordinator] in
-                guard let self, let coordinator else { return }
-                self.logBottomSearchDismissLayout(stage: "animation-\(Int(progress * 100))", coordinator: coordinator)
-            }
-        }
-#endif
-    }
-
-    private func scheduleBottomSearchPostHandoffLayoutLogs(coordinator: UnifiedToggleInputCoordinator) {
-#if DEBUG
-        guard coordinator.cardPosition.isBottom, coordinator.inputMode == .search else { return }
-        let samples: [(String, TimeInterval)] = [
-            ("post-handoff-next-runloop", 0),
-            ("post-handoff-16ms", 0.016),
-            ("post-handoff-50ms", 0.05),
-            ("post-handoff-150ms", 0.15),
-            ("post-handoff-300ms", 0.3)
-        ]
-        for (stage, delay) in samples {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self, weak coordinator] in
-                guard let self, let coordinator else { return }
-                self.writeBottomSearchDismissLayout(stage: stage, coordinator: coordinator)
-            }
-        }
-#endif
-    }
-
-    private func logBottomSearchDismissLayout(stage: String, coordinator: UnifiedToggleInputCoordinator) {
-#if DEBUG
-        guard coordinator.cardPosition.isBottom, coordinator.inputMode == .search else { return }
-        writeBottomSearchDismissLayout(stage: stage, coordinator: coordinator)
-#endif
-    }
-
-#if DEBUG
-    private func writeBottomSearchDismissLayout(stage: String, coordinator: UnifiedToggleInputCoordinator) {
-        let contentContainer = viewCoordinator.unifiedInputContentContainer
-        let inputFrame = coordinator.viewController.view.convert(coordinator.viewController.view.bounds, to: view)
-        let containerFrame = contentContainer?.convert(contentContainer?.bounds ?? .zero, to: view) ?? .zero
-        let focusedScrollViews = scrollViewLayoutSummary(named: "focused", in: contentContainer)
-        let restingScrollViews = scrollViewLayoutSummary(named: "resting", in: newTabPageViewController?.view)
-        let message = "[UTIBottomDismiss] stage=\(stage) keyboardTop=\(view.keyboardLayoutGuide.layoutFrame.minY) "
-            + "inputFrame=\(inputFrame) inputPresentation=\(presentationFrame(of: coordinator.viewController.view)) "
-            + "containerFrame=\(containerFrame) containerPresentation=\(presentationFrame(of: contentContainer)) "
-            + "containerHidden=\(contentContainer?.isHidden ?? true) containerAlpha=\(contentContainer?.alpha ?? 0) "
-            + "ntpSearchVisible=\(newTabPageViewController?.isShowingSearchContent ?? false) "
-            + "ntpViewHidden=\(newTabPageViewController?.view.isHidden ?? true) ntpViewAlpha=\(newTabPageViewController?.view.alpha ?? 0) "
-            + "isNewTabPageVisible=\(isNewTabPageVisible) isOmnibarSession=\(coordinator.isOmnibarSession) "
-            + "\(focusedScrollViews) \(restingScrollViews)"
-        Logger.unifiedInputState.notice("\(message, privacy: .public)")
-    }
-
-    private func scrollViewLayoutSummary(named name: String, in rootView: UIView?) -> String {
-        guard let rootView else { return "\(name)=none" }
-        let scrollViews = descendantScrollViews(in: rootView)
-        guard !scrollViews.isEmpty else { return "\(name)=none" }
-        return scrollViews.enumerated().map { index, scrollView in
-            let frame = scrollView.convert(scrollView.bounds, to: view)
-            let contentOriginY = scrollView.convert(.zero, to: view).y
-            let children = scrollView.subviews
-                .filter { !$0.isHidden && $0.alpha > 0 }
-                .map { child in
-                    let childFrame = child.convert(child.bounds, to: view)
-                    return "\(String(describing: type(of: child)))=\(childFrame)/presentation=\(presentationFrame(of: child))"
-                }
-                .joined(separator: ",")
-            return "\(name)[\(index)] type=\(String(describing: type(of: scrollView))) frame=\(frame) "
-                + "presentation=\(presentationFrame(of: scrollView)) bounds=\(scrollView.bounds) "
-                + "offset=\(scrollView.contentOffset) adjusted=\(scrollView.adjustedContentInset) size=\(scrollView.contentSize) "
-                + "contentOriginY=\(contentOriginY) children={\(children)}"
-        }.joined(separator: " || ")
-    }
-
-    private func presentationFrame(of view: UIView?) -> String {
-        String(describing: view?.layer.presentation()?.frame)
-    }
-
-    private func descendantScrollViews(in rootView: UIView) -> [UIScrollView] {
-        rootView.subviews.flatMap { subview in
-            (subview as? UIScrollView).map { [$0] } ?? descendantScrollViews(in: subview)
-        }
-    }
-#endif
 
     /// Routes a UTI omnibar-session dismiss to the matching chrome — Duck.ai header restore for
     /// AI tabs, standard omnibar morph for everything else.

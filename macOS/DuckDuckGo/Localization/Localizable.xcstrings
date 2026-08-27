@@ -108957,7 +108957,7 @@
       }
     },
     "select.bitwarden.preferences" : {
-      "comment" : "Setup of the integration with Bitwarden app (up to and including macOS 12)",
+      "comment" : "Setup of the integration with Bitwarden app.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -109018,7 +109018,7 @@
     },
     "select.bitwarden.settings" : {
       "comment" : "Setup of the integration with Bitwarden app (macOS 13 and above)",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

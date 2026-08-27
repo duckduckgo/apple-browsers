@@ -232,14 +232,6 @@ private struct ConnectToBitwardenView: View {
     let canConnect: Bool
     let canNotAccessSandboxContainers: Bool
 
-    private var selectBitwardenStepTwoText: String {
-        if #available(macOS 13.0, *) {
-            return UserText.selectBitwardenSettings
-        } else {
-            return UserText.selectBitwardenPreferences
-        }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text(UserText.allowIntegration)
@@ -262,7 +254,7 @@ private struct ConnectToBitwardenView: View {
 
             HStack {
                 NumberedBadge(value: 2)
-                Text(selectBitwardenStepTwoText)
+                Text(UserText.selectBitwardenPreferences)
                 Spacer()
             }
 

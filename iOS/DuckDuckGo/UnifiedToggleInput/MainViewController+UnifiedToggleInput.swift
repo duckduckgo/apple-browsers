@@ -1216,7 +1216,6 @@ extension MainViewController {
         }
         postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
         recordNewTabPageSessionAction { $0.hitSubmit() }
-        // Stamped via the load completion: the new-tab case has no tab to stamp until `loadQuery` creates it.
         loadQuery(query) { tab in
             if let duckAIEntrySource {
                 tab.duckAIEntrySource = duckAIEntrySource
@@ -1226,7 +1225,6 @@ extension MainViewController {
 
     /// The only place a typed duck.ai address can be told apart from an in-page or deep link.
     /// Mirrors `loadQuery`'s URL resolution so detection matches what gets navigated.
-    /// Returns the entry source the caller must stamp on the tab hosting the load.
     private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) -> AIChatEntryPointSource? {
         guard let url = URL.makeSearchURL(query: query,
                                           useUnifiedLogic: isUnifiedURLPredictionEnabled,

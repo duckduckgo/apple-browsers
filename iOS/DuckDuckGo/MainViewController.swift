@@ -2546,8 +2546,6 @@ class MainViewController: UIViewController {
     ///     Timing relative to UI refresh differs by exit path: the URL-reuse branch fires this before
     ///     `refreshOmniBar`/tab-bar refresh; all other branches fire it after. Callers should not rely
     ///     on chrome state being settled inside the closure.
-    /// `completion` receives the tab hosting the load, so per-tab state is stamped on the right tab
-    /// even when a clear defers the whole load and "current" still points at the outgoing tab.
     func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false, completion: ((Tab) -> Void)? = nil) {
 
         func worker() {
@@ -4296,9 +4294,6 @@ class MainViewController: UIViewController {
                                    hasPrompt: hasPrompt)
     }
 
-    /// Stamps the entry on the tab hosting the chat, where it persists as the `origin` of
-    /// follow-up prompts — surviving restarts and Duck.ai entries made from other tabs.
-    /// New-tab paths stamp the tab handed to their load completion instead.
     func stampDuckAIEntrySourceOnCurrentTab(_ source: AIChatEntryPointSource) {
         tabManager.currentTabsModel.currentTab?.duckAIEntrySource = source
     }
@@ -4978,8 +4973,6 @@ extension MainViewController: BrowserChromeDelegate {
         showHomeRowReminder()
     }
 
-    /// `completion` receives the tab hosting the load, so callers can stamp per-tab state that the
-    /// new-tab branch could not set up front (the tab does not exist yet).
     func loadUrlRespectingAIBoundary(_ url: URL, fromExternalLink: Bool = false, completion: ((Tab) -> Void)? = nil) {
         let decision = AIBoundaryNavigationDecision.forProgrammaticNavigation(
             currentIsAI: currentTab?.isAITab == true,

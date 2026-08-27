@@ -51,7 +51,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onPromptSubmitted: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
-    /// Every prompt this input submits, for measurement that needs the submission's entry point.
     var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?

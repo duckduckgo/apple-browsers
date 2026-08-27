@@ -59,8 +59,6 @@ protocol TabDelegate: AnyObject {
              openedByPage: Bool,
              inheritingAttribution: AdClickAttributionLogic.State?)
 
-    /// Same as `didRequestNewTabForUrl`, plus it stamps `entrySource` on the opened tab so prompts
-    /// submitted there report the Duck.ai entry that led to it.
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
              entrySource: AIChatEntryPointSource)
@@ -198,8 +196,6 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController)
 
-    /// A Duck.ai prompt was submitted from this tab's contextual sheet. `origin` is the entry
-    /// point the submission pixels report.
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 

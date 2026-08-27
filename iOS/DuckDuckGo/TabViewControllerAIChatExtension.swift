@@ -39,7 +39,7 @@ protocol AITabController {
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction()
 
-    /// Opens a new AI chat in a new tab, stamping `source` as its Duck.ai entry.
+    /// Opens a new AI chat in a new tab.
     func openNewChatInNewTab(source: AIChatEntryPointSource)
 }
 

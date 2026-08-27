@@ -77,14 +77,8 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// ignored for every other reason.
     func sessionEnded(reason: ReturnSessionWideEventData.StatusReason, promptOrigin: AIChatEntryPointSource?)
 
-    /// A Duck.ai prompt was submitted with nothing navigating behind it — the contextual sheet, or
-    /// the chat already bound to the input. Ends the return session only, leaving the post-idle flow
-    /// to its own terminal so its shipped `bar_used` series stays comparable.
     func promptSubmittedWithoutNavigation(origin: AIChatEntryPointSource?)
 
-    /// Duck.ai was opened from the bar with no prompt auto-submitted. Ends the post-idle flow only:
-    /// its shipped `bar_used` series counts the open either way, while the return session stays
-    /// active until a real prompt terminal lands.
     func duckAIOpenedWithoutPrompt()
 
     /// App was backgrounded with a session still active. Completes as CANCELLED.

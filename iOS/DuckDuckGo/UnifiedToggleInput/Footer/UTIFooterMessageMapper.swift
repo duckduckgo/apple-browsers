@@ -18,7 +18,6 @@
 //
 
 import AIChat
-import Core
 import Foundation
 
 /// The card's copy. `DuckAiUsageWarning` has already decided what to say and what to offer; the
@@ -42,14 +41,12 @@ struct UTIFooterMessageMapper {
     }
 
     /// Keyed off the selected model rather than the allowance, so there is no percentage, no reset
-    /// line and nothing to switch to — just the explainer and its help link.
+    /// line and nothing to switch to — the copy is the whole message.
     func message(for notice: DuckAiHighUsageModelNotice) -> UTIFooterMessage {
         UTIFooterMessage(
             icon: .none,
             title: String(format: UserText.utiDuckAIWarningsHighUsageModel, notice.modelShortName),
             subtitle: nil,
-            link: UTIFooterMessage.Link(text: UserText.utiDuckAIWarningsLearnMore,
-                                        url: URL.aiChatAccessSubscriberModels),
             primaryAction: nil,
             isDismissible: true
         )

@@ -27,7 +27,6 @@ final class UTIFooterControllerTests: XCTestCase {
     private var limitsProvider: StubUsageLimitsProvider!
     private var presenter: SpyUTIFooterPresenter!
     private var viewModel: DuckAiUsageWarningViewModel!
-    private var urlOpener: SpyURLOpener!
     private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
     private var animationCount = 0
     private var sut: UTIFooterController!
@@ -38,13 +37,11 @@ final class UTIFooterControllerTests: XCTestCase {
         super.setUp()
         limitsProvider = StubUsageLimitsProvider()
         presenter = SpyUTIFooterPresenter()
-        urlOpener = SpyURLOpener()
         selectedModel = (nil, nil)
         animationCount = 0
         viewModel = makeViewModel()
         sut = UTIFooterController(viewModel: viewModel,
                                   highUsageNotice: makeNoticeSource(),
-                                  urlOpener: urlOpener,
                                   animator: { [unowned self] changes in
                                       animationCount += 1
                                       changes()
@@ -55,7 +52,6 @@ final class UTIFooterControllerTests: XCTestCase {
     override func tearDown() {
         sut = nil
         viewModel = nil
-        urlOpener = nil
         presenter = nil
         limitsProvider = nil
         super.tearDown()
@@ -299,26 +295,6 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
     }
 
-    // MARK: - Link
-
-    func test_performLinkAction_opensTheMessagesLink() {
-        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
-        sut.refresh()
-
-        sut.performLinkAction()
-
-        XCTAssertEqual(urlOpener.opened, [URL.aiChatAccessSubscriberModels])
-    }
-
-    func test_performLinkAction_doesNothingWithoutALink() {
-        limitsProvider.limits = weeklyUsage(50)
-        sut.refresh()
-
-        sut.performLinkAction()
-
-        XCTAssertTrue(urlOpener.opened.isEmpty)
-    }
-
     // MARK: - Helpers
 
     private func makeNoticeSource() -> UTIFooterHighUsageNoticeSource {
@@ -362,13 +338,6 @@ private struct StubCheaperModelSuggester: DuckAiModelSuggesting {
     }
 
     func freeModel() -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
-}
-
-private final class SpyURLOpener: URLOpener {
-    private(set) var opened: [URL] = []
-
-    func canOpenURL(_ url: URL) -> Bool { true }
-    func open(_ url: URL) { opened.append(url) }
 }
 
 @MainActor

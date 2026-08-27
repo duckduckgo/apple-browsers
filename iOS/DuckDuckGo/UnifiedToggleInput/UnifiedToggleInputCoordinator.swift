@@ -1867,10 +1867,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         footerController?.dismissCurrent()
     }
 
-    func unifiedToggleInputVCDidTapFooterLink(_ vc: UnifiedToggleInputViewController) {
-        footerController?.performLinkAction()
-    }
-
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidChangeHeight()
     }

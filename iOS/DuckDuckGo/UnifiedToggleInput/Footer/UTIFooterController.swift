@@ -46,7 +46,6 @@ final class UTIFooterController {
     private let viewModel: DuckAiUsageWarningViewModel
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let mapper: UTIFooterMessageMapper
-    private let urlOpener: URLOpener
     private let animator: Animator
 
     private var isSuppressed = false
@@ -56,12 +55,10 @@ final class UTIFooterController {
     init(viewModel: DuckAiUsageWarningViewModel,
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
-         urlOpener: URLOpener = UIApplication.shared,
          animator: Animator? = nil) {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
         self.mapper = mapper
-        self.urlOpener = urlOpener
         self.animator = animator ?? Self.springAnimator
     }
 
@@ -107,12 +104,6 @@ final class UTIFooterController {
         viewModel.performAction()
         // The CTA can change what there is left to offer — a model switch retires its own suggestion.
         applyCurrentState()
-    }
-
-    func performLinkAction() {
-        guard let url = currentMessage?.link?.url else { return }
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] footer link opened")
-        urlOpener.open(url)
     }
 
     private func applyCurrentState() {

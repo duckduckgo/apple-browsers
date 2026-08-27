@@ -357,7 +357,6 @@ final class UnifiedToggleInputView: UIView {
     var onAIChatShortcutTapped: (() -> Void)?
     var onFooterPrimaryTapped: (() -> Void)?
     var onFooterDismissTapped: (() -> Void)?
-    var onFooterLinkTapped: (() -> Void)?
 
     // MARK: - Attachment API
 
@@ -1749,7 +1748,6 @@ private extension UnifiedToggleInputView {
         footerCard.alpha = 0
         footerCard.onPrimaryTap = { [weak self] in self?.onFooterPrimaryTapped?() }
         footerCard.onDismissTap = { [weak self] in self?.onFooterDismissTapped?() }
-        footerCard.onLinkTap = { [weak self] in self?.onFooterLinkTapped?() }
         insertSubview(footerCard, belowSubview: cardView)
         addSubview(aiTabCollapsedFireButton)
         addSubview(aiTabCollapsedMenuButton)

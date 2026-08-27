@@ -42,8 +42,6 @@ final class UTIFooterCardView: UIView {
 
     var onPrimaryTap: (() -> Void)?
     var onDismissTap: (() -> Void)?
-    /// Fired by the notice's copy, whose trailing run is a help link.
-    var onLinkTap: (() -> Void)?
 
     let contentView = UIView()
 
@@ -53,17 +51,12 @@ final class UTIFooterCardView: UIView {
     private let subtitleLabel = UILabel()
     private let actionButton = UTIFooterActionButton()
     private let dismissButton = UIButton(type: .system)
-    private lazy var linkTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(linkTapped))
 
     private var actionCollapsedWidthConstraint: NSLayoutConstraint?
     private var actionTrailingConstraint: NSLayoutConstraint?
     /// The icon slot and its gap collapse together, so a message with no icon starts at the leading edge.
     private var iconSlotWidthConstraint: NSLayoutConstraint?
     private var iconTextGapConstraint: NSLayoutConstraint?
-
-    /// Kept so a theme change can rebuild the notice's attributed copy.
-    private var currentTitle = ""
-    private var currentLink: UTIFooterMessage.Link?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -92,18 +85,12 @@ final class UTIFooterCardView: UIView {
         iconSlotWidthConstraint?.constant = hasIcon ? Constants.iconSize : 0
         iconTextGapConstraint?.constant = hasIcon ? Constants.iconTextGap : 0
 
-        // Without a reset line the copy has the second line to use, so it wraps rather than truncates.
-        titleLabel.numberOfLines = message.subtitle == nil ? 2 : 1
-        currentTitle = message.title
-        currentLink = message.link
-        if let link = message.link {
-            titleLabel.attributedText = Self.attributedTitle(message.title, link: link)
-        } else {
-            titleLabel.attributedText = nil
-            titleLabel.font = .daxFootnoteSemibold()
-            titleLabel.text = message.title
-        }
-        linkTapRecognizer.isEnabled = message.link != nil
+        // A title above a reset line is a headline that truncates; a standalone one is body copy
+        // with the second line free.
+        let isStandaloneCopy = message.subtitle == nil
+        titleLabel.numberOfLines = isStandaloneCopy ? 2 : 1
+        titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
+        titleLabel.text = message.title
 
         subtitleLabel.text = message.subtitle
         subtitleLabel.isHidden = message.subtitle?.isEmpty ?? true
@@ -134,25 +121,6 @@ final class UTIFooterCardView: UIView {
         onDismissTap?()
     }
 
-    @objc private func linkTapped() {
-        onLinkTap?()
-    }
-
-    /// The whole sentence is the target, not just the trailing run: it is two lines of copy whose
-    /// only purpose is the link, and precise glyph hit-testing buys nothing here.
-    private static func attributedTitle(_ title: String, link: UTIFooterMessage.Link) -> NSAttributedString {
-        let result = NSMutableAttributedString(
-            string: title + " ",
-            attributes: [.font: UIFont.daxFootnoteRegular(),
-                         .foregroundColor: UIColor(designSystemColor: .textPrimary)]
-        )
-        result.append(NSAttributedString(
-            string: link.text,
-            attributes: [.font: UIFont.daxFootnoteRegular(),
-                         .foregroundColor: UIColor(designSystemColor: .accentTextPrimary)]
-        ))
-        return result
-    }
 }
 
 // MARK: - Setup
@@ -185,10 +153,6 @@ private extension UTIFooterCardView {
         }
         titleLabel.font = .daxFootnoteSemibold()
         subtitleLabel.font = .daxCaption1()
-
-        titleLabel.isUserInteractionEnabled = true
-        linkTapRecognizer.isEnabled = false
-        titleLabel.addGestureRecognizer(linkTapRecognizer)
 
         let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         textStack.axis = .vertical
@@ -270,10 +234,6 @@ private extension UTIFooterCardView {
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
         dismissButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
         actionButton.applyColors()
-        // `textColor` doesn't reach an attributed string, so the notice's runs are rebuilt instead.
-        if let link = currentLink {
-            titleLabel.attributedText = Self.attributedTitle(currentTitle, link: link)
-        }
     }
 }
 

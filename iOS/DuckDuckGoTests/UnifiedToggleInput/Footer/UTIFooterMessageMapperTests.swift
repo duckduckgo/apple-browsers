@@ -139,12 +139,6 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertFalse(sut.message(for: warning(.weeklyLimitReached, window: .weekly, isDismissible: false)).isDismissible)
     }
 
-    /// No warning carries a link; only the high-usage notice does.
-    func test_message_warningsCarryNoLink() {
-        XCTAssertNil(sut.message(for: warning(.approaching, window: .weekly)).link)
-        XCTAssertNil(sut.message(for: warning(.weeklyLimitReached, window: .weekly)).link)
-    }
-
     // MARK: - High-usage model notice
 
     func test_message_highUsageNoticeNamesTheModel() {
@@ -162,9 +156,12 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertNil(sut.message(for: notice).primaryAction)
     }
 
-    func test_message_highUsageNoticeLinksToTheSubscriberModelsHelpPage() {
-        XCTAssertEqual(sut.message(for: notice).link?.text, "Learn More")
-        XCTAssertEqual(sut.message(for: notice).link?.url, URL.aiChatAccessSubscriberModels)
+    /// Copy only: the notice explains the cost and offers nothing to tap but the close button.
+    func test_message_highUsageNoticeCarriesNothingButItsCopy() {
+        let message = sut.message(for: notice)
+        XCTAssertNil(message.primaryAction)
+        XCTAssertNil(message.subtitle)
+        XCTAssertEqual(message.icon, UTIFooterMessage.Icon.none)
     }
 
     func test_message_highUsageNoticeIsDismissible() {

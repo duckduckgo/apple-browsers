@@ -69,6 +69,18 @@ final class UTIFooterCardViewTests: XCTestCase {
         XCTAssertEqual(titleLabel(in: sut)?.numberOfLines, 2)
     }
 
+    /// A warning's title is a headline above its reset line; the notice is a standalone paragraph, so
+    /// it reads at body weight rather than as a heading.
+    func test_title_usesBodyWeightWhenThereIsNoSubtitle() {
+        let sut = UTIFooterCardView()
+
+        sut.configure(with: makeMessage(), animateIcon: false)
+        XCTAssertEqual(titleLabel(in: sut)?.font, UIFont.daxFootnoteSemibold())
+
+        sut.configure(with: makeNotice(), animateIcon: false)
+        XCTAssertEqual(titleLabel(in: sut)?.font, UIFont.daxFootnoteRegular())
+    }
+
     /// The notice copy has to actually need the second line at phone width, or allowing it is moot.
     func test_title_wrapsTheNoticeCopyAtPhoneWidth() {
         let sut = UTIFooterCardView()
@@ -216,7 +228,6 @@ final class UTIFooterCardViewTests: XCTestCase {
         UTIFooterMessage(icon: .none,
                          title: title,
                          subtitle: nil,
-                         link: .init(text: "Learn More", url: URL(string: "https://duckduckgo.com")!),
                          primaryAction: nil,
                          isDismissible: true)
     }

@@ -29,6 +29,8 @@ protocol SubscriptionOnboardingActivationRecording {
     func recordDuckAIActivated()
     /// Call when the customer has a PIR profile or has started a free scan.
     func recordPIRActivated()
+    /// Call when the customer has a VPN configuration installed.
+    func recordVPNActivated()
 }
 
 struct SubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActivationRecording {
@@ -47,6 +49,10 @@ struct SubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActivatio
         markComplete(.pir)
     }
 
+    func recordVPNActivated() {
+        markComplete(.vpn)
+    }
+
     private func markComplete(_ item: SubscriptionOnboardingChecklistItem) {
         var persistor = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
         persistor.markComplete(item)
@@ -57,4 +63,5 @@ struct SubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActivatio
 struct NullSubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActivationRecording {
     func recordDuckAIActivated() {}
     func recordPIRActivated() {}
+    func recordVPNActivated() {}
 }

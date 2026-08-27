@@ -589,5 +589,6 @@ private final class MockProgressStore: SubscriptionOnboardingProgressPersisting 
     var completedItems: Set<SubscriptionOnboardingChecklistItem> = []
     var cardFirstShownDate: Date?
     var fullyCompletedAt: Date?
+    var completionViewCount: Int = 0
     var postCheckoutFlowStartedAt: Date?
 }

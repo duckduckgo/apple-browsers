@@ -165,6 +165,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var inputMode: TextEntryMode = .aiChat
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
+    private let featureDiscovery: FeatureDiscovery
     private let aiChatSettings: AIChatSettingsProvider
     private let sessionMonitor: UTISessionMonitor
     private(set) var currentTabUID: TabUID?
@@ -304,6 +305,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         stateStore: UnifiedInputStateStoring? = nil,
         syncService: DDGSyncing? = nil,
         switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
         aiChatSyncCleaner: AIChatSyncCleaning? = nil,
         recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
@@ -324,6 +326,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
         self.sessionMonitor = UTISessionMonitor(
             isEnabled: host == .omnibar,
@@ -1318,6 +1321,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let didSendBridgeMessage = userScript.canDispatchBridgeMessages
         userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
         recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
+        featureDiscovery.markDuckAIPromptSubmitted()
     }
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
@@ -1714,7 +1718,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             attachments: viewController.currentAttachments,
             reasoningMode: reasoningModeForSubmitPixel,
             modelId: modelStore.persistedModelId,
-            defaultOmnibarMode: aiChatSettings.defaultOmnibarMode
+            defaultOmnibarMode: aiChatSettings.defaultOmnibarMode,
+            isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall
         )
         pixelReporter.reportToolSubmittedIfNeeded(
             selectedTool: toolsController.selectedTool,
@@ -1741,6 +1746,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
         deliverAIChatPrompt(text: text, images: images, files: files, configuration: configuration, tools: tools, userScript: userScript)
+        // After delivery, so every pixel this submission fires (including the contextual
+        // ones fired during delivery) still reads the pre-submission first-prompt state.
+        featureDiscovery.markDuckAIPromptSubmitted()
     }
 
     private func deliverAIChatPrompt(text: String,

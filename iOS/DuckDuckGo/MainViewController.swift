@@ -1637,11 +1637,10 @@ class MainViewController: UIViewController {
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
         }
 
+        omniBar.adjust(for: position)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(position)
         reconcileAIChromeForCurrentTab()
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-
-        omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
         updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
@@ -2652,7 +2651,8 @@ class MainViewController: UIViewController {
                       modelId: String? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil,
                       images: [AIChatNativePrompt.NativePromptImage]? = nil,
-                      files: [AIChatNativePrompt.NativePromptFile]? = nil) {
+                      files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                      source: AIChatEntryPointSource) {
         guard let currentTab else {
             assertionFailure("load called with no current tab")
             return
@@ -2660,7 +2660,7 @@ class MainViewController: UIViewController {
         if currentTab.tabModel.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
+        postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: source)
         prepareTabForRequest {
             currentTab.load(
                 query,
@@ -4290,7 +4290,7 @@ class MainViewController: UIViewController {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
+        postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: .voice)
         openAIChatInVoiceMode()
     }
 
@@ -4391,7 +4391,7 @@ class MainViewController: UIViewController {
             // Mirror the in-place `.aiPromptSubmitted` so the new-tab branch keeps idle-session parity.
             // Gated on `!fromDeepLink` so external entries aren't reclassified as address-bar submissions.
             if !fromDeepLink {
-                postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
+                postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: source)
             }
             // Stage prompt singleton before `loadUrlInNewTab` — matches legacy `setData → load` order.
             // Per-tab payload runs in completion since it targets the newly-selected chat tab.
@@ -4418,7 +4418,7 @@ class MainViewController: UIViewController {
             return
         }
 
-        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files, source: source)
         if let modelId {
             unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
         }
@@ -4763,8 +4763,9 @@ extension MainViewController: BrowserChromeDelegate {
               !domain.isEmpty else {
             return 0
         }
-        return view.safeAreaInsets.bottom
-            + floatingDomainCapsuleController.restObscuredHeightAboveSafeArea
+        return floatingDomainCapsuleController.restObscuredHeightFromScreenEdge(
+            for: .bottom,
+            safeAreaInsets: view.safeAreaInsets)
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 
@@ -4775,8 +4776,10 @@ extension MainViewController: BrowserChromeDelegate {
               !domain.isEmpty else {
             return 0
         }
-        return view.safeAreaInsets.top
-            + floatingDomainCapsuleController.restObscuredHeightAboveSafeArea
+        return floatingDomainCapsuleController.restObscuredHeightFromScreenEdge(
+            for: .top,
+            safeAreaInsets: view.safeAreaInsets,
+            expandedFrame: floatingBarExpandedFrame())
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 
@@ -4804,6 +4807,19 @@ extension MainViewController: BrowserChromeDelegate {
                      left: 0,
                      bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
                      right: 0)
+    }
+
+    /// Read off the card's applied constraints, so it honours the landscape cap and the hidden-chrome
+    /// pose, and can't feed back when read during layout. iPhone-only, hence no tabs-bar offset.
+    var floatingNewTabPageTopObscuredHeight: CGFloat {
+        guard unifiedToggleInputCoordinator?.isActive == true,
+              isFloatingUIEnabled,
+              // Some poses (the AI-tab collapsed card) swap this out; its constant is stale then.
+              viewCoordinator.constraints.navigationBarContainerTop.isActive else { return 0 }
+        let cardBottomEdge = view.safeAreaInsets.top
+            + viewCoordinator.constraints.navigationBarContainerTop.constant
+            + viewCoordinator.constraints.navigationBarContainerHeight.constant
+        return appSettings.currentAddressBarPosition == .top ? max(0, cardBottomEdge) : 0
     }
 
     /// Top region obscured by chrome, shrinking from the omnibar to the resting capsule clearance.
@@ -4964,7 +4980,11 @@ extension MainViewController: BrowserChromeDelegate {
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
-        postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: suggestion))
+        var promptOrigin: AIChatEntryPointSource?
+        if case .askAIChat = suggestion {
+            promptOrigin = .suggestionAskAI
+        }
+        postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: suggestion), promptOrigin: promptOrigin)
         endNewTabPageSessionWithSuggestion(suggestion)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
@@ -7780,6 +7800,7 @@ extension MainViewController {
         guard floatingUIManager.isFloatingUIEnabled else { return }
         viewCoordinator.setFloatingUIEnabled(floatingUIManager.isFloatingUIEnabled)
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
+        viewCoordinator.omniBar.adjust(for: appSettings.currentAddressBarPosition)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)
         viewCoordinator.bringFloatingTopNavigationBarToFrontIfNeeded()
         (viewCoordinator.omniBar as? DefaultOmniBarViewController)?.reconcileShadowClip()
@@ -7932,7 +7953,7 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
                 if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
                     ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
                 }
-                postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted)
+                postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: .voice)
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()

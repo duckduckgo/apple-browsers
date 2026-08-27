@@ -4,7 +4,7 @@
         "owners": ["Bunn", "SabrinaTardio"],
         "meta": {
             "type": "ios-return-session",
-            "version": "0.0"
+            "version": "1.0"
         },
         "feature": {
             "name": "return-session",
@@ -42,6 +42,37 @@
                             "favorite_selected",
                             "chat_selected",
                             "app_terminated"
+                        ]
+                    },
+                    "prompt_origin": {
+                        "type": "string",
+                        "description": "What triggered the Duck.ai prompt submission that ended the session, as an m_aichat_entry_point source value. Present only when status_reason is ai_prompt_submitted; absent otherwise.",
+                        "enum": [
+                            "address_bar_prompt",
+                            "address_bar_icon",
+                            "address_bar_shortcut_chip",
+                            "address_bar_editing_state",
+                            "suggestion_ask_ai",
+                            "ipad_toggle_prompt",
+                            "browsing_menu_ntp",
+                            "browsing_menu_webpage",
+                            "tab_switcher",
+                            "tabs_bar_button",
+                            "chat_history_new_chat",
+                            "chat_history_open_chat",
+                            "voice",
+                            "onboarding",
+                            "direct_url",
+                            "serp",
+                            "icon_shortcut",
+                            "contextual_chat",
+                            "widget_quick_actions",
+                            "widget_quick_actions_medium",
+                            "widget_favorite",
+                            "widget_lock_screen",
+                            "widget_control_center",
+                            "siri",
+                            "deep_link_other"
                         ]
                     },
                     "session_duration_ms_bucketed": {

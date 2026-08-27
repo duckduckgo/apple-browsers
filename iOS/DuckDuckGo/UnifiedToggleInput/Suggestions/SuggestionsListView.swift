@@ -51,6 +51,7 @@ struct SuggestionsListView: View {
         static let searchAfterHatchTopInset: CGFloat = searchSectionSpacing - scrollableChromeBottomInset
         static let duckAIAfterHatchTopInset: CGFloat = 4
         /// The focused RMF's 12pt shadow with its 4pt downward offset extends 8pt above and 16pt below the card.
+        /// The bottom-bar layout's existing 10pt top inset already contains the upper shadow.
         static let messageShadowTopInset: CGFloat = 8
         static let messageShadowBottomInset: CGFloat = 16
         /// Search content starts at 16pt; favorites use the NTP's 24pt grid margin.
@@ -150,7 +151,6 @@ struct SuggestionsListView: View {
             .hideScrollContentBackground()
             .background(Color(designSystemColor: .background))
             .scrollDismissesKeyboardIfAvailable()
-            .ignoresSafeArea(.keyboard, edges: .bottom)
             // Pointer (trackpad/mouse) leaving the list clears the hover highlight. Touch never fires onHover.
             .onHover { isHovering in
                 if !isHovering { viewModel.selectedRowID = nil }
@@ -218,7 +218,7 @@ struct SuggestionsListView: View {
 
     private var searchContentTopInset: CGFloat {
         let contentInset = escapeHatch == nil ? scrollableChromeTopInset : Metrics.searchAfterHatchTopInset
-        return contentInset + (hasMessages ? Metrics.messageShadowTopInset : 0)
+        return contentInset + (hasMessages && !isAddressBarAtBottom ? Metrics.messageShadowTopInset : 0)
     }
 
     private var searchContentBottomInset: CGFloat {

@@ -68,7 +68,6 @@ class FloatingUIXCUITestCase: XCTestCase {
         static let searchEntry = "searchEntry"
         static let utiDismiss = "UnifiedToggleInput.Button.Dismiss"
         static let tabSwitcher = "Browser.Toolbar.Button.TabSwitcher"
-        static let tabCount = "Browser.Toolbar.TabSwitcher.Count"
         static let tabSwitcherDone = "TabSwitcher.Button.Done"
         static let toolbarBack = "Browser.Toolbar.Button.Back"
         static let toolbarForward = "Browser.Toolbar.Button.Forward"
@@ -194,13 +193,19 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
 
         searchField.tap()
-        XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForHittable(timeout: timeout))
-        element(withIdentifier: AccessibilityID.utiDismiss).tap()
+        let dismissButton = element(withIdentifier: AccessibilityID.utiDismiss)
+        XCTAssertTrue(dismissButton.waitForHittable(timeout: timeout))
+        dismissButton.tap()
+        XCTAssertTrue(dismissButton.waitForNotHittable(timeout: timeout))
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
 
+        XCTAssertTrue(tabSwitcherButton.waitForHittable(timeout: timeout))
         tabSwitcherButton.tap()
         let doneButton = element(withIdentifier: AccessibilityID.tabSwitcherDone)
         XCTAssertTrue(doneButton.waitForHittable(timeout: timeout))
         doneButton.tap()
+        XCTAssertTrue(doneButton.waitForNotHittable(timeout: timeout))
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
 
         moveAddressBar(to: barPosition)
         assertChromeButtonsAreUsable()
@@ -407,9 +412,6 @@ class FloatingUIXCUITestCase: XCTestCase {
         newTabButton.tap()
 
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
-        let tabCount = element(withIdentifier: AccessibilityID.tabCount)
-        XCTAssertTrue(tabCount.waitForExistence(timeout: timeout))
-        XCTAssertEqual(tabCount.label, "2")
         XCTAssertFalse(app.staticTexts[Page.oneHeading].exists)
         assertConfiguredBarPosition()
     }

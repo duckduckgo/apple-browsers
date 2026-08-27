@@ -247,7 +247,7 @@
         ],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
-    "web_extension_search_token_installed": {
+    "search-token_web_extension_installed": {
         "description": "The search token web extension was installed.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
@@ -257,7 +257,7 @@
         ],
         "parameters": ["appVersion"]
     },
-    "web_extension_search_token_upgraded": {
+    "search-token_web_extension_upgraded": {
         "description": "The search token web extension was upgraded to a new version.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
@@ -279,7 +279,7 @@
             }
         ]
     },
-    "web_extension_search_token_install_error": {
+    "search-token_web_extension_install_error": {
         "description": "The search token web extension failed to install.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
@@ -550,7 +550,7 @@
         ],
         "parameters": ["appVersion"]
     },
-    "web_extension_search_token_not_loaded": {
+    "search-token_web_extension_not_loaded": {
         "description": "The search token web extension was expected to be loaded but was not.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],

@@ -133,6 +133,7 @@ final class TabSwitcherStaticView: UIView {
 
         label.textAlignment = .center
         label.isUserInteractionEnabled = false
+        label.accessibilityIdentifier = "Browser.Toolbar.TabSwitcher.Count"
         iconImageView.isUserInteractionEnabled = false
     }
 

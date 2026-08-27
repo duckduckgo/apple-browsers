@@ -27,6 +27,12 @@ private extension XCUIElement {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
         return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
     }
+
+    func waitForNotHittable(timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate(format: "exists == false OR isHittable == false")
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
+    }
 }
 
 enum FloatingUIBarPosition: String {
@@ -62,6 +68,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         static let searchEntry = "searchEntry"
         static let utiDismiss = "UnifiedToggleInput.Button.Dismiss"
         static let tabSwitcher = "Browser.Toolbar.Button.TabSwitcher"
+        static let tabCount = "Browser.Toolbar.TabSwitcher.Count"
         static let tabSwitcherDone = "TabSwitcher.Button.Done"
         static let toolbarBack = "Browser.Toolbar.Button.Back"
         static let toolbarForward = "Browser.Toolbar.Button.Forward"
@@ -112,7 +119,7 @@ class FloatingUIXCUITestCase: XCTestCase {
 
         element(withIdentifier: AccessibilityID.utiDismiss).tap()
 
-        XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForNotHittable(timeout: timeout))
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         assertConfiguredBarPosition()
     }
@@ -254,6 +261,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         let dismissButton = element(withIdentifier: AccessibilityID.utiDismiss)
         XCTAssertTrue(dismissButton.waitForHittable(timeout: timeout))
         dismissButton.tap()
+        XCTAssertTrue(dismissButton.waitForNotHittable(timeout: timeout))
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
 
         collapseChrome()
@@ -286,6 +294,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(dismissButton.waitForHittable(timeout: timeout))
         dismissButton.tap()
 
+        XCTAssertTrue(dismissButton.waitForNotHittable(timeout: timeout))
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         assertConfiguredBarPosition()
     }
@@ -398,7 +407,9 @@ class FloatingUIXCUITestCase: XCTestCase {
         newTabButton.tap()
 
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
-        XCTAssertTrue(app.staticTexts["2"].waitForExistence(timeout: timeout))
+        let tabCount = element(withIdentifier: AccessibilityID.tabCount)
+        XCTAssertTrue(tabCount.waitForExistence(timeout: timeout))
+        XCTAssertEqual(tabCount.label, "2")
         XCTAssertFalse(app.staticTexts[Page.oneHeading].exists)
         assertConfiguredBarPosition()
     }
@@ -424,7 +435,8 @@ class FloatingUIXCUITestCase: XCTestCase {
     }
 
     private var searchField: XCUIElement {
-        element(withIdentifier: AccessibilityID.searchEntry)
+        let fields = app.descendants(matching: .any).matching(identifier: AccessibilityID.searchEntry)
+        return fields.allElementsBoundByIndex.first(where: { $0.isHittable }) ?? fields.firstMatch
     }
 
     private var tabSwitcherButton: XCUIElement {
@@ -529,8 +541,10 @@ class FloatingUIXCUITestCase: XCTestCase {
 
     private func openPage(path: String, heading: String, file: StaticString = #filePath, line: UInt = #line) {
         searchField.tap()
-        XCTAssertTrue(searchField.waitForHittable(timeout: timeout), file: file, line: line)
-        searchField.typeText("\(serverBaseURL)\(path)\r")
+        XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForHittable(timeout: timeout), file: file, line: line)
+        let activeSearchField = searchField
+        XCTAssertTrue(activeSearchField.waitForHittable(timeout: timeout), file: file, line: line)
+        activeSearchField.typeText("\(serverBaseURL)\(path)\r")
         XCTAssertTrue(app.staticTexts[heading].waitForExistence(timeout: timeout), "Did not load \(path).", file: file, line: line)
     }
 

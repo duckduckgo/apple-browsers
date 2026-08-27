@@ -28,6 +28,7 @@ final class UTIFooterControllerTests: XCTestCase {
     private var presenter: SpyUTIFooterPresenter!
     private var viewModel: DuckAiUsageWarningViewModel!
     private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
+    private var tier: AIChatUserTier = .plus
     private var animationCount = 0
     private var sut: UTIFooterController!
 
@@ -38,6 +39,7 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider = StubUsageLimitsProvider()
         presenter = SpyUTIFooterPresenter()
         selectedModel = (nil, nil)
+        tier = .plus
         animationCount = 0
         viewModel = makeViewModel()
         sut = UTIFooterController(viewModel: viewModel,
@@ -222,6 +224,49 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(received, [.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini", modelShortName: "5.4 mini"))])
     }
 
+    /// Acting on the message retires it, exactly as the close button would.
+    func test_performPrimaryAction_hidesTheMessageWhenItSwitchesModel() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+
+        sut.performPrimaryAction()
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    func test_performPrimaryAction_keepsTheMessageHiddenOnTheNextRefresh() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.performPrimaryAction()
+
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    /// Recorded against a rung like a close, not a blanket kill, so the next one still shows.
+    func test_performPrimaryAction_doesNotHideTheNextThreshold() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.performPrimaryAction()
+
+        limitsProvider.limits = weeklyUsage(90)
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("90%") ?? false)
+    }
+
+    /// The upsell is not a switch: the user is still blocked, so the message stays up.
+    func test_performPrimaryAction_keepsTheMessageWhenTheActionIsTheUpsell() {
+        tier = .free
+        limitsProvider.limits = weeklyUsage(100)
+        sut.refresh()
+
+        sut.performPrimaryAction()
+
+        XCTAssertEqual(presenter.appliedMessages.last??.primaryAction?.title, "Subscribe")
+    }
+
     func test_performPrimaryAction_doesNothingWithoutAMessage() {
         var received: [DuckAiUsageAction] = []
         viewModel.onAction = { received.append($0) }
@@ -305,7 +350,7 @@ final class UTIFooterControllerTests: XCTestCase {
     private func makeViewModel() -> DuckAiUsageWarningViewModel {
         DuckAiUsageWarningViewModel(
             limitsProvider: limitsProvider,
-            tierProvider: { .plus },
+            tierProvider: { [unowned self] in tier },
             isInternalUser: { false },
             dismissalStore: InMemoryDuckAiUsageWarningDismissalStore(),
             modelSuggester: StubCheaperModelSuggester(),

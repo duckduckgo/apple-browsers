@@ -49,6 +49,8 @@ final class UTIFooterController {
     private let animator: Animator
 
     private var isSuppressed = false
+    /// The message the user acted on, held so the CTA can retire one that carries no close button.
+    private var actedOnMessage: UTIFooterMessage?
 
     private(set) var currentMessage: UTIFooterMessage?
 
@@ -99,10 +101,22 @@ final class UTIFooterController {
     }
 
     func performPrimaryAction() {
-        guard currentMessage?.primaryAction != nil else { return }
+        guard let message = currentMessage, message.primaryAction != nil else { return }
+
+        let switchesModel = currentActionSwitchesModel
         viewModel.performAction()
-        // The CTA can change what there is left to offer — a model switch retires its own suggestion.
-        applyCurrentState()
+        // The upsell leaves the user just as blocked, so only a switch retires its message.
+        guard switchesModel else { return applyCurrentState() }
+
+        actedOnMessage = message
+        dismissCurrent()
+    }
+
+    private var currentActionSwitchesModel: Bool {
+        switch viewModel.warning?.action {
+        case .switchToModel, .switchToFreeModel: return true
+        default: return false
+        }
     }
 
     private func applyCurrentState() {
@@ -125,12 +139,17 @@ final class UTIFooterController {
             return nil
         }
         if let warning = viewModel.warning {
-            return mapper.message(for: warning)
+            return unlessActedOn(mapper.message(for: warning))
         }
         if let notice = highUsageNotice?.notice {
-            return mapper.message(for: notice)
+            return unlessActedOn(mapper.message(for: notice))
         }
         return nil
+    }
+
+    /// Releases as soon as the resolver produces a different message, so the next rung still shows.
+    private func unlessActedOn(_ message: UTIFooterMessage) -> UTIFooterMessage? {
+        message == actedOnMessage ? nil : message
     }
 
     static let springAnimator: Animator = { changes in

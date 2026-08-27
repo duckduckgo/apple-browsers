@@ -208,6 +208,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private(set) var layoutMode: OmniBarLayoutMode = .compact
 
+    var isExpandedPhoneLayout = false {
+        didSet {
+            updateVerticalSpacing()
+        }
+    }
+
     func setLayoutMode(_ newMode: OmniBarLayoutMode, animated: Bool = false) {
         guard layoutMode != newMode else { return }
 
@@ -1364,6 +1370,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         if isBottomFloatingField {
             topPadding = Metrics.floatingEmbeddedTextAreaPadding
             bottomPadding = Metrics.floatingEmbeddedTextAreaPadding
+        } else if isTopFloatingField {
+            topPadding = Metrics.floatingTopInputOuterPadding
+            bottomPadding = Metrics.floatingTopInputOuterPadding
         } else if isUsingSmallTopSpacing {
             topPadding = Metrics.textAreaTopPaddingAdjustedSpacing
             bottomPadding = Metrics.textAreaBottomPaddingAdjustedSpacing
@@ -1373,6 +1382,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         textAreaTopPaddingConstraint?.constant = topPadding
         textAreaBottomPaddingConstraint?.constant = -bottomPadding
+        searchAreaView.contentVerticalOffset = isTopFloatingField ? Metrics.floatingTopContentVerticalOffset : 0
         updateFireModeAppearance()
     }
 
@@ -1550,6 +1560,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         /// Tight inner padding so the 44pt controls sit inside the 48pt embedded field (12 + 2 = 14
         /// from the glass edge to the control, per spec).
         static let floatingEmbeddedTextAreaPadding: CGFloat = 2
+        static let floatingTopInputHeight: CGFloat = 48
+        static let floatingTopInputOuterPadding = (height - floatingTopInputHeight) / 2
+        static let floatingTopContentVerticalOffset: CGFloat = -2
         static var cornerRadius: CGFloat { OmniBarMetrics.cornerRadius }
 
         /// Sits 2pt outside `cornerRadius` so the active outline stays concentric with the field.
@@ -1644,6 +1657,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 }
 
 private extension DefaultOmniBarView {
+    var isTopFloatingField: Bool {
+        isFloatingUIEnabled && !isUsingSmallTopSpacing && !isExpandedPhoneLayout && layoutMode == .compact
+    }
+
     /// True when the field itself is a glass surface: top position, or any position in minimal chrome.
     var shouldUseFloatingTopGlass: Bool {
         isFloatingUIEnabled && (isFloatingMinimalChromeBar || !isUsingSmallTopSpacing)
@@ -1653,7 +1670,7 @@ private extension DefaultOmniBarView {
     /// capsule) in compact portrait layout. Landscape / iPad use the standalone three-pill chrome
     /// and must keep the original field metrics.
     var isBottomFloatingField: Bool {
-        isFloatingUIEnabled && isUsingSmallTopSpacing && layoutMode == .compact
+        isFloatingUIEnabled && isUsingSmallTopSpacing && !isExpandedPhoneLayout && layoutMode == .compact
     }
 
     /// Resting field fill: the bottom floating field is `T-Input/Resting` so it reads clearly

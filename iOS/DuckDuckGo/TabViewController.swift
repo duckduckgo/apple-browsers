@@ -161,6 +161,8 @@ class TabViewController: UIViewController {
     var outerContainer: UIView!
     var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
+    private var webViewLayoutConstraints: [NSLayoutConstraint] = []
+    private var fullscreenStateObserver: NSKeyValueObservation?
     var daxContextualOnboardingController: UIViewController? {
         didSet {
             // Floating UI reserves the obscured top region while a dialog is up, so relayout on both.
@@ -1322,14 +1324,7 @@ class TabViewController: UIViewController {
         webView.uiDelegate = self
 
         webViewContainer.addSubview(webView)
-        webView.translatesAutoresizingMaskIntoConstraints = false
-        webViewBottomAnchorConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
-        NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
-            webView.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
-            webViewBottomAnchorConstraint!,
-            webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
-        ])
+        pinWebViewToContainer()
 
         pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
                                                             pullableView: webViewContainer,
@@ -1417,6 +1412,7 @@ class TabViewController: UIViewController {
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.title), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.isLoading), options: .new, context: nil)
+        observeFullscreenStateForLayoutRestoration()
     }
 
     private func configureRefreshControl(_ control: UIRefreshControl) {
@@ -2108,6 +2104,84 @@ class TabViewController: UIViewController {
         view.removeFromSuperview()
     }
 
+    private func pinWebViewToContainer() {
+        webView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Retained so the fullscreen round-trip re-activates the same objects, preserving the bottom
+        // constant. Rebuilt when a different web view is attached.
+        if webViewLayoutConstraints.first?.firstItem !== webView {
+            let bottomConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
+            webViewBottomAnchorConstraint = bottomConstraint
+            webViewLayoutConstraints = [
+                webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
+                webView.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
+                bottomConstraint,
+                webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
+            ]
+        }
+
+        NSLayoutConstraint.activate(webViewLayoutConstraints)
+    }
+
+    private func observeFullscreenStateForLayoutRestoration() {
+        guard #available(iOS 16.0, *) else { return }
+        fullscreenStateObserver = webView.observe(\.fullscreenState) { [weak self] webView, _ in
+            self?.handleFullscreenStateChange(webView.fullscreenState)
+        }
+    }
+
+    @available(iOS 16.0, *)
+    private func handleFullscreenStateChange(_ state: WKWebView.FullscreenState) {
+        switch state {
+        case .enteringFullscreen:
+            handOverWebViewLayoutToWebKit()
+        case .notInFullscreen:
+            restoreWebViewLayoutAfterFullscreen()
+        default:
+            break
+        }
+    }
+
+    /// WebKit sizes the web view by setting its frame while it owns it in the fullscreen window.
+    /// Auto Layout would zero that frame back out, leaving the fullscreen surface blank.
+    private func handOverWebViewLayoutToWebKit() {
+        NSLayoutConstraint.deactivate(webViewLayoutConstraints)
+        webView.translatesAutoresizingMaskIntoConstraints = true
+        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+        // Seed only when the hand-over zeroed the frame, so a repeat transition cannot shrink content
+        // WebKit has already sized.
+        if webView.frame.isEmpty, let host = webView.superview {
+            webView.frame = onScreenWebViewRect(in: host)
+        }
+
+        suspendWebViewHostedChrome()
+    }
+
+    /// These are subviews of the web view, so WebKit carries them into the fullscreen window: the border
+    /// would draw over the video, and a pull-down could reload the page behind it.
+    private func suspendWebViewHostedChrome() {
+        borderView.isHidden = true
+        pullToRefreshViewAdapter?.setPullSuspended(true)
+    }
+
+    /// Leaving the container zeroes the frame. Seeding the rect it occupied on screen keeps the already
+    /// painted content valid, so WebKit animates to fullscreen instead of re-rendering from blank.
+    private func onScreenWebViewRect(in host: UIView) -> CGRect {
+        var rect = webViewContainer.bounds
+        rect.size.height += webViewBottomAnchorConstraint?.constant ?? 0
+        return webViewContainer.convert(rect, to: host)
+    }
+
+    private func restoreWebViewLayoutAfterFullscreen() {
+        webViewContainer.addSubview(webView)
+        pinWebViewToContainer()
+        webViewContainer.layoutIfNeeded()
+
+        updateBorderViewForFloatingUIIfNeeded()
+        pullToRefreshViewAdapter?.setPullSuspended(false)
+    }
+
     private func removeObservers() {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.url))
@@ -2115,6 +2189,7 @@ class TabViewController: UIViewController {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.title))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
+        fullscreenStateObserver = nil
     }
 
     public func makeBreakageAdditionalInfo(webExtensionManager: WebExtensionManaging? = nil) -> PrivacyDashboardViewController.BreakageAdditionalInfo? {

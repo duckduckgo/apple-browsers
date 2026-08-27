@@ -59,18 +59,24 @@ extension SubscriptionOnboardingLauncher {
 extension SubscriptionOnboardingFlowViewModel {
 
     /// Walks the whole flow from the order confirmation.
+    ///  A VPN configuration already installed marks `.vpn` complete.
     static func postCheckout<PIRScreen: View>(persistor: SubscriptionOnboardingProgressPersisting,
                                               isPIRAvailable: Bool,
                                               subscriptionManager: any SubscriptionManager,
                                               onFinish: @escaping () -> Void,
+                                              vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
                                               @ViewBuilder pirScreen: @escaping () -> PIRScreen) async
     -> SubscriptionOnboardingFlowViewModel? {
-        await makeFlow(entryPoint: .postCheckout,
-                       persistor: persistor,
-                       isPIRAvailable: isPIRAvailable,
-                       subscriptionManager: subscriptionManager,
-                       onFinish: onFinish,
-                       pirScreen: pirScreen)
+        var persistor = persistor
+        if await vpnController.isVPNConfigured() {
+            persistor.markComplete(.vpn)
+        }
+        return await makeFlow(entryPoint: .postCheckout,
+                              persistor: persistor,
+                              isPIRAvailable: isPIRAvailable,
+                              subscriptionManager: subscriptionManager,
+                              onFinish: onFinish,
+                              pirScreen: pirScreen)
     }
 
     /// Resumes at the first unfinished section, and closes on the summary.

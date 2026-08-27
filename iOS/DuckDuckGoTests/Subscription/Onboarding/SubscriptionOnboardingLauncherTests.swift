@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import Combine
 import SwiftUI
 import Persistence
 import Subscription
@@ -28,14 +29,17 @@ import SubscriptionTestingUtilities
 final class SubscriptionOnboardingLauncherTests: XCTestCase {
 
     private var subscriptionManager: SubscriptionManagerMock!
+    private var vpnController: MockVPNController!
 
     override func setUp() {
         super.setUp()
         subscriptionManager = SubscriptionManagerMock()
+        vpnController = MockVPNController(isConfigured: false)
     }
 
     override func tearDown() {
         subscriptionManager = nil
+        vpnController = nil
         super.tearDown()
     }
 
@@ -54,11 +58,30 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             isPIRAvailable: true,
             subscriptionManager: subscriptionManager,
             onFinish: {},
+            vpnController: vpnController,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
         XCTAssertEqual(flow.sequence,
                        [.orderConfirmation, .welcome, .vpnActivation, .vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
+    }
+
+    /// An installed VPN config skips only the activation section — widget/tips are a different signal.
+    func testWhenAVPNConfigurationIsAlreadyInstalledThenOnlyVPNActivationIsSkipped() async throws {
+        subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
+                                              .identityTheftRestoration, .identityTheftRestorationGlobal,
+                                              .paidAIChat]
+
+        let result = await SubscriptionOnboardingFlowViewModel.postCheckout(
+            persistor: makePersistor(),
+            isPIRAvailable: true,
+            subscriptionManager: subscriptionManager,
+            onFinish: {},
+            vpnController: MockVPNController(isConfigured: true),
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
+
+        XCTAssertEqual(flow.sequence, [.orderConfirmation, .welcome, .vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
     }
 
     /// The fetched entitlement, not a caller-supplied default, is what gates the built flow's sequence.
@@ -70,6 +93,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             isPIRAvailable: true,
             subscriptionManager: subscriptionManager,
             onFinish: {},
+            vpnController: vpnController,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -86,6 +110,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             isPIRAvailable: false,
             subscriptionManager: subscriptionManager,
             onFinish: {},
+            vpnController: vpnController,
             pirScreen: { EmptyView() })
 
         XCTAssertNil(flow)
@@ -138,4 +163,17 @@ private final class InMemoryThrowingStore: ThrowingKeyValueStoring {
     func object(forKey key: String) throws -> Any? { values[key] }
     func set(_ value: Any?, forKey key: String) throws { values[key] = value }
     func removeObject(forKey key: String) throws { values.removeValue(forKey: key) }
+}
+
+/// Only `isVPNConfigured()` matters here; connection state and `start()` are unused.
+private struct MockVPNController: SubscriptionOnboardingVPNControlling {
+    let isConfigured: Bool
+
+    var isConnected: Bool { false }
+    var isConnectedPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var configurationDeniedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var controllerErrorPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+
+    func start() async {}
+    func isVPNConfigured() async -> Bool { isConfigured }
 }

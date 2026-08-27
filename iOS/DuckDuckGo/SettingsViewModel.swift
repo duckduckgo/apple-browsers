@@ -162,6 +162,7 @@ final class SettingsViewModel: ObservableObject {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     let keyValueStore: ThrowingKeyValueStoring
     let subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging
+    private let vpnController: SubscriptionOnboardingVPNControlling
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
@@ -1045,7 +1046,8 @@ final class SettingsViewModel: ObservableObject {
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
          autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
-         adBlockingAvailability: AdBlockingAvailabilityProviding
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController()
     ) {
 
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
@@ -1092,6 +1094,7 @@ final class SettingsViewModel: ObservableObject {
         )
         self.whatsNewCoordinator = whatsNewCoordinator
         self.adBlockingAvailability = adBlockingAvailability
+        self.vpnController = vpnController
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
         refreshNextStepsVisibility(animated: false)
@@ -1442,12 +1445,23 @@ extension SettingsViewModel {
     private func recordOnboardingActivationsIfNeeded() {
         recordPIRActivationIfNeeded()
         reportVPNActivatedExperimentMetricIfNeeded()
+        Task {
+            await recordVPNActivationIfNeeded()
+        }
     }
 
     /// Backfill only: profiles saved from now on record themselves via `BrokerProfileJobEventsHandler.onProfileSaved`.
     private func recordPIRActivationIfNeeded() {
         guard isPIRActivated else { return }
         SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordPIRActivated()
+    }
+
+    /// Backfill only:  a config being installed is considered vpn step completed.
+    private func recordVPNActivationIfNeeded() async {
+        let persistor = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
+        guard !persistor.completedItems.contains(.vpn) else { return }
+        guard await vpnController.isVPNConfigured() else { return }
+        SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordVPNActivated()
     }
 
     private func reportVPNActivatedExperimentMetricIfNeeded() {

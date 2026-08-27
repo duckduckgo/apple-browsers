@@ -314,52 +314,62 @@ final class DuckAiUsageSnapshotTests: XCTestCase {
             let snapshot = make(seed.entryValue(now: now, switchTargets: targets, selectedModelId: "sonnet"))
 
             switch seed {
-            case .approachingDailyOneModel:
+            case .freeDailyReached:
+                XCTAssertEqual(snapshot.notice?.id, .freeReached)
+                XCTAssertEqual(snapshot.notice?.window, .daily)
+                XCTAssertEqual(snapshot.cta?.id, .subscribe)
+                XCTAssertEqual(snapshot.notice?.dismissible, false)
+            case .approachingDaily:
                 XCTAssertEqual(snapshot.notice?.id, .approaching)
                 XCTAssertEqual(snapshot.notice?.window, .daily)
-                XCTAssertEqual(snapshot.cta?.target.candidateModelIds, ["haiku"])
-            case .approachingDailySeveralModels:
-                XCTAssertEqual(snapshot.cta?.target.candidateModelIds, targets)
-            case .approachingWeekly:
-                XCTAssertEqual(snapshot.notice?.window, .weekly)
                 XCTAssertEqual(snapshot.notice?.percentUsed, 90)
-            case .approachingRetargetOnly:
-                XCTAssertTrue(snapshot.cta?.target.isEmpty ?? false)
-                XCTAssertTrue(snapshot.cta?.target(forSelectedModelId: "sonnet").isEmpty ?? false)
-                XCTAssertFalse(snapshot.cta?.target(forSelectedModelId: "mistral-small").isEmpty ?? true)
-            case .approachingNotDismissible:
-                XCTAssertEqual(snapshot.notice?.dismissible, false)
-            case .freeReached:
-                XCTAssertEqual(snapshot.notice?.id, .freeReached)
-                XCTAssertEqual(snapshot.cta?.id, .subscribe)
+                XCTAssertEqual(snapshot.cta?.id, .switchToCheaper)
+                XCTAssertEqual(snapshot.cta?.target.candidateModelIds, targets)
             case .dailyReachedWithBypass:
                 XCTAssertEqual(snapshot.notice?.id, .dailyReached)
                 XCTAssertEqual(snapshot.cta?.id, .bypassWeekly)
                 XCTAssertEqual(snapshot.cta?.putEntries.count, 1)
                 XCTAssertEqual(snapshot.cta?.putEntries.first?.key, "duckai.fixedCostWindowBypassResetAtById")
-            case .dailyReachedWithoutBypass:
-                XCTAssertEqual(snapshot.notice?.id, .dailyReached)
-                XCTAssertNil(snapshot.cta)
-                XCTAssertEqual(snapshot.notice?.dismissible, false)
+            case .approachingWeekly:
+                XCTAssertEqual(snapshot.notice?.id, .approaching)
+                XCTAssertEqual(snapshot.notice?.window, .weekly)
+                XCTAssertEqual(snapshot.notice?.percentUsed, 90)
+                XCTAssertEqual(snapshot.cta?.id, .switchToCheaper)
             case .weeklyReachedDegraded:
                 XCTAssertEqual(snapshot.notice?.id, .weeklyReachedDegraded)
+                XCTAssertEqual(snapshot.notice?.window, .weekly)
                 XCTAssertEqual(snapshot.cta?.id, .switchToFree)
             case .weeklyReached:
                 XCTAssertEqual(snapshot.notice?.id, .weeklyReached)
                 XCTAssertNil(snapshot.cta)
-            case .unknownNoticeID, .staleReset, .legacyWindowsOnly:
-                XCTAssertFalse(snapshot.hasNotice, seed.rawValue)
-            case .unknownCtaID:
-                XCTAssertEqual(snapshot.notice?.id, .approaching)
-                XCTAssertNil(snapshot.cta)
+                XCTAssertEqual(snapshot.notice?.dismissible, false)
             }
         }
+    }
+
+    /// The seeds' own reset times differ per window, so a message that picked the wrong window's
+    /// time is visible in the card rather than plausible.
+    func testTheSeedsResetTimesFollowTheirWindow() {
+        let daily = make(DuckAiUsageSnapshotSeed.approachingDaily.entryValue(now: now)).notice
+        let weekly = make(DuckAiUsageSnapshotSeed.approachingWeekly.entryValue(now: now)).notice
+
+        XCTAssertEqual(daily?.resetsAt, now.addingTimeInterval(5 * 3600))
+        XCTAssertEqual(weekly?.resetsAt, now.addingTimeInterval(3 * 24 * 3600))
+    }
+
+    /// A seed must never offer the model the picker is already on.
+    func testSwitchSeedsExcludeTheSelectedModel() {
+        let snapshot = make(DuckAiUsageSnapshotSeed.approachingDaily.entryValue(now: now,
+                                                                                switchTargets: ["haiku", "sonnet"],
+                                                                                selectedModelId: "sonnet"))
+
+        XCTAssertEqual(snapshot.cta?.target.candidateModelIds, ["haiku"])
     }
 
     /// Seeded without a live model list, the switch seeds render as the hidden-button case rather
     /// than offering a model that isn't in the picker.
     func testSwitchSeedsWithoutTargetsCarryNoModels() {
-        let snapshot = make(DuckAiUsageSnapshotSeed.approachingDailySeveralModels.entryValue(now: now))
+        let snapshot = make(DuckAiUsageSnapshotSeed.approachingDaily.entryValue(now: now))
 
         XCTAssertEqual(snapshot.notice?.id, .approaching)
         XCTAssertTrue(snapshot.cta?.target.isEmpty ?? false)
@@ -389,9 +399,7 @@ final class DuckAiUsageSnapshotTests: XCTestCase {
 final class DuckAiUsageSnapshotSeedGroupingTests: XCTestCase {
 
     func testEverySeedAppearsInExactlyOneMenuSection() {
-        let grouped = DuckAiUsageSnapshotSeed.approachingSeeds
-            + DuckAiUsageSnapshotSeed.reachedSeeds
-            + DuckAiUsageSnapshotSeed.edgeCaseSeeds
+        let grouped = DuckAiUsageSnapshotSeed.freeSeeds + DuckAiUsageSnapshotSeed.paidSeeds
 
         XCTAssertEqual(Set(grouped), Set(DuckAiUsageSnapshotSeed.allCases))
         XCTAssertEqual(grouped.count, DuckAiUsageSnapshotSeed.allCases.count)

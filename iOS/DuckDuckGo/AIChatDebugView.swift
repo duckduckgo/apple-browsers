@@ -323,17 +323,13 @@ private struct AIChatUsageWarningsSection: View {
     }
 
     var body: some View {
-        Section(header: Text(verbatim: "Duck.ai Usage Warnings — Approaching"),
+        Section(header: Text(verbatim: "Duck.ai Usage Warnings — Free"),
                 footer: Text(verbatim: status ?? defaultFooter)) {
-            seedButtons(DuckAiUsageSnapshotSeed.approachingSeeds)
+            seedButtons(DuckAiUsageSnapshotSeed.freeSeeds)
         }
 
-        Section(header: Text(verbatim: "Duck.ai Usage Warnings — Reached")) {
-            seedButtons(DuckAiUsageSnapshotSeed.reachedSeeds)
-        }
-
-        Section(header: Text(verbatim: "Duck.ai Usage Warnings — Edge cases")) {
-            seedButtons(DuckAiUsageSnapshotSeed.edgeCaseSeeds)
+        Section(header: Text(verbatim: "Duck.ai Usage Warnings — Paid")) {
+            seedButtons(DuckAiUsageSnapshotSeed.paidSeeds)
         }
 
         Section {

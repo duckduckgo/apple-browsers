@@ -74,14 +74,11 @@ final class AIChatDebugMenu: NSMenu {
         let item = NSMenuItem(title: "Duck.ai Usage Warnings")
         let submenu = NSMenu()
 
-        submenu.addItem(sectionHeader("Approaching"))
-        addSeeds(DuckAiUsageSnapshotSeed.approachingSeeds, to: submenu)
+        submenu.addItem(sectionHeader("Free"))
+        addSeeds(DuckAiUsageSnapshotSeed.freeSeeds, to: submenu)
         submenu.addItem(.separator())
-        submenu.addItem(sectionHeader("Reached"))
-        addSeeds(DuckAiUsageSnapshotSeed.reachedSeeds, to: submenu)
-        submenu.addItem(.separator())
-        submenu.addItem(sectionHeader("Edge cases"))
-        addSeeds(DuckAiUsageSnapshotSeed.edgeCaseSeeds, to: submenu)
+        submenu.addItem(sectionHeader("Paid"))
+        addSeeds(DuckAiUsageSnapshotSeed.paidSeeds, to: submenu)
         submenu.addItem(.separator())
 
         submenu.addItem(menuItem(title: "Re-seed the last case (simulates a republish)",

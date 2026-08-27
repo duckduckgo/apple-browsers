@@ -24,10 +24,10 @@ import PixelKit
 //
 // Legacy `Pixel` built a name as `<name><frequencySuffix>` and `URL.makePixelURL` then appended
 // `_ios_<formFactor>`. `namePrefix: .none` plus `platformSuffixPolicy: .standard` reproduces exactly
-// that, so migrated pixels keep the names they shipped with.
+// that. Migrated pixels keep the names they shipped with.
 //
-// `Pixel.Event` itself is unchanged: it stays the catalogue of legacy pixel names, and only the way
-// it reaches the network moves.
+// `Pixel.Event` itself is unchanged: it stays the catalogue of legacy pixel names. Only the way it
+// reaches the network moves.
 //
 // # Migrating a call site
 //
@@ -46,8 +46,8 @@ import PixelKit
 //     persistentPixel.fire(…)                                              .standard  + .withRetry
 //     persistentPixel.fireDailyAndCount(…)                        matching daily freq + .withRetry
 //
-// `_unique` names must use `.legacyInitial`, not `.uniqueByName`: PixelKit's `.uniqueByName` guards
-// on a `_u` suffix and returns *without firing* when it is absent, so a `_unique` pixel routed there
+// `_unique` names must use `.legacyInitial`, not `.uniqueByName`. PixelKit's `.uniqueByName` guards
+// on a `_u` suffix and returns *without firing* when it is absent. A `_unique` pixel routed there
 // would silently stop being sent. Both frequencies throttle under the same storage key, so their
 // once-ever state is shared and migrated together.
 //
@@ -78,26 +78,26 @@ extension Pixel.Event: PixelKit.Event {
     /// Legacy `Pixel` appended `_ios_<formFactor>` after any frequency suffix the caller had already
     /// baked into the name. `.standard` reproduces that order.
     ///
-    /// It also keeps the platform marker out of PixelKit's throttling key, which is what lets the
+    /// It also keeps the platform marker out of PixelKit's throttling key. That is what lets the
     /// once-ever and once-daily state carry over from the legacy stores. See
     /// `LegacyPixelStateMigration`.
     public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .standard }
 
-    /// Always `nil`: legacy `Pixel.Event` carried no parameters of its own, they came from the call site.
+    /// Always `nil`. Legacy `Pixel.Event` carried no parameters of its own; they came from the call site.
     public var parameters: [String: String]? { nil }
 
     public var standardParameters: [PixelKitStandardParameter]? { nil }
 
     /// Declared explicitly rather than left to the protocol's reflection-based default, which would
     /// pick up any `NSError` associated value on a case. Legacy `Pixel` only ever attached the error
-    /// passed to `fire`, so an error reaches PixelKit through `withError(_:)` and nowhere else.
+    /// passed to `fire`. An error reaches PixelKit only through `withError(_:)`.
     public var error: NSError? { nil }
 }
 
 public extension Pixel.Event {
 
-    /// This event carrying `error`, so PixelKit attaches the error parameters that legacy
-    /// `Pixel.fire(pixel:error:)` attached. A `nil` error yields an event with no error, which is
+    /// This event with `error` attached. PixelKit then adds the same error parameters legacy
+    /// `Pixel.fire(pixel:error:)` added. A `nil` error yields an event with no error, matching
     /// what the legacy optional `error:` argument did.
     func withError(_ error: Error?) -> PixelKit.Event {
         LegacyPixelEventWithError(wrapped: self, error: error as NSError?)

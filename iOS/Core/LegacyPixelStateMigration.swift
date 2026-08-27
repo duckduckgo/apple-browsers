@@ -23,8 +23,8 @@ import os.log
 
 /// A legacy pixel store, viewed as a snapshot.
 ///
-/// `ThrowingKeyValueStoring` cannot enumerate keys and the migration has to visit all of them, so
-/// each backing store supplies its own snapshot instead.
+/// `ThrowingKeyValueStoring` cannot enumerate keys. The migration has to visit every key, so each
+/// backing store supplies its own snapshot instead.
 public protocol LegacyPixelLastFireDateSource {
     func allLastFireDates() throws -> [String: Date]
 }
@@ -34,15 +34,15 @@ public protocol LegacyPixelLastFireDateSource {
 /// Legacy `DailyPixel`, `UniquePixel` and `Pixel`'s debounce each kept their own suite keyed by the
 /// bare `Pixel.Event.name` with a `Date` value. PixelKit keys
 /// `com.duckduckgo.network-protection.pixel.<name>` and stores a `[frequencyMapKey: Date]` map. The
-/// name part matches, because `Pixel.Event`'s `platformSuffixPolicy` is `.standard` and so keeps the
-/// `_ios_phone` marker out of the throttling key. That makes this a key-for-key copy.
+/// name part matches, because `Pixel.Event`'s `platformSuffixPolicy` is `.standard`. That policy keeps
+/// the `_ios_phone` marker out of the throttling key, which makes this a key-for-key copy.
 ///
 /// Without it, the release that migrates re-fires every once-ever pixel for the whole install base
 /// and every daily pixel once extra.
 ///
-/// Runs per process against that process's own stores: the browser and the VPN tunnel keep separate
-/// legacy stores (the tunnel replaces `DailyPixel.storage` and `UniquePixel.storage` with
-/// `KeyValueFileStore`s in the VPN app group), so each drives its own instance.
+/// Runs per process against that process's own stores. The browser and the VPN tunnel keep separate
+/// legacy stores: the tunnel replaces `DailyPixel.storage` and `UniquePixel.storage` with
+/// `KeyValueFileStore`s in the VPN app group. Each process drives its own migration instance.
 public struct LegacyPixelStateMigration {
 
     public static let completionFlagKey = "com.duckduckgo.pixel.legacy-state-migration.completed"
@@ -108,9 +108,13 @@ public struct LegacyPixelStateMigration {
     }
 
     private var hasAlreadyRun: Bool {
-        // Fail closed: if reading the flag throws, skip, rather than risk overwriting newer
-        // PixelKit state with stale legacy dates on every launch. A missing flag is not a throw,
-        // just a normal `nil` decode, and means only that this is the first run.
+        // Fail closed: if reading the flag throws, skip. Otherwise a launch could overwrite
+        // newer PixelKit state with stale legacy dates. A missing flag is not a throw, only a
+        // normal `nil` decode, and it means this is the first run.
+        //
+        // Do not collapse this to `((try? store.object(forKey:)) ?? true) as? Bool ?? true`.
+        // Swift flattens `try?` over an optional-returning throwing call, so a missing flag
+        // decodes to `nil`, falls through the `?? true`, and the migration never runs again.
         do {
             return (try completionFlagStore.object(forKey: Self.completionFlagKey) as? Bool) ?? false
         } catch {

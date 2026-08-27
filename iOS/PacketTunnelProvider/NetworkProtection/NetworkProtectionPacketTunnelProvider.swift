@@ -762,10 +762,11 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let legacyStores = Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
 
             // The tunnel keeps its legacy daily and once-ever pixel state in its own app-group
-            // files, not in the suites the browser migrates, so it runs its own migration here
-            // against whichever store PixelKit actually ended up using. Without it every VPN daily
-            // pixel fires once extra and every VPN once-ever pixel fires a second time on the
-            // release that migrates.
+            // files, not in the suites the browser migrates. It runs its own migration here,
+            // against whichever store PixelKit actually ended up using.
+            //
+            // Without it, every VPN daily pixel fires once extra on the release that migrates.
+            // Every VPN once-ever pixel fires a second time.
             let destination: ThrowingKeyValueStoring = pixelKitStore ?? UserDefaults.networkProtectionGroupDefaults
             LegacyPixelStateMigration(
                 destination: destination,

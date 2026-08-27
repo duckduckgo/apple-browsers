@@ -17,12 +17,8 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
-
-enum UTIFooterAction: Equatable {
-    case reduceUsage
-    case switchModel
-}
 
 struct UTIFooterMessage: Equatable {
 
@@ -33,7 +29,8 @@ struct UTIFooterMessage: Equatable {
 
     struct PrimaryAction: Equatable {
         let title: String
-        let action: UTIFooterAction
+        /// The chevron beside the title, which opens the model picker. Only a model switch offers it.
+        let showsModelPicker: Bool
     }
 
     let icon: Icon
@@ -43,6 +40,8 @@ struct UTIFooterMessage: Equatable {
     let isDismissible: Bool
 }
 
+/// Localizes the interval the shared resolver already bucketed, so "Resets in" reads as
+/// "2 days" rather than the module's unlocalized "2d".
 struct UTIFooterResetDescriber {
 
     private let formatter: DateComponentsFormatter
@@ -53,17 +52,24 @@ struct UTIFooterResetDescriber {
         let formatter = DateComponentsFormatter()
         formatter.calendar = calendar
         formatter.unitsStyle = .full
-        formatter.allowedUnits = [.day, .hour, .minute]
+        formatter.allowedUnits = [.day, .hour]
         formatter.maximumUnitCount = 1
         self.formatter = formatter
     }
 
-    func describe(until resetsAt: Date, from now: Date) -> String {
-        let remaining = max(resetsAt.timeIntervalSince(now), Constants.minimumRemaining)
-        return formatter.string(from: remaining) ?? ""
+    /// Whole days or whole hours only: the interval arrives already rounded up, and web never
+    /// counts a reset down in minutes.
+    func describe(_ interval: DuckAiUsageResetInterval) -> String {
+        switch interval {
+        case .days(let days):
+            return formatter.string(from: TimeInterval(max(1, days)) * Constants.secondsPerDay) ?? ""
+        case .hours(let hours):
+            return formatter.string(from: TimeInterval(max(1, hours)) * Constants.secondsPerHour) ?? ""
+        }
     }
 
     private enum Constants {
-        static let minimumRemaining: TimeInterval = 60
+        static let secondsPerHour: TimeInterval = 60 * 60
+        static let secondsPerDay: TimeInterval = 24 * 60 * 60
     }
 }

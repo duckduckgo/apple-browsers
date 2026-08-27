@@ -1059,8 +1059,10 @@ extension TabManager {
             Pixel.fire(pixel: .cachedTabPreviewsExceedsTabCount, withAdditionalParameters: [
                 PixelParameters.tabPreviewCountDelta: "\(storedPreviews - totalTabs)"
             ])
+            let validTabIDs = Set(allTabsModel.tabs.map { $0.uid })
+            let previewsSourceForCleanup = previewsSource
             Task(priority: .utility) {
-                _ = previewsSource.removePreviewsWithIdNotIn(Set(allTabsModel.tabs.map { $0.uid }))
+                _ = previewsSourceForCleanup.removePreviewsWithIdNotIn(validTabIDs)
             }
         }
     }

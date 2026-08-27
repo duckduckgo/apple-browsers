@@ -1043,9 +1043,8 @@ final class PixelKitTests: XCTestCase {
     }
 
     /// The `options:` entry point must produce byte-identical pixel names and parameters to the
-    /// legacy wide-parameter one. This is what makes the `doNotEnforcePrefix` -> `enforcePrefix`
-    /// polarity inversion safe: pixel names are contractual, so a botched translation would
-    /// silently rename production pixels.
+    /// legacy wide-parameter one. Pixel names are contractual, so any divergence between the two
+    /// entry points would silently rename production pixels.
     func testOptionsPathMatchesLegacyPathForDefaults() {
         let result = firedNameAndParameters(
             legacy: { $0.fire(TestEventV2.testEventWithoutParameters) },
@@ -1055,21 +1054,35 @@ final class PixelKitTests: XCTestCase {
         XCTAssertEqual(result.legacy.1, result.options.1)
     }
 
-    func testOptionsPathMatchesLegacyPathForUnenforcedPrefix() {
+    /// Naming no longer crosses the legacy/options boundary at all: it comes from the event, so
+    /// both entry points must agree for an event that states its own prefix.
+    func testBothEntryPointsHonourTheEventsOwnPrefix() {
         let result = firedNameAndParameters(
-            legacy: { $0.fire(TestEventV2.testEventWithoutParameters, doNotEnforcePrefix: true) },
-            options: { $0.fire(TestEventV2.testEventWithoutParameters, options: .unenforcedPrefix) }
+            legacy: { $0.fire(PrefixStatingEvent(namePrefix: .custom("custom_"))) },
+            options: { $0.fire(PrefixStatingEvent(namePrefix: .custom("custom_")), options: .default) }
         )
-        XCTAssertEqual(result.legacy.0, result.options.0,
-                       "enforcePrefix: false must produce the same pixel name as doNotEnforcePrefix: true")
+        XCTAssertEqual(result.legacy.0, result.options.0)
+        XCTAssertEqual(result.legacy.0, "custom_prefix_stating_event")
         XCTAssertEqual(result.legacy.1, result.options.1)
     }
 
-    func testOptionsPathMatchesLegacyPathForNamePrefix() {
+    func testAnEventCanDeclineAPrefixEntirely() {
         let result = firedNameAndParameters(
-            legacy: { $0.fire(TestEventV2.testEventWithoutParameters, withNamePrefix: "custom_") },
-            options: { $0.fire(TestEventV2.testEventWithoutParameters, options: .namePrefix("custom_")) }
+            legacy: { $0.fire(PrefixStatingEvent(namePrefix: .none)) },
+            options: { $0.fire(PrefixStatingEvent(namePrefix: .none), options: .default) }
         )
+        XCTAssertEqual(result.legacy.0, result.options.0)
+        XCTAssertEqual(result.legacy.0, "prefix_stating_event")
+    }
+
+    /// `prefixed(_:)` is how a shared package applies a host-chosen prefix without putting naming
+    /// back into `Options`.
+    func testPrefixedDecoratorAppliesThePrefixAndForwardsEverythingElse() {
+        let result = firedNameAndParameters(
+            legacy: { $0.fire(PrefixStatingEvent(namePrefix: .none).prefixed("m_ios_")) },
+            options: { $0.fire(PrefixStatingEvent(namePrefix: .none).prefixed("m_ios_"), options: .default) }
+        )
+        XCTAssertEqual(result.legacy.0, "m_ios_prefix_stating_event")
         XCTAssertEqual(result.legacy.0, result.options.0)
         XCTAssertEqual(result.legacy.1, result.options.1)
     }
@@ -1094,17 +1107,6 @@ final class PixelKitTests: XCTestCase {
         XCTAssertEqual(result.legacy.1, result.options.1)
         XCTAssertEqual(result.options.1["eventParam1"], "overridden",
                        "additionalParameters must win over the event's own parameters")
-    }
-
-    /// namePrefix and enforcePrefix interact, so cover them together rather than only in isolation.
-    func testOptionsPathMatchesLegacyPathForNamePrefixWithUnenforcedPrefix() {
-        let result = firedNameAndParameters(
-            legacy: { $0.fire(TestEventV2.testEventWithoutParameters, withNamePrefix: "custom_", doNotEnforcePrefix: true) },
-            options: { $0.fire(TestEventV2.testEventWithoutParameters,
-                               options: PixelKit.Options(namePrefix: "custom_", enforcePrefix: false)) }
-        )
-        XCTAssertEqual(result.legacy.0, result.options.0)
-        XCTAssertEqual(result.legacy.1, result.options.1)
     }
 
     // MARK: - Header semantics
@@ -1201,29 +1203,32 @@ final class PixelKitTests: XCTestCase {
         XCTAssertEqual(staticHeaders, viaInstance)
     }
 
+    /// An event that states its own prefix, which is where naming lives now.
+    private struct PrefixStatingEvent: PixelKit.Event {
+        let namePrefix: PixelKitNamePrefix
+        let name = "prefix_stating_event"
+        let parameters: [String: String]? = nil
+        let standardParameters: [PixelKitStandardParameter]? = nil
+    }
+
     // MARK: - Options presets
 
     func testOptionsPresetsMatchTheirMemberwiseEquivalents() {
         XCTAssertEqual(PixelKit.Options.default, PixelKit.Options())
-        XCTAssertEqual(PixelKit.Options.unenforcedPrefix, PixelKit.Options(enforcePrefix: false))
         XCTAssertEqual(PixelKit.Options.withoutAppVersion, PixelKit.Options(includeAppVersionParameter: false))
         XCTAssertEqual(PixelKit.Options.parameters(["a": "b"]),
                        PixelKit.Options(additionalParameters: ["a": "b"]))
-        XCTAssertEqual(PixelKit.Options.namePrefix("p_"), PixelKit.Options(namePrefix: "p_"))
-        XCTAssertEqual(PixelKit.Options.parameters(["a": "b"], namePrefix: "p_"),
-                       PixelKit.Options(additionalParameters: ["a": "b"], namePrefix: "p_"))
         XCTAssertEqual(PixelKit.Options.withRetry, PixelKit.Options(retryOnFailure: true))
     }
 
-    /// Defaults must be the non-intrusive ones: prefix enforced, app version included, no retry.
+    /// Defaults must be the non-intrusive ones: app version included, no retry. Naming is not
+    /// represented in `Options` at all any more.
     func testOptionsDefaultsAreConservative() {
         let options = PixelKit.Options()
-        XCTAssertTrue(options.enforcePrefix)
         XCTAssertTrue(options.includeAppVersionParameter)
         XCTAssertFalse(options.retryOnFailure)
         XCTAssertNil(options.headers)
         XCTAssertNil(options.additionalParameters)
-        XCTAssertNil(options.namePrefix)
         XCTAssertNil(options.allowedQueryReservedCharacters)
     }
 
@@ -1245,13 +1250,13 @@ final class PixelKitTests: XCTestCase {
     func testSugarForwardsExplicitArgumentsToWitness() {
         let recorder = RecordingPixelFiring()
 
-        recorder.fire(TestEventV2.testEvent, options: .unenforcedPrefix)
+        recorder.fire(TestEventV2.testEvent, options: .withoutAppVersion)
         recorder.fire(TestEventV2.testEvent, frequency: .daily)
 
         XCTAssertEqual(recorder.calls.count, 2)
         // Skipping the middle parameter must still default frequency.
         XCTAssertEqual(recorder.calls[0].frequency, .standard)
-        XCTAssertEqual(recorder.calls[0].options, .unenforcedPrefix)
+        XCTAssertEqual(recorder.calls[0].options, .withoutAppVersion)
         // Omitting options must still default it.
         XCTAssertEqual(recorder.calls[1].frequency, .daily)
         XCTAssertEqual(recorder.calls[1].options, .default)

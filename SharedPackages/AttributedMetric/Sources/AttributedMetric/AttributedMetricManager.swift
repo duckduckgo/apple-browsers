@@ -326,8 +326,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                    count: bucket.value,
                                                                    bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           doNotEnforcePrefix: true)
+                           includeAppVersionParameter: false)
         case .months(let month):
             Logger.attributedMetric.log("\(month, privacy: .public) month(s) from installation")
             guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userRetentionMonth) else {
@@ -340,8 +339,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                     count: bucket.value,
                                                                     bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           doNotEnforcePrefix: true)
+                           includeAppVersionParameter: false)
         }
     }
 
@@ -388,8 +386,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                 daysSinceInstalled: addDaysSinceInstalled ? daysSinceInstalled : nil,
                                                                 bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       doNotEnforcePrefix: true)
+                       includeAppVersionParameter: false)
     }
 
     // MARK: - Average searches
@@ -423,8 +420,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                                        dayAverage: result.dayAverage,
                                                                                        bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           doNotEnforcePrefix: true)
+                           includeAppVersionParameter: false)
         case .months:
             guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageSearchesPastWeek) else {
                 Logger.attributedMetric.error("Failed to bucket average search count value")
@@ -438,8 +434,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                              dayAverage: result.dayAverage,
                                                                              bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           doNotEnforcePrefix: true)
+                           includeAppVersionParameter: false)
         }
     }
 
@@ -475,8 +470,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                          dayAverage: result.dayAverage,
                                                                          bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       doNotEnforcePrefix: true)
+                       includeAppVersionParameter: false)
     }
 
     // MARK: - Average Duck.ai chats
@@ -511,8 +505,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                             dayAverage: result.dayAverage,
                                                                             bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       doNotEnforcePrefix: true)
+                       includeAppVersionParameter: false)
     }
 
     // MARK: - Subscription
@@ -548,8 +541,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                             month: bucket.value,
                                                             bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       doNotEnforcePrefix: true)
+                       includeAppVersionParameter: false)
     }
 
     func processSubscriptionCheck() {
@@ -593,8 +585,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                     month: bucket.value,
                                                                     bucketVersion: bucket.version),
                                frequency: .legacyDailyNoSuffix,
-                               includeAppVersionParameter: false,
-                               doNotEnforcePrefix: true)
+                               includeAppVersionParameter: false)
                 dataStorage.subscriptionMonth1Fired = true
             } catch {
                 Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
@@ -609,8 +600,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                     month: bucket.value,
                                                                     bucketVersion: bucket.version),
                                frequency: .legacyDailyNoSuffix,
-                               includeAppVersionParameter: false,
-                               doNotEnforcePrefix: true)
+                               includeAppVersionParameter: false)
             } catch {
                 Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
             }
@@ -647,7 +637,6 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                               devices: bucket.value,
                                                               bucketVersion: bucket.version),
                        frequency: .standard,
-                       includeAppVersionParameter: false,
-                       doNotEnforcePrefix: true)
+                       includeAppVersionParameter: false)
     }
 }

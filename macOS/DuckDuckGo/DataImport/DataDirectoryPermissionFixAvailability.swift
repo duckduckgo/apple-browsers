@@ -29,10 +29,14 @@ struct DataDirectoryPermissionFixAvailability {
 
     private let featureFlagger: FeatureFlagger
     private let debugSettings: any KeyedStoring<DataImportDebugSettings>
+    private let isOSSupported: Bool
 
-    init(featureFlagger: FeatureFlagger, debugSettings: any KeyedStoring<DataImportDebugSettings>) {
+    init(featureFlagger: FeatureFlagger,
+         debugSettings: any KeyedStoring<DataImportDebugSettings>,
+         isOSSupported: Bool = DataDirectoryPermissionFixAvailability.isRunningSupportedOS) {
         self.featureFlagger = featureFlagger
         self.debugSettings = debugSettings
+        self.isOSSupported = isOSSupported
     }
 
     /// Debug override: run the flow regardless of the OS version, the Feature Flag, and the directory's actual access state.
@@ -47,10 +51,21 @@ struct DataDirectoryPermissionFixAvailability {
             return true
         }
 
-        guard #available(macOS 27.0, *) else {
+        guard isOSSupported else {
             return false
         }
 
         return featureFlagger.isFeatureOn(.dataImportDataDirectoryAccess)
+    }
+}
+
+extension DataDirectoryPermissionFixAvailability {
+
+    /// `true` when the running OS is macOS +27.
+    static var isRunningSupportedOS: Bool {
+        if #available(macOS 27.0, *) {
+            return true
+        }
+        return false
     }
 }

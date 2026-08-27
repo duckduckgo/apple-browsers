@@ -1,5 +1,5 @@
 //
-//  UTIFooterWarning.swift
+//  FloatingOmnibarTransitionMetrics.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,20 +17,17 @@
 //  limitations under the License.
 //
 
-import Foundation
+import UIKit
 
-enum UTIFooterUsageWindow: Equatable, Hashable {
-    case daily
-    case weekly
-}
+enum FloatingOmnibarTransitionMetrics {
 
-enum UTIFooterUsageThreshold: Int, Equatable, Hashable, CaseIterable {
-    case fifty = 50
-    case seventyFive = 75
-    case ninety = 90
-}
+    static let legacyBottomDuration: TimeInterval = 0.35
+    static let legacyTopDuration: TimeInterval = 0.25
+    static let floatingDurationScale: TimeInterval = 3.0 / 4.0
 
-enum UTIFooterWarning: Equatable, Hashable {
-    case usageThreshold(window: UTIFooterUsageWindow, threshold: UTIFooterUsageThreshold, resetsAt: Date)
-    case limitReached(window: UTIFooterUsageWindow, resetsAt: Date)
+    static func duration(isBottom: Bool, isFloatingUIEnabled: Bool) -> TimeInterval {
+        let legacy = isBottom ? legacyBottomDuration : legacyTopDuration
+        return isFloatingUIEnabled ? legacy * floatingDurationScale : legacy
+    }
+
 }

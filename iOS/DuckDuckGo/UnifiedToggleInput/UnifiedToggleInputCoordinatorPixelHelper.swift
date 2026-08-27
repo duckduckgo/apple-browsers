@@ -18,14 +18,52 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import Core
 import Foundation
+import Persistence
 import PixelKit
 import Subscription
 
+/// Install-lifetime first-Duck.ai-prompt flag behind the shared `first_prompt_new_install` pixel
+/// parameter. Read by every prompt-submission pixel; marked once per submission flow after its
+/// pixels fire. `DuckAIFirstPromptNewInstallCohort` pre-marks existing installs at launch, so the
+/// parameter can only ever fire on a brand-new install's genuine first prompt.
+extension FeatureDiscovery {
+
+    var isFirstDuckAIPromptNewInstall: Bool {
+        !wasUsedBefore(.duckAIPrompt)
+    }
+
+    func markDuckAIPromptSubmitted() {
+        setWasUsedBefore(.duckAIPrompt)
+    }
+}
+
+/// Launch-time cohort gate for `first_prompt_new_install`: installs that predate this measurement
+/// are pre-marked as having prompted, so only brand-new installs can ever report the parameter.
+enum DuckAIFirstPromptNewInstallCohort {
+
+    static let cohortAssignedKey = "com.duckduckgo.aichat.firstPromptNewInstall.cohortAssigned"
+
+    /// Must run before StatisticsLoader stores install statistics (mirrors `IdleReturnCohort`):
+    /// once they exist every install looks existing, which would disqualify a genuinely new one.
+    static func assignIfNeeded(statisticsStore: StatisticsStore,
+                               featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+                               marker: KeyValueStoring = UserDefaults.standard) {
+        guard marker.object(forKey: cohortAssignedKey) == nil else { return }
+        if statisticsStore.hasInstallStatistics {
+            featureDiscovery.markDuckAIPromptSubmitted()
+        }
+        marker.set(true, forKey: cohortAssignedKey)
+    }
+}
+
 /// The schedule suffix is part of the name, fired with frequencies that append nothing, so PixelKit's
 /// platform suffix lands after it and the wire name stays `..._daily_ios_phone` as the legacy pixel reports it.
-enum ExperimentalOmnibarPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum ExperimentalOmnibarPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     /// `isToggleVisible`: whether the Search/Duck.ai toggle was on screen when the surface appeared.
     case omnibarShownDaily(isToggleVisible: Bool)
@@ -47,7 +85,7 @@ enum ExperimentalOmnibarPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 /// The UTI surface a pixel is fired from, sent as the `surface` param (`voice_tapped` reuses `source`).
@@ -216,6 +254,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         pageType: UnifiedToggleInputPromptPageType? = nil,
         origin: AIChatEntryPointSource? = nil,
         defaultMode: DefaultOmnibarMode? = nil,
+        isFirstPromptNewInstall: Bool = false,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
@@ -234,6 +273,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         parameters["page_type"] = pageType?.rawValue
         parameters["origin"] = origin?.rawValue
         parameters["default_mode"] = defaultMode?.rawValue
+        parameters[PixelParameters.aiChatFirstPromptNewInstall] = isFirstPromptNewInstall ? "true" : nil
 
         firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
     }

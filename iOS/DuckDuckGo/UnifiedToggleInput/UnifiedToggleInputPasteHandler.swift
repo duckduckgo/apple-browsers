@@ -264,9 +264,10 @@ enum PasteboardAttachmentReader {
         return pasteboard.numberOfItems > 0
     }
 
-    /// Not `hasImages`: that only covers `UIPasteboardTypeListImage`, which excludes HEIC and WebP that the loader accepts.
+    /// Not `hasImages` (misses HEIC/WebP) and not `contains(pasteboardTypes:)` (inspects only the first item).
     private static func mayHoldLoadableImage(in pasteboard: UIPasteboard) -> Bool {
-        pasteboard.contains(pasteboardTypes: loadableImageTypeIdentifiers)
+        guard let matches = pasteboard.itemSet(withPasteboardTypes: loadableImageTypeIdentifiers) else { return false }
+        return !matches.isEmpty
     }
 
     /// Reads the pasteboard bytes (surfaces the banner) and builds attachments. Images stop decoding at the allowance and files are

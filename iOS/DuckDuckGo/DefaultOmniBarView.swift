@@ -1670,7 +1670,7 @@ private extension DefaultOmniBarView {
     /// capsule) in compact portrait layout. Landscape / iPad use the standalone three-pill chrome
     /// and must keep the original field metrics.
     var isBottomFloatingField: Bool {
-        isFloatingUIEnabled && isUsingSmallTopSpacing && layoutMode == .compact
+        isFloatingUIEnabled && isUsingSmallTopSpacing && !isExpandedPhoneLayout && layoutMode == .compact
     }
 
     /// Resting field fill: the bottom floating field is `T-Input/Resting` so it reads clearly

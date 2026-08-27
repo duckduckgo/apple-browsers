@@ -482,6 +482,19 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
     }
 
+    func testWhenBottomFloatingLandscapeEditingThenCompactModeKeepsInputHeightUnchanged() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = true
+        barView.isExpandedPhoneLayout = true
+        barView.setLayoutMode(.compact, animated: false)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
     func testWhenNonFloatingTopFieldThenInputHeightStaysUnchanged() {
         let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)

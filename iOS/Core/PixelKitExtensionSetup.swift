@@ -63,5 +63,16 @@ public enum PixelKitExtensionSetup {
                 }
             }
         }
+
+        // Each process has its own copy of these suites; `UserDefaults(suiteName:)` does not share
+        // them across processes. Without this migration, an already-throttled pixel in this
+        // process fires once more on the release that moves it to PixelKit.
+        LegacyPixelStateMigration(
+            destination: defaults,
+            dailyStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.daily.pixel.storage"),
+            uniqueStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.unique.pixel.storage"),
+            debounceStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.pixel.storage"),
+            completionFlagStore: defaults
+        ).run()
     }
 }

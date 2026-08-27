@@ -153,3 +153,39 @@ extension LegacyPixelStateMigrationTests.Store: LegacyPixelLastFireDateSource {
         return values.compactMapValues { $0 as? Date }
     }
 }
+
+final class UserDefaultsLegacyPixelStoreTests: XCTestCase {
+
+    private var suiteName: String!
+    private var defaults: UserDefaults!
+
+    override func setUp() {
+        super.setUp()
+        suiteName = "\(Self.self)-\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: suiteName)
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suiteName)
+        super.tearDown()
+    }
+
+    func testReturnsOnlyThisSuitesOwnKeys() throws {
+        defaults.set(Date(), forKey: "m_example")
+        let store = UserDefaultsLegacyPixelStore(suiteName: suiteName)!
+
+        let dates = try store.allLastFireDates()
+
+        XCTAssertEqual(dates.count, 1)
+        XCTAssertEqual(Array(dates.keys), ["m_example"])
+    }
+
+    func testDoesNotLeakGlobalDomainKeys() throws {
+        // A freshly created, empty suite still returns many keys from the domains
+        // `dictionaryRepresentation()` merges in. `allLastFireDates()` must not.
+        XCTAssertGreaterThan(defaults.dictionaryRepresentation().count, 1)
+
+        let store = UserDefaultsLegacyPixelStore(suiteName: suiteName)!
+        XCTAssertTrue(try store.allLastFireDates().isEmpty)
+    }
+}

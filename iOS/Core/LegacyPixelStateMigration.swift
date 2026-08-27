@@ -131,16 +131,21 @@ public struct LegacyPixelStateMigration {
 /// A `UserDefaults` suite as a snapshot source. All three browser-side legacy stores are suites.
 public struct UserDefaultsLegacyPixelStore: LegacyPixelLastFireDateSource {
     private let defaults: UserDefaults
+    private let suiteName: String
 
     public init?(suiteName: String) {
         guard let defaults = UserDefaults(suiteName: suiteName) else { return nil }
         self.defaults = defaults
+        self.suiteName = suiteName
     }
 
     public func allLastFireDates() throws -> [String: Date] {
-        // `Date` values only. The daily store also holds compound `name:<error values>` keys whose
-        // granularity PixelKit does not reproduce, and those are simply not carried over.
-        defaults.dictionaryRepresentation().compactMapValues { $0 as? Date }
+        // `persistentDomain(forName:)` returns only this suite's own keys. `dictionaryRepresentation()`
+        // also merges in `NSGlobalDomain` and the registration domain.
+        //
+        // `Date` values only. Compound `name:<error values>` keys have no PixelKit equivalent.
+        // They are dropped here.
+        (defaults.persistentDomain(forName: suiteName) ?? [:]).compactMapValues { $0 as? Date }
     }
 }
 

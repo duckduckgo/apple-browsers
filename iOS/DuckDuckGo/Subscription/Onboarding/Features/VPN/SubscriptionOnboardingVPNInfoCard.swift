@@ -52,21 +52,24 @@ struct SubscriptionOnboardingVPNInfoCard: View {
         self.isAvailable = isAvailable
     }
 
-    // Hide the card until their data is available.
-    @ViewBuilder
+    // Hide the card until their data is available, then ease it in.
     var body: some View {
-        if state.hidesValues || isAvailable {
-            card
-                .accessibilityElement(children: .combine)
-                .onAppear {
-                    guard state.hidesValues, blurRadius == 0 else { return }
-                    if reduceMotion {
-                        blurRadius = Self.hiddenBlurRadius
-                    } else {
-                        withAnimation(.easeInOut(duration: 0.4)) { blurRadius = Self.hiddenBlurRadius }
+        Group {
+            if state.hidesValues || isAvailable {
+                card
+                    .accessibilityElement(children: .combine)
+                    .transition(.opacity)
+                    .onAppear {
+                        guard state.hidesValues, blurRadius == 0 else { return }
+                        if reduceMotion {
+                            blurRadius = Self.hiddenBlurRadius
+                        } else {
+                            withAnimation(.easeInOut(duration: 0.4)) { blurRadius = Self.hiddenBlurRadius }
+                        }
                     }
-                }
+            }
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: isAvailable)
     }
 
     private var card: some View {

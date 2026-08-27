@@ -182,6 +182,41 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
         XCTAssertEqual(SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).fullyCompletedAt, first)
     }
 
+    // MARK: - Setup card criteria ordering (three independent ORs; whichever fires first hides it)
+
+    /// No relaunch happens here, so the view cap must be what hides it, not the session latch.
+    func testWhenTwoViewsHappenWithinTheCompletingSessionThenTheViewCapHidesItFirst() {
+        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
+        let session = SubscriptionOnboardingSessionState()
+
+        XCTAssertTrue(progress.shouldShowSetupCard(now: Date(), session: session))
+        XCTAssertTrue(progress.shouldShowSetupCard(now: Date(), session: session))
+        XCTAssertFalse(progress.shouldShowSetupCard(now: Date(), session: session))
+        XCTAssertTrue(session.didCompleteDuringThisSession)
+    }
+
+    /// Below the view cap here, so the next-launch rule must be what hides it.
+    func testWhenOnlyOneViewHappensBeforeARelaunchThenTheNextLaunchRuleHidesItFirst() {
+        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
+        _ = progress.shouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState())
+
+        // A fresh session object is what the next app launch supplies.
+        XCTAssertFalse(progress.shouldShowSetupCard(now: Date(), session: SubscriptionOnboardingSessionState()))
+        XCTAssertEqual(SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).completionViewCount, 1)
+    }
+
+    /// The 14-day check is independent of the other two, so it can fire before either of them would.
+    func testWhenFourteenDaysHavePassedThenTheWindowHidesItEvenBelowTheViewCapAndWithinTheCompletingSession() {
+        var progress = makeProgress(isPIRAvailable: false, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
+        let firstShown = Date(timeIntervalSince1970: 1_000_000)
+        let session = SubscriptionOnboardingSessionState()
+        XCTAssertTrue(progress.shouldShowSetupCard(now: firstShown, session: session))
+
+        XCTAssertFalse(progress.shouldShowSetupCard(now: firstShown.addingTimeInterval(14 * day), session: session))
+        XCTAssertTrue(session.didCompleteDuringThisSession)
+        XCTAssertEqual(SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore).completionViewCount, 1)
+    }
+
     // MARK: - Setup card visibility preview (never writes)
 
     /// Seeded from a View `init`, which SwiftUI can re-run many times per session, so this must never write.

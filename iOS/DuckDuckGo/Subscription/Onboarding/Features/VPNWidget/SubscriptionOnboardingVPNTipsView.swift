@@ -48,7 +48,7 @@ struct SubscriptionOnboardingVPNTipsView: View {
 /// The VPN tips carousel: fixed-width cards with the neighbours peeking at the edges.
 private struct VPNTipsCarousel: View {
     private enum Metrics {
-        static let cardWidth: CGFloat = 217
+        static let cardWidth: CGFloat = 260
         static let horizontalPadding: CGFloat = 32
         static let verticalPadding: CGFloat = 32
         static let cardSpacing: CGFloat = 16

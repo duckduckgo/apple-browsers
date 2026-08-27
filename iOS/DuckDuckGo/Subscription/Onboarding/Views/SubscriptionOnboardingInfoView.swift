@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import WebKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
@@ -30,6 +31,9 @@ struct SubscriptionOnboardingInfoView: View {
         static let cardSpacing: CGFloat = 16
         static let disclaimerTopSpacing: CGFloat = 24
     }
+
+    /// The disclaimer's tapped link, shown in a document sheet on top of this info sheet.
+    @State private var disclaimerDocument: IdentifiableURL?
 
     var body: some View {
         VStack(spacing: Metrics.disclaimerTopSpacing) {
@@ -49,9 +53,12 @@ struct SubscriptionOnboardingInfoView: View {
                 disclaimerView(disclaimer)
             }
         }
+        .sheet(item: $disclaimerDocument) { document in
+            SubscriptionOnboardingDocumentSheet(url: document.url, onClose: { disclaimerDocument = nil })
+        }
     }
 
-    /// Renders Markdown; links open in the system URL handler.
+    /// Renders Markdown; links open in a document sheet on top of this one instead of the system URL handler.
     private func disclaimerView(_ disclaimer: String) -> some View {
         Text(underlinedLinks(in: disclaimer))
             .daxFootnoteRegular()
@@ -59,6 +66,10 @@ struct SubscriptionOnboardingInfoView: View {
             .foregroundColor(Color(designSystemColor: .textSecondary))
             .tintIfAvailable(Color(designSystemColor: .textSecondary))
             .frame(maxWidth: .infinity, alignment: .leading)
+            .environment(\.openURL, OpenURLAction { url in
+                disclaimerDocument = IdentifiableURL(url: url)
+                return .handled
+            })
     }
 
     private func underlinedLinks(in markdown: String) -> AttributedString {
@@ -96,6 +107,40 @@ private struct SubscriptionOnboardingInfoSheet: View {
         }
         .subscriptionOnboardingNavigationContainer()
     }
+}
+
+private struct IdentifiableURL: Identifiable {
+    let url: URL
+    var id: URL { url }
+}
+
+/// A document sheet for a disclaimer link (e.g. a PDF), presented on top of the info sheet.
+private struct SubscriptionOnboardingDocumentSheet: View {
+    let url: URL
+    let onClose: () -> Void
+
+    var body: some View {
+        SubscriptionOnboardingBaseView(
+            navigationButton: .close(onClose),
+            scrollsContent: false) {
+            SubscriptionOnboardingDocumentWebView(url: url)
+                .padding(.horizontal, -SubscriptionOnboardingPageInsets.horizontal)
+                .padding(.vertical, -SubscriptionOnboardingPageInsets.vertical)
+        }
+        .subscriptionOnboardingNavigationContainer()
+    }
+}
+
+private struct SubscriptionOnboardingDocumentWebView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        webView.load(URLRequest(url: url))
+        return webView
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
 }
 
 extension View {

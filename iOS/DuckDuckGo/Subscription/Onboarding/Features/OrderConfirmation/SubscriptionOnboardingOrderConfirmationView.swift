@@ -25,7 +25,6 @@ struct SubscriptionOnboardingOrderConfirmationView: View {
     private enum Metrics {
         static let contentSpacing: CGFloat = 24
         static let illustrationOverhang: CGFloat = 36
-        static let illustrationAspectRatio: CGFloat = 402.0 / 351.0
     }
 
     @StateObject private var viewModel: SubscriptionOnboardingOrderConfirmationViewModel
@@ -63,26 +62,23 @@ private extension SubscriptionOnboardingOrderConfirmationView {
     }
 
     var content: some View {
-        GeometryReader { proxy in
-            VStack(spacing: Metrics.contentSpacing) {
-                if let freeTrialCard = viewModel.freeTrialCard {
-                    SubscriptionOnboardingFreeTrialCalendarCard(model: freeTrialCard)
-                }
+        VStack(spacing: Metrics.contentSpacing) {
+            if let freeTrialCard = viewModel.freeTrialCard {
+                SubscriptionOnboardingFreeTrialCalendarCard(model: freeTrialCard)
+            }
 
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(alignment: .bottom) {
-                illustration(pageWidth: proxy.size.width + SubscriptionOnboardingPageInsets.horizontal * 2)
-            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(alignment: .bottom) {
+            illustration
         }
     }
 
-    func illustration(pageWidth: CGFloat) -> some View {
+    var illustration: some View {
         Image(.daxThumbupStatic)
             .resizable()
             .scaledToFit()
-            .frame(width: pageWidth, height: pageWidth / Metrics.illustrationAspectRatio)
             .padding(.horizontal, -SubscriptionOnboardingPageInsets.horizontal)
             .padding(.bottom, -(SubscriptionOnboardingPageInsets.vertical + Metrics.illustrationOverhang))
             .accessibilityHidden(true)

@@ -32,6 +32,8 @@ protocol SubscriptionOnboardingProgressPersisting {
     var cardFirstShownDate: Date? { get set }
     /// When the checklist first reached 100%.
     var fullyCompletedAt: Date? { get set }
+    /// How many times the card has been shown since reaching 100%, for the 2-view cap.
+    var completionViewCount: Int { get set }
 }
 
 extension SubscriptionOnboardingProgressPersisting {
@@ -50,6 +52,12 @@ extension SubscriptionOnboardingProgressPersisting {
         guard cardFirstShownDate == nil else { return }
         cardFirstShownDate = now
     }
+
+    mutating func recordCompletionView() {
+        progressLock.lock()
+        defer { progressLock.unlock() }
+        completionViewCount += 1
+    }
 }
 
 struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPersisting {
@@ -58,6 +66,7 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
         case completedItems = "subscription.onboarding.completed-items"
         case cardFirstShownDate = "subscription.onboarding.card-first-shown-date"
         case fullyCompletedAt = "subscription.onboarding.fully-completed-at"
+        case completionViewCount = "subscription.onboarding.completion-view-count"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -84,6 +93,11 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
         get { read(.fullyCompletedAt) as? Date }
         set { write(newValue, for: .fullyCompletedAt) }
     }
+
+    var completionViewCount: Int {
+        get { read(.completionViewCount) as? Int ?? 0 }
+        set { write(newValue, for: .completionViewCount) }
+    }
 }
 
 // MARK: - Progress
@@ -93,6 +107,9 @@ struct SubscriptionOnboardingProgress {
 
     /// How long the Subscription Settings card lives, measured from its first display.
     private static let cardLifetime: TimeInterval = .days(14)
+
+    /// Once complete, the card is shown at most this many times before it's hidden for good.
+    private static let maxCompletionViews = 2
 
     /// This run's checklist
     let checklist: [SubscriptionOnboardingChecklistItem]
@@ -118,9 +135,10 @@ struct SubscriptionOnboardingProgress {
         persistor.markComplete(item)
     }
 
-    /// Stays up for the rest of the run once complete, and expires 14 days after it first appeared regardless.
+    /// Stays up for the rest of the run once complete, capped at 2 views total once complete, and expires 14 days after it first appeared regardless.
     mutating func shouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
-        if percentage >= 100 {
+        let isComplete = percentage >= 100
+        if isComplete {
             let wasAlreadyComplete: Bool
             do {
                 progressLock.lock()
@@ -134,11 +152,21 @@ struct SubscriptionOnboardingProgress {
             if !wasAlreadyComplete {
                 session.recordCompletedDuringThisSession()
             }
-            guard session.didCompleteDuringThisSession else { return false }
+            guard isWithinCompletionCriteria(session: session) else { return false }
         }
 
         persistor.recordCardFirstShownIfNeeded(now: now)
-        return isWithinCardLifetime(now: now)
+        guard isWithinCardLifetime(now: now) else { return false }
+
+        if isComplete {
+            persistor.recordCompletionView()
+        }
+        return true
+    }
+
+    /// The session latch and view cap, evaluated together since both callers below need the same pair. Read-only.
+    private func isWithinCompletionCriteria(session: SubscriptionOnboardingSessionStating) -> Bool {
+        session.didCompleteDuringThisSession && persistor.completionViewCount < Self.maxCompletionViews
     }
 
     // A failed write leaves no anchor to measure from; but showing the card beats hiding it forever.
@@ -150,7 +178,7 @@ struct SubscriptionOnboardingProgress {
     /// A non-writing preview of ``shouldShowSetupCard(now:session:)``, safe to call from a View `init`.
     func previewShouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
         if percentage >= 100 {
-            guard session.didCompleteDuringThisSession else { return false }
+            guard isWithinCompletionCriteria(session: session) else { return false }
         }
         return isWithinCardLifetime(now: now)
     }
@@ -167,6 +195,7 @@ extension SubscriptionOnboardingProgress {
         var completedItems: Set<SubscriptionOnboardingChecklistItem>
         var cardFirstShownDate: Date?
         var fullyCompletedAt: Date?
+        var completionViewCount: Int = 0
     }
 }
 

@@ -26,7 +26,7 @@ struct SubscriptionOnboardingHeaderView: View {
     private enum Metrics {
         static let graphicWidth: CGFloat = 128
         static let graphicHeight: CGFloat = 96
-        static let graphicBottomSpacing: CGFloat = 24
+        static let graphicBottomSpacing: CGFloat = 16
     }
 
     private let visual: Graphic?

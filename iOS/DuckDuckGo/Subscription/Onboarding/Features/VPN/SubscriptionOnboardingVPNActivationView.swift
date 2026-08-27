@@ -31,6 +31,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
         static let infoCardStackSpacing: CGFloat = 8
         static let onInfoCardsSpacing: CGFloat = 12
         static let featureRowSpacing: CGFloat = 10
+        static let newIPCardSlideOffset: CGFloat = -16
     }
 
     @StateObject private var viewModel: SubscriptionOnboardingVPNActivationViewModel
@@ -38,6 +39,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var tapAllowHint = TapAllowHintCoordinator()
 
     @State private var isShowingInfoSheet = false
@@ -130,6 +132,7 @@ private extension SubscriptionOnboardingVPNActivationView {
             vpnInfoCards
             featureRows
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: viewModel.connectionState)
     }
 
     @ViewBuilder
@@ -142,35 +145,44 @@ private extension SubscriptionOnboardingVPNActivationView {
                                                   isAvailable: viewModel.isOriginalInfoAvailable)
                 footnote(UserText.subscriptionOnboardingVPNActivationOffFootnote)
             }
+            .transition(.opacity)
         } else {
             VStack(spacing: Metrics.infoCardStackSpacing) {
                 VStack(spacing: Metrics.onInfoCardsSpacing) {
                     SubscriptionOnboardingVPNInfoCard(state: .hiddenIP,
                                                       ipAddress: viewModel.originalIPText,
                                                       location: viewModel.originalLocationText)
+                        .transition(.opacity)
                     SubscriptionOnboardingVPNInfoCard(state: .newIP,
                                                       ipAddress: viewModel.vpnIPText,
                                                       location: viewModel.vpnLocationText,
                                                       nearestIndicator: viewModel.vpnLocationNearestIndicator,
                                                       isAvailable: viewModel.isVPNInfoAvailable)
+                        .transition(.offset(y: Metrics.newIPCardSlideOffset).combined(with: .opacity))
                 }
                 footnote(UserText.subscriptionOnboardingVPNActivationOnFootnote)
             }
+            .transition(.opacity)
         }
     }
 
+    @ViewBuilder
     var featureRows: some View {
-        VStack(spacing: Metrics.featureRowSpacing) {
-            ForEach(VPNProtection.allCases, id: \.self) { protection in
-                SubscriptionOnboardingListItemView(
-                    text: protection.text,
-                    status: viewModel.connectionState == .on ? .active : .inactive)
+        if viewModel.connectionState == .on {
+            VStack(spacing: Metrics.featureRowSpacing) {
+                ForEach(VPNProtection.allCases, id: \.self) { protection in
+                    SubscriptionOnboardingListItemView(text: protection.text, status: .active)
+                }
             }
+            .transition(.move(edge: .trailing).combined(with: .opacity))
+        } else {
+            VStack(spacing: Metrics.featureRowSpacing) {
+                ForEach(VPNProtection.allCases, id: \.self) { protection in
+                    SubscriptionOnboardingListItemView(text: protection.text, status: .inactive)
+                }
+            }
+            .transition(.move(edge: .leading).combined(with: .opacity))
         }
-        .id(viewModel.connectionState)
-        .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
-                                removal: .identity))
-        .animation(.easeInOut(duration: 0.4), value: viewModel.connectionState)
     }
 
     func footnote(_ text: String) -> some View {

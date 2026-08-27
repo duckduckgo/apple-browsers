@@ -37,6 +37,7 @@ struct SubscriptionOnboardingDuckAIView: View {
     private let progress: SubscriptionOnboardingProgress
 
     @State private var isShowingInfoSheet = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// How long the interstitial holds before the chat is requested, if the customer doesn't tap through.
     private static let interstitialDuration: TimeInterval = 2

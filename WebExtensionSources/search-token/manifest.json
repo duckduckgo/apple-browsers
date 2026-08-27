@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "DuckDuckGo Search Token",
     "description": "Attaches the DuckDuckGo search experiment token to search navigations.",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "minimum_chrome_version": "122.0",
     "browser_specific_settings": {
         "duckduckgo": {

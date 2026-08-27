@@ -21,7 +21,9 @@ async function pullAndSet() {
                 id: RULE_ID,
                 priority: 1,
                 action: { type: "modifyHeaders", requestHeaders: [{ header: "x-temp-tablet", operation: "set", value: token }] },
-                condition: { urlFilter: "||duckduckgo.com/", resourceTypes: ["main_frame"] }
+                // SERP only: ^ matches a separator (? or &), so this requires a q= query param
+                // in any position (isDuckDuckGoSearch), not just any duckduckgo.com page.
+                condition: { urlFilter: "||duckduckgo.com/*^q=", resourceTypes: ["main_frame"] }
             }]
         });
     } else {

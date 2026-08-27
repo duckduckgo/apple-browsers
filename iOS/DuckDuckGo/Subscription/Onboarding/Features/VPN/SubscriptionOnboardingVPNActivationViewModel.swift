@@ -19,6 +19,7 @@
 
 import Combine
 import Foundation
+import UserNotifications
 import VPN
 
 /// Drives the VPN activation screen, from the pre-VPN connection info through to reporting completion.
@@ -250,11 +251,14 @@ protocol SubscriptionOnboardingVPNControlling {
 final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVPNControlling {
     private let tunnelController: NetworkProtectionTunnelController
     private let connectionObserver: ConnectionStatusObserver
+    private let notificationsAuthorization: NotificationsAuthorizationControlling
 
     init(tunnelController: NetworkProtectionTunnelController = AppDependencyProvider.shared.networkProtectionTunnelController,
-         connectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver) {
+         connectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver,
+         notificationsAuthorization: NotificationsAuthorizationControlling = NotificationsAuthorizationController()) {
         self.tunnelController = tunnelController
         self.connectionObserver = connectionObserver
+        self.notificationsAuthorization = notificationsAuthorization
     }
 
     var isConnected: Bool {
@@ -276,7 +280,9 @@ final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVP
     }
 
     func start() async {
-        await tunnelController.start()
+        let status = await notificationsAuthorization.authorizationStatus
+        let mightPrompt = status == .notDetermined || status == .provisional
+        await tunnelController.start(suppressNotificationAuthorizationRequest: mightPrompt)
     }
 
     func isVPNConfigured() async -> Bool {

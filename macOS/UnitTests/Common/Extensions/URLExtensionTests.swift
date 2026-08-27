@@ -999,4 +999,32 @@ extension URLExtensionTests {
         #expect(URL.duckDuckGo.isEmailProtection == false)
         #expect(URL.aboutDuckDuckGo.isEmailProtection == false)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A directory contains itself and its descendants only", .timeLimit(.minutes(1)))
+    func directoryContainmentDetectionWorksCorrectly() {
+        let chrome = URL(fileURLWithPath: "/Users/user/Library/Application Support/Google/Chrome", isDirectory: true)
+
+        // the directory itself and its ancestors grant access to it
+        #expect(chrome.isContained(in: chrome) == true)
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/Users/user/Library/Application Support/Google/Chrome/", isDirectory: true)) == true)
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/Users/user/Library/Application Support/Google", isDirectory: true)) == true)
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/", isDirectory: true)) == true)
+
+        // children, siblings and unrelated directories don't
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/Users/user/Library/Application Support/Google/Chrome/Default", isDirectory: true)) == false)
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/Users/user/Library/Application Support/Google/Chrome Beta", isDirectory: true)) == false)
+        #expect(chrome.isContained(in: URL(fileURLWithPath: "/Users/user/Downloads", isDirectory: true)) == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Directory containment detection resolves symlinked paths", .timeLimit(.minutes(1)))
+    func directoryContainmentDetectionResolvesSymlinkedPaths() {
+        let temporaryDirectory = URL(fileURLWithPath: "/tmp", isDirectory: true)
+        let resolvedTemporaryDirectory = URL(fileURLWithPath: "/private/tmp", isDirectory: true)
+
+        #expect(temporaryDirectory.isContained(in: resolvedTemporaryDirectory) == true)
+        #expect(resolvedTemporaryDirectory.isContained(in: temporaryDirectory) == true)
+        #expect(temporaryDirectory.appendingPathComponent("file").isContained(in: resolvedTemporaryDirectory) == true)
+    }
 }

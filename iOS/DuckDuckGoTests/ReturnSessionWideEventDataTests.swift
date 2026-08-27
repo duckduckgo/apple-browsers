@@ -33,7 +33,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(ReturnSessionWideEventData.metadata.pixelName == "return_session")
         #expect(ReturnSessionWideEventData.metadata.featureName == "return-session")
         #expect(ReturnSessionWideEventData.metadata.type == "ios-return-session")
-        #expect(ReturnSessionWideEventData.metadata.version == "1.0.0")
+        #expect(ReturnSessionWideEventData.metadata.version == "1.1.0")
     }
 
     // MARK: - jsonParameters
@@ -48,6 +48,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(params["feature.data.ext.focused"] as? Bool == false)
         #expect(params["feature.data.ext.time_away_ms_bucketed"] == nil)
         #expect(params["feature.data.ext.status_reason"] == nil)
+        #expect(params["feature.data.ext.prompt_origin"] == nil)
         #expect(params["feature.data.ext.session_duration_ms_bucketed"] == nil)
         #expect(params["feature.data.ext.time_to_first_interaction_ms_bucketed"] == nil)
         #expect(params["feature.data.ext.page_engaged"] as? Bool == false)
@@ -99,6 +100,27 @@ struct ReturnSessionWideEventDataTests {
             data.statusReason = reason
             #expect(data.jsonParameters()["feature.data.ext.status_reason"] as? String == reason.rawValue)
         }
+    }
+
+    @available(iOS 16, *)
+    @Test("Prompt origin emits its value when set", .timeLimit(.minutes(1)))
+    func promptOriginEmitsWhenSet() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)
+        data.statusReason = .aiPromptSubmitted
+        data.promptOrigin = AIChatEntryPointSource.addressBarPrompt.rawValue
+
+        let params = data.jsonParameters()
+        #expect(params["feature.data.ext.status_reason"] as? String == "ai_prompt_submitted")
+        #expect(params["feature.data.ext.prompt_origin"] as? String == "address_bar_prompt")
+    }
+
+    @available(iOS 16, *)
+    @Test("Prompt origin is absent when nil", .timeLimit(.minutes(1)))
+    func promptOriginAbsentWhenNil() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)
+        data.statusReason = .searchSubmitted
+
+        #expect(data.jsonParameters()["feature.data.ext.prompt_origin"] == nil)
     }
 
     @available(iOS 16, *)
@@ -192,6 +214,7 @@ struct ReturnSessionWideEventDataTests {
                                                   timeAwayMs: 120_000,
                                                   focused: true)
         original.statusReason = .returnToPageTapped
+        original.promptOrigin = AIChatEntryPointSource.voice.rawValue
         original.sessionInterval.end = start.addingTimeInterval(5)
         original.firstInteractionInterval.end = start.addingTimeInterval(1)
         original.pageEngaged = true
@@ -209,6 +232,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(decoded.timeAwayMs == 120_000)
         #expect(decoded.focused == true)
         #expect(decoded.statusReason == .returnToPageTapped)
+        #expect(decoded.promptOrigin == AIChatEntryPointSource.voice.rawValue)
         #expect(decoded.sessionInterval.start == start)
         #expect(decoded.sessionInterval.end == start.addingTimeInterval(5))
         #expect(decoded.firstInteractionInterval.start == start)

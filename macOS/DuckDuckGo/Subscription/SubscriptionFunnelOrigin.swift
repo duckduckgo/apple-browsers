@@ -155,6 +155,8 @@ extension SubscriptionFunnelOrigin {
                 .duckAIReasoningDropdown,
                 .promptBarModelPicker,
                 .promptBarReasoningDropdown,
+                .addressBarUsageLimit,
+                .promptBarUsageLimit,
                 .duckAIAiSidebar,
                 .duckAIActivateSubscription,
                 .duckAIFreeLabel,

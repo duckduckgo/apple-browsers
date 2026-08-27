@@ -1418,7 +1418,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 title: UserText.aiChatImageGenButtonLabel,
                 subtitle: UserText.aiChatImageGenToolSubtitle
             )
-            createImageItem.image = DesignSystemImages.Glyphs.Size16.images
+            createImageItem.withImage(DesignSystemImages.Glyphs.Size16.images, visibleOnMacOS27: true)
             createImageItem.target = self
             createImageItem.action = #selector(toolsMenuCreateImageClicked)
             if omnibarController.isImageGenerationMode {
@@ -1433,7 +1433,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 title: UserText.aiChatWebSearchButtonLabel,
                 subtitle: UserText.aiChatWebSearchToolSubtitle
             )
-            webSearchItem.image = DesignSystemImages.Glyphs.Size16.globe
+            webSearchItem.withImage(DesignSystemImages.Glyphs.Size16.globe, visibleOnMacOS27: true)
             webSearchItem.target = self
             webSearchItem.action = #selector(toolsMenuWebSearchClicked)
             if omnibarController.isWebSearchMode {
@@ -1698,7 +1698,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 keyEquivalent: ""
             )
             imageItem.target = self
-            imageItem.image = DesignSystemImages.Glyphs.Size16.folder
+            imageItem.withImage(DesignSystemImages.Glyphs.Size16.folder, visibleOnMacOS27: true)
             menu.addItem(imageItem)
         }
 
@@ -1710,7 +1710,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             keyEquivalent: ""
         )
         attachTabsItem.target = self
-        attachTabsItem.image = DesignSystemImages.Glyphs.Size16.tabContent
+        attachTabsItem.withImage(DesignSystemImages.Glyphs.Size16.tabContent, visibleOnMacOS27: true)
         attachTabsItem.isEnabled = !candidates.isEmpty
         menu.addItem(attachTabsItem)
 
@@ -1749,7 +1749,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // An attached tab stays clickable so the same row detaches it; the cap only blocks adding.
             item.isEnabled = isAttached || !atCap
             item.state = isAttached ? .on : .off
-            item.image = menuFavicon(for: candidate)
+            item.withImage(menuFavicon(for: candidate), visibleOnMacOS27: true)
             menu.addItem(item)
         }
     }
@@ -2178,7 +2178,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let name = title.regular.isEmpty ? title.bold : "\(title.bold) \(title.regular)"
         let item = NSMenuItem(title: model.name, action: action, keyEquivalent: "")
         item.target = self
-        item.image = model.menuIcon
+        item.withImage(model.menuIcon, visibleOnMacOS27: true)
         item.state = isSelected ? .on : .off
         item.attributedTitle = Self.menuRowTitle(title: isGated ? name + "…" : name, subtitle: subtitle)
         item.representedObject = model
@@ -2257,7 +2257,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func reasoningEffortRow(for item: AIChatReasoningPickerItem) -> NSMenuItem {
         let menuItem = NSMenuItem(title: item.effort.title, action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
         menuItem.target = self
-        menuItem.image = item.effort.icon
+        menuItem.withImage(item.effort.icon, visibleOnMacOS27: true)
         menuItem.state = item.isSelected ? .on : .off
         menuItem.attributedTitle = Self.menuRowTitle(title: item.effort.title,
                                                      subtitle: item.effort.subtitle)

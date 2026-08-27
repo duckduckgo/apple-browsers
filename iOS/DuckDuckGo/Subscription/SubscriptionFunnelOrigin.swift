@@ -162,9 +162,11 @@ extension SubscriptionFunnelOrigin {
             return .newTabPage
         case .addressBarModelPicker,
                 .addressBarReasoningPicker,
+                .addressBarUsageLimit,
                 .duckAIModelPicker,
                 .duckAIReasoningPicker,
                 .duckAIFreeLabel,
+                .duckAIUsageLimit,
                 .duckAIAiSidebar,
                 .duckAIActivateSubscription,
                 .duckAIFreeLimit,

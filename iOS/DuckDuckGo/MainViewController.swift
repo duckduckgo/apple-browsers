@@ -7770,6 +7770,11 @@ extension MainViewController: OnboardingDelegate {
         // Enrol new users into the Search Token experiment. Must run here (post-onboarding) so we only
         // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).
         searchTokenExperiment.enrollIfEligible()
+        // The launch-time embedded-extension sync ran before enrollment (cohort was still nil), so
+        // resync now — otherwise a treatment user's first session never loads the search-token extension.
+        if #available(iOS 18.4, *) {
+            webExtensionLifecycleCoordinator?.sync()
+        }
 
         appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
 

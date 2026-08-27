@@ -436,6 +436,28 @@ struct PostIdleSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("duckAIOpenedWithoutPrompt ends the post-idle flow as bar_used and leaves the return session running", .timeLimit(.minutes(1)))
+    func duckAIOpenedWithoutPromptEndsPostIdleOnly() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .lut, focused: false)
+        sut.duckAIOpenedWithoutPrompt()
+
+        #expect(lastCompletion(wideEvent)?.0.statusReason == .barUsed)
+        #expect(lastReturnCompletion(wideEvent) == nil)
+
+        sut.sessionCancelledByBackground()
+        #expect(lastReturnCompletion(wideEvent)?.0.statusReason == .appBackgrounded)
+    }
+
+    @available(iOS 16, *)
+    @Test("When no active session then duckAIOpenedWithoutPrompt is a no-op", .timeLimit(.minutes(1)))
+    func duckAIOpenedWithoutPromptWithoutActiveSessionIsNoop() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.duckAIOpenedWithoutPrompt()
+        #expect(wideEvent.completions.isEmpty)
+    }
+
+    @available(iOS 16, *)
     @Test("The post-idle flow collapses the submission split back onto bar_used", .timeLimit(.minutes(1)))
     func postIdleFlowCollapsesSubmissionsOntoBarUsed() {
         for reason in [ReturnSessionWideEventData.StatusReason.searchSubmitted, .aiPromptSubmitted, .urlSubmitted] {

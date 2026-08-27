@@ -4,10 +4,10 @@
         "owners": ["Bunn", "SabrinaTardio"],
         "meta": {
             "type": "ios-return-session",
-            "version": "1.0"
+            "version": "2.0"
         },
         "feature": {
-            "name": "return-session",
+            "name": "return_session",
             "status": ["SUCCESS", "CANCELLED", "UNKNOWN"],
             "data": {
                 "ext": {
@@ -44,9 +44,9 @@
                             "app_terminated"
                         ]
                     },
-                    "prompt_origin": {
+                    "source": {
                         "type": "string",
-                        "description": "What triggered the Duck.ai prompt submission that ended the session, as an m_aichat_entry_point source value. Present only when status_reason is ai_prompt_submitted; absent otherwise.",
+                        "description": "The Duck.ai entry point that triggered the session's ai_prompt_submitted terminal, as an m_aichat_entry_point source value. Present only when status_reason is ai_prompt_submitted; absent otherwise.",
                         "enum": [
                             "address_bar_prompt",
                             "address_bar_icon",

@@ -59,6 +59,12 @@ protocol TabDelegate: AnyObject {
              openedByPage: Bool,
              inheritingAttribution: AdClickAttributionLogic.State?)
 
+    /// Same as `didRequestNewTabForUrl`, plus it stamps `entrySource` on the opened tab so prompts
+    /// submitted there report the Duck.ai entry that led to it.
+    func tab(_ tab: TabViewController,
+             didRequestNewDuckAITabForUrl url: URL,
+             entrySource: AIChatEntryPointSource)
+
     /// Called on navigate forward on a tab that had just closed a link-opened tab via back.
     /// Re-open that tab at `url` as a child of `tab` again.
     func tab(_ tab: TabViewController, didRequestReopenClosedTabAt url: URL)

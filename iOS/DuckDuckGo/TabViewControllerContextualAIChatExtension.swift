@@ -108,7 +108,7 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     }
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {
-        delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: url, entrySource: .contextualChat)
     }
 
     func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {

@@ -389,7 +389,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
 
-        XCTAssertEqual(mockDelegate.duckAIPromptSubmissionOrigins.count, 1)
+        XCTAssertEqual(mockDelegate.duckAIPromptSubmissionOrigins, [.addressBarIcon])
         XCTAssertNil(mockDelegate.submittedPrompt, "A bound chat takes the prompt directly, without navigation")
     }
 

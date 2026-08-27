@@ -1173,6 +1173,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
         selectionJourneyInstrumentation.promptSubmitted()
         sessionState.handlePromptSubmission(prompt)
+        delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: .contextualChat)
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,

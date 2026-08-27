@@ -270,13 +270,30 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testNativePromptSubmissionCompletesSelectionJourney() async throws {
+    func testNativePromptSubmissionWithoutPageContextCompletesSelectionJourneyAndReportsContextualOrigin() async throws {
         await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
         let sheet = try XCTUnwrap(sut.sheetViewController)
+        XCTAssertEqual(sut.sessionState.chipState, .placeholder)
 
         sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?")
 
         XCTAssertEqual(mockSelectionJourneyInstrumentation.promptSubmittedCount, 1)
+        XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
+    }
+
+    @MainActor
+    func testNativePromptSubmissionWithPageContextReportsContextualOrigin() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        sut.sessionState.attachContextFromSuggestionTap(makeTestContext())
+        guard case .attached = sut.sessionState.chipState else {
+            XCTFail("Expected page context to be attached")
+            return
+        }
+
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page")
+
+        XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
     }
 
     @MainActor

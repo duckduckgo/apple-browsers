@@ -39,8 +39,8 @@ protocol AITabController {
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction()
 
-    /// Opens a new AI chat in a new tab.
-    func openNewChatInNewTab()
+    /// Opens a new AI chat in a new tab, stamping `source` as its Duck.ai entry.
+    func openNewChatInNewTab(source: AIChatEntryPointSource)
 }
 
 // MARK: - AITabController
@@ -59,10 +59,11 @@ extension TabViewController: AITabController {
         isVoiceModeRequested = false
 
         aiChatContentHandler.setPayload(payload: payload)
+        let hasText = query?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
         let hasAttachments = images?.isEmpty == false || files?.isEmpty == false
-        if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hasAttachments {
+        if hasText || hasAttachments {
             let prompt = AIChatNativePrompt.queryPrompt(
-                query,
+                query ?? "",
                 autoSubmit: autoSend,
                 toolChoice: tools?.map(\.rawValue),
                 images: images,
@@ -108,14 +109,14 @@ extension TabViewController: AITabController {
     }
     
     /// Opens a new AI chat in a new tab.
-    func openNewChatInNewTab() {
+    func openNewChatInNewTab(source: AIChatEntryPointSource) {
         let newChatURL = aiChatContentHandler.buildQueryURL(
             query: nil,
             autoSend: false,
             flowType: .default,
             tools: nil
         )
-        delegate?.tab(self, didRequestNewTabForUrl: newChatURL, openedByPage: false, inheritingAttribution: nil)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source)
     }
 
     /// Opens the Duck.ai chats sidebar in a new tab. Mirrors the contextual sheet's "View all chats"

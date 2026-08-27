@@ -54,6 +54,7 @@ public class Tab: NSObject, NSCoding {
         static let selectedModelID = "selectedModelID"
         static let selectedReasoningMode = "selectedReasoningMode"
         static let selectedTool = "selectedTool"
+        static let duckAIEntrySource = "duckAIEntrySource"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
@@ -140,6 +141,10 @@ public class Tab: NSObject, NSCoding {
     /// NSCoding so reopening the app restores the tab's selected AI settings.
     var unifiedInputState: UnifiedInputTabState
 
+    /// How the user entered Duck.ai in this tab; reported as the `origin` of prompts
+    /// submitted here. Persisted so follow-ups keep their attribution across restarts.
+    var duckAIEntrySource: AIChatEntryPointSource?
+
     /// Type of tab: web or AI Chat, derived from the current URL
     private var type: TabType {
         if let link, link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
@@ -162,6 +167,7 @@ public class Tab: NSObject, NSCoding {
                 isExternalLaunch: Bool = false,
                 shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
                 unifiedInputState: UnifiedInputTabState = UnifiedInputTabState(),
+                duckAIEntrySource: AIChatEntryPointSource? = nil,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
@@ -175,6 +181,7 @@ public class Tab: NSObject, NSCoding {
         self.isExternalLaunch = isExternalLaunch
         self.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppressTrackerAnimationOnFirstLoad
         self.unifiedInputState = unifiedInputState
+        self.duckAIEntrySource = duckAIEntrySource
         self.aichatDebugSettings = aichatDebugSettings
     }
 
@@ -202,10 +209,12 @@ public class Tab: NSObject, NSCoding {
             selectedReasoningMode: selectedReasoningMode,
             selectedTool: selectedTool
         )
+        let duckAIEntrySourceRaw = decoder.decodeObject(forKey: NSCodingKeys.duckAIEntrySource) as? String
+        let duckAIEntrySource = duckAIEntrySourceRaw.flatMap(AIChatEntryPointSource.init(rawValue:))
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState)
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState, duckAIEntrySource: duckAIEntrySource)
     }
 
     public func encode(with coder: NSCoder) {
@@ -223,6 +232,7 @@ public class Tab: NSObject, NSCoding {
         coder.encode(unifiedInputState.selectedModelID, forKey: NSCodingKeys.selectedModelID)
         coder.encode(unifiedInputState.selectedReasoningMode?.rawValue, forKey: NSCodingKeys.selectedReasoningMode)
         coder.encode(unifiedInputState.selectedTool?.rawValue, forKey: NSCodingKeys.selectedTool)
+        coder.encode(duckAIEntrySource?.rawValue, forKey: NSCodingKeys.duckAIEntrySource)
         // Note: isExternalLaunch and shouldSuppressTrackerAnimationOnFirstLoad are not encoded as they are transient flags
         // Note: type is not encoded as it's now a computed property based on the link URL
     }
@@ -238,7 +248,8 @@ public class Tab: NSObject, NSCoding {
             contextualChatURL: contextualChatURL,
             supportsTabHistory: supportsTabHistory,
             fireTab: fireTab,
-            unifiedInputState: unifiedInputState)
+            unifiedInputState: unifiedInputState,
+            duckAIEntrySource: duckAIEntrySource)
     }
 
     public override func isEqual(_ other: Any?) -> Bool {

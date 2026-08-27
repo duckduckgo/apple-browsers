@@ -30,7 +30,7 @@
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
-                "enum": ["return-session"]
+                "enum": ["return_session"]
             },
 
             // Feature data
@@ -73,9 +73,9 @@
                 ]
             },
             {
-                "key": "feature.data.ext.prompt_origin",
+                "key": "feature.data.ext.source",
                 "type": "string",
-                "description": "What triggered the Duck.ai prompt submission that ended the session, as an m_aichat_entry_point source value. Present only when status_reason is ai_prompt_submitted.",
+                "description": "The Duck.ai entry point that triggered the session's ai_prompt_submitted terminal, as an m_aichat_entry_point source value. Present only when status_reason is ai_prompt_submitted.",
                 "enum": [
                     "address_bar_prompt",
                     "address_bar_icon",

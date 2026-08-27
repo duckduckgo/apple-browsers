@@ -31,9 +31,9 @@ struct ReturnSessionWideEventDataTests {
     @Test("Metadata exposes expected pixel and feature names", .timeLimit(.minutes(1)))
     func metadataExposesExpectedNames() {
         #expect(ReturnSessionWideEventData.metadata.pixelName == "return_session")
-        #expect(ReturnSessionWideEventData.metadata.featureName == "return-session")
+        #expect(ReturnSessionWideEventData.metadata.featureName == "return_session")
         #expect(ReturnSessionWideEventData.metadata.type == "ios-return-session")
-        #expect(ReturnSessionWideEventData.metadata.version == "1.1.0")
+        #expect(ReturnSessionWideEventData.metadata.version == "1.2.0")
     }
 
     // MARK: - jsonParameters
@@ -48,7 +48,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(params["feature.data.ext.focused"] as? Bool == false)
         #expect(params["feature.data.ext.time_away_ms_bucketed"] == nil)
         #expect(params["feature.data.ext.status_reason"] == nil)
-        #expect(params["feature.data.ext.prompt_origin"] == nil)
+        #expect(params["feature.data.ext.source"] == nil)
         #expect(params["feature.data.ext.session_duration_ms_bucketed"] == nil)
         #expect(params["feature.data.ext.time_to_first_interaction_ms_bucketed"] == nil)
         #expect(params["feature.data.ext.page_engaged"] as? Bool == false)
@@ -103,24 +103,43 @@ struct ReturnSessionWideEventDataTests {
     }
 
     @available(iOS 16, *)
-    @Test("Prompt origin emits its value when set", .timeLimit(.minutes(1)))
-    func promptOriginEmitsWhenSet() {
+    @Test("Prompt source emits its value when set", .timeLimit(.minutes(1)))
+    func promptSourceEmitsWhenSet() {
         let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)
         data.statusReason = .aiPromptSubmitted
         data.promptOrigin = AIChatEntryPointSource.addressBarPrompt.rawValue
 
         let params = data.jsonParameters()
         #expect(params["feature.data.ext.status_reason"] as? String == "ai_prompt_submitted")
-        #expect(params["feature.data.ext.prompt_origin"] as? String == "address_bar_prompt")
+        #expect(params["feature.data.ext.source"] as? String == "address_bar_prompt")
+        #expect(params["feature.data.ext.prompt_origin"] == nil)
     }
 
     @available(iOS 16, *)
-    @Test("Prompt origin is absent when nil", .timeLimit(.minutes(1)))
-    func promptOriginAbsentWhenNil() {
+    @Test("Prompt source is absent when nil", .timeLimit(.minutes(1)))
+    func promptSourceAbsentWhenNil() {
         let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)
         data.statusReason = .searchSubmitted
 
-        #expect(data.jsonParameters()["feature.data.ext.prompt_origin"] == nil)
+        #expect(data.jsonParameters()["feature.data.ext.source"] == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Prompt source is omitted for non-AI terminals", .timeLimit(.minutes(1)))
+    func promptSourceOmittedForNonAITerminal() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)
+        data.statusReason = .searchSubmitted
+        data.promptOrigin = AIChatEntryPointSource.addressBarPrompt.rawValue
+
+        #expect(data.jsonParameters()["feature.data.ext.source"] == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Return sessions are sampled at 100 percent", .timeLimit(.minutes(1)))
+    func returnSessionsUseFullSampling() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: false)
+
+        #expect(data.globalData.sampleRate == 1.0)
     }
 
     @available(iOS 16, *)

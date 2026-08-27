@@ -29,6 +29,7 @@ enum PromoTrigger {
     case windowBecameKey
     case newTabPageAppeared
     case autoplayDiscoverability
+    case bookmarkPromptShouldShow
     case testTriggered
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
@@ -41,7 +42,9 @@ enum PromoTrigger {
             NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
                 .map { _ in PromoTrigger.windowBecameKey },
             NotificationCenter.default.publisher(for: .autoplayPolicyDisplayed)
-                .map { _ in PromoTrigger.autoplayDiscoverability }
+                .map { _ in PromoTrigger.autoplayDiscoverability },
+            NotificationCenter.default.publisher(for: .bookmarkPromptShouldShow)
+                .map { _ in PromoTrigger.bookmarkPromptShouldShow }
         ).eraseToAnyPublisher()
 
         if PromoServiceFactory.includeTestPromos{

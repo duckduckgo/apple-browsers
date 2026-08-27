@@ -83,6 +83,20 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNil(promo.delegate)
     }
 
+    func testFactoryCreatesBookmarkToolbarPromoWithCorrectConfiguration() async {
+        let promo = await PromoServiceFactory.bookmarkToolbar(dependencies: dependencies)
+
+        XCTAssertEqual(promo.id, "bookmark-toolbar")
+        XCTAssertEqual(promo.triggers, [.bookmarkPromptShouldShow])
+        XCTAssertEqual(promo.initiated, .user)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertNil(promo.promoType.timeoutInterval)
+        XCTAssertEqual(promo.context, .global)
+        XCTAssertTrue(promo.respectsGlobalCooldown)
+        XCTAssertTrue(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
+    }
+
     func testFactoryCreatesDefaultBrowserAndDockPromosWithCorrectConfiguration() async {
         let popoverPromo = await PromoServiceFactory.defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService)
         let bannerPromo = await PromoServiceFactory.defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService)

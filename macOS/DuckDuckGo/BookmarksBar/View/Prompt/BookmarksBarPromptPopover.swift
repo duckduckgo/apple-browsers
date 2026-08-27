@@ -145,6 +145,10 @@ final class BookmarksBarPromptViewModel: ObservableObject {
     let prefs: AppearancePreferences
     var userDidDismiss = false
 
+    /// Reports the final outcome once, whether reached via an explicit button tap or an implicit
+    /// dismissal (click-away/Escape, handled by `BookmarksBarPromptPopover.popoverDidClose`).
+    var onResolved: ((_ accepted: Bool) -> Void)?
+
     init(prefs: AppearancePreferences = NSApp.delegateTyped.appearancePreferences) {
         self.prefs = prefs
     }
@@ -153,12 +157,14 @@ final class BookmarksBarPromptViewModel: ObservableObject {
         userDidDismiss = true
         prefs.showBookmarksBar = false
         delegate?.dismiss()
+        onResolved?(false)
     }
 
     func acceptBookmarksBar() {
         userDidDismiss = true
         prefs.showBookmarksBar = true
         delegate?.dismiss()
+        onResolved?(true)
     }
 
 }

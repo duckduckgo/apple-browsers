@@ -79,9 +79,6 @@ final class BookmarksBarViewController: NSViewController {
         return indicatorFrameInCollectionView.minX - 3
     }
 
-    @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)
-    var bookmarksBarPromptShown: Bool
-
     static func create(
         tabCollectionViewModel: TabCollectionViewModel,
         bookmarkManager: BookmarkManager,
@@ -207,9 +204,15 @@ final class BookmarksBarViewController: NSViewController {
         frameDidChangeNotification()
     }
 
-    func showBookmarksBarPrompt() {
-        BookmarksBarPromptPopover().show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
-        self.bookmarksBarPromptShown = true
+    /// Presents the "Show Bookmarks Bar?" popover, reporting the user's choice via `onResolved` once
+    /// it closes (whether by an explicit button tap or an implicit dismissal). Returns the popover so
+    /// the caller can force it closed early if needed.
+    @discardableResult
+    func showBookmarksBarPrompt(onResolved: @escaping (_ accepted: Bool) -> Void) -> BookmarksBarPromptPopover {
+        let popover = BookmarksBarPromptPopover()
+        popover.viewController.rootView.model.onResolved = onResolved
+        popover.show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
+        return popover
     }
 
     func userInteraction(prevented: Bool) {

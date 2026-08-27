@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Common
 import FoundationExtensions
 import os.log
+import PixelKit
 
 public final class PrivacyFeatures {
 
@@ -46,14 +47,17 @@ public final class PrivacyFeatures {
             dailyAndCount = false
         }
 
-        if dailyAndCount {
-            DailyPixel.fireDailyAndCount(pixel: domainEvent,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         error: error,
-                                         withAdditionalParameters: parameters ?? [:],
-                                         onCountComplete: onComplete)
-        } else {
-            Pixel.fire(pixel: domainEvent, error: error, withAdditionalParameters: parameters ?? [:], onComplete: onComplete)
+        // `EventMapping` promises the completion resolves, so this fires through `fireAsync` even
+        // though no current caller supplies one.
+        Task {
+            do {
+                try await PixelKit.fireAsync(domainEvent.withError(error),
+                                             frequency: dailyAndCount ? .legacyDailyAndCount : .standard,
+                                             options: .parameters(parameters ?? [:]))
+                onComplete(nil)
+            } catch let fireError {
+                onComplete(fireError)
+            }
         }
     }
     private static var httpsUpgradeStore: AppHTTPSUpgradeStore {

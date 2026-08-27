@@ -181,13 +181,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                 var additionalParameters = self.uiVersionParameters
                 additionalParameters[PixelParameters.source] = self.source
-                try await PixelKit.fire(Pixel.Event.syncSignupDirect, options: .parameters(additionalParameters))
+                try await PixelKit.fireAsync(Pixel.Event.syncSignupDirect, options: .parameters(additionalParameters))
                 var setupEndedParameters = self.uiVersionParameters
                 setupEndedParameters[PixelParameters.source] = "signup"
-                Pixel.fire(pixel: .syncSetupEndedSuccessful,
-                           withAdditionalParameters: setupEndedParameters,
-                           includedParameters: [.appVersion],
-                           onComplete: { _ in })
+                PixelKit.fire(Pixel.Event.syncSetupEndedSuccessful, options: .parameters(setupEndedParameters))
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()

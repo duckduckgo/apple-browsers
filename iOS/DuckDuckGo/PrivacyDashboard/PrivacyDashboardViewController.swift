@@ -43,17 +43,17 @@ final class PrivacyDashboardViewController: UIViewController {
 
     private let brokenSiteReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
-            Pixel.fire(pixel: .brokenSiteReport,
-                       withAdditionalParameters: parameters,
-                       allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
+            PixelKit.fire(Pixel.Event.brokenSiteReport,
+                          options: PixelKit.Options(additionalParameters: parameters,
+                                                    allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters))
         }, keyValueStoring: UserDefaults.standard)
     }()
 
     private let toggleProtectionsOffReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
-            Pixel.fire(pixel: .protectionToggledOffBreakageReport,
-                       withAdditionalParameters: parameters,
-                       allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
+            PixelKit.fire(Pixel.Event.protectionToggledOffBreakageReport,
+                          options: PixelKit.Options(additionalParameters: parameters,
+                                                    allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters))
         }, keyValueStoring: UserDefaults.standard)
     }()
 

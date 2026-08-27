@@ -58,7 +58,8 @@ final class CrashCollectionService {
                 }
 
                 let additionalParameters = Dictionary(uniqueKeysWithValues: params.map { ($0.key.rawValue, $0.value) })
-                Pixel.fire(pixel: .dbCrashDetected(appIdentifier: appIdentifier), withAdditionalParameters: additionalParameters, includedParameters: [])
+                PixelKit.fire(Pixel.Event.dbCrashDetected(appIdentifier: appIdentifier),
+                              options: PixelKit.Options(additionalParameters: additionalParameters, includeAppVersionParameter: false))
 
                 // Each crash comes with an `appVersion` parameter representing the version that the crash occurred on.
                 // This is to disambiguate the situation where a crash occurs, but isn't sent until the next update.

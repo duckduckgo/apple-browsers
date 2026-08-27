@@ -55,7 +55,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         case .userBecameActive:
             PixelKit.fire(Pixel.Event.networkProtectionActiveUser,
                           frequency: .legacyDailyNoSuffix,
-                          options: .parameters([PixelParameters.vpnCohort: UniquePixel.cohort(from: defaults.vpnFirstEnabled)]))
+                          options: .parameters([PixelParameters.vpnCohort: PixelKit.cohort(from: defaults.vpnFirstEnabled)]))
 
             persistentPixel.sendQueuedPixels { error in
                 Logger.networkProtection.error("Failed to send queued pixels, with error: \(error)")

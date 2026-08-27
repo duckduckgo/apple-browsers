@@ -254,16 +254,15 @@ class AppConfigurationFetch: AppConfigurationFetching {
         
         let semaphore = DispatchSemaphore(value: 0)
         
-        Pixel.fire(pixel: .configurationFetchInfo, withAdditionalParameters: parameters) { error in
-            guard error == nil else {
-                semaphore.signal()
-                return
-            }
-
+        Task {
+            defer { semaphore.signal() }
+            // The counts are only cleared once they have actually been reported, so a failed send
+            // leaves them for the next attempt.
+            guard (try? await PixelKit.fireAsync(Pixel.Event.configurationFetchInfo,
+                                                 options: .parameters(parameters))) == .sent else { return }
             self.resetStatistics()
-            semaphore.signal()
         }
-        
+
         semaphore.wait()
         completion()
     }

@@ -249,8 +249,13 @@ private extension ReportingService {
     func reportFailedCompilationsPixelIfNeeded() {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
-            DailyPixel.fire(pixel: .compilationFailed, withAdditionalParameters: store.summary) { error in
-                guard error != nil else { return }
+            Task {
+                let result = try? await PixelKit.fireAsync(Pixel.Event.compilationFailed,
+                                                           frequency: .legacyDailyNoSuffix,
+                                                           options: .parameters(store.summary))
+                // The summary is kept while the pixel is still reporting it, and dropped once the
+                // daily throttle has already reported it or the send failed outright.
+                guard result != .sent else { return }
                 store.cleanup()
             }
         }

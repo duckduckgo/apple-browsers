@@ -510,15 +510,13 @@ class TabViewController: UIViewController {
                                                       tld: AppDependencyProvider.shared.storageCache.tld)
     }()
 
-    private static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, params, onComplete in
+    private static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, params, _ in
         let domainEvent: Pixel.Event
         switch event {
         case .ampBlockingRulesCompilationFailed:
             domainEvent = .ampBlockingRulesCompilationFailed
         }
-        Pixel.fire(pixel: domainEvent,
-                   withAdditionalParameters: params ?? [:],
-                   onComplete: onComplete)
+        PixelKit.fire(domainEvent, options: .parameters(params ?? [:]))
     }
     
     private lazy var linkProtection: LinkProtection = {

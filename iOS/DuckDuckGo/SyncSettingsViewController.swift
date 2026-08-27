@@ -467,10 +467,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
                 return
             }
 
-            Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted,
-                       withAdditionalParameters: uiVersionParameters,
-                       includedParameters: [.appVersion],
-                       onComplete: { _ in })
+            PixelKit.fire(Pixel.Event.syncSetupDeepLinkFlowStarted, options: .parameters(uiVersionParameters))
 
             await connectionController.syncCodeEntered(
                 code: pairingInfo.base64Code,
@@ -532,10 +529,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey) async throws {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         mapDevices(registeredDevices)
-        Pixel.fire(pixel: .syncLogin,
-                   withAdditionalParameters: sourcePixelParameters,
-                   includedParameters: [.appVersion],
-                   onComplete: { _ in })
+        PixelKit.fire(Pixel.Event.syncLogin, options: .parameters(sourcePixelParameters))
         if useSimplifiedLayoutV2 {
             presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         } else {

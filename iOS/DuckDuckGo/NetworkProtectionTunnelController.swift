@@ -420,10 +420,16 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
             self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
             try await startupMonitor.waitForStartSuccess(tunnelManager)
-            UniquePixel.fire(pixel: .networkProtectionNewUser, includedParameters: [.appVersion]) { error in
-                guard error != nil else { return }
-                UserDefaults.networkProtectionGroupDefaults.vpnFirstEnabled = Pixel.Event.networkProtectionNewUser.lastFireDate(
-                    uniquePixelStorage: UniquePixel.storage
+            // Off the tunnel-start path on purpose: the legacy call reported through a completion, so
+            // awaiting it here would fold the pixel's round trip into `tunnelStartDuration`.
+            Task {
+                let result = try? await PixelKit.fireAsync(Pixel.Event.networkProtectionNewUser, frequency: .uniqueByName)
+                // Only seed `vpnFirstEnabled` when nothing was sent, which is the once-ever pixel
+                // reporting it already fired. A fresh send has no earlier date to read.
+                guard result != .sent else { return }
+                UserDefaults.networkProtectionGroupDefaults.vpnFirstEnabled = try? PixelKit.pixelLastFireDate(
+                    event: Pixel.Event.networkProtectionNewUser,
+                    frequency: .uniqueByName
                 )
             }
             self.connectionWideEventData?.tunnelStartDuration?.complete()

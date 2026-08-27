@@ -26,9 +26,9 @@ final class FloatingDomainCapsuleController {
 
     static let handoffBandHalfWidth: CGFloat = 0.02
 
-    /// Gap between the pill and the edge of the safe area at its resting position. Top address bar
-    /// uses this as-is; the collapsed bottom capsule sits `restBottomInsetReduction` closer to the
-    /// device bottom so the chrome morphs down into the pill rather than gaining space above it.
+    /// Gap between the pill and the adjacent edge of its expanded chrome at its resting position.
+    /// The collapsed bottom capsule sits `restBottomInsetReduction` closer to the device bottom so
+    /// the chrome morphs down into the pill rather than gaining space above it.
     static let restEdgePadding: CGFloat = 8
 
     /// Extra downward shift of the collapsed bottom capsule, in points, relative to `restEdgePadding`
@@ -46,13 +46,17 @@ final class FloatingDomainCapsuleController {
     }
 
     static func restCenterY(addressBarPosition: AddressBarPosition,
+                            expandedFrame: CGRect,
                             boundsMaxY: CGFloat,
                             safeAreaInsets: UIEdgeInsets,
                             capsuleHeight: CGFloat) -> CGFloat {
         let halfHeight = capsuleHeight / 2
         switch addressBarPosition {
         case .top:
-            return safeAreaInsets.top + restEdgePadding + halfHeight
+            guard !expandedFrame.isEmpty else {
+                return safeAreaInsets.top + restEdgePadding + halfHeight
+            }
+            return expandedFrame.maxY - restEdgePadding - halfHeight
         case .bottom:
             return boundsMaxY - restPaddingFromPhysicalBottom(safeAreaBottom: safeAreaInsets.bottom) - halfHeight
         }
@@ -67,10 +71,14 @@ final class FloatingDomainCapsuleController {
     /// Height obscured by the resting capsule, measured from the matching screen edge, so a
     /// page-fixed footer pins above the pill once the bars have hidden.
     func restObscuredHeightFromScreenEdge(for addressBarPosition: AddressBarPosition,
-                                          safeAreaInsets: UIEdgeInsets) -> CGFloat {
+                                          safeAreaInsets: UIEdgeInsets,
+                                          expandedFrame: CGRect = .zero) -> CGFloat {
         switch addressBarPosition {
         case .top:
-            return safeAreaInsets.top + Self.restEdgePadding + capsuleHeight
+            guard !expandedFrame.isEmpty else {
+                return safeAreaInsets.top + Self.restEdgePadding + capsuleHeight
+            }
+            return expandedFrame.maxY - Self.restEdgePadding
         case .bottom:
             return Self.restPaddingFromPhysicalBottom(safeAreaBottom: safeAreaInsets.bottom) + capsuleHeight
         }
@@ -231,6 +239,7 @@ final class FloatingDomainCapsuleController {
         let capsuleWidth = min(labelSize.width + 24, max(0, view.bounds.width - 32))
         let restCenterY = Self.restCenterY(
             addressBarPosition: addressBarPosition,
+            expandedFrame: expandedFrame,
             boundsMaxY: view.bounds.maxY,
             safeAreaInsets: view.safeAreaInsets,
             capsuleHeight: capsuleHeight)

@@ -96,6 +96,19 @@ final class PasteboardAttachmentReaderTests: XCTestCase {
         ))
     }
 
+    /// `hasImages` reports false for HEIC — the iOS default photo format — so gating on it hid Paste for copied photos.
+    func testHasSupportedAttachmentsFindsImageTypesHasImagesMisses() {
+        for identifier in ["public.heic", "org.webmproject.webp", "public.avif"] {
+            let pasteboard = UIPasteboard.withUniqueName()
+            defer { UIPasteboard.remove(withName: pasteboard.name) }
+            pasteboard.setItems([[identifier: Data([0x00, 0x01, 0x02, 0x03])]])
+
+            XCTAssertTrue(PasteboardAttachmentReader.hasSupportedAttachments(
+                in: pasteboard, allowsImages: true, allowedFileTypes: []
+            ), "\(identifier) is loadable as a UIImage but the metadata gate rejected it")
+        }
+    }
+
     // MARK: - loadAttachments
 
     func testLoadAttachmentsLoadsImage() async {

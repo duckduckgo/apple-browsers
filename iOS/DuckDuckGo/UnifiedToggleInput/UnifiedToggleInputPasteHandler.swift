@@ -251,15 +251,22 @@ enum PasteboardAttachmentReader {
         }
     }
 
-    /// Type-metadata gate run before `itemProviders` materialises every provider.
-    /// Rejects only, for the type families the pasteboard declares.
+    /// The identifiers `canLoadObject(ofClass: UIImage.self)` accepts, so the gate can't reject an image the loader would take.
+    private static let loadableImageTypeIdentifiers = UIImage.readableTypeIdentifiersForItemProvider
+
+    /// Type-metadata gate run before `itemProviders` materialises every provider. Rejects only.
     private static func mayContainSupportedAttachments(
         in pasteboard: UIPasteboard,
         allowsImages: Bool,
         allowedFileTypes: [UTType]
     ) -> Bool {
-        guard !allowedFileTypes.isEmpty else { return allowsImages && pasteboard.hasImages }
+        guard !allowedFileTypes.isEmpty else { return allowsImages && mayHoldLoadableImage(in: pasteboard) }
         return pasteboard.numberOfItems > 0
+    }
+
+    /// Not `hasImages`: that only covers `UIPasteboardTypeListImage`, which excludes HEIC and WebP that the loader accepts.
+    private static func mayHoldLoadableImage(in pasteboard: UIPasteboard) -> Bool {
+        pasteboard.contains(pasteboardTypes: loadableImageTypeIdentifiers)
     }
 
     /// Reads the pasteboard bytes (surfaces the banner) and builds attachments. Images stop decoding at the allowance and files are

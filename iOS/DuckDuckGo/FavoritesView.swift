@@ -57,6 +57,11 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
         // Prevent the content to leak out of bounds while collapsing
         .clipShape(Rectangle())
         .padding(0)
+        .background {
+#if DEBUG
+            FavoritesPositionProbe()
+#endif
+        }
     }
 
     @ViewBuilder
@@ -90,6 +95,21 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
         .buttonStyle(.plain)
     }
 }
+
+#if DEBUG
+private struct FavoritesPositionProbe: UIViewRepresentable {
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.accessibilityIdentifier = "FavoritesPositionProbe"
+        view.accessibilityElementsHidden = true
+        view.isUserInteractionEnabled = false
+        return view
+    }
+
+    func updateUIView(_ view: UIView, context: Context) {}
+}
+#endif
 
 private extension View {
     func previewShape() -> some View {

@@ -95,22 +95,18 @@ struct NewTabPageLayoutConfiguration {
     let contentTopInsetOverride: CGFloat?
     /// Spacing between sections (hatch → favorites).
     let interSectionSpacing: CGFloat
-    /// Keeps the focused and resting UTI favorites on the same rendering path.
-    let isolatesFavoriteInteractions: Bool
 
     static let standard = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: false,
                                                         escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding,
                                                         favoritesShareHatchTopInset: false,
                                                         contentTopInsetOverride: nil,
-                                                        interSectionSpacing: Metrics.sectionSpacing,
-                                                        isolatesFavoriteInteractions: false)
+                                                        interSectionSpacing: Metrics.sectionSpacing)
     static let unifiedToggleInput = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: true,
                                                                   // Keeps the focused and unfocused scrollable hatches the same width.
                                                                   escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding,
                                                                   favoritesShareHatchTopInset: true,
                                                                   contentTopInsetOverride: 10,
-                                                                  interSectionSpacing: 26,
-                                                                  isolatesFavoriteInteractions: true)
+                                                                  interSectionSpacing: 26)
 }
 
 private extension NewTabPageView {
@@ -135,8 +131,7 @@ private extension NewTabPageView {
                             .padding(.trailing, Metrics.sectionTitleTrailingPadding)
                     }
 
-                    FavoritesView(model: favoritesViewModel,
-                                  isolatesContextMenu: layoutConfiguration.isolatesFavoriteInteractions)
+                    FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
                         .opacity(viewModel.isFavoritesHidden ? 0 : 1)
                 }

@@ -1106,6 +1106,9 @@ extension MainViewController {
         } else if !isSearchContentToSearchContent {
             coordinator.contentViewController.beginDismissFade()
         }
+        if coordinator.inputMode == .aiChat {
+            newTabPageViewController?.setFavoritesHidden(false, animationDuration: min(duration, 0.2))
+        }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
         let finishDismiss: () -> Void = { [weak self] in
@@ -1118,7 +1121,7 @@ extension MainViewController {
                 guard let self, let coordinator else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.superview.layoutIfNeeded()
-                coordinator.contentViewController.setContentInset(top: 0, bottom: 0)
+                coordinator.pushContentInsets(forInputHeight: coordinator.viewController.view.frame.height)
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }

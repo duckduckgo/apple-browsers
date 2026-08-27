@@ -59,8 +59,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         newTabPageViewModel.isLogoHidden = hidden
     }
 
-    func setFavoritesHidden(_ hidden: Bool) {
-        newTabPageViewModel.isFavoritesHidden = hidden
+    func setFavoritesHidden(_ hidden: Bool, animationDuration: TimeInterval? = nil) {
+        if let animationDuration {
+            withAnimation(.easeInOut(duration: animationDuration)) {
+                newTabPageViewModel.isFavoritesHidden = hidden
+            }
+        } else {
+            newTabPageViewModel.isFavoritesHidden = hidden
+        }
     }
 
     private lazy var borderView = StyledTopBottomBorderView()

@@ -1431,6 +1431,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // constraint) while editing, so the content inset animates in lockstep with the
         // input instead of chasing transient frame values mid-animation.
         let utiHeight = isInputEditing ? editingHeight() : viewController.view.frame.height
+        pushContentInsets(forInputHeight: utiHeight)
+    }
+
+    func pushContentInsets(forInputHeight utiHeight: CGFloat) {
         if cardPosition == .top {
             contentViewController.setContentInset(top: utiHeight, bottom: 0)
         } else {

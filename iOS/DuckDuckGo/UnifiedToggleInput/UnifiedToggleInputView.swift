@@ -1654,6 +1654,7 @@ private extension UnifiedToggleInputView {
         button.layer.cornerRadius = Constants.inlineDismissSize / 2
         button.translatesAutoresizingMaskIntoConstraints = false
         button.accessibilityLabel = UserText.backButtonTitle
+        button.accessibilityIdentifier = "UnifiedToggleInput.Button.Dismiss"
         button.alpha = 0
         button.isUserInteractionEnabled = false
         return button

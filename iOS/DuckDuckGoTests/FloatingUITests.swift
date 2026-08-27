@@ -454,8 +454,10 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
     }
 
     @discardableResult
-    private func update(barsVisibilityPercent: CGFloat, reduceMotion: Bool = false) -> UIButton? {
-        controller.update(addressBarPosition: .top,
+    private func update(barsVisibilityPercent: CGFloat,
+                        addressBarPosition: AddressBarPosition = .top,
+                        reduceMotion: Bool = false) -> UIButton? {
+        controller.update(addressBarPosition: addressBarPosition,
                           isFloatingUIEnabled: true,
                           isUnifiedToggleInputActive: false,
                           isAITab: false,
@@ -500,6 +502,70 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         let midWidth = update(barsVisibilityPercent: 0.5, reduceMotion: true)?.bounds.width ?? 0
 
         XCTAssertEqual(midWidth, capsuleWidth, accuracy: 0.5)
+    }
+
+    func testWhenBottomBarsHiddenThenPillRestsAtTheLowerCollapsedCenter() {
+        let button = update(barsVisibilityPercent: 0, addressBarPosition: .bottom)
+        let expectedCenterY = FloatingDomainCapsuleController.restCenterY(
+            addressBarPosition: .bottom,
+            boundsMaxY: containerView.bounds.maxY,
+            safeAreaInsets: containerView.safeAreaInsets,
+            capsuleHeight: controller.capsuleHeight)
+
+        XCTAssertEqual(button?.center.y ?? 0, expectedCenterY, accuracy: 0.5)
+    }
+
+    func testWhenBottomCapsuleRestsThenObscuredHeightTracksThePillNotExtraTopPadding() {
+        update(barsVisibilityPercent: 0, addressBarPosition: .bottom)
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+        let padding = FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(safeAreaBottom: insets.bottom)
+        let obscured = controller.restObscuredHeightFromScreenEdge(for: .bottom, safeAreaInsets: insets)
+
+        XCTAssertEqual(obscured, padding + controller.capsuleHeight, accuracy: 0.001)
+        XCTAssertLessThan(obscured, insets.bottom + FloatingDomainCapsuleController.restEdgePadding + controller.capsuleHeight)
+    }
+}
+
+final class FloatingDomainCapsuleGeometryTests: XCTestCase {
+
+    func testWhenHomeIndicatorIsPresentThenBottomRestPaddingIsReducedByTwelvePoints() {
+        let safeAreaBottom: CGFloat = 34
+        let padding = FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(safeAreaBottom: safeAreaBottom)
+
+        XCTAssertEqual(
+            padding,
+            safeAreaBottom + FloatingDomainCapsuleController.restEdgePadding - FloatingDomainCapsuleController.restBottomInsetReduction,
+            accuracy: 0.001)
+    }
+
+    func testWhenSafeAreaCannotAbsorbTheReductionThenBottomRestPaddingClampsToZero() {
+        XCTAssertEqual(FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(safeAreaBottom: 0), 0, accuracy: 0.001)
+    }
+
+    func testWhenBottomAddressBarThenCollapsedRestCenterIsLowerByTheInsetReduction() {
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+        let capsuleHeight: CGFloat = 28
+        let boundsMaxY: CGFloat = 844
+        let previousRestCenterY = boundsMaxY - insets.bottom - FloatingDomainCapsuleController.restEdgePadding - capsuleHeight / 2
+        let restCenterY = FloatingDomainCapsuleController.restCenterY(
+            addressBarPosition: .bottom,
+            boundsMaxY: boundsMaxY,
+            safeAreaInsets: insets,
+            capsuleHeight: capsuleHeight)
+
+        XCTAssertEqual(restCenterY, previousRestCenterY + FloatingDomainCapsuleController.restBottomInsetReduction, accuracy: 0.001)
+    }
+
+    func testWhenTopAddressBarThenCollapsedRestCenterKeepsEdgePadding() {
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+        let capsuleHeight: CGFloat = 28
+        let restCenterY = FloatingDomainCapsuleController.restCenterY(
+            addressBarPosition: .top,
+            boundsMaxY: 844,
+            safeAreaInsets: insets,
+            capsuleHeight: capsuleHeight)
+
+        XCTAssertEqual(restCenterY, insets.top + FloatingDomainCapsuleController.restEdgePadding + capsuleHeight / 2, accuracy: 0.001)
     }
 }
 

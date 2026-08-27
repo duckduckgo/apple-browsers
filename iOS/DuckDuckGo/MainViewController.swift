@@ -4764,8 +4764,9 @@ extension MainViewController: BrowserChromeDelegate {
               !domain.isEmpty else {
             return 0
         }
-        return view.safeAreaInsets.bottom
-            + floatingDomainCapsuleController.restObscuredHeightAboveSafeArea
+        return floatingDomainCapsuleController.restObscuredHeightFromScreenEdge(
+            for: .bottom,
+            safeAreaInsets: view.safeAreaInsets)
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 
@@ -4776,8 +4777,9 @@ extension MainViewController: BrowserChromeDelegate {
               !domain.isEmpty else {
             return 0
         }
-        return view.safeAreaInsets.top
-            + floatingDomainCapsuleController.restObscuredHeightAboveSafeArea
+        return floatingDomainCapsuleController.restObscuredHeightFromScreenEdge(
+            for: .top,
+            safeAreaInsets: view.safeAreaInsets)
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 

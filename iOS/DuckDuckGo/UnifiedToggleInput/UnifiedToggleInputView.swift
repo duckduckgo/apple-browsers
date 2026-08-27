@@ -1197,8 +1197,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.maskedCorners = Constants.allCorners
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
-        cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
-        cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
+        updateExpandedBorderVisibility(expanded && showsToggle)
         let changes = {
             self.setCardFlanked(layout == .flanked)
             // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything
@@ -1450,8 +1449,7 @@ final class UnifiedToggleInputView: UIView {
         applyInlineDismissVisibility(true)
         inputTopConstraint.constant = Constants.toggleBottomPadding
         toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
-        cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
-        cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
+        updateExpandedBorderVisibility(true)
         toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
         toolsToolbar.alpha = showToolbar ? 1 : 0
         updateAttachmentsStripLayout()
@@ -1530,8 +1528,7 @@ final class UnifiedToggleInputView: UIView {
         if isToggleEnabled {
             toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         }
-        cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
-        cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
+        updateExpandedBorderVisibility(isToggleEnabled)
         updateAttachmentsStripLayout()
 
         guard animated else {
@@ -1554,6 +1551,11 @@ final class UnifiedToggleInputView: UIView {
                 self.toolsToolbar.finalizeToolbarShown()
             }
         }
+    }
+
+    private func updateExpandedBorderVisibility(_ isVisible: Bool) {
+        cardView.layer.borderWidth = isVisible ? Constants.expandedBorderWidth : 0
+        cardView.layer.borderColor = isVisible ? expandedBorderColor : UIColor.clear.cgColor
     }
 
     private func updateAttachmentsStripLayout() {

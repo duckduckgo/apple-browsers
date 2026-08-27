@@ -29,6 +29,27 @@ import UniformTypeIdentifiers
 
 final class UnifiedToggleInputViewTests: XCTestCase {
 
+    func testWhenExpandedInputSwitchesToSearchThenCardKeepsOutline() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.setInputMode(.aiChat, animated: false)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let outlinedCard = try XCTUnwrap(sut.subviews.first { $0.layer.borderWidth > 0 })
+
+        sut.setInputMode(.search, animated: false)
+
+        XCTAssertEqual(outlinedCard.layer.borderWidth, 0.5)
+    }
+
+    func testWhenExpandedSearchOnlyInputIsShownThenCardHasNoOutline() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
+
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
     func test_searchModeTextSubmitStaysEnabledWhenInvalidDuckAIAttachmentIsHidden() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)

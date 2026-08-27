@@ -1094,7 +1094,6 @@ extension MainViewController {
         let isSearchContentToSearchContent = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsSearchContent == true
         let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
-        let crossfadesBottomSearchContent = coordinator.cardPosition.isBottom && isSearchContentToSearchContent
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
         let contentContainer = viewCoordinator.unifiedInputContentContainer
@@ -1104,10 +1103,10 @@ extension MainViewController {
         )
         if isLogoToLogo {
             coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
-        } else if !isSearchContentToSearchContent || crossfadesBottomSearchContent {
+        } else if !isSearchContentToSearchContent {
             coordinator.contentViewController.beginDismissFade()
         }
-        if coordinator.inputMode == .aiChat || crossfadesBottomSearchContent {
+        if coordinator.inputMode == .aiChat {
             newTabPageViewController?.setFavoritesHidden(false, animationDuration: min(duration, 0.2))
         } else {
             coordinator.contentViewController.prepareForDismissAnimation()

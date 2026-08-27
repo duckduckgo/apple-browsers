@@ -218,7 +218,10 @@ final class UnifiedSuggestionsHost {
             // Keep a self-sizing List's adjustedContentInset stable while its rows change.
             let usesHostingTopInset = viewModel.isFireTab || usesHostingTopInsetForDismissal
             hostingTopInset = usesHostingTopInset ? contentInsets.top : 0
-            viewModel.scrollContentInsetTop = usesHostingTopInset ? 0 : contentInsets.top
+            let scrollContentInsetTop = usesHostingTopInset ? 0 : contentInsets.top
+            if viewModel.scrollContentInsetTop != scrollContentInsetTop {
+                viewModel.scrollContentInsetTop = scrollContentInsetTop
+            }
         } else {
             hostingTopInset = contentInsets.top
         }

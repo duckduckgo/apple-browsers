@@ -214,7 +214,7 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionPrintSite,
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.print : DesignSystemImages.Glyphs.Size24.print,
                  action: { [weak self] in
-            PixelKit.fire(smallIcon ? .browsingMenuListPrint : .browsingMenuPrint)
+            PixelKit.fire(smallIcon ? Pixel.Event.browsingMenuListPrint : .browsingMenuPrint)
             self?.print()
         })
     }
@@ -698,7 +698,7 @@ extension TabViewController {
                                               image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.favorite : DesignSystemImages.Glyphs.Size24.favorite,
                                               tag: .favorite,
                                               action: { [weak self] in
-            PixelKit.fire(addToFavoriteFlow ? .browsingMenuAddToFavoritesAddFavoriteFlow : .browsingMenuAddToFavorites)
+            PixelKit.fire(addToFavoriteFlow ? Pixel.Event.browsingMenuAddToFavoritesAddFavoriteFlow : .browsingMenuAddToFavorites)
             PixelKit.fire(Pixel.Event.addFavoriteDaily, frequency: .legacyDailyNoSuffix)
             self?.performAddFavoriteAction(for: link, with: bookmarksInterface)
         })
@@ -903,7 +903,7 @@ extension TabViewController {
         } else {
             togglePrivacyProtection(domain: domain)
         }
-        PixelKit.fire(isProtected ? .browsingMenuDisableProtection : .browsingMenuEnableProtection)
+        PixelKit.fire(isProtected ? Pixel.Event.browsingMenuDisableProtection : .browsingMenuEnableProtection)
         let tdsEtag = AppDependencyProvider.shared.configurationStore.loadEtag(for: .trackerDataSet) ?? ""
         SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
             PixelKit.fire(Pixel.Event.debugBreakageExperiment, frequency: .uniqueByName, options: .parameters(parameters))

@@ -350,7 +350,7 @@ final class SettingsViewModel: ObservableObject {
                 self.state.addressBar.position
             },
             set: {
-                PixelKit.fire($0 == .top ? .settingsAddressBarTopSelected : .settingsAddressBarBottomSelected)
+                PixelKit.fire($0 == .top ? Pixel.Event.settingsAddressBarTopSelected : .settingsAddressBarBottomSelected)
                 self.appSettings.currentAddressBarPosition = $0
                 self.state.addressBar.position = $0
             }
@@ -363,7 +363,7 @@ final class SettingsViewModel: ObservableObject {
                 !self.appSettings.keepAddressBarVisibleOnIPad
             },
             set: { hideWhileScrolling in
-                PixelKit.fire(hideWhileScrolling ? .settingsHideTabBarWhileScrollingOn : .settingsHideTabBarWhileScrollingOff)
+                PixelKit.fire(hideWhileScrolling ? Pixel.Event.settingsHideTabBarWhileScrollingOn : .settingsHideTabBarWhileScrollingOff)
                 let keepVisible = !hideWhileScrolling
                 self.appSettings.keepAddressBarVisibleOnIPad = keepVisible
             }
@@ -376,7 +376,7 @@ final class SettingsViewModel: ObservableObject {
                 self.state.refreshButtonPosition
             },
             set: {
-                PixelKit.fire($0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
+                PixelKit.fire($0 == .addressBar ? Pixel.Event.settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
                 self.appSettings.currentRefreshButtonPosition = $0
                 self.state.refreshButtonPosition = $0
             }
@@ -401,7 +401,7 @@ final class SettingsViewModel: ObservableObject {
         Binding<Bool>(
             get: { self.state.showsFullURL },
             set: {
-                PixelKit.fire($0 ? .settingsShowFullURLOn : .settingsShowFullURLOff)
+                PixelKit.fire($0 ? Pixel.Event.settingsShowFullURLOn : .settingsShowFullURLOff)
                 self.state.showsFullURL = $0
                 self.appSettings.showFullSiteAddress = $0
             }
@@ -439,7 +439,7 @@ final class SettingsViewModel: ObservableObject {
             get: { self.lastTabShortcutAdapter.isEnabled },
             set: { newValue in
                 self.lastTabShortcutAdapter.setEnabled(newValue)
-                PixelKit.fire(newValue ? .ntpAfterIdleLastTabShortcutSettingEnabled : .ntpAfterIdleLastTabShortcutSettingDisabled, frequency: .dailyAndCount)
+                PixelKit.fire(newValue ? Pixel.Event.ntpAfterIdleLastTabShortcutSettingEnabled : .ntpAfterIdleLastTabShortcutSettingDisabled, frequency: .dailyAndCount)
             }
         )
     }
@@ -578,7 +578,7 @@ final class SettingsViewModel: ObservableObject {
                     autoManageEnabled: isEnabled,
                     popUpsWithoutOptOutsEnabled: popUpsWithoutOptOuts
                 ))
-                PixelKit.fire(isEnabled ? .autoconsentSettingsOn : .autoconsentSettingsOff)
+                PixelKit.fire(isEnabled ? Pixel.Event.autoconsentSettingsOn : .autoconsentSettingsOff)
             }
         )
     }
@@ -591,7 +591,7 @@ final class SettingsViewModel: ObservableObject {
                     autoManageEnabled: true,
                     popUpsWithoutOptOutsEnabled: isEnabled
                 ))
-                PixelKit.fire(isEnabled ? .autoconsentSettingsMax : .autoconsentSettingsDefault)
+                PixelKit.fire(isEnabled ? Pixel.Event.autoconsentSettingsMax : .autoconsentSettingsDefault)
             }
         )
     }
@@ -794,7 +794,7 @@ final class SettingsViewModel: ObservableObject {
                 } else if disclosureVisibleAtToggle {
                     self.setYouTubeAnalyticsEnabled(true)
                 }
-                PixelKit.fire($0 ? .webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
+                PixelKit.fire($0 ? Pixel.Event.webExtensionAdBlockingEnabled : .webExtensionAdBlockingDisabled,
                               frequency: .dailyAndStandard)
                 NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
             }
@@ -944,7 +944,7 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.darkReaderFeatureSettings.setForceDarkModeEnabled($0)
                 self.state.forceWebsiteDarkMode = $0
-                PixelKit.fire($0 ? .webExtensionDarkReaderEnabled : .webExtensionDarkReaderDisabled,
+                PixelKit.fire($0 ? Pixel.Event.webExtensionDarkReaderEnabled : .webExtensionDarkReaderDisabled,
                               frequency: .dailyAndStandard)
             }
         )
@@ -2071,7 +2071,7 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabBarUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabBarUserSettings(enable: newValue)
-                PixelKit.fire(newValue ? .aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff, frequency: .dailyAndCount)
+                PixelKit.fire(newValue ? Pixel.Event.aiChatSettingsNavigationBarTurnedOn : .aiChatSettingsNavigationBarTurnedOff, frequency: .dailyAndCount)
             }
         )
     }
@@ -2118,7 +2118,7 @@ extension SettingsViewModel {
                 guard newValue.hidden != self.serpSettings.hideAIGeneratedImages else { return }
                 self.objectWillChange.send()
                 self.serpSettings.hideAIGeneratedImages = newValue.hidden
-                PixelKit.fire(newValue.hidden ? .aiFeaturesHideImagesOn : .aiFeaturesHideImagesOff, frequency: .dailyAndCount)
+                PixelKit.fire(newValue.hidden ? Pixel.Event.aiFeaturesHideImagesOn : .aiFeaturesHideImagesOff, frequency: .dailyAndCount)
             }
         )
     }

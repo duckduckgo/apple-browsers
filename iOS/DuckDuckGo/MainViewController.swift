@@ -5935,9 +5935,9 @@ extension MainViewController: SuggestionTrayDuckAINavigationDelegate {
     func suggestionTrayDidSelectDuckAI(_ selection: DuckAISuggestionsSelection) {
         switch selection {
         case .chat(let chat):
-            PixelKit.fire(chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected, frequency: .dailyAndCount)
+            PixelKit.fire(chat.isPinned ? Pixel.Event.aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected, frequency: .dailyAndCount)
             if isPad {
-                PixelKit.fire(chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected, frequency: .dailyAndCount)
+                PixelKit.fire(chat.isPinned ? Pixel.Event.aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected, frequency: .dailyAndCount)
             }
             PixelKit.fire(Pixel.Event.autocompleteDuckAIClickChatHistory)
             onChatHistorySelected(url: aiChatSettings.aiChatURL.withChatID(chat.chatId))

@@ -331,10 +331,10 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
     func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
         switch suggestion {
         case .bookmark(_, _, let isFavorite, _):
-            PixelKit.fire(isFavorite ? .autocompleteClickFavorite : .autocompleteClickBookmark)
+            PixelKit.fire(isFavorite ? Pixel.Event.autocompleteClickFavorite : .autocompleteClickBookmark)
 
         case .historyEntry(_, let url, _):
-            PixelKit.fire(url.isDuckDuckGoSearch ? .autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
+            PixelKit.fire(url.isDuckDuckGoSearch ? Pixel.Event.autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
 
         case .phrase:
             PixelKit.fire(Pixel.Event.autocompleteClickPhrase)

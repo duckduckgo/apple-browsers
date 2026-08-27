@@ -71,7 +71,7 @@ final class AutoconsentSettingsViewController: UITableViewController {
     
     @IBAction private func onAutoconsentValueChanged(_ sender: Any) {
         appSettings.autoconsentEnabled = autoconsentToggle.isOn
-        PixelKit.fire(autoconsentToggle.isOn ? .settingsAutoconsentOn : .settingsAutoconsentOff)
+        PixelKit.fire(autoconsentToggle.isOn ? Pixel.Event.settingsAutoconsentOn : .settingsAutoconsentOff)
 
         if appSettings.autoconsentEnabled {
             PixelKit.fire(Pixel.Event.settingsAutoconsentOn)

@@ -73,7 +73,7 @@ final class AutofillService {
                     }
                     PixelKit.fire(Pixel.Event.autofillToggledOn, options: .parameters(params ?? [:]))
                     if let autofillExtensionToggled = self?.autofillUsageMonitor.autofillExtensionEnabled {
-                        PixelKit.fire(autofillExtensionToggled ? .autofillExtensionToggledOn : .autofillExtensionToggledOff,
+                        PixelKit.fire(autofillExtensionToggled ? Pixel.Event.autofillExtensionToggledOn : .autofillExtensionToggledOff,
                                       options: .parameters(params ?? [:]))
                     }
                 case .autofillToggledOff:
@@ -82,7 +82,7 @@ final class AutofillService {
                     }
                     PixelKit.fire(Pixel.Event.autofillToggledOff, options: .parameters(params ?? [:]))
                     if let autofillExtensionToggled = self?.autofillUsageMonitor.autofillExtensionEnabled {
-                        PixelKit.fire(autofillExtensionToggled ? .autofillExtensionToggledOn : .autofillExtensionToggledOff,
+                        PixelKit.fire(autofillExtensionToggled ? Pixel.Event.autofillExtensionToggledOn : .autofillExtensionToggledOff,
                                       options: .parameters(params ?? [:]))
                     }
                 case .autofillLoginsStacked:

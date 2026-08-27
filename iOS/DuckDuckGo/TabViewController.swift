@@ -81,6 +81,10 @@ enum WebViewPreviewSnapshotGeometry {
                                      right: 0)
         return visibleRect(webViewBounds: webViewBounds, contentInset: cropInset)
     }
+
+    static func snapshotWidth(for rect: CGRect, windowSize: CGSize) -> CGFloat {
+        min(rect.width, TabSwitcherGridLayoutGeometry.maximumPreviewWidth(for: windowSize))
+    }
 }
 
 enum WebViewPreviewSnapshotPolicy {
@@ -2651,9 +2655,10 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
-            let configuration = WKSnapshotConfiguration()
-            configuration.rect = visibleRect
-            configuration.afterScreenUpdates = true
+            let configuration = makePreviewSnapshotConfiguration(
+                rect: visibleRect,
+                windowSize: webView.window?.bounds.size ?? visibleRect.size,
+                afterScreenUpdates: true)
             webView.takeSnapshot(with: configuration) { image, _ in
                 completion(image)
             }
@@ -2677,14 +2682,25 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        let configuration = WKSnapshotConfiguration()
-        configuration.rect = rect
-        configuration.afterScreenUpdates = false
+        let configuration = makePreviewSnapshotConfiguration(
+            rect: rect,
+            windowSize: webView.window?.bounds.size ?? rect.size,
+            afterScreenUpdates: false)
         webView.takeSnapshot(with: configuration) { image, _ in
             DispatchQueue.main.async {
                 completion(image)
             }
         }
+    }
+
+    private func makePreviewSnapshotConfiguration(rect: CGRect,
+                                                  windowSize: CGSize,
+                                                  afterScreenUpdates: Bool) -> WKSnapshotConfiguration {
+        let configuration = WKSnapshotConfiguration()
+        configuration.rect = rect
+        configuration.snapshotWidth = NSNumber(value: WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize))
+        configuration.afterScreenUpdates = afterScreenUpdates
+        return configuration
     }
 
     /// Renders the web view on the calling thread. `drawHierarchy` blocks until the render server

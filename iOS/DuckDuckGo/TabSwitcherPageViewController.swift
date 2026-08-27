@@ -36,6 +36,32 @@ import PrivacyConfig
 import AIChat
 import UIComponents
 
+enum TabSwitcherGridLayoutGeometry {
+
+    static let spacing: CGFloat = 14
+    static let minimumColumnWidth: CGFloat = 150
+    static let maximumColumnCount = 4
+
+    static var sectionInset: UIEdgeInsets {
+        UIEdgeInsets(top: spacing, left: spacing, bottom: spacing, right: spacing)
+    }
+
+    static func columnWidth(for availableWidth: CGFloat) -> CGFloat {
+        let contentWidth = max(0, availableWidth - spacing)
+        let columnCount = min(maximumColumnCount, max(1, Int(contentWidth / minimumColumnWidth)))
+        return max(0, contentWidth / CGFloat(columnCount) - spacing)
+    }
+
+    static func previewWidth(for availableWidth: CGFloat) -> CGFloat {
+        max(0, floor(columnWidth(for: availableWidth)) - TabViewGridCell.Constants.previewHorizontalInset)
+    }
+
+    /// Keeps previews sharp after rotation without snapshotting at the full web view width.
+    static func maximumPreviewWidth(for availableSize: CGSize) -> CGFloat {
+        max(previewWidth(for: availableSize.width), previewWidth(for: availableSize.height))
+    }
+}
+
 protocol TabSwitcherPageDelegate: AnyObject {
     func page(_ page: TabSwitcherPageViewController, didSelectTabAt index: Int)
     func page(_ page: TabSwitcherPageViewController, didDeselectTab: Void)
@@ -115,9 +141,9 @@ class TabSwitcherPageViewController: UIViewController {
         super.viewDidLoad()
 
         let layout = UICollectionViewFlowLayout()
-        layout.minimumLineSpacing = 14
-        layout.minimumInteritemSpacing = 14
-        layout.sectionInset = UIEdgeInsets(top: 14, left: 14, bottom: 14, right: 14)
+        layout.minimumLineSpacing = TabSwitcherGridLayoutGeometry.spacing
+        layout.minimumInteritemSpacing = TabSwitcherGridLayoutGeometry.spacing
+        layout.sectionInset = TabSwitcherGridLayoutGeometry.sectionInset
 
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -503,14 +529,6 @@ extension TabSwitcherPageViewController: UICollectionViewDelegate {
 
 extension TabSwitcherPageViewController: UICollectionViewDelegateFlowLayout {
 
-    private func calculateColumnWidth(minimumColumnWidth: CGFloat, maxColumns: Int) -> CGFloat {
-        let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
-        let spacing = layout?.sectionInset.left ?? 0.0
-        let contentWidth = collectionView.bounds.width - spacing
-        let numberOfColumns = min(maxColumns, Int(contentWidth / minimumColumnWidth))
-        return contentWidth / CGFloat(numberOfColumns) - spacing
-    }
-
     private func calculateRowHeight(columnWidth: CGFloat) -> CGFloat {
         let contentAspectRatio = collectionView.bounds.width / collectionView.bounds.height
         let heightToFit = (columnWidth / contentAspectRatio) + TabViewCell.Constants.cellHeaderHeight
@@ -524,7 +542,7 @@ extension TabSwitcherPageViewController: UICollectionViewDelegateFlowLayout {
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
         if tabSwitcherSettings.isGridViewEnabled {
-            let columnWidth = calculateColumnWidth(minimumColumnWidth: 150, maxColumns: 4)
+            let columnWidth = TabSwitcherGridLayoutGeometry.columnWidth(for: collectionView.bounds.width)
             let rowHeight = calculateRowHeight(columnWidth: columnWidth)
             return CGSize(width: floor(columnWidth), height: floor(rowHeight))
         } else {

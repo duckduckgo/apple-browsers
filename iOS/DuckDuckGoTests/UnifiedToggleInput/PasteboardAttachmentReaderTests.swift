@@ -77,6 +77,25 @@ final class PasteboardAttachmentReaderTests: XCTestCase {
         ))
     }
 
+    func testHasSupportedAttachmentsRejectsTextOnlyPasteboardWhenOnlyImagesAllowed() {
+        let pasteboard = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        pasteboard.string = "duckduckgo.com"
+
+        XCTAssertFalse(PasteboardAttachmentReader.hasSupportedAttachments(
+            in: pasteboard, allowsImages: true, allowedFileTypes: []
+        ))
+    }
+
+    func testHasSupportedAttachmentsRejectsEmptyPasteboard() {
+        let pasteboard = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+
+        XCTAssertFalse(PasteboardAttachmentReader.hasSupportedAttachments(
+            in: pasteboard, allowsImages: true, allowedFileTypes: [.pdf]
+        ))
+    }
+
     // MARK: - loadAttachments
 
     func testLoadAttachmentsLoadsImage() async {

@@ -112,9 +112,15 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
 
     weak var delegate: UnifiedToggleInputPasteDelegate?
 
+    private let attachmentProbe: PasteboardAttachmentProbe
+
+    init(attachmentProbe: PasteboardAttachmentProbe = PasteboardAttachmentProbe()) {
+        self.attachmentProbe = attachmentProbe
+    }
+
     func canPasteAttachments(from pasteboard: UIPasteboard) -> Bool {
         guard let support = delegate?.pasteAttachmentSupport, support.isEnabled, support.acceptsAnyAttachment else { return false }
-        return PasteboardAttachmentReader.hasSupportedAttachments(
+        return attachmentProbe.hasSupportedAttachments(
             in: pasteboard,
             allowsImages: support.acceptsImages,
             allowedFileTypes: support.fileTypes
@@ -125,6 +131,7 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
         guard let delegate else { return }
         let support = delegate.pasteAttachmentSupport
         guard support.isEnabled, support.acceptsAnyAttachment else { return }
+        // Read on the main thread: `NSItemProvider` isn't `Sendable`, and this runs once per user-initiated paste rather than per menu build.
         let providers = pasteboard.itemProviders
         let context = delegate.pasteContextIdentity
         delegate.pasteWillBeginExpandingIfNeeded()
@@ -170,6 +177,45 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
     }
 }
 
+/// Answers the edit-menu "can attachments be pasted?" question, memoised per pasteboard `changeCount`.
+/// Repeat menu builds never re-read `itemProviders` — a cross-process read that becomes a network fetch for a Universal Clipboard promise.
+@MainActor
+final class PasteboardAttachmentProbe {
+
+    /// The underlying metadata-only read; injectable so the memoisation can be exercised without a real clipboard.
+    typealias Read = @MainActor (_ pasteboard: UIPasteboard, _ allowsImages: Bool, _ allowedFileTypes: [UTType]) -> Bool
+
+    private struct Query: Equatable {
+        let changeCount: Int
+        let pasteboardName: UIPasteboard.Name
+        let allowsImages: Bool
+        let allowedFileTypes: [UTType]
+    }
+
+    private let read: Read
+    private var lastQuery: Query?
+    private var lastAnswer = false
+
+    nonisolated init(read: @escaping Read = PasteboardAttachmentReader.hasSupportedAttachments) {
+        self.read = read
+    }
+
+    func hasSupportedAttachments(in pasteboard: UIPasteboard, allowsImages: Bool, allowedFileTypes: [UTType]) -> Bool {
+        let query = Query(
+            changeCount: pasteboard.changeCount,
+            pasteboardName: pasteboard.name,
+            allowsImages: allowsImages,
+            allowedFileTypes: allowedFileTypes
+        )
+        guard query != lastQuery else { return lastAnswer }
+
+        let answer = read(pasteboard, allowsImages, allowedFileTypes)
+        lastQuery = query
+        lastAnswer = answer
+        return answer
+    }
+}
+
 /// Extracts image/file attachments from a `UIPasteboard`, mirroring the picker paths so pasted content flows through the same validation and UI as the attach menu.
 @MainActor
 enum PasteboardAttachmentReader {
@@ -194,6 +240,8 @@ enum PasteboardAttachmentReader {
         allowsImages: Bool,
         allowedFileTypes: [UTType]
     ) -> Bool {
+        guard mayContainSupportedAttachments(in: pasteboard, allowsImages: allowsImages, allowedFileTypes: allowedFileTypes) else { return false }
+
         let fileIdentifiers = allowedFileTypes.map(\.identifier)
         return pasteboard.itemProviders.contains { provider in
             if allowsImages, provider.canLoadObject(ofClass: UIImage.self) {
@@ -201,6 +249,17 @@ enum PasteboardAttachmentReader {
             }
             return fileIdentifiers.contains { provider.hasItemConformingToTypeIdentifier($0) }
         }
+    }
+
+    /// Type-metadata gate run before `itemProviders` materialises every provider.
+    /// Rejects only, for the type families the pasteboard declares.
+    private static func mayContainSupportedAttachments(
+        in pasteboard: UIPasteboard,
+        allowsImages: Bool,
+        allowedFileTypes: [UTType]
+    ) -> Bool {
+        guard !allowedFileTypes.isEmpty else { return allowsImages && pasteboard.hasImages }
+        return pasteboard.numberOfItems > 0
     }
 
     /// Reads the pasteboard bytes (surfaces the banner) and builds attachments. Images stop decoding at the allowance and files are

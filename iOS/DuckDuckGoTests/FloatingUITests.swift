@@ -587,6 +587,12 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertLessThan(button?.bounds.width ?? .greatestFiniteMagnitude, expandedFrame.width / 2)
     }
 
+    func testWhenTopBarsHiddenThenPillKeepsEightPointsBelowIt() {
+        let button = update(barsVisibilityPercent: 0)
+
+        XCTAssertEqual(expandedFrame.maxY - (button?.frame.maxY ?? 0), FloatingDomainCapsuleController.restEdgePadding, accuracy: 0.5)
+    }
+
     func testWhenPartiallyVisibleThenPillWidthIsBetweenCapsuleAndBarAndFullyOpaque() {
         let capsuleWidth = update(barsVisibilityPercent: 0)?.bounds.width ?? 0
         let midWidth = update(barsVisibilityPercent: 0.5)?.bounds.width ?? 0
@@ -615,6 +621,7 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         let button = update(barsVisibilityPercent: 0, addressBarPosition: .bottom)
         let expectedCenterY = FloatingDomainCapsuleController.restCenterY(
             addressBarPosition: .bottom,
+            expandedFrame: expandedFrame,
             boundsMaxY: containerView.bounds.maxY,
             safeAreaInsets: containerView.safeAreaInsets,
             capsuleHeight: controller.capsuleHeight)
@@ -656,6 +663,7 @@ final class FloatingDomainCapsuleGeometryTests: XCTestCase {
         let previousRestCenterY = boundsMaxY - insets.bottom - FloatingDomainCapsuleController.restEdgePadding - capsuleHeight / 2
         let restCenterY = FloatingDomainCapsuleController.restCenterY(
             addressBarPosition: .bottom,
+            expandedFrame: .zero,
             boundsMaxY: boundsMaxY,
             safeAreaInsets: insets,
             capsuleHeight: capsuleHeight)
@@ -663,16 +671,21 @@ final class FloatingDomainCapsuleGeometryTests: XCTestCase {
         XCTAssertEqual(restCenterY, previousRestCenterY + FloatingDomainCapsuleController.restBottomInsetReduction, accuracy: 0.001)
     }
 
-    func testWhenTopAddressBarThenCollapsedRestCenterKeepsEdgePadding() {
+    func testWhenTopAddressBarThenCollapsedRestCenterKeepsEightPointsBelowCapsule() {
         let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
         let capsuleHeight: CGFloat = 28
+        let expandedFrame = CGRect(x: 16, y: insets.top, width: 358, height: 60)
         let restCenterY = FloatingDomainCapsuleController.restCenterY(
             addressBarPosition: .top,
+            expandedFrame: expandedFrame,
             boundsMaxY: 844,
             safeAreaInsets: insets,
             capsuleHeight: capsuleHeight)
 
-        XCTAssertEqual(restCenterY, insets.top + FloatingDomainCapsuleController.restEdgePadding + capsuleHeight / 2, accuracy: 0.001)
+        XCTAssertEqual(
+            expandedFrame.maxY - (restCenterY + capsuleHeight / 2),
+            FloatingDomainCapsuleController.restEdgePadding,
+            accuracy: 0.001)
     }
 }
 

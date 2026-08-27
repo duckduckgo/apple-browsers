@@ -70,8 +70,7 @@ final class DuckAiHighUsageNoticeDismissalStoreTests: XCTestCase {
         XCTAssertEqual(stored, ["claude-opus-4-8"])
     }
 
-    /// A record we can't read is treated as "not dismissed": showing the notice again is the safe
-    /// failure, and it self-heals on the next dismissal.
+    /// Unreadable reads as "not dismissed": showing the notice again is the safe failure.
     func testWhenTheStoredValueIsUnreadableThenNothingIsDismissed() {
         try? keyValueStore.set("not a list", forKey: "aichat.high-usage-notice.dismissed-models")
 
@@ -79,8 +78,7 @@ final class DuckAiHighUsageNoticeDismissalStoreTests: XCTestCase {
     }
 }
 
-/// A local stub rather than `PersistenceTestingUtils`: only this file needs one, matching
-/// `DuckAiUsageWarningDismissalStoreTests`.
+/// A local stub, matching `DuckAiUsageWarningDismissalStoreTests`.
 private final class InMemoryThrowingStore: ThrowingKeyValueStoring {
 
     private var values: [String: Any] = [:]

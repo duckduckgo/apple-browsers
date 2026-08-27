@@ -40,8 +40,6 @@ struct UTIFooterMessageMapper {
         )
     }
 
-    /// Keyed off the selected model rather than the allowance, so there is no percentage, no reset
-    /// line and nothing to switch to — the copy is the whole message.
     func message(for notice: DuckAiHighUsageModelNotice) -> UTIFooterMessage {
         UTIFooterMessage(
             icon: .none,
@@ -89,8 +87,6 @@ struct UTIFooterMessageMapper {
         switch action {
         case .none:
             return nil
-        // One word for every model switch: the card has no room to name a model, and the toolbar's
-        // own picker is where a different choice is made.
         case .switchToModel, .switchToFreeModel:
             return UserText.utiDuckAIWarningsSwitch
         case .tryForFree(let isTrialEligible):

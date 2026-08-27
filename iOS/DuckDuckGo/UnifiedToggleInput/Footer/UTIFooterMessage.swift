@@ -23,9 +23,7 @@ import Foundation
 struct UTIFooterMessage: Equatable {
 
     enum Icon: Equatable {
-        /// No leading glyph: the high-usage notice reads as a sentence, not an alert.
         case none
-        /// The severity colours the ring; the progress fills it.
         case usageRing(progress: Double, severity: DuckAiUsageSeverity)
         case alert
     }

@@ -88,8 +88,7 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    /// Routed to whichever message owns the slot: the two dismissals are recorded separately, so
-    /// closing a usage warning must not also spend the notice's.
+    /// The two dismissals are recorded separately, so each message spends only its own.
     func dismissCurrent() {
         if viewModel.warning != nil {
             viewModel.dismiss()
@@ -119,7 +118,7 @@ final class UTIFooterController {
         }
     }
 
-    /// A usage warning is actionable and the notice is only informational, so the warning takes the slot.
+    /// One slot: an actionable warning outranks the informational notice.
     private func resolveMessage() -> UTIFooterMessage? {
         guard !isSuppressed else {
             Logger.duckAIUsageWarnings.debug("[UsageWarnings] nothing to show: suppressed (editing or Search mode)")
@@ -150,8 +149,7 @@ final class UTIFooterController {
 
 // MARK: - High-usage model notice
 
-/// Owns the high-usage-model notice for the footer slot: applies the shared resolver to whichever
-/// model is selected now, and remembers dismissals per model.
+/// Applies the shared resolver to the selected model, and remembers dismissals per model.
 @MainActor
 final class UTIFooterHighUsageNoticeSource {
 
@@ -181,7 +179,6 @@ final class UTIFooterHighUsageNoticeSource {
         }
     }
 
-    /// One-time per model: there is no reset window to expire against.
     func dismissCurrent() {
         guard let notice else { return }
         dismissalStore.setDismissed(modelId: notice.modelId)

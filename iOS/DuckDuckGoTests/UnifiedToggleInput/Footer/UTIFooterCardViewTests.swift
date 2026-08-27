@@ -57,8 +57,7 @@ final class UTIFooterCardViewTests: XCTestCase {
         XCTAssertGreaterThan(height(of: sut), UTIFooterCardView.overlap + 34)
     }
 
-    /// A warning's copy shares the card with its reset line and must truncate; the notice has the
-    /// second line free.
+    /// A warning truncates beside its reset line; the notice has the second line free.
     func test_title_allowsTwoLinesOnlyWhenThereIsNoSubtitle() {
         let sut = UTIFooterCardView()
 
@@ -69,8 +68,7 @@ final class UTIFooterCardViewTests: XCTestCase {
         XCTAssertEqual(titleLabel(in: sut)?.numberOfLines, 2)
     }
 
-    /// A warning's title is a headline above its reset line; the notice is a standalone paragraph, so
-    /// it reads at body weight rather than as a heading.
+    /// A standalone paragraph reads as body copy, not as a heading.
     func test_title_usesBodyWeightWhenThereIsNoSubtitle() {
         let sut = UTIFooterCardView()
 
@@ -183,8 +181,7 @@ final class UTIFooterCardViewTests: XCTestCase {
                                             verticalFittingPriority: .fittingSizeLevel).height
     }
 
-    /// Lays the card out at phone width and reports the leading edge of the title, in the card's own
-    /// coordinates. The title is the first label after the icon views.
+    /// The title's leading edge in the card's own coordinates, laid out at phone width.
     private func titleLeadingEdge(in card: UTIFooterCardView, message: UTIFooterMessage) -> CGFloat {
         card.frame = CGRect(x: 0, y: 0, width: phoneWidth, height: 200)
         card.configure(with: message, animateIcon: false)

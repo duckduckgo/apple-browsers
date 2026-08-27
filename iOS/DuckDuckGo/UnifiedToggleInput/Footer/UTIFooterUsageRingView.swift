@@ -106,8 +106,6 @@ final class UTIFooterUsageRingView: UIView {
         progressLayer.strokeColor = UIColor(designSystemColor: Self.progressColor(for: severity)).cgColor
     }
 
-    /// The rung the user is on, not the raw percentage: neutral while it is only informational, then
-    /// amber and red as the limit closes in.
     private static func progressColor(for severity: DuckAiUsageSeverity) -> DesignSystemColor {
         switch severity {
         case .info: return .icons

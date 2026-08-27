@@ -920,8 +920,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
     }
 
-    /// The persisted id, not the live one: before a chat starts it is what a prompt would use, which
-    /// is the same model the warning's own suggester reasons about.
+    /// The persisted id, matching what the warning's own suggester reasons about.
     private func makeHighUsageNoticeSource() -> UTIFooterHighUsageNoticeSource {
         UTIFooterHighUsageNoticeSource(modelProvider: { [weak self] in
             guard let self, let id = persistedModelId else { return (nil, nil) }

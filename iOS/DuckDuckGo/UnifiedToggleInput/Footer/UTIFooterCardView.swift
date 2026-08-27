@@ -54,7 +54,6 @@ final class UTIFooterCardView: UIView {
 
     private var actionCollapsedWidthConstraint: NSLayoutConstraint?
     private var actionTrailingConstraint: NSLayoutConstraint?
-    /// The icon slot and its gap collapse together, so a message with no icon starts at the leading edge.
     private var iconSlotWidthConstraint: NSLayoutConstraint?
     private var iconTextGapConstraint: NSLayoutConstraint?
 
@@ -85,8 +84,7 @@ final class UTIFooterCardView: UIView {
         iconSlotWidthConstraint?.constant = hasIcon ? Constants.iconSize : 0
         iconTextGapConstraint?.constant = hasIcon ? Constants.iconTextGap : 0
 
-        // A title above a reset line is a headline that truncates; a standalone one is body copy
-        // with the second line free.
+        // A title above a reset line is a headline that truncates; a standalone one is body copy.
         let isStandaloneCopy = message.subtitle == nil
         titleLabel.numberOfLines = isStandaloneCopy ? 2 : 1
         titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
@@ -239,8 +237,7 @@ private extension UTIFooterCardView {
 
 // MARK: - Action button
 
-/// The card's CTA: a plain pill with the primary action. The model picker lives in the toolbar, so
-/// the card offers one tap and no chevron.
+/// The card's CTA: a plain pill. The model picker lives in the toolbar, not here.
 final class UTIFooterActionButton: UIView {
 
     private enum Constants {

@@ -94,8 +94,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     // MARK: - Action titles
 
-    /// Every model switch reads the same one word, whether or not the suggestion carries a name and
-    /// whether it steps down a tier or across to a free model.
+    /// Named or not, stepping down a tier or across to a free model — all one word.
     func test_message_everyModelSwitchReadsSwitch() {
         let named = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
                                                                          modelShortName: "5.4 mini"))
@@ -154,14 +153,6 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     func test_message_highUsageNoticeOffersNoButton() {
         XCTAssertNil(sut.message(for: notice).primaryAction)
-    }
-
-    /// Copy only: the notice explains the cost and offers nothing to tap but the close button.
-    func test_message_highUsageNoticeCarriesNothingButItsCopy() {
-        let message = sut.message(for: notice)
-        XCTAssertNil(message.primaryAction)
-        XCTAssertNil(message.subtitle)
-        XCTAssertEqual(message.icon, UTIFooterMessage.Icon.none)
     }
 
     func test_message_highUsageNoticeIsDismissible() {

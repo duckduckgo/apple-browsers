@@ -19,8 +19,7 @@
 import Foundation
 import Persistence
 
-/// Models that spend the allowance far faster than the basic tier. Hand-maintained to mirror the web
-/// app's `highUsageModelIds`; the models payload carries no equivalent field.
+/// Mirrors the web app's `highUsageModelIds`; the models payload carries no equivalent field.
 public enum DuckAiHighUsageModels {
 
     public static let ids: Set<String> = ["claude-opus-4-8"]
@@ -31,12 +30,10 @@ public enum DuckAiHighUsageModels {
     }
 }
 
-/// The informational notice for a high-usage model. Not a usage warning: it is keyed off the selected
-/// model rather than the allowance, so it carries no percentage, no reset and no switch.
+/// Keyed off the selected model rather than the allowance, so it is not a `DuckAiUsageWarning`.
 public struct DuckAiHighUsageModelNotice: Equatable {
 
     public let modelId: String
-    /// Names the model in the copy, so the notice can't be built without one.
     public let modelShortName: String
 
     public init(modelId: String, modelShortName: String) {
@@ -47,7 +44,7 @@ public struct DuckAiHighUsageModelNotice: Equatable {
 
 // MARK: - Dismissal
 
-/// One-time per model, with no reset window to expire against — unlike the usage-limit dismissals.
+/// One-time per model: there is no reset window to expire against.
 public protocol DuckAiHighUsageNoticeDismissalStoring {
     func isDismissed(modelId: String) -> Bool
     func setDismissed(modelId: String)
@@ -74,13 +71,12 @@ public struct DuckAiHighUsageNoticeDismissalStore: DuckAiHighUsageNoticeDismissa
         try? keyValueStore.set(ids, forKey: Self.key)
     }
 
-    /// An unreadable record reads as "not dismissed": showing the notice again is the safe failure.
+    /// Unreadable reads as "not dismissed": showing the notice again is the safe failure.
     private func dismissedModelIds() -> [String] {
         (try? keyValueStore.object(forKey: Self.key) as? [String]) ?? []
     }
 }
 
-/// For tests and any caller that wants dismissals to die with the session.
 public final class InMemoryDuckAiHighUsageNoticeDismissalStore: DuckAiHighUsageNoticeDismissalStoring {
 
     private var dismissed: Set<String> = []
@@ -93,7 +89,6 @@ public final class InMemoryDuckAiHighUsageNoticeDismissalStore: DuckAiHighUsageN
 
 // MARK: - Resolver
 
-/// Pure: every input is a parameter or an injected collaborator, so the rule set is testable without UI.
 public struct DuckAiHighUsageModelNoticeResolver {
 
     /// Reported so each gate stays observable in the log.

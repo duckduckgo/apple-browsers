@@ -242,7 +242,7 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
     }
 
-    /// A usage warning is actionable and the notice is only informational, so the warning owns the slot.
+    /// One slot: an actionable warning outranks the informational notice.
     func test_refresh_prefersTheUsageWarningOverTheNotice() {
         selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
         limitsProvider.limits = weeklyUsage(50)

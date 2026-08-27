@@ -77,7 +77,7 @@ class RequeryLogic {
         }
         
         // Sent with the webview's User-Agent, not the pixel one, and without the platform suffix.
-        let headers = [HTTPHeaderKey.userAgent: userAgentManager.userAgent(isDesktop: false)]
-        PixelKit.fire(pixel.withoutPlatformSuffix, options: PixelKit.Options(headers: headers))
+        PixelKit.fire(pixel.withoutPlatformSuffix,
+                      options: .userAgent(userAgentManager.userAgent(isDesktop: false)))
     }
 }

@@ -363,6 +363,7 @@ public final class PixelKit {
              platformSuffix: resolvedName.trailingPlatformSuffix,
              frequency: frequency,
              withHeaders: options.headers,
+             userAgent: options.userAgent,
              withAdditionalParameters: newParams,
              withError: event.error,
              allowedQueryReservedCharacters: options.allowedQueryReservedCharacters,
@@ -446,6 +447,7 @@ public final class PixelKit {
                       platformSuffix: String,
                       frequency: Frequency,
                       withHeaders headers: [String: String]?,
+                      userAgent: String?,
                       withAdditionalParameters params: [String: String]?,
                       withError error: NSError?,
                       allowedQueryReservedCharacters: CharacterSet?,
@@ -477,6 +479,9 @@ public final class PixelKit {
 
         var headers = headers ?? defaultHeaders
         headers[Header.moreInfo] = "See " + Self.duckDuckGoMorePrivacyInfo.absoluteString
+        // The host's `FireRequest` closure reads this in preference to its own pixel user agent.
+        // See `Options.userAgent`.
+        if let userAgent { headers[Header.userAgent] = userAgent }
         // Needs to be updated/generalised when fully adopted by iOS
         if let source {
             switch source {

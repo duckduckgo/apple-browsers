@@ -1133,6 +1133,34 @@ final class PixelKitTests: XCTestCase {
         return captured
     }
 
+    /// `Options.userAgent` reaches the fire request under `Header.userAgent`, which is the key a
+    /// host reads in preference to its own pixel user agent.
+    func testUserAgentOptionIsDeliveredUnderTheUserAgentHeaderKey() {
+        let headers = firedHeaders(defaultHeaders: [:]) {
+            $0.fire(TestEventV2.testEventWithoutParameters, options: .userAgent("Custom/1.0"))
+        }
+        XCTAssertEqual(headers[PixelKit.Header.userAgent], "Custom/1.0")
+    }
+
+    /// Without the option the key is absent, so the host falls back to its own pixel user agent.
+    func testNoUserAgentHeaderWhenTheOptionIsUnset() {
+        let headers = firedHeaders(defaultHeaders: [:]) {
+            $0.fire(TestEventV2.testEventWithoutParameters)
+        }
+        XCTAssertNil(headers[PixelKit.Header.userAgent])
+    }
+
+    /// `Options.userAgent` wins over a `User-Agent` in `Options.headers`, so the dedicated option is
+    /// always the one that decides.
+    func testUserAgentOptionOverridesAUserAgentInHeaders() {
+        var options = PixelKit.Options.userAgent("Custom/1.0")
+        options.headers = [PixelKit.Header.userAgent: "FromHeaders/9.9"]
+        let headers = firedHeaders(defaultHeaders: [:]) {
+            $0.fire(TestEventV2.testEventWithoutParameters, options: options)
+        }
+        XCTAssertEqual(headers[PixelKit.Header.userAgent], "Custom/1.0")
+    }
+
     /// Omitting headers sends the instance's `defaultHeaders`.
     func testOmittingHeadersSendsDefaultHeaders() {
         let headers = firedHeaders(defaultHeaders: ["X-Default": "yes"]) {

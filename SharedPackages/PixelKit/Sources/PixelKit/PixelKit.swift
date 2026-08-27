@@ -364,6 +364,7 @@ public final class PixelKit {
              frequency: frequency,
              withHeaders: options.headers,
              userAgent: options.userAgent,
+             allowsDotInName: event.allowsDotInName,
              withAdditionalParameters: newParams,
              withError: event.error,
              allowedQueryReservedCharacters: options.allowedQueryReservedCharacters,
@@ -448,6 +449,7 @@ public final class PixelKit {
                       frequency: Frequency,
                       withHeaders headers: [String: String]?,
                       userAgent: String?,
+                      allowsDotInName: Bool,
                       withAdditionalParameters params: [String: String]?,
                       withError error: NSError?,
                       allowedQueryReservedCharacters: CharacterSet?,
@@ -497,7 +499,9 @@ public final class PixelKit {
         }
 
         // The event name can't contain `.`
-        reportErrorIf(pixel: pixelName, contains: ".")
+        if !allowsDotInName {
+            reportErrorIf(pixel: pixelName, contains: ".")
+        }
 
         switch frequency {
         case .standard:

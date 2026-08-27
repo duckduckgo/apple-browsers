@@ -1133,6 +1133,25 @@ final class PixelKitTests: XCTestCase {
         return captured
     }
 
+    /// An event that opts in fires a dotted name without tripping the naming assertion.
+    /// Several legacy iOS pixel names interpolate a bucketed value such as `0.5`.
+    func testDottedNameFiresWhenTheEventAllowsIt() {
+        let userDefaults = UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)")!
+        var firedNames: [String] = []
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                source: PixelKit.Source.iOS.rawValue,
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                defaults: userDefaults) { name, _, _, _, _, _ in
+            firedNames.append(name)
+        }
+
+        pixelKit.fire(DottedNameTestEvent())
+
+        XCTAssertEqual(firedNames, ["m_debug_app-did-finish-launching-time-0.5_ios_phone"])
+    }
+
     /// `Options.userAgent` reaches the fire request under `Header.userAgent`, which is the key a
     /// host reads in preference to its own pixel user agent.
     func testUserAgentOptionIsDeliveredUnderTheUserAgentHeaderKey() {
@@ -1447,4 +1466,13 @@ private class TimeMachine {
     func now() -> Date {
         date
     }
+}
+
+/// See `testDottedNameFiresWhenTheEventAllowsIt`.
+private struct DottedNameTestEvent: PixelKit.Event {
+    let namePrefix: PixelKitNamePrefix = .none
+    let name = "m_debug_app-did-finish-launching-time-0.5"
+    let allowsDotInName = true
+    let parameters: [String: String]? = nil
+    let standardParameters: [PixelKitStandardParameter]? = nil
 }

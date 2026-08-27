@@ -28,9 +28,10 @@ extension PromoServiceFactory {
         InternalPromo(
             id: syncFaviconsPromoID,
             triggers: [.missingBookmarkFaviconEncountered],
-            initiated: .app,
+            initiated: .user,
             promoType: PromoType(.appModal),
             context: .global,
+            coexistingPromoIDs: [PromoServiceFactory.nextSteps.id],
             delegate: SyncFaviconsPromoDelegate(
                 syncService: dependencies.syncService,
                 syncBookmarksAdapter: dependencies.syncBookmarksAdapter,

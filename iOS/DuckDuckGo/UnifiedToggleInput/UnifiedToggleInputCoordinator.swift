@@ -418,6 +418,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             view: .init(
                 setModelName: { [weak self] in self?.viewController.modelName = $0 },
                 setModelPickerMenu: { [weak self] in self?.viewController.modelPickerMenu = $0 },
+                setFooterModelPickerMenu: { [weak self] in self?.viewController.footerModelPickerMenu = $0 },
                 setModelChipHidden: { [weak self] in self?.viewController.isModelChipHidden = $0 },
                 setSelectedReasoningMode: { [weak self] in self?.viewController.selectedReasoningMode = $0 },
                 setReasoningButtonHidden: { [weak self] in self?.viewController.isReasoningButtonHidden = $0 },
@@ -905,6 +906,17 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         footerController = UTIFooterController(viewModel: viewModel)
         footerController?.presenter = viewController
+
+        // The card's chevron lists only free models behind "Switch to a Free Model", so the menu has
+        // to follow which message is up.
+        viewModel.$warning
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] warning in
+                self?.modelSelector.setFooterMenuOffersFreeModelsOnly(
+                    warning?.modelPickerOffersFreeModelsOnly ?? false
+                )
+            }
+            .store(in: &cancellables)
 
         // Web publishing a new snapshot mid-session, or a debug seed, refreshes the open input — and
         // is what brings a message back after the user has acted on the previous one.

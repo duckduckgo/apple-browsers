@@ -252,11 +252,14 @@ final class UnifiedToggleInputView: UIView {
 
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
-        set {
-            toolsToolbar.modelPickerMenu = newValue
-            // The usage card's chevron offers the same list, popped from the chevron itself.
-            footerCard.modelPickerMenu = newValue
-        }
+        set { toolsToolbar.modelPickerMenu = newValue }
+    }
+
+    /// The usage card's chevron, popped from the chevron itself. Its own menu rather than the
+    /// toolbar's: behind "Switch to a Free Model" it lists only the models that are still free to use.
+    var footerModelPickerMenu: UIMenu? {
+        get { footerCard.modelPickerMenu }
+        set { footerCard.modelPickerMenu = newValue }
     }
 
     @discardableResult

@@ -142,6 +142,14 @@ public struct DuckAiUsageWarning: Equatable {
 
 extension DuckAiUsageWarning {
 
+    /// Whether the `>` beside the action should list free models and nothing else. It should for the
+    /// free-model switch: that message is shown *because* the advanced allowance is spent, so offering
+    /// an advanced model there contradicts the sentence it hangs off.
+    public var modelPickerOffersFreeModelsOnly: Bool {
+        if case .switchToFreeModel = action { return true }
+        return false
+    }
+
     /// For the debug log only, so a decision reads straight across against the web banner. iOS and
     /// macOS deliberately drop web's "Reduce usage with a more efficient model" subtitle.
     var messagePreview: (title: String, button: String?) {

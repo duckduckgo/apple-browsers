@@ -194,6 +194,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.modelPickerMenu = newValue }
     }
 
+    var footerModelPickerMenu: UIMenu? {
+        get { inputBarView.footerModelPickerMenu }
+        set { inputBarView.footerModelPickerMenu = newValue }
+    }
+
     @discardableResult
     func presentModelPickerMenu() -> Bool {
         inputBarView.presentModelPickerMenu()

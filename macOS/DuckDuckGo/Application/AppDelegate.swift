@@ -543,7 +543,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDatabase = BookmarkDatabase()
 
         if AppVersion.runType.requiresEnvironment {
-            let commonDatabase = Database()
+            let commonDatabase = Database(onRetry: {
+                // Keychain retry sleeps contaminate startup timings.
+                startupProfiler.invalidate()
+            })
             database = commonDatabase
 
             database.db.loadStore { _, error in

@@ -48,12 +48,14 @@ final class LegacyPixelStateMigrationTests: XCTestCase {
                            daily: Store? = nil,
                            unique: Store? = nil,
                            debounce: Store? = nil,
-                           flags: Store? = nil) -> LegacyPixelStateMigration {
+                           flags: Store? = nil,
+                           version: String = "1.0.0") -> LegacyPixelStateMigration {
         LegacyPixelStateMigration(destination: destination,
                                   dailyStore: daily,
                                   uniqueStore: unique,
                                   debounceStore: debounce,
-                                  completionFlagStore: flags ?? Store())
+                                  completionFlagStore: flags ?? Store(),
+                                  migrationVersion: version)
     }
 
     func testCopiesADailyLastFireDateUnderTheDailyMapKey() throws {
@@ -120,11 +122,45 @@ final class LegacyPixelStateMigrationTests: XCTestCase {
         XCTAssertTrue(destination.values.isEmpty)
     }
 
-    func testSetsTheCompletionFlag() throws {
+    func testRecordsTheMigratingVersion() throws {
         let flags = Store()
-        migration(destination: Store(), daily: Store(["m_example": date]), flags: flags).run()
+        migration(destination: Store(), daily: Store(["m_example": date]), flags: flags, version: "7.1.0").run()
 
-        XCTAssertEqual(flags.values[LegacyPixelStateMigration.completionFlagKey] as? Bool, true)
+        XCTAssertEqual(flags.values[LegacyPixelStateMigration.completionFlagKey] as? String, "7.1.0")
+    }
+
+    func testRunsAgainOnANewAppVersion() throws {
+        // PixelKit can ship a release or more before the call sites move onto it. Until they do, the
+        // legacy store keeps taking the writes, so each upgrade has to pick up what it recorded.
+        let flags = Store()
+        let destination = Store()
+        migration(destination: destination, daily: Store(["m_example": date]), flags: flags, version: "7.1.0").run()
+
+        let laterDate = date.addingTimeInterval(86_400)
+        migration(destination: destination, daily: Store(["m_example": laterDate]), flags: flags, version: "7.2.0").run()
+
+        XCTAssertEqual(destination.values[key("m_example")] as? [String: Date], ["daily": laterDate])
+        XCTAssertEqual(flags.values[LegacyPixelStateMigration.completionFlagKey] as? String, "7.2.0")
+    }
+
+    func testRunsOnceMoreWhenTheFlagIsThePreVersionedBool() throws {
+        // Installs that ran the migration before the flag became version-keyed hold `true`.
+        let flags = Store([LegacyPixelStateMigration.completionFlagKey: true])
+        let destination = Store()
+        migration(destination: destination, daily: Store(["m_example": date]), flags: flags, version: "7.2.0").run()
+
+        XCTAssertEqual(destination.values[key("m_example")] as? [String: Date], ["daily": date])
+        XCTAssertEqual(flags.values[LegacyPixelStateMigration.completionFlagKey] as? String, "7.2.0")
+    }
+
+    func testKeepsTheLaterOfTheTwoDates() throws {
+        // A re-run must not walk a date backwards: PixelKit's own entry is the newer one once the
+        // call sites have moved over.
+        let newer = date.addingTimeInterval(3600)
+        let destination = Store([key("m_example"): ["daily": newer]])
+        migration(destination: destination, daily: Store(["m_example": date]), version: "7.2.0").run()
+
+        XCTAssertEqual(destination.values[key("m_example")] as? [String: Date], ["daily": newer])
     }
 
     func testAnAbsentLegacyStoreIsNotAnError() throws {

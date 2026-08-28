@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Persistence
 import os.log
@@ -29,7 +30,7 @@ public protocol LegacyPixelLastFireDateSource {
     func allLastFireDates() throws -> [String: Date]
 }
 
-/// Carries the legacy pixel throttling state into PixelKit's store, once.
+/// Carries the legacy pixel throttling state into PixelKit's store.
 ///
 /// Legacy `DailyPixel`, `UniquePixel` and `Pixel`'s debounce each kept their own suite keyed by the
 /// bare `Pixel.Event.name` with a `Date` value. PixelKit keys
@@ -43,8 +44,18 @@ public protocol LegacyPixelLastFireDateSource {
 /// Runs per process against that process's own stores: the browser and the VPN tunnel keep separate
 /// legacy stores (the tunnel replaces `DailyPixel.storage` and `UniquePixel.storage` with
 /// `KeyValueFileStore`s in the VPN app group), so each drives its own instance.
+///
+/// Runs once per app version rather than once ever. PixelKit can be set up a release or more before
+/// the call sites that write this state move onto it, and until they do the legacy stores keep
+/// receiving the writes while PixelKit's copy goes stale. Re-running on each upgrade means the
+/// release that finally switches a call site over starts from whatever the legacy store last
+/// recorded, instead of from a snapshot taken when PixelKit first shipped. Once nothing writes to the
+/// legacy stores any more the re-runs find nothing newer and become no-ops.
 public struct LegacyPixelStateMigration {
 
+    /// Holds the app version that last completed a migration. Older installs may still hold the
+    /// `true` this key was originally written with; that is treated as "migrated by some earlier
+    /// version" and triggers exactly one more run.
     public static let completionFlagKey = "com.duckduckgo.pixel.legacy-state-migration.completed"
 
     /// PixelKit's `userDefaultsKeyName(forPixelName:)`. Duplicated rather than exposed, because
@@ -54,6 +65,7 @@ public struct LegacyPixelStateMigration {
     private let destination: ThrowingKeyValueStoring
     private let sources: [(store: LegacyPixelLastFireDateSource?, mapKey: String)]
     private let completionFlagStore: ThrowingKeyValueStoring
+    private let migrationVersion: String
     private let logger = Logger(subsystem: "PixelMigration", category: "LegacyPixelStateMigration")
 
     /// - Parameters:
@@ -64,17 +76,20 @@ public struct LegacyPixelStateMigration {
     ///   - uniqueStore: `UniquePixel.storage`, migrated to `uniqueByName`, shared by
     ///     `.uniqueByName` and `.legacyInitial`.
     ///   - debounceStore: `Pixel.storage`, migrated to `debounce`.
-    ///   - completionFlagStore: where the run-once flag lives.
+    ///   - completionFlagStore: where the last-migrated version lives.
+    ///   - migrationVersion: re-runs whenever this differs from the stored value.
     public init(destination: ThrowingKeyValueStoring,
                 dailyStore: LegacyPixelLastFireDateSource?,
                 uniqueStore: LegacyPixelLastFireDateSource?,
                 debounceStore: LegacyPixelLastFireDateSource?,
-                completionFlagStore: ThrowingKeyValueStoring) {
+                completionFlagStore: ThrowingKeyValueStoring,
+                migrationVersion: String = AppVersion.shared.versionNumber) {
         self.destination = destination
         self.sources = [(dailyStore, "daily"),
                         (uniqueStore, "uniqueByName"),
                         (debounceStore, "debounce")]
         self.completionFlagStore = completionFlagStore
+        self.migrationVersion = migrationVersion
     }
 
     public func run() {
@@ -104,15 +119,19 @@ public struct LegacyPixelStateMigration {
         }
 
         logger.log("Migrated \(migrated, privacy: .public) legacy pixel last-fire dates into PixelKit")
-        try? completionFlagStore.set(true, forKey: Self.completionFlagKey)
+        try? completionFlagStore.set(migrationVersion, forKey: Self.completionFlagKey)
     }
 
     private var hasAlreadyRun: Bool {
-        // Fail closed: if reading the flag throws, skip, rather than risk overwriting newer
-        // PixelKit state with stale legacy dates on every launch. A missing flag is not a throw,
-        // just a normal `nil` decode, and means only that this is the first run.
+        // Fail closed: if reading the flag throws, skip, rather than re-reading the legacy stores on
+        // every launch. A missing flag is not a throw, just a normal `nil` decode, and means only
+        // that this is the first run.
         do {
-            return (try completionFlagStore.object(forKey: Self.completionFlagKey) as? Bool) ?? false
+            // Anything that is not this version's string means "run": a missing value on a fresh
+            // install, a different version on upgrade, or the `true` this key held before it became
+            // version-keyed.
+            let flag = try completionFlagStore.object(forKey: Self.completionFlagKey)
+            return (flag as? String) == migrationVersion
         } catch {
             return true
         }
@@ -121,8 +140,11 @@ public struct LegacyPixelStateMigration {
     private func merge(date: Date, mapKey: String, pixelName: String) throws {
         let key = Self.pixelKitKeyPrefix + pixelName
         var map = (try destination.object(forKey: key) as? [String: Date]) ?? [:]
-        // An entry PixelKit itself wrote wins: it is newer than anything the legacy store holds.
-        guard map[mapKey] == nil else { return }
+        // Keep whichever date is later. Before the call sites move, the legacy store is the one still
+        // being written and PixelKit's entry is the stale copy an earlier run made; afterwards
+        // PixelKit's own entry is the newer one. Only ever moving a date forward means a re-run can
+        // suppress a duplicate fire but never cause one.
+        if let existing = map[mapKey], existing >= date { return }
         map[mapKey] = date
         try destination.set(map, forKey: key)
     }

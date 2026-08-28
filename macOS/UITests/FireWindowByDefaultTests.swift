@@ -151,6 +151,6 @@ class FireWindowByDefaultTests: UITestCase {
             "App window didn't become available in a reasonable timeframe."
         )
 
-        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
     }
 }

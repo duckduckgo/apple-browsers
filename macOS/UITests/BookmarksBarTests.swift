@@ -177,7 +177,7 @@ private extension BookmarksBarTests {
         addressBarTextField.pasteURL(urlForBookmarksBar, pressingEnter: true)
 
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForNavigationToExist(),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 

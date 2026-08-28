@@ -32,9 +32,7 @@ enum UITests {
         /// The fire animation time has environmental dependencies, so we want to wait for completion so we don't try to type into it
         static let fireAnimation: Double = 30.0
         /// Navigation timeout for page loads and network requests
-        static let navigation: Double = 120.0
-        /// Expected upper bound for a successful navigation. Navigation waits may be longer to diagnose hangs.
-        static let expectedNavigationDuration: Double = 30.0
+        static let navigation: Double = 30.0
         /// Local test server timeout for localhost connections
         static let localTestServer: Double = 15.0
     }

@@ -57,7 +57,7 @@ class StalledResourceLoadUITests: UITestCase {
         // Wait for page content to be visible (proves NTP was dismissed and page rendered)
         XCTAssertTrue(
             webView.staticTexts.containing(\.value, containing: "Page loaded despite stalled script").firstMatch
-                .waitForExistence(timeout: UITests.Timeouts.navigation),
+                .waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Page content should be visible despite the stalled deferred script"
         )
 

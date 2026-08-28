@@ -25,6 +25,13 @@ enum BookmarkMode {
     case manager
 }
 
+private extension URL {
+    var usesLocalTestServerTimeout: Bool {
+        guard let host else { return false }
+        return port == 8085 && (host == "localhost" || host == "127.0.0.1")
+    }
+}
+
 @objc protocol XCTRunnerAutomationSessionProtocol: AnyObject {
     @objc(attributesForElement:attributes:error:)
     func attributes(for element: AXElement, attributes: [String]) throws -> Any
@@ -345,7 +352,7 @@ extension XCUIApplication {
         addressBar.pasteURL(url, pressingEnter: true)
         XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         XCTAssertTrue(
-            windows.firstMatch.webViews[pageTitle].waitForNavigationToExist(),
+            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }
@@ -357,6 +364,7 @@ extension XCUIApplication {
     }
 
     func openURL(_ url: URL, waitForWebViewAccessibilityLabel expectedLabel: String? = nil) {
+        let navigationTimeout = url.usesLocalTestServerTimeout ? UITests.Timeouts.localTestServer : UITests.Timeouts.navigation
         let addressBar = addressBar
         XCTAssertTrue(
             addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -366,12 +374,12 @@ extension XCUIApplication {
         XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         if let expectedLabel {
             XCTAssertTrue(
-                windows.firstMatch.webViews[expectedLabel].waitForNavigationToExist(),
+                windows.firstMatch.webViews[expectedLabel].waitForExistence(timeout: navigationTimeout),
                 "Web view with label '\(expectedLabel)' didn't load in a reasonable timeframe."
             )
         } else {
             XCTAssertTrue(
-                windows.firstMatch.webViews.firstMatch.waitForNavigationToExist(),
+                windows.firstMatch.webViews.firstMatch.waitForExistence(timeout: navigationTimeout),
                 "Web view didn't load in a reasonable timeframe."
             )
         }
@@ -387,12 +395,12 @@ extension XCUIApplication {
                 scheme + "www." + naked,
                 scheme + "www." + naked + "/",
                 url.absoluteString,
-            ]), timeout: UITests.Timeouts.navigation),
+            ]), timeout: navigationTimeout),
             "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
         )
         _=progressIndicator.waitForExistence(timeout: 1)
         XCTAssertTrue(
-            progressIndicator.waitForNavigationToFinish(),
+            progressIndicator.waitForNonExistence(timeout: navigationTimeout),
             "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
         )
     }
@@ -477,6 +485,7 @@ extension XCUIApplication {
                             bookmarkingViaDialog: Bool,
                             escapingDialog: Bool,
                             folderName: String? = nil) {
+        let navigationTimeout = url.usesLocalTestServerTimeout ? UITests.Timeouts.localTestServer : UITests.Timeouts.navigation
         let addressBarTextField = windows.textFields[AccessibilityIdentifiers.addressBarTextField]
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -484,7 +493,7 @@ extension XCUIApplication {
         )
         addressBarTextField.typeURL(url)
         XCTAssertTrue(
-            windows.webViews[pageTitle].waitForNavigationToExist(),
+            windows.webViews[pageTitle].waitForExistence(timeout: navigationTimeout),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         if bookmarkingViaDialog {

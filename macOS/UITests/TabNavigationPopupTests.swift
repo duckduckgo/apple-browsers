@@ -54,12 +54,12 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Try to navigate in popup
         let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open in new tab"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         link.click()
 
         // Should open in new tab of the original window
         XCTAssertEqual(app.windows.count, 2)
-        XCTAssertTrue(mainWindow.webViews["New Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(mainWindow.webViews["New Tab"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertTrue(mainWindow.tabs["Page #12"].exists)
         XCTAssertTrue(mainWindow.tabs["New Tab"].exists)
         XCTAssertEqual(mainWindow.tabs.count, 2)
@@ -112,7 +112,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         bookmarkItem.click()
 
         // Target tab should be created in the main window.
-        XCTAssertTrue(mainWindow.tabs["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(mainWindow.tabs["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // Window count should stay main + popup.
         XCTAssertEqual(app.windows.count, 2)
         // Target page should be active in the main window.
@@ -163,7 +163,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         historyItem.click()
 
         // Target tab should be created in the main window.
-        XCTAssertTrue(mainWindow.tabs["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(mainWindow.tabs["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // Window count should stay main + popup.
         XCTAssertEqual(app.windows.count, 2)
         // Target page should be active in the main window.
@@ -193,7 +193,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         }
 
         // Target tab should be created in the main window.
-        XCTAssertTrue(mainWindow.tabs["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(mainWindow.tabs["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // Window count should stay main + popup.
         XCTAssertEqual(app.windows.count, 2)
         // Source page should remain active in the main window.
@@ -223,7 +223,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         }
 
         // Target page should be active in the main window.
-        XCTAssertTrue(mainWindow.webViews["Popup Bookmark Target"].waitForNavigationToExist())
+        XCTAssertTrue(mainWindow.webViews["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // Window count should stay main + popup.
         XCTAssertEqual(app.windows.count, 2)
         // Source page should not remain active.
@@ -257,7 +257,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Background window should appear.
         XCTAssertTrue(backgroundWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Target page should load in that background window.
-        XCTAssertTrue(backgroundWindow.webViews["Popup Bookmark Target"].waitForNavigationToExist())
+        XCTAssertTrue(backgroundWindow.webViews["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // Window count should be main + popup + background window.
         XCTAssertEqual(app.windows.count, 3)
         // Main window should stay on source page.
@@ -287,7 +287,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Ensure it opens in selected new window, never in popup.
         let activeWindow = app.windows.firstMatch
         // Target page should load in the active new window.
-        XCTAssertTrue(activeWindow.webViews["Popup Bookmark Target"].waitForNavigationToExist())
+        XCTAssertTrue(activeWindow.webViews["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // Window count should be main + popup + foreground window.
         XCTAssertEqual(app.windows.count, 3)
         // Popup window should still be open.
@@ -309,7 +309,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         }
 
         // Target tab should be created in the main window.
-        XCTAssertTrue(mainWindow.tabs["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(mainWindow.tabs["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // Window count should stay main + popup.
         XCTAssertEqual(app.windows.count, 2)
         // Source page should remain active in the main window.
@@ -339,7 +339,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         }
 
         // Target page should be active in the main window.
-        XCTAssertTrue(mainWindow.webViews["Popup History Target"].waitForNavigationToExist())
+        XCTAssertTrue(mainWindow.webViews["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // Window count should stay main + popup.
         XCTAssertEqual(app.windows.count, 2)
         // Source page should not remain active.
@@ -373,7 +373,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Background window should appear.
         XCTAssertTrue(backgroundWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Target page should load in that background window.
-        XCTAssertTrue(backgroundWindow.webViews["Popup History Target"].waitForNavigationToExist())
+        XCTAssertTrue(backgroundWindow.webViews["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // Window count should be main + popup + background window.
         XCTAssertEqual(app.windows.count, 3)
         // Main window should stay on source page.
@@ -403,7 +403,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Ensure it opens in selected new window, never in popup.
         let activeWindow = app.windows.firstMatch
         // Target page should load in the active new window.
-        XCTAssertTrue(activeWindow.webViews["Popup History Target"].waitForNavigationToExist())
+        XCTAssertTrue(activeWindow.webViews["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         // Window count should be main + popup + foreground window.
         XCTAssertEqual(app.windows.count, 3)
         // Popup window should still be open.
@@ -435,13 +435,13 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Command click in popup - should open in background tab in main window
         let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #13"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCUIElement.perform(withKeyModifiers: [.command]) {
             link.click()
         }
 
         // Should open in background tab in main window, popup remains frontmost
-        XCTAssertTrue(mainWindow.tabs["Page #13"].waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(mainWindow.tabs["Page #13"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 2)
         XCTAssertTrue(mainWindow.webViews["Page #12"].exists)
         XCTAssertFalse(mainWindow.webViews["Page #13"].exists) // Original page still in foreground
@@ -480,14 +480,14 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Command shift click in popup - should open in foreground tab in main window
         let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #14"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCUIElement.perform(withKeyModifiers: [.command, .shift]) {
             link.click()
         }
 
         // Should open in foreground tab in main window
         XCTAssertEqual(app.windows.count, 2) // Main window + popup window
-        XCTAssertTrue(mainWindow.webViews["Page #14"].waitForNavigationToExist())
+        XCTAssertTrue(mainWindow.webViews["Page #14"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertFalse(mainWindow.webViews["Page #12"].exists) // Original page now in background
         XCTAssertTrue(mainWindow.tabs["Page #12"].exists)
         XCTAssertTrue(mainWindow.tabs["Page #14"].exists)
@@ -525,7 +525,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Command option click in popup - should open in background window
         let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #15"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCUIElement.perform(withKeyModifiers: [.command, .option]) {
             link.click()
         }
@@ -533,7 +533,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Should open in background window, popup remains frontmost
         let backgroundWindow = app.windows.element(boundBy: 2) // Now third window (main, popup, background)
         XCTAssertTrue(backgroundWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        XCTAssertTrue(backgroundWindow.webViews["Page #15"].waitForNavigationToExist())
+        XCTAssertTrue(backgroundWindow.webViews["Page #15"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 3)
 
         XCTAssertTrue(mainWindow.webViews["Page #12"].exists)
@@ -576,14 +576,14 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Command option shift click in popup - should open in foreground window
         let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #16"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCUIElement.perform(withKeyModifiers: [.command, .option, .shift]) {
             link.click()
         }
 
         // Should open in foreground window
         let activeWindow = app.windows.firstMatch
-        XCTAssertTrue(activeWindow.webViews["Page #16"].waitForNavigationToExist(), "Page #16 should load in the foreground window")
+        XCTAssertTrue(activeWindow.webViews["Page #16"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 3) // Main window + popup window + new foreground window
 
         XCTAssertFalse(activeWindow.webViews["Page #12"].exists)
@@ -828,14 +828,14 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Command click in popup - should open in background tab in Fire window
         let popupWindow = app.windows.containing(.link, identifier: "Open Page #13").firstMatch
         let link = popupWindow.links["Open Page #13"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCUIElement.perform(withKeyModifiers: [.command]) {
             link.click()
         }
 
         // Should open in background tab in Fire window, popup remains frontmost
         XCTAssertEqual(app.windows.count, 2)
-        XCTAssertTrue(fireWindow.tabs["Page #13"].waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(fireWindow.tabs["Page #13"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertTrue(fireWindow.tabs["Fire Page #12"].exists)
         XCTAssertTrue(fireWindow.webViews["Fire Page #12"].exists) // Original Fire page still in foreground
         XCTAssertEqual(fireWindow.tabs.count, 2)
@@ -891,8 +891,8 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Should open in background Fire window
         let backgroundFireWindow = app.windows.element(boundBy: 2) // Main Fire, popup, background Fire
         XCTAssertTrue(backgroundFireWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        XCTAssertTrue(backgroundFireWindow.tabs["Page #15"].waitForExistence(timeout: UITests.Timeouts.navigation))
-        XCTAssertTrue(backgroundFireWindow.webViews["Page #15"].waitForNavigationToExist())
+        XCTAssertTrue(backgroundFireWindow.tabs["Page #15"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(backgroundFireWindow.webViews["Page #15"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 3)
 
         XCTAssertEqual(backgroundFireWindow.tabs.count, 1)
@@ -915,8 +915,8 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
 
         // Should open in foreground tab in Fire window
         XCTAssertEqual(app.windows.count, 3) // Main Fire + popup + background Fire
-        XCTAssertTrue(fireWindow.tabs["Page #14"].waitForExistence(timeout: UITests.Timeouts.navigation))
-        XCTAssertTrue(fireWindow.webViews["Page #14"].waitForNavigationToExist())
+        XCTAssertTrue(fireWindow.tabs["Page #14"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(fireWindow.webViews["Page #14"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertFalse(fireWindow.webViews["Fire Page #12"].exists) // Original page now in background
         XCTAssertTrue(fireWindow.tabs["Fire Page #12"].exists)
         XCTAssertEqual(fireWindow.tabs.count, 2)
@@ -966,8 +966,8 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
 
         // Should open in foreground Fire window
         let foregroundFireWindow = app.windows.firstMatch
-        XCTAssertTrue(foregroundFireWindow.tabs["Page #16"].waitForExistence(timeout: UITests.Timeouts.navigation))
-        XCTAssertTrue(foregroundFireWindow.webViews["Page #16"].waitForNavigationToExist())
+        XCTAssertTrue(foregroundFireWindow.tabs["Page #16"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(foregroundFireWindow.webViews["Page #16"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(app.windows.count, 3) // Original Fire + popup + foreground Fire
 
         XCTAssertEqual(foregroundFireWindow.tabs.count, 1)
@@ -1024,8 +1024,8 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         XCTAssertEqual(app.windows.count, 2) // Popup + new Fire window
         let newFireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #17")).firstMatch
         XCTAssertTrue(newFireWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        XCTAssertTrue(newFireWindow.tabs["Page #17"].waitForExistence(timeout: UITests.Timeouts.navigation))
-        XCTAssertTrue(newFireWindow.webViews["Page #17"].waitForNavigationToExist())
+        XCTAssertTrue(newFireWindow.tabs["Page #17"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(newFireWindow.webViews["Page #17"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertEqual(newFireWindow.tabs.count, 1)
 
         // Verify popup window and its webView still exist
@@ -1084,7 +1084,7 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
 
         // Should open in background tab in Fire window, popup remains frontmost
         XCTAssertEqual(app.windows.count, 2)
-        XCTAssertTrue(fireWindow.tabs["Page #18"].waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(fireWindow.tabs["Page #18"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertTrue(fireWindow.webViews["Fire Page #12"].exists) // Original Fire page still in foreground
         XCTAssertFalse(fireWindow.webViews["Page #18"].exists) // Bookmark page in background
         XCTAssertTrue(fireWindow.tabs["Fire Page #12"].exists)
@@ -1143,8 +1143,8 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
 
         // Should open in foreground tab in Fire window
         XCTAssertEqual(app.windows.count, 2)
-        XCTAssertTrue(fireWindow.tabs["Page #19"].waitForExistence(timeout: UITests.Timeouts.navigation))
-        XCTAssertTrue(fireWindow.webViews["Page #19"].waitForNavigationToExist())
+        XCTAssertTrue(fireWindow.tabs["Page #19"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(fireWindow.webViews["Page #19"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertFalse(fireWindow.webViews["Fire Page #12"].exists) // Original Fire page now in background
         XCTAssertTrue(fireWindow.tabs["Fire Page #12"].exists)
         XCTAssertEqual(fireWindow.tabs.count, 2)
@@ -1185,13 +1185,13 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         // Try to navigate in popup
         let popupWindow = app.windows.containing(.link, identifier: "Open in new tab").firstMatch
         let link = popupWindow.links["Open in new tab"]
-        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         link.click()
 
         // Should open in new tab of the Fire window
         XCTAssertEqual(app.windows.count, 2)
-        XCTAssertTrue(fireWindow.tabs["New Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        XCTAssertTrue(fireWindow.webViews["New Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(fireWindow.tabs["New Tab"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(fireWindow.webViews["New Tab"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         XCTAssertTrue(fireWindow.tabs["Fire Page #12"].exists)
         XCTAssertEqual(fireWindow.tabs.count, 2)
 

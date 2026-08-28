@@ -87,7 +87,7 @@ class NavigationProtectionUITests: UITestCase {
             link.click()
 
             // Wait for navigation to complete
-            XCTAssertTrue(link.waitForNavigationToFinish(), "Navigation should complete after AMP link click: \(label)")
+            XCTAssertTrue(link.waitForNonExistence(timeout: UITests.Timeouts.navigation), "Navigation should complete after AMP link click: \(label)")
             Thread.sleep(forTimeInterval: 5)
 
             // Verify redirected URL exactly matches the page-provided canonical expectation

@@ -62,7 +62,7 @@ class TabSuspensionTests: UITestCase {
 
         let webView = app.windows.firstMatch.webViews[pageTitle]
         XCTAssertTrue(
-            webView.waitForExistence(timeout: UITests.Timeouts.navigation),
+            webView.waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Suspended tab should reload its web view after being selected"
         )
     }
@@ -94,7 +94,7 @@ class TabSuspensionTests: UITestCase {
         app.typeKey("1", modifierFlags: [.command])
         let webView = app.windows.firstMatch.webViews[inputPageTitle]
         XCTAssertTrue(
-            webView.waitForExistence(timeout: UITests.Timeouts.navigation),
+            webView.waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Tab should reload after being selected"
         )
 

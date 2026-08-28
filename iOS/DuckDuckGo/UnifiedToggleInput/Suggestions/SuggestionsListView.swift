@@ -416,10 +416,11 @@ private final class ListCellShadowOverflowProbe: UIView {
             restoreContainingCellClipping()
             return
         }
-        guard cell !== containingCell else { return }
-        restoreContainingCellClipping()
-        containingCell = cell
-        originalCellClipsToBounds = cell.clipsToBounds
+        if cell !== containingCell {
+            restoreContainingCellClipping()
+            containingCell = cell
+            originalCellClipsToBounds = cell.clipsToBounds
+        }
         cell.clipsToBounds = false
     }
 

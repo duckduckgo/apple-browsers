@@ -1,87 +1,106 @@
-# Tech design (Asana-ready body): [iOS] On-site permission manager
-
-Paste everything below into the tech-design subtask. Deeper detail lives in the repo on branch `bartosz/on-site-permissions`, in `docs/on-site-permission-manager/` (requirements.md, tech-design.md, platform-precedents.md).
-
----
+# [iOS] On-site permission manager
 
 Author: Bartosz
+
 Reviewer: @Brindy (confirm)
-Stakeholders: @Chris Thelwell @Sveta @David
-Project: [iOS] On-site permission manager and updated permission dialogues — https://app.asana.com/1/137249556945/task/1213800892997347
 
-Background & Requirements
+Stakeholders: @Chris Thelwell, @Sveta, @David
 
-Today the iOS browser has no site-permission model. For camera and microphone, our WKUIDelegate returns `.prompt`, so WebKit shows its own two-option, per-page alert and we never see or store the outcome. For geolocation, WebKit handles everything itself — we have no hook at all. The iOS system prompt is one-shot: a single "Don't Allow" locks the whole app out of that permission for every website, and users have no way to discover or reverse it. This drives real breakage (id.me: 173 reports in 3 months, more than 60% iOS).
+Project: [[iOS] On-site permission manager and updated permission dialogues](https://app.asana.com/1/137249556945/task/1213800892997347)
 
-The project adds, for camera, microphone, and location: a 3-option site prompt (Allow Once / Allow While Using Site / Never Allow) shown *before* the system prompt, persistent per-site decisions, an on-site manager in the browser menu, a Settings > Site Permissions page with global "prevent asking" controls, a recovery path to system Settings after an OS-level denial, and Fire Button integration. Everything ships behind one remote-releasable flag (`sitePermissions`, default off). Detailed requirements, exact copy, and open questions live in `docs/on-site-permission-manager/requirements.md` in the repo.
+## Background & Requirements
 
-Problem Statement
+The iOS browser does not have a site-permission model. For camera and microphone, WebKit shows its own per-page prompt, and the browser does not see or store the result. WebKit handles location without an iOS delegate hook.
 
-Give iOS users persistent, discoverable, and reversible control over camera, microphone, and location for individual websites — without changing today's shipped behavior while the feature flag is off.
+The project adds browser-managed permissions for camera, microphone, and location. Users can make persistent decisions for each site, grant temporary access, manage saved decisions, and recover from system-level denial. The [requirements](requirements.md) define the expected product behavior and UI.
 
-Recommended Approach
+macOS already has a permission manager, but its implementation is not portable. Its public interfaces expose Core Data identity, macOS-only types, and extension points designed for the macOS app. Only a few small model types are directly reusable.
 
-Build the feature iOS-standalone, in one new internal Swift package, independent of the macOS implementation.
+## Problem Statement
 
-1. Add the `sitePermissions` feature flag and the one missing icon asset. With the flag off, every current code path runs verbatim.
-2. Create `iOS/LocalPackages/SitePermissions` (one production target, one test target). At a high level it contains four pieces[1]:
-   - a small permission model (type, tri-state decision, per-site record);
-   - a `@MainActor` store over `KeyedStoring`, with the per-site map and the global defaults under separate keys;
-   - a per-tab decision coordinator with its own prompt queue;
-   - a system-permission client (AVCaptureDevice plus one shared CLLocationManager driver).
-   The same PR registers the app-side Fire worker, so persisted data always has a burn path: it clears per-site records, exempts fireproofed sites, preserves global defaults, and runs even when the flag is off.
-3. Camera and microphone: route `requestMediaCapturePermissionFor` through the coordinator behind the flag. Show the 3-option dialog first; trigger the OS prompt only after a positive choice. Duck.ai keeps its existing special-case behavior in both flag states. The same phase restyles the existing Voice Search denied-microphone alert to the new reminder design (also behind the flag).
-4. Geolocation: intercept `navigator.geolocation` and `permissions.query` with a user script in the page content world (validated in the hack phase), backed by a native CLLocationManager provider. v1 covers window contexts in the main frame and document iframes; workers have no injection route and stay out of scope. Cross-site iframes are denied.
-5. Management surfaces: a Settings entry with global 2-option pickers and a Manage Sites list, plus a per-site bottom sheet reachable from the browser menu when the site has stored or active permission state. Users can remove one site or all sites, with Undo.
-6. Recovery: when the OS permission is already denied, show a reminder dialog that deep-links to Settings → Apps → DuckDuckGo. The site-level decision commits at choice time; an OS denial never rewrites it.
+Design an iOS permission system that gives users persistent, visible, and reversible control for each site without coupling the implementation to macOS-specific architecture.
 
-Key semantics — aligned with shipped macOS and Android behavior after a code-level review of both (`platform-precedents.md`), and ratified at the 2026-08-28 kick-off:
+## Recommended Approach
 
-- A stored per-site Always Allow overrides the global Never Allow default; the global control only prevents asking[2].
-- Allow Once lives in memory for the current page. It ends on reload or navigation and is never persisted.
-- An explicit deny or removal revokes active capture immediately. Grants apply on reload or the next request.
-- Fire-mode tabs read stored decisions but never write.
-- Only explicit persistent choices create Settings rows — a privacy-triage rule, and a deliberate divergence from both platforms.
+1. **Create one internal Swift Package Manager package for iOS.**
 
-Delivery is a 6-PR stack, each PR releasable with the flag off; ~21–25 person-days.
+   Add `iOS/LocalPackages/SitePermissions`. The package owns the permission model, persisted state, request coordination, system-permission client, geolocation provider, and reusable permission UI. The iOS app target owns WebKit routing, Settings and menu registration, Fire Button integration, and other app-only effects.[1]
 
-Notes
+   Keep the small persisted model compatible with macOS by using the same raw values. This preserves a path to future convergence without making macOS changes part of version 1.
 
-[1] The model duplicates three small enums from macOS instead of sharing code. Raw values stay byte-identical to macOS's, so a future shared package remains cheap.
+2. **Use simple local persistence and one coordinator per tab.**
 
-[2] This matches Android's shipped predicate and macOS's autoplay precedent; it reversed an earlier "global Never is absolute" draft decision.
+   Use a concrete `@MainActor` store over `KeyedStoring`. Store site decisions and global defaults under separate keys so that site data can be cleared without changing global preferences.[2]
 
-Alternatives considered and rejected:
+   Give each tab one concrete `SitePermissionsCoordinator`. It owns decision precedence, page-scoped grants, prompt serialization, and stale-request rejection. A small injected system client owns camera, microphone, and location authorization. It uses one `CLLocationManager` for both authorization and location delivery.[3]
 
-- **Extract the macOS permission model into a shared package.** Only the type and decision enums are directly portable. The macOS store and manager leak Core Data identity (`NSManagedObjectID`), macOS-only types (`FireproofDomains`, `TLD`), and an override seam through their public surface. Extraction is an API redesign, not a move, and it puts shipped, unflagged macOS behavior at risk before iOS ships anything. We defer convergence until both platforms have demonstrably reusable behavior.
-- **Reuse macOS's per-tab `PermissionModel` and UI.** Built around AppKit popovers and a two-option prompt with different persistence semantics; not portable.
-- **Put the iOS code in the app target instead of a package.** Viable — synchronized buildable folders avoid per-file project edits — but the package gives isolation and package-level tests. This choice is reversible.
-- **Build the geolocation shim on content-scope-scripts.** Requires a change and release in the external C-S-S repo, and its messaging push path has no originating-frame context. A dedicated user script is self-contained; we can revisit C-S-S later.
-- **Core Data persistence.** Overkill for a tiny per-site map; `KeyedStoring` matches existing iOS per-domain features (text zoom, fireproofing).
+3. **Use the native media hook and an app-owned geolocation bridge.**
 
-Testing
+   Handle camera and microphone through `WKUIDelegate`. Handle location through a WebKit user script backed by the native system client.[4]
 
-- Package unit tests, run through the app scheme in CI: decision precedence, Allow Once lifecycle, store round-trip and Undo semantics, Fire worker fireproofing and eTLD+1 cases, fire-mode read-only behavior.
-- Regression tests that freeze today's WKUIDelegate behavior at both call sites (including Duck.ai and camera-only cases) before any routing change.
-- Geolocation integration tests against the existing privacy-test-pages fixtures (geolocation, Permissions API, iframe permissions), extended with combined-request, Allow Once lifecycle, and OS-denied recovery cases.
-- Flag rollback tests: turning the flag off must restore legacy behavior on the next navigation, with no shim injected into new page loads.
+   The bridge intercepts `navigator.geolocation` and `permissions.query`. Version 1 supports the main frame and document iframes. Worker and service-worker support is out of scope because iOS provides no injection route for those contexts.
 
-Additional Considerations
+4. **Key decisions by the top-level site.**
 
-Privacy
-- Approved mobile privacy triage: https://app.asana.com/1/137249556945/task/1215589903253313. Three implementation details are pinged for the record: Fire exempts fireproofed sites; Fire and Remove All clear per-site records only and preserve global defaults; the permission key is host-only. Only explicit persistent choices create visible records; pixels never contain domains.
+   Derive the permission key from the committed top-level page in native code. Do not accept a host from JavaScript. Keep the requesting frame's origin separate so that the bridge can enforce secure-context, sandbox, and Permissions Policy rules.[5]
 
-Security
-- The permission key derives natively from the top-level frame's security origin — never from shim-supplied JavaScript. Platform gating is preserved: no grant in insecure contexts, sandboxed frames, or iframes not delegated by Permissions Policy; cross-site iframe geolocation is denied.
+   Normalize the key as a host: remove a leading `www.`, use the punycode form for internationalized domains, and collapse the scheme and port. Use eTLD+1 only to check whether Fire should preserve a fireproofed site. Deny location requests from cross-site iframes.
 
-Site Breakage
-- The geolocation shim is the main risk because it replaces a platform API surface. Mitigations: a scoped v1 (main frame and document iframes; no workers), a full `permissions.query` transition table, fixtures in privacy-test-pages, and the flag as a kill switch (disabling takes effect on the next page load).
+5. **Implement the agreed permission behavior in the coordinator and store.**
 
-Experimentation
-- Rollout uses the remote-releasable flag: internal → percentage ramp → 100%. Prompt-volume and manager-engagement pixels are the interim success signal per the project's success criteria; no A/B cohort is planned.
+   The [requirements](requirements.md) remain the source of truth. The following decisions have direct architectural impact:
 
-Operational
-- No infrastructure changes. Rollback = flag off; the Fire worker still clears any stored data afterwards.
+   - A stored site allow overrides the global **Never Allow** setting. The global setting prevents new prompts but does not override stored choices.
+   - **Allow Once** stays in memory for the current page and is never persisted.
+   - An OS denial does not rewrite the user's stored site choice.
+   - Fire-mode tabs can read stored choices but cannot write them.
+   - An explicit denial or removal stops active permission use. Grants and other changes apply on the next request or reload.
+   - Duck.ai remains outside the new permission model and keeps its existing behavior.
 
-Localization / Internationalization
-- All strings ship in the package through the standard localization pipeline (26 locales already flow into existing packages). Long domains truncate in dialog and sheet titles. The Settings entry position follows locale-sorted ordering, so it varies by language.
+## Notes
+
+[1] **Alternatives:** Extracting a shared package from macOS would require redesigning APIs that expose macOS-specific dependencies. Reusing the macOS store and manager would also import macOS lifecycle assumptions. Keeping all code in the iOS app target is viable, but it provides less isolation and makes the feature boundary harder to maintain.
+
+[2] **Alternatives:** Core Data is not justified for a small property-list map that does not need queries, relationships, or migrations. A separate actor or store protocol would add a boundary without a current consumer that needs it.
+
+[3] **Alternatives:** An app-wide coordinator cannot represent page-scoped grants safely. Separate per-permission coordinators or a separate decision engine would divide one request flow across multiple owners. Separate location managers can observe different authorization states. The existing JavaScript alert path cannot serialize permission prompts because it declines new alerts while another alert is visible.
+
+[4] **Alternatives:** The current content-scope-scripts dependency has no Apple geolocation feature, and its message path does not identify the requesting frame. Supporting it would require a separate repository change and release. The private macOS WebKit geolocation API is not available on iOS. A JavaScript-only implementation cannot own trusted site identity or system authorization.
+
+[5] **Alternatives:** Keying by the requesting frame would let an embedded frame own the top-level site's saved decision. Trusting a JavaScript-supplied host would move a security boundary into untrusted input. Storing by eTLD+1 would make permission decisions broader than the agreed host-level scope.
+
+## Testing
+
+Test the architecture at three levels:
+
+- Package tests cover persistence, decision precedence, page-scoped grants, prompt serialization, stale callbacks, and Fire-mode behavior.
+- App regression tests preserve existing media behavior, including the Duck.ai exception.
+- WebKit integration tests cover geolocation, the Permissions API, iframe attribution, secure contexts, Permissions Policy, cross-site iframe denial, navigation, and OS-denial recovery.
+
+Also verify that Fire clears site decisions, preserves global defaults, and respects fireproofed sites.
+
+## Additional Considerations
+
+### Privacy
+
+The [mobile privacy triage](https://app.asana.com/1/137249556945/task/1215589903253313) is approved. The store contains only explicit persistent choices. Permission keys contain only the normalized host, and pixels must not contain domains. Fire and manual removal clear site decisions while preserving global defaults.
+
+### Security
+
+Native navigation state supplies the top-level site identity. JavaScript supplies request identifiers, not permission keys. Stored permission never bypasses WebKit restrictions for insecure contexts, sandboxed frames, or iframes without Permissions Policy delegation.
+
+### Site Breakage
+
+The geolocation bridge is the main compatibility risk because it replaces part of a Web API. Limit version 1 to supported window contexts, keep WebKit security behavior intact, and validate the bridge against existing privacy test pages.
+
+### Experimentation
+
+The architectural decisions do not require an A/B test. Validate the geolocation bridge with integration tests and a staged rollout.
+
+### Operational
+
+The design requires no infrastructure or deployment changes and no new SLI or SLO. The Fire worker provides the recovery path for persisted browsing data.
+
+### Localization / Internationalization
+
+The architecture uses the standard package localization pipeline. UI copy and layout behavior remain part of the product requirements and design review.

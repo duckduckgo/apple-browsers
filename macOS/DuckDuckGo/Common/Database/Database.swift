@@ -62,19 +62,39 @@ final class Database {
 
         let mainModel = NSManagedObjectModel.mergedModel(from: [.main])!
 
-        do {
-            _ = try mainModel.registerValueTransformers(withAllowedPropertyClasses: [
-                NSImage.self,
-                NSString.self,
-                NSURL.self,
-                NSNumber.self,
-                NSError.self,
-                NSData.self
-            ], keyStore: keyStore)
-        } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
-            Thread.sleep(forTimeInterval: 1)
-            fatalError("Could not register value transformers: \(error.localizedDescription)")
+        // When launched as a login item the Keychain may not be unlocked yet;
+        // retry for up to ~10 seconds to give loginwindow time to unlock it.
+        let maxAttempts = 6
+        for attempt in 1...maxAttempts {
+            do {
+                _ = try mainModel.registerValueTransformers(withAllowedPropertyClasses: [
+                    NSImage.self,
+                    NSString.self,
+                    NSURL.self,
+                    NSNumber.self,
+                    NSError.self,
+                    NSData.self
+                ], keyStore: keyStore)
+                break
+            } catch {
+                guard attempt == maxAttempts else {
+                    Thread.sleep(forTimeInterval: 2)
+                    continue
+                }
+
+                PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
+                PixelKit.fire(GeneralPixel.dbKeychainUnavailableAlertShown, frequency: .standard)
+
+                let alert = NSAlert()
+                alert.alertStyle = .critical
+                alert.messageText = UserText.keychainUnavailableAlertTitle
+                alert.informativeText = UserText.keychainUnavailableAlertMessage
+                alert.addButton(withTitle: UserText.quit)
+                NSApp.activate(ignoringOtherApps: true)
+                alert.runModal()
+
+                fatalError("Could not register value transformers: \(error.localizedDescription)")
+            }
         }
 
         let httpsUpgradeModel = HTTPSUpgrade.managedObjectModel

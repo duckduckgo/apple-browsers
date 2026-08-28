@@ -158,6 +158,15 @@ struct UserText {
     static let settingsConfirmQuitCheckbox = NSLocalizedString("settings.confirm.quit.checkbox", value: "Show confirmation before quitting with ⌘Q", comment: "Checkbox label in Settings to enable quit confirmation")
     static let settingsConfirmCloseCheckbox = NSLocalizedString("settings.confirm.close.checkbox", value: "Show confirmation before closing pinned tabs with ⌘W", comment: "Checkbox label in Settings to enable close confirmation for pinned tabs")
 
+    static let keychainUnavailableAlertTitle = NSLocalizedString(
+        "keychain.unavailable.alert.title",
+        value: "DuckDuckGo Can't Access Its Encryption Key",
+        comment: "Title of the alert shown when the app cannot read its data encryption key from the macOS Keychain at startup")
+    static let keychainUnavailableAlertMessage = NSLocalizedString(
+        "keychain.unavailable.alert.message",
+        value: "DuckDuckGo uses a key stored in the macOS Keychain to protect your data, but the Keychain isn't available right now, so the app can't continue. Try opening DuckDuckGo again. If this keeps happening, log out of your Mac and back in, or check in Keychain Access that your login keychain is unlocked.",
+        comment: "Message of the alert shown when the app cannot read its data encryption key from the macOS Keychain at startup. The app quits after the alert.")
+
     static let next = NSLocalizedString("next", value: "Next", comment: "Next button")
     static let pasteAndGo = NSLocalizedString("paste.and.go", value: "Paste & Go", comment: "Paste & Go button")
     static let pasteAndSearch = NSLocalizedString("paste.and.search", value: "Paste & Search", comment: "Paste & Search button")

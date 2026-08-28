@@ -904,7 +904,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewModel.onAction = { [weak self] action in
             self?.handleUsageWarningAction(action)
         }
-        footerController = UTIFooterController(viewModel: viewModel)
+        footerController = UTIFooterController(viewModel: viewModel,
+                                              highUsageNotice: makeHighUsageNoticeSource())
         footerController?.presenter = viewController
     }
 
@@ -917,6 +918,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             requiredMimeTypes: attachments.compactMap { $0.fileAttachment?.mimeType },
             requiredTools: toolsController.selectedTool.map { [$0] } ?? []
         )
+    }
+
+    /// The persisted id, matching what the warning's own suggester reasons about.
+    private func makeHighUsageNoticeSource() -> UTIFooterHighUsageNoticeSource {
+        UTIFooterHighUsageNoticeSource(modelProvider: { [weak self] in
+            guard let self, let id = persistedModelId else { return (nil, nil) }
+            return (id, models.first { $0.id == id }?.shortName)
+        })
     }
 
     private func handleUsageWarningAction(_ action: DuckAiUsageAction) {
@@ -1767,6 +1776,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 images: images,
                 files: files
             )
+            delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: pixelReporter.currentPromptOrigin())
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
             clearAttachments()
             setText("")
@@ -1793,6 +1803,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         if let userScript {
             let didSendBridgeMessage = userScript.canDispatchBridgeMessages
             userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
+            delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: pixelReporter.currentPromptOrigin())
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
         } else {
             delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)

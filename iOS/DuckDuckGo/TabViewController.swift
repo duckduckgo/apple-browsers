@@ -1079,6 +1079,26 @@ class TabViewController: UIViewController {
         }
     }
 
+    /// Assigns `WKWebView.obscuredContentInsets` only when the running OS actually implements it.
+    ///
+    /// `#available(iOS 26, *)` is not sufficient on its own: on early iOS 26 betas (e.g. build
+    /// 23A5297m) the availability check passes but the `obscuredContentInsets` selector is not yet
+    /// implemented, so *both* the getter and setter abort with an unrecognized-selector exception
+    /// (SIGABRT). We therefore gate on the setter's `responds(to:)` and avoid touching the property
+    /// at all — including the getter comparison — when it is unsupported.
+    @discardableResult
+    private func setWebViewObscuredContentInsetsIfSupported(_ insets: UIEdgeInsets) -> Bool {
+        guard #available(iOS 26, *),
+              let webView,
+              webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) else {
+            return false
+        }
+        if webView.obscuredContentInsets != insets {
+            webView.obscuredContentInsets = insets
+        }
+        return true
+    }
+
     private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat) {
         guard #available(iOS 26, *) else {
             assertionFailure("Floating UI requires iOS 26")
@@ -1121,9 +1141,7 @@ class TabViewController: UIViewController {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
             hasAppliedFloatingUIScrollViewInsets = true
         }
-        if webView.obscuredContentInsets != obscuredInsets {
-            webView.obscuredContentInsets = obscuredInsets
-        }
+        setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
     }
 
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
@@ -1131,9 +1149,7 @@ class TabViewController: UIViewController {
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
-        if #available(iOS 26, *) {
-            webView.obscuredContentInsets = .zero
-        }
+        setWebViewObscuredContentInsetsIfSupported(.zero)
         if hasAppliedFloatingUIScrollViewInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
             hasAppliedFloatingUIScrollViewInsets = false
@@ -3574,7 +3590,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func shouldUpgradeToHttps(url: URL, navigationAction: WKNavigationAction) -> Bool {
-        return !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame()
+        return url.isHttp && url.port == nil && !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame()
     }
 
     private func performExternalNavigationFor(url: URL, action: SchemeHandler.Action) {

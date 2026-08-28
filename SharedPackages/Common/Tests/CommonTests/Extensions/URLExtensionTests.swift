@@ -134,6 +134,12 @@ final class URLExtensionTests {
         #expect(rootUrl.isRoot)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.toHttps does not upgrade URLs with explicit ports", .timeLimit(.minutes(1)))
+    func toHttpsDoesNotUpgradeURLsWithExplicitPorts() {
+        #expect(URL(string: "http://example.com:8080")!.toHttps() == nil)
+    }
+
     static let basicAuthCredential_args: [(String, String?, String?, UInt)] = [
         ("https://dax%40duck.com:123%3A456A@www.duckduckgo.com/test.php?test=S&info=test#fragment", "dax@duck.com", "123:456A", #line),
         ("user@somehost.local:9091/index.html", "user", "", #line),

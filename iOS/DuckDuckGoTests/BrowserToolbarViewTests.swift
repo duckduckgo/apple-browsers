@@ -115,4 +115,120 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         XCTAssertEqual(height, BrowserToolbarView.floatingButtonsHeight, accuracy: 0.01)
     }
+
+    func testWhenFloatingThenCombinedChromeHeightMatchesTheTwelvePointSpacingSpec() {
+        // 12 top + 48 field + 12 gap + 44 buttons + 12 bottom — bottom address bar only.
+        XCTAssertEqual(BrowserToolbarView.floatingEmbeddedButtonsHeight, 44)
+        XCTAssertEqual(
+            BrowserToolbarView.totalHeight(withOmnibarHeight: 48, isFloating: true),
+            128,
+            accuracy: 0.01)
+        XCTAssertEqual(
+            BrowserToolbarView.singleRowHeight(withOmnibarHeight: 48),
+            72,
+            accuracy: 0.01)
+    }
+
+    func testWhenFloatingWithoutEmbeddedOmnibarThenStandaloneButtonHeightIsUnchanged() {
+        XCTAssertEqual(BrowserToolbarView.floatingButtonsHeight, 62)
+        XCTAssertEqual(
+            BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: true),
+            BrowserToolbarView.floatingButtonsHeight,
+            accuracy: 0.01)
+    }
+
+    func testWhenStandaloneFloatingThenOuterInsetIsTwentyFourPoints() {
+        let sut = makeSUT(embeddedOmnibar: false)
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        container.addSubview(sut)
+
+        let frame = sut.restingCapsuleFrame(in: container)
+
+        XCTAssertEqual(BrowserToolbarView.floatingStandaloneHorizontalInset, 24)
+        XCTAssertEqual(BrowserToolbarView.floatingStandaloneButtonRowHorizontalPadding, 16)
+        XCTAssertEqual(frame.minX, 24, accuracy: 0.01)
+        XCTAssertEqual(container.bounds.width - frame.maxX, 24, accuracy: 0.01)
+    }
+
+    func testWhenEmbeddedFloatingThenOuterInsetStaysSixteenPoints() {
+        let sut = makeSUT(embeddedOmnibar: true)
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        container.addSubview(sut)
+
+        let frame = sut.restingCapsuleFrame(in: container)
+
+        XCTAssertEqual(BrowserToolbarView.floatingEmbeddedHorizontalInset, 16)
+        XCTAssertEqual(frame.minX, 16, accuracy: 0.01)
+        XCTAssertEqual(container.bounds.width - frame.maxX, 16, accuracy: 0.01)
+    }
+
+    func testWhenStandaloneFloatingThenBottomMarginIsTwentyOnePoints() {
+        let sut = makeSUT(embeddedOmnibar: false)
+
+        XCTAssertEqual(BrowserToolbarView.floatingStandaloneBottomMargin, 21)
+        XCTAssertEqual(sut.floatingBottomMargin, 21, accuracy: 0.01)
+    }
+
+    func testWhenStandaloneFloatingThenButtonsAreEvenlySpacedAndFireButtonIsCentered() {
+        let sut = makeSUT(embeddedOmnibar: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        window.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: window.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: window.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: window.bottomAnchor),
+            sut.heightAnchor.constraint(equalToConstant: 62)
+        ])
+        let fire = makeToolbarButton(identifier: "Browser.Toolbar.Button.Fire", width: 44)
+        sut.setToolbarButtons([
+            makeToolbarButton(identifier: "back", width: 44),
+            makeToolbarButton(identifier: "forward", width: 44),
+            fire,
+            makeToolbarButton(identifier: "tabs", width: 44),
+            makeToolbarButton(identifier: "menu", width: 44)
+        ])
+        window.layoutIfNeeded()
+
+        let centers = sut.arrangedToolbarButtonViews.map { view in
+            sut.convert(view.center, from: view.superview).x
+        }
+        let spacings = zip(centers.dropFirst(), centers).map { $0 - $1 }
+        let fireCenterInToolbar = sut.convert(fire.center, from: fire.superview)
+
+        XCTAssertEqual(fireCenterInToolbar.x, sut.bounds.midX, accuracy: 0.5)
+        spacings.dropFirst().forEach {
+            XCTAssertEqual($0, spacings[0], accuracy: 0.5)
+        }
+    }
+
+    private func makeToolbarButton(identifier: String, width: CGFloat) -> UIView {
+        let view = UIView()
+        view.accessibilityIdentifier = identifier
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.widthAnchor.constraint(equalToConstant: width).isActive = true
+        view.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        return view
+    }
+
+    func testWhenButtonRowCollapsesThenEmbeddedOmnibarKeepsItsHeight() {
+        let fieldHeight: CGFloat = 48
+        let omnibar = UIView()
+        let toolbar = BrowserToolbarView(frame: .zero)
+        toolbar.setFloatingStyleEnabled(true)
+        toolbar.setOmnibarView(omnibar, height: fieldHeight)
+
+        let collapsedHeight = toolbar.setButtonRowCollapseProgress(1, reduceMotion: false)
+        toolbar.frame = CGRect(x: 0, y: 0, width: 390, height: collapsedHeight)
+        toolbar.layoutIfNeeded()
+
+        XCTAssertEqual(omnibar.bounds.height, fieldHeight, accuracy: 0.5)
+    }
+
+    func testWhenNotFloatingThenCombinedChromeHeightKeepsLegacyPadding() {
+        XCTAssertEqual(
+            BrowserToolbarView.totalHeight(withOmnibarHeight: 60, isFloating: false),
+            115,
+            accuracy: 0.01)
+    }
 }

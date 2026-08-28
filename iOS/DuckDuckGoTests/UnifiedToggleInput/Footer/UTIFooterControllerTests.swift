@@ -27,6 +27,8 @@ final class UTIFooterControllerTests: XCTestCase {
     private var limitsProvider: StubUsageLimitsProvider!
     private var presenter: SpyUTIFooterPresenter!
     private var viewModel: DuckAiUsageWarningViewModel!
+    private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
+    private var tier: AIChatUserTier = .plus
     private var animationCount = 0
     private var sut: UTIFooterController!
 
@@ -36,9 +38,12 @@ final class UTIFooterControllerTests: XCTestCase {
         super.setUp()
         limitsProvider = StubUsageLimitsProvider()
         presenter = SpyUTIFooterPresenter()
+        selectedModel = (nil, nil)
+        tier = .plus
         animationCount = 0
         viewModel = makeViewModel()
         sut = UTIFooterController(viewModel: viewModel,
+                                  highUsageNotice: makeNoticeSource(),
                                   animator: { [unowned self] changes in
                                       animationCount += 1
                                       changes()
@@ -219,6 +224,49 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(received, [.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini", modelShortName: "5.4 mini"))])
     }
 
+    /// Acting on the message retires it, exactly as the close button would.
+    func test_performPrimaryAction_hidesTheMessageWhenItSwitchesModel() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+
+        sut.performPrimaryAction()
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    func test_performPrimaryAction_keepsTheMessageHiddenOnTheNextRefresh() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.performPrimaryAction()
+
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    /// Recorded against a rung like a close, not a blanket kill, so the next one still shows.
+    func test_performPrimaryAction_doesNotHideTheNextThreshold() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.performPrimaryAction()
+
+        limitsProvider.limits = weeklyUsage(90)
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("90%") ?? false)
+    }
+
+    /// The upsell is not a switch: the user is still blocked, so the message stays up.
+    func test_performPrimaryAction_keepsTheMessageWhenTheActionIsTheUpsell() {
+        tier = .free
+        limitsProvider.limits = weeklyUsage(100)
+        sut.refresh()
+
+        sut.performPrimaryAction()
+
+        XCTAssertEqual(presenter.appliedMessages.last??.primaryAction?.title, "Subscribe")
+    }
+
     func test_performPrimaryAction_doesNothingWithoutAMessage() {
         var received: [DuckAiUsageAction] = []
         viewModel.onAction = { received.append($0) }
@@ -228,12 +276,81 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(received.isEmpty)
     }
 
+    // MARK: - High-usage model notice
+
+    func test_refresh_presentsTheHighUsageNoticeWhenThereIsNoWarning() {
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        limitsProvider.limits = .noData
+
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
+    }
+
+    /// One slot: an actionable warning outranks the informational notice.
+    func test_refresh_prefersTheUsageWarningOverTheNotice() {
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        limitsProvider.limits = weeklyUsage(50)
+
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("50%") ?? false)
+    }
+
+    func test_refresh_presentsNothingForAModelThatIsNotHighUsage() {
+        selectedModel = (id: "gpt-5.4-mini", shortName: "5.4 mini")
+        limitsProvider.limits = .noData
+
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.isEmpty)
+    }
+
+    /// Re-read per refresh, so switching onto a high-usage model mid-session surfaces the notice.
+    func test_refresh_picksUpAModelChange() {
+        limitsProvider.limits = .noData
+        sut.refresh()
+
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
+    }
+
+    func test_dismissCurrent_keepsTheNoticeHiddenOnTheNextRefresh() {
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        limitsProvider.limits = .noData
+        sut.refresh()
+
+        sut.dismissCurrent()
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    /// The two dismissals are separate records: closing the warning must not also spend the notice's.
+    func test_dismissCurrent_dismissesTheWarningWithoutSpendingTheNoticesDismissal() {
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+
+        sut.dismissCurrent()
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
+    }
+
     // MARK: - Helpers
+
+    private func makeNoticeSource() -> UTIFooterHighUsageNoticeSource {
+        UTIFooterHighUsageNoticeSource(dismissalStore: InMemoryDuckAiHighUsageNoticeDismissalStore(),
+                                       modelProvider: { [unowned self] in selectedModel })
+    }
 
     private func makeViewModel() -> DuckAiUsageWarningViewModel {
         DuckAiUsageWarningViewModel(
             limitsProvider: limitsProvider,
-            tierProvider: { .plus },
+            tierProvider: { [unowned self] in tier },
             isInternalUser: { false },
             dismissalStore: InMemoryDuckAiUsageWarningDismissalStore(),
             modelSuggester: StubCheaperModelSuggester(),

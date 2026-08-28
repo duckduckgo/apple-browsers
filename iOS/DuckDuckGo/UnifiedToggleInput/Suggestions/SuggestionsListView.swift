@@ -113,7 +113,7 @@ struct SuggestionsListView: View {
                         .modifier(DismissFade(animationModel: animationModel))
                         .background {
                             if showsAmbientMessageShadow {
-                                ListCellShadowOverflowView()
+                                ListCellShadowOverflowView(raisesCellAbovePreviousRow: escapeHatch != nil)
                             }
                         }
                     }
@@ -379,9 +379,11 @@ private struct DisableListRowSelection: ViewModifier {
 /// The focused floating-bottom RMF uses the same wide ambient shadow as the resting NTP. Let that
 /// shadow render beyond its List row and scroll viewport without changing the RMF's handoff frame.
 private struct ListCellShadowOverflowView: UIViewRepresentable {
+    let raisesCellAbovePreviousRow: Bool
 
     func makeUIView(context: Context) -> ListCellShadowOverflowProbe {
         let view = ListCellShadowOverflowProbe()
+        view.raisesCellAbovePreviousRow = raisesCellAbovePreviousRow
         view.isUserInteractionEnabled = false
         view.accessibilityElementsHidden = true
 #if DEBUG
@@ -391,6 +393,7 @@ private struct ListCellShadowOverflowView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: ListCellShadowOverflowProbe, context: Context) {
+        uiView.raisesCellAbovePreviousRow = raisesCellAbovePreviousRow
         uiView.updateContainingCellClipping()
     }
 
@@ -401,8 +404,11 @@ private struct ListCellShadowOverflowView: UIViewRepresentable {
 
 private final class ListCellShadowOverflowProbe: UIView {
 
+    var raisesCellAbovePreviousRow = false
+
     private weak var containingCell: UICollectionViewCell?
     private var originalCellClipsToBounds: Bool?
+    private var originalCellZPosition: CGFloat?
     private var clippingUpdateGeneration = 0
 
     override func didMoveToWindow() {
@@ -437,17 +443,22 @@ private final class ListCellShadowOverflowProbe: UIView {
             restoreContainingCellClipping()
             containingCell = cell
             originalCellClipsToBounds = cell.clipsToBounds
+            originalCellZPosition = cell.layer.zPosition
         }
         cell.clipsToBounds = false
+        // The ambient shadow overlaps the preceding Escape Hatch row, so its cell must paint above that sibling.
+        cell.layer.zPosition = raisesCellAbovePreviousRow ? 1 : originalCellZPosition ?? cell.layer.zPosition
     }
 
     func restoreContainingCellClipping() {
         clippingUpdateGeneration += 1
-        if let containingCell, let originalCellClipsToBounds {
+        if let containingCell, let originalCellClipsToBounds, let originalCellZPosition {
             containingCell.clipsToBounds = originalCellClipsToBounds
+            containingCell.layer.zPosition = originalCellZPosition
         }
         containingCell = nil
         originalCellClipsToBounds = nil
+        originalCellZPosition = nil
     }
 
     private func firstContainingCell() -> UICollectionViewCell? {

@@ -34,11 +34,13 @@ struct NewTabPageView: View {
     let narrowLayoutInLandscape: Bool
     let dismissKeyboardOnScroll: Bool
     let layoutConfiguration: NewTabPageLayoutConfiguration
+    let raisesMessageAboveEscapeHatch: Bool
 
     init(isFocussedState: Bool = false,
          narrowLayoutInLandscape: Bool = false,
          dismissKeyboardOnScroll: Bool = true,
          layoutConfiguration: NewTabPageLayoutConfiguration = .standard,
+         raisesMessageAboveEscapeHatch: Bool = false,
          viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
          favoritesViewModel: FavoritesViewModel) {
@@ -49,6 +51,7 @@ struct NewTabPageView: View {
         self.narrowLayoutInLandscape = narrowLayoutInLandscape
         self.dismissKeyboardOnScroll = dismissKeyboardOnScroll
         self.layoutConfiguration = layoutConfiguration
+        self.raisesMessageAboveEscapeHatch = raisesMessageAboveEscapeHatch
 
         self.messagesModel.load()
     }
@@ -121,6 +124,7 @@ private extension NewTabPageView {
                     messagesSectionView
                         .padding(.top, sectionTopNudge)
                         .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                        .zIndex(raisesMessageAboveEscapeHatch && viewModel.escapeHatch != nil ? 1 : 0)
 
                     if let title = viewModel.sectionTitle, !title.isEmpty {
                         Text(title)
@@ -179,6 +183,7 @@ private extension NewTabPageView {
                         messagesSectionView
                             .padding(.top, sectionTopNudge)
                             .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                            .zIndex(raisesMessageAboveEscapeHatch && viewModel.escapeHatch != nil ? 1 : 0)
                     }
                     .frame(maxWidth: .infinity, alignment: .top)
                     .padding(.top, contentTopInset(in: proxy))

@@ -164,6 +164,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
                                             layoutConfiguration: unifiedToggleInputFeature.isAvailable ? .unifiedToggleInput : .standard,
+                                            raisesMessageAboveEscapeHatch: floatingUIManager.isFloatingUIEnabled,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))

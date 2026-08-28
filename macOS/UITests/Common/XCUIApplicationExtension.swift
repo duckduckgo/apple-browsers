@@ -25,6 +25,13 @@ enum BookmarkMode {
     case manager
 }
 
+private extension URL {
+    var usesLocalTestServerTimeout: Bool {
+        guard let host else { return false }
+        return port == 8085 && (host == "localhost" || host == "127.0.0.1")
+    }
+}
+
 @objc protocol XCTRunnerAutomationSessionProtocol: AnyObject {
     @objc(attributesForElement:attributes:error:)
     func attributes(for element: AXElement, attributes: [String]) throws -> Any
@@ -113,6 +120,8 @@ extension XCUIApplication {
 
         static let fireDialogMoreOptionsMenuButton = "FireDialogView.toolbarMoreButton"
         static let fireDialogManageFireproofSites = "FireDialogView.moreOptions.manageFireproofSites"
+
+        static let quitMenuItem = "Quit DuckDuckGo"
     }
 
     static func setUp(environment: [String: String]? = nil,
@@ -135,6 +144,18 @@ extension XCUIApplication {
         app.launch()
         return app
     }
+
+    /// Terminate the running app and launch it again, preserving environment and arguments from `setUp()`.
+    func restart(forceTerminate: Bool = false) {
+        if forceTerminate {
+            terminate()
+        } else {
+            menuItems[AccessibilityIdentifiers.quitMenuItem].tap()
+        }
+        launch()
+    }
+
+    static let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
 
     @nonobjc var path: String? {
         value(forKey: "path") as? String
@@ -329,9 +350,9 @@ extension XCUIApplication {
             "The address bar text field didn't become available in a reasonable timeframe."
         )
         addressBar.pasteURL(url, pressingEnter: true)
-        Self.dismissLocalNetworkPromptIfPresent()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         XCTAssertTrue(
-            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }
@@ -343,21 +364,22 @@ extension XCUIApplication {
     }
 
     func openURL(_ url: URL, waitForWebViewAccessibilityLabel expectedLabel: String? = nil) {
+        let navigationTimeout = url.usesLocalTestServerTimeout ? UITests.Timeouts.localTestServer : UITests.Timeouts.navigation
         let addressBar = addressBar
         XCTAssertTrue(
             addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
         addressBar.pasteURL(url, pressingEnter: true)
-        Self.dismissLocalNetworkPromptIfPresent()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
         if let expectedLabel {
             XCTAssertTrue(
-                windows.firstMatch.webViews[expectedLabel].waitForExistence(timeout: UITests.Timeouts.navigation),
+                windows.firstMatch.webViews[expectedLabel].waitForExistence(timeout: navigationTimeout),
                 "Web view with label '\(expectedLabel)' didn't load in a reasonable timeframe."
             )
         } else {
             XCTAssertTrue(
-                windows.firstMatch.webViews.firstMatch.waitForExistence(timeout: UITests.Timeouts.navigation),
+                windows.firstMatch.webViews.firstMatch.waitForExistence(timeout: navigationTimeout),
                 "Web view didn't load in a reasonable timeframe."
             )
         }
@@ -373,12 +395,12 @@ extension XCUIApplication {
                 scheme + "www." + naked,
                 scheme + "www." + naked + "/",
                 url.absoluteString,
-            ]), timeout: UITests.Timeouts.navigation),
+            ]), timeout: navigationTimeout),
             "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
         )
         _=progressIndicator.waitForExistence(timeout: 1)
         XCTAssertTrue(
-            progressIndicator.waitForNonExistence(timeout: UITests.Timeouts.navigation),
+            progressIndicator.waitForNonExistence(timeout: navigationTimeout),
             "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
         )
     }
@@ -389,18 +411,44 @@ extension XCUIApplication {
     /// fails at a nondeterministic point — a recurring source of flakiness on the macOS 15+ CI VMs.
     /// Tapping "Allow" lets the tests-server loopback traffic proceed unchanged.
     @discardableResult
-    static func dismissLocalNetworkPromptIfPresent() -> Bool {
-        let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
-        for label in ["Allow", "Don’t Allow", "Don't Allow"] {
-            // `.firstMatch`: UserNotificationCenter can surface the same label more than once
-            // (nested hierarchy / stacked notifications); a bare query would fail `.click()` with
-            // "multiple matching elements". Any match dismisses the prompt.
-            let button = notificationCenter.buttons[label].firstMatch
+    func dismissSystemPermissionPromptIfPresent(allow: Bool = true, logIfNotFound: Bool = true) -> Bool {
+        guard let snapshot = try? self.snapshot() else { return false }
+        func descr() -> String {
+            snapshot.toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar]) ??? "<nil>"
+        }
+        // Check if Notification Center has sheets with buttons
+        var children = snapshot.children
+        var buttonFound = false
+        while let child = children.popLast() {
+            if child.elementType == .button {
+                buttonFound = true
+                break
+            } else if ![.menu, .menuItem, .menuBar].contains(child.elementType) {
+                children.append(contentsOf: child.children)
+            }
+        }
+        guard buttonFound else {
+            if logIfNotFound {
+                Logger.log("🔍 dismissSystemPermissionPromptIfPresent: no button found: \(descr())")
+            }
+            return false
+        }
+
+        let allowLabels = ["Allow", "OK"]
+        let denyLabels = ["Don’t Allow", "Don't Allow", "Deny", "Cancel"]
+
+        let labels = allow ? allowLabels : denyLabels
+
+        for label in labels {
+            let button = self.buttons[label].firstMatch
             if button.exists {
+                Logger.log("🔍 dismissSystemPermissionPromptIfPresent: \(label)")
                 button.click()
                 return true
             }
         }
+
+        Logger.log("🔴 dismissSystemPermissionPromptIfPresent: Could not find \(allow ? "Allow" : "Deny") button in \(descr())")
         return false
     }
 
@@ -437,6 +485,7 @@ extension XCUIApplication {
                             bookmarkingViaDialog: Bool,
                             escapingDialog: Bool,
                             folderName: String? = nil) {
+        let navigationTimeout = url.usesLocalTestServerTimeout ? UITests.Timeouts.localTestServer : UITests.Timeouts.navigation
         let addressBarTextField = windows.textFields[AccessibilityIdentifiers.addressBarTextField]
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -444,7 +493,7 @@ extension XCUIApplication {
         )
         addressBarTextField.typeURL(url)
         XCTAssertTrue(
-            windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            windows.webViews[pageTitle].waitForExistence(timeout: navigationTimeout),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         if bookmarkingViaDialog {
@@ -706,7 +755,7 @@ extension XCUIApplication {
 
             return true
         }).firstMatch
-        XCTAssertTrue(pathCell.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(pathCell.waitForExistence(timeout: UITests.Timeouts.navigation), "Path cell did not appear in reasonable time")
 
         // Confirm Location selection
         typeKey(.return, modifierFlags: [])

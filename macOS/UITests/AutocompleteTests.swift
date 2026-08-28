@@ -38,7 +38,6 @@ class AutocompleteTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         addBookmarkButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
@@ -161,7 +160,7 @@ private extension AutocompleteTests {
 
         addressBarTextField.typeURL(urlForBookmarks)
         XCTAssertTrue(
-            app.windows.webViews[siteTitleForBookmarkedSite].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[siteTitleForBookmarkedSite].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
@@ -227,7 +226,7 @@ private extension AutocompleteTests {
 
         addressBarTextField.typeURL(urlForHistory)
         XCTAssertTrue(
-            app.windows.webViews[siteTitleForHistorySite].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[siteTitleForHistorySite].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         app.enforceSingleWindow()

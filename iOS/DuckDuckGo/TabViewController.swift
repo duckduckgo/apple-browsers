@@ -3556,7 +3556,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func shouldUpgradeToHttps(url: URL, navigationAction: WKNavigationAction) -> Bool {
-        return !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame()
+        return url.isHttp && url.port == nil && !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame()
     }
 
     private func performExternalNavigationFor(url: URL, action: SchemeHandler.Action) {

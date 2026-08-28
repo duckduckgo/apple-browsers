@@ -29,7 +29,6 @@ class StateRestorationTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         firstPageTitle = UITests.randomPageTitle(length: titleStringLength)
         secondPageTitle = UITests.randomPageTitle(length: titleStringLength)
@@ -60,26 +59,25 @@ class StateRestorationTests: UITestCase {
         )
         addressBarTextField.pasteURL(firstURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
         app.openNewTab()
         addressBarTextField.pasteURL(secondURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        app.restart()
 
         XCTAssertTrue(
-            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Second visited site wasn't found in a webview with the expected title in a reasonable timeframe."
         )
         app.closeCurrentTab()
         XCTAssertTrue(
-            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "First visited site wasn't found in a webview with the expected title in a reasonable timeframe."
         )
     }
@@ -96,18 +94,17 @@ class StateRestorationTests: UITestCase {
         )
         addressBarTextField.pasteURL(firstURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
         app.openNewTab()
         addressBarTextField.pasteURL(secondURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        app.terminate()
-        app.launch()
+        app.restart(forceTerminate: true)
 
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),

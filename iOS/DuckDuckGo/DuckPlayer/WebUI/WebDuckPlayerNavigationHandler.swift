@@ -315,7 +315,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     private func fireDuckPlayerPixels(webView: WKWebView) {
 
         // First daily unique user Duck Player view
-        pixelFiring?.fire(Pixel.Event.duckPlayerDailyUniqueView, frequency: .legacyDaily, options: .parameters(["settings": duckPlayerMode.stringValue]))
+        pixelFiring?.fire(Pixel.Event.duckPlayerDailyUniqueView, frequency: .legacyDailyNoSuffix, options: .parameters(["settings": duckPlayerMode.stringValue]))
 
         // Duck Player viewed with Always setting, referred from YouTube (automatic)
         if (referrer == .youtube) && duckPlayerMode == .enabled {

@@ -33,7 +33,7 @@ final class SystemSettingsPiPTutorialPixelHandler: SystemSettingsPiPTutorialEven
     func fireFailedToLoadPiPTutorialEvent(error: (any Error)?, urlPath: String?) {
         let parameters = extractVideoUrlPath(from: urlPath).flatMap { ["video_url_path": $0] } ?? [:]
         pixelFiring?.fire(Pixel.Event.systemSettingsPiPTutorialFailedToLoadVideo.withError(error),
-                          frequency: .legacyDailyAndCount,
+                          frequency: .dailyAndCount,
                           options: .parameters(parameters))
     }
 

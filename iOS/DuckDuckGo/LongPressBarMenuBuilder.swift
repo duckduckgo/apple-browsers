@@ -56,11 +56,11 @@ final class LongPressBarMenuBuilder {
             let copyTitle = UserText.copyLinkTitle(for: url, isPrivacyProtectionEnabled: context.isPrivacyProtectionEnabled)
             sections.append(UIMenu(title: "", options: .displayInline, children: [
                 UIAction(title: UserText.actionShare, image: Glyphs.shareApple) { [weak self] _ in
-                    self?.pixelFiring?.fire(Pixel.Event.longPressBarActionShare, frequency: .legacyDailyAndCount)
+                    self?.pixelFiring?.fire(Pixel.Event.longPressBarActionShare, frequency: .dailyAndCount)
                     context.onShare()
                 },
                 UIAction(title: copyTitle, image: Glyphs.link) { [weak self] _ in
-                    self?.pixelFiring?.fire(Pixel.Event.longPressBarActionCopy, frequency: .legacyDailyAndCount)
+                    self?.pixelFiring?.fire(Pixel.Event.longPressBarActionCopy, frequency: .dailyAndCount)
                     context.onCopy(url)
                 },
             ]))
@@ -71,7 +71,7 @@ final class LongPressBarMenuBuilder {
             let moveImage = context.addressBarPosition == .top ? Glyphs.addressBarBottom : Glyphs.addressBarTop
             sections.append(UIMenu(title: "", options: .displayInline, children: [
                 UIAction(title: moveLabel, image: moveImage) { [weak self] _ in
-                    self?.pixelFiring?.fire(Pixel.Event.longPressBarActionMove, frequency: .legacyDailyAndCount)
+                    self?.pixelFiring?.fire(Pixel.Event.longPressBarActionMove, frequency: .dailyAndCount)
                     context.onMoveAddressBar()
                 },
             ]))
@@ -79,7 +79,7 @@ final class LongPressBarMenuBuilder {
 
         sections.append(UIMenu(title: "", options: .displayInline, children: [
             UIAction(title: UserText.closeTabs(withCount: 1), image: Glyphs.closeOutline, attributes: [.destructive]) { [weak self] _ in
-                self?.pixelFiring?.fire(Pixel.Event.longPressBarActionCloseTab, frequency: .legacyDailyAndCount)
+                self?.pixelFiring?.fire(Pixel.Event.longPressBarActionCloseTab, frequency: .dailyAndCount)
                 context.onCloseTab()
             },
         ]))
@@ -88,7 +88,7 @@ final class LongPressBarMenuBuilder {
     }
 
     func fireOmniBarMenuOpenPixel() {
-        pixelFiring?.fire(Pixel.Event.longPressBarOpen, frequency: .legacyDailyAndCount)
+        pixelFiring?.fire(Pixel.Event.longPressBarOpen, frequency: .dailyAndCount)
     }
 
     private func isSupportedNonEditingOmniBarStateForLongPressMenu(_ state: OmniBarState) -> Bool {

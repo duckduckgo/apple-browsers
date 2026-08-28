@@ -55,7 +55,7 @@ struct DuckAIDestinationHandler: CustomProductPageDestinationHandling {
     func handle(url: URL, on presenter: AppStoreCustomProductPagePresenter) {
         guard featureFlagger.isFeatureOn(.customProductPageDuckAiChat) else { return }
         
-        pixelFiring?.fire(Pixel.Event.customProductPageDuckAIOpenedAIChat, frequency: .legacyDailyAndCount, options: .parameters([:]))
+        pixelFiring?.fire(Pixel.Event.customProductPageDuckAIOpenedAIChat, frequency: .dailyAndCount, options: .parameters([:]))
         aiChatDeepLinkHandler.handleDeepLink(url, on: presenter)
     }
 }

@@ -60,7 +60,7 @@ final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
 
     func screenShown(source: AIChatHistorySource) {
         pixelFiring?.fire(Pixel.Event.aiChatHistoryScreenShown,
-                          frequency: .legacyDailyAndCount,
+                          frequency: .dailyAndCount,
                           options: .parameters([PixelParameters.source: source.rawValue]))
     }
 
@@ -137,6 +137,6 @@ final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
     }
 
     private func fire(_ pixel: Pixel.Event, error: Error? = nil) {
-        pixelFiring?.fire(pixel.withError(error), frequency: .legacyDailyAndCount)
+        pixelFiring?.fire(pixel.withError(error), frequency: .dailyAndCount)
     }
 }

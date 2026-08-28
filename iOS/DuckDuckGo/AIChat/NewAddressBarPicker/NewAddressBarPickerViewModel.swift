@@ -53,7 +53,7 @@ private extension NewAddressBarPickerViewModel {
         let selectionValue = isDuckAISelected ? "search_and_ai" : "search_only"
         pixelFiring?.fire(
             Pixel.Event.aiChatNewAddressBarPickerV2Confirmed,
-            frequency: .legacyDailyAndCount,
+            frequency: .dailyAndCount,
             options: .parameters([PixelParameters.selection: selectionValue])
         )
     }

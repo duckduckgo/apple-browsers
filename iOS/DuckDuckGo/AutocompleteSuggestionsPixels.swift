@@ -81,6 +81,6 @@ struct AutocompleteSuggestionsPixels {
     /// owns those dependencies.
     func fireAskAIChatClickPixel(isExperimentalExperience: Bool, additionalParameters params: [String: String]) {
         let pixel: Pixel.Event = isExperimentalExperience ? .autocompleteAskAIChatExperimentalExperience : .autocompleteAskAIChatLegacyExperience
-        pixelFiring?.fire(pixel, frequency: .legacyDailyAndCount, options: .parameters(params))
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount, options: .parameters(params))
     }
 }

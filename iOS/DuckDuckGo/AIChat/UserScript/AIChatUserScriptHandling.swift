@@ -129,13 +129,13 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
             case .reportMetricDecodingFailed(let error, let failureReason):
                 pixelFiring?.fire(
                     Pixel.Event.aiChatReportMetricDecodeError.withError(error),
-                    frequency: .legacyDailyAndCount,
+                    frequency: .dailyAndCount,
                     options: .parameters([Parameters.failureReason: failureReason.rawValue])
                 )
             case .responseStateDecodingFailed(let error, let failureReason):
                 pixelFiring?.fire(
                     Pixel.Event.aiChatResponseStateDecodeError.withError(error),
-                    frequency: .legacyDailyAndCount,
+                    frequency: .dailyAndCount,
                     options: .parameters([Parameters.failureReason: failureReason.rawValue])
                 )
             }

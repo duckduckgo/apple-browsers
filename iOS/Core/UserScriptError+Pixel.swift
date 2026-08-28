@@ -35,7 +35,7 @@ extension UserScriptError {
             PixelParameters.jsFile: jsFile,
             PixelParameters.source: source.rawValue
         ]
-        pixelFiring?.fire(Pixel.Event.userScriptLoadJSFailed.withError(error), frequency: .legacyDailyAndCount, options: .parameters(params))
+        pixelFiring?.fire(Pixel.Event.userScriptLoadJSFailed.withError(error), frequency: .dailyAndCount, options: .parameters(params))
         Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
     }
 }

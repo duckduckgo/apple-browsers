@@ -105,7 +105,7 @@ class FavoritesViewModel: ObservableObject {
             pixelFiring?.fire(Pixel.Event.favoriteLaunchedWebsite)
         } else {
             pixelFiring?.fire(Pixel.Event.favoriteLaunchedNTP)
-            pixelFiring?.fire(Pixel.Event.favoriteLaunchedNTPDaily, frequency: .legacyDaily)
+            pixelFiring?.fire(Pixel.Event.favoriteLaunchedNTPDaily, frequency: .legacyDailyNoSuffix)
         }
         if let host = url.host {
             faviconsCache.populateFavicon(for: host, intoCache: .fireproof, fromCache: .tabs)

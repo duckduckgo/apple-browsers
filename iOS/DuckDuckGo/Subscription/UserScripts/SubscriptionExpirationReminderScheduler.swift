@@ -159,7 +159,7 @@ final class DefaultSubscriptionExpirationReminderScheduler: SubscriptionExpirati
         if let subscription, Self.subscriptionWarrantsReminder(subscription) {
             return
         }
-        pixelFiring?.fire(Pixel.Event.subscriptionExpirationReminderCancelled, frequency: .legacyDailyAndCount)
+        pixelFiring?.fire(Pixel.Event.subscriptionExpirationReminderCancelled, frequency: .dailyAndCount)
         cancelPendingReminder()
     }
 

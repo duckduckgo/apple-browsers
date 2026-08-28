@@ -114,6 +114,23 @@ final class UTIPixelReporterTests: XCTestCase {
         ])
     }
 
+    // MARK: - Prompt origin
+
+    func testCurrentPromptOriginMatchesTheSurfaceTheSubmissionPixelsReport() {
+        XCTAssertEqual(makeReporter { self.context(surface: .addressBar) }.currentPromptOrigin(), .addressBarPrompt)
+        XCTAssertEqual(makeReporter { self.context(surface: .contextualChat) }.currentPromptOrigin(), .contextualChat)
+        XCTAssertEqual(makeReporter { self.context(surface: .duckAI, duckAIEntrySource: .tabSwitcher) }.currentPromptOrigin(),
+                       .tabSwitcher)
+    }
+
+    func testCurrentPromptOriginIsNilOnADuckAISurfaceWithNoRecordedEntry() {
+        XCTAssertNil(makeReporter { self.context(surface: .duckAI, duckAIEntrySource: nil) }.currentPromptOrigin())
+    }
+
+    func testCurrentPromptOriginIsNilWhenTheCoordinatorIsGone() {
+        XCTAssertNil(makeReporter { nil }.currentPromptOrigin())
+    }
+
     // MARK: - Prompt submission (daily, non-trivial params)
 
     func testReportPromptSubmittedFiresDailyWithResolvedSurface() {

@@ -21,7 +21,6 @@ import XCTest
 class FireWindowByDefaultTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
 
         // Assume feature flag is on by default
         app = XCUIApplication.setUp()
@@ -104,9 +103,7 @@ class FireWindowByDefaultTests: UITestCase {
         app.typeKey("n", modifierFlags: [.command, .shift])
         app.openSite(pageTitle: "Page #1")
 
-        // Quit the application
-        app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        app.restart()
 
         _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
 
@@ -154,6 +151,6 @@ class FireWindowByDefaultTests: UITestCase {
             "App window didn't become available in a reasonable timeframe."
         )
 
-        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.navigation))
+        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
     }
 }

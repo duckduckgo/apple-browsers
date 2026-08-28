@@ -28,7 +28,7 @@ final class VisitMenuItem: NSMenuItem {
                   keyEquivalent: "")
         // validate AppDelegate method used when no windows are open has the same signature
         assert(#selector(MainViewController.openHistoryEntryVisit(_:)) == #selector(AppDelegate.openHistoryEntryVisit(_:)))
-        image = visitViewModel.smallFaviconImage?.resizedToFaviconSize()
+        withImage(visitViewModel.smallFaviconImage?.resizedToFaviconSize(), visibleOnMacOS27: true)
         // Keep the reference to visit in order to use it for burning
         representedObject = visitViewModel.visit
     }

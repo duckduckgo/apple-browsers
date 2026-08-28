@@ -21,26 +21,14 @@
                BlueprintName = "AtbUITests"
                ReferencedContainer = "container:DuckDuckGo-iOS.xcodeproj">
             </BuildableReference>
-            <SkippedTests>
-               <Test
-                  Identifier = "AtbServerTests">
-               </Test>
-               <Test
-                  Identifier = "ContentBlockingRulesTests">
-               </Test>
-               <Test
-                  Identifier = "SubscriptionPromoUITests">
-               </Test>
+            <SelectedTests>
                <Test
                   Identifier = "FloatingUIBottomBarTests">
                </Test>
                <Test
                   Identifier = "FloatingUITopBarTests">
                </Test>
-               <Test
-                  Identifier = "TrackerRadarIntegrationTests">
-               </Test>
-            </SkippedTests>
+            </SelectedTests>
          </TestableReference>
       </Testables>
    </TestAction>

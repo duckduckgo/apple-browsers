@@ -47,13 +47,20 @@ final class SharingMenu: NSMenu {
 
     override func update() {
         let services = .copyLink + .urlSharingServices + .qrCode
+        let visibleOnMacOS27 = location != .mainMenu
 
         guard services != items.compactMap({ $0.representedObject as? NSSharingService }) else { return }
 
         self.items = services.map { service in
-            NSMenuItem(service: service, target: self, action: #selector(sharingItemSelected))
+            NSMenuItem(
+                service: service,
+                target: self,
+                action: #selector(sharingItemSelected),
+                visibleOnMacOS27: visibleOnMacOS27
+            )
         } + [
-            NSMenuItem(title: UserText.moreMenuItem, action: #selector(openSharingPreferences), target: self).withImage(.sharedMoreMenu)
+            NSMenuItem(title: UserText.moreMenuItem, action: #selector(openSharingPreferences), target: self)
+                .withImage(.sharedMoreMenu, visibleOnMacOS27: visibleOnMacOS27)
         ]
     }
 
@@ -173,7 +180,7 @@ private extension NSPasteboard {
 
 private extension NSMenuItem {
 
-    convenience init(service: NSSharingService, target: AnyObject, action: Selector) {
+    convenience init(service: NSSharingService, target: AnyObject, action: Selector, visibleOnMacOS27: Bool) {
         var isMailService = false
         if service.responds(to: NSSelectorFromString("name")),
            let name = service.value(forKey: "name") as? NSSharingService.Name,
@@ -185,7 +192,7 @@ private extension NSMenuItem {
         if isMailService {
             self.keyEquivalentModifierMask = [.command, .shift]
         }
-        self.image = service.image
+        withImage(service.image, visibleOnMacOS27: visibleOnMacOS27)
         self.representedObject = service
         self.target = target
         self.action = action

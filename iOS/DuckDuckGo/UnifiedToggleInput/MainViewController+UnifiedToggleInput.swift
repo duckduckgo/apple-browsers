@@ -90,7 +90,7 @@ extension MainViewController {
         )
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
-        coordinator.duckAIEntrySourceProvider = { [weak self] in self?.lastDuckAIEntrySource }
+        coordinator.duckAIEntrySourceProvider = { [weak self] in self?.tabManager.currentTabsModel.currentTab?.duckAIEntrySource }
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
         coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
@@ -1210,22 +1210,26 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
-        fireDirectDuckAINavigationPixelIfNeeded(for: query)
+        let duckAIEntrySource = fireDirectDuckAINavigationPixelIfNeeded(for: query)
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
         recordNewTabPageSessionAction { $0.hitSubmit() }
-        loadQuery(query)
+        loadQuery(query) { tab in
+            if let duckAIEntrySource {
+                tab.duckAIEntrySource = duckAIEntrySource
+            }
+        }
     }
 
     /// The only place a typed duck.ai address can be told apart from an in-page or deep link.
     /// Mirrors `loadQuery`'s URL resolution so detection matches what gets navigated.
-    private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) {
+    private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) -> AIChatEntryPointSource? {
         guard let url = URL.makeSearchURL(query: query,
                                           useUnifiedLogic: isUnifiedURLPredictionEnabled,
                                           queryContext: currentTab?.url),
-              url.isDuckAIURL else { return }
+              url.isDuckAIURL else { return nil }
 
         DailyPixel.fireDailyAndCount(pixel: .aiChatDuckAIDirectNavigation, withAdditionalParameters: [
             "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
@@ -1247,6 +1251,7 @@ extension MainViewController {
         fireAIChatEntryPointPixel(source: .directURL,
                                   opensNewTab: decision == .openInNewTab,
                                   hasPrompt: false)
+        return .directURL
     }
 
 }
@@ -1293,6 +1298,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         // No per-tab persistence: existing tabs read from URL; new tabs read from setting + app-wide last-used.
         // The app-wide last-used is written through `UnifiedInputStateStore.commitToggleMode` on submit, which fires this delegate.
+    }
+
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
+        postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: origin)
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {

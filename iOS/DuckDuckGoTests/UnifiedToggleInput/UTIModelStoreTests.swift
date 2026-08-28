@@ -484,6 +484,41 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(sut.freeTrialEligibility, .eligible)
     }
 
+    // MARK: - imageGenerationFallbackModel
+
+    func test_imageGenerationFallbackModel_isNilWithoutModels() {
+        XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
+    func test_imageGenerationFallbackModel_resolvesTheHardcodedModel() {
+        sut.models = [
+            makeModel(id: "mistral", access: true),
+            makeModel(id: "gpt-5.6-luna", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "gpt-5.6-luna")
+    }
+
+    func test_imageGenerationFallbackModel_isNilWhenTheModelIsAbsent() {
+        sut.models = [makeModel(id: "some-other-image-model", access: true, supportedTools: [.imageGeneration])]
+
+        XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
+    /// `persistedModelId` drops an inaccessible id and falls back to the first accessible model, so
+    /// switching to one would leave the user on a third model while the footer card names this one.
+    func test_imageGenerationFallbackModel_isNilWithoutEntityAccess() {
+        sut.models = [makeModel(id: "gpt-5.6-luna", access: false, supportedTools: [.imageGeneration])]
+
+        XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
+    func test_imageGenerationFallbackModel_isNilWhenTheModelCannotGenerateImages() {
+        sut.models = [makeModel(id: "gpt-5.6-luna", access: true, supportedTools: [.webSearch])]
+
+        XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(isUpdatedModelPickerEnabled: Bool) -> UTIModelStore {

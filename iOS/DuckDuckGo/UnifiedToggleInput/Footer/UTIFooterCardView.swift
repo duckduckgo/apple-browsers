@@ -152,7 +152,7 @@ private extension UTIFooterCardView {
         }
         titleLabel.font = .daxFootnoteSemibold()
         subtitleLabel.font = .daxCaption1()
-        subtitleLabel.numberOfLines = 2
+        subtitleLabel.numberOfLines = 1
 
         let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         textStack.axis = .vertical

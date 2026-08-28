@@ -8131,7 +8131,8 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: nil)
+        let origin = currentTab?.aiChatContentHandler === handler ? currentTab?.tabModel.duckAIEntrySource : nil
+        postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: origin)
         reportDuckAIFrontendSubmissionAcknowledged()
     }
 

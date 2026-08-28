@@ -95,7 +95,7 @@
                                 },
                                 "source": {
                                     "type": "string",
-                                    "description": "The Duck.ai entry point that triggered the session's ai_prompt_submitted terminal, as an m_aichat_entry_point source value. Present only when status_reason is ai_prompt_submitted; absent otherwise.",
+                                    "description": "The Duck.ai entry point that triggered the session's ai_prompt_submitted terminal, as an m_aichat_entry_point source value, or unknown when the entry point could not be attributed. Present only when status_reason is ai_prompt_submitted; absent otherwise.",
                                     "enum": [
                                         "address_bar_prompt",
                                         "address_bar_icon",
@@ -121,7 +121,8 @@
                                         "widget_lock_screen",
                                         "widget_control_center",
                                         "siri",
-                                        "deep_link_other"
+                                        "deep_link_other",
+                                        "unknown"
                                     ]
                                 },
                                 "session_duration_ms_bucketed": {

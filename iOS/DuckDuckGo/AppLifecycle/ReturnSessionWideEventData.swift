@@ -55,6 +55,11 @@ final class ReturnSessionWideEventData: WideEventData {
         case chatSelected = "chat_selected"
     }
 
+    /// Fallback for `source` when an `ai_prompt_submitted` terminal has no attributed entry point.
+    enum PromptSourceFallback: String {
+        case unknown
+    }
+
     var globalData: WideEventGlobalData
     var contextData: WideEventContextData
     var appData: WideEventAppData
@@ -133,7 +138,7 @@ extension ReturnSessionWideEventData {
 
     func jsonParameters() -> [String: Encodable] {
         let bucket = Self.durationBucket
-        let source = statusReason == .aiPromptSubmitted ? promptOrigin : nil
+        let source = statusReason == .aiPromptSubmitted ? (promptOrigin ?? PromptSourceFallback.unknown.rawValue) : nil
         return Dictionary(compacting: [
             (WideEventParameter.ReturnSessionFeature.landedOn, landedOn.rawValue),
             (WideEventParameter.ReturnSessionFeature.afterIdle, afterIdle),

@@ -116,6 +116,15 @@ struct ReturnSessionWideEventDataTests {
     }
 
     @available(iOS 16, *)
+    @Test("Prompt source reports unknown for unattributed AI submissions", .timeLimit(.minutes(1)))
+    func promptSourceReportsUnknownWhenUnattributed() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)
+        data.statusReason = .aiPromptSubmitted
+
+        #expect(data.jsonParameters()["feature.data.ext.source"] as? String == "unknown")
+    }
+
+    @available(iOS 16, *)
     @Test("Prompt source is absent when nil", .timeLimit(.minutes(1)))
     func promptSourceAbsentWhenNil() {
         let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true)

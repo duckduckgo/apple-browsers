@@ -130,6 +130,7 @@ private extension UTIFooterCardView {
         layer.cornerCurve = .continuous
         layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         clipsToBounds = true
+        accessibilityIdentifier = "AIChat.Footer.Card"
 
         contentView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(contentView)
@@ -140,6 +141,8 @@ private extension UTIFooterCardView {
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
             contentView.addSubview($0)
         }
+        usageRing.accessibilityIdentifier = "AIChat.Footer.Icon.UsageRing"
+        alertIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Alert"
         alertIcon.contentMode = .scaleAspectFit
         alertIcon.isHidden = true
 
@@ -150,7 +153,9 @@ private extension UTIFooterCardView {
             label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         }
         titleLabel.font = .daxFootnoteSemibold()
+        titleLabel.accessibilityIdentifier = "AIChat.Footer.Label.Title"
         subtitleLabel.font = .daxCaption1()
+        subtitleLabel.accessibilityIdentifier = "AIChat.Footer.Label.Subtitle"
 
         let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         textStack.axis = .vertical
@@ -166,6 +171,7 @@ private extension UTIFooterCardView {
         dismissButton.translatesAutoresizingMaskIntoConstraints = false
         dismissButton.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
         dismissButton.accessibilityLabel = UserText.utiDuckAIWarningsDismissAccessibilityLabel
+        dismissButton.accessibilityIdentifier = "AIChat.Footer.Button.Dismiss"
         dismissButton.setContentHuggingPriority(.required, for: .horizontal)
         dismissButton.addTarget(self, action: #selector(dismissTapped), for: .primaryActionTriggered)
         contentView.addSubview(dismissButton)
@@ -288,6 +294,7 @@ final class UTIFooterActionButton: UIView {
         layer.borderWidth = Constants.strokeWidth
 
         primaryButton.translatesAutoresizingMaskIntoConstraints = false
+        primaryButton.accessibilityIdentifier = "AIChat.Footer.Button.Primary"
         primaryButton.configuration = Self.makePrimaryConfiguration()
         // The label gives before the pill does, so a zero-width collapse can't break the layout.
         primaryButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)

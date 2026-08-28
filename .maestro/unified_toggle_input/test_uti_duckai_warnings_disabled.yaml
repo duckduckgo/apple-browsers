@@ -1,0 +1,48 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - unified_toggle_input
+name: test_uti_duckai_warnings_disabled
+
+---
+
+# Control for the two warning flows: the same seeded snapshot must produce no card while
+# `utiDuckAIWarnings` is off. Everything else is left on, so a failure here points at the flag
+# gate rather than at the storage bridge or the seeding.
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        isInternalUser: "true"
+        # Keep quoted — LaunchOptionsHandler silently ignores unquoted YAML booleans.
+        ff.utiDuckAIWarnings: "false"
+        ff.aiChatNativeStorage: "true"
+        ff.browsingMenuSheetEnabledByDefault: "true"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+- runFlow:
+    file: ../shared/seed_duckai_usage_warning.yaml
+    env:
+        PRESET: "Weekly limit reached"
+
+- tapOn:
+    id: "searchEntry"
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# The Duck.ai input is up — this is the state that would carry the card.
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+- assertNotVisible:
+    id: "AIChat.Footer.Card"

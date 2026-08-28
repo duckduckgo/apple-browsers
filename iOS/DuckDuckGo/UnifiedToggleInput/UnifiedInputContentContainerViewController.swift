@@ -312,6 +312,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     var isShowingLogoContent: Bool { unifiedSuggestionsHost?.isShowingLogo ?? false }
     var isShowingFavoritesContent: Bool { unifiedSuggestionsHost?.isShowingFavorites ?? false }
 
+#if DEBUG
+    var bottomSearchLayoutDebugSummary: String {
+        "active=\(isContentActive) requestedInset=(top: \(requestedContentInset.top), bottom: \(requestedContentInset.bottom)) "
+            + "host={\(unifiedSuggestionsHost?.bottomSearchLayoutDebugSummary ?? "none")}"
+    }
+#endif
+
     /// Fades the focused content (logo / suggestion list) out as the UTI collapses, so the NTP
     /// content takes over cleanly.
     func beginDismissFade() {

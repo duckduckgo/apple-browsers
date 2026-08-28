@@ -201,6 +201,12 @@ private extension MainViewController {
                                            pendingHeight: CGFloat?,
                                            isSeamlessHandoff: Bool,
                                            contentContainer: UIView) {
+        logBottomSearchLayout(event: "Focus", stage: "animation-before-start", coordinator: coordinator)
+#if DEBUG
+        scheduleBottomSearchLayoutLogs(event: "Focus",
+                                       stages: bottomSearchAnimationLayoutStages(duration: duration),
+                                       coordinator: coordinator)
+#endif
         UIView.animate(
             withDuration: duration,
             delay: 0,
@@ -225,11 +231,26 @@ private extension MainViewController {
                     contentContainer.transform = .identity
                 }
                 coordinator.viewController.setTextHorizontalShift(0)
+                self.logBottomSearchLayout(event: "Focus", stage: "animation-model-applied", coordinator: coordinator)
             },
-            completion: { [weak self] _ in
-                self?.refreshFloatingToolbarBackdrop()
+            completion: { [weak self, weak coordinator] _ in
+                self?.finishBottomSearchFocusAnimation(coordinator: coordinator)
             }
         )
+    }
+
+    func finishBottomSearchFocusAnimation(coordinator: UnifiedToggleInputCoordinator?) {
+        if let coordinator {
+            logBottomSearchLayout(event: "Focus", stage: "animation-completion", coordinator: coordinator)
+#if DEBUG
+            scheduleBottomSearchLayoutLogs(
+                event: "Focus",
+                stages: bottomSearchDeferredLayoutStages(prefix: "post-focus"),
+                coordinator: coordinator
+            )
+#endif
+        }
+        refreshFloatingToolbarBackdrop()
     }
 
     /// The NTP replaces the web page behind the toolbar while the input is focused, so the glass has to
@@ -243,7 +264,9 @@ private extension MainViewController {
         warmSearchTokenIfEligible()
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
+        logBottomSearchLayout(event: "Focus", stage: "before-cache-refresh", coordinator: coordinator)
         coordinator.contentViewController.refreshSuggestionsCaches()
+        logBottomSearchLayout(event: "Focus", stage: "after-cache-refresh", coordinator: coordinator)
 
         // Measure the resting omnibar pill + placeholder text before ownership transfer detaches the
         // omnibar from the toolbar (bottom floating), so the collapsed UTI pose and its text can
@@ -260,6 +283,7 @@ private extension MainViewController {
         } else {
             viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         }
+        logBottomSearchLayout(event: "Focus", stage: "after-ownership-transfer", coordinator: coordinator)
 
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
@@ -279,8 +303,10 @@ private extension MainViewController {
             : CGAffineTransform(scaleX: 0.95, y: 0.95)
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
+        logBottomSearchLayout(event: "Focus", stage: "after-show-container", coordinator: coordinator)
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
+        logBottomSearchLayout(event: "Focus", stage: "after-content-visibility", coordinator: coordinator)
         let duration = Constants.omnibarTransitionDuration(isBottom: isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
             coordinator.viewController.prepareForOmnibarMaterialTransition(duration: duration)
@@ -296,6 +322,7 @@ private extension MainViewController {
             // Hide the real NTP favorites while focusing so the UTI's embedded favorites don't
             // cross-dissolve against them (mirrors the defocus hide-reveal). Revealed again on dismiss.
             newTabPageViewController?.setFavoritesHidden(true)
+            logBottomSearchLayout(event: "Focus", stage: "after-hide-resting-favorites", coordinator: coordinator)
         }
         if let omnibarPlaceholderWindowX {
             coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
@@ -308,6 +335,7 @@ private extension MainViewController {
             newTabPageViewController?.setLogoHidden(true)
         }
 
+        logBottomSearchLayout(event: "Focus", stage: "before-animation", coordinator: coordinator)
         animateOmnibarEditingShow(coordinator: coordinator,
                                   duration: duration,
                                   pendingHeight: pendingHeight,

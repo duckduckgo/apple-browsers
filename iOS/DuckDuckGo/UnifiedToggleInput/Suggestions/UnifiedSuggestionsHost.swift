@@ -160,6 +160,15 @@ final class UnifiedSuggestionsHost {
     }
     var isShowingFavorites: Bool { viewModel.isShowingFavorites }
 
+#if DEBUG
+    var bottomSearchLayoutDebugSummary: String {
+        "content=\(String(describing: viewModel.content)) messages=\(config.messagesModel.homeMessageViewModels.count) "
+            + "favorites=\(config.favoritesViewModel.allFavorites.count) escapeHatch=\(escapeHatch != nil) "
+            + "contentInsets=\(contentInsets) scrollTop=\(viewModel.scrollContentInsetTop) "
+            + "hostingTopForDismiss=\(usesHostingTopInsetForDismissal) dismiss=\(String(describing: viewModel.dismissBehavior))"
+    }
+#endif
+
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
     func setIsFireTab(_ value: Bool) {
         guard viewModel.isFireTab != value else { return }

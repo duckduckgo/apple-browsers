@@ -36,6 +36,11 @@ struct FocusedNewTabPageMessagesView: View {
             }
         }
         .frame(maxWidth: .infinity)
+        .background {
+#if DEBUG
+            BottomSearchLayoutProbe(identifier: "FocusedMessagesPositionProbe")
+#endif
+        }
     }
 
     private enum Metrics {

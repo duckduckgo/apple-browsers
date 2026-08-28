@@ -40,6 +40,11 @@ struct EscapeHatchView: View {
         .animation(.easeInOut(duration: Metrics.collapseDuration), value: model.isReturnToTabCardVisible)
         .frame(height: TabSwitcherPill.compactSize)
         .id(model.targetTab.uid)
+        .background {
+#if DEBUG
+            BottomSearchLayoutProbe(identifier: "EscapeHatchPositionProbe")
+#endif
+        }
     }
 
     private enum Metrics {

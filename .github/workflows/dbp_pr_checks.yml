@@ -255,7 +255,7 @@ jobs:
         id: select-simulator
         uses: ./.github/actions/select-ios-simulator
         with:
-          preferred-versions: "26.4"
+          preferred-versions: "26.6"
 
       - name: Resolve package dependencies
         run: |

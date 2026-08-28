@@ -104,7 +104,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.4"
+        preferred-versions: "26.6"
 
     - name: Boot iOS Simulator for log collection
       id: boot-simulator

@@ -21,7 +21,7 @@ on:
         required: true
         type: string
       xcode-version:
-        description: "Xcode version to select (e.g. '26.4')"
+        description: "Xcode version to select (e.g. '26.6')"
         required: true
         type: string
       test:

@@ -65,7 +65,7 @@ struct PromoServiceFactory {
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
             nextSteps,
             subscriptionPromo(delegate: dependencies.subscriptionPromoDelegate),
-            cookiePopupsBlocked(dependencies: dependencies),
+            cookiePopupsBlocked(delegate: dependencies.cookiePopupsBlockedPromoDelegate),
             defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockInactiveModal(service: dependencies.defaultBrowserAndDockPromptService),

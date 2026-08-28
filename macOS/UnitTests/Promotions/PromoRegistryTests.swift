@@ -44,6 +44,7 @@ final class PromoRegistryTests: XCTestCase {
             isOnboardingCompletedProvider: { true },
             dockCustomization: DockCustomizerMock()
         )
+        let windowControllersManager = WindowControllersManagerMock()
         let dependencies = PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
@@ -58,14 +59,20 @@ final class PromoRegistryTests: XCTestCase {
             windowControllersManager: WindowControllersManagerMock(),
             syncService: nil,
             syncBookmarksAdapter: nil,
-            appearancePreferences: AppearancePreferences(
-                persistor: AppearancePreferencesPersistorMock(),
-                privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
                 featureFlagger: MockFeatureFlagger(),
-                aiChatMenuConfig: MockAIChatConfig()
-            ),
-            onboardingStateUpdater: MockOnboardingStateUpdater(),
-            autoconsentStats: MockAutoconsentStats())
+                keyValueStore: InMemoryThrowingKeyValueStore(),
+                windowControllersManager: windowControllersManager,
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                appearancePreferences: AppearancePreferences(
+                    persistor: AppearancePreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    featureFlagger: MockFeatureFlagger(),
+                    aiChatMenuConfig: MockAIChatConfig()
+                ),
+                onboardingStateUpdater: MockOnboardingStateUpdater(),
+                autoconsentStats: MockAutoconsentStats()
+            ))
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

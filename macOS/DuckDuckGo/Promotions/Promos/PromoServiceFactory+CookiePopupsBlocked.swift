@@ -22,23 +22,16 @@ extension PromoServiceFactory {
 
     static let cookiePopupsBlockedPromoID = "cookie-popups-blocked"
 
-    /// Builds the Cookie Pop-ups Blocked Promo (migrated from `AutoconsentStatsPopoverCoordinator`'s standalone popover).
+    /// Builds the Cookie Pop-ups Blocked Promo.
     @MainActor
-    static func cookiePopupsBlocked(dependencies: PromoDependencies) -> Promo {
+    static func cookiePopupsBlocked(delegate: CookiePopupsBlockedPromoDelegate) -> Promo {
         InternalPromo(
             id: cookiePopupsBlockedPromoID,
-            triggers: [.windowBecameKey],
+            triggers: [.appBecameActive],
             initiated: .app,
             promoType: PromoType(.featureTip, customTimeoutResult: .ignored()),
             context: .global,
-            delegate: AutoconsentStatsPopoverPromoDelegate(
-                keyValueStore: dependencies.keyValueStore,
-                windowControllersManager: dependencies.windowControllersManager,
-                cookiePopupProtectionPreferences: dependencies.cookiePopupProtectionPreferences,
-                appearancePreferences: dependencies.appearancePreferences,
-                onboardingStateUpdater: dependencies.onboardingStateUpdater,
-                autoconsentStats: dependencies.autoconsentStats
-            )
+            delegate: delegate
         )
     }
 }

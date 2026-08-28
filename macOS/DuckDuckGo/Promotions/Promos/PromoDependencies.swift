@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import AutoconsentStats
 import BrowserServicesKit
 import DDGSync
 import Foundation
@@ -40,7 +39,5 @@ struct PromoDependencies {
     let windowControllersManager: WindowControllersManagerProtocol
     let syncService: DDGSyncing?
     let syncBookmarksAdapter: SyncBookmarksAdapter?
-    let appearancePreferences: AppearancePreferences
-    let onboardingStateUpdater: ContextualOnboardingStateUpdater
-    let autoconsentStats: AutoconsentStatsCollecting
+    let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
 }

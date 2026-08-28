@@ -145,6 +145,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     var privacyDashboardWindow: NSWindow?
 
+    @MainActor
+    private(set) lazy var cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate = {
+        CookiePopupsBlockedPromoDelegate(
+            featureFlagger: featureFlagger,
+            keyValueStore: keyValueStore,
+            windowControllersManager: windowControllersManager,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            appearancePreferences: appearancePreferences,
+            onboardingStateUpdater: onboardingContextualDialogsManager,
+            autoconsentStats: autoconsentStats
+        )
+    }()
+
     @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
         let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
             tabAndWindowCountProvider: windowControllersManager,
@@ -200,16 +213,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let attributedMetricManager: AttributedMetricManager
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry?
-
-    @MainActor
-    private(set) lazy var autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator = AutoconsentStatsPopoverCoordinator(
-        autoconsentStats: autoconsentStats,
-        keyValueStore: keyValueStore,
-        windowControllersManager: windowControllersManager,
-        cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-        appearancePreferences: appearancePreferences,
-        onboardingStateUpdater: onboardingContextualDialogsManager
-    )
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -1470,9 +1473,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 windowControllersManager: windowControllersManager,
                 syncService: syncService,
                 syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
-                appearancePreferences: appearancePreferences,
-                onboardingStateUpdater: onboardingContextualDialogsManager,
-                autoconsentStats: autoconsentStats
+                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1639,14 +1640,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         defaultBrowserAndDockPromptService.applicationDidBecomeActive()
         eventHubIntegration.applicationDidBecomeActive()
-
-        // Migrated to the Promo Queue (see PromoServiceFactory+CookiePopupsBlocked.swift); keep this path
-        // for users outside the promoQueue rollout, since PromoService only exists when the flag is on.
-        if !featureFlagger.isFeatureOn(.promoQueue) {
-            Task { @MainActor in
-                await autoconsentStatsPopoverCoordinator.checkAndShowDialogIfNeeded()
-            }
-        }
     }
 
     private func fireDailyActiveUserPixels() {

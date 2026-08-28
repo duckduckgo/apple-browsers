@@ -1,5 +1,5 @@
 //
-//  AutoconsentStatsPopoverPromoDelegateTests.swift
+//  CookiePopupsBlockedPromoDelegateTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -25,8 +25,58 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
-final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
+final class MockAutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting {
+    var isPopoverBeingPresentedValue = false
+    var showPopoverCalled = false
+    var showPopoverViewController: PopoverMessageViewController?
+    var dismissPopoverCalled = false
 
+    func isPopoverBeingPresented() -> Bool {
+        return isPopoverBeingPresentedValue
+    }
+
+    var showPopoverReturnValue = true
+
+    @discardableResult
+    func showPopover(viewController: PopoverMessageViewController) -> Bool {
+        showPopoverCalled = true
+        showPopoverViewController = viewController
+        if showPopoverReturnValue {
+            isPopoverBeingPresentedValue = true
+        }
+        return showPopoverReturnValue
+    }
+
+    func dismissPopover() {
+        dismissPopoverCalled = true
+        isPopoverBeingPresentedValue = false
+    }
+}
+
+@MainActor
+final class MockOnboardingStateUpdater: ContextualOnboardingStateUpdater {
+    private var _state: ContextualOnboardingState = .onboardingCompleted
+    var state: ContextualOnboardingState {
+        get {
+            return _state
+        }
+        set {
+            _state = newValue
+            isContextualOnboardingCompleted = newValue == .onboardingCompleted
+        }
+    }
+    @Published var isContextualOnboardingCompleted: Bool = true
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
+    func gotItPressed() {}
+
+    func fireButtonUsed() {}
+    func turnOffFeature() {}
+}
+
+@MainActor
+final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
+
+    private var featureFlagger: MockFeatureFlagger!
     private var keyValueStore: InMemoryThrowingKeyValueStore!
     private var windowControllersManager: WindowControllersManagerMock!
     private var cookiePopupProtectionPreferences: CookiePopupProtectionPreferences!
@@ -35,11 +85,13 @@ final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
     private var autoconsentStats: MockAutoconsentStats!
     private var presenter: MockAutoconsentStatsPopoverPresenter!
     private var stateChangedSubject: PassthroughSubject<Void, Never>!
-    private var sut: AutoconsentStatsPopoverPromoDelegate!
+    private var sut: CookiePopupsBlockedPromoDelegate!
 
     override func setUp() {
         super.setUp()
 
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.promoQueueCookiePopupsBlockedPromo]
         keyValueStore = InMemoryThrowingKeyValueStore()
         windowControllersManager = WindowControllersManagerMock()
         setSelectedTabContent(.url(URL.duckDuckGo, source: .ui))
@@ -82,11 +134,13 @@ final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
         stateChangedSubject = nil
         windowControllersManager = nil
         keyValueStore = nil
+        featureFlagger = nil
         super.tearDown()
     }
 
-    private func makeSUT() -> AutoconsentStatsPopoverPromoDelegate {
-        AutoconsentStatsPopoverPromoDelegate(
+    private func makeSUT() -> CookiePopupsBlockedPromoDelegate {
+        CookiePopupsBlockedPromoDelegate(
+            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             windowControllersManager: windowControllersManager,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
@@ -107,10 +161,6 @@ final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
         windowControllersManager.customAllTabCollectionViewModels = [tabCollectionViewModel]
     }
 
-    /// `isEligible` reads the blocked-pop-up count directly from `keyValueStore` (bypassing the
-    /// `AutoconsentStats` actor for a synchronous read) - so tests must seed the store directly,
-    /// not the `MockAutoconsentStats.totalCookiePopUpsBlocked` property, which only backs the async
-    /// `fetchTotalCookiePopUpsBlocked()` path used by `show()` for the popover title.
     private func setBlockedCount(_ count: Int64) {
         autoconsentStats.totalCookiePopUpsBlocked = count
         try? keyValueStore.set(count, forKey: AutoconsentStats.Constants.totalCookiePopUpsBlockedKey)
@@ -120,6 +170,11 @@ final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
 
     func testWhenAllGatesPassThenEligible() {
         XCTAssertTrue(sut.isEligible)
+    }
+
+    func testWhenFeatureFlagDisabledThenNotEligible() {
+        featureFlagger.enabledFeatureFlags = []
+        XCTAssertFalse(sut.isEligible)
     }
 
     func testWhenAutoconsentDisabledThenNotEligible() {
@@ -150,7 +205,7 @@ final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
 
     // MARK: - isEligiblePublisher
 
-    func testWhenTabStateChangesToNTPThenEligibilityPublisherEmitsFalse() {
+    func testWhenTabStateChangesToNTPThenEligibilityPublisherDoesNotReemit() {
         var received: [Bool] = []
         let cancellable = sut.isEligiblePublisher.sink { received.append($0) }
 
@@ -158,7 +213,7 @@ final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
         stateChangedSubject.send(())
 
         cancellable.cancel()
-        XCTAssertEqual(received, [true, false])
+        XCTAssertEqual(received, [true])
     }
 
     func testWhenRefreshEligibilityCalledThenPublisherReemits() {
@@ -174,11 +229,8 @@ final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
 
     // MARK: - show() — migration bridge
 
-    /// Users who already saw the pre-Promo-Queue popover must not see it again: the legacy flag is a
-    /// one-time migration bridge, checked in `show()` (not `isEligible`) so the queue's own history
-    /// remains the sole ongoing source of truth going forward.
     func testWhenLegacyFlagAlreadySetThenShowRetiresThePromo() async {
-        try? keyValueStore.set(true, forKey: AutoconsentStatsPopoverCoordinator.StorageKey.blockedCookiesPopoverSeen)
+        try? keyValueStore.set(true, forKey: CookiePopupsBlockedPromoDelegate.StorageKey.blockedCookiesPopoverSeen)
 
         let result = await sut.show(history: PromoHistoryRecord(id: "cookie-popups-blocked"), force: false)
 
@@ -186,11 +238,8 @@ final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
         XCTAssertFalse(presenter.showPopoverCalled)
     }
 
-    /// `presenter.showPopoverReturnValue = false` here is just to make `show()` resolve immediately
-    /// (via the presentation-failure path) instead of hanging on an unresolved continuation — the
-    /// thing under test is that `force` gets past the legacy-flag retirement check at all.
     func testWhenForcedThenLegacyFlagIsIgnored() async {
-        try? keyValueStore.set(true, forKey: AutoconsentStatsPopoverCoordinator.StorageKey.blockedCookiesPopoverSeen)
+        try? keyValueStore.set(true, forKey: CookiePopupsBlockedPromoDelegate.StorageKey.blockedCookiesPopoverSeen)
         presenter.showPopoverReturnValue = false
 
         let result = await sut.show(history: PromoHistoryRecord(id: "cookie-popups-blocked"), force: true)
@@ -201,8 +250,6 @@ final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
 
     // MARK: - show() — presentation failure
 
-    /// No anchor to present against: the promo must end its session rather than leave the queue
-    /// waiting on an unresolved continuation.
     func testWhenPresenterCannotShowThenShowReturnsNoChange() async {
         presenter.showPopoverReturnValue = false
 
@@ -211,17 +258,32 @@ final class AutoconsentStatsPopoverPromoDelegateTests: XCTestCase {
         XCTAssertEqual(result, .noChange)
     }
 
+    // MARK: - dismissDueToNewTabBeingShown()
+
+    func testWhenNewTabButtonClickedWhileShowingThenResolvesIgnored() async {
+        let task = Task { await sut.show(history: PromoHistoryRecord(id: "cookie-popups-blocked"), force: false) }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        sut.dismissDueToNewTabBeingShown()
+
+        let result = await task.value
+        XCTAssertEqual(result, .ignored())
+        XCTAssertTrue(presenter.dismissPopoverCalled)
+    }
+
+    func testWhenNewTabButtonClickedWhileNotShowingThenNoOp() {
+        sut.dismissDueToNewTabBeingShown()
+
+        XCTAssertFalse(presenter.dismissPopoverCalled)
+    }
+
     // MARK: - hide()
 
-    /// `PromoService` calls `hide()` unconditionally after recording any result, even post-teardown — it must not crash.
     func testWhenHiddenTwiceThenNoCrash() {
         sut.hide()
         sut.hide()
     }
 
-    /// If `hide()` is called while `show()`'s continuation is still pending (the promo queue's own
-    /// timeout fired, or eligibility was retracted), the continuation must still resolve so the
-    /// awaiting task doesn't leak.
     func testWhenHiddenWhileShowPendingThenShowResolvesNoChange() async {
         let task = Task { await sut.show(history: PromoHistoryRecord(id: "cookie-popups-blocked"), force: false) }
         try? await Task.sleep(nanoseconds: 50_000_000)

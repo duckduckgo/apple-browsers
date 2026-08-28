@@ -26,6 +26,7 @@ import Foundation
 /// that can be subscribed to by the PromoService.
 enum PromoTrigger {
     case appLaunched
+    case appBecameActive
     case windowBecameKey
     case newTabPageAppeared
     case autoplayDiscoverability
@@ -44,7 +45,9 @@ enum PromoTrigger {
             NotificationCenter.default.publisher(for: .autoplayPolicyDisplayed)
                 .map { _ in PromoTrigger.autoplayDiscoverability },
             NotificationCenter.default.publisher(for: .missingBookmarkFaviconEncountered)
-                .map { _ in PromoTrigger.missingBookmarkFaviconEncountered }
+                .map { _ in PromoTrigger.missingBookmarkFaviconEncountered },
+            NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+                .map { _ in PromoTrigger.appBecameActive }
         ).eraseToAnyPublisher()
 
         if PromoServiceFactory.includeTestPromos{

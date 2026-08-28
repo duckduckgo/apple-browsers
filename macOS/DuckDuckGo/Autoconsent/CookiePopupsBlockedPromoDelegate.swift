@@ -1,5 +1,5 @@
 //
-//  AutoconsentStatsPopoverPromoDelegate.swift
+//  CookiePopupsBlockedPromoDelegate.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -25,15 +25,20 @@ import PixelKit
 import PrivacyConfig
 
 /// Presents the "N cookie pop-ups blocked" popover through the promo queue, once the user has had
-/// enough pop-ups blocked (`AutoconsentStatsPopoverCoordinator.Constants.threshold`) and enough time
-/// since install (`.minimumDaysSinceInstallation`).
-///
-/// Shown at most once ever, regardless of outcome. A user who already saw the pre-Promo-Queue popover
-/// (recorded by the legacy `AutoconsentStatsPopoverCoordinator.StorageKey.blockedCookiesPopoverSeen` flag)
-/// is retired without presenting anything; the same flag is still written by every exit path here so the
-/// legacy coordinator won't re-show it if the promo queue feature flag is ever rolled back.
-final class AutoconsentStatsPopoverPromoDelegate: InternalPromoDelegate {
+/// enough pop-ups blocked (`Constants.threshold`) and enough time since install
+/// (`Constants.minimumDaysSinceInstallation`).
+final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
 
+    enum StorageKey {
+        static let blockedCookiesPopoverSeen = "com.duckduckgo.autoconsent.blocked.cookies.popover.seen"
+    }
+
+    enum Constants {
+        static let threshold = 5
+        static let minimumDaysSinceInstallation = 2
+    }
+
+    private let featureFlagger: FeatureFlagger
     private let keyValueStore: ThrowingKeyValueStoring
     private let windowControllersManager: WindowControllersManagerProtocol
     private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
@@ -43,22 +48,20 @@ final class AutoconsentStatsPopoverPromoDelegate: InternalPromoDelegate {
     private let presenter: AutoconsentStatsPopoverPresenting
 
     private var resultContinuation: CheckedContinuation<PromoResult, Never>?
-
-    /// Mirrors "is the selected tab not the NTP" (legacy `isNotOnNTP`). `isEligible` is read off a
-    /// background queue, but that check needs the `@MainActor`-isolated `windowControllersManager.selectedTab` —
-    /// so it's kept fresh here via a main-actor subscription and read synchronously from any thread.
     private let notOnNTPSubject: CurrentValueSubject<Bool, Never>
     private var stateChangedCancellable: AnyCancellable?
     private let refreshSubject = PassthroughSubject<Void, Never>()
 
     @MainActor
-    init(keyValueStore: ThrowingKeyValueStoring,
+    init(featureFlagger: FeatureFlagger,
+         keyValueStore: ThrowingKeyValueStoring,
          windowControllersManager: WindowControllersManagerProtocol,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          appearancePreferences: AppearancePreferences,
          onboardingStateUpdater: ContextualOnboardingStateUpdater,
          autoconsentStats: AutoconsentStatsCollecting,
          presenter: AutoconsentStatsPopoverPresenting? = nil) {
+        self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
         self.windowControllersManager = windowControllersManager
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
@@ -71,16 +74,20 @@ final class AutoconsentStatsPopoverPromoDelegate: InternalPromoDelegate {
         stateChangedCancellable = windowControllersManager.stateChanged
             .sink { [weak self] in
                 guard let self else { return }
-                self.notOnNTPSubject.send(self.windowControllersManager.selectedTab?.content != .newtab)
+                // Tab close/reselection can fire this synchronously while `selectedTab` still reflects
+                // the tab being closed. Deferring lets the selection settle before we read it.
+                DispatchQueue.main.async {
+                    self.notOnNTPSubject.send(self.windowControllersManager.selectedTab?.content != .newtab)
+                }
             }
     }
 
     var isEligible: Bool { computeEligibility() }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        notOnNTPSubject
-            .combineLatest(refreshSubject.prepend(()))
-            .map { [weak self] _, _ in self?.computeEligibility() ?? false }
+        refreshSubject
+            .prepend(())
+            .map { [weak self] _ in self?.computeEligibility() ?? false }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
@@ -90,15 +97,16 @@ final class AutoconsentStatsPopoverPromoDelegate: InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
+        guard featureFlagger.isFeatureOn(.promoQueueCookiePopupsBlockedPromo) else { return false }
         guard cookiePopupProtectionPreferences.isAutoconsentEnabled,
               appearancePreferences.isProtectionsReportVisible,
               onboardingStateUpdater.state == .onboardingCompleted,
               notOnNTPSubject.value,
-              AppDelegate.firstLaunchDate.daysSinceNow() >= AutoconsentStatsPopoverCoordinator.Constants.minimumDaysSinceInstallation
+              AppDelegate.firstLaunchDate.daysSinceNow() >= Constants.minimumDaysSinceInstallation
         else { return false }
 
         let blockedCount = (try? keyValueStore.object(forKey: AutoconsentStats.Constants.totalCookiePopUpsBlockedKey)) as? Int64 ?? 0
-        return blockedCount >= Int64(AutoconsentStatsPopoverCoordinator.Constants.threshold)
+        return blockedCount >= Int64(Constants.threshold)
     }
 
     @MainActor
@@ -118,13 +126,11 @@ final class AutoconsentStatsPopoverPromoDelegate: InternalPromoDelegate {
             let onClick: () -> Void = { [weak self] in
                 PixelKit.fire(AutoconsentPixel.popoverClicked, frequency: .daily)
                 self?.openNewTabWithSpecialAction()
-                self?.markSeen()
                 self?.resolve(with: .actioned)
             }
 
             let onClose: () -> Void = { [weak self] in
                 PixelKit.fire(AutoconsentPixel.popoverClosed, frequency: .daily)
-                self?.markSeen()
                 self?.resolve(with: .ignored())
             }
 
@@ -150,18 +156,22 @@ final class AutoconsentStatsPopoverPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func hide() {
-        // If a continuation is still pending here, neither onClick nor onClose ran, so this is the
-        // promo queue retracting us - either the timeout fired, or the user navigated to the NTP.
+        // If a continuation is still pending here, this is the promo queue's own timeout (already recorded
+        // permanently via PromoType.timeoutResult) or another eligibility check failing (correctly left
+        // as a transient .noChange).
         if resultContinuation != nil {
-            if windowControllersManager.selectedTab?.content == .newtab {
-                PixelKit.fire(AutoconsentPixel.popoverNewTabOpened, frequency: .daily)
-            } else {
-                PixelKit.fire(AutoconsentPixel.popoverAutoDismissed, frequency: .daily)
-            }
-            markSeen()
+            PixelKit.fire(AutoconsentPixel.popoverAutoDismissed, frequency: .daily)
         }
         presenter.dismissPopover()
         resolve(with: .noChange)
+    }
+
+    @MainActor
+    func dismissDueToNewTabBeingShown() {
+        guard resultContinuation != nil else { return }
+        PixelKit.fire(AutoconsentPixel.popoverNewTabOpened, frequency: .daily)
+        presenter.dismissPopover()
+        resolve(with: .ignored())
     }
 
     @MainActor
@@ -175,15 +185,12 @@ final class AutoconsentStatsPopoverPromoDelegate: InternalPromoDelegate {
         }
     }
 
+    /// One-time migration-bridge read only - never written by this class. PromoService's own history is
+    /// the sole source of truth for every outcome going forward.
     private func hasBeenPresented() -> Bool {
-        (try? keyValueStore.object(forKey: AutoconsentStatsPopoverCoordinator.StorageKey.blockedCookiesPopoverSeen)) as? Bool ?? false
+        (try? keyValueStore.object(forKey: StorageKey.blockedCookiesPopoverSeen)) as? Bool ?? false
     }
 
-    private func markSeen() {
-        try? keyValueStore.set(true, forKey: AutoconsentStatsPopoverCoordinator.StorageKey.blockedCookiesPopoverSeen)
-    }
-
-    /// Single funnel for every resolution path. Nil the continuation *before* resuming.
     private func resolve(with result: PromoResult) {
         guard let continuation = resultContinuation else { return }
         resultContinuation = nil

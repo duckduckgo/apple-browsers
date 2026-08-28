@@ -140,6 +140,13 @@ final class BrowserToolbarView: UIView {
         return addressBarPosition.isBottom ? floatingEmbeddedHorizontalInset : floatingStandaloneHorizontalInset
     }
 
+    /// Extra inset inside the corner-adapted guide so combined bottom chrome sits
+    /// `floatingEmbeddedConcentricInset` from the physical screen edges. Zero when the guide is
+    /// already larger (landscape Dynamic Island) so the glass never leaves the toolbar.
+    static func embeddedRestStateInnerInset(guideInset: CGFloat) -> CGFloat {
+        max(0, floatingEmbeddedConcentricInset - max(0, guideInset))
+    }
+
     static func floatingBottomMargin(for addressBarPosition: AddressBarPosition) -> CGFloat {
         if #available(iOS 26.0, *), addressBarPosition.isBottom {
             return floatingEmbeddedConcentricInset
@@ -298,7 +305,8 @@ final class BrowserToolbarView: UIView {
     }
 
     /// Horizontal compensation for the combined bottom chrome. Its host is pinned to the
-    /// corner-adapted guide, so this keeps the glass at the same physical inset on every edge.
+    /// corner-adapted guide, so this keeps the glass at the same physical inset on every edge
+    /// unless the guide already exceeds that inset.
     @available(iOS 26.0, *)
     private var embeddedRestStateOuterInsets: UIEdgeInsets {
         guard let host = superview, host.bounds.width > 0 else {
@@ -310,7 +318,7 @@ final class BrowserToolbarView: UIView {
         }
         let guide = host.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
         let guideInset = max(0, guide.layoutFrame.minX)
-        let inner = Self.floatingEmbeddedConcentricInset - guideInset
+        let inner = Self.embeddedRestStateInnerInset(guideInset: guideInset)
         return UIEdgeInsets(top: 0, left: inner, bottom: 0, right: inner)
     }
 
@@ -828,8 +836,12 @@ final class BrowserToolbarView: UIView {
         let bottom: CGFloat
         if #available(iOS 26.0, *) {
             if usesCombinedBottomChromeGeometry {
-                left = Self.floatingEmbeddedConcentricInset
-                right = Self.floatingEmbeddedConcentricInset
+                let horizontalGuide = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+                let leftGuideInset = max(0, horizontalGuide.layoutFrame.minX)
+                let rightGuideInset = max(0, bounds.maxX - horizontalGuide.layoutFrame.maxX)
+                let inner = Self.embeddedRestStateInnerInset(guideInset: leftGuideInset)
+                left = leftGuideInset + inner
+                right = rightGuideInset + inner
                 bottom = bounds.maxY - Self.floatingEmbeddedConcentricInset
             } else {
                 let horizontalGuide = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))

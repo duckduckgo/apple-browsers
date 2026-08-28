@@ -212,6 +212,20 @@ final class BrowserToolbarViewTests: XCTestCase {
         }
     }
 
+    func testWhenHorizontalGuideInsetIsSmallerThanConcentricInsetThenInnerInsetFillsTheGap() {
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: 0), concentric, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: 16), concentric - 16, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: concentric), 0, accuracy: 0.01)
+    }
+
+    func testWhenHorizontalGuideInsetExceedsConcentricInsetThenInnerInsetIsClampedToZero() {
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: concentric + 1), 0, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: 59), 0, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: -8), concentric, accuracy: 0.01)
+    }
+
     func testWhenBottomOmnibarDetachesForFocusThenOuterInsetsStayUnchanged() {
         let sut = makeSUT(embeddedOmnibar: true)
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))

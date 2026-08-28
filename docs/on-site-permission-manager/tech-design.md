@@ -9,6 +9,8 @@ Decisions of record (DRI, 2026-08-26): iOS-standalone (no macOS changes); implem
 
 **Decision rule for unknowns:** the Asana task and its linked approved artifacts are the source of truth; otherwise follow macOS unless its behavior doesn't make sense on mobile, then Android. Shipped-platform behavior is catalogued with citations in [platform-precedents.md](platform-precedents.md) (reviewed 2026-08-26; it resolved OQ-8/9/10/13/20 and corrected several assumptions below).
 
+**Kick-off (held 2026-08-28) ratified:** per-site-overrides-global, Duck.ai exception, Allow Once macOS model (provisional — validate by feel), copy-macOS recovery behavior (provisional), fire-mode read-only, fireproof exemption, globals-preserved clearing. It also resolved: no visible in-use design changes (VoiceOver labels only — OQ-14); no dedicated restricted-state UI in v1 (standard denied handling; design demo pending — OQ-15); the OS prompt is never shown without the site dialogue first (OQ-1). Open verification: Bartosz is confirming camera-only/mic-only WebKit requests (expected yes — `WKMediaCaptureType.camera`/`.microphone`).
+
 ---
 
 ## 1. Current state (what we build on)
@@ -48,11 +50,11 @@ A concrete **`@MainActor final class SitePermissionsStore`** (no actor: every co
   - **Lifecycle:** watches cancel on navigation and web-content-process replacement. The shim must not depend on user-script installation order (assembly order is nondeterministic, `UserScripts.swift:219-233`).
   - **Rollback:** flag off → shim not registered for new loads; already-loaded pages keep it until reload. This path is **not free**: `UserScripts.userScripts` is lazy and `ContentBlockingUpdating` does not subscribe to flag updates — test ON→OFF→new-navigation explicitly, and test handler-vs-script lifetime (WebKit removes scripts on asset changes but retains handlers).
   - **Fixtures:** verified present in the privacy-test-pages repo (local checkout inspected 2026-08-26): `features/geolocation.html`, `features/permissions-api.html`, `features/iframe-permissions.html`, `features/iframe-media-prompt*.html`. PR 5/6 **extend** them; known gaps to add: a minimal combined camera+mic page, an Allow Once reload/navigation/tab-close matrix, OS-denied recovery, and a manager-originated mutation while a `PermissionStatus` change listener is attached.
-- **In-use tracking:** KVO on `cameraCaptureState`/`microphoneCaptureState`; active watches/pending requests for location. `.muted` presentation is OQ-19.
+- **In-use tracking:** KVO on `cameraCaptureState`/`microphoneCaptureState`; active watches/pending requests for location. `.muted` maps to paused and is **not** shown as in-use (macOS model; kick-off: no visible design changes — VoiceOver labels carry the state).
 
 ### D4 — System-permission layer
 
-One small injected **system client** (not a service layer): AV status/request plus a **single shared `CLLocationManager` driver used for both authorization and position delivery** (two managers could observe divergent state). States: notDetermined / authorized / denied / **restricted / unavailable** (System Settings cannot fix the last two — OQ-15 UX); refresh on app activation. Site-first ordering as before. **Combined camera+microphone:** one WebKit decision spans two site and two OS decisions — grant only when all allow; any partial denial → deny + recovery (both platforms confirm one combined dialog; copy pending OQ-2, gates PR 3). Evaluate each OS permission separately when classifying a combined denial — Android checks only the first and misclassifies camera-only permanent denials; do not copy that. Recovery deep link: `UIApplication.openSettingsURLString`.
+One small injected **system client** (not a service layer): AV status/request plus a **single shared `CLLocationManager` driver used for both authorization and position delivery** (two managers could observe divergent state). States: notDetermined / authorized / denied / **restricted / unavailable** — the last two stay modeled in the client, but **v1 shows no dedicated UI for them** (kick-off 2026-08-28: standard denied handling applies; design will revisit after a demo of the real restricted experience — requirements OQ-15); refresh on app activation. Site-first ordering as before. **Combined camera+microphone:** one WebKit decision spans two site and two OS decisions — grant only when all allow; any partial denial → deny + recovery (both platforms confirm one combined dialog; copy pending OQ-2, gates PR 3). Evaluate each OS permission separately when classifying a combined denial — Android checks only the first and misclassifies camera-only permanent denials; do not copy that. Recovery deep link: `UIApplication.openSettingsURLString`.
 
 ### D5 — Per-tab coordination: one concrete `@MainActor` coordinator
 
@@ -129,7 +131,7 @@ Chosen over app-target synchronized buildable folders (both viable; folders are 
 
 One Asana subtask per PR; `gh stack`; rebase the branch on `main` first (it is ~31 commits behind). Total ≈ **21–25 person-days** (second review re-estimated 22–26; the accepted simplifications recover ~1–2). PRs 1–4 form a coherent camera/mic milestone internally; everything ships behind the single flag.
 
-**Decision gates:** OQ-7 (privacy: fireproofing + globals-preserved clearing) **before PR 1**; OQ-2 (combined dialog copy) + OQ-4 (copy) + OQ-1/3/15 (recovery copy/states) + OQ-6 (animation) + OQ-14/19 (in-use affordance, `.muted`) + OQ-16 (friction pixel) **before PR 3**; OQ-12 + OQ-17/18 (Settings header, menu membership, sheet rows) **before PR 4**. OQ-8/9/10/13/20 are **resolved** (platform-precedents review, 2026-08-26) — PR 2's coordinator tests encode them; ratify at kickoff.
+**Decision gates** (kick-off held 2026-08-28 — OQ-1/8/9/10/13/14/15/19/20 settled): still open — OQ-2 combined-dialog **copy** + OQ-3 multi-denied copy + OQ-4 copy inconsistencies + OQ-6 animation placement **before PR 3**; OQ-12 + OQ-17/18 working defaults to confirm with design **before PR 4**; OQ-16 friction-pixel definition before the pixel work (PR 3/6); the OQ-7/OQ-21 for-the-record privacy ping before PR 1 (product decisions ratified). Bartosz is verifying camera-only/mic-only WebKit requests in parallel.
 
 | PR / subtask | Contents | Depends on | ~LOC | ~Days |
 |---|---|---|---|---|

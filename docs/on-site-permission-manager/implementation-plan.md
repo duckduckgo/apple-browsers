@@ -1,25 +1,33 @@
 # [iOS] On-site Permission Manager — Implementation Plan
 
-**Status: implementation can start now. There are no blockers.**
+**Status: implementation can start now. There are still no blockers.**
 
-Kick-off has not run yet. The DRI decided to start on sensible defaults rather than wait,
-because no open kick-off item threatens the architecture. Every former decision gate is now a
-**documented assumption** (see §10, Assumptions register). Formal ratification may follow
-kick-off and will land as targeted corrections, not re-architecture.
+**Kick-off was held on 2026-08-28.** The decisions in this plan are now **ratified** — the
+working defaults held, and kick-off's corrections have been folded into this document. §10
+(Assumptions register) records the per-item status; nothing that came out of kick-off requires
+re-architecture.
 
 Specifically:
 
 - **Feature Flags Registry entry exists** for `sitePermissions`:
   https://app.asana.com/1/137249556945/project/1211834678943996/task/1217880888140745
   Link it from the flag's doc comment in Phase 1.
-- **Privacy confirmations are provisionally greenlit** as sensible defaults: Fire exempts
-  fireproofed sites; Fire and "Remove All" clear per-site records only and preserve global
-  defaults; the permission key is host-only. Proceed on these.
-- **Open design/copy questions (the OQ table in requirements.md §10) block nothing.** Proceed
-  on the recorded working defaults.
+- **The privacy decisions are ratified**: Fire exempts fireproofed sites; Fire and "Remove All"
+  clear per-site records only and preserve global defaults; the permission key is host-only.
+  The formal privacy-review confirmations (OQ-7/OQ-21) remain an open **action**, but the
+  product decisions are settled — proceed on them.
+- **The remaining open items are design/copy gates. They block nothing now:**
+  - combined-dialog copy (OQ-2), copy inconsistencies (OQ-4), multi-denied copy (OQ-3), and
+    animation placement (OQ-6) — owed by design **before the camera/mic UI phase** (Phase 3);
+  - per-site header (OQ-12), menu membership (OQ-17), and sheet rows (OQ-18) — the working
+    defaults stand; confirm with design **before the management-surfaces phase** (Phase 4);
+  - friction-pixel definition (OQ-16) — owed **before the pixels work**;
+  - Bartosz is verifying that a site can request camera-only or microphone-only through WebKit
+    (`WKMediaCaptureType` has `.camera` and `.microphone` cases, so the expected answer is yes).
 
 **Do not stop to ask about a known OQ.** Stop only on a genuine contradiction with no recorded
-or derivable default (§11 lists the five that exist).
+or derivable default (§11 lists the five that exist), or when one of the two yield rules
+applies (§2.12 UI, §2.13 Xcode project).
 
 ---
 
@@ -82,8 +90,8 @@ Seven deliverables, spread across six PRs:
 | **iOS-standalone** | No macOS changes. No shared cross-platform Permissions package. macOS is a reference implementation you read, not code you move. Persisted raw values stay byte-identical to macOS's (`"camera"`, `"microphone"`, `"geolocation"`) so a later convergence is cheap. |
 | **Single local package** | Everything model-and-UI lives in `iOS/LocalPackages/SitePermissions` — one production target, one test target. App-side code is thin glue only. |
 | **Single feature flag** | `sitePermissions`. No geolocation subflag. Every phase must leave the app releasable with the flag **off**. |
-| **Duck.ai is an explicit exception** | duck.ai origins never route through this model, in **either** flag state. Both existing call sites keep their current branches verbatim. `AIChatWebViewController` is not touched at all. |
-| **Global "Never Allow" prevents asking only** | It is **not** absolute: a stored per-site Always Allow keeps working under it (FR-9, resolving OQ-8). The one absolute rule is that global Never never *prompts*. |
+| **Duck.ai is an explicit exception** | duck.ai origins never route through this model, in **either** flag state. Both existing call sites keep their current branches verbatim. `AIChatWebViewController` is not touched at all. Ratified at kick-off. |
+| **Global "Never Allow" prevents asking only** | It is **not** absolute: a stored per-site Always Allow keeps working under it (FR-9, resolving OQ-8). The one absolute rule is that global Never never *prompts*. Ratified at kick-off. |
 | **No macOS-style shared extraction, no Core Data** | The store is a `@MainActor` class over `KeyValueStoring` with a plain plist wire format. |
 
 ### Estimate
@@ -126,7 +134,7 @@ Log, at minimum:
 - each phase completion, with what shipped and what was deferred;
 - each review outcome — suggestions applied, suggestions skipped, and **why** for the skipped ones;
 - any decision you made that this plan did not pre-decide;
-- any assumption from §9 that turned out wrong once you saw the code.
+- any assumption from §10 (the assumptions register) that turned out wrong once you saw the code.
 
 ### 2.4 Verification
 
@@ -281,9 +289,30 @@ Each phase below carries its own flag-off checklist. Work through it before you 
 
 ### 2.11 When to stop and ask
 
-Stop and ask the user **only** on a genuine contradiction with no recorded or derivable default.
-A known open question is not a blocker — §10 tells you what to assume. §11 lists the five genuine
-ambiguities found while writing this plan; everything else has a default.
+Stop and ask the user on a genuine contradiction with no recorded or derivable default, and
+whenever one of the two yield rules below applies (§2.12, §2.13). A known open question is not a
+blocker — §10 tells you what to assume. §11 lists the five genuine ambiguities found while
+writing this plan; everything else has a default.
+
+### 2.12 UI yield rule — never guess a design
+
+You have **no Figma access**. Never guess or improvise UI. Whenever you are unsure how a screen,
+dialog, sheet, state, or animation should look — or an icon, asset, or copy string is missing —
+**stop and ask the user** for a screenshot of the specific Figma element or for the specific
+asset files. No second-guessing, no invented placeholder designs. The UI specifications in this
+plan (§6.5, §7.5) plus requirements §5–§6 are the spec; where they run out, yield — do not fill
+the gap yourself. This rule applies to every UI-bearing step: the dialogs (Phases 3 and 5), the
+grant animation (Phase 3), the sheet, Settings screens, and menu rows (Phase 4), and the
+location management rows (Phase 6).
+
+### 2.13 Xcode project yield rule — never fight the project file
+
+If creating or registering the local Swift package — or **any** pbxproj/scheme edit: package
+registration, the scheme `TestableReference`, the four entries for a new app-target file — fails
+or you are not confident in the edit, **stop and ask the user to perform that step manually in
+Xcode**, giving exact instructions for what to add (file, target, section, and the entry
+contents). Do not retry variations against the project file until something parses. A broken
+`project.pbxproj` costs far more than the hand-off.
 
 ---
 
@@ -352,7 +381,8 @@ previous one **after** that one is complete.
 | OQ-9 | Allow-once grants are never persisted, so the store has no representation for them. |
 | OQ-17 | An explicit user-reset `.ask` **is** persisted (it is what keeps the row listed). |
 
-No blocking precondition. The registry task exists; the privacy defaults are greenlit.
+No blocking precondition. The registry task exists; the privacy decisions are ratified
+(kick-off 2026-08-28) — only the formal privacy-review confirmations remain as a follow-up action.
 
 ### 4.3 Ordered implementation steps
 
@@ -431,7 +461,9 @@ handles imageset creation, `Contents.json` variants, and the camelCase accessor 
 Use it if you have the SVG; otherwise create the imageset by hand mirroring
 `Color/24px/Settings-Color-24.imageset`. Note that `Color` assets often carry a `-legacy` twin
 and a rebrand branch (`+Color.swift:507-517`) — if you only have one artwork, add the plain
-accessor without the `AppRebrand.isAppRebranded()` branch.
+accessor without the `AppRebrand.isAppRebranded()` branch. If you do not have the artwork at
+all, yield per §2.12: ask the user for the asset files — do not substitute another glyph or
+invent a placeholder.
 
 **No `Info.plist` work.** All three usage-description keys already exist:
 `NSCameraUsageDescription` (`iOS/DuckDuckGo/Info.plist:169`),
@@ -581,6 +613,9 @@ scheme.
 **Do not add the testable to `iOS Browser Alpha.xcscheme`** — it has no `<Testables>` block at
 all, and adding one is out of scope. Just remember to pass `--scheme "iOS Browser"` when testing (§2.4).
 
+**If any of these pbxproj or scheme edits fails — or you are not confident it is right — yield
+per §2.13:** stop and hand the user exact instructions to perform the step manually in Xcode.
+
 Checkpoint — the package must build and resolve before you write model code:
 
 ```bash
@@ -714,7 +749,8 @@ package.
 > | `DuckDuckGo` target `PBXSourcesBuildPhase` | **13726** | `<uuidA> /* PermissionsFireWorker.swift in Sources */,` |
 >
 > Same rule for **every** new app-side file in this project, in any phase. Grep the neighbouring
-> file's name in the pbxproj first and mirror its entries.
+> file's name in the pbxproj first and mirror its entries. §2.13 applies here too — if the
+> pbxproj edit fails or you are unsure, stop and hand it to the user.
 
 Conform to `FireExecutorWorker`
 (`iOS/DuckDuckGo/Fire/FireWorkers/FireExecutorWorker.swift:20-24`) — exactly three methods, all
@@ -919,10 +955,10 @@ tested against `iOS Browser Alpha`. Do not proceed to Phase 2 until you have see
 
 | OQ | Default applied here |
 |---|---|
-| OQ-8 | Stored per-site Always Allow overrides global Never. Global Never blocks *asking* only. |
-| OQ-9 | Allow Once is in-memory and page-scoped; no TTL; never persisted or restored. |
-| OQ-10 | Fire-mode tabs read stored decisions and globals, **never write**. |
-| OQ-15 | `restricted` and `unavailable` are modelled as states distinct from user-denied. Phase 3 owns their UX; Phase 2 just represents them faithfully. |
+| OQ-8 | Stored per-site Always Allow overrides global Never. Global Never blocks *asking* only. Ratified at kick-off. |
+| OQ-9 | Allow Once is in-memory and page-scoped; no TTL; never persisted or restored; backgrounding alone does not end a grant. Ratified at kick-off (provisional — validate by feel in an early build). |
+| OQ-10 | Fire-mode tabs read stored decisions and globals, **never write**. Ratified at kick-off. |
+| OQ-15 | Deferred at kick-off: v1 gives `restricted` / `unavailable` the standard denied handling. The client still models them as distinct states (cheap, and the later restricted-experience work needs them); Phase 2 represents them faithfully. |
 
 ### 5.3 Ordered implementation steps
 
@@ -1003,8 +1039,9 @@ a protocol-per-permission.
 - **Location:** a **single shared `CLLocationManager`** used for both authorization and position
   delivery. Two managers can observe divergent state — do not create a second one.
 - **States:** `notDetermined` / `authorized` / `denied` / **`restricted`** / **`unavailable`**.
-  Keep the last two distinct from `denied`: System Settings cannot fix them, so Phase 3 must not
-  offer a Change Permissions route for them (OQ-15).
+  Keep the last two distinct from `denied` in the model — it is cheap, and the designer will demo
+  the real restricted experience later. v1 UX gives them the standard denied handling; there is
+  no dedicated restricted-state UI anywhere in the phases (OQ-15, deferred at kick-off).
 - **Refresh on app activation** — OS state can change while the app is backgrounded, and FR-5's
   invariant depends on re-reading it.
 - **Recovery deep link:** `UIApplication.openSettingsURLString`.
@@ -1056,8 +1093,10 @@ Three clarifications that are easy to get wrong:
 - web-content-process replacement;
 - app termination.
 
-It does **not** end on a same-document / SPA history update. It is **never** persisted and
-**never** restored — explicitly not Android's 24-hour TTL. A restored tab starts with no grants.
+It does **not** end on a same-document / SPA history update, and backgrounding alone does not
+end it. It is **never** persisted and **never** restored — explicitly not Android's 24-hour TTL.
+A restored tab starts with no grants. (Ratified at kick-off as provisional — the page-scoped
+feel is to be validated in an early build.)
 
 **Own prompt FIFO.** Do **not** route permission prompts through the existing `WebJSAlert` path.
 That path **declines** rather than queues: `canDisplayJavaScriptAlert`
@@ -1088,7 +1127,7 @@ most test-dense phase relative to its size.
 | FIFO | two concurrent requests both get answered in order; **neither is declined** |
 | Navigation generation | a late callback arriving after navigation is dropped and persists nothing |
 | Fire-mode tabs | stored decisions and globals are read; **nothing is ever written**; grants are memory-only |
-| System client | all five states represented; `restricted`/`unavailable` never collapse into `denied`; activation refresh re-reads |
+| System client | all five states represented; `restricted`/`unavailable` never collapse into `denied` in the model (v1 UX maps them to the standard denied handling — OQ-15); activation refresh re-reads |
 | **Legacy matrices (frozen)** | both call sites × {ordinary site, duck.ai} × {mic, camera-only, camera+mic} × all `.audio` states, **including audio-authorized/video-denied** |
 
 **No snapshot tests in v1.** `SKIP_SNAPSHOT_TESTS=1` makes image assertions pass silently both
@@ -1158,14 +1197,14 @@ shipped behavior, so the flag-off checklist matters more here than anywhere else
 
 | OQ | Default applied here |
 |---|---|
-| **OQ-2** | **One combined camera+microphone dialog.** WebKit's single decision handler makes sequential independently-answered dialogs impossible. Copy uses the bracketed dynamic-list pattern. |
-| **OQ-4** | Figma copy verbatim per requirements §5–§6; prefer the multi-permission-scaling phrasing. **Mark every new string for copy review; do not wait for it.** |
-| OQ-1 | OS prompt requested directly when `notDetermined`; the reminder dialog only when the OS permission is already `denied`. |
+| **OQ-2** | **One combined camera+microphone dialog.** WebKit's single decision handler makes sequential independently-answered dialogs impossible. Copy uses the bracketed dynamic-list pattern. **Gate: the combined-dialog copy is owed by design before this phase.** |
+| **OQ-4** | Figma copy verbatim per requirements §5–§6; prefer the multi-permission-scaling phrasing. **Mark every new string for copy review; do not wait for it.** (Gate: design owes the copy-inconsistency resolutions before this phase.) |
+| OQ-1 | The OS prompt is **never** shown without the site dialog first (ratified at kick-off). After a site-dialog allow: OS prompt when `notDetermined`; the designed reminder dialog when already `denied`. |
 | OQ-5 | The site allow commits at choice time, so the menu entry becomes eligible immediately and the sheet would open in its reminder state. (The menu row itself lands in Phase 4.) |
-| OQ-6 | Code-built pop-in/pop-out in the browsing chrome, immediately after a grant. No animation on any denial. |
-| OQ-13 | The site decision commits at choice time; an OS denial **never** rewrites it. |
-| OQ-15 | `restricted` / `unavailable`: decline + Case A toast, **no** Change Permissions route. |
-| OQ-19 | `.muted` is a distinct **paused** state — allowed, but not red "in use". |
+| OQ-6 | Code-built pop-in/pop-out in the browsing chrome, immediately after a grant. No animation on any denial. (Gate: confirm placement with design before this phase.) |
+| OQ-13 | The site decision commits at choice time; an OS denial **never** rewrites it. Ratified at kick-off (provisional) — copies macOS. |
+| OQ-15 | Deferred at kick-off: `restricted` / `unavailable` get the **standard denied handling** — no dedicated restricted-state UI in v1. The states stay distinct in the system client. |
+| OQ-19 | `.muted` is a distinct **paused** state — allowed, **not** shown as in-use (no red); the VoiceOver label reflects it (resolved at kick-off). |
 
 ### 6.3 Ordered implementation steps
 
@@ -1269,9 +1308,11 @@ from Phase 4 on).
 **Case B — the user allows a site's permission but the OS permission was already `denied`.** Show
 the reminder dialog. `Change Permissions` deep-links via `UIApplication.openSettingsURLString`.
 
-**`restricted` / `unavailable`:** decline + the Case A toast, and **no** `Change Permissions`
-route — System Settings cannot fix these states, so offering the route would dead-end the user
-(OQ-15).
+**`restricted` / `unavailable`:** no dedicated handling in v1 (OQ-15, deferred at kick-off) —
+apply the **standard denied handling** above, even though System Settings may not be able to fix
+these states. Keep the states distinct in the system client (Phase 2 already models them; that
+is cheap); the designer will demo the real restricted experience later, and any special-cased UI
+lands then.
 
 **Our UI can never grant an OS permission.** The triggering request is always declined; the grant
 takes effect from the **next** request onward (requirements §3.3). Say this in the PR's testing steps —
@@ -1309,14 +1350,20 @@ Port the read-side wrapper and the KVO into the package; leave the macOS files u
 properties are iOS 15+ and KVO-compliant, so no availability guard is needed. Feed the
 coordinator's per-tab in-use state.
 
-`.muted` maps to a **paused** state, distinct from active (OQ-19) — allowed, not red "in use".
+`.muted` maps to a **paused** state, distinct from active (OQ-19, resolved at kick-off as the
+platform rule) — allowed, **not** shown as in-use (no red); the VoiceOver label reflects it.
 macOS models this the same way (`PermissionState.swift:22-30`).
 
-Phase 4 consumes this state for the sheet's icon states and the "In Use" affordance; Phase 4 also
+Phase 4 consumes this state for the sheet's icon states and the VoiceOver in-use announcements
+(OQ-14 — no visible design change); Phase 4 also
 owns the immediate-revocation writes (`setCameraCaptureState(.none)` /
 `setMicrophoneCaptureState(.none)`). This phase only **observes**.
 
 #### Step 5 — Grant animation
+
+Placement is a still-open design gate (OQ-6): confirm where in the browsing chrome it lives with
+design before building, and if the intended look is unclear, yield per §2.12 rather than
+improvising.
 
 Code-built pop-in/pop-out. **No Lottie** — a peer-review decision, and the package must not gain a
 Lottie dependency.
@@ -1434,7 +1481,7 @@ cd iOS && npm run validate-pixel-defs
 | FIFO presentation | two queued requests both presented and both answered; **neither declined** |
 | Case A | OS denial after a site allow → no animation, decline, toast, stored decision **unchanged** |
 | Case B | stored/chosen allow + OS already `denied` → reminder dialog; `Change Permissions` opens Settings; the request is declined |
-| `restricted` / `unavailable` | decline + toast, **no** Change Permissions route |
+| `restricted` / `unavailable` | treated as `denied` — the standard denied handling applies (OQ-15 deferred at kick-off); the states stay distinct in the system client |
 | FR-5 invariant | an OS denial never rewrites a stored site Allow |
 | In-use KVO | active → in-use; `.muted` → paused, **not** in-use; `.none` → inactive |
 | Animation | fires on grant; **never** on site denial or OS denial |
@@ -1445,7 +1492,9 @@ No snapshot tests (§5.4).
 ### 6.5 UI specification
 
 You have no Figma access. **This section plus requirements §5–§6 is the spec.** Structural and copy
-correctness is the bar; the DRI runs a separate design-fidelity pass with Figma afterwards.
+correctness is the bar; the DRI runs a separate design-fidelity pass with Figma afterwards. Where
+this spec runs out — or you are unsure how anything should look — apply the UI yield rule (§2.12):
+stop and ask for a screenshot of the specific Figma element. Never improvise a design.
 
 #### 6.5.1 The 3-option site permission dialog
 
@@ -1495,6 +1544,11 @@ So for the combined dialog title, list both permissions in one sentence in the s
 (`Glyphs.Size24.video`) — one slot, and camera is the more visually specific of the pair. **Both
 choices are marked for copy and design review**; they are the simplest reading of the pattern the
 rest of the copy already uses.
+
+Two kick-off notes (2026-08-28): the combined-dialog **copy is still owed by design before this
+phase** — the title pattern above is the working default until it lands (yield per §2.12 if in
+doubt) — and Bartosz is verifying that a site can request camera-only or microphone-only through
+WebKit (`WKMediaCaptureType` has `.camera` and `.microphone` cases, so the expected answer is yes).
 
 Decision semantics:
 
@@ -1591,11 +1645,12 @@ Figma sets 443:36250 / 442:113096. Defined here because the dialog and the sheet
 All under `DesignSystemImages.Glyphs.Size24`. `videoBlocked` and `microphoneBlocked` accessors are
 **added in Phase 1** (assets already exist; accessors did not). See §11.2 on the red token.
 
-**Red applies to both Always-Allow and Ask-Each-Time grants while in use.** Colour is **never** the
-only signal — the non-color affordance is required (requirements §4.1) and specified in §7.5.1 of
-the Phase 4 spec (OQ-14).
+**Red applies to both Always-Allow and Ask-Each-Time grants while in use.** Kick-off (2026-08-28)
+resolved OQ-14 as **no visible design change** for the in-use state: the non-color affordance
+(requirements §4.1) is **VoiceOver only**, specified in §7.5.1 of the Phase 4 spec.
 
-`.muted` renders as the **paused** state: solid, **not** red (OQ-19).
+`.muted` renders as the **paused** state: solid, **not** red — never shown as in-use; the
+VoiceOver label reflects it (OQ-19, resolved at kick-off as the platform rule). No design change.
 
 ### 6.6 Flag-off safety checklist
 
@@ -1655,12 +1710,12 @@ two of the three permission types.
 | OQ-3 | Mixed running-plus-denied state = sheet **state 2**; multi-permission footer uses the bracketed dynamic list. |
 | OQ-4 | Figma copy verbatim; prefer multi-scaling phrasing; mark for copy review. |
 | OQ-11 | Changes apply on reload / next request — hence the caption. Exception: OQ-20. |
-| **OQ-12** | The per-site Settings page's literal `Permissions for site.com` header is a Figma placeholder. **Nav title = the domain; omit the in-page header.** |
-| **OQ-14** | The row's state text reads `In Use` while active; VoiceOver reads `<Type>, <stored state>, in use`. Colour is never the only signal. |
-| **OQ-16** | Ship: manager opened, change committed (from → to), removal (per-site / all-sites), and sheet-dismissed-with-uncommitted-edit as the abandonment signal. All domain-free. |
-| **OQ-17** | Any stored record — **including an explicit Ask Each Time** — or active session state shows the menu entry. |
-| **OQ-18** | Sheet rows = `stored ∪ active ∪ requested-this-visit`. **Not** added merely because a global default is Never. |
-| OQ-19 | `.muted` = paused, not red. |
+| **OQ-12** | The per-site Settings page's literal `Permissions for site.com` header is a Figma placeholder. **Nav title = the domain; omit the in-page header.** (Kick-off: working default stands; confirm with design before this phase.) |
+| **OQ-14** | **Resolved at kick-off: no visible design change** for the in-use state — the state text keeps showing the stored decision. VoiceOver reads `<Type>, <stored state>, in use`. |
+| **OQ-16** | Ship: manager opened, change committed (from → to), removal (per-site / all-sites), and sheet-dismissed-with-uncommitted-edit as the abandonment signal. All domain-free. (Gate: confirm the friction-pixel definition before the pixels work.) |
+| **OQ-17** | Any stored record — **including an explicit Ask Each Time** — or active session state shows the menu entry. (Kick-off: working default stands; confirm with design before this phase.) |
+| **OQ-18** | Sheet rows = `stored ∪ active ∪ requested-this-visit`. **Not** added merely because a global default is Never. (Kick-off: working default stands; confirm with design before this phase.) |
+| OQ-19 | `.muted` = paused — **not** shown as in-use (no red); the VoiceOver label reflects it (resolved at kick-off). |
 | OQ-20 | Explicit deny or Remove **immediately** revokes active capture; grants wait for reload. |
 
 ### 7.3 Ordered implementation steps
@@ -1848,7 +1903,9 @@ exists but is the gear, which already means app settings in this menu.
 
 **Visibility (FR-4 / OQ-17):** show the row **only** when the current site has a stored record —
 including an explicit Ask Each Time — or active session state. Hidden otherwise, and hidden when
-the flag is off. It is a "temporary" row: it comes and goes with the site's state.
+the flag is off. It is a "temporary" row: it comes and goes with the site's state. (Kick-off:
+this working default stands — confirm with design before this phase. If the row's look is
+unclear, yield per §2.12.)
 
 #### Step 5 — Dynamic detent
 
@@ -1902,6 +1959,9 @@ Only Fire applies the fireproof exemption.
 
 #### Step 7 — Management pixels
 
+The friction-pixel definition is a still-open gate (OQ-16) — confirm it before building these;
+the events below are the working default.
+
 Extend Phase 3's `site_permissions.json5` and the package event enum. Mirror macOS's names minus
 `m_mac_` (`macOS/DuckDuckGo/Statistics/PermissionPixel.swift:69-83`):
 
@@ -1948,7 +2008,8 @@ cd iOS && npm run validate-pixel-defs
 ### 7.5 UI specification
 
 Requirements §5 FR-4 and FR-6 plus §6 are the source. Icon states are in §6.5.4 (Phase 3) — reuse
-them; do not redefine.
+them; do not redefine. Where the spec runs out — or you are unsure how a screen, sheet state, or
+row should look — apply the UI yield rule (§2.12): ask for the Figma screenshot; never improvise.
 
 #### 7.5.1 The on-site bottom sheet
 
@@ -2001,8 +2062,10 @@ that scales: `DuckDuckGo needs to access your <list>, if you want to use related
 site.` **Do not** use `DuckDuckGo needs access to this device camera, …`.
 
 **`Go to System Settings` appears only when the user allowed the site but the OS denies it, and
-disappears once the OS permission is granted** (requirements §4.2.4). It must **not** appear for
-`restricted` / `unavailable` (OQ-15) — System Settings cannot fix those.
+disappears once the OS permission is granted** (requirements §4.2.4). Under the kick-off deferral
+of OQ-15, `restricted` / `unavailable` follow the same standard denied handling — the row appears
+for them too, even though System Settings may not fix those states; the designer will demo the
+real restricted experience later.
 
 **`Remove Permissions`** resets all of the site's permissions to Ask Each Time, removes the site
 from the Settings list, and shows `Permissions removed for <domain>` + `Undo`.
@@ -2019,11 +2082,12 @@ rather than hardcoding.
 `iOS/DuckDuckGo/MainViewController.swift:5243-5259` shows the same APIs in the browsing-menu context
 and is worth reading alongside it — that is also the code Step 5's detent change touches.
 
-**Accessibility (OQ-14 — the required non-color affordance):** while a permission is actively in
-use, the row's **state text reads `In Use`** in place of the stored state, and VoiceOver announces
-`<Type>, <stored state>, in use`. The red icon is a redundant signal, never the only one. `.muted`
-is the **paused** state: solid icon, not red, and the state text shows the stored state, not
-`In Use`. Both strings are flagged for copy review.
+**Accessibility (OQ-14 — resolved at kick-off: VoiceOver only, no visible design change):** the
+row's visible state text always shows the stored state — there is **no** `In Use` text
+replacement and no other new visible affordance. While a permission is actively in use, VoiceOver
+announces `<Type>, <stored state>, in use`; the red icon is the visible signal. `.muted` is the
+**paused** state: solid icon, not red, and VoiceOver reflects paused — it is never announced as
+in use. The VoiceOver strings are still marked for copy review.
 
 Every picker row needs an `.accessibilityValue` carrying the selected option, and the close button
 an `.accessibilityLabel`. If you use `CardItem`, pass its `accessibilityValue:` init parameter and
@@ -2132,7 +2196,7 @@ answer is don't.
 
 | OQ | Default applied here |
 |---|---|
-| OQ-1 | OS prompt directly when `notDetermined`; reminder dialog only when already `denied`. |
+| OQ-1 | Never the OS prompt without the site dialog first (ratified at kick-off). After a site-dialog allow: OS prompt when `notDetermined`; the designed reminder dialog when already `denied`. |
 | OQ-3 | Multi-permission copy uses the bracketed dynamic-list footer pattern. |
 | OQ-4 | Figma copy verbatim from requirements §5–§6; multi-scaling phrasing preferred; mark for copy review. |
 | OQ-21 | Host-only key from the committed main-frame URL; the requesting frame's origin is kept separately for gating and routing. |
@@ -2274,7 +2338,8 @@ Buttons are identical to every other variant, top→bottom: `Allow Once` · `All
 
 Note the two deliberate copy quirks preserved from Figma: the SERP variant **drops the word
 "website"**, and its domain is the literal `duckduckgo.com`. Both are flagged for copy review
-(OQ-4) but ship as-is.
+(OQ-4) but ship as-is. If either variant's look is unclear beyond this table and requirements §5,
+yield per §2.12 — ask for the Figma screenshot.
 
 **Case A toast (location):** `DuckDuckGo couldn’t share location with this site` — no action button.
 
@@ -2385,7 +2450,8 @@ picker options, same icon-state rules — see the Phase 4 UI specification (§7.
 verbatim. Icons: `Glyphs.Size24.location` / `.locationBlocked` / `.locationSolid`.
 
 Nothing structurally new here. If it feels like new structure, Phase 4 built the wrong abstraction —
-fix Phase 4's code rather than adding a location-specific path.
+fix Phase 4's code rather than adding a location-specific path. If any location-row visual is
+unclear, yield per §2.12.
 
 #### Step 2 — `PermissionStatus` transition table
 
@@ -2495,35 +2561,38 @@ This is the last phase — run the **full** app unit-test target here, not just 
 ## 10. Assumptions register
 
 Every open question in [`requirements.md`](requirements.md) §10 appears here with the default you
-apply and the phase where it lands. **None of these blocks anything.** If kick-off later corrects
-one, this table tells you exactly which phase to revisit.
+apply and the phase where it lands. **None of these blocks anything.** Kick-off (2026-08-28)
+ratified, resolved, or deferred the rows as noted below; the remaining **A** rows are working
+defaults with a design/copy gate still open (the gates are listed in the preamble). If a later
+correction lands, this table tells you exactly which phase to revisit.
 
-Legend: **R** = already resolved in the docs (not an assumption — recorded for traceability).
-**G** = provisionally greenlit by the DRI. **A** = assumed default chosen for this plan.
+Legend: **R** = resolved — settled in the source docs or ratified at the 2026-08-28 kick-off.
+**A** = working default; kick-off confirmed proceeding on it, with a design/copy gate still open
+before the phase that consumes it.
 
 | OQ | Question | Default applied | Kind | Phase |
 |---|---|---|---|---|
-| OQ-1 | Show a system dialog directly instead of the Case B reminder dialog? | Request the OS prompt directly whenever OS state is `notDetermined`; the reminder dialog applies **only** when the OS permission is already `denied`. | R | 3, 5 |
-| **OQ-2** | **Combined camera+microphone: two sequential dialogs or one combined?** | **One combined dialog.** WebKit hands a single decision handler for the pair (`TabViewController.swift:3938-3951`), so two independently-answered dialogs are physically impossible. Copy uses the bracketed dynamic-list pattern from requirements §6. | **A** | **3** |
-| OQ-3 | Copy for multiple denied location; mixed running-plus-denied state | Reuse the bracketed dynamic-list footer from FR-4 for multi-permission text. The mixed state is sheet **state 2** (Permissions + Reminder) — rows first, then the `Remove Permissions` + `Go to System Settings` group, then the footer. | A | 4, 6 |
-| **OQ-4** | **Two competing footer phrasings; title and punctuation inconsistencies** | **Use the Figma copy verbatim as captured in requirements §5–§6.** Where two phrasings coexist, prefer the one that **scales to multiple permissions** — i.e. `DuckDuckGo needs to access your <list>, if you want to use related features on this site.` over `needs access to this device <type>`. Keep `Reload the page for changes to take effect.` with the period. **Mark every new string for copy review; do not wait for it.** | **A** | **3, 4, 5, 6** |
+| OQ-1 | Show a system dialog directly instead of the Case B reminder dialog? | Ratified at kick-off (2026-08-28): the OS prompt is **never** shown without the site dialog first — there is no "show the OS prompt directly" path anywhere. After a site-dialog allow, request the OS prompt when OS state is `notDetermined`; the designed reminder dialog applies when the OS permission is already `denied`. | R | 3, 5 |
+| **OQ-2** | **Combined camera+microphone: two sequential dialogs or one combined?** | **One combined dialog.** WebKit hands a single decision handler for the pair (`TabViewController.swift:3938-3951`), so two independently-answered dialogs are physically impossible. Copy uses the bracketed dynamic-list pattern from requirements §6. **Gate: the combined-dialog copy is owed by design before Phase 3.** Bartosz is verifying that a site can request camera-only or microphone-only through WebKit (`WKMediaCaptureType` has `.camera` and `.microphone` cases — expected yes). | **A** | **3** |
+| OQ-3 | Copy for multiple denied location; mixed running-plus-denied state | Reuse the bracketed dynamic-list footer from FR-4 for multi-permission text. The mixed state is sheet **state 2** (Permissions + Reminder) — rows first, then the `Remove Permissions` + `Go to System Settings` group, then the footer. (Gate: the multi-denied copy is owed by design before the camera/mic phase.) | A | 4, 6 |
+| **OQ-4** | **Two competing footer phrasings; title and punctuation inconsistencies** | **Use the Figma copy verbatim as captured in requirements §5–§6.** Where two phrasings coexist, prefer the one that **scales to multiple permissions** — i.e. `DuckDuckGo needs to access your <list>, if you want to use related features on this site.` over `needs access to this device <type>`. Keep `Reload the page for changes to take effect.` with the period. **Mark every new string for copy review; do not wait for it.** (Gate: design owes the copy-inconsistency resolutions before the camera/mic phase.) | **A** | **3, 4, 5, 6** |
 | OQ-5 | Menu-entry visibility timing after a fresh OS denial | Follows from OQ-13 + OQ-17: the site allow commits at choice time, so the menu entry appears immediately and the sheet opens in its reminder state. Ignore the contradictory Figma sticky ("No Site Permissions entry in the menu"). | R | 3, 4 |
-| OQ-6 | Grant-animation placement | Code-built pop-in/pop-out (no Lottie) in the browsing chrome, fired immediately after a grant. No animation on any denial. | A | 3 |
-| OQ-7 | Fireproof exemption on Fire-Button clearing | **Fire exempts fireproofed sites; Fire and Remove All clear per-site records only and preserve global defaults.** Provisionally greenlit. | G | 1 |
-| OQ-8 | Global Never vs stored per-site Allow | **Resolved:** a stored per-site Always Allow overrides global Never. The global control prevents *asking* only. | R | 2 |
-| OQ-9 | Allow Once validity window | **Resolved (macOS model):** in-memory, page-scoped. Ends on reload, any non-same-document navigation, tab close, web-content-process replacement, app termination. Never persisted or restored. **No** Android-style 24-hour TTL. Same-document/SPA history updates do **not** end it. | R | 2 |
-| OQ-10 | Fire-mode tabs | **Resolved (Android model):** read stored decisions and global defaults, **never write**. Grants there are memory-only. | R | 2 |
+| OQ-6 | Grant-animation placement | Code-built pop-in/pop-out (no Lottie) in the browsing chrome, fired immediately after a grant. No animation on any denial. (Gate: confirm placement with design before the camera/mic phase.) | A | 3 |
+| OQ-7 | Fireproof exemption on Fire-Button clearing | **Fire exempts fireproofed sites; manual Remove / Remove All delete everything, fireproofed sites included; both clear per-site records only and preserve global defaults.** Ratified at kick-off (2026-08-28); the formal privacy-review confirmation remains an open action. | R | 1 |
+| OQ-8 | Global Never vs stored per-site Allow | **Resolved, ratified at kick-off:** a stored per-site Always Allow overrides global Never. The global control prevents *asking* only. | R | 2 |
+| OQ-9 | Allow Once validity window | **Resolved (macOS model):** in-memory, page-scoped. Ends on reload, any non-same-document navigation, tab close, web-content-process replacement, app termination. Never persisted or restored. **No** Android-style 24-hour TTL. Same-document/SPA history updates do **not** end it, and backgrounding alone does not end it. Ratified at kick-off as **provisional** — to be validated by feel in an early build. | R | 2 |
+| OQ-10 | Fire-mode tabs | **Resolved (Android model), ratified at kick-off:** read stored decisions and global defaults, **never write**. Grants there are memory-only. | R | 2 |
 | OQ-11 | Can changes apply without reload? | v1 assumes reload — hence the caption. The one exception is OQ-20's immediate revocation. | R | 4 |
-| OQ-12 | Per-site Settings page shows a literal `Permissions for site.com` header under a real-domain nav title | Treat the literal header as a Figma placeholder oversight. **Nav title = the domain; omit the redundant in-page header.** Simplest option, and it matches how every other per-item Settings page in the app reads. | A | 4 |
-| OQ-13 | Does an OS denial rewrite the stored site decision? | **Resolved:** no. The site decision commits at choice time; an OS denial never converts a stored Allow into Never Allow. Deliberate divergence from Android. OS state is re-checked on app activation. | R | 3 |
-| OQ-14 | Non-color "currently in use" affordance | No platform precedent. **Default:** the row's state text becomes `In Use` while the permission is actively in use, alongside the solid-red icon; VoiceOver reads `<Type>, <stored state>, in use`. Colour is never the only signal. Flag the exact wording for copy review. | A | 4 |
-| OQ-15 | UX for `restricted` / `unavailable` OS states | Keep them **distinct from user-denied**: decline the request and show the Case A toast, but **do not** offer a `Go to System Settings` route (it would dead-end). No reminder dialog for these states. | A | 2, 3 |
-| OQ-16 | Friction-pixel definition | Ship three domain-free events in Phase 4: **manager opened**, **change committed** (from → to), **removal** (per-site / all-sites). Add **sheet dismissed with an uncommitted edit** as the abandonment signal. Every event carries type and decision only. | A | 4 |
-| OQ-17 | Does an explicit Ask-Each-Time record show the menu entry? | **Yes** — any stored record (including explicit Ask) or active session state shows the `Site Permissions` menu row. | A | 4 |
-| OQ-18 | Which rows the on-site sheet lists | `stored ∪ active ∪ requested-this-visit`. **Do not** add a row solely because a type's global default is Never Allow. (macOS confirms this; see platform-precedents §6.) | A | 4 |
-| OQ-19 | Presentation of WebKit's `.muted` capture state | A distinct **paused** state: allowed, but **not** red "in use". Do not silently drop the indication. | A | 3, 4 |
+| OQ-12 | Per-site Settings page shows a literal `Permissions for site.com` header under a real-domain nav title | Treat the literal header as a Figma placeholder oversight. **Nav title = the domain; omit the redundant in-page header.** Simplest option, and it matches how every other per-item Settings page in the app reads. (Kick-off: working default stands; confirm with design before Phase 4.) | A | 4 |
+| OQ-13 | Does an OS denial rewrite the stored site decision? | **Resolved:** no. The site decision commits at choice time; an OS denial never converts a stored Allow into Never Allow. Deliberate divergence from Android. OS state is re-checked on app activation. Ratified at kick-off (provisional): copies macOS — the stored site Allow is kept, the request declined, and the reminder affordances appear. | R | 3 |
+| OQ-14 | Non-color "currently in use" affordance | **Resolved at kick-off (2026-08-28): no visible design change** for the in-use state — no `In Use` state text, no new visible affordance. Add VoiceOver labels only: `<Type>, <stored state>, in use` while active. The solid-red icon stays as designed. | R | 4 |
+| OQ-15 | UX for `restricted` / `unavailable` OS states | **Deferred at kick-off (2026-08-28): no special alert or dedicated UI in v1** — the standard denied handling applies, even though System Settings may not fix these states. Keep the states modelled distinctly in the system client (cheap); the designer will demo the real restricted experience later. | R | 2, 3 |
+| OQ-16 | Friction-pixel definition | Ship three domain-free events in Phase 4: **manager opened**, **change committed** (from → to), **removal** (per-site / all-sites). Add **sheet dismissed with an uncommitted edit** as the abandonment signal. Every event carries type and decision only. (Gate: the friction-pixel definition is owed before the pixels work.) | A | 4 |
+| OQ-17 | Does an explicit Ask-Each-Time record show the menu entry? | **Yes** — any stored record (including explicit Ask) or active session state shows the `Site Permissions` menu row. (Kick-off: working default stands; confirm with design before Phase 4.) | A | 4 |
+| OQ-18 | Which rows the on-site sheet lists | `stored ∪ active ∪ requested-this-visit`. **Do not** add a row solely because a type's global default is Never Allow. (macOS confirms this; see platform-precedents §6.) (Kick-off: working default stands; confirm with design before Phase 4.) | A | 4 |
+| OQ-19 | Presentation of WebKit's `.muted` capture state | **Resolved at kick-off (platform rule):** `.muted` maps to **paused** — allowed, **not** shown as in-use (no red); the VoiceOver label reflects it. No design change. | R | 3, 4 |
 | OQ-20 | Mid-session changes | **Resolved (macOS model):** an explicit per-site deny or Remove Permissions **immediately** revokes active use (`setCameraCaptureState(.none)` / `setMicrophoneCaptureState(.none)`, geolocation watches stopped). Grants and every other change apply on reload / next request. | R | 4, 6 |
-| OQ-21 | Host-only key collapses scheme and port | **Host-only key** — leading `www.` dropped, punycode for IDN, scheme and port collapsed. Provisionally greenlit. Platform gating still restricts grants to secure contexts. | G | 1 |
+| OQ-21 | Host-only key collapses scheme and port | **Host-only key** — leading `www.` dropped, punycode for IDN, scheme and port collapsed. Ratified at kick-off (2026-08-28); the formal privacy-review confirmation remains an open action. Platform gating still restricts grants to secure contexts. | R | 1 |
 
 ---
 

@@ -25,7 +25,8 @@ import UIKit
 @Suite("Application Shortcut Items Service")
 struct ApplicationShortcutItemsServiceTests {
 
-    @Test("Resume updates shortcut items while the application is active")
+    @available(iOS 16.0, *)
+    @Test("Resume updates shortcut items while the application is active", .timeLimit(.minutes(1)))
     func resumeUpdatesShortcutItemsWhileActive() async {
         let shortcutItem = UIApplicationShortcutItem(type: "test", localizedTitle: "Test")
         let recorder = ShortcutItemsRecorder()
@@ -42,7 +43,8 @@ struct ApplicationShortcutItemsServiceTests {
         #expect(updatedItems?.map(\.type) == [shortcutItem.type])
     }
 
-    @Test("Resume does not update shortcut items while the application is in the background")
+    @available(iOS 16.0, *)
+    @Test("Resume does not update shortcut items while the application is in the background", .timeLimit(.minutes(1)))
     func resumeDoesNotUpdateShortcutItemsWhileBackgrounded() async {
         let shortcutItem = UIApplicationShortcutItem(type: "test", localizedTitle: "Test")
         let providerCalled = AsyncSignal<Void>()
@@ -64,7 +66,8 @@ struct ApplicationShortcutItemsServiceTests {
         #expect(recorder.recordedItems.isEmpty)
     }
 
-    @Test("Suspend prevents an in-flight refresh from updating shortcut items")
+    @available(iOS 16.0, *)
+    @Test("Suspend prevents an in-flight refresh from updating shortcut items", .timeLimit(.minutes(1)))
     func suspendPreventsInFlightRefreshFromUpdatingShortcutItems() async {
         let shortcutItem = UIApplicationShortcutItem(type: "test", localizedTitle: "Test")
         let provider = SuspendedShortcutItemProvider()
@@ -85,7 +88,8 @@ struct ApplicationShortcutItemsServiceTests {
         #expect(recorder.recordedItems.isEmpty)
     }
 
-    @Test("Suspend removes shortcut items that are no longer eligible")
+    @available(iOS 16.0, *)
+    @Test("Suspend removes shortcut items that are no longer eligible", .timeLimit(.minutes(1)))
     func suspendRemovesIneligibleShortcutItems() {
         let retainedShortcutItem = UIApplicationShortcutItem(type: "retained", localizedTitle: "Retained")
         let removedShortcutItem = UIApplicationShortcutItem(type: "removed", localizedTitle: "Removed")
@@ -103,7 +107,8 @@ struct ApplicationShortcutItemsServiceTests {
         #expect(recorder.recordedItems.map { $0.map(\.type) } == [[retainedShortcutItem.type]])
     }
 
-    @Test("Suspend does not update shortcut items after entering the background")
+    @available(iOS 16.0, *)
+    @Test("Suspend does not update shortcut items after entering the background", .timeLimit(.minutes(1)))
     func suspendDoesNotUpdateShortcutItemsAfterEnteringBackground() {
         let shortcutItem = UIApplicationShortcutItem(type: "removed", localizedTitle: "Removed")
         let recorder = ShortcutItemsRecorder()
@@ -120,7 +125,8 @@ struct ApplicationShortcutItemsServiceTests {
         #expect(recorder.recordedItems.isEmpty)
     }
 
-    @Test("Settings changes refresh shortcut items while active")
+    @available(iOS 16.0, *)
+    @Test("Settings changes refresh shortcut items while active", .timeLimit(.minutes(1)))
     func settingsChangesRefreshShortcutItemsWhileActive() async {
         let notificationCenter = NotificationCenter()
         let shortcutItem = UIApplicationShortcutItem(type: "test", localizedTitle: "Test")

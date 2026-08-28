@@ -1115,11 +1115,7 @@ extension MainViewController {
         if coordinator.inputMode == .aiChat {
             newTabPageViewController?.setFavoritesHidden(false, animationDuration: min(duration, 0.2))
         } else {
-            // Render the pixel-aligned NTP favorites behind the opaque focused List before their final handoff.
-            if coordinator.cardPosition.isBottom, isSearchContentToSearchContent {
-                newTabPageViewController?.setFavoritesHidden(false)
-            }
-            coordinator.contentViewController.prepareForDismissAnimation()
+            prepareSearchContentForDismiss(coordinator: coordinator, isSearchContentToSearchContent: isSearchContentToSearchContent)
         }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
@@ -1159,6 +1155,14 @@ extension MainViewController {
                 duration: duration
             )
         }
+    }
+
+    private func prepareSearchContentForDismiss(coordinator: UnifiedToggleInputCoordinator, isSearchContentToSearchContent: Bool) {
+        // Render the pixel-aligned NTP favorites behind the opaque focused List before their final handoff.
+        if coordinator.cardPosition.isBottom, isSearchContentToSearchContent {
+            newTabPageViewController?.setFavoritesHidden(false)
+        }
+        coordinator.contentViewController.prepareForDismissAnimation()
     }
 
     private func makeStationaryFocusedContentSnapshotIfNeeded(keepsFocusedContentStationary: Bool,

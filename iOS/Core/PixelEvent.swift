@@ -26,6 +26,15 @@ import DDGSync
 import MaliciousSiteProtection
 import PixelKit
 
+// -------------------------------------------------------------------------------------------------------------------------
+// ▗▖ ▗▖ ▗▄▖ ▗▄▄▖ ▗▖  ▗▖▗▄▄▄▖▗▖  ▗▖ ▗▄▄▖
+// ▐▌ ▐▌▐▌ ▐▌▐▌ ▐▌▐▛▚▖▐▌  █  ▐▛▚▖▐▌▐▌
+// ▐▌ ▐▌▐▛▀▜▌▐▛▀▚▖▐▌ ▝▜▌  █  ▐▌ ▝▜▌▐▌▝▜▌
+// ▐▙█▟▌▐▌ ▐▌▐▌ ▐▌▐▌  ▐▌▗▄█▄▖▐▌  ▐▌▝▚▄▞▘
+//
+// Deprecated file, please do not add any more Pixels to this file, use instead PixelKit.Event in a separate file
+// -------------------------------------------------------------------------------------------------------------------------
+
 extension Pixel {
     
     public enum Event {

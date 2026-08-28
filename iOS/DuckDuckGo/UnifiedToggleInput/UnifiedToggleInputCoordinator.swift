@@ -907,6 +907,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         footerController = UTIFooterController(viewModel: viewModel)
         footerController?.presenter = viewController
 
+        modelSelector.onFooterModelSelected = { [weak viewModel] in
+            viewModel?.modelSwitchedFromMessage()
+        }
+
         // The card's chevron filters its menu, so it has to follow which message is up.
         viewModel.$warning
             .receive(on: DispatchQueue.main)

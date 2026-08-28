@@ -187,6 +187,34 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertEqual(sut.warning?.message, .approaching)
     }
 
+    /// The `>` applies the model itself, so it has to stand the message down the same way the button
+    /// does — otherwise switching from the chevron reads as the tap having done nothing.
+    func testAModelSwitchFromTheChevronStandsItsMessageDown() {
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching),
+                                             cta: DuckAiUsageCta(id: .switchToCheaper),
+                                             signature: "snapshot-1")
+        let sut = makeSUT(suggestion: .suggestion(DuckAiModelSuggestion(modelId: "haiku", modelShortName: "Haiku")))
+        sut.refresh()
+
+        sut.modelSwitchedFromMessage()
+
+        XCTAssertNil(sut.warning)
+        XCTAssertEqual(dismissalStore.actedSnapshot()?.noticeID, "approaching")
+    }
+
+    /// Only a message that offers the picker can be stood down by it.
+    func testAChevronSwitchIsIgnoredWhenTheMessageOffersNoPicker() {
+        snapshotProvider.snapshot = snapshot(notice(id: .freeReached, reached: true),
+                                             cta: DuckAiUsageCta(id: .subscribe))
+        let sut = makeSUT()
+        sut.refresh()
+
+        sut.modelSwitchedFromMessage()
+
+        XCTAssertEqual(sut.warning?.message, .freeReached)
+        XCTAssertNil(dismissalStore.actedSnapshot())
+    }
+
     /// The free-model switch behaves the same way.
     func testTheFreeModelSwitchStandsItsMessageDown() {
         let suggestion = DuckAiModelSuggestion(modelId: "mistral-small", modelShortName: "Mistral Small")

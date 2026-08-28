@@ -68,6 +68,8 @@ final class UTIModelSelector {
     private let view: ViewSurface
     private let environment: Environment
     private let callbacks: Callbacks
+    /// The card's picker applies the model itself, so the message it hangs off has to hear about it.
+    var onFooterModelSelected: (() -> Void)?
     private var footerMenuOffersFreeModelsOnly = false
     private let modelMenuFactory: UnifiedToggleInputModelMenuFactory
     private let reasoningMenuFactory: UnifiedToggleInputReasoningMenuFactory
@@ -274,17 +276,21 @@ final class UTIModelSelector {
 
     private func updateFooterModelPickerMenu() {
         view.setFooterModelPickerMenu(makeModelPickerMenu(selectedId: modelStore.persistedModelId,
-                                                          freeModelsOnly: footerMenuOffersFreeModelsOnly))
+                                                          freeModelsOnly: footerMenuOffersFreeModelsOnly,
+                                                          onSelected: { [weak self] in self?.onFooterModelSelected?() }))
     }
 
     /// "Free" is the model's own `isAdvanced`, not what this account can reach: a paid user's advanced
     /// models are exactly the ones they have run out of.
-    private func makeModelPickerMenu(selectedId: String?, freeModelsOnly: Bool = false) -> UIMenu? {
+    private func makeModelPickerMenu(selectedId: String?,
+                                     freeModelsOnly: Bool = false,
+                                     onSelected: (() -> Void)? = nil) -> UIMenu? {
         let models = freeModelsOnly ? modelStore.models.filter { !$0.isAdvanced } : modelStore.models
         guard !models.isEmpty else { return nil }
 
         let onSelect: (String) -> Void = { [weak self] modelId in
             self?.handleModelSelection(modelId)
+            onSelected?()
         }
 
         return modelMenuFactory.makeMenu(

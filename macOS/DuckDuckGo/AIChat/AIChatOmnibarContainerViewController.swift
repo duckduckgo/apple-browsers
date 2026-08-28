@@ -1167,7 +1167,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             let offersFreeModelsOnly = omnibarController.usageWarningViewModel?.warning?
                 .modelPickerOffersFreeModelsOnly ?? false
             presentModelPicker(anchoredTo: usageWarningCardView.modelPickerAnchor,
-                               freeModelsOnly: offersFreeModelsOnly)
+                               freeModelsOnly: offersFreeModelsOnly,
+                               raisedFromUsageCard: true)
         }
 
         subscribeToUsageWarnings()
@@ -1222,6 +1223,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         return true
     }
+
+    private var isPresentingModelPickerFromUsageCard = false
 
     /// The last known suggestions height before image gen mode suppressed it.
     private var lastKnownSuggestionsHeight: CGFloat = 0
@@ -2080,7 +2083,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     /// Anchored, so a menu raised from the card's `>` lands under the control the user clicked.
-    private func presentModelPicker(anchoredTo anchor: NSView, freeModelsOnly: Bool = false) {
+    private func presentModelPicker(anchoredTo anchor: NSView,
+                                    freeModelsOnly: Bool = false,
+                                    raisedFromUsageCard: Bool = false) {
+        // `popUp` tracks modally, so this still reads true inside `modelSelected`.
+        isPresentingModelPickerFromUsageCard = raisedFromUsageCard
+        defer { isPresentingModelPickerFromUsageCard = false }
+
         // Resolved once and passed on: `modelPickerItems` records a free-trial badge impression, so
         // asking for it twice per open would burn through the badge's view cap at double speed.
         let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId,
@@ -2212,6 +2221,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard let model = sender.representedObject as? AIChatModel else { return }
         // `updateSelectedModel` calls back into `refreshForSelectedModel`, whichever route changed it.
         omnibarController.updateSelectedModel(model.id)
+        if isPresentingModelPickerFromUsageCard {
+            omnibarController.usageWarningViewModel?.modelSwitchedFromMessage()
+        }
         omnibarController.pixelHandler.fire(.modelSelected)
     }
 

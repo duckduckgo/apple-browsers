@@ -2183,8 +2183,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     /// is spent, so the menu behind it must not list the models it was spent on.
     func testModelPickerItems_freeModelsOnly_listsOnlyModelsTheFreeTierGets() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        // A free-tier model lists every tier in the live payload — "free" marks what it costs, not
+        // who may select it, and a paid user must still be able to switch onto one.
         await loadModels([
-            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
             makeRemoteModel(id: "basic", accessTier: ["free", "plus"]),
             makeRemoteModel(id: "plus-only", accessTier: ["plus"]),
             makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
@@ -2199,7 +2201,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     /// A paid model the user *can* select is still the wrong offer here — their allowance for it is gone.
     func testModelPickerItems_freeModelsOnly_dropsPaidModelsTheUserHasAccessTo() async {
         await loadModels([
-            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
             makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
         ], tier: .pro, trialEligible: false)
 
@@ -2213,7 +2215,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     func testModelPickerItems_withoutTheFreeOnlyFlag_stillOffersPaidModels() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
         await loadModels([
-            makeRemoteModel(id: "free-a", accessTier: ["free"]),
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
             makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
         ], tier: nil, trialEligible: true)
 

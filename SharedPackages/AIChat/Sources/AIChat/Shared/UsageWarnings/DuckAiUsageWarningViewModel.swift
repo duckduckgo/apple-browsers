@@ -97,6 +97,18 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         resolveAndPublish()
     }
 
+    /// The `>` opens a picker that applies the model itself, so the message is stood down from there
+    /// too — otherwise the chevron leaves it up while the button beside it hides it.
+    public func modelSwitchedFromMessage() {
+        guard warning?.offersModelPicker == true,
+              let notice = lastReadSnapshot.notice,
+              let signature = lastReadSnapshot.signature else { return }
+
+        dismissalStore.setActedSnapshot(DuckAiUsageWarningActedSnapshot(noticeID: notice.id.rawValue,
+                                                                       signature: signature))
+        resolveAndPublish()
+    }
+
     public func openModelPicker() {
         guard warning?.offersModelPicker == true else { return }
 

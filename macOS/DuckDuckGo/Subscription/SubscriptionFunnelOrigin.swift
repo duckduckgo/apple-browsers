@@ -169,9 +169,7 @@ extension SubscriptionFunnelOrigin {
                 .duckAIVoiceChatLimit,
                 .duckAIVoiceChatDurationLimit,
                 .duckAISwitchModel,
-                .duckAIUnknown,
-                .addressBarUsageLimit,
-                .promptBarUsageLimit:
+                .duckAIUnknown:
             return .duckAI
         case .appMenu,
                 .winBackMenu:

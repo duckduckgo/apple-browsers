@@ -545,24 +545,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if AppVersion.runType.requiresEnvironment {
             let commonDatabase: Database
             do {
-                commonDatabase = try Database(onRetry: {
+                commonDatabase = try Database(onKeychainWait: {
                     // Keychain retry sleeps contaminate startup timings.
                     startupProfiler.invalidate()
                 })
                 database = commonDatabase
             } catch {
-                PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
-                PixelKit.fire(GeneralPixel.dbKeychainUnavailableAlertShown, frequency: .standard)
-
-                let alert = NSAlert()
-                alert.alertStyle = .critical
-                alert.messageText = UserText.keychainUnavailableAlertTitle
-                alert.informativeText = UserText.keychainUnavailableAlertMessage
-                alert.addButton(withTitle: UserText.quit)
-                NSApp.activate(ignoringOtherApps: true)
-                alert.runModal()
-
-                fatalError("Could not register value transformers: \(error.localizedDescription)")
+                Self.presentKeychainUnavailableAndTerminate(error: error)
             }
 
             database.db.loadStore { _, error in
@@ -2550,6 +2539,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.promptBarMenuBarController?.hide()
                 }
             }
+    }
+
+    private static func presentKeychainUnavailableAndTerminate(error: Error) -> Never {
+        PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
+        PixelKit.fire(GeneralPixel.dbKeychainUnavailableAlertShown, frequency: .standard)
+
+        NSApp.activate(ignoringOtherApps: true)
+        NSAlert.keychainUnavailable().runModal()
+        exit(0)
     }
 }
 

@@ -244,6 +244,15 @@ extension NSAlert {
         return alert
     }
 
+    static func keychainUnavailable() -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.keychainUnavailableAlertTitle
+        alert.informativeText = UserText.keychainUnavailableAlertMessage
+        alert.alertStyle = .critical
+        alert.addButton(withTitle: UserText.quit)
+        return alert
+    }
+
     static func cannotReadImageAlert() -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.cannotReadImageAlertMessage

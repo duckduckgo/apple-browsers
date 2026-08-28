@@ -39,7 +39,7 @@ final class Database {
         static let databaseName = "Database"
     }
 
-    init(onRetry: () -> Void = {}) throws {
+    init(onKeychainWait: () -> Void = {}) throws {
 #if DEBUG
         assert(![.unitTests, .xcPreviews].contains(AppVersion.runType), {
             "Use CoreData.---Container() methods for testing purposes:\n" + Thread.callStackSymbols.description
@@ -82,7 +82,7 @@ final class Database {
                 break
             } catch {
                 guard attempt == maxAttempts else {
-                    onRetry()
+                    onKeychainWait()
                     Thread.sleep(forTimeInterval: 2)
                     continue
                 }

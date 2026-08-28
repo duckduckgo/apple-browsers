@@ -727,10 +727,11 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             pixelKitDefaults = UserDefaults.networkProtectionGroupDefaults
         }
 
+        // Configuring PixelKit
         PixelKit.setUp(
             dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
             appVersion: AppVersion.shared.versionNumber,
-            source: (UIDevice.current.userInterfaceIdiom == .phone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS).rawValue,
+            source: (UIDevice.current.userInterfaceIdiom == .pad ? PixelKit.Source.iPadOS : PixelKit.Source.iOS).rawValue,
             session: "ios-vpn-tunnel",
             defaultHeaders: [:],
             defaults: pixelKitDefaults

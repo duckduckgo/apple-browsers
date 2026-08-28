@@ -17,11 +17,11 @@
 //  limitations under the License.
 //
 
-
 import SwiftUI
 import Combine
 import AIChat
 import AIChatDebugServer
+import os.log
 import DebugServer
 
 struct AIChatDebugView: View {
@@ -35,6 +35,10 @@ struct AIChatDebugView: View {
     var body: some View {
         List {
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+
+#if DEBUG || ALPHA
+            AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+#endif
 
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
                 NavigationLink(destination: AIChatDebugHostnameEntryView(viewModel: viewModel)) {
@@ -302,6 +306,87 @@ private struct AIChatDebugSessionTimerEntryView: View {
         }
     }
 }
+
+#if DEBUG || ALPHA
+// Matches the `debugOverride` gate in DuckAiUsageLimitsStore — Release must not carry the override.
+private struct AIChatUsageWarningsSection: View {
+
+    private static let presets: [(label: String, weekly: Double?, daily: Double?, hoursUntilReset: Double)] = [
+        ("Weekly 50%", 50, nil, 48),
+        ("Weekly 75%", 75, nil, 48),
+        ("Weekly 90%", 90, nil, 48),
+        ("Weekly limit reached", 100, nil, 168),
+        ("Daily 90%", nil, 90, 5),
+        // A free tier only carries a daily allowance, so this is the one card it can actually reach.
+        ("Daily limit reached", nil, 100, 5),
+    ]
+
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+
+    @State private var status: String?
+
+    var body: some View {
+        Section(header: Text(verbatim: "Duck.ai Usage Warnings"),
+                footer: Text(verbatim: status ?? "Writes a synthetic snapshot to the reserved `usageLimits` entry — the same one the web app writes — so the real read path drives the footer. Needs the utiDuckAIWarnings flag on, and is picked up the next time a Duck.ai input is opened.")) {
+            ForEach(Self.presets, id: \.label) { preset in
+                Button {
+                    seed(weekly: preset.weekly, daily: preset.daily, hoursUntilReset: preset.hoursUntilReset)
+                    status = "Seeded \(preset.label) (override + storage). Reopen the Duck.ai input."
+                } label: {
+                    Text(verbatim: preset.label)
+                }
+                .foregroundColor(.primary)
+            }
+
+            Button {
+                clear()
+            } label: {
+                Text(verbatim: "Clear snapshot")
+            }
+            .foregroundColor(.red)
+        }
+    }
+
+    private func seed(weekly: Double?, daily: Double?, hoursUntilReset: Double) {
+        let resetsAtDate = Date().addingTimeInterval(hoursUntilReset * 60 * 60)
+        DuckAiUsageLimitsStore.debugOverride = DuckAiUsageLimits(
+            daily: daily.map { DuckAiUsageLimitWindow(percentUsed: $0, resetsAt: resetsAtDate) },
+            weekly: weekly.map { DuckAiUsageLimitWindow(percentUsed: $0, resetsAt: resetsAtDate) }
+        )
+        guard let duckAiNativeStorageHandler else {
+            status = "Override set; native storage unavailable so nothing was written to it."
+            return
+        }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let resetsAt = formatter.string(from: resetsAtDate)
+        let windows = [("weekly", weekly), ("daily", daily)]
+            .compactMap { name, percent -> String? in
+                guard let percent else { return nil }
+                return "\"\(name)\":{\"percentUsed\":\(percent),\"resetsAt\":\"\(resetsAt)\"}"
+            }
+        let json = "{\(windows.joined(separator: ","))}"
+        do {
+            try duckAiNativeStorageHandler.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: json)
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] debug seeded usageLimits=\(json, privacy: .public)")
+        } catch {
+            status = "Failed to seed: \(error)"
+            Logger.duckAIUsageWarnings.error("[UsageWarnings] debug seed failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func clear() {
+        DuckAiUsageLimitsStore.debugOverride = nil
+        do {
+            try duckAiNativeStorageHandler?.deleteEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue)
+            status = "Snapshot cleared."
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] debug cleared usageLimits")
+        } catch {
+            status = "Failed to clear: \(error)"
+        }
+    }
+}
+#endif
 
 private struct AIChatStorageServerSection: View {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?

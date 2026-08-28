@@ -23,6 +23,9 @@ import Foundation
 public typealias ConversionWindow = ClosedRange<Int>
 public typealias NumberOfCalls = Int
 
+/// Names here always start with `experiment_`, which routes them through PixelKit's dedicated
+/// experiment branch. That branch applies the platform marker itself and ignores
+/// `platformSuffixPolicy`, so setting one on this type would be dead code.
 struct ExperimentEvent: PixelKit.Event {
     var name: String
     var parameters: [String: String]?

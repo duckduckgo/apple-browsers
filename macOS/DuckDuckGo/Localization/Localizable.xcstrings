@@ -49072,7 +49072,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów historii"
+                      "value" : "%arg elem. historii"
                     }
                   }
                 }
@@ -49384,7 +49384,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Elementy historii (%#@items@)** zostaną usunięte"
+            "value" : "Elementy historii (**%#@items@**) zostaną usunięte"
           },
           "substitutions" : {
             "items" : {
@@ -49452,7 +49452,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Из журнала будет удалено **%1$#@items@**"
+            "value" : "Из журнала будет удалено **%#@items@**"
           },
           "substitutions" : {
             "items" : {
@@ -49581,13 +49581,13 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Includere cookie e altri dati"
+            "value" : "Includi cookie e altri dati"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclusief cookies en andere gegevens"
+            "value" : "Inclusief cookies & andere gegevens"
           }
         },
         "pl" : {
@@ -49605,7 +49605,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Также удалить cookie и другие данные"
+            "value" : "Также удалить файлы cookie и прочие данные"
           }
         }
       }
@@ -50794,7 +50794,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Pliki cookie i inne dane witryn (%#@sites@)** zostaną usunięte"
+            "value" : "**Pliki cookie i inne dane z %#@sites@** zostaną usunięte"
           },
           "substitutions" : {
             "sites" : {
@@ -50817,13 +50817,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg"
+                      "value" : "%arg witryna"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg"
+                      "value" : "%arg witryn"
                     }
                   }
                 }
@@ -50885,7 +50885,7 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайта"
+                      "value" : "%arg сайт"
                     }
                   },
                   "other" : {
@@ -57199,6 +57199,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Результаты импорта:"
+          }
+        }
+      }
+    },
+    "import.access-panel.message" : {
+      "comment" : "Access Panel that grants permissions to import data from another browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gewähre Zugriff auf den Datenordner %1$@, damit DuckDuckGo deine Daten importieren kann"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Grant access to the %1$@ data folder to allow DuckDuckGo to import your data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concede acceso a la carpeta de datos de %1$@ para permitir que DuckDuckGo importe tus datos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accordez l’accès au dossier %1$@ pour permettre à DuckDuckGo d’importer vos données"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concedi l'accesso alla cartella dati di %1$@ per consentire a DuckDuckGo di importare i tuoi dati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geef toegang tot de %1$@ gegevensmap, zodat DuckDuckGo je gegevens kan importeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przyznaj dostęp do folderu danych %1$@, aby DuckDuckGo mogło zaimportować Twoje dane"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concede acesso à pasta de dados %1$@ para permitir que o DuckDuckGo importe os teus dados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предоставьте доступ к папке данных %1$@, чтобы DuckDuckGo мог импортировать ваши данные"
+          }
+        }
+      }
+    },
+    "import.access-panel.prompt" : {
+      "comment" : "Confirmation button in the folder picker used to grant DuckDuckGo access to another browser's data folder",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zugriff gewähren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Grant Access"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conceder acceso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accorder l'accès"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concedi accesso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toegang verlenen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przyznaj dostęp"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conceder acesso"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предоставить доступ"
           }
         }
       }
@@ -64459,6 +64579,546 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пароли импортируются (%d)…"
+          }
+        }
+      }
+    },
+    "import.request-access-denied.cancel.title" : {
+      "comment" : "Button that aborts the data import flow and closes the import dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annulla"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuleren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anuluj"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить"
+          }
+        }
+      }
+    },
+    "import.request-access-denied.title" : {
+      "comment" : "Title of the screen shown after the user declined to grant DuckDuckGo access to another browser's data folder, asking them to try again (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Möchtest du es erneut versuchen? DuckDuckGo benötigt Zugriff auf deine %1$@-Daten, um den Import abzuschließen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Want to try again? DuckDuckGo needs access to your %1$@ data to finish importing."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quieres intentarlo de nuevo? DuckDuckGo necesita acceder a tus datos de %1$@ para finalizar la importación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous souhaitez réessayer ? DuckDuckGo a besoin d’accéder à vos données %1$@ pour terminer l’importation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuoi riprovare? DuckDuckGo ha bisogno di accedere ai tuoi dati di %1$@ per completare l'importazione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wil je het opnieuw proberen? DuckDuckGo heeft toegang tot je %1$@-gegevens nodig om het importeren te voltooien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chcesz spróbować ponownie? DuckDuckGo potrzebuje dostępu do Twoich danych %1$@, aby dokończyć importowanie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Queres tentar novamente? O DuckDuckGo precisa de aceder aos teus dados do %1$@ para terminar a importação."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хотите повторить попытку? Для завершения импорта DuckDuckGo нужен доступ к данным вашего %1$@."
+          }
+        }
+      }
+    },
+    "import.request-access-error.step.do-not-navigate" : {
+      "comment" : "Second step of the instructions shown when DuckDuckGo still can't read the browser data folder after the user picked one",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Navigiere nicht zu einem anderen Ordner"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t navigate to another folder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No navegues a otra carpeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne naviguez pas vers un autre dossier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non passare a un'altra cartella"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Navigeer niet naar een andere map"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie przechodź do innego folderu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não navegues para outra pasta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не переходи в другую папку"
+          }
+        }
+      }
+    },
+    "import.request-access-error.step.grant-access" : {
+      "comment" : "Third step of the instructions shown when DuckDuckGo still can't read the browser data folder after the user picked one. Markdown bold marks the button to click.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle in der Dateiauswahl **Zugriff gewähren** aus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select **Grant Access** in the file picker"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecciona **Conceder acceso** en el selector de archivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélectionnez **Accorder l’accès** dans le sélecteur de fichiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleziona **Concedi accesso** nel selettore file"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecteer **Toegang verlenen** in de bestandskiezer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz opcję **Udziel dostępu** w selektorze plików"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleciona **Conceder acesso** no seletor de ficheiros"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите **Предоставить доступ** в окне выбора файла"
+          }
+        }
+      }
+    },
+    "import.request-access-error.step.select-data" : {
+      "comment" : "First step of the instructions shown when DuckDuckGo still can't read the browser data folder after the user picked one (%1$@ is the browser name). Markdown bold marks the button to click.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klicke auf **%1$@-Daten auswählen**"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click **Select %1$@ Data**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz clic en **Seleccionar datos de %1$@**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cliquez sur **Sélectionner les données %1$@**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fai clic su **Seleziona i dati di %1$@**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klik op **Selecteer %1$@-gegevens**"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kliknij **Wybierz dane %1$@**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clica em **Selecionar dados do %1$@**"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите **Выбрать данные %1$@**"
+          }
+        }
+      }
+    },
+    "import.request-access-error.title" : {
+      "comment" : "Title of the screen shown when DuckDuckGo still can't read the browser data folder after the user picked one, asking them to try again (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas ist schiefgelaufen. DuckDuckGo kann nicht auf deinen %1$@-Datenordner zugreifen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something went wrong. DuckDuckGo can’t access your %1$@ Data folder."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se ha producido un error. DuckDuckGo no puede acceder a la carpeta de datos de %1$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une erreur s'est produite. DuckDuckGo ne peut pas accéder à votre dossier de données %1$@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si è verificato un errore. DuckDuckGo non riesce ad accedere alla tua cartella dati %1$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er is iets misgegaan. DuckDuckGo heeft geen toegang tot je %1$@-gegevensmap."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wystąpił błąd. DuckDuckGo nie może uzyskać dostępu do folderu danych %1$@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocorreu um erro. O DuckDuckGo não consegue aceder à tua pasta de dados do %1$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что-то пошло не так. DuckDuckGo не может получить доступ к вашей папке данных %1$@."
+          }
+        }
+      }
+    },
+    "import.request-access.button" : {
+      "comment" : "Button opening the folder picker used to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@-Daten auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select %1$@ Data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleccionar datos de %1$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélectionner les données %1$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleziona i dati di %1$@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecteer %1$@ gegevens"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz dane %1$@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecionar dados do %1$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать данные %1$@"
+          }
+        }
+      }
+    },
+    "import.request-access.description" : {
+      "comment" : "Instructions on the screen asking the user to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name). Markdown bold marks the two buttons to click.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klicke auf **%1$@-Daten auswählen** und dann auf **Zugriff gewähren**, sobald die Dateiauswahl erscheint."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click **Select %1$@ Data** and then select **Grant Access** when the file picker appears."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz clic en **Seleccionar datos de %1$@** y luego selecciona **Conceder acceso** cuando aparezca el selector de archivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cliquez sur **Sélectionner les données %1$@**, puis sélectionnez **Accorder l’accès** lorsque la fenêtre de sélection de fichiers s’affiche."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fai clic su **Seleziona i dati di %1$@** e poi seleziona **Concedi accesso** quando appare il selettore file."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klik op **Selecteer %1$@-gegevens** en selecteer vervolgens **Toegang verlenen** wanneer de bestandskiezer verschijnt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kliknij **Wybierz dane %1$@**, a następnie wybierz **Przyznaj dostęp** po wyświetleniu selektora plików."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clica em **Selecionar dados do %1$@** e depois seleciona **Conceder acesso** quando aparecer o seletor de ficheiros."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите **Выбрать данные %1$@** и, когда появится окно выбора файла, нажмите **Предоставить доступ**."
+          }
+        }
+      }
+    },
+    "import.request-access.title" : {
+      "comment" : "Title of the screen asking the user to grant DuckDuckGo access to another browser's data folder (%1$@ is the browser name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo benötigt Zugriff auf deine %1$@-Daten, um den Import abzuschließen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo needs access to your %1$@ data to finish importing."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo necesita acceder a tus datos de %1$@ para finalizar la importación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo a besoin d’accéder à vos données %1$@ pour terminer l’importation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo ha bisogno di accedere ai tuoi dati di %1$@ per completare l'importazione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo heeft toegang tot je %1$@-gegevens nodig om het importeren te voltooien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo potrzebuje dostępu do Twoich danych %1$@, aby dokończyć importowanie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O DuckDuckGo precisa de aceder aos teus dados do %1$@ para terminar a importação."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для завершения импорта DuckDuckGo нужен доступ к данным вашего %1$@."
           }
         }
       }

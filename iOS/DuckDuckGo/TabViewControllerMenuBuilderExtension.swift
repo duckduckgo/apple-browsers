@@ -55,12 +55,7 @@ extension TabViewController {
 
         if shouldShowAIChatInMenu {
             
-            var chatEntry: BrowsingMenuEntry
-            if aiChatFullModeFeature.isAvailable {
-                chatEntry = buildNewAIChatEntry()
-            } else {
-                chatEntry = buildChatEntry(withSmallIcon: false)
-            }
+            let chatEntry = devicePlatform.isIphone ? buildNewAIChatEntry() : buildChatEntry(withSmallIcon: false)
 
             entries.append(newTabEntry)
             entries.append(chatEntry)
@@ -292,12 +287,7 @@ extension TabViewController {
             }))
 
             if shouldShowAIChatInMenu {
-                var chatEntry: BrowsingMenuEntry
-                if aiChatFullModeFeature.isAvailable {
-                    chatEntry = buildNewAIChatEntry(withSmallIcon: true)
-                } else {
-                    chatEntry = buildChatEntry(withSmallIcon: true)
-                }
+                let chatEntry = devicePlatform.isIphone ? buildNewAIChatEntry(withSmallIcon: true) : buildChatEntry(withSmallIcon: true)
                 entries.append(chatEntry)
             }
 
@@ -781,6 +771,8 @@ extension TabViewController {
     }
     
     private func firePixelForActivityType(_ activityType: UIActivity.ActivityType) {
+        let addToHomeScreen: UIActivity.ActivityType? = if #available(iOS 16.4, *) { .addToHomeScreen } else { nil }
+
         switch activityType {
         case .copyToPasteboard:
             Pixel.fire(pixel: .shareSheetActivityCopy)
@@ -794,6 +786,8 @@ extension TabViewController {
             Pixel.fire(pixel: .shareSheetActivityPrint)
         case .addToReadingList:
             Pixel.fire(pixel: .shareSheetActivityAddToReadingList)
+        case addToHomeScreen:
+            Pixel.fire(pixel: .shareSheetActivityAddToHomeScreen)
         default:
             Pixel.fire(pixel: .shareSheetActivityOther)
         }
@@ -1066,7 +1060,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             return buildDuckAIHeaderTile()
         }
 
-        if aiChatFullModeFeature.isAvailable {
+        if devicePlatform.isIphone {
             return buildNewAIChatEntry(withSmallIcon: false)
         } else {
             return buildChatEntry(withSmallIcon: false)

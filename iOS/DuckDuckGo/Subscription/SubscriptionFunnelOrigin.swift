@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Subscription
 
 /// Represents the origin point from which the user enters the subscription funnel in the iOS app.
 enum SubscriptionFunnelOrigin: String {
@@ -60,6 +61,12 @@ enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel via the native "Free Plan / Upgrade" plate in the Duck.ai tab header.
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1216395339071576?focus=true
     case duckAIFreeLabel = "funnel_duckai_ios__freelabel"
+
+    /// User entered the funnel via the CTA on the Duck.ai usage-limit footer card, from the address bar.
+    case addressBarUsageLimit = "funnel_addressbar_ios__usagelimit"
+
+    /// The same card, shown on the Duck.ai tab.
+    case duckAIUsageLimit = "funnel_duckai_ios__usagelimit"
 
     // MARK: - Duck.ai Funnel Origins (frontend-reported)
 
@@ -139,6 +146,56 @@ enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel by tapping the VPN push notification without an active VPN entitlement.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1215398999855859
     case notificationVPN = "funnel_notification_ios__subscriptionvpn"
+}
+
+extension SubscriptionFunnelOrigin {
+
+    static func purchaseWideEventEntryPoint(for origin: String?) -> SubscriptionPurchaseWideEventData.EntryPoint {
+        guard let origin else { return .web }
+        guard let funnelOrigin = Self(rawValue: origin) else { return .unknown }
+        return funnelOrigin.purchaseWideEventEntryPoint
+    }
+
+    private var purchaseWideEventEntryPoint: SubscriptionPurchaseWideEventData.EntryPoint {
+        switch self {
+        case .newTabMenu:
+            return .newTabPage
+        case .addressBarModelPicker,
+                .addressBarReasoningPicker,
+                .addressBarUsageLimit,
+                .duckAIModelPicker,
+                .duckAIReasoningPicker,
+                .duckAIFreeLabel,
+                .duckAIUsageLimit,
+                .duckAIAiSidebar,
+                .duckAIActivateSubscription,
+                .duckAIFreeLimit,
+                .duckAIImageGenerationLimit,
+                .duckAIPlusLimit,
+                .duckAIPromotionCard,
+                .duckAISettings,
+                .duckAIDisclaimerBanner,
+                .duckAIVoiceChatLimit,
+                .duckAIVoiceChatDurationLimit:
+            return .duckAI
+        case .onboarding,
+                .skippedOnboarding:
+            return .onboarding
+        case .existingUserPromo,
+                .winBackLaunch:
+            return .appPromotion
+        case .appSettings,
+                .winBackSettings:
+            return .settings
+        case .vpnAccessRevokedAlert,
+                .toolbarVPN,
+                .addressBarVPN,
+                .widgetVPN,
+                .shortcutVPN,
+                .notificationVPN:
+            return .vpn
+        }
+    }
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the iOS app.

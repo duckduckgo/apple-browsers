@@ -48,14 +48,18 @@ enum SafariRedirectPixel {
     var countPixel: SafariRedirectScheduledPixel { SafariRedirectScheduledPixel(name: name + "_count") }
 }
 
-struct SafariRedirectScheduledPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+struct SafariRedirectScheduledPixel: PixelKit.Event {
+
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     let name: String
 
     var parameters: [String: String]? { nil }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 protocol SafariRedirectHandling: AnyObject {

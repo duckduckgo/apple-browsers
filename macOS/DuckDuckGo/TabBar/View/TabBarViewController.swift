@@ -1039,7 +1039,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let newChatItem = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(duckAIMenuNewChatAction), keyEquivalent: "")
         newChatItem.target = self
-        newChatItem.image = DesignSystemImages.Glyphs.Size12.compose
+        newChatItem.withImage(DesignSystemImages.Glyphs.Size12.compose, visibleOnMacOS27: true)
         // Display-only: mirror the main menu's ⌥⌘N (handling lives on the main-menu item).
         newChatItem.keyEquivalent = "n"
         newChatItem.keyEquivalentModifierMask = [.command, .option]
@@ -1051,10 +1051,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         sidebarItem.target = self
         if isDuckAIChatPresented {
             sidebarItem.title = UserText.aiChatMenuCloseSidebar
-            sidebarItem.image = Self.closeSidebarMenuIcon()
+            sidebarItem.withImage(Self.closeSidebarMenuIcon(), visibleOnMacOS27: true)
         } else {
             sidebarItem.title = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
-            sidebarItem.image = Self.openSidebarMenuIcon()
+            sidebarItem.withImage(Self.openSidebarMenuIcon(), visibleOnMacOS27: true)
         }
         // Display-only: mirror the main menu's ⌥⌘L. This transient popup doesn't register the shortcut
         // globally (the main-menu item owns handling); it just shows the glyph for discoverability.
@@ -2909,7 +2909,7 @@ extension TabBarViewController: NSMenuDelegate {
             keyEquivalent: "Y"
         )
         duckAIItem.target = self
-        duckAIItem.image = Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.aiChat)
+        duckAIItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.aiChat), visibleOnMacOS27: true)
         menu.addItem(duckAIItem)
 
         if !isMenuButtonLayout {
@@ -2931,7 +2931,7 @@ extension TabBarViewController: NSMenuDelegate {
             keyEquivalent: ""
         )
         settingsItem.target = self
-        settingsItem.image = Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.settingsAiChat)
+        settingsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.settingsAiChat), visibleOnMacOS27: true)
         menu.addItem(settingsItem)
     }
 

@@ -49,7 +49,7 @@ let package = Package(
                 .product(name: "AutoconsentStats", package: "BrowserServicesKit"),
                 .product(name: "Bookmarks", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyStats", package: "BrowserServicesKit"),
                 .product(name: "RemoteMessaging", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),

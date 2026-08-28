@@ -48,6 +48,84 @@
             "dbpBackgroundAgent"
         ]
     },
+    "subscriptionAuthSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The legacy app component identifier for the process that encountered the subscription authentication event",
+        "enum": ["MainApp", "SysExt", "VPNApp", "DBP"]
+    },
+    "subscriptionAuthTokenCachePolicy": {
+        "key": "policycache",
+        "type": "string",
+        "description": "The token cache policy used by the failed token request",
+        "enum": ["Local", "Local valid", "Local force refresh", "Create if needed"]
+    },
+    "subscriptionAutoSignOutRecoveryOutcome": {
+        "key": "recovery_outcome",
+        "type": "string",
+        "description": "Whether account recovery was unavailable or failed; not_applicable when recovery is not part of the sign-out path",
+        "enum": ["not_attempted", "failed", "not_applicable"]
+    },
+    "subscriptionAutoSignOutHadSubscriptionEntitlementsBefore": {
+        "key": "had_subscription_entitlements_before",
+        "type": "string",
+        "description": "Whether the locally stored access token contained subscription entitlements immediately before the token attempt",
+        "enum": ["present", "absent", "unknown"]
+    },
+    "subscriptionAutoSignOutAccessTokenTimeRemainingBucketBefore": {
+        "key": "access_token_time_remaining_bucket_before",
+        "type": "string",
+        "description": "Bucketed time until the locally stored access token expired, captured immediately before the token attempt",
+        "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
+    },
+    "subscriptionAutoSignOutRefreshTokenTimeRemainingBucketBefore": {
+        "key": "refresh_token_time_remaining_bucket_before",
+        "type": "string",
+        "description": "Bucketed time until the locally stored refresh token expired, captured immediately before the token attempt",
+        "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
+    },
+    "subscriptionAutoSignOutRefreshTokenAgeBucketBefore": {
+        "key": "refresh_token_age_bucket_before",
+        "type": "string",
+        "description": "Bucketed age of the locally stored refresh token immediately before the token attempt; issued_in_future can indicate clock skew",
+        "enum": ["issued_in_future", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
+    },
+    "subscriptionAutoSignOutCachedSubscriptionStatusBefore": {
+        "key": "cached_subscription_status_before",
+        "type": "string",
+        "description": "Status of the subscription cached in the reporting process before sign-out; absence does not mean the backend subscription was inactive",
+        "enum": ["auto_renewable", "not_auto_renewable", "grace_period", "inactive", "expired", "unknown", "unavailable"]
+    },
+    "subscriptionAutoSignOutCachedSubscriptionTrialStatusBefore": {
+        "key": "cached_subscription_trial_status_before",
+        "type": "string",
+        "description": "Whether the subscription cached in the reporting process had an active free-trial offer before sign-out",
+        "enum": ["active", "not_active", "unavailable"]
+    },
+    "subscriptionAutoSignOutCachedSubscriptionPurchasePlatformBefore": {
+        "key": "cached_subscription_purchase_platform_before",
+        "type": "string",
+        "description": "Purchase platform of the subscription cached in the reporting process before sign-out",
+        "enum": ["app_store", "play_store", "stripe", "unknown", "unavailable"]
+    },
+    "subscriptionAutoSignOutCachedSubscriptionTimeRemainingBucketBefore": {
+        "key": "cached_subscription_time_remaining_bucket_before",
+        "type": "string",
+        "description": "Bucketed time until the cached subscription expiry or renewal date before sign-out; absence is reported per process",
+        "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown", "unavailable"]
+    },
+    "subscriptionAutoSignOutStoredRefreshTokenStateDuringAttempt": {
+        "key": "stored_refresh_token_state_during_attempt",
+        "type": "string",
+        "description": "Whether the locally stored refresh token changed or disappeared between the pre-request snapshot and the failed request",
+        "enum": ["unchanged", "changed", "missing", "read_error", "unavailable_before_attempt"]
+    },
+    "subscriptionAutoSignOutLocalTokenStateAfterSignOut": {
+        "key": "local_token_state_after_sign_out",
+        "type": "string",
+        "description": "Whether local authentication tokens were actually removed after the automatic sign-out completed",
+        "enum": ["present", "missing", "read_error"]
+    },
     "channel": {
         "key": "channel",
         "type": "string",
@@ -278,6 +356,11 @@
         "type": "number",
         "description": "Total duration of the opt-out attempt in milliseconds"
     },
+    "dbpAwakeDuration": {
+        "key": "awake_duration",
+        "type": "number",
+        "description": "Total duration excluding machine sleep in milliseconds"
+    },
     "dbpConfirmationAttemptNumber": {
         "key": "attempt_number",
         "type": "integer",
@@ -393,5 +476,50 @@
         "description": "The mode of the consent heuristic feature: '', off, reject, tier1, tier2",
         "type": "string",
         "enum": ["", "off", "reject", "tier1", "tier2"]
+    },
+    "aiChatConversationSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The user-facing surface that opened the Duck.ai conversation this prompt was submitted in. Recorded just before the chat opens and consumed once when it loads, so for an ongoing chat it describes how that chat was originally opened, not where this particular prompt came from. Values name the specific control that was used, down to the individual menu item, so a voice, image-generation or resumed-chat start stays attributable to the surface it came from (e.g. 'new-tab-page-voice', 'main-menu-image', 'omnibar-recent-chat'). The 'contextual-*' values are page actions on the current page or selection; 'address-bar-context-menu' is the right-click menu on the address-bar Duck.ai button and is unrelated to them. 'unattributed' means no surface was recorded \u2014 direct navigation to duck.ai, a session restored at startup, a bookmark or external link, or an entry point not yet instrumented \u2014 so it measures the attribution gap rather than naming a real entry point. Mirrors AIChatConversationSource in SharedPackages/AIChat.",
+        "enum": [
+            "tab-bar-button",
+            "ask-about-page",
+            "tab-bar-sidebar",
+            "address-bar",
+            "address-bar-suggestion",
+            "address-bar-context-menu",
+            "new-tab-page",
+            "new-tab-page-view-all-chats",
+            "new-tab-page-voice",
+            "new-tab-page-recent-chat",
+            "omnibar",
+            "omnibar-view-all-chats",
+            "omnibar-voice",
+            "omnibar-recent-chat",
+            "prompt-bar",
+            "prompt-bar-voice",
+            "main-menu-file-new-chat",
+            "main-menu-sidebar",
+            "main-menu-open-duck-ai",
+            "main-menu-new-chat",
+            "main-menu-view-all-chats",
+            "main-menu-voice",
+            "main-menu-image",
+            "main-menu-recent-chat",
+            "more-options-menu-new-duck-ai-chat",
+            "more-options-menu-open-duck-ai",
+            "more-options-menu-new-chat",
+            "more-options-menu-view-all-chats",
+            "more-options-menu-voice",
+            "more-options-menu-image",
+            "more-options-menu-recent-chat",
+            "contextual-summarize",
+            "contextual-translate",
+            "contextual-attach-selection",
+            "serp",
+            "sidebar-handoff",
+            "settings",
+            "unattributed"
+        ]
     }
 }

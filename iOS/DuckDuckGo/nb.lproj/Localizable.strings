@@ -403,6 +403,15 @@
 /* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
 "aiChat.history.swipe.unpin.a11y" = "Løsne chat";
 
+/* Section header for Pro-only models shown to DuckDuckGo Plus subscribers */
+"aichat.model-picker.pro-plan-exclusive" = "Kun for Pro-abonnenter";
+
+/* Section header for subscription models shown to users who are not eligible for a free trial */
+"aichat.model-picker.subscriber-exclusive" = "Kun for abonnenter";
+
+/* Section header for subscription models shown to free users */
+"aichat.model-picker.try-free" = "Prøv gratis";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Til analytiske oppgaver";
 
@@ -1912,6 +1921,9 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sendt med meldingen din til Duck.ai";
 
+/* Row in the contextual chat's chats popup that opens Duck.ai in a new tab */
+"duckai.contextual.open.duckai" = "Åpne Duck.ai";
+
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Nylige chatter";
 
@@ -2542,14 +2554,17 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Sist brukte Fire-fane";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Lukk fanen";
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Lukk sist brukte fane";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Slett fanen";
 
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Tilbake til fanen";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Skjul snarveien «Gå tilbake til»";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Gå tilbake til fanen du brukte sist";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Flere alternativer";
@@ -2562,6 +2577,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Gå tilbake til %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Lukk fanen";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Private faner";
@@ -4216,11 +4234,11 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Inaktivitetstidtaker";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Sist brukte fane";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Åpne sist brukte fane";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Ny fane";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Åpne ny fane";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Etter inaktivitet";
@@ -4528,11 +4546,13 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Viser en lenke for å gå tilbake til den sist brukte fanen når du åpner appen igjen etter inaktivitet.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Finn ut mer";
 
 /* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "La DuckDuckGo administrere popup-vinduer om samtykke til informasjonskapsler";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Passord og autofyll";
@@ -4590,6 +4610,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Plassering av knappen for lasting på nytt";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "«Gå tilbake til»-snarvei";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Søkeinnstillinger";

@@ -95,7 +95,7 @@ final class AIChatSummarizer: AIChatSummarizing {
                 ),
                 frequency: .dailyAndStandard
             )
-            aiChatConversationSourceHandler.setData(.summarization)
+            aiChatConversationSourceHandler.setData(.contextualSummarize)
         }
         // The selection is what the user asked about — don't also auto-attach the whole page.
         currentPageContextProvider()?.suppressAutoPageContextForSelectionAction()

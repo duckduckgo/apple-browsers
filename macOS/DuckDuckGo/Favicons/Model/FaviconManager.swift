@@ -122,19 +122,6 @@ extension FaviconManagement {
     }
 
     @MainActor
-    func getCachedFavicon(forUrlOrAnySubdomain documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
-        if let favicon = getCachedFavicon(for: documentUrl, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller) {
-            return favicon
-        }
-
-        if let domain = documentUrl.host?.dropSubdomain(), let favicon = getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller) {
-            return favicon
-        }
-
-        return nil
-    }
-
-    @MainActor
     private var shouldRenderFavicon: Bool {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
 

@@ -403,6 +403,15 @@
 /* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
 "aiChat.history.swipe.unpin.a11y" = "Atsegti pokalbį";
 
+/* Section header for Pro-only models shown to DuckDuckGo Plus subscribers */
+"aichat.model-picker.pro-plan-exclusive" = "Tik plano „Pro“ prenumeratoriams";
+
+/* Section header for subscription models shown to users who are not eligible for a free trial */
+"aichat.model-picker.subscriber-exclusive" = "Tik prenumeratoriams.";
+
+/* Section header for subscription models shown to free users */
+"aichat.model-picker.try-free" = "Išbandyk nemokamai";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analitinėms užduotims";
 
@@ -1912,6 +1921,9 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Išsiųstas su jūsų žinute Duck.ai";
 
+/* Row in the contextual chat's chats popup that opens Duck.ai in a new tab */
+"duckai.contextual.open.duckai" = "Atidaryti „Duck.ai“";
+
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Naujausi pokalbiai";
 
@@ -2542,14 +2554,17 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Paskutinį kartą naudota „Fire“ kortelė";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Uždaryti kortelę";
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Uždaryti paskutinę naudotą kortelę";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Ištrinti kortelę";
 
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Grįžti į kortelę";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Slėpti nuorodą „Grįžti į“";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Grįžti į paskutinę naudotą kortelę";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Daugiau parinkčių";
@@ -2562,6 +2577,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Grįžti į %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Uždaryti kortelę";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Privačios kortelės";
@@ -4216,11 +4234,11 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Neaktyvumo laikmatis";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Paskutinį kartą naudotas skirtukas";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Atidaryti paskutinę naudotą kortelę";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Nauja kortelė";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Atidaryti naują kortelę";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Po neaktyvumo";
@@ -4528,11 +4546,13 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatūra";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Rodo nuorodą grįžti į paskutinę naudotą kortelę, kai paleidžiate programą po neaktyvumo.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Sužinoti daugiau";
 
 /* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Leiskite „DuckDuckGo“ valdyti sutikimo su slapukais iššokančiuosius langus";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Slaptažodžiai ir automatinis užpildymas";
@@ -4590,6 +4610,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Perkrovimo mygtuko padėtis";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "Nuoroda „Grįžti į“";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Paieškos nustatymai";

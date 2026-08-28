@@ -1555,9 +1555,10 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
-    // MARK: - Ask about page vs the attachment strip's re-attach button
+    // MARK: - Ask about page after an explicit removal
 
-    /// The strip's re-attach button takes an explicit removal, so only then is the chip a duplicate.
+    /// Removing the context is the user declining it, so the chip stands down and the attachment menu
+    /// is the way back.
     func testAskAboutPageIsDroppedOnlyOnceTheUserHasRemovedTheContext() {
         // Given a floating-input-capable surface with the page attached
         mockSettings.isAutomaticContextAttachmentEnabled = true
@@ -1570,17 +1571,17 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.updateContext(makeTestContext())
         XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
 
-        // When the user removes it, the strip offers re-attach, so the chip stands down
+        // When the user removes it, the chip stands down
         sessionState.downgradeToPlaceholder()
         XCTAssertEqual(sessionState.viewState.quickActions, [])
 
-        // Then a new chat clears that offer, so the chip has to come back — otherwise neither is left
+        // Then a new chat resets that decision, so the chip comes back
         sessionState.resetToNoChat()
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
     func testAskAboutPageSurvivesRemovalWhenThereIsNoFloatingInput() {
-        // Given no floating input, nothing else offers re-attach, so the chip must stay
+        // Given no floating input, the chip is the only affordance, so it must stay
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
@@ -2530,7 +2531,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
                                scope: ResolvePageSuggestionsInput.Scope,
                                surface: AIChatContextualSuggestionsSurface) {}
     func fireSuggestionsContextCollectionTimedOut() {}
-    func fireRecentChatsPopupDisplayed() {}
+    func fireRecentChatsMenuDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() { fireButtonTappedFired = true }

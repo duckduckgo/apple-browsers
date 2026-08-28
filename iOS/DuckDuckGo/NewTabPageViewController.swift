@@ -73,6 +73,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?
+    /// Driven by `updateDaxDialogTopInsetIfNeeded()` to clear the focused unified toggle input card.
+    private var daxDialogTopConstraint: NSLayoutConstraint?
     private(set) var isShowingDuckAICompletionDialog = false
     private var isBorderSuppressedForChromeLayout = false
     private var didHideBarsForChatPathVisitSiteDialog = false
@@ -182,6 +184,11 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         super.viewDidLoad()
 
         registerForNotifications()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateDaxDialogTopInsetIfNeeded()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -357,12 +364,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func showDuckAIOnboardingCompletionWithActiveAddressBar(message: String, textEntryMode: TextEntryMode? = nil) {
-        // Note: the editing-state Dax suppression and NTP `view.alpha = 0` are pre-armed
-        // synchronously in `MainViewController.tabDidRequestNewTab` /
-        // `presentChatPathOnboardingCompletionIfNeeded` BEFORE this async hop runs, so
-        // we don't repeat them here — re-setting the pending flag at this point would
-        // leak past the EOJ flow and incorrectly suppress the Dax in the next-created
-        // editing state (e.g. after the subscription promo's "No, Thanks").
         setLogoHidden(true)
         chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: textEntryMode)
 
@@ -446,91 +447,15 @@ extension NewTabPageViewController {
         // Completion dialog should not hide NTP background state.
         newTabPageViewModel.finishOnboarding()
 
-        // UTI mode: no OmniBarEditingStateViewController is presented; embed the dialog in the
-        // UTI's content area (below the bar) and wire up subscription-promo check on dismiss.
-        if let mainVC = parent as? MainViewController,
-           let coordinator = mainVC.unifiedToggleInputCoordinator,
-           coordinator.isOmnibarSession {
-            showDuckAIOnboardingCompletionDialogInUTI(mainVC: mainVC, coordinator: coordinator, message: message)
-            return
-        }
-
-        let presentedHostViewController = parent?.presentedViewController ?? parent
-        guard let editingController = presentedHostViewController as? OmniBarEditingStateViewController else {
+        guard let mainVC = parent as? MainViewController,
+              let coordinator = mainVC.unifiedToggleInputCoordinator,
+              coordinator.isOmnibarSession else {
             isShowingDuckAICompletionDialog = false
             setLogoHidden(false)
             view.alpha = 1
             return
         }
-
-        isShowingDuckAICompletionDialog = true
-        editingController.setLogoHidden(true)
-
-        let onDismiss = { [weak self, weak editingController] in
-            guard let self else { return }
-            let finishDismissal = {
-                // Mark EOJ as seen before peeking the next spec so that
-                // peekNextHomeScreenMessageExperiment() enters the finalDaxDialogSeen
-                // branch and can return .subscriptionPromotion. Without this the
-                // chat-path branch returns nil and dismiss() is called immediately,
-                // making isEnabled = false and blocking the promo forever (r3257196584).
-                self.daxDialogsManager.setFinalOnboardingDialogSeen()
-                // Check for subscription promo before ending onboarding, mirroring
-                // the same check in showNextDaxDialogNew's onDismiss.
-                let nextSpec = self.daxDialogsManager.nextHomeScreenMessageNew()
-                if nextSpec == .subscriptionPromotion {
-                    // Editing state is about to be dismissed for the subscription promo —
-                    // keep the suppressed Dax non-installed so the dismiss animation can't
-                    // slide it in along with the editing state's logo Y-offset animation.
-                    self.dismissHostingController(didFinishNTPOnboarding: true)
-                    self.chromeDelegate?.omniBar.endEditing()
-                    self.showNextDaxDialog()
-                } else {
-                    // Staying in the editing state — lazily install/restore the Dax so
-                    // it's visible normally for subsequent visibility updates.
-                    editingController?.setLogoHidden(false)
-                    self.daxDialogsManager.dismiss()
-                    self.dismissHostingController(didFinishNTPOnboarding: true)
-                    ViewHighlighter.hideAll()
-                }
-            }
-
-            guard let hostingView = self.hostingController?.view else {
-                finishDismissal()
-                return
-            }
-            hostingView.isUserInteractionEnabled = false
-            UIView.animate(withDuration: 0.2, animations: {
-                hostingView.alpha = 0
-            }, completion: { _ in
-                finishDismissal()
-            })
-        }
-
-        let root = newTabDialogFactory.createDuckAIFireOnboardingCompletionDialog(message: message, onDismiss: onDismiss)
-        let hostingController = UIHostingController(rootView: root)
-        self.hostingController = hostingController
-        hostingController.view.backgroundColor = .clear
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        editingController.addChild(hostingController)
-        let container = editingController.contentStackContainerView
-        container.addSubview(hostingController.view)
-        NSLayoutConstraint.activate([
-            // Keep the completion content pinned to the top; in bottom-bar mode it gets cropped from the bottom
-            // as the bar moves up with the keyboard.
-            editingController.isUsingTopBarPositionForLayout ?
-                hostingController.view.topAnchor.constraint(equalTo: editingController.contentStackTopAnchor,
-                                                            constant: editingController.addressBarToToggleSpacing) :
-                hostingController.view.topAnchor.constraint(equalTo: container.topAnchor),
-            editingController.isUsingTopBarPositionForLayout ?
-                hostingController.view.heightAnchor.constraint(equalTo: container.heightAnchor) :
-                hostingController.view.bottomAnchor.constraint(equalTo: editingController.contentStackBottomAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor)
-        ])
-        hostingController.didMove(toParent: editingController)
-        container.bringSubviewToFront(editingController.switchBarVC.view)
+        showDuckAIOnboardingCompletionDialogInUTI(mainVC: mainVC, coordinator: coordinator, message: message)
     }
 
     // Mirrors showDuckAIOnboardingCompletionDialog for UTI mode where no editing-state VC exists.
@@ -619,8 +544,8 @@ extension NewTabPageViewController {
         // NTP copy — overlays the NTP view, visible after the omnibar closes.
         // Parented to mainVC (not self) because self is UIHostingController<NewTabPageView>:
         // adding one _UIHostingView as a subview of another UIHostingController.view is
-        // unsupported and triggers a UIKit warning. self.view.superview is the plain UIView
-        // of UnifiedInputContentContainerViewController, so it is safe to host into.
+        // unsupported and triggers a UIKit warning. self.view.superview is the content
+        // container's plain UIView, so it is safe to host into.
         let ntpRoot = newTabDialogFactory.createDuckAIFireOnboardingCompletionDialog(message: message, onDismiss: onDismiss)
         let ntpHC = UIHostingController(rootView: ntpRoot)
         ntpHC.view.backgroundColor = .clear
@@ -629,8 +554,12 @@ extension NewTabPageViewController {
         let ntpContainer: UIView = view.superview ?? mainVC.view
         mainVC.addChild(ntpHC)
         ntpContainer.addSubview(ntpHC.view)
+        // Also shown with the input card focused, so it needs the same offset.
+        let ntpTopConstraint = ntpHC.view.topAnchor.constraint(equalTo: view.topAnchor,
+                                                              constant: floatingDaxDialogTopInset)
+        daxDialogTopConstraint = ntpTopConstraint
         NSLayoutConstraint.activate([
-            ntpHC.view.topAnchor.constraint(equalTo: view.topAnchor),
+            ntpTopConstraint,
             ntpHC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             ntpHC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             ntpHC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -755,8 +684,12 @@ extension NewTabPageViewController {
         view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
+        // Floating UI spans the page behind the focused input card, so start the dialog below it.
+        let topConstraint = hostingController.view.topAnchor.constraint(equalTo: view.topAnchor,
+                                                                       constant: floatingDaxDialogTopInset)
+        daxDialogTopConstraint = topConstraint
         NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            topConstraint,
             hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -806,12 +739,35 @@ extension NewTabPageViewController {
         }
     }
 
+    /// Offset the contextual onboarding dialog needs to clear the focused unified toggle input card.
+    /// Zero outside floating UI, which is the only layout that floats the card over the page.
+    private var floatingDaxDialogTopInset: CGFloat {
+        guard floatingUIManager.isFloatingUIEnabled else { return 0 }
+        return chromeDelegate?.floatingNewTabPageTopObscuredHeight ?? 0
+    }
+
+    /// Re-applies the dialog offset after the input card resized — typing, or a Search ↔ Duck.ai
+    /// toggle. Neither dirties this page's layout, so the push has to be explicit.
+    func refreshContextualOnboardingDialogLayout() {
+        updateDaxDialogTopInsetIfNeeded()
+    }
+
+    /// Runs on every layout pass (covers rotation and attach) and on the push above. The offset comes
+    /// from the card, not from anything downstream of this constraint, so it settles in one pass.
+    private func updateDaxDialogTopInsetIfNeeded() {
+        guard let daxDialogTopConstraint else { return }
+        let inset = floatingDaxDialogTopInset
+        guard daxDialogTopConstraint.constant != inset else { return }
+        daxDialogTopConstraint.constant = inset
+    }
+
     private func dismissHostingController(didFinishNTPOnboarding: Bool, updateUnifiedInputContentOverlaySuppression: Bool = true) {
         let didDismissDuckAICompletionDialog = isShowingDuckAICompletionDialog
         hostingController?.willMove(toParent: nil)
         hostingController?.view.removeFromSuperview()
         hostingController?.removeFromParent()
         hostingController = nil
+        daxDialogTopConstraint = nil
         if updateUnifiedInputContentOverlaySuppression {
             chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
         }

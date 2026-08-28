@@ -75,9 +75,18 @@ enum WebViewPreviewSnapshotGeometry {
     }
 
     static func visibleRect(webViewBounds: CGRect, contentInset: UIEdgeInsets, capturesFullBounds: Bool) -> CGRect? {
-        capturesFullBounds
-            ? visibleRect(webViewBounds: webViewBounds)
-            : visibleRect(webViewBounds: webViewBounds, contentInset: contentInset)
+        let cropInset = UIEdgeInsets(top: contentInset.top,
+                                     left: 0,
+                                     bottom: capturesFullBounds ? 0 : contentInset.bottom,
+                                     right: 0)
+        return visibleRect(webViewBounds: webViewBounds, contentInset: cropInset)
+    }
+}
+
+enum WebViewPreviewSnapshotPolicy {
+
+    static func shouldCapture(isLoading: Bool) -> Bool {
+        !isLoading
     }
 }
 
@@ -154,10 +163,19 @@ class TabViewController: UIViewController {
     var errorMessage: UILabel!
     
     var containerStackView: UIStackView!
+    /// Driven by `applyContextualOnboardingTopInset(_:)` to clear the floating chrome.
+    var containerStackViewTopConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
-    var daxContextualOnboardingController: UIViewController?
+    private var webViewLayoutConstraints: [NSLayoutConstraint] = []
+    private var fullscreenStateObserver: NSKeyValueObservation?
+    var daxContextualOnboardingController: UIViewController? {
+        didSet {
+            // Floating UI reserves the obscured top region while a dialog is up, so relayout on both.
+            updateContextualOnboardingLayoutForFloatingUIIfNeeded()
+        }
+    }
     var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec?
     
     /// Stores the visual state of the web view
@@ -266,10 +284,13 @@ class TabViewController: UIViewController {
     private(set) var webView: WKWebView!
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
+    /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
+    private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
+    private var contextualOnboardingTopInset: CGFloat = 0
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
-    private lazy var floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger,
-                                                           unifiedToggleInputFeature: unifiedToggleInputFeature)
+    lazy var floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger,
+                                                   unifiedToggleInputFeature: unifiedToggleInputFeature)
     lazy var aiChatTextSelectionFeature: AIChatTextSelectionFeatureProviding =
         AIChatTextSelectionFeature(featureFlagger: featureFlagger,
                                    aiChatSettings: aiChatSettings,
@@ -706,7 +727,7 @@ class TabViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
     let aiChatSettings: AIChatSettingsProvider
-    let aiChatFullModeFeature: AIChatFullModeFeatureProviding
+    let devicePlatform: DevicePlatformProviding.Type
     let sharedSecureVault: (any AutofillSecureVault)?
     let privacyStats: PrivacyStatsProviding
     private let pixelFiring: (any PixelKitFiring)?
@@ -779,8 +800,8 @@ class TabViewController: UIViewController {
          adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
          aiChatSettings: AIChatSettingsProvider,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          privacyStats: PrivacyStatsProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -831,8 +852,8 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
-        self.aiChatFullModeFeature = aiChatFullModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.devicePlatform = devicePlatform
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,
@@ -998,14 +1019,22 @@ class TabViewController: UIViewController {
             borderView.isHidden = false
             borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         }
+        updateContextualOnboardingLayoutForFloatingUIIfNeeded()
         updateWebViewBottomAnchor()
     }
 
     private func updateWebViewBottomAnchor() {
-        updateWebViewBottomAnchor(for: 1.0)
+        // Doesn't record the fraction: this overload assumes full chrome rather than knowing it, and
+        // remembering 1.0 would replay it over a genuinely hidden bar.
+        applyWebViewLayout(for: 1.0)
     }
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
+        lastAppliedBarsVisibilityPercent = barsVisibilityPercent
+        applyWebViewLayout(for: barsVisibilityPercent)
+    }
+
+    private func applyWebViewLayout(for barsVisibilityPercent: CGFloat) {
         updateWebViewBottomConstraint(for: barsVisibilityPercent)
 
         if floatingUIManager.isFloatingUIEnabled {
@@ -1059,9 +1088,17 @@ class TabViewController: UIViewController {
         // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
         // full-bleed with no obscured region there.
         let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
+        var obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
             ? .zero
             : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+
+        // While a dialog is up the obscured top region offsets the stack instead of the web view, or
+        // the page gets pushed down twice. Measured at full chrome visibility so the dialog (and the
+        // web view frame) holds still through a bars hide/show instead of resizing every frame.
+        let effectiveContextualOnboardingTopInset = isUnifiedToggleInputAffectingLayout ? 0 : contextualOnboardingTopInset
+        applyContextualOnboardingTopInset(effectiveContextualOnboardingTopInset)
+        obscuredInsets.top = max(0, obscuredInsets.top - effectiveContextualOnboardingTopInset)
+
         let refreshControlTopOffset = appSettings.currentAddressBarPosition == .top
             ? max(0, obscuredInsets.top - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
             : 0
@@ -1086,6 +1123,7 @@ class TabViewController: UIViewController {
     }
 
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
+        applyContextualOnboardingTopInset(0)
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
@@ -1102,6 +1140,25 @@ class TabViewController: UIViewController {
         }
     }
 
+    /// Relayouts after the contextual onboarding dialog is added to or removed from the content stack.
+    private func updateContextualOnboardingLayoutForFloatingUIIfNeeded() {
+        // A non-current tab has no chrome to measure; it gets laid out again on re-selection.
+        guard floatingUIManager.isFloatingUIEnabled, webView != nil, let chromeDelegate else { return }
+        let inset = daxContextualOnboardingController == nil
+            ? 0
+            : max(0, chromeDelegate.floatingWebViewObscuredInsets(for: 1.0).top)
+        guard contextualOnboardingTopInset != inset else { return }
+        contextualOnboardingTopInset = inset
+        applyWebViewLayout(for: lastAppliedBarsVisibilityPercent)
+    }
+
+    /// Offsets the content stack so the dialog — its first arranged subview — clears the floating
+    /// chrome. Uses the top constraint, not stack layout margins: UIKit clamps those to the safe area.
+    private func applyContextualOnboardingTopInset(_ inset: CGFloat) {
+        guard let containerStackViewTopConstraint, containerStackViewTopConstraint.constant != inset else { return }
+        containerStackViewTopConstraint.constant = inset
+    }
+
     private func restoreScrollViewAdjustmentBehaviorAfterFloatingUI() {
         guard let behavior = scrollViewAdjustmentBehaviorBeforeFloatingUI else { return }
         WebViewScrollViewInsetUpdater.endManaging(webView.scrollView, restoring: behavior)
@@ -1114,12 +1171,20 @@ class TabViewController: UIViewController {
             .assign(to: \.netPConnectionStatus, onWeaklyHeld: self)
     }
 
+    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.updateContextualOnboardingLayoutForFloatingUIIfNeeded()
+        }
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         // The email manager is pulled from the main view controller, so reconnect it now, otherwise, it's nil
         userScripts?.autofillUserScript.emailDelegate = emailManager
 
         woShownRecently = false // don't fire if the user goes somewhere else first
+        updateContextualOnboardingLayoutForFloatingUIIfNeeded()
         updateWebViewBottomAnchor()
         resetNavigationBar()
         delegate?.tabDidRequestShowingMenuHighlighter(tab: self)
@@ -1266,14 +1331,7 @@ class TabViewController: UIViewController {
         webView.uiDelegate = self
 
         webViewContainer.addSubview(webView)
-        webView.translatesAutoresizingMaskIntoConstraints = false
-        webViewBottomAnchorConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
-        NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
-            webView.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
-            webViewBottomAnchorConstraint!,
-            webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
-        ])
+        pinWebViewToContainer()
 
         pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
                                                             pullableView: webViewContainer,
@@ -1361,6 +1419,7 @@ class TabViewController: UIViewController {
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.title), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.isLoading), options: .new, context: nil)
+        observeFullscreenStateForLayoutRestoration()
     }
 
     private func configureRefreshControl(_ control: UIRefreshControl) {
@@ -2052,6 +2111,84 @@ class TabViewController: UIViewController {
         view.removeFromSuperview()
     }
 
+    private func pinWebViewToContainer() {
+        webView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Retained so the fullscreen round-trip re-activates the same objects, preserving the bottom
+        // constant. Rebuilt when a different web view is attached.
+        if webViewLayoutConstraints.first?.firstItem !== webView {
+            let bottomConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
+            webViewBottomAnchorConstraint = bottomConstraint
+            webViewLayoutConstraints = [
+                webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
+                webView.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
+                bottomConstraint,
+                webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
+            ]
+        }
+
+        NSLayoutConstraint.activate(webViewLayoutConstraints)
+    }
+
+    private func observeFullscreenStateForLayoutRestoration() {
+        guard #available(iOS 16.0, *) else { return }
+        fullscreenStateObserver = webView.observe(\.fullscreenState) { [weak self] webView, _ in
+            self?.handleFullscreenStateChange(webView.fullscreenState)
+        }
+    }
+
+    @available(iOS 16.0, *)
+    private func handleFullscreenStateChange(_ state: WKWebView.FullscreenState) {
+        switch state {
+        case .enteringFullscreen:
+            handOverWebViewLayoutToWebKit()
+        case .notInFullscreen:
+            restoreWebViewLayoutAfterFullscreen()
+        default:
+            break
+        }
+    }
+
+    /// WebKit sizes the web view by setting its frame while it owns it in the fullscreen window.
+    /// Auto Layout would zero that frame back out, leaving the fullscreen surface blank.
+    private func handOverWebViewLayoutToWebKit() {
+        NSLayoutConstraint.deactivate(webViewLayoutConstraints)
+        webView.translatesAutoresizingMaskIntoConstraints = true
+        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+        // Seed only when the hand-over zeroed the frame, so a repeat transition cannot shrink content
+        // WebKit has already sized.
+        if webView.frame.isEmpty, let host = webView.superview {
+            webView.frame = onScreenWebViewRect(in: host)
+        }
+
+        suspendWebViewHostedChrome()
+    }
+
+    /// These are subviews of the web view, so WebKit carries them into the fullscreen window: the border
+    /// would draw over the video, and a pull-down could reload the page behind it.
+    private func suspendWebViewHostedChrome() {
+        borderView.isHidden = true
+        pullToRefreshViewAdapter?.setPullSuspended(true)
+    }
+
+    /// Leaving the container zeroes the frame. Seeding the rect it occupied on screen keeps the already
+    /// painted content valid, so WebKit animates to fullscreen instead of re-rendering from blank.
+    private func onScreenWebViewRect(in host: UIView) -> CGRect {
+        var rect = webViewContainer.bounds
+        rect.size.height += webViewBottomAnchorConstraint?.constant ?? 0
+        return webViewContainer.convert(rect, to: host)
+    }
+
+    private func restoreWebViewLayoutAfterFullscreen() {
+        webViewContainer.addSubview(webView)
+        pinWebViewToContainer()
+        webViewContainer.layoutIfNeeded()
+
+        updateBorderViewForFloatingUIIfNeeded()
+        pullToRefreshViewAdapter?.setPullSuspended(false)
+    }
+
     private func removeObservers() {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.url))
@@ -2059,6 +2196,7 @@ class TabViewController: UIViewController {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.title))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
+        fullscreenStateObserver = nil
     }
 
     public func makeBreakageAdditionalInfo(webExtensionManager: WebExtensionManaging? = nil) -> PrivacyDashboardViewController.BreakageAdditionalInfo? {
@@ -2493,6 +2631,11 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
+            guard WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: webView.isLoading) else {
+                completion(nil)
+                return
+            }
+
             if jsAlertView?.isShown == true {
                 completion(preparePreviewSync(afterScreenUpdates: true))
                 return
@@ -2551,14 +2694,15 @@ extension TabViewController: WKNavigationDelegate {
         guard let webView, webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
 
         let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
-        let contentInset = capturesFullBounds ? UIEdgeInsets.zero : webView.scrollView.contentInset
-        let size = CGSize(width: webView.frame.size.width,
-                          height: webView.frame.size.height - contentInset.top - contentInset.bottom)
-        guard size.width > 0, size.height > 0 else { return nil }
+        guard let snapshotRect = WebViewPreviewSnapshotGeometry.visibleRect(
+            webViewBounds: webView.bounds,
+            contentInset: webView.scrollView.contentInset,
+            capturesFullBounds: capturesFullBounds
+        ) else { return nil }
 
-        let renderer = UIGraphicsImageRenderer(size: size)
+        let renderer = UIGraphicsImageRenderer(size: snapshotRect.size)
         return renderer.image { context in
-            context.cgContext.translateBy(x: 0, y: -contentInset.top)
+            context.cgContext.translateBy(x: -snapshotRect.origin.x, y: -snapshotRect.origin.y)
             webView.drawHierarchy(in: webView.bounds, afterScreenUpdates: afterScreenUpdates)
             if let jsAlertView {
                 jsAlertView.drawHierarchy(in: jsAlertView.bounds, afterScreenUpdates: false)
@@ -4074,6 +4218,17 @@ extension TabViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherRecognizer: UIGestureRecognizer) -> Bool {
         guard gestureRecognizer == showBarsTapGestureRecogniser else {
             return false
+        }
+
+        if featureFlagger.isFeatureOn(.suppressShowBarsGestureRecogniserDelay) {
+            // Claiming priority inserts this recognizer into the failure graph of every other tap
+            // recognizer, including the multi-tap ones WKWebView installs over web content. Those hold
+            // the second tap of a quick two-tap sequence back while they arbitrate, and it is dropped
+            // rather than delivered - so typing on an on-screen keyboard loses alternate keypresses.
+            // Claim nothing unless this tap could actually fire.
+            guard isShowBarsTap(gestureRecognizer) else {
+                return false
+            }
         }
 
         // Don't delay tap gestures that are inside the onboarding dialog

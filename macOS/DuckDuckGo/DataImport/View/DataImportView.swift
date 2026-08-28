@@ -130,12 +130,18 @@ struct DataImportView: ModalView {
                 )
             case .moreInfo:
                 NewImportMoreInfoView()
-            case .getReadPermission(let url):
+            case .getFileReadPermission(let url):
                 RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
                     model.initiateImport()
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
+            case .getDirectoryReadPermission:
+                RequestDirectoryReadPermissionView(source: model.importSource)
+            case .directoryReadPermissionCancelled:
+                RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterCancel)
+            case .directoryReadPermissionDenied:
+                RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterError)
             case .passwordEntryHelp:
                 PasswordEntryRetryPromptView(
                     onRetry: {
@@ -441,12 +447,14 @@ extension DataImportViewModel.ButtonType {
         case .selectFile: .defaultAction
         case .skip: .cancelAction
         case .cancel: .cancelAction
+        case .cancelImport: .cancelAction
         case .back: .cancelAction
         case .close: .cancelAction
         case .done: .cancelAction
         case .submit: .defaultAction
         case .continue: .defaultAction
         case .sync: .defaultAction
+        case .grantDirectoryAccess: .defaultAction
         }
     }
 
@@ -484,6 +492,8 @@ extension DataImportViewModel.ButtonType {
             }
         case .cancel:
             UserText.cancel
+        case .cancelImport:
+            UserText.importBrowserDataRequestAccessDeniedCancelTitle
         case .back:
             UserText.navigateBack
         case .done:
@@ -498,6 +508,8 @@ extension DataImportViewModel.ButtonType {
             UserText.importDataCompleteSyncButtonTitle
         case .close:
             UserText.close
+        case .grantDirectoryAccess(let source):
+            UserText.importBrowserDataRequestAccessButton(for: source)
         }
     }
 

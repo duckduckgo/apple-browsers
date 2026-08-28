@@ -47,13 +47,13 @@ final class HistoryMenu: NSMenu {
         keyEquivalent: "y",
         representedObject: location
     )
-        .withImage(DesignSystemImages.Glyphs.Size12.history)
+        .withImage(DesignSystemImages.Glyphs.Size12.history, visibleOnMacOS27: true)
     private let showHistorySeparator = NSMenuItem.separator()
-    private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryDeleteAllHistory,
-                                                     action: #selector(AppDelegate.clearAllHistory),
-                                                     keyEquivalent: [.command, .shift, .backspace])
+    private lazy var clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryDeleteAllHistory,
+                                                         action: #selector(AppDelegate.clearAllHistory),
+                                                         keyEquivalent: [.command, .shift, .backspace])
         .withAccessibilityIdentifier("HistoryMenu.clearAllHistory")
-        .withImage(DesignSystemImages.Glyphs.Size12.trash)
+        .withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: location == .moreOptionsMenu)
     private let clearAllHistorySeparator = NSMenuItem.separator()
 
     private let historyGroupingProvider: HistoryGroupingProvider

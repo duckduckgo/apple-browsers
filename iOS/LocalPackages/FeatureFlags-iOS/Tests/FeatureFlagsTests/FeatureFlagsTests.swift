@@ -83,4 +83,20 @@ final class FeatureFlagsTests: XCTestCase {
             XCTAssertTrue(flag.supportsLocalOverriding)
         }
     }
+
+    func testSuppressShowBarsGestureRecogniserDelayIsDefaultEnabledRemoteReleasableAndLocallyOverridable() {
+        let flag = FeatureFlag.suppressShowBarsGestureRecogniserDelay
+
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual((subfeature as? iOSBrowserConfigSubfeature)?.rawValue,
+                       iOSBrowserConfigSubfeature.suppressShowBarsGestureRecogniserDelay.rawValue)
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
 }

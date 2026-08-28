@@ -41,13 +41,15 @@ extension HTTPSUpgradeTabExtension: NavigationResponder {
     @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         guard let mainFrameTarget = navigationAction.mainFrameTarget else { return .next }
-        guard navigationAction.url.isHttp, navigationAction.url.port == nil else { return .next }
 
         // resetting lastUpgradedURL for new navigation or cross-domain navigation
         if (navigationAction.navigationType == .other && !navigationAction.isUserInitiated)
             || navigationAction.request.mainDocumentURL?.host != lastUpgradedURL?.host {
             lastUpgradedURL = nil
         }
+
+        // Don't upgrade HTTP URLs with explicit ports.
+        guard navigationAction.url.isHttp, navigationAction.url.port == nil else { return .next }
 
         guard case let .success(upgradedURL) = await httpsUpgrade.upgrade(url: navigationAction.url),
               lastUpgradedURL != upgradedURL

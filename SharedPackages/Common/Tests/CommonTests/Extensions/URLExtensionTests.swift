@@ -137,7 +137,7 @@ final class URLExtensionTests {
     @available(iOS 16, macOS 13, *)
     @Test("URL.toHttps does not upgrade URLs with explicit ports", .timeLimit(.minutes(1)))
     func toHttpsDoesNotUpgradeURLsWithExplicitPorts() {
-        #expect(URL(string: "http://example.com:8080")!.toHttps() == URL(string: "http://example.com:8080")!)
+        #expect(URL(string: "http://example.com:8080")!.toHttps() == nil)
     }
 
     static let basicAuthCredential_args: [(String, String?, String?, UInt)] = [

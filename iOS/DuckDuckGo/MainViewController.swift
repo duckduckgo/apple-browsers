@@ -411,7 +411,8 @@ class MainViewController: UIViewController {
         SiteThemeColorManager(viewCoordinator: viewCoordinator,
                               currentTabViewController: { [weak self] in self?.currentTab }(),
                               appSettings: appSettings,
-                              themeManager: themeManager)
+                              themeManager: themeManager,
+                              isFloatingUIEnabled: isFloatingUIEnabled)
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {

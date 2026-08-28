@@ -152,8 +152,9 @@ final class SiteThemeColorManager {
         }
         viewCoordinator.setStandardStatusBackgroundColor(statusBackgroundColor)
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
-        tabViewController?.webView?.underPageBackgroundColor = isFloatingUIEnabled ? UIColor(designSystemColor: .surfaceCanvas) : newColor
-        tabViewController?.webView?.scrollView.backgroundColor = newColor
+        let webViewBackgroundColor = isFloatingUIEnabled ? UIColor(designSystemColor: .surfaceCanvas) : newColor
+        tabViewController?.webView?.underPageBackgroundColor = webViewBackgroundColor
+        tabViewController?.webView?.scrollView.backgroundColor = webViewBackgroundColor
     }
 
 }

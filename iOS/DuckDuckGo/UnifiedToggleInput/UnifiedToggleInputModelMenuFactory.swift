@@ -106,7 +106,7 @@ struct UnifiedToggleInputModelMenuFactory {
         onSelect: @escaping (String) -> Void
     ) -> UIMenu {
         let groupedModels = AIChatModelSectionBuilder.groupByAccess(models: models)
-        let groupedAvailableModels = AIChatModelSectionBuilder.groupByRecommendationLabel(models: groupedModels.accessible)
+        let groupedAvailableModels = AIChatModelSectionBuilder.groupByEditorialLabel(models: groupedModels.accessible)
         let availableModels = groupedAvailableModels.withLabel + groupedAvailableModels.withoutLabel
         var children: [UIMenuElement] = availableModels.map { model in
             makeUpdatedAction(

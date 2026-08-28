@@ -119,17 +119,8 @@ final class UTIModelStore {
     /// `resolve(modelId:)`, which drops an inaccessible model and falls back to `firstAccessibleModelId`
     /// — so switching to one would leave the user on a third model while the footer card names this one.
     var imageGenerationFallbackModel: AIChatModel? {
-        models.first {
-            $0.id == Constants.imageGenerationFallbackModelId
-                && $0.entityHasAccess
-                && $0.supportsTool(.imageGeneration)
-        }
-    }
-
-    private enum Constants {
-        /// Hardcoded until the picker learns to resolve the first accessible image-capable model.
-        /// TODO: https://app.asana.com/1/137249556945/project/1210947754188321/task/1217865341581108?focus=true
-        static let imageGenerationFallbackModelId = "gpt-5.6-luna"
+        let candidates = models.filter { $0.entityHasAccess && $0.supportsTool(.imageGeneration) }
+        return candidates.first(where: \.isSuggestedForImageCreation) ?? candidates.first
     }
 
     private var firstAccessibleModelId: String? {

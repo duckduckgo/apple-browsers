@@ -49,7 +49,7 @@ final class AIChatModelSectionBuilderTests: XCTestCase {
         XCTAssertEqual(gated.first?.requiredTier, .plus)
     }
 
-    // MARK: - groupByRecommendationLabel
+    // MARK: - groupByEditorialLabel
 
     func testWhenModelsHaveRecommendationLabelsThenGroupsPreserveAPIOrder() {
         let models = [
@@ -60,14 +60,14 @@ final class AIChatModelSectionBuilderTests: XCTestCase {
             makeModel(id: "with-2", entityHasAccess: true, accessTier: ["free"], label: .usesLimitsFaster),
         ]
 
-        let grouped = AIChatModelSectionBuilder.groupByRecommendationLabel(models: models)
+        let grouped = AIChatModelSectionBuilder.groupByEditorialLabel(models: models)
 
         XCTAssertEqual(grouped.withLabel.map(\.id), ["with-1", "unknown", "with-2"])
         XCTAssertEqual(grouped.withoutLabel.map(\.id), ["without-1", "without-2"])
     }
 
     func testWhenModelsAreEmptyThenRecommendationLabelGroupsAreEmpty() {
-        let grouped = AIChatModelSectionBuilder.groupByRecommendationLabel(models: [])
+        let grouped = AIChatModelSectionBuilder.groupByEditorialLabel(models: [])
 
         XCTAssertTrue(grouped.withLabel.isEmpty)
         XCTAssertTrue(grouped.withoutLabel.isEmpty)

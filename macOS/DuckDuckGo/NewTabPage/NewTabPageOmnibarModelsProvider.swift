@@ -82,7 +82,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
             // Recommended = backend-labelled models, shown first with the label as a subtitle.
             let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
-            let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
+            let (recommended, rest) = AIChatModelSectionBuilder.groupByEditorialLabel(models: accessible)
             let ordered = recommended + rest
 
             var result: [NewTabPageDataModel.AIModelSection] = []

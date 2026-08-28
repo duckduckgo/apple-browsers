@@ -369,7 +369,7 @@ final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
         observerNotificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
 
         await waitUntil("cancelled pixel fired after subscription became inactive") {
-            pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.subscriptionExpirationReminderCancelled.name }
+            self.pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.subscriptionExpirationReminderCancelled.name }
         }
     }
 
@@ -381,7 +381,7 @@ final class SubscriptionExpirationReminderSchedulerTests: XCTestCase {
         observerNotificationCenter.post(name: .subscriptionDidChange, object: nil)
 
         await waitUntil("cancelled pixel fired after trial offer ended") {
-            pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.subscriptionExpirationReminderCancelled.name }
+            self.pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.subscriptionExpirationReminderCancelled.name }
         }
     }
 

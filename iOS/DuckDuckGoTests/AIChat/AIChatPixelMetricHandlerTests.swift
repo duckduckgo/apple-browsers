@@ -190,14 +190,14 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         // Given
         let featureDiscovery = MockFeatureDiscovery()
         handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil,
-                                           pixelFiring: PixelFiringMock.self,
+                                           pixelFiring: pixelKitMock,
                                            featureDiscovery: featureDiscovery)
 
         // When
         handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitPrompt))
 
         // Then
-        XCTAssertEqual(PixelFiringMock.lastParams?["first_prompt_new_install"], "true")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["first_prompt_new_install"], "true")
         XCTAssertTrue(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
     }
 
@@ -205,28 +205,28 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         // Given
         let featureDiscovery = Self.returningUserFeatureDiscovery()
         handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil,
-                                           pixelFiring: PixelFiringMock.self,
+                                           pixelFiring: pixelKitMock,
                                            featureDiscovery: featureDiscovery)
 
         // When
         handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitFirstPrompt))
 
         // Then
-        XCTAssertNil(PixelFiringMock.lastParams?["first_prompt_new_install"])
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["first_prompt_new_install"])
     }
 
     func testWhenNonPromptMetricFiresThenFirstPromptFlagIsUntouched() {
         // Given
         let featureDiscovery = MockFeatureDiscovery()
         handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil,
-                                           pixelFiring: PixelFiringMock.self,
+                                           pixelFiring: pixelKitMock,
                                            featureDiscovery: featureDiscovery)
 
         // When
         handler.firePixelWithMetric(AIChatMetric(metricName: .userDidOpenHistory))
 
         // Then
-        XCTAssertNil(PixelFiringMock.lastParams?["first_prompt_new_install"])
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["first_prompt_new_install"])
         XCTAssertFalse(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
     }
 

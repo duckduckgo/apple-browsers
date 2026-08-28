@@ -167,7 +167,7 @@ final class UTIPixelReporterTests: XCTestCase {
                                        defaultOmnibarMode: .search,
                                        isFirstPromptNewInstall: true)
 
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["first_prompt_new_install"], "true")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["first_prompt_new_install"], "true")
     }
 
     func testWhenPromptSubmittedFromAddressBarThenOriginIsAddressBarPrompt() {

@@ -102,9 +102,11 @@ final class UTIModelSelector {
 
     // MARK: - Model selection
 
-    func handleModelSelection(_ modelId: String) {
+    /// `true` when the model was applied; `false` when the row was gated and only opened the upsell.
+    @discardableResult
+    func handleModelSelection(_ modelId: String) -> Bool {
         guard let model = modelStore.models.first(where: { $0.id == modelId }) else {
-            return
+            return false
         }
 
         if model.entityHasAccess {
@@ -118,11 +120,13 @@ final class UTIModelSelector {
                 pixelReporter.reportModelSelected(modelId: modelId)
             }
             callbacks.onModelApplied(modelId)
+            return true
         } else {
             if routeGatedModelSelection(model) {
                 pendingGatedModelId = modelId
             }
             refreshModelPickerMenuAfterRejectedSelection()
+            return false
         }
     }
 
@@ -289,8 +293,10 @@ final class UTIModelSelector {
         guard !models.isEmpty else { return nil }
 
         let onSelect: (String) -> Void = { [weak self] modelId in
-            self?.handleModelSelection(modelId)
-            onSelected?()
+            // Only on a real switch: a gated row opens the upsell and leaves the model as it was.
+            if self?.handleModelSelection(modelId) == true {
+                onSelected?()
+            }
         }
 
         return modelMenuFactory.makeMenu(

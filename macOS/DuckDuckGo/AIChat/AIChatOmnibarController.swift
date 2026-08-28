@@ -146,10 +146,12 @@ final class AIChatOmnibarController {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
             updateSelectedModel(suggestion.modelId)
         case .tryForFree:
-            // The funnel origin is surface-specific and belongs to the view layer, so this waits for UI.
-            Logger.aiChat.debug("Duck.ai usage warning: try-for-free tapped, no native route yet")
+            // Free tier only, so `.plus` always resolves to the purchase flow rather than an upgrade.
+            subscriptionUpsellPresenter.routeGatedSelection(requiredTier: .plus,
+                                                            userTier: userTier,
+                                                            origin: surface.usageLimitFunnelOrigin)
         case .startUsingWeeklyLimit:
-            // Awaiting the native-storage value web will set; logged so the tap is observable meanwhile.
+            // The card offers no button for this until web sets the value it needs.
             Logger.aiChat.debug("Duck.ai usage warning: start-using-weekly-limit tapped, no native action yet")
         }
     }
@@ -346,7 +348,7 @@ final class AIChatOmnibarController {
         usageWarningViewModel?.onAction = { [weak self] action in
             self?.performUsageWarningAction(action)
         }
-        // macOS has no programmatic model-picker entry point yet; `>` is wired when the UI lands.
+        // `onOpenModelPicker` is set by the container VC, which owns the anchor the menu pops from.
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;

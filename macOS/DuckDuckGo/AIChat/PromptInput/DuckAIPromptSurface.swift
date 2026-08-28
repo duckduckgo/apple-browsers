@@ -82,4 +82,12 @@ extension DuckAIPromptSurface {
         case .promptBar: true
         }
     }
+
+    /// Funnel origin for the usage-limit card's upsell.
+    var usageLimitFunnelOrigin: SubscriptionFunnelOrigin {
+        switch self {
+        case .addressBar: .addressBarUsageLimit
+        case .promptBar: .promptBarUsageLimit
+        }
+    }
 }

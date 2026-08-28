@@ -58,6 +58,7 @@ final class PromoQueueUITests: UITestCase {
 
     func testWhenCooldownActive_ThenPromosBlocked() throws {
         app.fireTestTrigger()
+        XCTAssertTrue(app.alertA.waitForExistence(timeout: UITests.Timeouts.elementExistence), "test-promo-a should appear")
         app.alertA.dismissWithCooldownButton.clickAfterExistenceTestSucceeds()
         XCTAssertTrue(app.alertA.waitForNonExistence(timeout: UITests.Timeouts.elementExistence))
 
@@ -75,6 +76,7 @@ final class PromoQueueUITests: UITestCase {
 
     func testWhenDateAdvanced_ThenCooldownsUnblocked() throws {
         app.fireTestTrigger()
+        XCTAssertTrue(app.alertA.waitForExistence(timeout: UITests.Timeouts.elementExistence), "test-promo-a should appear")
         app.alertA.dismissWithCooldownButton.clickAfterExistenceTestSucceeds()
         XCTAssertTrue(app.alertA.waitForNonExistence(timeout: UITests.Timeouts.elementExistence))
 
@@ -213,28 +215,30 @@ private extension XCUIApplication {
 }
 
 private extension XCUIElement {
+    private typealias Identifiers = Utilities.AccessibilityIdentifiers.PromoQueue
+
     var noneButton: XCUIElement {
-        buttons["None"]
+        buttons[Identifiers.noneButton]
     }
 
     var setIneligibleButton: XCUIElement {
-        buttons["Set Ineligible"]
+        buttons[Identifiers.setIneligibleButton]
     }
 
     var dismissWithCooldownButton: XCUIElement {
-        buttons["Dismiss (1 day cooldown)"]
+        buttons[Identifiers.dismissWithCooldownButton]
     }
 
     var dismissPermanentlyButton: XCUIElement {
-        buttons["Dismiss Permanently"]
+        buttons[Identifiers.dismissPermanentlyButton]
     }
 
     var actionButton: XCUIElement {
-        buttons["Action"]
+        buttons[Identifiers.actionButton]
     }
 
     var nextSteps: XCUIElement {
-        webViews.firstMatch.staticTexts["Next Steps"]
+        webViews.firstMatch.staticTexts.containing(\.value, containing: "NEXT STEPS").firstMatch
     }
 
     var tabBarRemoteMessageCloseButton: XCUIElement {

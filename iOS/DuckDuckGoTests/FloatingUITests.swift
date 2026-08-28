@@ -124,6 +124,49 @@ final class FloatingUIManagerTests: XCTestCase {
 
 }
 
+final class FloatingGlassAppearancePolicyTests: XCTestCase {
+
+    func testWhenFireModeIsActiveThenInterfaceStyleIsDarkRegardlessOfDeviceAndPageAppearance() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: true,
+            traitCollection: UITraitCollection(userInterfaceStyle: .light),
+            pageBackgroundColor: .white)
+
+        XCTAssertEqual(interfaceStyle, .dark)
+    }
+
+    func testWhenNormalModeUsesDarkDeviceAppearanceThenInterfaceStyleIsDark() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: false,
+            traitCollection: UITraitCollection(userInterfaceStyle: .dark),
+            pageBackgroundColor: .white)
+
+        XCTAssertEqual(interfaceStyle, .dark)
+    }
+
+    func testWhenNormalModeUsesLightDeviceAppearanceThenInterfaceStyleFollowsPageAppearance() {
+        let traitCollection = UITraitCollection(userInterfaceStyle: .light)
+
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .black),
+                       .dark)
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .white),
+                       .light)
+    }
+
+    func testWhenNormalModeHasNoPageColorThenInterfaceStyleIsLight() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: false,
+            traitCollection: UITraitCollection(userInterfaceStyle: .light),
+            pageBackgroundColor: nil)
+
+        XCTAssertEqual(interfaceStyle, .light)
+    }
+}
+
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
     func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
@@ -171,6 +214,18 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         XCTAssertEqual(height, 70, accuracy: 0.001)
     }
 
+    func testWhenVisibleToolbarIsTallerThanTheInterpolatedSlotThenBottomObscuredHeightUsesTheVisibleChrome() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0.8,
+            toolbarSlotHeight: 100,
+            visibleToolbarHeight: 90,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 90, accuracy: 0.001)
+    }
+
     func testWhenBarsVisibleThenTopObscuredHeightIsExpandedChrome() {
         let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
             barsVisibilityPercent: 1,
@@ -213,6 +268,38 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         )
 
         XCTAssertEqual(height, 91, accuracy: 0.001)
+    }
+
+    func testWhenVisibleTopChromeIsTallerThanTheInterpolatedChromeThenTopObscuredHeightUsesTheVisibleChrome() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0.8,
+            expandedChromeHeight: 111,
+            visibleChromeHeight: 105,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 105, accuracy: 0.001)
+    }
+
+    func testWhenBarsVisibleAboveTheHandoffThenChromeStaysFullyOnScreen() {
+        for percent in [1.0, 0.9, 0.75, 0.6] as [CGFloat] {
+            let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: percent, handoffStart: 0.6)
+
+            XCTAssertEqual(fraction, 1, accuracy: 0.001, "expected no slide at \(percent)")
+        }
+    }
+
+    func testWhenBarsVisibleBelowTheHandoffThenChromeSlidesOutProportionally() {
+        let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: 0.3, handoffStart: 0.6)
+
+        XCTAssertEqual(fraction, 0.5, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenThenChromeIsFullyOffScreen() {
+        let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: 0, handoffStart: 0.6)
+
+        XCTAssertEqual(fraction, 0, accuracy: 0.001)
     }
 
     func testWhenFloatingBottomAddressBarAndNotMinimalChromeThenOmnibarIsHostedInToolbar() {
@@ -335,6 +422,113 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
         XCTAssertGreaterThan(barView.searchContainer.layer.cornerRadius, 0)
     }
+
+    func testWhenBottomFloatingFieldThenExpectedHeightIsTheFortyEightPointPill() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+
+        XCTAssertEqual(barView.expectedHeight, 48)
+    }
+
+    func testWhenTopFloatingFieldThenExpectedHeightStaysAtTheStandardBarHeight() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = false
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+    }
+
+    func testWhenTopFloatingFieldThenInputIsFortyEightPointsHighWithTwoPointInternalSpacing() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let searchContainerFrame = barView.convert(searchContainer.bounds, from: searchContainer)
+        let searchView = try XCTUnwrap(firstSubview(of: DefaultOmniBarSearchView.self, in: searchContainer))
+        let loupe = try XCTUnwrap(barView.searchLoupe)
+        let loupeFrame = searchView.convert(loupe.bounds, from: loupe)
+        XCTAssertEqual(searchContainerFrame.height, 48, accuracy: 0.01)
+        XCTAssertEqual(searchContainerFrame.midX, barView.bounds.midX, accuracy: 0.01)
+        XCTAssertEqual(searchContainerFrame.midY, barView.bounds.midY, accuracy: 0.01)
+        XCTAssertEqual(searchView.bounds.height, 44, accuracy: 0.01)
+        XCTAssertEqual((searchContainerFrame.height - searchView.bounds.height) / 2, 2, accuracy: 0.01)
+        XCTAssertEqual(loupeFrame.midY, searchView.bounds.midY - 2, accuracy: 0.01)
+    }
+
+    func testWhenTopFloatingLandscapeChromeThenInputHeightStaysUnchanged() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+        barView.isExpandedPhoneLayout = true
+        barView.setLayoutMode(.expandedPhone, animated: false)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
+    func testWhenTopFloatingLandscapeEditingThenCompactModeKeepsInputHeightUnchanged() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+        barView.isExpandedPhoneLayout = true
+        barView.setLayoutMode(.compact, animated: false)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
+    func testWhenBottomFloatingLandscapeEditingThenCompactModeKeepsInputHeightUnchanged() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = true
+        barView.isExpandedPhoneLayout = true
+        barView.setLayoutMode(.compact, animated: false)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
+    func testWhenNonFloatingTopFieldThenInputHeightStaysUnchanged() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
+    func testWhenBottomFloatingLandscapeChromeThenExpectedHeightStaysAtTheStandardBarHeight() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.setLayoutMode(.expandedPhone, animated: false)
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+    }
+
+    func testWhenBottomFloatingPadChromeThenExpectedHeightStaysAtTheStandardBarHeight() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.setLayoutMode(.expandedPad, animated: false)
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+    }
+
+    private func firstSubview<View: UIView>(of type: View.Type, in view: UIView) -> View? {
+        if let view = view as? View {
+            return view
+        }
+        return view.subviews.lazy.compactMap { self.firstSubview(of: type, in: $0) }.first
+    }
 }
 
 final class FloatingDomainCapsuleControllerTests: XCTestCase {
@@ -367,8 +561,10 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
     }
 
     @discardableResult
-    private func update(barsVisibilityPercent: CGFloat, reduceMotion: Bool = false) -> UIButton? {
-        controller.update(addressBarPosition: .top,
+    private func update(barsVisibilityPercent: CGFloat,
+                        addressBarPosition: AddressBarPosition = .top,
+                        reduceMotion: Bool = false) -> UIButton? {
+        controller.update(addressBarPosition: addressBarPosition,
                           isFloatingUIEnabled: true,
                           isUnifiedToggleInputActive: false,
                           isAITab: false,
@@ -389,6 +585,12 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertEqual(button?.alpha ?? 0, 1, accuracy: 0.001)
         // Capsule hugs the domain label, so it is far narrower than the bar.
         XCTAssertLessThan(button?.bounds.width ?? .greatestFiniteMagnitude, expandedFrame.width / 2)
+    }
+
+    func testWhenTopBarsHiddenThenPillKeepsEightPointsBelowIt() {
+        let button = update(barsVisibilityPercent: 0)
+
+        XCTAssertEqual(expandedFrame.maxY - (button?.frame.maxY ?? 0), FloatingDomainCapsuleController.restEdgePadding, accuracy: 0.5)
     }
 
     func testWhenPartiallyVisibleThenPillWidthIsBetweenCapsuleAndBarAndFullyOpaque() {
@@ -413,6 +615,77 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         let midWidth = update(barsVisibilityPercent: 0.5, reduceMotion: true)?.bounds.width ?? 0
 
         XCTAssertEqual(midWidth, capsuleWidth, accuracy: 0.5)
+    }
+
+    func testWhenBottomBarsHiddenThenPillRestsAtTheLowerCollapsedCenter() {
+        let button = update(barsVisibilityPercent: 0, addressBarPosition: .bottom)
+        let expectedCenterY = FloatingDomainCapsuleController.restCenterY(
+            addressBarPosition: .bottom,
+            expandedFrame: expandedFrame,
+            boundsMaxY: containerView.bounds.maxY,
+            safeAreaInsets: containerView.safeAreaInsets,
+            capsuleHeight: controller.capsuleHeight)
+
+        XCTAssertEqual(button?.center.y ?? 0, expectedCenterY, accuracy: 0.5)
+    }
+
+    func testWhenBottomCapsuleRestsThenObscuredHeightTracksThePillNotExtraTopPadding() {
+        update(barsVisibilityPercent: 0, addressBarPosition: .bottom)
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+        let padding = FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(safeAreaBottom: insets.bottom)
+        let obscured = controller.restObscuredHeightFromScreenEdge(for: .bottom, safeAreaInsets: insets)
+
+        XCTAssertEqual(obscured, padding + controller.capsuleHeight, accuracy: 0.001)
+        XCTAssertLessThan(obscured, insets.bottom + FloatingDomainCapsuleController.restEdgePadding + controller.capsuleHeight)
+    }
+}
+
+final class FloatingDomainCapsuleGeometryTests: XCTestCase {
+
+    func testWhenHomeIndicatorIsPresentThenBottomRestPaddingIsReducedByTwelvePoints() {
+        let safeAreaBottom: CGFloat = 34
+        let padding = FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(safeAreaBottom: safeAreaBottom)
+
+        XCTAssertEqual(
+            padding,
+            safeAreaBottom + FloatingDomainCapsuleController.restEdgePadding - FloatingDomainCapsuleController.restBottomInsetReduction,
+            accuracy: 0.001)
+    }
+
+    func testWhenSafeAreaCannotAbsorbTheReductionThenBottomRestPaddingClampsToZero() {
+        XCTAssertEqual(FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(safeAreaBottom: 0), 0, accuracy: 0.001)
+    }
+
+    func testWhenBottomAddressBarThenCollapsedRestCenterIsLowerByTheInsetReduction() {
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+        let capsuleHeight: CGFloat = 28
+        let boundsMaxY: CGFloat = 844
+        let previousRestCenterY = boundsMaxY - insets.bottom - FloatingDomainCapsuleController.restEdgePadding - capsuleHeight / 2
+        let restCenterY = FloatingDomainCapsuleController.restCenterY(
+            addressBarPosition: .bottom,
+            expandedFrame: .zero,
+            boundsMaxY: boundsMaxY,
+            safeAreaInsets: insets,
+            capsuleHeight: capsuleHeight)
+
+        XCTAssertEqual(restCenterY, previousRestCenterY + FloatingDomainCapsuleController.restBottomInsetReduction, accuracy: 0.001)
+    }
+
+    func testWhenTopAddressBarThenCollapsedRestCenterKeepsEightPointsBelowCapsule() {
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+        let capsuleHeight: CGFloat = 28
+        let expandedFrame = CGRect(x: 16, y: insets.top, width: 358, height: 60)
+        let restCenterY = FloatingDomainCapsuleController.restCenterY(
+            addressBarPosition: .top,
+            expandedFrame: expandedFrame,
+            boundsMaxY: 844,
+            safeAreaInsets: insets,
+            capsuleHeight: capsuleHeight)
+
+        XCTAssertEqual(
+            expandedFrame.maxY - (restCenterY + capsuleHeight / 2),
+            FloatingDomainCapsuleController.restEdgePadding,
+            accuracy: 0.001)
     }
 }
 
@@ -451,14 +724,35 @@ final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
         XCTAssertNil(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset))
     }
 
-    func testWhenCapturingFullBoundsThenContentInsetsDoNotCropTheViewport() {
+    func testWhenCapturingFullBoundsThenOnlyTheTopInsetIsCropped() {
         let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
         let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
 
         XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds,
                                                                   contentInset: contentInset,
                                                                   capturesFullBounds: true),
-                       bounds)
+                       CGRect(x: 0, y: 50, width: 320, height: 590))
+    }
+
+    func testWhenNotCapturingFullBoundsThenTopAndBottomInsetsAreCropped() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds,
+                                                                  contentInset: contentInset,
+                                                                  capturesFullBounds: false),
+                       CGRect(x: 0, y: 50, width: 320, height: 560))
+    }
+}
+
+final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
+
+    func testWhenPageIsLoadingThenSnapshotIsSkipped() {
+        XCTAssertFalse(WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: true))
+    }
+
+    func testWhenPageIsNotLoadingThenSnapshotIsCaptured() {
+        XCTAssertTrue(WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: false))
     }
 }
 
@@ -748,5 +1042,62 @@ final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
         XCTAssertNil(outgoingView.layer.mask)
         XCTAssertNil(incomingView.layer.mask)
         XCTAssertNil(incomingView.superview)
+    }
+}
+
+final class ChromeMorphAnimatorCurveTests: XCTestCase {
+
+    private let expandCurve = MainViewController.ChromeAnimationConstants.morphExpandCurve
+    private let collapseCurve = MainViewController.ChromeAnimationConstants.morphCollapseCurve
+
+    func testWhenCurveIsSmoothstepThenItEasesInAndOutSymmetrically() {
+        let curve = ChromeMorphAnimator.Curve.smoothstep
+
+        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 0.5), 0.5, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
+    }
+
+    func testWhenCurveIsEaseOutCubicThenItStartsFastAndDecelerates() {
+        let curve = ChromeMorphAnimator.Curve.easeOutCubic
+
+        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 0.5), 0.875, accuracy: 0.0001)
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
+        XCTAssertGreaterThan(curve.value(at: 0.25), 0.5)
+    }
+
+    func testWhenCollapsingThenTheCurveNeverOvershoots() {
+        for step in 0...100 {
+            let value = collapseCurve.value(at: CGFloat(step) / 100)
+            XCTAssertLessThanOrEqual(value, 1.0, "Collapse must not overshoot at t = \(CGFloat(step) / 100)")
+        }
+    }
+
+    func testWhenExpandingThenTheSpringSettlesByTheEndOfItsDuration() {
+        XCTAssertEqual(expandCurve.value(at: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(expandCurve.value(at: 1),
+                       1,
+                       accuracy: 0.001,
+                       "Residual at the cutoff becomes a snap. Raise naturalFrequency or the damping ratio.")
+    }
+
+    func testWhenExpandingThenOvershootStaysBelowOnePointFivePercent() {
+        var peak: CGFloat = 0
+        for step in 0...200 {
+            peak = max(peak, expandCurve.value(at: CGFloat(step) / 200))
+        }
+
+        XCTAssertGreaterThan(peak, 1.0, "A lightly damped spring is expected to overshoot slightly")
+        XCTAssertLessThan(peak, 1.015, "Overshoot on a bar that clips the screen edge reads as a glitch")
+    }
+
+    func testWhenSpringIsCriticallyDampedThenItNeverOvershoots() {
+        let curve = ChromeMorphAnimator.Curve.spring(dampingRatio: 1, naturalFrequency: 8.84)
+
+        for step in 0...100 {
+            XCTAssertLessThanOrEqual(curve.value(at: CGFloat(step) / 100), 1.0)
+        }
+        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.01)
     }
 }

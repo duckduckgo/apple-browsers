@@ -304,6 +304,10 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         // PixelKit.fire delivers through whatever PixelKit.shared was configured with, not through
         // this class's own injected pixelFiring, so the pixel is observed by configuring a real
         // PixelKit instance with a capturing fireRequest rather than by mocking a dependency.
+        // The failure path is reached asynchronously, so wait for the pixel rather than reading
+        // `firedPixels` straight after the call.
+        let pixelExpectation = expectation(description: "fires Pairing V2 presenter start failure pixel")
+        pixelExpectation.assertForOverFulfill = false
         var firedPixels: [(name: String, parameters: [String: String])] = []
         let pixelKitDefaults = UserDefaults(suiteName: "test_\(UUID().uuidString)")!
         PixelKit.setUp(dryRun: false,
@@ -312,11 +316,15 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
                        defaultHeaders: [:],
                        defaults: pixelKitDefaults) { firedPixelName, _, firedParameters, _, _, completion in
             firedPixels.append((firedPixelName, firedParameters))
+            if firedPixelName.contains(Pixel.Event.syncSetupEndedFailed.name) {
+                pixelExpectation.fulfill()
+            }
             completion(true, nil)
         }
         defer { PixelKit.tearDown() }
 
         vc.showSyncWithAnotherDevice()
+        await fulfillment(of: [pixelExpectation], timeout: 5)
 
         let pixel = firedPixels.first { $0.name.contains(Pixel.Event.syncSetupEndedFailed.name) }
         XCTAssertNotNil(pixel, "fires Pairing V2 presenter start failure pixel")

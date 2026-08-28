@@ -1092,11 +1092,7 @@ private extension SwipeTabsCoordinator {
         omniBar.showSeparator()
         omniBar.adjust(for: appSettings.currentAddressBarPosition)
         if floatingUIManager.isFloatingUIEnabled {
-            if appSettings.currentAddressBarPosition.isBottom {
-                omniBar.barView.makeOpaque()
-            } else {
-                omniBar.barView.makeGlass()
-            }
+            omniBar.barView.makeGlass()
         }
         omniBar.configureForSwipeTemplate(
             isExpandedPhone: coordinator.omniBar.isExpandedPhone,

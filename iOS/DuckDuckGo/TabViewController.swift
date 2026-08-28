@@ -83,6 +83,13 @@ enum WebViewPreviewSnapshotGeometry {
     }
 }
 
+enum WebViewPreviewSnapshotPolicy {
+
+    static func shouldCapture(isLoading: Bool) -> Bool {
+        !isLoading
+    }
+}
+
 enum WebViewScrollViewInsetUpdater {
 
     struct AdjustmentBehavior {
@@ -2624,6 +2631,11 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
+            guard WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: webView.isLoading) else {
+                completion(nil)
+                return
+            }
+
             if jsAlertView?.isShown == true {
                 completion(preparePreviewSync(afterScreenUpdates: true))
                 return
@@ -3544,7 +3556,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func shouldUpgradeToHttps(url: URL, navigationAction: WKNavigationAction) -> Bool {
-        return !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame()
+        return url.isHttp && url.port == nil && !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame()
     }
 
     private func performExternalNavigationFor(url: URL, action: SchemeHandler.Action) {

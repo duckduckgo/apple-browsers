@@ -1,10 +1,10 @@
 {
     "ios-return-session": {
         "description": "Sent at the end of a return session: every return to the app, whether it got an after-idle treatment (the NTP or LUT shown once the After Inactivity threshold elapses) or was an ordinary return. Captures where the user landed, what they did there, and how the session ended. `ios-post-idle-session` stays scoped to after-idle returns and runs alongside this event.",
-        "owners": ["Bunn", "SabrinaTardio"],
+        "owners": ["Bunn"],
         "meta": {
             "type": "ios-return-session",
-            "version": "1.0"
+            "version": "2.0"
         },
         "feature": {
             "name": "return-session",
@@ -44,9 +44,9 @@
                             "app_terminated"
                         ]
                     },
-                    "prompt_origin": {
+                    "source": {
                         "type": "string",
-                        "description": "What triggered the Duck.ai prompt submission that ended the session, as an m_aichat_entry_point source value. Present only when status_reason is ai_prompt_submitted; absent otherwise.",
+                        "description": "The Duck.ai entry point that triggered the session's ai_prompt_submitted terminal, as an m_aichat_entry_point source value, or unknown when the entry point could not be attributed. Present only when status_reason is ai_prompt_submitted; absent otherwise.",
                         "enum": [
                             "address_bar_prompt",
                             "address_bar_icon",
@@ -72,7 +72,8 @@
                             "widget_lock_screen",
                             "widget_control_center",
                             "siri",
-                            "deep_link_other"
+                            "deep_link_other",
+                            "unknown"
                         ]
                     },
                     "session_duration_ms_bucketed": {

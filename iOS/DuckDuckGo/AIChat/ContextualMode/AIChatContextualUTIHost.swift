@@ -51,6 +51,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onPromptSubmitted: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
+    var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?
 
@@ -476,6 +477,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     func unifiedToggleInputDidSubmitPromptToBoundChat() {
         reportFirstPromptSubmission()
+    }
+
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
+        onDuckAIPromptSubmitted?(origin)
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String,

@@ -162,6 +162,9 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
         navigationBar.translatesAutoresizingMaskIntoConstraints = false
         toolbar.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.insetsLayoutMarginsFromSafeArea = false
+        toolbar.preservesSuperviewLayoutMargins = false
+        toolbar.layoutMargins = .zero
 
         navigationBar.setItems([navigationItem], animated: false)
 
@@ -177,7 +180,6 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         tabsStyleItem.accessibilityLabel = UserText.tabSwitcherGridViewMenuTitle
 
         attachTopScrollViewInteraction()
-        attachBottomScrollViewInteraction()
     }
 
     var scrollViewTopInteraction: UIInteraction?
@@ -204,8 +206,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     }
 
     func attachBottomScrollViewInteraction() {
-        guard #available(iOS 26, *) else { return }
-        scrollViewBottomInteraction = attachScrollViewInteractionToView(toolbar, onEdge: .bottom, removingExistingInteraction: scrollViewBottomInteraction)
+        // Intentionally empty: the toolbar is inset to match the webview capsule.
+        // A scroll-edge interaction would apply a second, larger device-concentric inset.
     }
 
     func trackScrollEdge(of scrollView: UIScrollView) {
@@ -213,7 +215,6 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         scrollEdgeScrollView = scrollView
         guard #available(iOS 26, *) else { return }
         (scrollViewTopInteraction as? UIScrollEdgeElementContainerInteraction)?.scrollView = scrollView
-        (scrollViewBottomInteraction as? UIScrollEdgeElementContainerInteraction)?.scrollView = scrollView
     }
 
     func setCenterView(_ view: UIView?) {
@@ -357,11 +358,42 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         toolbar.isHidden = params.interfaceMode.isLarge
     }
 
+    /// Distance from the host's top to the bottom of the floating navigation bar.
+    /// Both pages use this so tab cards keep the same top spacing during a paging swipe.
+    var topBarBottomOffset: CGFloat {
+        if navigationBar.frame.maxY > 0 {
+            return navigationBar.frame.maxY
+        }
+        return Metrics.topFloatingInset + Metrics.estimatedNavBarHeight
+    }
+
     func applyCollectionContentInset(to collectionView: UICollectionView) {
-        let navHeight = navigationBar.frame.height > 0 ? navigationBar.frame.height : Metrics.estimatedNavBarHeight
+        collectionView.contentInsetAdjustmentBehavior = .never
+
+        let topInset = topBarBottomOffset
         let toolbarHeight = toolbar.frame.height > 0 ? toolbar.frame.height : Metrics.estimatedToolbarHeight
-        collectionView.contentInset.top = navHeight + Metrics.topFloatingInset
-        collectionView.contentInset.bottom = interfaceMode.isLarge ? 0 : toolbarHeight + Metrics.bottomFloatingInset
+        let bottomClearance: CGFloat
+        if interfaceMode.isLarge {
+            bottomClearance = 0
+        } else if let hostView, toolbar.frame.height > 0 {
+            let toolbarFrameInHost = toolbar.convert(toolbar.bounds, to: hostView)
+            bottomClearance = hostView.bounds.maxY - toolbarFrameInHost.minY + Metrics.bottomFloatingInset
+        } else {
+            bottomClearance = toolbarHeight + Metrics.bottomFloatingInset
+        }
+
+        let previousTopInset = collectionView.contentInset.top
+        let wasScrolledToTop = abs(collectionView.contentOffset.y + previousTopInset) < 1
+
+        collectionView.contentInset.top = topInset
+        collectionView.contentInset.bottom = bottomClearance
+        collectionView.verticalScrollIndicatorInsets = collectionView.contentInset
+
+        if wasScrolledToTop {
+            collectionView.contentOffset.y = -topInset
+        } else {
+            collectionView.contentOffset.y += previousTopInset - topInset
+        }
     }
 
     func layout(addressBarPosition: AddressBarPosition,
@@ -404,11 +436,23 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             contentView.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: hostView.bottomAnchor),
-
-            toolbar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
-            toolbar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
-            toolbar.bottomAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.bottomAnchor),
         ]
+
+        if #available(iOS 26.0, *) {
+            let horizontalGuide = hostView.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+            let verticalGuide = hostView.layoutGuide(for: .safeArea(cornerAdaptation: .vertical))
+            constraints.append(contentsOf: [
+                toolbar.leadingAnchor.constraint(equalTo: horizontalGuide.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: horizontalGuide.trailingAnchor),
+                toolbar.bottomAnchor.constraint(equalTo: verticalGuide.bottomAnchor),
+            ])
+        } else {
+            constraints.append(contentsOf: [
+                toolbar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
+                toolbar.bottomAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.bottomAnchor),
+            ])
+        }
         if #unavailable(iOS 26.0) {
             constraints.append(contentsOf: [
                 fallbackTopBackgroundView.topAnchor.constraint(equalTo: hostView.topAnchor),

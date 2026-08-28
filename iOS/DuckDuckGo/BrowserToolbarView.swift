@@ -117,6 +117,10 @@ final class BrowserToolbarView: UIView {
     static let floatingEmbeddedHorizontalInset: CGFloat = 16
     /// Outer side inset of the standalone top-address-bar toolbar.
     static let floatingStandaloneHorizontalInset: CGFloat = 24
+    /// Extra inset of the custom glass inside the concentric layout-guide pin. iOS 26 `UIToolbar`
+    /// applies this itself; `BrowserToolbarView` fills its bounds, so it has to be explicit.
+    static let floatingConcentricGlassInset: CGFloat = 20
+    private static let floatingConcentricGlassInsets = UIEdgeInsets(top: 0, left: floatingConcentricGlassInset, bottom: 0, right: floatingConcentricGlassInset)
     private static let floatingEmbeddedBarOuterInsets = UIEdgeInsets(top: 0, left: floatingEmbeddedHorizontalInset, bottom: 0, right: floatingEmbeddedHorizontalInset)
     private static let floatingStandaloneBarOuterInsets = UIEdgeInsets(top: 0, left: floatingStandaloneHorizontalInset, bottom: 0, right: floatingStandaloneHorizontalInset)
     private static let legacyBarOuterInsets = UIEdgeInsets.zero
@@ -124,8 +128,16 @@ final class BrowserToolbarView: UIView {
     /// In the floating style the toolbar is laid out against the safe-area bottom (so the chrome
     /// hide/show math stays valid), but the capsule should float this close to the physical device
     /// bottom. The glass is shifted down into the home-indicator region by the difference.
-    private static let floatingBottomMarginWithEmbedded: CGFloat = 16
+    static let floatingEmbeddedBottomMargin: CGFloat = 16
     static let floatingStandaloneBottomMargin: CGFloat = 21
+
+    static func floatingOuterHorizontalInset(for addressBarPosition: AddressBarPosition) -> CGFloat {
+        addressBarPosition.isBottom ? floatingEmbeddedHorizontalInset : floatingStandaloneHorizontalInset
+    }
+
+    static func floatingBottomMargin(for addressBarPosition: AddressBarPosition) -> CGFloat {
+        addressBarPosition.isBottom ? floatingEmbeddedBottomMargin : floatingStandaloneBottomMargin
+    }
 
     /// Inner padding of the combined bottom floating chrome (address field + buttons). The standalone
     /// floating toolbar used in top-address-bar mode keeps the original 2pt padding.
@@ -267,6 +279,9 @@ final class BrowserToolbarView: UIView {
 
     private var currentBarOuterInsets: UIEdgeInsets {
         guard isFloatingStyleEnabled else { return Self.legacyBarOuterInsets }
+        if #available(iOS 26.0, *) {
+            return Self.floatingConcentricGlassInsets
+        }
         return usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBarOuterInsets : Self.floatingStandaloneBarOuterInsets
     }
 
@@ -752,12 +767,13 @@ final class BrowserToolbarView: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
+        applyHorizontalChromeMetrics()
         updateFloatingBottomOffset()
         updateCornerStyle()
     }
 
     var floatingBottomMargin: CGFloat {
-        hasEmbeddedOmnibar ? Self.floatingBottomMarginWithEmbedded : Self.floatingStandaloneBottomMargin
+        hasEmbeddedOmnibar ? Self.floatingEmbeddedBottomMargin : Self.floatingStandaloneBottomMargin
     }
 
     var visibleCapsuleRect: CGRect {
@@ -770,15 +786,31 @@ final class BrowserToolbarView: UIView {
     func restingCapsuleFrame(in view: UIView) -> CGRect {
         guard isFloatingStyleEnabled else { return .zero }
         let bounds = view.bounds
-        let safeBottom = view.safeAreaInsets.bottom
-        let insets = currentBarOuterInsets
-        let width = bounds.width - insets.left - insets.right
         let height = hasEmbeddedOmnibar
             ? Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
             : buttonsHeightConstraint.constant
-        let offset = max(0, safeBottom - floatingBottomMargin)
-        let bottom = bounds.maxY - safeBottom + offset
-        return CGRect(x: bounds.minX + insets.left, y: bottom - height, width: width, height: height)
+
+        let left: CGFloat
+        let right: CGFloat
+        let bottom: CGFloat
+        if #available(iOS 26.0, *) {
+            let horizontalGuide = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+            let verticalGuide = view.layoutGuide(for: .safeArea(cornerAdaptation: .vertical))
+            let glassInset = currentBarOuterInsets.left
+            left = max(0, horizontalGuide.layoutFrame.minX) + glassInset
+            right = max(0, bounds.maxX - horizontalGuide.layoutFrame.maxX) + glassInset
+            bottom = verticalGuide.layoutFrame.maxY
+        } else {
+            let insets = currentBarOuterInsets
+            left = insets.left
+            right = insets.right
+            let safeBottom = view.safeAreaInsets.bottom
+            let offset = max(0, safeBottom - floatingBottomMargin)
+            bottom = bounds.maxY - safeBottom + offset
+        }
+
+        let width = bounds.width - left - right
+        return CGRect(x: bounds.minX + left, y: bottom - height, width: width, height: height)
     }
 
     @discardableResult
@@ -823,12 +855,17 @@ final class BrowserToolbarView: UIView {
         chromeContainer.transform = CGAffineTransform(translationX: 0, y: floatingBottomOffset + standaloneHideTranslation)
     }
 
-    /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,
-    /// leaving `floatingBottomMargin`. Done as a transform (not a constraint change) so it doesn't
-    /// disturb the toolbar's layout slot or the runtime chrome hide/show constant logic.
+    /// On iOS 26 the host pins this bar to the concentric vertical guide, so the glass stays put.
+    /// Below iOS 26 the layout slot sits on the safe area and the glass is shifted down toward the
+    /// device bottom, leaving `floatingBottomMargin`.
     private func updateFloatingBottomOffset() {
-        let hostBottomInset = superview?.safeAreaInsets.bottom ?? 0
-        let target = isFloatingStyleEnabled ? max(0, hostBottomInset - floatingBottomMargin) : 0
+        let target: CGFloat
+        if #available(iOS 26.0, *), isFloatingStyleEnabled {
+            target = 0
+        } else {
+            let hostBottomInset = superview?.safeAreaInsets.bottom ?? 0
+            target = isFloatingStyleEnabled ? hostBottomInset - floatingBottomMargin : 0
+        }
         guard target != floatingBottomOffset else { return }
         floatingBottomOffset = target
         applyMaterialBackgroundTransform()

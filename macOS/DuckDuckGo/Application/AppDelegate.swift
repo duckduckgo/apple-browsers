@@ -543,11 +543,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDatabase = BookmarkDatabase()
 
         if AppVersion.runType.requiresEnvironment {
-            let commonDatabase = Database(onRetry: {
-                // Keychain retry sleeps contaminate startup timings.
-                startupProfiler.invalidate()
-            })
-            database = commonDatabase
+            let commonDatabase: Database
+            do {
+                commonDatabase = try Database(onRetry: {
+                    // Keychain retry sleeps contaminate startup timings.
+                    startupProfiler.invalidate()
+                })
+                database = commonDatabase
+            } catch {
+                PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
+                PixelKit.fire(GeneralPixel.dbKeychainUnavailableAlertShown, frequency: .standard)
+
+                let alert = NSAlert()
+                alert.alertStyle = .critical
+                alert.messageText = UserText.keychainUnavailableAlertTitle
+                alert.informativeText = UserText.keychainUnavailableAlertMessage
+                alert.addButton(withTitle: UserText.quit)
+                NSApp.activate(ignoringOtherApps: true)
+                alert.runModal()
+
+                fatalError("Could not register value transformers: \(error.localizedDescription)")
+            }
 
             database.db.loadStore { _, error in
                 guard let error = error else { return }

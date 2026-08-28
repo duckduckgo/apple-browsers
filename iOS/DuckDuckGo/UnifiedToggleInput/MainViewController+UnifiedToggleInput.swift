@@ -1191,6 +1191,12 @@ extension MainViewController {
         applyUnifiedInputChromeBackground(.standardChrome)
         applyFloatingUIIfNeeded()
         coordinator.contentViewController.setActive(false)
+        if coordinator.cardPosition.isBottom,
+           newTabPageViewController?.restingContentIsSearchContent == true {
+            // Keyboard teardown leaves a transient bottom inset. Settle the resting NTP behind the focused content
+            // so the final floating-chrome reconciliation cannot move it after the handoff.
+            newTabPageViewController?.additionalSafeAreaInsets.bottom = viewCoordinator.omniBar.barView.expectedHeight
+        }
         newTabPageViewController?.setLogoHidden(false)
         newTabPageViewController?.setFavoritesHidden(false)
         newTabPageViewController?.view.setNeedsLayout()

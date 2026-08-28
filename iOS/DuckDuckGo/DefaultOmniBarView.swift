@@ -1728,9 +1728,24 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
     }
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        omnibarTargetedPreview(for: interaction)
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        omnibarTargetedPreview(for: interaction)
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                 willDisplayMenuFor configuration: UIContextMenuConfiguration,
                                 animator: UIContextMenuInteractionAnimating?) {
         onLongPressMenuDisplayed?()
+    }
+
+    private func omnibarTargetedPreview(for interaction: UIContextMenuInteraction) -> UITargetedPreview? {
+        guard interaction === omniBarLongPressInteraction else { return nil }
+        return UITargetedPreview(view: searchAreaContainerView)
     }
 }
 

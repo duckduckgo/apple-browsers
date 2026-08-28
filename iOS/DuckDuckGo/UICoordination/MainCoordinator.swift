@@ -441,6 +441,7 @@ final class MainCoordinator {
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            searchTokenProvider: controller,
             scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
@@ -575,6 +576,12 @@ final class MainCoordinator {
         }
         if controller.adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
+        }
+        let searchTokenCohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort
+        // The search-token extension pulls its token over native messaging,
+        // so skipping this extension builds without that support (Alpha)
+        if searchTokenCohort == .treatment, nativeMessagingSupport.isSupported {
+            enabledTypes.insert(.searchToken)
         }
         return enabledTypes
     }

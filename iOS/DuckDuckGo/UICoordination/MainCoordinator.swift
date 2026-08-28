@@ -513,8 +513,6 @@ final class MainCoordinator {
     @available(iOS 18.4, *)
     private func deferUntilProtectedDataAvailable(_ operation: @escaping () -> Void) {
         pendingProtectedDataWork.append(operation)
-        PixelKit.fire(Pixel.Event.webExtensionDeferredProtectedDataUnavailable,
-                      frequency: .dailyAndStandard)
 
         guard protectedDataCancellable == nil else { return }
         protectedDataCancellable = NotificationCenter.default
@@ -526,8 +524,6 @@ final class MainCoordinator {
                     let pendingWork = self.pendingProtectedDataWork
                     self.pendingProtectedDataWork.removeAll()
                     guard !pendingWork.isEmpty else { return }
-                    PixelKit.fire(Pixel.Event.webExtensionResumedProtectedDataAvailable,
-                                  frequency: .dailyAndStandard)
                     pendingWork.forEach { $0() }
                 }
             }

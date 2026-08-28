@@ -171,6 +171,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         fireItem.accessibilityLabel = "Close all tabs and clear data"
         fireItem.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
         plusItem.accessibilityLabel = UserText.keyCommandNewTab
+        plusItem.accessibilityIdentifier = "TabSwitcher.Button.NewTab"
+        doneItem.accessibilityIdentifier = "TabSwitcher.Button.Done"
         duckChatItem.accessibilityIdentifier = "TabSwitcher.Button.DuckChat"
         duckChatItem.accessibilityLabel = UserText.duckAiFeatureName
         tabsStyleItem.accessibilityLabel = UserText.tabSwitcherGridViewMenuTitle

@@ -45,7 +45,7 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
         static let fullScreenCacheCountLimit = 8
     }
 
-    private var cache = [String: UIImage]()
+    private let cache = NSCache<NSString, UIImage>()
     private let fullScreenCache: NSCache<NSString, UIImage> = {
         let cache = NSCache<NSString, UIImage>()
         cache.countLimit = Constants.fullScreenCacheCountLimit
@@ -79,13 +79,13 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
     }
     
     func update(preview: UIImage, forTab tab: Tab) {
-        cache[tab.uid] = preview
+        cache.setObject(preview, forKey: tab.uid as NSString)
         store(preview: preview, forTab: tab)
         tab.didUpdatePreview()
     }
     
     func preview(for tab: Tab) -> UIImage? {
-        if let preview = cache[tab.uid] {
+        if let preview = cache.object(forKey: tab.uid as NSString) {
             return preview
         }
         
@@ -93,14 +93,14 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
             return nil
         }
         
-        cache[tab.uid] = preview
+        cache.setObject(preview, forKey: tab.uid as NSString)
         return preview
     }
     
     func removePreview(forTab tab: Tab) {
         guard let url = previewLocation(for: tab) else { return }
 
-        cache[tab.uid] = nil
+        cache.removeObject(forKey: tab.uid as NSString)
 
         do {
             if FileManager.default.fileExists(atPath: url.filePath) {
@@ -114,7 +114,7 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
     }
     
     func removeAllPreviews() -> Result<Void, Error> {
-        cache.removeAll()
+        cache.removeAllObjects()
         fullScreenCache.removeAllObjects()
         guard let dirUrl = previewStoreDir else { return .success(()) }
 
@@ -145,7 +145,7 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
     }
     
     fileprivate func cleanupCache() {
-        cache.removeAll()
+        cache.removeAllObjects()
     }
 
     func totalStoredPreviews() -> Int? {
@@ -242,7 +242,7 @@ class DefaultTabPreviewsSource: TabPreviewsSource {
             contents.filter { $0.hasSuffix(".png") }.forEach {
                 let id = $0.dropping(suffix: ".png")
                 if !ids.contains(id) {
-                    cache[id] = nil
+                    cache.removeObject(forKey: id as NSString)
                     let previewUrl = directory.appending($0)
                     do {
                         try FileManager.default.removeItem(at: previewUrl)

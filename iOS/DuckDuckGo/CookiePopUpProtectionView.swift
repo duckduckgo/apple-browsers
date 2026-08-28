@@ -43,11 +43,7 @@ struct CookiePopUpProtectionView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onForwardNavigationAppear {
-            if viewModel.isCookiePopupPreferenceSettingEnabled {
-                PixelKit.fire(Pixel.Event.autoconsentSettingsShown)
-            } else {
-                PixelKit.fire(Pixel.Event.settingsAutoconsentShown)
-            }
+            PixelKit.fire(Pixel.Event.autoconsentSettingsShown)
         }
     }
 }
@@ -61,22 +57,15 @@ struct CookiePopUpProtectionViewSettings: View {
     }
 
     var body: some View {
-        if viewModel.isCookiePopupPreferenceSettingEnabled {
-            Section(footer: Text(UserText.autoManageCookiePopupsExplanation)) {
-                SettingsCellView(label: UserText.autoManageCookiePopupsTitle,
-                                 accessory: .toggle(isOn: viewModel.autoManageCookiePopupsBinding))
-            }
+        Section(footer: Text(UserText.autoManageCookiePopupsExplanation)) {
+            SettingsCellView(label: UserText.autoManageCookiePopupsTitle,
+                             accessory: .toggle(isOn: viewModel.autoManageCookiePopupsBinding))
+        }
 
-            if isAutoManageEnabled {
-                Section(footer: Text(UserText.popUpsWithoutOptOutsExplanation)) {
-                    SettingsCellView(label: UserText.popUpsWithoutOptOutsTitle,
-                                     accessory: .toggle(isOn: viewModel.popUpsWithoutOptOutsBinding))
-                }
-            }
-        } else {
-            Section {
-                SettingsCellView(label: UserText.letDuckDuckGoManageCookieConsentPopups,
-                                 accessory: .toggle(isOn: viewModel.autoconsentBinding))
+        if isAutoManageEnabled {
+            Section(footer: Text(UserText.popUpsWithoutOptOutsExplanation)) {
+                SettingsCellView(label: UserText.popUpsWithoutOptOutsTitle,
+                                 accessory: .toggle(isOn: viewModel.popUpsWithoutOptOutsBinding))
             }
         }
     }

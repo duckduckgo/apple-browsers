@@ -376,9 +376,7 @@ extension MainViewController {
     func segueToSettingsCookiePopupManagement() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.openCookiePopupManagement()
-        }
+        launchSettings(deepLinkTarget: .cookiePopupProtection)
     }
 
     func segueToSettingsAutofillWith(account: SecureVaultModels.WebsiteAccount?,

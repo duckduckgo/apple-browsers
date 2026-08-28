@@ -71,6 +71,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user requests a new Duck.ai voice chat.
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator)
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -732,7 +735,7 @@ private extension AIChatContextualSheetCoordinator {
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
             start: start,
-            footerWarningProvider: duckAiFooterWarningProvider
+            usageLimitsStore: duckAiUsageLimitsStore
         )
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
@@ -752,6 +755,10 @@ private extension AIChatContextualSheetCoordinator {
         }
         host.onPromptDelivered = { [weak self] in
             self?.sessionState.markUTIContextDelivered()
+        }
+        host.onDuckAIPromptSubmitted = { [weak self] origin in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: origin)
         }
         host.onAttachmentsChanged = { [weak self] in
             self?.sessionState.refreshForAttachmentChange()
@@ -960,11 +967,11 @@ private extension AIChatContextualSheetCoordinator {
         }
     }
 
-    var duckAiFooterWarningProvider: UTIFooterWarningProviding? {
-        let storageHandler = isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
-        return storageHandler.map {
-            UTIFooterWarningProvider(limitsStore: DuckAiUsageLimitsStore(storageHandler: $0))
-        }
+    /// Fire tabs run an isolated Duck.ai session with no usage worth warning about, so the feature
+    /// never even gets a store there.
+    var duckAiUsageLimitsStore: DuckAiUsageLimitsStore? {
+        guard !isFireTab else { return nil }
+        return duckAiNativeStorageHandler.map { DuckAiUsageLimitsStore(storageHandler: $0) }
     }
     
     /// Starts the session timer after the sheet is dismissed.
@@ -1165,6 +1172,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
         selectionJourneyInstrumentation.promptSubmitted()
         sessionState.handlePromptSubmission(prompt)
+        delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: .contextualChat)
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,

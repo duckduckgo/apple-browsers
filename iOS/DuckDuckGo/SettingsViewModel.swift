@@ -550,25 +550,6 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var isCookiePopupPreferenceSettingEnabled: Bool {
-        featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
-    }
-
-    var autoconsentBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.autoconsentEnabled },
-            set: {
-                self.appSettings.autoconsentEnabled = $0
-                self.state.autoconsentEnabled = $0
-                if $0 {
-                    PixelKit.fire(Pixel.Event.settingsAutoconsentOn)
-                } else {
-                    PixelKit.fire(Pixel.Event.settingsAutoconsentOff)
-                }
-            }
-        )
-    }
-
     var autoManageCookiePopupsBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.cookiePopupPreference.isAutoManageCookiePopupsEnabled },
@@ -1627,10 +1608,6 @@ extension SettingsViewModel {
         urlOpener.open(url)
     }
 
-    @MainActor func openCookiePopupManagement() {
-        pushViewController(legacyViewProvider.autoConsent)
-    }
-    
     @MainActor func dismissSettings() {
         onRequestDismissSettings?()
     }
@@ -1677,8 +1654,6 @@ extension SettingsViewModel {
             firePixel(.settingsDoNotSellShown)
             pushViewController(legacyViewProvider.gpc)
         
-        case .autoconsent:
-            pushViewController(legacyViewProvider.autoConsent)
         case .passwordsImport:
             pushViewController(legacyViewProvider.importPasswords(importScreen: .completeSetup,
                                                                   delegate: self,
@@ -1752,6 +1727,7 @@ extension SettingsViewModel {
         case customizeAddressBarButton
         case appearance
         case general
+        case cookiePopupProtection
         // Add other cases as needed
 
         var id: String {
@@ -1771,6 +1747,7 @@ extension SettingsViewModel {
             case .customizeAddressBarButton: return "customizeAddressButton"
             case .appearance: return "appearance"
             case .general: return "general"
+            case .cookiePopupProtection: return "cookiePopupProtection"
             // Ensure all cases are covered
             }
         }
@@ -1779,7 +1756,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection:
                 return .navigationLink
             }
         }

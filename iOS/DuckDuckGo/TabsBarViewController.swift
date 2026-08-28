@@ -1013,7 +1013,7 @@ extension MainViewController: TabsBarDelegate {
         if let currentTab, currentTab.tabModel.link != nil {
             // Bypasses `openAIChat`, so fire the entry pixel directly.
             fireAIChatEntryPointPixel(source: .tabsBarButton, opensNewTab: true, hasPrompt: false)
-            currentTab.openNewChatInNewTab()
+            currentTab.openNewChatInNewTab(source: .tabsBarButton)
         } else {
             openAIChat(source: .tabsBarButton)
         }

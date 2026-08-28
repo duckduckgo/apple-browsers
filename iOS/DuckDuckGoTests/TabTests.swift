@@ -504,6 +504,24 @@ class TabTests: XCTestCase {
         XCTAssertNil(tab?.unifiedInputState.selectedTool)
     }
 
+    func testWhenTabEncodedBeforeDuckAIEntrySourceAddedThenDecodesWithNil() {
+        let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.duckAIEntrySource)
+    }
+
+    func testWhenTabHasInvalidDuckAIEntrySourceRawValueThenDecodesAsNil() {
+        let tab = Tab(coder: CoderStub(properties: [
+            "link": link(),
+            "viewed": false,
+            "duckAIEntrySource": "not-a-real-source"
+        ]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.duckAIEntrySource)
+    }
+
     // MARK: - promptPageType
 
     func testWhenTabHasNoLinkThenPromptPageTypeIsNTP() {

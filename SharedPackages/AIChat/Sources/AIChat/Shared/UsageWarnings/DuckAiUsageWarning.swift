@@ -90,8 +90,10 @@ public enum DuckAiUsageAction: Equatable {
 
     /// The `>` modifies a model switch, so it never pairs with the upsell or the weekly hand-off.
     var offersModelPicker: Bool {
-        if case .switchToModel = self { return true }
-        return false
+        switch self {
+        case .switchToModel, .switchToFreeModel: return true
+        case .tryForFree, .startUsingWeeklyLimit: return false
+        }
     }
 
     var buttonTitle: String {

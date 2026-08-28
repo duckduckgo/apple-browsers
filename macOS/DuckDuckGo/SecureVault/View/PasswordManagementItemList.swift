@@ -105,7 +105,7 @@ struct PasswordManagementItemListCategoryView: View {
                 let button = PopUpButton()
 
                 for category in SecureVaultSorting.Category.allCases {
-                    button.add(NSMenuItem(title: category.title, representedObject: category).withImage(category.image),
+                    button.add(NSMenuItem(title: category.title, representedObject: category).withImage(category.image, visibleOnMacOS27: true),
                                withForegroundColor: category.foregroundColor, backgroundColor: category.backgroundColor)
 
                     if category == .allItems {

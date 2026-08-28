@@ -85,11 +85,28 @@ private struct NetworkProtectionWebView: UIViewRepresentable {
     }
 
     public func makeUIView(context: Context) -> View {
+        wkWebView.uiDelegate = context.coordinator
         return wkWebView
     }
 
     public func updateUIView(_ uiView: View, context: Context) {
         updateView(uiView)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, WKUIDelegate {
+
+        func webView(_ webView: WKWebView,
+                     createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction,
+                     windowFeatures: WKWindowFeatures) -> WKWebView? {
+            webView.load(navigationAction.request)
+            return nil
+        }
     }
 
 }

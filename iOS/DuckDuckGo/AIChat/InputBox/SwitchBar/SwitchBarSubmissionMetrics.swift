@@ -81,7 +81,10 @@ struct SwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding {
         case .search:
             PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarQuerySubmitted, frequency: .dailyAndCount, options: .parameters(additionalParams))
         case .aiChat:
-            let mergedParams = additionalParams.merging(featureDiscovery.addToParams([:], forFeature: .aiChat)) { (_, new) in new }
+            var mergedParams = additionalParams.merging(featureDiscovery.addToParams([:], forFeature: .aiChat)) { (_, new) in new }
+            if featureDiscovery.isFirstDuckAIPromptNewInstall {
+                mergedParams[PixelParameters.aiChatFirstPromptNewInstall] = "true"
+            }
             PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarPromptSubmitted, frequency: .dailyAndCount, options: .parameters(mergedParams))
             featureDiscovery.setWasUsedBefore(.aiChat)
         }

@@ -18,7 +18,9 @@
 //
 
 import AIChat
+import BrowserServicesKitTestsUtils
 import Core
+import Persistence
 @_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo
@@ -109,6 +111,23 @@ final class UTIPixelReporterTests: XCTestCase {
         ])
     }
 
+    // MARK: - Prompt origin
+
+    func testCurrentPromptOriginMatchesTheSurfaceTheSubmissionPixelsReport() {
+        XCTAssertEqual(makeReporter { self.context(surface: .addressBar) }.currentPromptOrigin(), .addressBarPrompt)
+        XCTAssertEqual(makeReporter { self.context(surface: .contextualChat) }.currentPromptOrigin(), .contextualChat)
+        XCTAssertEqual(makeReporter { self.context(surface: .duckAI, duckAIEntrySource: .tabSwitcher) }.currentPromptOrigin(),
+                       .tabSwitcher)
+    }
+
+    func testCurrentPromptOriginIsNilOnADuckAISurfaceWithNoRecordedEntry() {
+        XCTAssertNil(makeReporter { self.context(surface: .duckAI, duckAIEntrySource: nil) }.currentPromptOrigin())
+    }
+
+    func testCurrentPromptOriginIsNilWhenTheCoordinatorIsGone() {
+        XCTAssertNil(makeReporter { nil }.currentPromptOrigin())
+    }
+
     // MARK: - Prompt submission (daily, non-trivial params)
 
     func testReportPromptSubmittedFiresDailyWithResolvedSurface() {
@@ -119,7 +138,8 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: "gpt-x",
-                                       defaultOmnibarMode: .search)
+                                       defaultOmnibarMode: .search,
+                                       isFirstPromptNewInstall: false)
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputPromptSubmitted.name)
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
@@ -136,6 +156,20 @@ final class UTIPixelReporterTests: XCTestCase {
         ])
     }
 
+    func testWhenFirstPromptOnNewInstallSubmittedThenParamIsTrue() {
+        let reporter = makeReporter { self.context(surface: .addressBar, pageType: .ntp) }
+
+        reporter.reportPromptSubmitted(hasText: true,
+                                       selectedTool: nil,
+                                       attachments: [],
+                                       reasoningMode: nil,
+                                       modelId: nil,
+                                       defaultOmnibarMode: .search,
+                                       isFirstPromptNewInstall: true)
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["first_prompt_new_install"], "true")
+    }
+
     func testWhenPromptSubmittedFromAddressBarThenOriginIsAddressBarPrompt() {
         let reporter = makeReporter { self.context(surface: .addressBar, pageType: .serp) }
 
@@ -144,7 +178,8 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: nil,
-                                       defaultOmnibarMode: .lastUsed)
+                                       defaultOmnibarMode: .lastUsed,
+                                       isFirstPromptNewInstall: false)
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["origin"], "address_bar_prompt")
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["page_type"], "serp")
@@ -158,7 +193,8 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: nil,
-                                       defaultOmnibarMode: .lastUsed)
+                                       defaultOmnibarMode: .lastUsed,
+                                       isFirstPromptNewInstall: false)
 
         XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["origin"])
     }
@@ -198,7 +234,8 @@ final class UTIPixelReporterTests: XCTestCase {
                                        attachments: [],
                                        reasoningMode: nil,
                                        modelId: nil,
-                                       defaultOmnibarMode: .search)
+                                       defaultOmnibarMode: .search,
+                                       isFirstPromptNewInstall: false)
         let promptParams = pixelKitMock.actualFireCalls.last?.additionalParameters ?? [:]
 
         for key in ["surface", "page_type", "default_mode"] {
@@ -289,4 +326,63 @@ final class UTIPixelReporterTests: XCTestCase {
 
         XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
+}
+
+final class DuckAIFirstPromptNewInstallCohortTests: XCTestCase {
+
+    private var featureDiscovery: MockFeatureDiscovery!
+    private var statisticsStore: MockStatisticsStore!
+    private var marker: MockKeyValueStore!
+
+    override func setUp() {
+        super.setUp()
+        featureDiscovery = MockFeatureDiscovery()
+        statisticsStore = MockStatisticsStore()
+        marker = MockKeyValueStore()
+    }
+
+    override func tearDown() {
+        featureDiscovery = nil
+        statisticsStore = nil
+        marker = nil
+        super.tearDown()
+    }
+
+    private func assignCohort() {
+        DuckAIFirstPromptNewInstallCohort.assignIfNeeded(statisticsStore: statisticsStore,
+                                                         featureDiscovery: featureDiscovery,
+                                                         marker: marker)
+    }
+
+    func testWhenInstallHasStatisticsThenExistingInstallIsMarkedAsPrompted() {
+        statisticsStore.atb = "v456-7"
+
+        assignCohort()
+
+        XCTAssertTrue(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    func testWhenBrandNewInstallThenFlagStaysUnset() {
+        assignCohort()
+
+        XCTAssertFalse(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    /// A new install's second launch has install statistics; only the marker keeps it in the cohort.
+    func testWhenCohortAlreadyAssignedThenLaterLaunchesWithStatisticsDoNotMark() {
+        assignCohort()
+        statisticsStore.atb = "v456-7"
+
+        assignCohort()
+
+        XCTAssertFalse(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+}
+
+private final class MockKeyValueStore: KeyValueStoring {
+    private var storage: [String: Any] = [:]
+
+    func object(forKey key: String) -> Any? { storage[key] }
+    func set(_ value: Any?, forKey key: String) { storage[key] = value }
+    func removeObject(forKey key: String) { storage.removeValue(forKey: key) }
 }

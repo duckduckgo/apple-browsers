@@ -215,7 +215,8 @@ final class UTIPixelReporter {
                                attachments: [UnifiedToggleInputAttachment],
                                reasoningMode: AIChatReasoningMode?,
                                modelId: String?,
-                               defaultOmnibarMode: DefaultOmnibarMode) {
+                               defaultOmnibarMode: DefaultOmnibarMode,
+                               isFirstPromptNewInstall: Bool) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -227,6 +228,7 @@ final class UTIPixelReporter {
                 pageType: $0.pageType,
                 origin: Self.promptOrigin(for: $0),
                 defaultMode: defaultOmnibarMode,
+                isFirstPromptNewInstall: isFirstPromptNewInstall,
                 firing: firing
             )
         }
@@ -242,6 +244,11 @@ final class UTIPixelReporter {
                 firing: firing
             )
         }
+    }
+
+    func currentPromptOrigin() -> AIChatEntryPointSource? {
+        guard let context = context() else { return nil }
+        return Self.promptOrigin(for: context)
     }
 
     static func promptOrigin(for context: UTIPixelContext) -> AIChatEntryPointSource? {

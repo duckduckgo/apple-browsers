@@ -317,6 +317,8 @@ private struct AIChatUsageWarningsSection: View {
         ("Weekly 90%", 90, nil, 48),
         ("Weekly limit reached", 100, nil, 168),
         ("Daily 90%", nil, 90, 5),
+        // A free tier only carries a daily allowance, so this is the one card it can actually reach.
+        ("Daily limit reached", nil, 100, 5),
     ]
 
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?

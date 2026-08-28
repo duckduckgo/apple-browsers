@@ -402,6 +402,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let fireMode = isFireModeProvider?() ?? false
 
         let supportsSuggestions = supportsContextualMode && featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+        let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
+            && supportsNativeChatInput
+            && isNativeStorageBridgeAvailable
         let config = AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
@@ -423,6 +426,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
             supportsPromoCards: featureFlagger.isFeatureOn(.nativePromoCards) && supportsNativeChatInput,
             supportsSuggestions: supportsSuggestions,
+            supportsNativeUsageWarnings: supportsNativeUsageWarnings,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
         )

@@ -343,6 +343,13 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
         configuration.mediaTypesRequiringUserActionForPlayback = autoplaySettings.currentAutoplayBlockingMode.mediaTypesRequiringUserAction
 
+        // iPad tabs only: iPhone's mobile YouTube enters fullscreen via `webkitEnterFullscreen()`
+        // regardless, so it gains nothing and would only lose the native player on other sites.
+        // iOS 16 is the floor because the layout restore observes `fullscreenState`, which is iOS 16+.
+        if #available(iOS 16.0, *), isPad, featureFlagger.isFeatureOn(.elementFullscreen) {
+            configuration.preferences.isElementFullscreenEnabled = true
+        }
+
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
             configuration.webExtensionController = webExtensionManager.controller
         }
@@ -1053,8 +1060,10 @@ extension TabManager {
             PixelKit.fire(Pixel.Event.cachedTabPreviewsExceedsTabCount, options: .parameters([
                 PixelParameters.tabPreviewCountDelta: "\(storedPreviews - totalTabs)"
             ]))
+            let validTabIDs = Set(allTabsModel.tabs.map { $0.uid })
+            let previewsSourceForCleanup = previewsSource
             Task(priority: .utility) {
-                _ = previewsSource.removePreviewsWithIdNotIn(Set(allTabsModel.tabs.map { $0.uid }))
+                _ = previewsSourceForCleanup.removePreviewsWithIdNotIn(validTabIDs)
             }
         }
     }

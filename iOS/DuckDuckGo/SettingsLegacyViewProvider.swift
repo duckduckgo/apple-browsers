@@ -123,7 +123,6 @@ class SettingsLegacyViewProvider: ObservableObject {
              autofill,
              appIcon,
              gpc,
-             autoconsent,
              unprotectedSites,
              fireproofSites,
              keyboard,
@@ -179,7 +178,6 @@ class SettingsLegacyViewProvider: ObservableObject {
     // Legacy UIKit Views (Pushed unmodified)
     var addToDock: UIViewController { instantiate( "instructions", fromStoryboard: StoryboardName.homeRow) }
     var gpc: UIViewController { instantiate("DoNotSell", fromStoryboard: StoryboardName.settings) }
-    var autoConsent: UIViewController { instantiate("AutoconsentSettingsViewController", fromStoryboard: StoryboardName.settings) }
     var unprotectedSites: UIViewController { UnprotectedSitesViewController() }
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController { instantiate("Keyboard", fromStoryboard: StoryboardName.settings) }

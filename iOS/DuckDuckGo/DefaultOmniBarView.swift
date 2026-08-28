@@ -63,7 +63,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var customizableButton: UIButton! { searchAreaView.customizableButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
-    let expectedHeight: CGFloat = DefaultOmniBarView.expectedHeight
+    var expectedHeight: CGFloat {
+        isBottomFloatingField ? Metrics.floatingEmbeddedHeight : Metrics.height
+    }
     static let expectedHeight: CGFloat = Metrics.height
 
     private var readableSearchAreaWidthConstraint: NSLayoutConstraint?
@@ -206,6 +208,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private(set) var layoutMode: OmniBarLayoutMode = .compact
 
+    var isExpandedPhoneLayout = false {
+        didSet {
+            updateVerticalSpacing()
+        }
+    }
+
     func setLayoutMode(_ newMode: OmniBarLayoutMode, animated: Bool = false) {
         guard layoutMode != newMode else { return }
 
@@ -248,6 +256,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackView.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeSpacing : Metrics.expandedPadSizeSpacing
         stackViewLeadingConstraint?.constant = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
         stackViewTrailingConstraint?.constant = isExpandedPhone ? -Metrics.expandedPhoneSizeMargins.trailing : -Metrics.textAreaHorizontalPadding
+        updateVerticalSpacing()
     }
 
     var isUsingSmallTopSpacing: Bool = false {
@@ -1111,7 +1120,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
 
-        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        if !isFloatingUIEnabled {
+            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        }
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
         searchAreaContainerView.layer.cornerCurve = .continuous
 
@@ -1354,8 +1365,24 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateVerticalSpacing() {
-        textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
-        textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
+        let topPadding: CGFloat
+        let bottomPadding: CGFloat
+        if isBottomFloatingField {
+            topPadding = Metrics.floatingEmbeddedTextAreaPadding
+            bottomPadding = Metrics.floatingEmbeddedTextAreaPadding
+        } else if isTopFloatingField {
+            topPadding = Metrics.floatingTopInputOuterPadding
+            bottomPadding = Metrics.floatingTopInputOuterPadding
+        } else if isUsingSmallTopSpacing {
+            topPadding = Metrics.textAreaTopPaddingAdjustedSpacing
+            bottomPadding = Metrics.textAreaBottomPaddingAdjustedSpacing
+        } else {
+            topPadding = Metrics.textAreaVerticalPaddingRegularSpacing
+            bottomPadding = Metrics.textAreaVerticalPaddingRegularSpacing
+        }
+        textAreaTopPaddingConstraint?.constant = topPadding
+        textAreaBottomPaddingConstraint?.constant = -bottomPadding
+        searchAreaView.contentVerticalOffset = isTopFloatingField ? Metrics.floatingTopContentVerticalOffset : 0
         updateFireModeAppearance()
     }
 
@@ -1381,13 +1408,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         guard omniBarLongPressInteraction == nil else { return }
 
         let interaction = UIContextMenuInteraction(delegate: self)
-        searchContainer.addInteraction(interaction)
+        // Attach to the URL field, not the whole search container, so customize-button context
+        // menus on trailing chrome controls are not swallowed by this interaction.
+        searchAreaView.textField.addInteraction(interaction)
         omniBarLongPressInteraction = interaction
     }
 
     private func removeOmniBarLongPressInteraction() {
         guard let omniBarLongPressInteraction else { return }
-        searchContainer.removeInteraction(omniBarLongPressInteraction)
+        searchAreaView.textField.removeInteraction(omniBarLongPressInteraction)
         self.omniBarLongPressInteraction = nil
     }
 
@@ -1525,6 +1554,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private struct Metrics {
         static let itemSize: CGFloat = 44
         static let height: CGFloat = 60
+        /// Height of the address field when it is hosted inside the floating bottom toolbar, matching
+        /// the 48pt search pill in the chrome spec.
+        static let floatingEmbeddedHeight: CGFloat = 48
+        /// Tight inner padding so the 44pt controls sit inside the 48pt embedded field (12 + 2 = 14
+        /// from the glass edge to the control, per spec).
+        static let floatingEmbeddedTextAreaPadding: CGFloat = 2
+        static let floatingTopInputHeight: CGFloat = 48
+        static let floatingTopInputOuterPadding = (height - floatingTopInputHeight) / 2
+        static let floatingTopContentVerticalOffset: CGFloat = -2
         static var cornerRadius: CGFloat { OmniBarMetrics.cornerRadius }
 
         /// Sits 2pt outside `cornerRadius` so the active outline stays concentric with the field.
@@ -1619,16 +1657,20 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 }
 
 private extension DefaultOmniBarView {
+    var isTopFloatingField: Bool {
+        isFloatingUIEnabled && !isUsingSmallTopSpacing && !isExpandedPhoneLayout && layoutMode == .compact
+    }
+
     /// True when the field itself is a glass surface: top position, or any position in minimal chrome.
     var shouldUseFloatingTopGlass: Bool {
         isFloatingUIEnabled && (isFloatingMinimalChromeBar || !isUsingSmallTopSpacing)
     }
 
     /// The floating omnibar field when hosted at the bottom (embedded in the toolbar's glass
-    /// capsule). Unlike the top position it isn't a glass surface itself, so it takes an explicit
-    /// resting fill rather than `.backgroundTertiary`.
+    /// capsule) in compact portrait layout. Landscape / iPad use the standalone three-pill chrome
+    /// and must keep the original field metrics.
     var isBottomFloatingField: Bool {
-        isFloatingUIEnabled && isUsingSmallTopSpacing
+        isFloatingUIEnabled && isUsingSmallTopSpacing && !isExpandedPhoneLayout && layoutMode == .compact
     }
 
     /// Resting field fill: the bottom floating field is `T-Input/Resting` so it reads clearly
@@ -1651,7 +1693,8 @@ private extension DefaultOmniBarView {
 extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
-        guard let menu = longPressMenuProvider?() else { return nil }
+        guard interaction === omniBarLongPressInteraction,
+              let menu = longPressMenuProvider?() else { return nil }
 
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
             menu

@@ -772,6 +772,8 @@ extension TabViewController {
     }
     
     private func firePixelForActivityType(_ activityType: UIActivity.ActivityType) {
+        let addToHomeScreen: UIActivity.ActivityType? = if #available(iOS 16.4, *) { .addToHomeScreen } else { nil }
+
         switch activityType {
         case .copyToPasteboard:
             PixelKit.fire(Pixel.Event.shareSheetActivityCopy)
@@ -785,6 +787,8 @@ extension TabViewController {
             PixelKit.fire(Pixel.Event.shareSheetActivityPrint)
         case .addToReadingList:
             PixelKit.fire(Pixel.Event.shareSheetActivityAddToReadingList)
+        case addToHomeScreen:
+            PixelKit.fire(Pixel.Event.shareSheetActivityAddToHomeScreen)
         default:
             PixelKit.fire(Pixel.Event.shareSheetActivityOther)
         }

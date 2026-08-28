@@ -251,11 +251,7 @@ final class UnifiedToggleInputView: UIView {
 
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
-        set {
-            toolsToolbar.modelPickerMenu = newValue
-            // The usage card's chevron offers the same list, popped from the chevron itself.
-            footerCard.modelPickerMenu = newValue
-        }
+        set { toolsToolbar.modelPickerMenu = newValue }
     }
 
     @discardableResult
@@ -337,6 +333,13 @@ final class UnifiedToggleInputView: UIView {
     /// The owning view controller sets this.
     var onNeedsHierarchyLayout: (() -> Void)?
     var onAttachmentsLayoutDidChange: (() -> Void)?
+
+    private var isApplyingDismissPose = false
+
+    private func requestHierarchyLayout() {
+        guard !isApplyingDismissPose else { return }
+        onNeedsHierarchyLayout?()
+    }
 
     var isVoiceSearchAvailable = false {
         didSet { handler.isVoiceSearchEnabled = isVoiceSearchAvailable }
@@ -430,7 +433,7 @@ final class UnifiedToggleInputView: UIView {
               editReplaceDisclaimerCard.isHidden else { return }
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] view joining expand animation with pending message")
         applyPendingFooterMessage(pending)
-        onNeedsHierarchyLayout?()
+        requestHierarchyLayout()
     }
 
     private func applyPendingFooterMessage(_ message: UTIFooterMessage) {
@@ -1327,6 +1330,8 @@ final class UnifiedToggleInputView: UIView {
     /// Shadow swap is deferred to `finalizeOmnibarEditingDismiss` so the dominant expanded shadow
     /// stays visible during collapse instead of snapping off mid-animation.
     func applyOmnibarEditingDismissPose() {
+        isApplyingDismissPose = true
+        defer { isApplyingDismissPose = false }
         if omnibarMaterialTransitionBackgroundColor != nil {
             ensureOmnibarMaterialTransitionViews()
             applyCardBackgroundColor(.clear)
@@ -1476,6 +1481,7 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStrip.alpha = 0
         textEntryView.isExpandable = false
         updateExpandedBorderVisibility(false)
+        applyFooterForCardLayout(expanded: false)
     }
 
     func setInactiveCardAppearance(_ inactive: Bool) {
@@ -1508,7 +1514,7 @@ final class UnifiedToggleInputView: UIView {
                 self.toolsToolbar.alpha = showToolbar ? 1 : 0
             }
             self.layoutIfNeeded()
-            self.onNeedsHierarchyLayout?()
+            self.requestHierarchyLayout()
         }
     }
 
@@ -1553,7 +1559,7 @@ final class UnifiedToggleInputView: UIView {
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
             self.attachmentsStrip.alpha = self.attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
             self.layoutIfNeeded()
-            self.onNeedsHierarchyLayout?()
+            self.requestHierarchyLayout()
         } completion: { _ in
             if showToolbar {
                 self.toolsToolbar.finalizeToolbarShown()
@@ -1800,7 +1806,7 @@ private extension UnifiedToggleInputView {
             updateAttachmentsStripLayout()
             updateSubmitButtonAvailability()
             layoutIfNeeded()
-            onNeedsHierarchyLayout?()
+            requestHierarchyLayout()
             onAttachmentsLayoutDidChange?()
         }
         attachmentsStrip.onAttachmentRemoved = { [weak self] id, attachment, isUserInitiated in
@@ -1992,7 +1998,7 @@ private extension UnifiedToggleInputView {
 
         textEntryView.textHeightChangeSubject
             .sink { [weak self] in
-                self?.onNeedsHierarchyLayout?()
+                self?.requestHierarchyLayout()
             }
             .store(in: &cancellables)
     }

@@ -23,14 +23,13 @@ import Foundation
 struct UTIFooterMessage: Equatable {
 
     enum Icon: Equatable {
-        case usageRing(progress: Double)
+        case none
+        case usageRing(progress: Double, severity: DuckAiUsageSeverity)
         case alert
     }
 
     struct PrimaryAction: Equatable {
         let title: String
-        /// The chevron beside the title, which opens the model picker. Only a model switch offers it.
-        let showsModelPicker: Bool
     }
 
     let icon: Icon

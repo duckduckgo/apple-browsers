@@ -185,6 +185,10 @@ extension XCUIApplication {
             _=window.waitForNonExistence(timeout: UITests.Timeouts.elementExistence)
         }
         typeKey("n", modifierFlags: .command)
+        XCTAssertTrue(
+            windows.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "A new window didn't open in a reasonable timeframe."
+        )
     }
 
     /// Opens a new tab via keyboard shortcut

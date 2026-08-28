@@ -69,11 +69,12 @@ enum UITests {
     /// - Parameter requestedToggleState: How the autocomplete checkbox state should be set
     static func setAutocompleteToggleBeforeTestcaseRuns(_ requestedToggleState: Bool) {
         let app = XCUIApplication.setUp()
+        app.enforceSingleWindow()
 
         let settings = app.menuItems["MainMenu.preferencesMenuItem"]
         XCTAssertTrue(
             settings.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Reset bookmarks menu item didn't become available in a reasonable timeframe."
+            "The Settings menu item didn't become available in a reasonable timeframe."
         )
 
         settings.click()
@@ -81,7 +82,7 @@ enum UITests {
         let autocompleteToggle = app.checkBoxes["PreferencesGeneralView.showAutocompleteSuggestions"]
         XCTAssertTrue(
             generalPreferencesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The user settings appearance section button didn't become available in a reasonable timeframe."
+            "The user settings General section button didn't become available in a reasonable timeframe."
         )
         generalPreferencesButton.click(forDuration: 0.5, thenDragTo: generalPreferencesButton)
 

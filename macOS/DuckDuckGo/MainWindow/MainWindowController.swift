@@ -169,11 +169,14 @@ final class MainWindowController: NSWindowController {
             return
         }
 
-        // During Onboarding, several UI elements get disabled. In order to prevent flickering, we'll disable them right after kicking off Onboarding.
-        // Locking up UI via `OnboardingUserScript.setInit` has a noticeable delay, where elements may flash.
-        //
         selectedTab.startOnboarding()
-        userInteraction(prevented: true)
+
+        if featureFlagger?.isFeatureOn(.onboardingAsync) != true {
+            // During Onboarding, several UI elements get disabled. In order to prevent flickering,
+            // we'll disable them right after kicking off Onboarding.
+            // Locking up UI via `OnboardingUserScript.setInit` has a noticeable delay, where elements may flash.
+            userInteraction(prevented: true)
+        }
     }
 
     private func subscribeToResolutionChange() {

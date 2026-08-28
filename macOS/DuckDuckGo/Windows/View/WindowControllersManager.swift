@@ -649,6 +649,11 @@ extension WindowControllersManager: OnboardingNavigating {
     }
 
     @MainActor
+    func setOnboardingTabCloseInterceptor(_ interceptor: (@MainActor () -> Bool)?) {
+        selectedTab?.closeInterceptor = interceptor
+    }
+
+    @MainActor
     func replaceTabWith(_ tab: Tab) {
         guard let tabToRemove = selectedTab else { return }
         guard let mainWindowController else { return }
@@ -658,6 +663,7 @@ extension WindowControllersManager: OnboardingNavigating {
             let burnerMode = mainWindowController.mainViewController.tabCollectionViewModel.burnerMode
             tabToAppend = Tab(content: tab.content, burnerMode: burnerMode)
         }
+        // Append before remove: the tab count must never hit zero, or the window closes.
         mainWindowController.mainViewController.tabCollectionViewModel.append(tab: tabToAppend)
         mainWindowController.mainViewController.tabCollectionViewModel.remove(at: index)
     }

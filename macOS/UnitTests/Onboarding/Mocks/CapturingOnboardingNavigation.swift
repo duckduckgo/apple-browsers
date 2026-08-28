@@ -50,4 +50,10 @@ class CapturingOnboardingNavigation: OnboardingNavigating {
         preventUserInteraction = prevent
     }
 
+    var closeInterceptor: (@MainActor () -> Bool)?
+
+    func setOnboardingTabCloseInterceptor(_ interceptor: (@MainActor () -> Bool)?) {
+        closeInterceptor = interceptor
+    }
+
 }

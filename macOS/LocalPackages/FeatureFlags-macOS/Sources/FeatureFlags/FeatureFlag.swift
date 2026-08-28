@@ -500,6 +500,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Local-only: skips contextual onboarding highlights when onboarding is skipped.
     case onboardingSkipHighlights
 
+    /// Local-only: makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
+    case onboardingAsync
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -838,6 +841,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingSkipOption:
             Config(source: .disabled)
         case .onboardingSkipHighlights:
+            Config(source: .disabled)
+        case .onboardingAsync:
             Config(source: .disabled)
         }
     }

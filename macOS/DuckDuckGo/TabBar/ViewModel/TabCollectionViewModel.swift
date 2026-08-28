@@ -648,6 +648,11 @@ final class TabCollectionViewModel: NSObject {
     private func removeUnpinnedTab(at index: Int, published: Bool = true, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
+        if case .loaded(let tab) = tabCollection.tabs[safe: index],
+           let interceptor = tab.closeInterceptor, interceptor() {
+            return
+        }
+
         let removedTab = tabCollection.tabs[safe: index]
         let parentTab = removedTab?.parentTab
         guard tabCollection.removeTab(at: index, published: published, forced: forceChange) else { return }

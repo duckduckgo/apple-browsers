@@ -598,6 +598,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     var contentChangeEnabled = true
 
+    /// When set, `TabCollectionViewModel` calls this before removing the tab.
+    /// Return `true` to cancel the removal (the interceptor handled it), `false` to proceed normally.
+    var closeInterceptor: (@MainActor () -> Bool)?
+
     var isLazyLoadingInProgress = false
 
     let burnerMode: BurnerMode

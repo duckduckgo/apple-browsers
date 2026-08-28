@@ -112,6 +112,7 @@ protocol OnboardingNavigating: AnyObject {
     func focusOnAddressBar()
     func showImportDataView()
     func updatePreventUserInteraction(prevent: Bool)
+    func setOnboardingTabCloseInterceptor(_ interceptor: (@MainActor () -> Bool)?)
 }
 
 final class OnboardingActionsManager: OnboardingActionsManaging {
@@ -274,7 +275,17 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func onboardingStarted() {
-        navigation.updatePreventUserInteraction(prevent: true)
+        let isAsync = featureFlagger.isFeatureOn(.onboardingAsync)
+
+        if isAsync {
+            navigation.setOnboardingTabCloseInterceptor { [weak self] in
+                self?.skipOnboarding()
+                return true
+            }
+        } else {
+            navigation.updatePreventUserInteraction(prevent: true)
+        }
+
         stepShown(step: .welcome)
         if isEligibleForChromeExtensionInstall {
             chromeExtensionExperiment.enroll()
@@ -305,6 +316,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     @MainActor
     func skipOnboarding() {
         onboardingHasFinished()
+        navigation.setOnboardingTabCloseInterceptor(nil)
 
         if featureFlagger.isFeatureOn(.onboardingSkipHighlights) {
             contextualOnboardingStateUpdater?.state = .onboardingCompleted

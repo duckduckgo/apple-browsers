@@ -4683,6 +4683,8 @@ extension MainViewController: BrowserChromeDelegate {
         updateFloatingDomainCapsuleVisibility(for: hidden ? 0 : 1)
     }
 
+    // Work around a Swift compiler crash when this is inlined from BrowserChromeManager to PullToRefreshViewAdapter.
+    @inline(never)
     func setRefreshControlEnabled(_ isEnabled: Bool) {
         currentTab?.setRefreshControlEnabled(isEnabled)
     }

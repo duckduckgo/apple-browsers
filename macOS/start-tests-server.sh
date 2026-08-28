@@ -35,6 +35,19 @@ fi
 
 killall tests-server 2>/dev/null || true
 
+# Wait for the old server process to exit before starting a replacement.
+for _ in $(seq 1 20); do
+    if ! pgrep -x tests-server >/dev/null 2>&1; then
+        break
+    fi
+    sleep 0.25
+done
+
+if pgrep -x tests-server >/dev/null 2>&1; then
+    os_log "🔴 previous tests-server did not exit"
+    exit 1
+fi
+
 (
     os_log "watchdog launching ${server} cwd=$(pwd)"
     "${server}"
@@ -46,4 +59,23 @@ killall tests-server 2>/dev/null || true
     fi
 ) &
 
-os_log "watchdog started, wrapper pid=$! cwd=$(pwd)"
+watchdog_pid=$!
+os_log "watchdog started, wrapper pid=${watchdog_pid} cwd=$(pwd)"
+
+# Verify the new server is accepting connections before letting UI tests continue.
+for _ in $(seq 1 20); do
+    if ! kill -0 "${watchdog_pid}" >/dev/null 2>&1; then
+        os_log "🔴 tests-server exited before becoming ready"
+        exit 1
+    fi
+    if curl --silent --output /dev/null --max-time 1 http://localhost:8085; then
+        os_log "tests-server ready"
+        exit 0
+    fi
+    sleep 0.5
+done
+
+os_log "🔴 tests-server did not become ready"
+kill "${watchdog_pid}" 2>/dev/null || true
+killall tests-server 2>/dev/null || true
+exit 1

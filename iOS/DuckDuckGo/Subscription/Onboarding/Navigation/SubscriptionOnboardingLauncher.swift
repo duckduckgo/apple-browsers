@@ -43,6 +43,7 @@ enum SubscriptionOnboardingLauncher {
                                            factory: SubscriptionOnboardingViewFactory(flow: flow,
                                                                                        forcedTrialLengthDays: forcedTrialLengthDays))
                 .graphicLottieRenderer(.app)
+                .interactiveDismissDisabled(true)
                 .onAppear { lockToPortrait() }
                 .onDisappear { unlockOrientation() })
     }

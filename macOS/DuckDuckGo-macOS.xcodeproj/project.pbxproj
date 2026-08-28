@@ -2442,6 +2442,7 @@
 		8409BD782ED878C400E39FA7 /* popup-delayed.html in Resources */ = {isa = PBXBuildFile; fileRef = 8409BD752ED878C400E39FA7 /* popup-delayed.html */; };
 		8409BD792ED878C400E39FA7 /* popup-servicenow.html in Resources */ = {isa = PBXBuildFile; fileRef = 8409BD772ED878C400E39FA7 /* popup-servicenow.html */; };
 		8409BD7A2ED878C400E39FA7 /* popup-links.html in Resources */ = {isa = PBXBuildFile; fileRef = 8409BD762ED878C400E39FA7 /* popup-links.html */; };
+		84F1C0DE2F3B100000000001 /* favicon.ico in Resources */ = {isa = PBXBuildFile; fileRef = 84F1C0DD2F3B100000000001 /* favicon.ico */; };
 		840B66862F3A020F001E20C6 /* SparkleUpdateMenuItemFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA84D312C119AE70011C80F /* SparkleUpdateMenuItemFactory.swift */; };
 		840B66872F3A023C001E20C6 /* UpdatesDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC641142DD1FBD600272A9D /* UpdatesDebugMenu.swift */; };
 		840B66892F3A02C5001E20C6 /* SparkleUpdateMenuItemFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0B4EA92E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift */; };
@@ -6054,6 +6055,7 @@
 		8409BD752ED878C400E39FA7 /* popup-delayed.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "popup-delayed.html"; sourceTree = "<group>"; };
 		8409BD762ED878C400E39FA7 /* popup-links.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "popup-links.html"; sourceTree = "<group>"; };
 		8409BD772ED878C400E39FA7 /* popup-servicenow.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "popup-servicenow.html"; sourceTree = "<group>"; };
+		84F1C0DD2F3B100000000001 /* favicon.ico */ = {isa = PBXFileReference; lastKnownFileType = image.ico; path = favicon.ico; sourceTree = "<group>"; };
 		841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuItemNode.swift; sourceTree = "<group>"; };
 		841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkDragDropManager.swift; sourceTree = "<group>"; };
 		842211692F2B86FB0051A0E8 /* UpdateNotificationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateNotificationPresenter.swift; sourceTree = "<group>"; };
@@ -10206,6 +10208,7 @@
 				8409BD762ED878C400E39FA7 /* popup-links.html */,
 				8409BD772ED878C400E39FA7 /* popup-servicenow.html */,
 				8458123C2E5EE33300B89BB1 /* SpecialErrorPageLocalization.swift */,
+				84F1C0DD2F3B100000000001 /* favicon.ico */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -14917,6 +14920,7 @@
 				8409BD7A2ED878C400E39FA7 /* popup-links.html in Resources */,
 				84BD1A8D2E585A5C002512E2 /* test.pdf in Resources */,
 				84BD1A8F2E585A62002512E2 /* lorem_ipsum.html in Resources */,
+				84F1C0DE2F3B100000000001 /* favicon.ico in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

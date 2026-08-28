@@ -501,6 +501,7 @@ extension URL {
 
     public func toHttps() -> URL? {
         guard navigationalScheme == .http,
+              port == nil,
               var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
         components.scheme = NavigationalScheme.https.rawValue
         return components.url

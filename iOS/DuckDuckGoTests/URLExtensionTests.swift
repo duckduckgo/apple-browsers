@@ -28,6 +28,10 @@ class URLExtensionTests: XCTestCase {
     func testWhenUrlHasHttpSchemeThenToHttpsUpdatesItToHttps() {
         XCTAssertEqual(URL(string: "https://example.com"), URL(string: "http://example.com")?.toHttps())
     }
+
+    func testWhenUrlHasExplicitPortThenToHttpsDoesNothing() {
+        XCTAssertEqual(URL(string: "http://example.com:8080"), URL(string: "http://example.com:8080")?.toHttps())
+    }
     
     func testWhenUrlHasHttpsSchemeThenToHttpsDoesNothing() {
         XCTAssertEqual(URL(string: "https://example.com"), URL(string: "https://example.com")?.toHttps())

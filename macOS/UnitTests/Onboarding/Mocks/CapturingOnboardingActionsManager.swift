@@ -35,6 +35,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
 
     var goToAddressBarCalled = false
     var goToSettingsCalled = false
+    var skipOnboardingCalled = false
     var addToDockCalled = false
     var importDataCalled = false
     var setAsDefaultCalled = false
@@ -64,6 +65,10 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
 
     func goToSettings() {
         goToSettingsCalled = true
+    }
+
+    func skipOnboarding() {
+        skipOnboardingCalled = true
     }
 
     func addToDock() {

@@ -61,6 +61,9 @@ protocol OnboardingActionsManaging {
     /// Used for any setup necessary for during the onboarding
     func onboardingStarted()
 
+    /// Skips the onboarding flow entirely and starts browsing
+    func skipOnboarding()
+
     /// At the end of the onboarding the user will be taken to the DuckDuckGo search page
     func goToAddressBar()
 
@@ -125,6 +128,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
+    private weak var contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater?
     private var cancellables = Set<AnyCancellable>()
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
@@ -163,12 +167,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
         let excludedSteps = buildExcludedSteps()
 
+        let showSkip = featureFlagger.isFeatureOn(.onboardingSkipOption)
+
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
                                        exclude: excludedSteps,
                                        order: "v4",
                                        env: env,
                                        locale: preferredLocale,
-                                       platform: platform)
+                                       platform: platform,
+                                       showSkip: showSkip)
     }
 
     private func buildExcludedSteps() -> [String] {
@@ -206,7 +213,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         pinningManager: PinningManager,
         featureFlagger: FeatureFlagger,
         reinstallUserDetection: ReinstallingUserDetecting,
-        installDateProvider: @escaping () -> Date
+        installDateProvider: @escaping () -> Date,
+        contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil
     ) {
         let chromeExtensionInstaller = ChromeExtensionInstaller(
             buildType: StandardApplicationBuildType(),
@@ -231,7 +239,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                 },
                 installDateProvider: installDateProvider
              ),
-            chromeExtensionInstaller: chromeExtensionInstaller
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            contextualOnboardingStateUpdater: contextualOnboardingStateUpdater
         )
     }
 
@@ -246,7 +255,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
-        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
+        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling,
+        contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil
     ) {
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
@@ -260,6 +270,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
+        self.contextualOnboardingStateUpdater = contextualOnboardingStateUpdater
     }
 
     func onboardingStarted() {
@@ -289,6 +300,26 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         onboardingHasFinished()
         let tab = Tab(content: .settings(pane: nil))
         navigation.replaceTabWith(tab)
+    }
+
+    @MainActor
+    func skipOnboarding() {
+        onboardingHasFinished()
+
+        if featureFlagger.isFeatureOn(.onboardingSkipHighlights) {
+            contextualOnboardingStateUpdater?.state = .onboardingCompleted
+        }
+
+        PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
+        let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
+        navigation.replaceTabWith(tab)
+
+        tab.navigationDidEndPublisher
+            .first()
+            .sink { [weak self] _ in
+                self?.navigation.focusOnAddressBar()
+            }
+            .store(in: &cancellables)
     }
 
     func addToDock() {

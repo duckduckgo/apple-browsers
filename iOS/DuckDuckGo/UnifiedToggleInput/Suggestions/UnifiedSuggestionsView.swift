@@ -25,6 +25,7 @@ struct UnifiedSuggestionsView: View {
 
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
+    let isFloatingUIEnabled: Bool
     let escapeHatch: EscapeHatchModel?
     @ObservedObject var favoritesViewModel: FavoritesViewModel
     @ObservedObject var messagesModel: NewTabPageMessagesModel
@@ -76,11 +77,12 @@ struct UnifiedSuggestionsView: View {
     private var listLayer: some View {
         SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
                             isAddressBarAtBottom: isAddressBarAtBottom,
+                            showsAmbientMessageShadow: isFloatingUIEnabled && isAddressBarAtBottom,
                             scrollContentInsetTop: viewModel.scrollContentInsetTop,
                             escapeHatch: escapeHatch,
                             syncPromo: activeListKind == .recents ? viewModel.syncPromo : nil,
                             favoritesViewModel: favoritesViewModel,
-                            messagesModel: messagesModel,
+                            homeMessageViewModels: messagesModel.homeMessageViewModels,
                             showsRestingContent: !isTypingList,
                             showsFavorites: viewModel.isShowingFavorites,
                             showsSuggestionRows: isShowingList,

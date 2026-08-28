@@ -1101,15 +1101,15 @@ extension MainViewController {
         let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
-        // A bottom List relayout briefly moves its live Favorites presentation during collapse.
-        // Freeze only the favorites-only NTP handoff; RMF and the other completed paths stay live.
-        let snapshotsBottomNTPFavorites = coordinator.cardPosition.isBottom
+        // A floating-bottom List relayout briefly moves its live Search content presentation during collapse.
+        // Keep the existing favorites-only snapshot on other bottom layouts.
+        let snapshotsBottomNTPSearchContent = coordinator.cardPosition.isBottom
             && isSearchContentToSearchContent
-            && newTabPageViewController?.restingContentIsFavoritesOnly == true
+            && (isFloatingUIEnabled || newTabPageViewController?.restingContentIsFavoritesOnly == true)
         let contentContainer = viewCoordinator.unifiedInputContentContainer
         let stationaryContentSnapshot = makeStationaryFocusedContentSnapshotIfNeeded(
             keepsFocusedContentStationary: keepsFocusedContentStationary
-                && (!isNewTabPageVisible || snapshotsBottomNTPFavorites),
+                && (!isNewTabPageVisible || snapshotsBottomNTPSearchContent),
             contentContainer: contentContainer
         )
         if isLogoToLogo {

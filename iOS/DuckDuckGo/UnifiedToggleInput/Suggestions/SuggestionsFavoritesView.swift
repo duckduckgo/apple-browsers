@@ -25,12 +25,13 @@ struct FocusedNewTabPageMessagesView: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    @ObservedObject var messagesModel: NewTabPageMessagesModel
+    let homeMessageViewModels: [HomeMessageViewModel]
+    let showsAmbientShadow: Bool
 
     var body: some View {
         VStack(spacing: Metrics.sectionSpacing) {
-            ForEach(messagesModel.homeMessageViewModels, id: \.viewIdentity) { messageModel in
-                HomeMessageView(viewModel: messageModel, showsAmbientShadow: false)
+            ForEach(homeMessageViewModels, id: \.viewIdentity) { messageModel in
+                HomeMessageView(viewModel: messageModel, showsAmbientShadow: showsAmbientShadow)
                     .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
                     .transition(.scale.combined(with: .opacity))
             }

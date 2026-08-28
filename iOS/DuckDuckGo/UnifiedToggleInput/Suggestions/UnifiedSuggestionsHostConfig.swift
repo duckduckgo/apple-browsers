@@ -25,6 +25,7 @@ struct UnifiedSuggestionsHostConfig {
     let source: SuggestionsSource
     let inputsPublisher: AnyPublisher<UnifiedSuggestionsInputs, Never>
     let isAddressBarAtBottom: Bool
+    let isFloatingUIEnabled: Bool
     let favoritesViewModel: FavoritesViewModel
     let messagesModel: NewTabPageMessagesModel
     let onSelectRow: (String) -> Void

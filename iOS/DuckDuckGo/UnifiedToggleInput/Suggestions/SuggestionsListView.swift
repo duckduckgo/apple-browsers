@@ -27,11 +27,13 @@ struct SuggestionsListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool
+    var showsAmbientMessageShadow = false
     var scrollContentInsetTop: CGFloat = 0
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
     var favoritesViewModel: FavoritesViewModel?
-    var messagesModel: NewTabPageMessagesModel?
+    /// Pass the published array by value so the List invalidates when RMF content changes.
+    var homeMessageViewModels: [HomeMessageViewModel] = []
     var showsRestingContent = false
     var showsFavorites = false
     var showsSuggestionRows = true
@@ -91,8 +93,9 @@ struct SuggestionsListView: View {
                     }
                     if isSearchContentVisible {
                         VStack(spacing: Metrics.searchSectionSpacing) {
-                            if hasMessages, let messagesModel {
-                                FocusedNewTabPageMessagesView(messagesModel: messagesModel)
+                            if hasMessages {
+                                FocusedNewTabPageMessagesView(homeMessageViewModels: homeMessageViewModels,
+                                                              showsAmbientShadow: showsAmbientMessageShadow)
                             }
                             if hasFavorites, let favoritesViewModel {
                                 FavoritesView(model: favoritesViewModel, isolatesContextMenu: true)
@@ -197,7 +200,7 @@ struct SuggestionsListView: View {
     }
 
     private var hasMessages: Bool {
-        !(messagesModel?.homeMessageViewModels.isEmpty ?? true)
+        !homeMessageViewModels.isEmpty
     }
 
     private var hasFavorites: Bool {

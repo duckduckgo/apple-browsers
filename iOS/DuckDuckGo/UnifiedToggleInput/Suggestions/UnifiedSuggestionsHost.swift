@@ -116,6 +116,7 @@ final class UnifiedSuggestionsHost {
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
+            isFloatingUIEnabled: config.isFloatingUIEnabled,
             escapeHatch: escapeHatch,
             favoritesViewModel: config.favoritesViewModel,
             messagesModel: config.messagesModel)
@@ -311,6 +312,7 @@ final class UnifiedSuggestionsHost {
         hosting.rootView = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
+            isFloatingUIEnabled: config.isFloatingUIEnabled,
             escapeHatch: escapeHatch,
             favoritesViewModel: config.favoritesViewModel,
             messagesModel: config.messagesModel)

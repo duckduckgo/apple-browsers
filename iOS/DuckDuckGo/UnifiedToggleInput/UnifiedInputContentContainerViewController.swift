@@ -588,6 +588,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             source: source,
             inputsPublisher: inputsPublisher,
             isAddressBarAtBottom: !isUsingTopBarPosition,
+            isFloatingUIEnabled: isFloatingUIEnabled,
             favoritesViewModel: favoritesViewModel,
             messagesModel: messagesModel,
             onSelectRow: { [weak self] id in

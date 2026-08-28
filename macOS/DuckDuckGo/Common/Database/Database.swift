@@ -39,7 +39,7 @@ final class Database {
         static let databaseName = "Database"
     }
 
-    init(onKeychainWait: () -> Void = {}) throws {
+    init() throws {
 #if DEBUG
         assert(![.unitTests, .xcPreviews].contains(AppVersion.runType), {
             "Use CoreData.---Container() methods for testing purposes:\n" + Thread.callStackSymbols.description
@@ -66,29 +66,17 @@ final class Database {
 
         let mainModel = NSManagedObjectModel.mergedModel(from: [.main])!
 
-        // When launched as a login item the Keychain may not be unlocked yet;
-        // retry for up to ~10 seconds to give loginwindow time to unlock it.
-        let maxAttempts = 6
-        for attempt in 1...maxAttempts {
-            do {
-                _ = try mainModel.registerValueTransformers(withAllowedPropertyClasses: [
-                    NSImage.self,
-                    NSString.self,
-                    NSURL.self,
-                    NSNumber.self,
-                    NSError.self,
-                    NSData.self
-                ], keyStore: keyStore)
-                break
-            } catch {
-                guard attempt == maxAttempts else {
-                    onKeychainWait()
-                    Thread.sleep(forTimeInterval: 2)
-                    continue
-                }
-
-                throw KeychainUnavailableError(underlying: error)
-            }
+        do {
+            _ = try mainModel.registerValueTransformers(withAllowedPropertyClasses: [
+                NSImage.self,
+                NSString.self,
+                NSURL.self,
+                NSNumber.self,
+                NSError.self,
+                NSData.self
+            ], keyStore: keyStore)
+        } catch {
+            throw KeychainUnavailableError(underlying: error)
         }
 
         let httpsUpgradeModel = HTTPSUpgrade.managedObjectModel

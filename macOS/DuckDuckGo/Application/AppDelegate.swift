@@ -543,16 +543,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDatabase = BookmarkDatabase()
 
         if AppVersion.runType.requiresEnvironment {
-            let commonDatabase: Database
-            do {
-                commonDatabase = try Database(onKeychainWait: {
-                    // Keychain retry sleeps contaminate startup timings.
-                    startupProfiler.invalidate()
-                })
-                database = commonDatabase
-            } catch {
-                Self.presentKeychainUnavailableAndTerminate(error: error)
-            }
+            let commonDatabase = Self.createDatabaseRetryingKeychainAccess(startupProfiler: startupProfiler)
+            database = commonDatabase
 
             database.db.loadStore { _, error in
                 guard let error = error else { return }
@@ -2539,6 +2531,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.promptBarMenuBarController?.hide()
                 }
             }
+    }
+
+    // MARK: - Keychain availability
+
+    /// When launched as a login item the Keychain may not be unlocked yet.
+    /// Retry for up to ~10 s to give loginwindow time to unlock it, then
+    /// show an alert and exit cleanly.
+    private static func createDatabaseRetryingKeychainAccess(startupProfiler: StartupProfiler) -> Database {
+        let maxAttempts = 6
+        for attempt in 1...maxAttempts {
+            do {
+                return try Database()
+            } catch {
+                guard attempt < maxAttempts else {
+                    presentKeychainUnavailableAndTerminate(error: error)
+                }
+                startupProfiler.invalidate()
+                Thread.sleep(forTimeInterval: 2)
+            }
+        }
+        fatalError()
     }
 
     private static func presentKeychainUnavailableAndTerminate(error: Error) -> Never {

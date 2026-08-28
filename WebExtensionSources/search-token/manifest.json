@@ -6,8 +6,7 @@
     "minimum_chrome_version": "122.0",
     "browser_specific_settings": {
         "duckduckgo": {
-            "id": "com.duckduckgo.web-extension.search-token",
-            "appleRequiresExtraction": true
+            "id": "com.duckduckgo.web-extension.search-token"
         }
     },
     "permissions": ["declarativeNetRequest", "declarativeNetRequestWithHostAccess", "nativeMessaging"],

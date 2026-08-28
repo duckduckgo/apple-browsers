@@ -1553,7 +1553,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
+        let notice = tool == .imageGeneration ? switchModelForImageGenerationIfNeeded() : nil
         toolsController.select(tool, for: modelStore)
+        if let notice {
+            footerController?.showModelSwitchNotice(notice)
+        }
         refreshToolsPresentation()
         recordUserChoiceToStore()
     }
@@ -1641,21 +1645,27 @@ extension UnifiedToggleInputCoordinator {
 
     /// Selecting Create Image on a model that can't generate images moves the user to one that can, and says so in the footer.
     private func toggleImageGenerationSelection() {
+        let isSelecting = toolsController.selectedTool != .imageGeneration
+        let notice = isSelecting ? switchModelForImageGenerationIfNeeded() : nil
+        toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
+        if let notice {
+            footerController?.showModelSwitchNotice(notice)
+        }
+    }
+
+    /// Moves the user onto an image-capable model when the selected one can't generate images, and
+    /// returns the notice to raise — without raising it.
+    private func switchModelForImageGenerationIfNeeded() -> CreateImageModelSwitchNotice? {
         guard isUpdatedCreateImageEnabled,
-              toolsController.selectedTool != .imageGeneration,
               !modelStore.selectedModelSupports(tool: .imageGeneration),
               canSwitchModelForImageGeneration,
               let previousModel = modelStore.selectedModel,
               let fallbackModel = modelStore.imageGenerationFallbackModel else {
-            toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
-            return
+            return nil
         }
 
         modelSelector.updateSelectedModel(fallbackModel.id)
-        toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
-        footerController?.showModelSwitchNotice(
-            CreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
-        )
+        return CreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
     }
 
     private func fireToolToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {

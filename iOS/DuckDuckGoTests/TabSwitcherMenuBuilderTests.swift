@@ -86,6 +86,64 @@ class DefaultTabSwitcherMenuBuilderTests: XCTestCase {
         XCTAssertFalse(actions.contains(title: UserText.deselectAllTabs))
     }
 
+    func testMultiSelectMenu_whenFloatingAndNothingSelected_showsOnlyBookmarkAll() {
+        let actions = floatingMenuActions(
+            selectedCount: 0,
+            selectedContainsWebPages: false,
+            allContainsWebPages: true)
+
+        XCTAssertEqual(actions.map(\.title), [UserText.tabSwitcherBookmarkAllTabs])
+    }
+
+    func testMultiSelectMenu_whenFloatingAndEmptyTabSelected_showsOnlyCloseOtherTabs() {
+        let actions = floatingMenuActions(
+            selectedCount: 1,
+            selectedContainsWebPages: false,
+            allContainsWebPages: true)
+
+        XCTAssertEqual(actions.map(\.title), [UserText.tabSwitcherCloseOtherTabs(withCount: 2)])
+    }
+
+    func testMultiSelectMenu_whenFloatingAndBrowsingTabSelected_showsBookmarkShareAndCloseOtherTabs() {
+        let actions = floatingMenuActions(
+            selectedCount: 1,
+            selectedContainsWebPages: true,
+            allContainsWebPages: true)
+
+        XCTAssertEqual(actions.map(\.title), [
+            UserText.bookmarkSelectedTabs(withCount: 1),
+            UserText.shareLinks(withCount: 1),
+            UserText.tabSwitcherCloseOtherTabs(withCount: 2),
+        ])
+    }
+
+    func testMultiSelectMenu_whenFloatingAndMultipleTabsSelected_showsBookmarkShareAndCloseOtherTabs() {
+        let actions = floatingMenuActions(
+            selectedCount: 2,
+            selectedContainsWebPages: true,
+            allContainsWebPages: true)
+
+        XCTAssertEqual(actions.map(\.title), [
+            UserText.bookmarkSelectedTabs(withCount: 2),
+            UserText.shareLinks(withCount: 2),
+            UserText.tabSwitcherCloseOtherTabs(withCount: 2),
+        ])
+    }
+
+    func testMultiSelectMenu_whenFloatingAndAllTabsSelected_showsBookmarkShareAndCloseOtherTabs() {
+        let actions = floatingMenuActions(
+            selectedCount: 4,
+            totalCount: 4,
+            selectedContainsWebPages: true,
+            allContainsWebPages: true)
+
+        XCTAssertEqual(actions.map(\.title), [
+            UserText.bookmarkSelectedTabs(withCount: 4),
+            UserText.shareLinks(withCount: 4),
+            UserText.tabSwitcherCloseOtherTabs(withCount: 2),
+        ])
+    }
+
     func testMultiSelectMenu_whenAllSelected_showsDeselectAllAndClose() {
         let state = TabSwitcherMultiSelectMenuState(
             selectedCount: 3, totalCount: 3,
@@ -201,6 +259,28 @@ class DefaultTabSwitcherMenuBuilderTests: XCTestCase {
         XCTAssertTrue(actions.contains(title: UserText.tabSwitcherSelectTabs(withCount: 1)))
         XCTAssertTrue(actions.contains(title: UserText.closeTabs(withCount: 1)))
         XCTAssertTrue(actions.contains(title: UserText.tabSwitcherCloseOtherTabs(withCount: 2)))
+        XCTAssertFalse(actions.contains(title: UserText.tabSwitcherDeleteTabAndData))
+    }
+
+    func testLongPressMenu_whenFloatingWebPageTab_showsDesignActionsInOrder() {
+        let state = TabSwitcherLongPressMenuState(
+            pressedCount: 1,
+            totalCount: 3,
+            pressedContainsWebPages: true,
+            isEditing: false,
+            title: "example.com",
+            shouldShowDeleteTabAndData: true)
+        let actions = flatActions(builder.longPressMenuItems(state: state, actions: noopLongPressActions))
+
+        XCTAssertEqual(actions.map(\.title), [
+            UserText.shareLinks(withCount: 1),
+            UserText.bookmarkSelectedTabs(withCount: 1),
+            UserText.tabSwitcherSelectTabs(withCount: 1),
+            UserText.closeTabs(withCount: 1),
+            UserText.tabSwitcherCloseOtherTabs(withCount: 2),
+            UserText.tabSwitcherDeleteTabAndData,
+        ])
+        XCTAssertTrue(actions.last?.attributes.contains(.destructive) == true)
     }
 
     func testLongPressMenu_homePageTab_hidesShareAndBookmarkButShowsSelect() {
@@ -301,6 +381,21 @@ class DefaultTabSwitcherMenuBuilderTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func floatingMenuActions(selectedCount: Int,
+                                     totalCount: Int = 3,
+                                     selectedContainsWebPages: Bool,
+                                     allContainsWebPages: Bool) -> [UIAction] {
+        let state = TabSwitcherMultiSelectMenuState(
+            selectedCount: selectedCount,
+            totalCount: totalCount,
+            selectedContainsWebPages: selectedContainsWebPages,
+            allContainsWebPages: allContainsWebPages,
+            shouldShowSelectionToggleActions: false,
+            shouldShowCloseSelectedAction: false,
+            shouldShowCloseOtherActionWhenAllSelected: true)
+        return flatActions(builder.multiSelectionMenuItems(state: state, actions: noopMultiSelectActions))
+    }
 
     /// Recursively collects all UIActions from a menu element tree.
     private func flatActions(_ elements: [UIMenuElement]) -> [UIAction] {

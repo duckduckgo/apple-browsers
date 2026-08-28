@@ -464,6 +464,11 @@ public struct UserText {
 
     public static let tabSwitcherBookmarkAllTabs = NSLocalizedString("tab.switcher.bookmarkAll", value: "Bookmark All Tabs", comment: "Bookmark all tabs menu item")
 
+    public static let tabSwitcherDeleteTabAndData = NSLocalizedString(
+        "tab.switcher.delete.tab.and.data",
+        value: "Delete Tab and Data",
+        comment: "Delete a tab and its site data menu item")
+
     public static func tabSwitcherSelectTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "tab.switcher.select-tabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)

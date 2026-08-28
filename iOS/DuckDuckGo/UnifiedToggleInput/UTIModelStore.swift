@@ -114,6 +114,24 @@ final class UTIModelStore {
         return models.first(where: { $0.id == persistedModelId })?.supportsTool(tool) ?? false
     }
 
+    /// The model to switch to when the user picks Create Image on a model that can't generate images.
+    /// `entityHasAccess` is part of the predicate on purpose: `persistedModelId` runs every id through
+    /// `resolve(modelId:)`, which drops an inaccessible model and falls back to `firstAccessibleModelId`
+    /// — so switching to one would leave the user on a third model while the footer card names this one.
+    var imageGenerationFallbackModel: AIChatModel? {
+        models.first {
+            $0.id == Constants.imageGenerationFallbackModelId
+                && $0.entityHasAccess
+                && $0.supportsTool(.imageGeneration)
+        }
+    }
+
+    private enum Constants {
+        /// Hardcoded until the picker learns to resolve the first accessible image-capable model.
+        /// TODO: https://app.asana.com/1/137249556945/project/1210947754188321/task/1217865341581108?focus=true
+        static let imageGenerationFallbackModelId = "gpt-5.6-luna"
+    }
+
     private var firstAccessibleModelId: String? {
         models.first(where: { $0.entityHasAccess })?.id
     }

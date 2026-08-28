@@ -49,6 +49,8 @@ final class UTIFooterController {
 
     private var isSuppressed = false
 
+    private var modelSwitchNotice: CreateImageModelSwitchNotice?
+
     private(set) var currentMessage: UTIFooterMessage?
 
     init(viewModel: DuckAiUsageWarningViewModel,
@@ -83,10 +85,23 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    /// Persisted by the view model, so the message stays down until the window resets or the user
-    /// crosses the next redisplay threshold.
+    func showModelSwitchNotice(_ notice: CreateImageModelSwitchNotice) {
+        modelSwitchNotice = notice
+        applyCurrentState()
+    }
+
+    func clearModelSwitchNotice() {
+        guard modelSwitchNotice != nil else { return }
+        modelSwitchNotice = nil
+        applyCurrentState()
+    }
+
     func dismissCurrent() {
-        viewModel.dismiss()
+        if modelSwitchNotice != nil {
+            modelSwitchNotice = nil
+        } else {
+            viewModel.dismiss()
+        }
         applyCurrentState()
     }
 
@@ -114,6 +129,11 @@ final class UTIFooterController {
         guard !isSuppressed else {
             Logger.duckAIUsageWarnings.debug("[UsageWarnings] nothing to show: suppressed (editing or Search mode)")
             return nil
+        }
+        // The model switch is something the app just did to the user's selection, so it outranks a
+        // usage warning, which stays available once the notice is gone.
+        if let modelSwitchNotice {
+            return mapper.message(for: modelSwitchNotice)
         }
         guard let warning = viewModel.warning else { return nil }
         return mapper.message(for: warning)

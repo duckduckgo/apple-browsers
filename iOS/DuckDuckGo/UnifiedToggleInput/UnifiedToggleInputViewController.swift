@@ -229,6 +229,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isModelChipHidden = newValue }
     }
 
+    var isModelChipMenuIndicatorHidden: Bool {
+        get { inputBarView.isModelChipMenuIndicatorHidden }
+        set { inputBarView.isModelChipMenuIndicatorHidden = newValue }
+    }
+
     var selectedTool: AIChatRAGTool? {
         get { inputBarView.selectedTool }
         set { inputBarView.selectedTool = newValue }

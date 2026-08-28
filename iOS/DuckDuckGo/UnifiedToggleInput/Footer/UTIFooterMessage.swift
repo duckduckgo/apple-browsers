@@ -20,11 +20,24 @@
 import AIChat
 import Foundation
 
+struct CreateImageModelSwitchNotice: Equatable {
+    let previousModelShortName: String
+    let newModelShortName: String
+    let previousModelHasExtraPrivacyProtections: Bool
+
+    init(previousModel: AIChatModel, newModel: AIChatModel) {
+        previousModelShortName = previousModel.shortName
+        newModelShortName = newModel.shortName
+        previousModelHasExtraPrivacyProtections = previousModel.provider == .oss
+    }
+}
+
 struct UTIFooterMessage: Equatable {
 
     enum Icon: Equatable {
         case usageRing(progress: Double)
         case alert
+        case modelSwitch
     }
 
     struct PrimaryAction: Equatable {

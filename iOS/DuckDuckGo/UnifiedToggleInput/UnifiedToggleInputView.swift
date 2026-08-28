@@ -293,6 +293,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isModelChipHidden = newValue }
     }
 
+    var isModelChipMenuIndicatorHidden: Bool {
+        get { toolsToolbar.isModelChipMenuIndicatorHidden }
+        set { toolsToolbar.isModelChipMenuIndicatorHidden = newValue }
+    }
+
     var selectedTool: AIChatRAGTool? {
         get { toolsToolbar.selectedTool }
         set { toolsToolbar.selectedTool = newValue }

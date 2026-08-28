@@ -53,6 +53,7 @@ final class UTIFooterCardView: UIView {
 
     private let usageRing = UTIFooterUsageRingView()
     private let alertIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.alertRecolorable)
+    private let modelSwitchIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.importExport)
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
     private let actionButton = UTIFooterActionButton()
@@ -76,10 +77,16 @@ final class UTIFooterCardView: UIView {
         case .usageRing(let progress):
             usageRing.isHidden = false
             alertIcon.isHidden = true
+            modelSwitchIcon.isHidden = true
             usageRing.setProgress(progress, animated: animateIcon)
         case .alert:
             usageRing.isHidden = true
             alertIcon.isHidden = false
+            modelSwitchIcon.isHidden = true
+        case .modelSwitch:
+            usageRing.isHidden = true
+            alertIcon.isHidden = true
+            modelSwitchIcon.isHidden = false
         }
 
         titleLabel.text = message.title
@@ -126,7 +133,7 @@ private extension UTIFooterCardView {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(contentView)
 
-        [usageRing, alertIcon].forEach {
+        [usageRing, alertIcon, modelSwitchIcon].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             $0.setContentHuggingPriority(.required, for: .horizontal)
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -134,6 +141,8 @@ private extension UTIFooterCardView {
         }
         alertIcon.contentMode = .scaleAspectFit
         alertIcon.isHidden = true
+        modelSwitchIcon.contentMode = .scaleAspectFit
+        modelSwitchIcon.isHidden = true
 
         for label in [titleLabel, subtitleLabel] {
             label.numberOfLines = 1
@@ -143,6 +152,7 @@ private extension UTIFooterCardView {
         }
         titleLabel.font = .daxFootnoteSemibold()
         subtitleLabel.font = .daxCaption1()
+        subtitleLabel.numberOfLines = 2
 
         let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         textStack.axis = .vertical
@@ -190,6 +200,11 @@ private extension UTIFooterCardView {
             alertIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             alertIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
+            modelSwitchIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            modelSwitchIcon.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
+            modelSwitchIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            modelSwitchIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
             textStack.leadingAnchor.constraint(equalTo: usageRing.trailingAnchor, constant: Constants.iconTextGap),
             textStack.topAnchor.constraint(equalTo: contentView.topAnchor),
             textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
@@ -216,6 +231,7 @@ private extension UTIFooterCardView {
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
+        modelSwitchIcon.tintColor = UIColor(designSystemColor: .icons)
         dismissButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
         actionButton.applyColors()
     }

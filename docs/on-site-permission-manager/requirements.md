@@ -50,6 +50,7 @@ Permission types: **Camera, Microphone, Location (geolocation)** — only these 
 5. **Recovery from denied system permissions**: reminder dialogue + "Go to System Settings" links (deep link to Settings → Apps → DuckDuckGo).
 6. **Visual feedback**: grant animation; status icons (outline / solid / blocked / red-in-use) throughout the manager surfaces.
 7. **Fire Button / fireproofing integration** for stored permissions.
+8. **Voice Search denied-permission prompt update** (added by the DRI, 2026-08-28): restyle the existing plain alert (`NoMicPermissionAlert`) to the redesigned reminder dialog — `DuckDuckGo needs to access your microphone` / `Microphone permissions are needed if you want to use our Private Voice Search.` / **Change Permissions** (deep-links to app Settings) / **Hide Voice Search** / **Cancel** (Figma 1087:27674). Behind the same feature flag.
 
 ### Out of scope (explicitly descoped or deferred)
 
@@ -57,7 +58,8 @@ Permission types: **Camera, Microphone, Location (geolocation)** — only these 
 - **Per-session live toggles in the on-site sheet** — proposed late, rejected (misleading semantics; mid-session changes likely require a page reload). May be re-evaluated during implementation in a real build.
 - **Duck.ai** — explicit exception (**ratified at kick-off 2026-08-28**): both the SERP Duck.ai surface and the embedded Duck.ai web view keep their purpose-built microphone behavior in both flag states; the 3-option prompt, stored per-site decisions, and the global Never Allow default do not apply to duck.ai origins.
 - Other permission types: notifications, pop-ups, autoplay, device motion, **DRM/protected media** (a first-class fourth permission on Android), and **screen/display capture**. Tech input confirmed pop-ups/device-motion are feasible and autoplay needs extra plumbing — all future candidates, none in scope.
-- Android work (sibling projects) and the Android-specific voice-search flow.
+- Android work (sibling projects) and the Android voice-search flow. (The iOS voice-search denied-mic prompt IS in scope — In scope #8.)
+- **Grant animation** — cut from the v1 implementation (DRI, 2026-08-28); may return later. OQ-6 is moot until then.
 - Re-triggering the OS system prompt after denial — **impossible on iOS for every permission type** (hack-phase confirmed).
 - Syncing permission state across devices — privacy triage mandates **local device state only**.
 
@@ -136,7 +138,7 @@ When a website requests camera, microphone, or location and no applicable stored
   | Location on DDG SERP | DuckDuckGo logo | `“duckduckgo.com” wants to access your location` | `We’ll anonymize your location and use it to deliver better results, closer to you.` |
 
 - Semantics: **Allow Once** = ephemeral in-memory grant for the current page — it ends on reload or any non-same-document navigation, and is never persisted (§4.3, OQ-9); **Allow While Using Site** = persistent per-site allow ("Always Allow" in pickers); **Never Allow** = persistent per-site deny.
-- No combined camera+microphone request dialogue is designed (see Open Questions OQ-2).
+- No combined camera+microphone request dialogue is designed. **Working default (DRI, 2026-08-28):** one combined dialog titled `“<domain>” website wants to access your camera and microphone`, no body, the standard three buttons — string marked for later copy review (OQ-2).
 - Copy note: the main task and older docs say "Always Allow / Allow Once / Never Allow"; **the Figma copy is the source of truth** (peer-review decision).
 
 ### FR-2: Dialogue ordering (site first, system second)
@@ -197,8 +199,7 @@ Two cases (the original toast design was updated by the hack-phase decision):
 
 ### FR-7: Visual feedback & animation
 
-- After a permission is **granted**, show a brief pop-in/pop-out animation (code-built, no Lottie; prototype in §4.1). Figma stickies place it in the browsing chrome immediately after the grant; the main task describes it as "in the menu". Exact placement per prototype (see OQ-6).
-- No animation after denial (site-level or system-level).
+- **The grant animation is cut from the v1 implementation** (DRI, 2026-08-28). The original intent (brief code-built pop-in/pop-out per the §4.1 prototype) is kept here for when it returns; OQ-6 (placement) is moot until then.
 - Status iconography per FR-4 across the sheet and settings.
 - Note from peer review: once granted, the iOS system status-bar indicators (green/orange dots) are the signal users actually notice — our animation complements, not replaces, them.
 
@@ -249,39 +250,48 @@ Copy-review goals (from the copy task, 1214494688509116): align our dialogue str
 
 ## 9. Measurement & Instrumentation
 
-New pixels needed (naming per Desktop precedent — type + decision only, no domains):
+No Asana or Figma task defines a pixel list for this project. The closest sources: the parent problem task's KPI friction signals ("need new pixels"), macOS's shipped `permission_*` family, and Android's dialog impression/click pixels. **Proposed set (adopted as the implementation default 2026-08-28, pending DRI review of final names).** All are type+decision only — never a domain; PixelKit appends the platform suffix:
 
-- Prompt shown / decision taken per type (allow-once / allow-always / never).
-- Permission manager (sheet) opened; state changed (from → to, per type); permissions removed (per-site, all-sites).
-- Settings page opened; global default changed.
-- System-Settings link/dialog interactions (reminder shown, Change Permissions tapped).
-- Friction signal (parent KPI): manager opened + change attempted but not completed.
+| # | Pixel | When |
+|---|---|---|
+| 1 | `permission_dialog_impression_<type>` | our 3-option dialog shows (`type`: camera / microphone / camera_and_microphone / geolocation) |
+| 2 | `permission_dialog_click_<type>_<allow_once\|allow_always\|never>` | site-dialog selection (intent, separate from OS outcome) |
+| 3 | `permission_system_prompt_result_<type>_<granted\|denied>` | the OS prompt outcome after a site allow (funnel with #2) |
+| 4 | `permission_reminder_dialog_<type>_<shown\|settings\|cancel>` | Case B recovery dialog interactions |
+| 5 | `permission_center_opened` | on-site sheet opened from the menu |
+| 6 | `permission_center_changed_<type>_to_<ask\|allow\|deny>` (+ `from` param) | committed change in sheet or per-site Settings page (macOS parity) |
+| 7 | `permission_center_dismissed_dirty` | sheet closed with an edit begun but not committed — the parent-KPI friction signal |
+| 8 | `permission_remove_site` / `permission_remove_all` / `permission_remove_undo` | removal flows |
+| 9 | `permission_system_settings_opened_<type>` | any Go to System Settings / Change Permissions tap (macOS parity) |
+| 10 | `settings_site_permissions_open` | Settings page opened |
+| 11 | `settings_site_permissions_global_changed_<type>_to_<ask\|deny>` | global default changed |
+| 12 | `voice_search_permission_prompt_<shown\|settings\|hide\|cancel>` | the restyled Voice Search denied-mic prompt |
 
 ## 10. Open Questions & Unresolved Items
 
 | # | Item | Source |
 |---|---|---|
 | OQ-1 | **Resolved at kick-off 2026-08-28: no direct OS prompt, ever.** The OS prompt appears only immediately after a positive site-dialogue choice; the designed reminder dialogue stays for the OS-denied case. Existing designs stand | Figma sticky → kick-off |
-| OQ-2 | Combined camera+microphone: one combined dialog confirmed (both shipped platforms; single WebKit decision handler). **Still open: the 3-option combined copy — before the dialog PR.** Bartosz is verifying that a site can request camera-only or microphone-only via WebKit (expected yes: `WKMediaCaptureType.camera`/`.microphone` exist and macOS/Figma handle single types) | Figma TODO + kick-off |
-| OQ-3 | "Copy for multiple denied location" and the mixed state (running permissions + system-denied reminder simultaneously) — copy TODO | Figma TODO sticky |
-| OQ-4 | Two competing footer phrasings ("needs to access your X" vs "needs access to this device X"); minor title inconsistencies ("the microphone" vs "your camera/location"; DDG variant drops "website"); "Reload the page…" with/without period. Resolve with copy review — **needed before the dialog/geolocation PRs** | Figma inconsistencies |
-| OQ-5 | Largely resolved by OQ-13/OQ-17: the site allow commits at choice time, so the menu entry appears and the sheet shows the reminder state. The contradictory Figma sticky ("No Site Permissions entry in the menu") remains to clarify with design | Figma flow D |
-| OQ-6 | Exact placement/target of the grant animation (browsing chrome vs menu button) — annotated ("Show animation") but never visually specified; follow the prototype | Figma + peer review |
-| OQ-7 | Fireproofing exemption + globals-preserved clearing **ratified at kick-off 2026-08-28**; send the for-the-record ping on the mobile triage thread (its summary said "Fire clears all permissions" without addressing fireproofing) | §5 FR-8 → ratified |
+| OQ-2 | **Default adopted (2026-08-28):** one combined dialog with the default copy in FR-1; final copy to follow later. Camera-only/mic-only WebKit requests are assumed possible (`WKMediaCaptureType.camera`/`.microphone`) | Figma TODO → defaulted |
+| OQ-3 | **Default adopted (2026-08-28):** minimal sensible strings for multi-denied and mixed granted+reminder states, marked for later copy review | Figma TODO → defaulted |
+| OQ-4 | **Default adopted (2026-08-28):** Figma copy verbatim where it exists; the "needs to access your X" footer form where phrasings compete; finalize in a later copy pass | Figma inconsistencies → defaulted |
+| OQ-5 | Resolved by OQ-13/OQ-17: the site allow commits at choice time, so the menu entry appears and the sheet shows the reminder state. The contradictory Figma sticky is treated as stale; fix in Figma when convenient | Figma flow D → defaulted |
+| OQ-6 | **Moot (2026-08-28):** the grant animation is cut from v1 | Figma + peer review → moot |
+| OQ-7 | Fireproofing exemption + globals-preserved clearing **ratified at kick-off 2026-08-28**; DRI follow-up: privacy triage assumed not an issue — proceed; send the for-the-record ping when convenient | §5 FR-8 → ratified |
 | OQ-8 | **Resolved (platform-aligned) and ratified at kick-off 2026-08-28:** a stored per-site Always Allow overrides the global Never Allow default; the global control only prevents asking. Matches Android's shipped predicate and macOS's autoplay precedent | gap → ratified |
 | OQ-9 | **Resolved (macOS model), ratified provisionally at kick-off 2026-08-28 — validate by feel in an early build:** Allow Once is in-memory and page-scoped — it ends on reload and any non-same-document navigation, on tab close, web-content-process replacement, and app termination (backgrounding alone does not end it); never persisted or restored (no Android-style 24h TTL); same-document (SPA history) updates do not end it; a completed one-time capture may prompt again | gap → ratified |
 | OQ-10 | **Resolved (Android model) and ratified at kick-off 2026-08-28:** fire-mode tabs read stored decisions and global defaults but never write; decisions made there are session-only. (macOS burner tabs read *and* write the shared store — rejected as unfit for an ephemeral mode) | gap → ratified |
 | OQ-11 | Whether permission changes can apply without reload in some cases (mid-session muting exists per §3.5); v1 assumes reload (caption + flow C "Reload" sticky), re-evaluate in a real build | peer review |
-| OQ-12 | Per-site settings page header shows literal `Permissions for site.com` under a real-domain nav title (likely a placeholder oversight) | Figma |
+| OQ-12 | **Default adopted (2026-08-28):** the per-site header uses the real domain (`Permissions for <domain>`); the Figma literal is treated as a placeholder | Figma → defaulted |
 | OQ-13 | **Resolved and ratified provisionally at kick-off 2026-08-28 ("copy macOS and see how it feels"):** the site decision commits at choice time; an OS denial never rewrites it (FR-5 invariant), keeping the menu/recovery sheet reachable. Deliberate divergence from Android's commit-after-OS-success | independent review → ratified |
 | OQ-14 | **Resolved at kick-off 2026-08-28: no visible design changes** — VoiceOver labels only; the existing designs (icons + row state text) stand | independent review → decided |
 | OQ-15 | **Kick-off 2026-08-28: v1 adds no special alert** for `restricted`/unavailable OS states — standard denied handling applies (accepting a possible Settings dead-end); the states stay modeled in the system client. Sveta will demo the real restricted experience and the UX will be revisited from there | independent review → deferred |
-| OQ-16 | Precise definition of the "manager change attempted but not completed" friction pixel, measurable without recording domains. Candidate event set (neither platform measures this today): manager open, edit begun, edit committed, dismissal with dirty state, remove/undo, reminder shown, Settings tap | independent review |
-| OQ-17 | Menu-entry membership: does a site whose only record is an explicit Ask Each Time show the `Site Permissions` menu entry? Working default: yes — any stored record or active state | review round 2 |
-| OQ-18 | Which permission rows appear in the on-site sheet ("relevant permissions"): stored, active, requested-this-visit, globally denied? | review round 2 |
+| OQ-16 | **Default adopted (2026-08-28):** the proposed pixel set in §9, with `permission_center_dismissed_dirty` as the friction signal — pending DRI review of the final names | independent review → defaulted |
+| OQ-17 | **Default adopted (2026-08-28):** yes — any stored record (explicit Ask included) or active state shows the menu entry; finalize after a working build | review round 2 → defaulted |
+| OQ-18 | **Default adopted (2026-08-28):** sheet rows = stored ∪ active ∪ requested-this-visit; globally-denied types add no row; finalize after a working build | review round 2 → defaulted |
 | OQ-19 | **Resolved (macOS model, per the decision rule; consistent with kick-off's no-design-changes call):** `.muted` maps to a paused state and is **not** shown as red in-use; the VoiceOver label reflects it | review round 2 → decided |
 | OQ-20 | **Resolved 2026-08-26 (macOS model):** an explicit per-site deny or Remove Permissions immediately revokes active capture (camera/mic via WebKit capture-state APIs; geolocation watches stopped); grants and all other changes apply on reload/next request (the reload caption) | review round 2 → decided |
-| OQ-21 | Host-only permission key collapses scheme and port — confirm with privacy (grants remain restricted to secure contexts by platform gating) | review round 2 |
+| OQ-21 | **Assumed fine (DRI, 2026-08-28):** host-only key proceeds; grants remain restricted to secure contexts by platform gating; for-the-record privacy ping when convenient | review round 2 → defaulted |
 
 ## 11. Design & Evidence Index
 

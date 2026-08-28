@@ -186,7 +186,6 @@ class AIChatSettingsTests: UITestCase {
 
         // Restore: re-enable Duck.ai
         app.activateAddressBar()
-        addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
         let restorePicker = app.popUpButtons[Identifiers.aiFeaturesToggle]
         XCTAssertTrue(restorePicker.waitForExistence(timeout: UITests.Timeouts.elementExistence))

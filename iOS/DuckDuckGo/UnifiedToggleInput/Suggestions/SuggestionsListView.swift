@@ -403,6 +403,7 @@ private final class ListCellShadowOverflowProbe: UIView {
 
     private weak var containingCell: UICollectionViewCell?
     private var originalCellClipsToBounds: Bool?
+    private var clippingUpdateGeneration = 0
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
@@ -415,6 +416,19 @@ private final class ListCellShadowOverflowProbe: UIView {
     }
 
     func updateContainingCellClipping() {
+        applyContainingCellClipping()
+
+        // SwiftUI's List reapplies the cell configuration after updating the hosted row.
+        // Reassert overflow after that pass so UIKit cannot restore masksToBounds on the cell.
+        clippingUpdateGeneration += 1
+        let generation = clippingUpdateGeneration
+        DispatchQueue.main.async { [weak self] in
+            guard let self, clippingUpdateGeneration == generation else { return }
+            applyContainingCellClipping()
+        }
+    }
+
+    private func applyContainingCellClipping() {
         guard window != nil, let cell = firstContainingCell() else {
             restoreContainingCellClipping()
             return
@@ -428,6 +442,7 @@ private final class ListCellShadowOverflowProbe: UIView {
     }
 
     func restoreContainingCellClipping() {
+        clippingUpdateGeneration += 1
         if let containingCell, let originalCellClipsToBounds {
             containingCell.clipsToBounds = originalCellClipsToBounds
         }

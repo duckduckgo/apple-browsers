@@ -1297,6 +1297,8 @@ extension MainViewController {
     private func writeBottomSearchLayout(event: String, stage: String, coordinator: UnifiedToggleInputCoordinator) {
         let focusedRoot = viewCoordinator.unifiedInputContentContainer
         let restingRoot = newTabPageViewController?.view
+        let rmfShadowColor = UIColor(designSystemColor: .shadowPrimary).resolvedColor(with: view.traitCollection).cgColor
+        let focusedRMFUsesAmbientShadow = isFloatingUIEnabled && coordinator.cardPosition.isBottom
         let message = "[UTIBottom\(event)] stage=\(stage) os=\(UIDevice.current.systemVersion) "
             + "floatingUI=\(isFloatingUIEnabled) keyboardTop=\(view.keyboardLayoutGuide.layoutFrame.minY) "
             + "expectedOmnibarHeight=\(viewCoordinator.omniBar.barView.expectedHeight) "
@@ -1309,6 +1311,9 @@ extension MainViewController {
             + "focusedRoot={\(viewLayoutSummary(focusedRoot))} ntp={\(viewLayoutSummary(restingRoot))} "
             + "focusedState={\(coordinator.contentViewController.bottomSearchLayoutDebugSummary)} "
             + "ntpState={\(newTabPageViewController?.bottomSearchLayoutDebugSummary ?? "none")} "
+            + "rmfShadow={color=\(String(describing: rmfShadowColor.components)) "
+            + "primary=(opacity=colorAlpha,radius=12,offset=(0,4),spread=0,path=roundedRect) "
+            + "ambient=(unfocused=true,focused=\(focusedRMFUsesAmbientShadow),opacity=colorAlpha,radius=48,offset=(0,16),spread=0,path=roundedRect)} "
             + "snapshot={\(viewLayoutSummary(descendantViews(in: view).first { $0.accessibilityIdentifier == "UTIBottomDismissContentSnapshot" }))} "
             + "\(probeSummary(named: "focusedMessages", identifier: "FocusedMessagesPositionProbe", in: focusedRoot)) "
             + "\(probeSummary(named: "focusedFavorites", identifier: "FavoritesPositionProbe", in: focusedRoot)) "
@@ -1326,7 +1331,9 @@ extension MainViewController {
         let probes = descendantViews(in: rootView).filter { $0.accessibilityIdentifier == identifier }
         guard !probes.isEmpty else { return "\(name)=none" }
         return probes.enumerated().map { index, probe in
-            "\(name)[\(index)]={\(viewLayoutSummary(probe))}"
+            "\(name)[\(index)]={\(viewLayoutSummary(probe)) "
+                + "effectiveVisibility={\(effectiveVisibilitySummary(probe))} "
+                + "renderingAncestors={\(renderingAncestorsSummary(from: probe, through: rootView))}}"
         }.joined(separator: " || ")
     }
 
@@ -1353,7 +1360,41 @@ extension MainViewController {
         let presentationFrame = view.layer.presentation().map { String(describing: $0.convert($0.bounds, to: nil)) } ?? "nil"
         return "frame=\(modelFrame)/presentation=\(presentationFrame) hidden=\(view.isHidden) "
             + "alpha=\(view.alpha)/presentationAlpha=\(String(describing: view.layer.presentation()?.opacity)) "
+            + "clips=\(view.clipsToBounds) masks=\(view.layer.masksToBounds) mask=\(view.layer.mask != nil) "
+            + "shadow=(color=\(String(describing: view.layer.shadowColor?.components)),opacity=\(view.layer.shadowOpacity),"
+            + "radius=\(view.layer.shadowRadius),offset=\(view.layer.shadowOffset),path=\(view.layer.shadowPath != nil)) "
             + "safeArea=\(view.safeAreaInsets) animations=\(view.layer.animationKeys() ?? [])"
+    }
+
+    private func effectiveVisibilitySummary(_ view: UIView) -> String {
+        var currentView: UIView? = view
+        var modelAlpha: CGFloat = 1
+        var presentationAlpha: Float = 1
+        var hidden = false
+        while let current = currentView {
+            modelAlpha *= current.alpha
+            presentationAlpha *= current.layer.presentation()?.opacity ?? current.layer.opacity
+            hidden = hidden || current.isHidden
+            currentView = current.superview
+        }
+        return "hidden=\(hidden) alpha=\(modelAlpha)/presentationAlpha=\(presentationAlpha)"
+    }
+
+    private func renderingAncestorsSummary(from view: UIView, through rootView: UIView) -> String {
+        var currentView = view.superview
+        var summaries: [String] = []
+        while let current = currentView {
+            if current.clipsToBounds
+                || current.layer.masksToBounds
+                || current.layer.mask != nil
+                || current.layer.shadowOpacity > 0
+                || current === rootView {
+                summaries.append("\(String(describing: type(of: current)))={\(viewLayoutSummary(current))}")
+            }
+            if current === rootView { break }
+            currentView = current.superview
+        }
+        return summaries.isEmpty ? "none" : summaries.joined(separator: ",")
     }
 
     private func descendantViews(in rootView: UIView) -> [UIView] {

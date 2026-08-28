@@ -59,6 +59,10 @@ protocol TabDelegate: AnyObject {
              openedByPage: Bool,
              inheritingAttribution: AdClickAttributionLogic.State?)
 
+    func tab(_ tab: TabViewController,
+             didRequestNewDuckAITabForUrl url: URL,
+             entrySource: AIChatEntryPointSource)
+
     /// Called on navigate forward on a tab that had just closed a link-opened tab via back.
     /// Re-open that tab at `url` as a child of `tab` again.
     func tab(_ tab: TabViewController, didRequestReopenClosedTabAt url: URL)
@@ -191,6 +195,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController)
 
     func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController)
+
+    func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
 extension TabDelegate {
@@ -204,6 +210,8 @@ extension TabDelegate {
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
+
+    func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {}
 
     func searchToken(for tab: TabViewController) -> String? { nil }
 

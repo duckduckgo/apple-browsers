@@ -249,6 +249,11 @@ final class UTIPixelReporter {
         }
     }
 
+    func currentPromptOrigin() -> AIChatEntryPointSource? {
+        guard let context = context() else { return nil }
+        return Self.promptOrigin(for: context)
+    }
+
     static func promptOrigin(for context: UTIPixelContext) -> AIChatEntryPointSource? {
         switch context.surface {
         case .addressBar: return .addressBarPrompt

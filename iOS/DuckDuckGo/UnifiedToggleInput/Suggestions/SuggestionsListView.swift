@@ -20,6 +20,7 @@
 import Combine
 import DesignResourcesKit
 import SwiftUI
+import UIKit
 
 /// The data-driven suggestion sections (the scrolling rows), including optional Duck.ai chrome.
 /// Replaces `DuckAISuggestionsViewController`'s table.
@@ -110,6 +111,11 @@ struct SuggestionsListView: View {
                         .listRowSeparator(.hidden)
                         .modifier(DisableListRowSelection())
                         .modifier(DismissFade(animationModel: animationModel))
+                        .background {
+                            if showsAmbientMessageShadow {
+                                ListCellShadowOverflowView()
+                            }
+                        }
                     }
                     if showsRestingContent, let syncPromo {
                         syncPromo
@@ -151,6 +157,7 @@ struct SuggestionsListView: View {
             .modifier(ListContentMarginsModifier(top: listTopContentInset,
                                                  bottom: isFloatingPopover ? Metrics.popoverVerticalInset : nil,
                                                  horizontal: Metrics.listHorizontalContentMargin))
+            .modifier(ListScrollShadowOverflowModifier(allowsOverflow: showsAmbientMessageShadow && isSearchContentVisible))
             .hideScrollContentBackground()
             .background(Color(designSystemColor: .background))
             .scrollDismissesKeyboardIfAvailable()
@@ -363,6 +370,84 @@ private struct DisableListRowSelection: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
             content.selectionDisabled()
+        } else {
+            content
+        }
+    }
+}
+
+/// The focused floating-bottom RMF uses the same wide ambient shadow as the resting NTP. Let that
+/// shadow render beyond its List row and scroll viewport without changing the RMF's handoff frame.
+private struct ListCellShadowOverflowView: UIViewRepresentable {
+
+    func makeUIView(context: Context) -> ListCellShadowOverflowProbe {
+        let view = ListCellShadowOverflowProbe()
+        view.isUserInteractionEnabled = false
+        view.accessibilityElementsHidden = true
+        return view
+    }
+
+    func updateUIView(_ uiView: ListCellShadowOverflowProbe, context: Context) {
+        uiView.updateContainingCellClipping()
+    }
+
+    static func dismantleUIView(_ uiView: ListCellShadowOverflowProbe, coordinator: Void) {
+        uiView.restoreContainingCellClipping()
+    }
+}
+
+private final class ListCellShadowOverflowProbe: UIView {
+
+    private weak var containingCell: UICollectionViewCell?
+    private var originalCellClipsToBounds: Bool?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        updateContainingCellClipping()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateContainingCellClipping()
+    }
+
+    func updateContainingCellClipping() {
+        guard window != nil, let cell = firstContainingCell() else {
+            restoreContainingCellClipping()
+            return
+        }
+        guard cell !== containingCell else { return }
+        restoreContainingCellClipping()
+        containingCell = cell
+        originalCellClipsToBounds = cell.clipsToBounds
+        cell.clipsToBounds = false
+    }
+
+    func restoreContainingCellClipping() {
+        if let containingCell, let originalCellClipsToBounds {
+            containingCell.clipsToBounds = originalCellClipsToBounds
+        }
+        containingCell = nil
+        originalCellClipsToBounds = nil
+    }
+
+    private func firstContainingCell() -> UICollectionViewCell? {
+        var ancestor = superview
+        while let current = ancestor {
+            if let cell = current as? UICollectionViewCell { return cell }
+            ancestor = current.superview
+        }
+        return nil
+    }
+}
+
+private struct ListScrollShadowOverflowModifier: ViewModifier {
+    let allowsOverflow: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *), allowsOverflow {
+            content.scrollClipDisabled()
         } else {
             content
         }

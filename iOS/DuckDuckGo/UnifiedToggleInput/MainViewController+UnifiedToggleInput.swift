@@ -1316,6 +1316,9 @@ extension MainViewController {
             + "ambient=(unfocused=true,focused=\(focusedRMFUsesAmbientShadow),opacity=colorAlpha,radius=48,offset=(0,16),spread=0,path=roundedRect)} "
             + "snapshot={\(viewLayoutSummary(descendantViews(in: view).first { $0.accessibilityIdentifier == "UTIBottomDismissContentSnapshot" }))} "
             + "\(probeSummary(named: "focusedMessages", identifier: "FocusedMessagesPositionProbe", in: focusedRoot)) "
+            + "\(probeSummary(named: "focusedMessageCard", identifier: "FocusedMessageCardPositionProbe", in: focusedRoot)) "
+            + "\(probeSummary(named: "shadowOverflowProbe", identifier: "ListCellShadowOverflowProbe", in: focusedRoot)) "
+            + "\(ambientShadowClippingSummary(named: "focusedAmbientShadow", identifier: "FocusedMessageCardPositionProbe", in: focusedRoot)) "
             + "\(probeSummary(named: "focusedFavorites", identifier: "FavoritesPositionProbe", in: focusedRoot)) "
             + "\(probeSummary(named: "focusedHatch", identifier: "EscapeHatchPositionProbe", in: focusedRoot)) "
             + "\(probeSummary(named: "restingMessages", identifier: "RestingMessagePositionProbe", in: restingRoot)) "
@@ -1358,9 +1361,11 @@ extension MainViewController {
         guard let view else { return "none" }
         let modelFrame = view.convert(view.bounds, to: nil)
         let presentationFrame = view.layer.presentation().map { String(describing: $0.convert($0.bounds, to: nil)) } ?? "nil"
-        return "frame=\(modelFrame)/presentation=\(presentationFrame) hidden=\(view.isHidden) "
+        return "frame=\(modelFrame)/presentation=\(presentationFrame) bounds=\(view.bounds) hidden=\(view.isHidden) "
             + "alpha=\(view.alpha)/presentationAlpha=\(String(describing: view.layer.presentation()?.opacity)) "
             + "clips=\(view.clipsToBounds) masks=\(view.layer.masksToBounds) mask=\(view.layer.mask != nil) "
+            + "corner=(radius=\(view.layer.cornerRadius),curve=\(view.layer.cornerCurve.rawValue),"
+            + "masked=\(view.layer.maskedCorners.rawValue)) maskLayer={\(layerMaskSummary(view.layer.mask))} "
             + "shadow=(color=\(String(describing: view.layer.shadowColor?.components)),opacity=\(view.layer.shadowOpacity),"
             + "radius=\(view.layer.shadowRadius),offset=\(view.layer.shadowOffset),path=\(view.layer.shadowPath != nil)) "
             + "safeArea=\(view.safeAreaInsets) animations=\(view.layer.animationKeys() ?? [])"
@@ -1395,6 +1400,90 @@ extension MainViewController {
             currentView = current.superview
         }
         return summaries.isEmpty ? "none" : summaries.joined(separator: ",")
+    }
+
+    private func ambientShadowClippingSummary(named name: String, identifier: String, in rootView: UIView?) -> String {
+        guard let rootView else { return "\(name)=none" }
+        let probes = descendantViews(in: rootView).filter { $0.accessibilityIdentifier == identifier }
+        guard !probes.isEmpty else { return "\(name)=none" }
+        return probes.enumerated().map { index, probe in
+            let expectedShadowBounds = probe.bounds
+                .insetBy(dx: -48, dy: -48)
+                .offsetBy(dx: 0, dy: 16)
+            let viewAncestors = ambientShadowViewAncestors(from: probe,
+                                                           expectedShadowBounds: expectedShadowBounds,
+                                                           through: rootView)
+            let layerAncestors = ambientShadowLayerAncestors(from: probe,
+                                                             expectedShadowBounds: expectedShadowBounds,
+                                                             through: rootView)
+            return "\(name)[\(index)]={expectedInCard=\(expectedShadowBounds) "
+                + "viewAncestors={\(viewAncestors)} layerAncestors={\(layerAncestors)}}"
+        }.joined(separator: " || ")
+    }
+
+    private func ambientShadowViewAncestors(from view: UIView,
+                                            expectedShadowBounds: CGRect,
+                                            through rootView: UIView) -> String {
+        var currentView = view.superview
+        var summaries: [String] = []
+        while let current = currentView {
+            if current.clipsToBounds || current.layer.masksToBounds || current.layer.mask != nil || current.layer.cornerRadius > 0 {
+                let shadowRect = view.convert(expectedShadowBounds, to: current)
+                let cellContent = (current as? UICollectionViewCell)
+                    .map { " contentView={\(viewLayoutSummary($0.contentView))}" } ?? ""
+                summaries.append("\(String(describing: type(of: current)))={shadowRect=\(shadowRect) "
+                                 + "clippedEdges=\(clippedEdges(of: shadowRect, by: current.bounds)) "
+                                 + "\(viewLayoutSummary(current))\(cellContent)}")
+            }
+            if current === rootView { break }
+            currentView = current.superview
+        }
+        return summaries.isEmpty ? "none" : summaries.joined(separator: ",")
+    }
+
+    private func ambientShadowLayerAncestors(from view: UIView,
+                                             expectedShadowBounds: CGRect,
+                                             through rootView: UIView) -> String {
+        var currentLayer = view.layer.superlayer
+        var summaries: [String] = []
+        while let current = currentLayer {
+            if current.masksToBounds || current.mask != nil || current.cornerRadius > 0 {
+                let shadowRect = view.layer.convert(expectedShadowBounds, to: current)
+                summaries.append("\(String(describing: type(of: current)))={shadowRect=\(shadowRect) "
+                                 + "clippedEdges=\(clippedEdges(of: shadowRect, by: current.bounds)) "
+                                 + "\(layerLayoutSummary(current, rootLayer: rootView.layer))}")
+            }
+            if current === rootView.layer { break }
+            currentLayer = current.superlayer
+        }
+        return summaries.isEmpty ? "none" : summaries.joined(separator: ",")
+    }
+
+    private func layerLayoutSummary(_ layer: CALayer, rootLayer: CALayer) -> String {
+        let modelFrame = layer.convert(layer.bounds, to: rootLayer)
+        let presentationFrame = layer.presentation().map { presentationLayer in
+            let presentationRoot = rootLayer.presentation() ?? rootLayer
+            return String(describing: presentationLayer.convert(presentationLayer.bounds, to: presentationRoot))
+        } ?? "nil"
+        return "frame=\(modelFrame)/presentation=\(presentationFrame) bounds=\(layer.bounds) "
+            + "masks=\(layer.masksToBounds) maskLayer={\(layerMaskSummary(layer.mask))} "
+            + "corner=(radius=\(layer.cornerRadius),curve=\(layer.cornerCurve.rawValue),masked=\(layer.maskedCorners.rawValue)) "
+            + "animations=\(layer.animationKeys() ?? [])"
+    }
+
+    private func layerMaskSummary(_ mask: CALayer?) -> String {
+        guard let mask else { return "none" }
+        return "type=\(String(describing: type(of: mask))) frame=\(mask.frame) bounds=\(mask.bounds) "
+            + "corner=(radius=\(mask.cornerRadius),curve=\(mask.cornerCurve.rawValue),masked=\(mask.maskedCorners.rawValue))"
+    }
+
+    private func clippedEdges(of contentRect: CGRect, by clippingBounds: CGRect) -> String {
+        var edges: [String] = []
+        if contentRect.minX < clippingBounds.minX { edges.append("left") }
+        if contentRect.minY < clippingBounds.minY { edges.append("top") }
+        if contentRect.maxX > clippingBounds.maxX { edges.append("right") }
+        if contentRect.maxY > clippingBounds.maxY { edges.append("bottom") }
+        return edges.isEmpty ? "none" : edges.joined(separator: "+")
     }
 
     private func descendantViews(in rootView: UIView) -> [UIView] {

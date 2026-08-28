@@ -384,6 +384,9 @@ private struct ListCellShadowOverflowView: UIViewRepresentable {
         let view = ListCellShadowOverflowProbe()
         view.isUserInteractionEnabled = false
         view.accessibilityElementsHidden = true
+#if DEBUG
+        view.accessibilityIdentifier = "ListCellShadowOverflowProbe"
+#endif
         return view
     }
 

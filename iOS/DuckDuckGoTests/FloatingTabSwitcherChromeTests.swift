@@ -83,6 +83,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
 
     func testWhenEditingThenTopBarHasMenuSelectionCountAndSelectAll() {
         let chrome = makeInstalledChrome()
+        chrome.actions.onMultiSelectMenuRequested = { UIMenu(children: []) }
         chrome.setTitle("2 Selected")
 
         chrome.update(state: .editingRegularSize(selectedCount: 2, totalCount: 4),

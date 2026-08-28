@@ -319,8 +319,7 @@ extension TabSwitcherViewController {
             selectedContainsWebPages: selectedTabObjects.contains(where: { $0.link != nil }),
             allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
             shouldShowSelectionToggleActions: !isFloatingTabSwitcherEnabled,
-            shouldShowCloseSelectedAction: !isFloatingTabSwitcherEnabled || interfaceMode.isLarge,
-            shouldShowCloseOtherActionWhenAllSelected: isFloatingTabSwitcherEnabled
+            shouldShowCloseSelectedAction: !isFloatingTabSwitcherEnabled || interfaceMode.isLarge
         )
         canShowSelectionMenu = state.canShowSelectionMenu
         return menuBuilder.multiSelectionMenu(state: state, actions: TabSwitcherMultiSelectMenuActions(

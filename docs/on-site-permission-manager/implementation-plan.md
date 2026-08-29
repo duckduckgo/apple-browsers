@@ -27,8 +27,8 @@ Specifically:
     cases, every new string marked for later copy review;
   - per-site header (OQ-12), menu membership (OQ-17), sheet rows (OQ-18) — defaults adopted;
     finalize after a working build;
-  - pixels (OQ-16) — the plan's candidate event set is the implementation default, pending DRI
-    review of the final list;
+  - pixels (OQ-16) — **resolved**: the DRI approved the final pixel set on 2026-08-28. The
+    phases carry the exact wire names (Phase 3 Step 6, Phase 4 Step 7, Phase 6 Step 3);
   - the grant animation is **cut from v1** (DRI decision 2026-08-28 — OQ-6 is moot), and the
     **Voice Search denied-permission prompt is in scope**: Phase 3 gains that step in its place.
 
@@ -1194,7 +1194,8 @@ shipped behavior, so the flag-off checklist matters more here than anywhere else
 - In-use tracking via KVO on `cameraCaptureState` / `microphoneCaptureState`.
 - The redesigned Voice Search denied-permission dialog — `NoMicPermissionAlert` restyled behind
   the flag (in scope per DRI decision 2026-08-28).
-- Prompt and decision pixels.
+- The flow pixels from the DRI-approved set (2026-08-28): dialog impression and click, OS prompt
+  result, reminder-dialog interactions, system-settings taps, and the Voice Search prompt events.
 
 **Explicitly out of scope for this phase:**
 
@@ -1400,6 +1401,9 @@ different from the site variants' all-gray buttons (§6.5.2).
   before building it.
 - `Hide Voice Search` flips the **existing** voice-search setting off — do not invent a new
   preference.
+- **Pixels:** the restyled prompt fires
+  `voice_search_permission_prompt_<shown|settings|hide|cancel>` — one family from the approved
+  set, defined with the rest in Step 6.
 
 #### Step 6 — Pixels
 
@@ -1436,26 +1440,31 @@ with firing at `:34-50` via an injected `(any PixelFiring)?` defaulting to `Pixe
 `PixelKitEventV2` in this repo — the protocols are `PixelKit.Event` and
 `PixelKitEventWithCustomPrefix`.)
 
-**Names: mirror macOS minus the `m_mac_` prefix.** macOS's four families are at
-`macOS/DuckDuckGo/Statistics/PermissionPixel.swift:69-83`. Phase 3 ships two of them:
+**Names — the final set, approved by the DRI 2026-08-28** (no longer a candidate list). Phase 3
+fires these six families; Phase 4 adds the management families (its Step 7) and Phase 6 starts
+firing the `geolocation` type:
 
-| Event | iOS name | Suffixes |
-|---|---|---|
-| Prompt shown | `permission_prompt_shown` | type |
-| Decision taken | `permission_authorization` | type, decision |
-| Reminder dialog shown | `permission_reminder_shown` | type |
-| Change Permissions tapped | `permission_system_preferences` | type |
+| Family | Fired when |
+|---|---|
+| `permission_dialog_impression_<type>` | the 3-option dialog shows |
+| `permission_dialog_click_<type>_<allow_once\|allow_always\|never>` | a site-dialog selection — user intent, **fired at tap time**, separate from the OS outcome |
+| `permission_system_prompt_result_<type>_<granted\|denied>` | the OS prompt outcome after a site allow |
+| `permission_reminder_dialog_<type>_<shown\|settings\|cancel>` | the denied-OS recovery (Case B) dialog interactions |
+| `permission_system_settings_opened_<type>` | any `Go to System Settings` / `Change Permissions` tap — in this phase, the reminder dialog's; Phase 4 adds the sheet/Settings links to the same family |
+| `voice_search_permission_prompt_<shown\|settings\|hide\|cancel>` | the restyled Voice Search denied-mic prompt (Step 5) |
 
-`permission_prompt_shown` and `permission_reminder_shown` have no macOS counterpart — requirements
-§9 asks for "prompt shown", and macOS simply doesn't measure it.
+Token vocabularies — define all four type tokens in the JSON5 up front, even though Phase 3 fires
+only the first three:
 
-Token vocabularies — take the type tokens from macOS verbatim
-(`PermissionPixel.swift:120-137`), and **extend** the decision vocabulary, because iOS's dialog has
-three options where macOS's has two:
+- **type:** `camera`, `microphone`, `camera_and_microphone` (the combined dialog), `geolocation`
+  (fired from Phase 6 on — note `geolocation`, not `location`, matching macOS and the persisted
+  raw value)
+- **dialog selection:** `allow_once`, `allow_always`, `never` — matching the dialog's three buttons
 
-- **type:** `camera`, `microphone`, `geolocation` (only these three — note `geolocation`, not
-  `location`, matching macOS and the persisted raw value)
-- **decision:** `allow-once`, `allow-always`, `deny`
+These names are deliberately **not** a mirror of macOS's four families
+(`macOS/DuckDuckGo/Statistics/PermissionPixel.swift:69-83`); the one shape kept for cross-platform
+analysis is `permission_center_changed` (Phase 4 Step 7). The impression family has no macOS
+counterpart at all — requirements §9 asks for "prompt shown", and macOS simply doesn't measure it.
 
 JSON5 structure: multi-segment **inline suffix enums**, like
 `macOS/PixelDefinitions/pixels/definitions/permission_pixels.json5:8-18`, **plus** the shared
@@ -1489,7 +1498,7 @@ cd iOS && npm run validate-pixel-defs
 | FR-5 invariant | an OS denial never rewrites a stored site Allow |
 | In-use KVO | active → in-use; `.muted` → paused, **not** in-use; `.none` → inactive |
 | Voice Search prompt | flag **off** → the legacy `NoMicPermissionAlert` shows unchanged; flag **on** → the redesigned dialog; `Hide Voice Search` turns the voice-search setting off; `Change Permissions` opens System Settings |
-| Pixels | one event per prompt and per decision; correct type and decision tokens; **no domain in any parameter** |
+| Pixels | one impression per dialog shown; one click per selection, **fired at tap time** (not at the OS outcome); correct type and selection tokens; **no domain in any parameter** |
 
 No snapshot tests (§5.4).
 
@@ -1712,7 +1721,7 @@ two of the three permission types.
 | OQ-11 | Changes apply on reload / next request — hence the caption. Exception: OQ-20. |
 | **OQ-12** | The literal `Permissions for site.com` header is a Figma placeholder for the real domain: **the per-site page header reads `Permissions for <domain>`**, with the real domain substituted. (Default adopted 2026-08-28; finalize later in a working build.) |
 | **OQ-14** | **Resolved at kick-off: no visible design change** for the in-use state — the state text keeps showing the stored decision. VoiceOver reads `<Type>, <stored state>, in use`. |
-| **OQ-16** | Ship the candidate set as the implementation default: manager opened, change committed (from → to), removal + undo (per-site / all-sites), reminder shown and system-settings tap (Phase 3 families), and sheet-dismissed-with-uncommitted-edit as the friction signal. All domain-free, macOS-style `permission_*` names. (Adopted 2026-08-28 — pending DRI review of the final list.) |
+| **OQ-16** | **Resolved — the DRI approved the final pixel set 2026-08-28.** Phase 4 fires: `permission_center_opened`, `permission_center_changed_<type>_to_<ask\|allow\|deny>` (+ `from` parameter), `permission_center_dismissed_dirty` (the parent-KPI friction signal), `permission_remove_site` / `permission_remove_all` / `permission_remove_undo`, `permission_system_settings_opened_<type>`, `settings_site_permissions_open`, and `settings_site_permissions_global_changed_<type>_to_<ask\|deny>`. All domain-free — exact wire names in Step 7. |
 | **OQ-17** | Any stored record — **including an explicit Ask Each Time** — or active session state shows the menu entry. (Default adopted 2026-08-28; finalize after a working build.) |
 | **OQ-18** | Sheet rows = `stored ∪ active ∪ requested-this-visit`. **Not** added merely because a global default is Never. (Default adopted 2026-08-28; finalize after a working build.) |
 | OQ-19 | `.muted` = paused — **not** shown as in-use (no red); the VoiceOver label reflects it (resolved at kick-off). |
@@ -1959,22 +1968,20 @@ Only Fire applies the fireproof exemption.
 
 #### Step 7 — Management pixels
 
-The event set below is adopted as the implementation default (OQ-16, DRI 2026-08-28), **pending
-DRI review of the final list** — build it now and adjust if the review changes the list.
+The event set below is **the final list, approved by the DRI 2026-08-28** (OQ-16 resolved) — no
+adjustment pass is pending. Same names, no extras.
 
-Extend Phase 3's `site_permissions.json5` and the package event enum. Mirror macOS's names minus
-`m_mac_` (`macOS/DuckDuckGo/Statistics/PermissionPixel.swift:69-83`):
+Extend Phase 3's `site_permissions.json5` and the package event enum with the management families:
 
-| Event | iOS name | Suffixes / params |
-|---|---|---|
-| Sheet/manager opened | `permission_center_opened` | — |
-| Decision changed | `permission_center_changed` | suffixes: type, `to`; **parameter `from`** |
-| Reset to Ask | `permission_center_reset` | type |
-| Permissions removed | `permission_center_removed` | suffix: `site` \| `all-sites` |
-| Undo tapped | `permission_center_undo` | suffix: `site` \| `all-sites` |
-| Settings page opened | `permission_settings_opened` | — |
-| Global default changed | `permission_settings_global_changed` | suffixes: type, `to` |
-| Abandoned edit (OQ-16) | `permission_center_abandoned` | — |
+| Family | Fired when |
+|---|---|
+| `permission_center_opened` | the on-site sheet opened from the browser menu |
+| `permission_center_changed_<type>_to_<ask\|allow\|deny>` + **parameter `from`** | a committed change in the sheet **or** the per-site Settings page (macOS parity); a reset to Ask is `…_to_ask` — there is no separate reset family |
+| `permission_center_dismissed_dirty` | the sheet closed with an edit begun but not committed — the parent-KPI friction signal |
+| `permission_remove_site` / `permission_remove_all` / `permission_remove_undo` | the removal flows and Undo |
+| `permission_system_settings_opened_<type>` | any `Go to System Settings` tap from the sheet or Settings links — the same family Phase 3's reminder dialog fires |
+| `settings_site_permissions_open` | Settings › Site Permissions page opened |
+| `settings_site_permissions_global_changed_<type>_to_<ask\|deny>` | a global default changed |
 
 `permission_center_changed` keeps macOS's exact three-segment shape —
 `permission_center_changed_{type}_to_{ask|allow|deny}` with `from` as a **parameter**, not a suffix
@@ -1982,8 +1989,9 @@ Extend Phase 3's `site_permissions.json5` and the package event enum. Mirror mac
 `macOS/PixelDefinitions/pixels/definitions/permission_pixels.json5:41-46`). Do not flatten `from`
 into the name — cross-platform analysis depends on the shapes matching.
 
-**No domains, hosts, or origins in any name or parameter.** `permission_center_removed` carries
-`site` vs `all-sites` as a **count-free** distinction — not the site itself, not how many.
+**No domains, hosts, or origins in any name or parameter.** Site-vs-all removal is a **name-level,
+count-free** distinction (`permission_remove_site` / `permission_remove_all`) — not the site
+itself, not how many.
 
 ```bash
 cd iOS && npm run validate-pixel-defs
@@ -2475,9 +2483,13 @@ fixture for this is one of Phase 5's four additions.
 
 #### Step 3 — Geolocation pixels
 
-Add the location type to the Phase 3/4 pixel families. **No new pixel names** — `geolocation` is
-already a suffix value in the type enum. If you find yourself adding a `geo_`-prefixed family,
-stop: reuse the type suffix.
+Start firing the `geolocation` type in the four flow families from the DRI-approved set
+(2026-08-28): `permission_dialog_impression_<type>`,
+`permission_dialog_click_<type>_<allow_once|allow_always|never>`,
+`permission_system_prompt_result_<type>_<granted|denied>`, and
+`permission_reminder_dialog_<type>_<shown|settings|cancel>`. **No new pixel names and no new
+tokens** — Phase 3's JSON5 already defines `geolocation` in the type enum. If you find yourself
+adding a `geo_`-prefixed family, stop: reuse the type token.
 
 Note the persisted/pixel token is **`geolocation`**, matching macOS, while the user-facing label is
 **Location**. Do not let the UI string leak into the wire name.
@@ -2590,7 +2602,7 @@ gate; proceed on the documented default and finalize later in a working build.
 | OQ-13 | Does an OS denial rewrite the stored site decision? | **Resolved:** no. The site decision commits at choice time; an OS denial never converts a stored Allow into Never Allow. Deliberate divergence from Android. OS state is re-checked on app activation. Ratified at kick-off (provisional): copies macOS — the stored site Allow is kept, the request declined, and the reminder affordances appear. | R | 3 |
 | OQ-14 | Non-color "currently in use" affordance | **Resolved at kick-off (2026-08-28): no visible design change** for the in-use state — no `In Use` state text, no new visible affordance. Add VoiceOver labels only: `<Type>, <stored state>, in use` while active. The solid-red icon stays as designed. | R | 4 |
 | OQ-15 | UX for `restricted` / `unavailable` OS states | **Deferred at kick-off (2026-08-28): no special alert or dedicated UI in v1** — the standard denied handling applies, even though System Settings may not fix these states. Keep the states modelled distinctly in the system client (cheap); the designer will demo the real restricted experience later. | R | 2, 3 |
-| OQ-16 | Friction-pixel definition | Adopt the plan's candidate event set as the implementation default: **manager opened**, **change committed** (from → to), **removal + undo** (per-site / all-sites), **reminder shown** and **system-settings tap** (Phase 3 families), and **sheet dismissed with an uncommitted edit** as the friction signal. Names follow the macOS `permission_*` family; no domains anywhere. (Adopted 2026-08-28 — pending DRI review of the final list.) | A | 4 |
+| OQ-16 | Friction-pixel definition | **Resolved — the DRI approved the final pixel set on 2026-08-28** (12 families; exact wire names in Phase 3 Step 6, Phase 4 Step 7, and Phase 6 Step 3). The parent-KPI friction signal is `permission_center_dismissed_dirty` — the sheet closed with an edit begun but not committed. No domains anywhere. | R | 3, 4, 6 |
 | OQ-17 | Does an explicit Ask-Each-Time record show the menu entry? | **Yes** — any stored record (including explicit Ask) or active session state shows the `Site Permissions` menu row. (Default adopted 2026-08-28; finalize after a working build.) | A | 4 |
 | OQ-18 | Which rows the on-site sheet lists | `stored ∪ active ∪ requested-this-visit`. **Do not** add a row solely because a type's global default is Never Allow. (macOS confirms this; see platform-precedents §6.) (Default adopted 2026-08-28; finalize after a working build.) | A | 4 |
 | OQ-19 | Presentation of WebKit's `.muted` capture state | **Resolved at kick-off (platform rule):** `.muted` maps to **paused** — allowed, **not** shown as in-use (no red); the VoiceOver label reflects it. No design change. | R | 3, 4 |

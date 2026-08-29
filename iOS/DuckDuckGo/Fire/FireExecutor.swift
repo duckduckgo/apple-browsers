@@ -24,7 +24,9 @@ import DDGSync
 import Bookmarks
 import AIChat
 import PixelKit
+import Persistence
 import PrivacyConfig
+import SitePermissions
 import UserScript
 import WebKit
 import WKAbstractions
@@ -146,6 +148,7 @@ class FireExecutor: FireExecuting {
     
     // MARK: - Init
     
+    @MainActor
     init(tabManager: TabManaging,
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          websiteDataManager: WebsiteDataManaging,
@@ -216,6 +219,9 @@ class FireExecutor: FireExecuting {
             TextZoomFireWorker(fireproofing: fireproofing,
                                textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                dataClearingWideEventService: dataClearingWideEventService),
+            PermissionsFireWorker(store: SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+                                  fireproofing: fireproofing,
+                                  dataClearingWideEventService: dataClearingWideEventService),
             HistoryFireWorker(historyManager: historyManager,
                               dataClearingWideEventService: dataClearingWideEventService),
             PrivacyStatsFireWorker(privacyStats: privacyStats,

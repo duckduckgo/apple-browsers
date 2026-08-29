@@ -196,6 +196,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SitePermissionsTests"
+               BuildableName = "SitePermissionsTests"
+               BlueprintName = "SitePermissionsTests"
+               ReferencedContainer = "container:LocalPackages/SitePermissions">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "FoundationExtensionsTests"
                BuildableName = "FoundationExtensionsTests"
                BlueprintName = "FoundationExtensionsTests"

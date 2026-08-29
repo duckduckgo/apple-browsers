@@ -3,10 +3,10 @@
 ## Current handoff
 
 - Goal: Implement the six-PR on-site permission manager stack from `implementation-plan.md` without pushing.
-- Status: Phase 1 is complete. Phase 2 is ready to start.
-- Completed: `bartosz/on-site-permissions-1` contains commits `9319d540ff` and `794c151acd`. Together they add the disabled-by-default feature flag, required icon resources, the package model and persistence store, Xcode registration, focused tests, and flag-independent Fire clearing.
-- Next: Create `bartosz/on-site-permissions-2` from `bartosz/on-site-permissions-1`, then implement the coordinator and system client from Phase 2.
-- Blockers: None.
+- Status: Phases 1 and 2 are complete. Phase 3 is ready to start.
+- Completed: `bartosz/on-site-permissions-2` contains commit `fd03017631` on top of Phase 1. It adds the system-permission client, site-permission coordinator, deterministic package tests, and frozen legacy media-capture matrices without making the feature reachable in production.
+- Next: Create `bartosz/on-site-permissions-3` from `bartosz/on-site-permissions-2`, then implement Phase 3 steps 1–4 in order.
+- Blockers: Phase 3 step 5 requires the missing Voice Search design from Figma node `1087:27674`. Steps 1–4 are locally specified and can proceed first.
 
 ## Decisions
 
@@ -28,6 +28,18 @@
 - Why: It resolves to the required light and dark values, and iOS has no `statusRed` token.
 - Consequences: Do not add a new semantic color unless the design system changes before the UI phase.
 
+### 2026-08-29 — Preserve site-first permission prompting
+
+- Decision: A stored or session Allow choice cannot silently trigger an undetermined iOS permission prompt. The coordinator returns the preexisting-denial recovery state and waits for a fresh site prompt before requesting iOS access.
+- Why: The feature contract requires the site dialog to precede every native permission prompt.
+- Consequences: Persistent Allow remains stored after an iOS denial, but a later automatic request shows recovery UI instead of presenting the native prompt in isolation.
+
+### 2026-08-29 — Keep location status reads simple
+
+- Decision: Keep the infrequent `CLLocationManager.locationServicesEnabled()` reads synchronous on the main actor during initialization and app activation.
+- Why: Moving those reads off actor would add coordination machinery without changing the user-visible contract. The client already coalesces native requests and resumes all pending continuations safely.
+- Consequences: Revisit only if profiling shows a measurable activation delay.
+
 ## Review outcomes
 
 ### Phase 1
@@ -35,6 +47,13 @@
 - Correctness review: No findings.
 - Xcode and resource-wiring audit: No findings. The package, test bundle, worker source, and icon are registered once with the expected target membership.
 - Ponytail review: Applied the recommendation to remove a bespoke counting storage mock and an optimization-only test. The sparse-map tests now assert the persisted state directly. No suggestions were skipped.
+
+### Phase 2
+
+- Correctness review: Fixed a continuation leak when location authorization changed after app activation, coalesced concurrent location callers into one native request, and stopped audio/video callbacks from performing unrelated location refreshes.
+- Contract review: Fixed queued requests so their stored and ephemeral choices are re-evaluated when they reach the front of the per-tab FIFO. Expanded the frozen legacy matrix to cover both `example.com` and Duck.ai for microphone, camera, and combined requests across all four native authorization states.
+- Follow-up review: Added explicit coverage for Allow Once across same-document requests and for the fact that ephemeral choices do not survive coordinator recreation. The full post-fix correctness review found no remaining issues.
+- Ponytail review: No findings after the correctness fixes. The concrete coordinator and system client remain package-owned and avoid speculative protocols or subcoordinators.
 
 ## Recent progress
 
@@ -50,3 +69,10 @@
 - Built `DuckDuckGo.xcworkspace` with the `iOS Browser` scheme through XcodeBuildMCP on an iOS simulator. The normal configured-target build succeeded with pre-existing warnings only.
 - After the review fix, ran `SitePermissionsTests` and `UnitTests/FireExecutorTests` through the `iOS Browser` simulator scheme: 77 passed, zero failed, and zero skipped. The test output named `SitePermissionsTests` and reported a nonzero count.
 - The current SDK cannot compile an unrelated iOS 15 `UIAction.subtitle` test on `main`. The focused test command used a test-only `IPHONEOS_DEPLOYMENT_TARGET=16.0` override; the production app build used the project setting without an override.
+- Added a five-state system-permission client for camera, microphone, and location. It shares one location manager for status and position callbacks, refreshes on app activation, opens Settings, coalesces pending location requests, and drains every continuation.
+- Added the site-permission coordinator with site-choice precedence, per-tab FIFO serialization, five-part browsing-context validation, stale-callback rejection, navigation and tab-lifecycle resets, combined-request handling, and preexisting/after-request recovery states.
+- Kept persistent Allow durable when iOS denies access. Deny Once is an internal coordinator action for Phase 3 dismissal and cancellation paths; it is not a visible dialog button.
+- Added frozen legacy matrices that exercise the unchanged `TabViewController` and `AIChatWebViewController` delegate paths for 24 exact call-site combinations plus DuckDuckGo, subdomain, and mixed combined-permission cases. Neither production delegate changed in Phase 2.
+- Built `DuckDuckGo.xcworkspace` with the `iOS Browser` scheme through XcodeBuildMCP on an iPhone 17 simulator. The normal configured-target build succeeded with pre-existing warnings only.
+- Initialized the pinned `privacy-reference-tests` submodule after the first full run exposed missing fixture files. The submodule remains at `c2b49fe7ce4a75404c6a79e4dd1053710a9869ee` and is not part of the implementation diff.
+- Ran `SitePermissionsTests` and all `UnitTests` through the `iOS Browser` simulator scheme after review fixes: 6,629 passed, zero failed, and 37 baseline skips. The test-only iOS 16 deployment-target override remains necessary for the unrelated current-main `UIMenuElement.subtitle` compilation issue.

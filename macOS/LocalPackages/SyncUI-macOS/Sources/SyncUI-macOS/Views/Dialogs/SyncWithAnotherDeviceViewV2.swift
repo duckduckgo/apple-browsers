@@ -282,7 +282,7 @@ struct SyncWithAnotherDeviceViewV2: View {
                 model.delegate?.recoveryCodePasted(recoveryCodeModel.recoveryCode, fromRecoveryScreen: false)
             } label: {
                 HStack(spacing: 6) {
-                    Image(nsImage: DesignSystemImages.Glyphs.Size16.copy)
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.paste)
                     Text(UserText.syncWithAnotherDevicePasteCodeV2)
                 }
                 .padding(.vertical, 2)

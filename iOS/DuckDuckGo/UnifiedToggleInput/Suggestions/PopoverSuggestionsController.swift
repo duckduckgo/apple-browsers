@@ -117,7 +117,6 @@ final class PopoverSuggestionsController: UIViewController {
     private func installHostingController() {
         let listView = SuggestionsListView(viewModel: listViewModel,
                                            isAddressBarAtBottom: isAddressBarAtBottom,
-                                           syncPromo: nil,
                                            animationModel: animationModel,
                                            isFloatingPopover: true)
         let hosting = UIHostingController(rootView: listView)

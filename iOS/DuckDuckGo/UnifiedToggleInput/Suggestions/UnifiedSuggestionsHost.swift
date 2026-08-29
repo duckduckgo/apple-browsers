@@ -258,6 +258,7 @@ final class UnifiedSuggestionsHost {
     }
 
     func setLogoChromeInsetTop(_ top: CGFloat) {
+        guard viewModel.chromeInsetTop != top else { return }
         viewModel.chromeInsetTop = top
     }
 

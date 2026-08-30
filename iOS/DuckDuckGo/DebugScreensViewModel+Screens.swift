@@ -258,6 +258,9 @@ extension DebugScreensViewModel {
                     SubscriptionDebugViewController(coder: coder, subscriptionDataReporter: dependencies.subscriptionDataReporter)
                 }
             }),
+            .controller(title: "JS Bridge Playground", { _ in
+                return JSBridgePlaygroundViewController(feature: SubscriptionBridgePlaygroundFeature())
+            }),
             .controller(title: "Configuration URLs", { _ in
                 return self.debugStoryboard.instantiateViewController(identifier: "ConfigurationURLDebugViewController") { coder in
                     let viewController = ConfigurationURLDebugViewController(coder: coder)

@@ -388,7 +388,7 @@ jobs:
     name: Report Memory Metrics to ClickHouse
     needs: performance-tests
     if: always()
-    runs-on: [ self-hosted, apple ]
+    runs-on: [ self-hosted, apple, Linux ]
 
     steps:
       - name: Download startup metrics

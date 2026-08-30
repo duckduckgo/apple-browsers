@@ -566,11 +566,15 @@ final class MainMenu: NSMenu {
                     .hidden()
                 NSMenuItem(title: "Show Previous Tab (Hidden)", action: #selector(MainViewController.showPreviousTab), keyEquivalent: [.option, .command, .left])
                     .hidden()
+                NSMenuItem(title: "Show Previous Tab (Hidden)", action: #selector(MainViewController.showPreviousTab), keyEquivalent: [.control, .pageUp])
+                    .hidden()
 
                 NSMenuItem(title: UserText.mainMenuWindowShowNextTab, action: #selector(MainViewController.showNextTab), keyEquivalent: [.control, .tab])
                 NSMenuItem(title: "Show Next Tab (Hidden)", action: #selector(MainViewController.showNextTab), keyEquivalent: [.command, .shift, "]"])
                     .hidden()
                 NSMenuItem(title: "Show Next Tab (Hidden)", action: #selector(MainViewController.showNextTab), keyEquivalent: [.option, .command, .right])
+                    .hidden()
+                NSMenuItem(title: "Show Next Tab (Hidden)", action: #selector(MainViewController.showNextTab), keyEquivalent: [.control, .pageDown])
                     .hidden()
 
                 NSMenuItem(title: "Show First Tab (Hidden)", action: #selector(MainViewController.showTab), keyEquivalent: "1")

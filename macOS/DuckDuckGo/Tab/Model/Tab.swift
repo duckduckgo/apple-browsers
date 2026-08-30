@@ -667,6 +667,13 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         return self.setContent(.contentFromURL(url, source: source))
     }
 
+    /// Executes a bookmarklet (javascript: URL) in the current tab's web view context.
+    /// Bookmarklets must not be loaded as regular navigation targets — they run as JavaScript in the page context.
+    func executeBookmarklet(url: URL) {
+        guard let js = url.toDecodedBookmarklet() else { return }
+        webView.evaluateJavaScript(js, in: nil, in: .defaultClient)
+    }
+
     private func handleUrlDidChange() {
         if let url = webView.url {
             let content = TabContent.contentFromURL(url, source: .webViewUpdated)
@@ -1065,6 +1072,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         if case .settings = content, case .settings = webView.url.flatMap({ TabContent.contentFromURL($0, source: .ui) }) {
             // replace WebView URL without adding a new history item if switching settings panes
             webView.evaluateJavaScript("location.replace('\(url.absoluteString.escapedJavaScriptString())')", in: nil, in: .defaultClient)
+            return nil
+        }
+
+        // Execute bookmarklets in the current page context rather than navigating to them
+        if url.isBookmarklet() {
+            executeBookmarklet(url: url)
             return nil
         }
 

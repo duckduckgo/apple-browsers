@@ -226,10 +226,20 @@ extension WindowControllersManager {
     }
 
     /// Opens a bookmark in a tab, respecting the current modifier keys when deciding where to open the bookmark's URL.
+    /// Bookmarklets (javascript: URLs) are executed in the current tab's web view rather than loaded as navigation targets.
     func open(_ bookmark: Bookmark, target window: NSWindow? = nil, with event: NSEvent?) {
         guard let url = bookmark.urlObject else { return }
 
-        // Call updated openBookmark
+        // Bookmarklets must be executed in the current tab's context, not navigated to
+        if url.isBookmarklet() {
+            let eventWindowController = mainWindowController(for: window ?? event?.window)
+            let targetWindowController = eventWindowController ?? lastKeyMainWindowController
+            if let currentTab = targetWindowController?.mainViewController.tabCollectionViewModel.selectedTab {
+                currentTab.executeBookmarklet(url: url)
+                return
+            }
+        }
+
         open(url, source: .bookmark(isFavorite: bookmark.isFavorite), target: window, with: event)
     }
 

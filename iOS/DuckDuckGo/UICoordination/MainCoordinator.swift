@@ -924,6 +924,13 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             return
         }
 
+        // Only replace the browser's own tab (a web page or Duck.ai) — the surface
+        // the after-idle escape hatch can return to. If a non-browsing surface is
+        // frontmost (Settings, the tab switcher, Duck Player, etc.), leave it be.
+        guard controller.isCurrentTabFrontmostSurface else {
+            return
+        }
+
         // Already on the NTP — no rebuild needed. This preserves any existing
         // escape hatch state, avoids bouncing the omnibar/keyboard on idle return,
         // and avoids surfacing a stale hatch when the user has already consumed

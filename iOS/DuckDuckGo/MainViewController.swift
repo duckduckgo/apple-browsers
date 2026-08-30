@@ -3679,6 +3679,22 @@ class MainViewController: UIViewController {
     }
 
     // MARK: - Idle return NTP (dismiss overlays so NTP is visible)
+
+    /// True when the browser's current tab is frontmost (nothing non-browsing is
+    /// covering it). The idle-return escape hatch can only return to a tab, so we
+    /// gate idle-return NTP on this — leaving the user in place on Settings, the
+    /// tab switcher, Duck Player, or any other modal. The omnibar editing state is
+    /// part of browsing the current tab and does not count as covering it.
+    var isCurrentTabFrontmostSurface: Bool {
+        if tabSwitcherController != nil {
+            return false
+        }
+        if let presented = presentedViewController, !presented.isBeingDismissed {
+            return presented is OmniBarEditingStateViewController
+        }
+        return true
+    }
+
     /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.
     func prepareForIdleReturnNTP(completion: @escaping () -> Void) {
         // A child of this controller rather than a presented one, so it outlives the dismissal below.

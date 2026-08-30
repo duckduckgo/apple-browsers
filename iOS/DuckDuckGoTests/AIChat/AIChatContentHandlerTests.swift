@@ -60,6 +60,21 @@ final class AIChatContentHandlerTests: XCTestCase {
         )
     }
 
+    private func makeHandler(fireNewChatExperimentPixels: @escaping () -> Void) -> AIChatContentHandler {
+        AIChatContentHandler(
+            aiChatSettings: mockSettings,
+            payloadHandler: mockPayloadHandler,
+            pixelMetricHandler: mockMetricHandler,
+            featureDiscovery: MockFeatureDiscovery(),
+            productSurfaceTelemetry: mockProductSurfaceTelemetry,
+            freeTrialConversionService: mockFreeTrialConversionService,
+            statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature,
+            fireNewChatExperimentPixels: fireNewChatExperimentPixels
+        )
+    }
+
     // MARK: - setup(with:webView:)
 
     func testSetupSetsUserScriptDelegate() throws {
@@ -694,6 +709,35 @@ final class AIChatContentHandlerTests: XCTestCase {
         // Then
         XCTAssertEqual(mockDelegate.didReceiveNewChatCreatedCallCount, 1)
         XCTAssertEqual(mockDelegate.didReceiveCloseChatRequestCallCount, 0)
+    }
+
+    // MARK: - duck_ai_new_chat metric
+
+    func testNewChatStartedFiresNewChatExperimentPixel() throws {
+        var fireCount = 0
+        let handler = makeHandler { fireCount += 1 }
+
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .newChatStarted)
+
+        XCTAssertEqual(fireCount, 1, "Starting a new chat must fire duck_ai_new_chat")
+    }
+
+    func testCloseAIChatDoesNotFireNewChatExperimentPixel() throws {
+        var fireCount = 0
+        let handler = makeHandler { fireCount += 1 }
+
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMessage: .closeAIChat)
+
+        XCTAssertEqual(fireCount, 0)
+    }
+
+    func testPromptSubmissionDoesNotFireNewChatExperimentPixel() throws {
+        var fireCount = 0
+        let handler = makeHandler { fireCount += 1 }
+
+        handler.aiChatUserScript(makeTestUserScript(), didReceiveMetric: AIChatMetric(metricName: .userDidSubmitPrompt))
+
+        XCTAssertEqual(fireCount, 0, "A prompt submission is not a new chat")
     }
 
     // MARK: - fireAIChatTelemetry

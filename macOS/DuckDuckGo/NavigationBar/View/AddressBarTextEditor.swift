@@ -276,13 +276,29 @@ final class AddressBarTextEditor: NSTextView {
         return NSRange(range, in: string)
     }
 
-    private func nextWordSelectionIndex(backwards: Bool) -> Int? {
+    /// Returns the character index of the next word boundary in the given direction.
+    /// - Parameters:
+    ///   - backwards: Search direction — `true` = move left, `false` = move right.
+    ///   - cursorOverride: When supplied, use this NSRange integer offset as the starting cursor
+    ///     position instead of `self.selectedRange()`. This avoids mutating the selection (and
+    ///     triggering address-bar observers) just to feed a different position into this function.
+    private func nextWordSelectionIndex(backwards: Bool, cursorOverride: Int? = nil) -> Int? {
         let string = self.string
 
-        guard let selectableRange = addressBar?.stringValueWithoutSuffixRange,
-              let selectedRange = Range(selectedRange(), in: string)?.clamped(to: selectableRange) else { return nil }
+        guard let selectableRange = addressBar?.stringValueWithoutSuffixRange else { return nil }
 
-        var index = backwards ? selectedRange.lowerBound : selectedRange.upperBound
+        let startIndex: String.Index
+        if let override = cursorOverride {
+            // Convert the NSRange integer offset to a String.Index, clamped to the selectable range.
+            let clampedOffset = min(override, string.utf16.count)
+            let rawIdx = String.Index(utf16Offset: clampedOffset, in: string)
+            startIndex = min(max(rawIdx, selectableRange.lowerBound), selectableRange.upperBound)
+        } else {
+            guard let selectedRange = Range(selectedRange(), in: string)?.clamped(to: selectableRange) else { return nil }
+            startIndex = backwards ? selectedRange.lowerBound : selectedRange.upperBound
+        }
+
+        var index = startIndex
         var searchRange: Range<String.Index> {
             backwards ? selectableRange.lowerBound..<index : index..<selectableRange.upperBound
         }
@@ -317,9 +333,22 @@ final class AddressBarTextEditor: NSTextView {
 
     override func moveWordRightAndModifySelection(_ sender: Any?) {
         let selectedRange = self.selectedRange()
-        guard selectionAffinity == .downstream || selectedRange.length == 0 else {
-            // current selection is from right to left: reset selection to the upper bound
-            self.selectedRange = NSRange(location: selectedRange.upperBound, length: 0)
+        if selectionAffinity == .upstream && selectedRange.length > 0 {
+            // Upstream selection (right-to-left): contract from the left end by one word.
+            // Use cursorOverride so we don't mutate self.selectedRange (which would fire address-bar
+            // observers and corrupt the string state before nextWordSelectionIndex can read it).
+            let newLowerBound = nextWordSelectionIndex(backwards: false, cursorOverride: selectedRange.location)
+            guard let newLowerBound else { return }
+            if newLowerBound >= selectedRange.upperBound {
+                // Contraction exhausted the selection — collapse to the right end.
+                self.setSelectedRange(NSRange(location: selectedRange.upperBound, length: 0), affinity: .downstream, stillSelecting: false)
+            } else {
+                self.setSelectedRange(
+                    NSRange(location: newLowerBound, length: selectedRange.upperBound - newLowerBound),
+                    affinity: .upstream,
+                    stillSelecting: false
+                )
+            }
             return
         }
         guard let index = nextWordSelectionIndex(backwards: false) else { return }
@@ -331,13 +360,40 @@ final class AddressBarTextEditor: NSTextView {
 
     override func moveWordLeftAndModifySelection(_ sender: Any?) {
         let selectedRange = self.selectedRange()
-        guard selectionAffinity == .upstream || selectedRange.length == 0 else {
-            // current selection is from left to right: reset selection to the upper bound
-            self.selectedRange = NSRange(location: selectedRange.lowerBound, length: 0)
+        // Compute the leftmost selectable offset (i.e. the start of the URL portion, ignoring any suffix).
+        // If the selection already starts there we cannot extend further left, so we must contract
+        // from the right end instead (this is the Cmd+A / focus-with-full-selection case).
+        let selectableLowerBound = (addressBar?.stringValueWithoutSuffixRange)
+            .map { NSRange($0, in: self.string).location } ?? 0
+        let isAtSelectableStart = selectedRange.location <= selectableLowerBound
+
+        // Contract from the right end when:
+        // - The selection has `.downstream` affinity (cursor is at the right end — Opt+Shift+Left
+        //   shrinks the selection by moving the cursor leftward), OR
+        // - The selection has `.upstream` affinity but already starts at the leftmost selectable
+        //   position (e.g. after Cmd+A), so it cannot grow any further left.
+        // Otherwise (`.upstream` selection with room to grow), extend the left edge further left —
+        // this preserves the natural "Opt+Shift+Left, Opt+Shift+Left" extension flow.
+        if selectedRange.length > 0 && (selectionAffinity == .downstream || isAtSelectableStart) {
+            // Use cursorOverride so we don't mutate self.selectedRange (which would fire address-bar
+            // observers and corrupt the string state before nextWordSelectionIndex can read it).
+            guard let newUpperBound = nextWordSelectionIndex(backwards: true, cursorOverride: selectedRange.upperBound) else { return }
+            if newUpperBound <= selectedRange.location {
+                // Contraction exhausted the selection — collapse to the left end.
+                self.setSelectedRange(NSRange(location: selectedRange.location, length: 0), affinity: .upstream, stillSelecting: false)
+            } else {
+                self.setSelectedRange(
+                    NSRange(location: selectedRange.location, length: newUpperBound - selectedRange.location),
+                    affinity: .downstream,
+                    stillSelecting: false
+                )
+            }
             return
         }
-        guard let index = nextWordSelectionIndex(backwards: true) else { return }
 
+        // Extend the left edge of the selection (or move the caret left if there is no selection).
+        // For an upstream selection this grows it further left; for an empty selection it creates one.
+        guard let index = nextWordSelectionIndex(backwards: true, cursorOverride: selectedRange.location) else { return }
         let range = NSRange(location: index, length: selectedRange.upperBound - index)
         self.setSelectedRange(range, affinity: .upstream, stillSelecting: false)
         self.scrollToSelectionStart()

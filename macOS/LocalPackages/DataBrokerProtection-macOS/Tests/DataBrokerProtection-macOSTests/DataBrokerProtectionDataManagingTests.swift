@@ -149,9 +149,40 @@ final class DataBrokerProtectionDataManagingTests: XCTestCase {
         // Then
         XCTAssertFalse(mockDBPProfileSavedNotifier.didCallPostProfileSavedNotificationIfPermitted)
     }
+
+    @MainActor
+    func testWhenOpeningOptOutEmailThenOpenerResultIsReturned() throws {
+        // Given
+        let opener = MockOptOutEmailOpener()
+        opener.result = .failed(providerName: "Gmail", failure: .workspaceOpenFailed(providerName: "Gmail"))
+        let sut = DataBrokerProtectionDataManager(database: mockDatabase,
+                                                  profileSavedNotifier: mockDBPProfileSavedNotifier,
+                                                  optOutEmailOpener: opener)
+        let payload = try makeOptOutEmailPayload()
+
+        // When
+        let didOpen = sut.willOpenOptOutEmail(payload)
+
+        // Then
+        XCTAssertFalse(didOpen)
+        XCTAssertEqual(opener.openedPayload?.brokerName, payload.brokerName)
+    }
 }
 
 private extension DataBrokerProtectionDataManagingTests {
+
+    func makeOptOutEmailPayload() throws -> DBPUIOptOutEmail {
+        let data = try XCTUnwrap("""
+        {
+            "brokerName": "Example Broker",
+            "to": "support@example.com",
+            "subject": "Removal request",
+            "body": "Please remove me."
+        }
+        """.data(using: .utf8))
+
+        return try JSONDecoder().decode(DBPUIOptOutEmail.self, from: data)
+    }
 
     var mockProfile: DataBrokerProtectionProfile {
         let name = DataBrokerProtectionProfile.Name(
@@ -325,5 +356,16 @@ private extension DataBrokerProtectionDataManagingTests {
                 deprecated: false
             )
         ]
+    }
+}
+
+@MainActor
+private final class MockOptOutEmailOpener: DBPUIOptOutEmailOpening {
+    var result = DBPUIOptOutEmailOpenResult.opened(providerName: "Apple Mail")
+    private(set) var openedPayload: DBPUIOptOutEmail?
+
+    func open(_ payload: DBPUIOptOutEmail) -> DBPUIOptOutEmailOpenResult {
+        openedPayload = payload
+        return result
     }
 }

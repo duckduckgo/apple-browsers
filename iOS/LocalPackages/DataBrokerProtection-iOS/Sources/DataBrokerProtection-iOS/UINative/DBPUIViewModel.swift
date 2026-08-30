@@ -226,6 +226,11 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
         feedbackFormDelegate?.openSendFeedbackForm()
     }
 
+    public func openOptOutEmail(_ payload: DBPUIOptOutEmail) async -> Bool {
+        // Opt-out email prefill is macOS only for now.
+        return false
+    }
+
     public func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata {
         // Return no information as we think this is unused
         DBPUIDebugMetadata(lastRunAppVersion: "")

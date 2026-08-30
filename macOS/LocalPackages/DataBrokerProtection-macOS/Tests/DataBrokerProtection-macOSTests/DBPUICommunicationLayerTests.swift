@@ -177,6 +177,61 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         XCTAssertEqual(featureConfig.useUnifiedFeedback, true)
         XCTAssertEqual(featureConfig.excludeVpnTraffic, true)
     }
+
+    func testWhenOpenOptOutEmailCalled_andPayloadIsWellFormed_thenDelegateIsCalledAndSuccessMatchesDelegate() async throws {
+        // Given
+        let mockDelegate = MockDelegate()
+        mockDelegate.openOptOutEmailResult = true
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
+        sut.delegate = mockDelegate
+        let params: [String: Any] = [
+            "brokerName": "MyLife",
+            "to": "privacy@mylife.com",
+            "subject": "Removal request for Daniel Silva (Los Angeles, CA)",
+            "body": "Hello,\n\nPlease remove the following listing...\n"
+        ]
+        let scriptMessage = WKScriptMessage.mock()
+
+        // When
+        let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.openOptOutEmail.rawValue)
+        let result = try await handler?(params, scriptMessage)
+
+        // Then
+        XCTAssertTrue(mockDelegate.openOptOutEmailCalled)
+        XCTAssertEqual(mockDelegate.openOptOutEmailPayload?.brokerName, "MyLife")
+        XCTAssertEqual(mockDelegate.openOptOutEmailPayload?.to, "privacy@mylife.com")
+
+        guard let response = result as? DBPUIStandardResponse else {
+            XCTFail("Expected DBPUIStandardResponse to be returned")
+            return
+        }
+
+        XCTAssertTrue(response.success)
+    }
+
+    func testWhenOpenOptOutEmailCalled_andPayloadIsMalformed_thenSuccessIsFalseAndDelegateNotCalled() async throws {
+        // Given
+        let mockDelegate = MockDelegate()
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
+        sut.delegate = mockDelegate
+        // Missing required fields (only brokerName provided)
+        let params: [String: Any] = ["brokerName": "MyLife"]
+        let scriptMessage = WKScriptMessage.mock()
+
+        // When
+        let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.openOptOutEmail.rawValue)
+        let result = try await handler?(params, scriptMessage)
+
+        // Then
+        XCTAssertFalse(mockDelegate.openOptOutEmailCalled)
+
+        guard let response = result as? DBPUIStandardResponse else {
+            XCTFail("Expected DBPUIStandardResponse to be returned")
+            return
+        }
+
+        XCTAssertFalse(response.success)
+    }
 }
 
 // MARK: - Mock Classes
@@ -224,6 +279,16 @@ private final class MockDelegate: DBPUICommunicationDelegate {
     }
 
     func openSendFeedbackModal() async {}
+
+    var openOptOutEmailCalled = false
+    var openOptOutEmailPayload: DBPUIOptOutEmail?
+    var openOptOutEmailResult = true
+
+    func openOptOutEmail(_ payload: DBPUIOptOutEmail) async -> Bool {
+        openOptOutEmailCalled = true
+        openOptOutEmailPayload = payload
+        return openOptOutEmailResult
+    }
 
     func applyVPNBypassSetting(_ bypass: Bool) async {}
 

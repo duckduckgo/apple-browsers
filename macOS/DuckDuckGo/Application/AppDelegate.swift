@@ -2555,6 +2555,17 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         if let tabUUID = userInfo[WebNotificationsHandler.UserInfoKey.tabUUID] as? String,
            let notificationId = userInfo[WebNotificationsHandler.UserInfoKey.notificationId] as? String {
             await webNotificationClickHandler.handleClick(tabUUID: tabUUID, notificationId: notificationId)
+            return
+        }
+
+        // Web Push PoC: route a click on a SW-initiated notification to the
+        // scope's tab (focusing it if open, opening a new one otherwise).
+        if #available(macOS 13.3, *),
+           let scopeString = userInfo[WebPushNotificationDelegate.scopeURLUserInfoKey] as? String,
+           let scopeURL = URL(string: scopeString) {
+            await MainActor.run {
+                windowControllersManager.showTab(with: .contentFromURL(scopeURL, source: .appOpenUrl))
+            }
         }
     }
 

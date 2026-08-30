@@ -573,6 +573,25 @@ extension AppDelegate {
             modifiedSince: .distantPast) { }
     }
 
+    @objc func debugSetupWebPushTestingEnvironment(_ sender: Any?) {
+        if #available(macOS 13.0, *) {
+            WebPushDebugHelper.setupWebPushTestingEnvironment()
+        }
+    }
+
+    @objc func debugFireTestWebPush(_ sender: Any?) {
+        if #available(macOS 13.0, *) {
+            WebPushDebugHelper.fireTestPushMessage()
+        }
+    }
+
+    @MainActor
+    @objc func debugFireTestWebPushAtCurrentTab(_ sender: Any?) {
+        if #available(macOS 13.3, *) {
+            WebPushDebugHelper.fireTestPushAtActiveTabOrigin()
+        }
+    }
+
     @MainActor
     @objc func debugClearFaviconsCache(_ sender: Any?) {
         faviconManager.clearInMemoryFaviconCache()

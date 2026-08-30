@@ -983,6 +983,14 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "Content Scope Experiments")
                 .submenu(ContentScopeExperimentsMenu())
+            NSMenuItem(title: "Web Push") {
+                NSMenuItem(title: "Set up Web Push testing environment…",
+                           action: #selector(AppDelegate.debugSetupWebPushTestingEnvironment))
+                NSMenuItem(title: "Fire Test Push (localhost:8765)",
+                           action: #selector(AppDelegate.debugFireTestWebPush))
+                NSMenuItem(title: "Fire Test Push at Current Tab Origin",
+                           action: #selector(AppDelegate.debugFireTestWebPushAtCurrentTab))
+            }
             NSMenuItem(title: "Reset Data") {
                 NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(AppDelegate.resetDefaultGrammarChecks))
                 NSMenuItem(title: "Reset Autofill Data", action: #selector(AppDelegate.resetSecureVaultData)).withAccessibilityIdentifier("MainMenu.resetSecureVaultData")

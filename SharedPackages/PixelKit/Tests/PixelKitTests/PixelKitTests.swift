@@ -22,6 +22,12 @@ import os.log
 
 final class PixelKitTests: XCTestCase {
 
+    private struct PreSuffixedDailyEvent: PixelKit.Event {
+        let name = "test_pre_suffixed_d"
+        let parameters: [String: String]? = nil
+        let standardParameters: [PixelKitStandardParameter]? = nil
+    }
+
     private func userDefaults() -> UserDefaults {
         UserDefaults(suiteName: "testing_\(UUID().uuidString)")!
     }
@@ -571,6 +577,24 @@ final class PixelKitTests: XCTestCase {
 
         // Wait for expectations to be fulfilled
         wait(for: [fireCallbackCalled], timeout: 0.5)
+    }
+
+    func testLegacyDailyNoSuffixFiresPreSuffixedDailyNameVerbatim() {
+        let fired = expectation(description: "Expect the pixel firing callback to be called")
+        let event = PreSuffixedDailyEvent()
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.5",
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                defaults: userDefaults()) { name, _, _, _, _, completion in
+            XCTAssertEqual(name, event.name)
+            completion(true, nil)
+            fired.fulfill()
+        }
+
+        pixelKit.fire(event, frequency: .legacyDailyNoSuffix)
+
+        wait(for: [fired], timeout: 0.5)
     }
 
     /// Test firing a unique pixel

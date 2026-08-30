@@ -41,6 +41,9 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read   # `gh pr diff` reads the changed-file list via the API
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
       strict_mode: ${{ steps.check.outputs.strict_mode }}
@@ -84,3 +87,61 @@ jobs:
           else
             echo "strict_mode=false" >> $GITHUB_OUTPUT
           fi
+
+      # PHASE 1 (shadow): compute per-area change flags for logging only.
+      # Nothing gates on them — they are not exposed as outputs. The steps are
+      # deliberately fail-open: any error (or a non-PR event) yields all-true,
+      # i.e. exactly today's "run everything" behaviour, so they can never make
+      # the check job fail and skip downstream checks.
+      #
+      # The group definitions and matcher live in a shared script so that the
+      # replay/validation workflow (replay_change_detection.yml) can never
+      # drift from what this gate computes.
+      - name: Check out the change-detection script
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/scripts/detect-changed-areas.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Detect changed paths (shadow)
+        id: paths
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          fail_open() {
+            for area in ios macos shared; do echo "${area}=true" >> "$GITHUB_OUTPUT"; done
+            echo "$1"
+            exit 0
+          }
+
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            fail_open "Non-PR event (${{ github.event_name }}): all areas = true (unchanged from today)"
+          fi
+
+          files=$(gh pr diff "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" --name-only) \
+            || fail_open "Could not read changed files: failing open to all areas = true"
+
+          flags=$(echo "$files" | .github/scripts/detect-changed-areas.sh) \
+            || fail_open "detect-changed-areas.sh failed: failing open to all areas = true"
+
+          echo "$flags" >> "$GITHUB_OUTPUT"
+          echo "$flags"
+
+      # PHASE 1 (shadow): log what a future gating phase WOULD skip. Purely
+      # informational — lets us eyeball the flags against real PRs before any
+      # job is gated on them.
+      - name: Shadow report
+        if: always()
+        run: |
+          echo "::group::Change-detection shadow report"
+          echo "event=${{ github.event_name }} should_run=${{ steps.check.outputs.should_run }}"
+          echo "flags: ios=${{ steps.paths.outputs.ios }} macos=${{ steps.paths.outputs.macos }} shared=${{ steps.paths.outputs.shared }}"
+          [ "${{ steps.paths.outputs.ios }}" = "false" ]    && echo "WOULD-SKIP: iOS Unit Tests / Make Release Build"
+          [ "${{ steps.paths.outputs.macos }}" = "false" ]  && echo "WOULD-SKIP: macOS Test / Release Build / Notarized / PIR / performance"
+          [ "${{ steps.paths.outputs.shared }}" = "false" ] && echo "WOULD-SKIP: BSK + DBP unit tests / DBP Test Report"
+          echo "::endgroup::"
+          exit 0

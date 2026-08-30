@@ -66,6 +66,23 @@ final class PromoServiceTests: XCTestCase {
         )
     }
 
+    // MARK: - Off-queue precondition (regression: #5083)
+
+    func testApplyExternalVisibilityOffStateQueueReDispatchesInsteadOfCrashing() {
+        // Regression test for #5083: state mutators invoked off the state queue must re-dispatch onto
+        // it rather than tripping dispatchPrecondition (which crashed the app). This calls
+        // applyExternalVisibility from the test thread (NOT testQueue); with the fix reverted to
+        // `dispatchPrecondition(condition: .onQueue(stateQueue))` the test process crashes.
+        let delegate = MockExternalPromoDelegate()
+        let service = makeService(promos: [])
+
+        service.applyExternalVisibility(visible: true, promoId: "external-promo", delegate: delegate)
+        testQueue.sync {} // barrier: wait for the re-dispatched work to complete
+
+        XCTAssertNotNil(historyStore.record(for: "external-promo").lastShown,
+                        "External visibility applied off-queue should still record the promo as shown")
+    }
+
     // MARK: - Rule evaluation
 
     func testWhenOneMediumPromoVisible_ThenSecondMediumPromoIsSkipped() async {

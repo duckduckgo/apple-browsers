@@ -2001,6 +2001,7 @@
 		C128BA252DF0847900ADDC5F /* SettingsCompleteSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C128BA242DF0847900ADDC5F /* SettingsCompleteSetupView.swift */; };
 		C12B671E2EC0ABEB003B80DD /* AIChatContentHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B671D2EC0ABEB003B80DD /* AIChatContentHandler.swift */; };
 		C12B67202EC0BDD9003B80DD /* AIChatContentHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B671F2EC0BDD9003B80DD /* AIChatContentHandlerTests.swift */; };
+		FDDA366100000000000000B0 /* AIChatUserScriptSyncPushTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDA366100000000000000A1 /* AIChatUserScriptSyncPushTests.swift */; };
 		C138286D2EB57712001AE344 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = C138286C2EB57712001AE344 /* Lottie */; };
 		C138286F2EB57757001AE344 /* confirmation-prompt-128.json in Resources */ = {isa = PBXBuildFile; fileRef = C138286E2EB57757001AE344 /* confirmation-prompt-128.json */; };
 		C13830FC2DCD3F1400A29B3C /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13830FB2DCD3F1400A29B3C /* WebView.swift */; };
@@ -4846,6 +4847,7 @@
 		C129DF0A2D0862D7007AB046 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C12B671D2EC0ABEB003B80DD /* AIChatContentHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContentHandler.swift; sourceTree = "<group>"; };
 		C12B671F2EC0BDD9003B80DD /* AIChatContentHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContentHandlerTests.swift; sourceTree = "<group>"; };
+		FDDA366100000000000000A1 /* AIChatUserScriptSyncPushTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptSyncPushTests.swift; sourceTree = "<group>"; };
 		C132F5A32D0862B8000C81D0 /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = fi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C132F5A42D0862B8000C81D0 /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = fi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C138286E2EB57757001AE344 /* confirmation-prompt-128.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "confirmation-prompt-128.json"; sourceTree = "<group>"; };
@@ -6370,6 +6372,7 @@
 				5AB12C3D4E5F60718293A4F4 /* ChatHistoryDownloaderTests.swift */,
 				3132928208A0000000C3A276 /* DuckAiNativeStorageContainerMigrationTests.swift */,
 				C12B671F2EC0BDD9003B80DD /* AIChatContentHandlerTests.swift */,
+				FDDA366100000000000000A1 /* AIChatUserScriptSyncPushTests.swift */,
 				B8BCE5B1BA2A40AFBD9B2FDF /* AIBoundaryNavigationDecisionTests.swift */,
 				C16670E32EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift */,
 				C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */,
@@ -15293,6 +15296,7 @@
 				5B4FA2F12F33F50B007DDF4C /* MockRemoteMessagingImageLoader.swift in Sources */,
 				9FF967B22E0E26DE00E45B54 /* DefaultBrowserPromptUserTypeManagerTests.swift in Sources */,
 				C12B67202EC0BDD9003B80DD /* AIChatContentHandlerTests.swift in Sources */,
+				FDDA366100000000000000B0 /* AIChatUserScriptSyncPushTests.swift in Sources */,
 				26B891EE56C54E4587912787 /* AIBoundaryNavigationDecisionTests.swift in Sources */,
 				7C8A1B2D3E4F506172839405 /* AIChatTabChatHeaderViewTests.swift in Sources */,
 				98629D342C21BE37001E6031 /* BookmarksStateValidationTests.swift in Sources */,

@@ -35,7 +35,22 @@ class DownloadManagerTests: XCTestCase {
         WKNavigationResponse.restoreDealloc()
         downloadManagerTestsHelper.deleteAllFiles()
     }
-    
+
+    func testWhenDownloadManagerIsInitializedWithEmptyDirectoryThenDirectoryIsNotDeleted() throws {
+        // Regression test for #3400: the download manager must NOT delete the downloads directory on
+        // init. The reverted "delete downloads directory if empty" logic wiped users' Downloads
+        // folder on launch; re-introducing delete-on-init behaviour makes this fail.
+        let handler = DownloadsDirectoryHandler()
+        handler.createDownloadsDirectory()
+        XCTAssertTrue(handler.downloadsDirectoryExists())
+        XCTAssertTrue(try handler.downloadsDirectoryFiles.isEmpty)
+
+        _ = DownloadManager(NotificationCenter(), downloadsDirectoryHandler: handler)
+
+        XCTAssertTrue(handler.downloadsDirectoryExists(),
+                      "DownloadManager init must not auto-delete the (empty) downloads directory")
+    }
+
     func testWhenIPadThenPKPassThenDownloadIsNotTemporary() throws {
         guard UIDevice.current.userInterfaceIdiom == .pad else { return }
         

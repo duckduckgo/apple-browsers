@@ -415,7 +415,8 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         externalSubscriptions[promoId] = cancellable
     }
 
-    private func applyExternalVisibility(visible: Bool, promoId: String, delegate: ExternalPromoDelegate) {
+    // Not private so the off-queue re-dispatch guard can be exercised directly by unit tests (#5083).
+    func applyExternalVisibility(visible: Bool, promoId: String, delegate: ExternalPromoDelegate) {
         guard isOnStateQueue else {
             stateQueue.async { [weak self] in
                 self?.applyExternalVisibility(visible: visible, promoId: promoId, delegate: delegate)

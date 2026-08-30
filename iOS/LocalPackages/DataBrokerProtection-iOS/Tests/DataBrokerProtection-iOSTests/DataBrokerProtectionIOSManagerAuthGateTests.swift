@@ -155,6 +155,20 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertTrue(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
     }
 
+    func testAppDidBecomeActive_authenticatedButNoProfile_doesNotStartScanOperations() async {
+        // Regression test for #3053: a foreground activation must skip scan/email work when no PIR
+        // profile exists, even for an authenticated user with the foreground-running feature on.
+        // Reverting the `meetsProfileRunPrequisite` guard lets scan operations start with no profile.
+        let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: true)
+        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = nil
+        dependencies.authenticationManager.isUserAuthenticatedValue = true
+
+        await sut.appDidBecomeActive()
+
+        XCTAssertFalse(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
+    }
+
     // MARK: - handleBGProcessingTask routing
 
     func testHandleBGProcessingTask_authenticated_startsAllOperations() async {

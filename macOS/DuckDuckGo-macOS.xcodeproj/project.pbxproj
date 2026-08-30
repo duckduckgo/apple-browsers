@@ -155,7 +155,13 @@
 		1D8C2FED2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FEC2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift */; };
 		1D8C2FEE2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FEC2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift */; };
 		1D8C2FF02B70F751005E4BBD /* MockTabSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */; };
+		FDDA535900000000000000B0 /* FaviconStoreCorruptImageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDA535900000000000000A1 /* FaviconStoreCorruptImageTests.swift */; };
+		FDDA435800000000000000B0 /* AIChatTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDA435800000000000000A1 /* AIChatTabExtensionTests.swift */; };
+		FDDA461500000000000000B0 /* TabPreviewViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDA461500000000000000A1 /* TabPreviewViewControllerTests.swift */; };
 		1D8C2FF12B70F751005E4BBD /* MockTabSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */; };
+		FDDA535900000000000000B1 /* FaviconStoreCorruptImageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDA535900000000000000A1 /* FaviconStoreCorruptImageTests.swift */; };
+		FDDA435800000000000000B1 /* AIChatTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDA435800000000000000A1 /* AIChatTabExtensionTests.swift */; };
+		FDDA461500000000000000B1 /* TabPreviewViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDA461500000000000000A1 /* TabPreviewViewControllerTests.swift */; };
 		1D94E7992F333CA1008315A2 /* AIChatOmnibarToolButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */; };
 		1D94E79A2F333CA1008315A2 /* AIChatOmnibarToolButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */; };
 		1D94E7A02F33AA2E008315A2 /* MacOSWebExtensionPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */; };
@@ -5127,6 +5133,9 @@
 		1D8C2FE92B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockWebViewSnapshotRenderer.swift; sourceTree = "<group>"; };
 		1D8C2FEC2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockViewSnapshotRenderer.swift; sourceTree = "<group>"; };
 		1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockTabSnapshotStore.swift; sourceTree = "<group>"; };
+		FDDA535900000000000000A1 /* FaviconStoreCorruptImageTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FaviconStoreCorruptImageTests.swift; path = UnitTests/Favicons/FaviconStoreCorruptImageTests.swift; sourceTree = SOURCE_ROOT; };
+		FDDA435800000000000000A1 /* AIChatTabExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AIChatTabExtensionTests.swift; path = UnitTests/TabExtensionsTests/AIChatTabExtensionTests.swift; sourceTree = SOURCE_ROOT; };
+		FDDA461500000000000000A1 /* TabPreviewViewControllerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TabPreviewViewControllerTests.swift; path = UnitTests/TabPreview/TabPreviewViewControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatOmnibarToolButton.swift; sourceTree = "<group>"; };
 		1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSWebExtensionPixelFiring.swift; sourceTree = "<group>"; };
 		1D99CDDA2D929EBE00656A84 /* PinnedTabsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsPixel.swift; sourceTree = "<group>"; };
@@ -8075,6 +8084,9 @@
 				1D8C2FE92B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift */,
 				1D8C2FEC2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift */,
 				1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */,
+				FDDA535900000000000000A1 /* FaviconStoreCorruptImageTests.swift */,
+				FDDA435800000000000000A1 /* AIChatTabExtensionTests.swift */,
+				FDDA461500000000000000A1 /* TabPreviewViewControllerTests.swift */,
 			);
 			path = Mocks;
 			sourceTree = "<group>";
@@ -17391,6 +17403,9 @@
 				BBD31EAA2E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift in Sources */,
 				376E2D2629428353001CD31B /* PrivacyReferenceTestHelper.swift in Sources */,
 				1D8C2FF12B70F751005E4BBD /* MockTabSnapshotStore.swift in Sources */,
+				FDDA535900000000000000B1 /* FaviconStoreCorruptImageTests.swift in Sources */,
+				FDDA435800000000000000B1 /* AIChatTabExtensionTests.swift in Sources */,
+				FDDA461500000000000000B1 /* TabPreviewViewControllerTests.swift in Sources */,
 				37A0BA242D747B9F00130447 /* CapturingContextMenuPresenter.swift in Sources */,
 				3706FE7E293F661700E42796 /* RunLoopExtensionTests.swift in Sources */,
 				5681ED412BDB955100F59729 /* SyncCredentialsAdapterTests.swift in Sources */,
@@ -19614,6 +19629,9 @@
 				37EC31532D8C1BBC0026C348 /* CapturingFaviconReferenceCache.swift in Sources */,
 				56534DED29DF252C00121467 /* CapturingDefaultBrowserProvider.swift in Sources */,
 				1D8C2FF02B70F751005E4BBD /* MockTabSnapshotStore.swift in Sources */,
+				FDDA535900000000000000B0 /* FaviconStoreCorruptImageTests.swift in Sources */,
+				FDDA435800000000000000B0 /* AIChatTabExtensionTests.swift in Sources */,
+				FDDA461500000000000000B0 /* TabPreviewViewControllerTests.swift in Sources */,
 				9F0660782BECC81C00B8EEF1 /* PixelCapturedParameters.swift in Sources */,
 				B5E7B6CA2ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift in Sources */,
 				B6C2C9F62760B659005B7F0A /* TestDataModel.xcdatamodeld in Sources */,

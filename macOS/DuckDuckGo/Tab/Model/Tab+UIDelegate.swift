@@ -336,5 +336,35 @@ extension Tab: WKInspectorDelegate {
     func webView(_ webView: WKWebView, didAttachLocalInspector inspector: NSObject) {
         // Fire pixel when developer tools are opened
         PixelKit.fire(GeneralPixel.developerToolsOpened, frequency: .dailyAndCount)
+        WebInspectorCloseShortcut.installIfNeeded()
+    }
+}
+
+/// Routes ⌘W to `performClose` when the detached Web Inspector window is key.
+/// Without this, ⌘W is bound to `closeTab:` on `MainViewController` and never reaches
+/// the inspector window.
+enum WebInspectorCloseShortcut {
+
+    private static var monitor: Any?
+
+    static func installIfNeeded() {
+        guard monitor == nil else { return }
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+                  event.charactersIgnoringModifiers == "w",
+                  let keyWindow = NSApp.keyWindow,
+                  keyWindow.isWebInspectorWindow
+            else { return event }
+            keyWindow.performClose(nil)
+            return nil
+        }
+    }
+}
+
+private extension NSWindow {
+    /// Matches only the detached inspector window (whose `contentView` is the inspector's
+    /// own web view) — not a main browser window with a docked inspector subview.
+    var isWebInspectorWindow: Bool {
+        className.contains("WKInspector") || contentView?.className.contains("WKInspector") == true
     }
 }

@@ -400,8 +400,6 @@ enum GeneralPixel: PixelKit.Event {
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
     case dbValueTransformerRegistrationError
-    case startupEncryptionKeyRetrySucceeded(waitedSeconds: Int, status: OSStatus?)
-    case startupEncryptionKeyRetryExhausted(status: OSStatus?)
     case startupEncryptionKeyPromptCancelled
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
     case dbSaveBloomFilterError(error: Error?)
@@ -1151,10 +1149,6 @@ enum GeneralPixel: PixelKit.Event {
             return "dbie"
         case .dbValueTransformerRegistrationError:
             return "db_value_transformer_registration_error"
-        case .startupEncryptionKeyRetrySucceeded:
-            return "startup_encryption_key_retry_succeeded"
-        case .startupEncryptionKeyRetryExhausted:
-            return "startup_encryption_key_retry_exhausted"
         case .startupEncryptionKeyPromptCancelled:
             return "startup_encryption_key_prompt_cancelled"
         case .dbSaveExcludedHTTPSDomainsError:
@@ -1447,17 +1441,6 @@ enum GeneralPixel: PixelKit.Event {
 
         case .navigation(let kind):
             return ["kind": kind.description]
-
-        case .startupEncryptionKeyRetrySucceeded(let waitedSeconds, let status):
-            var params = ["keychain_wait_bucket": KeychainWaitBucket(seconds: waitedSeconds).description]
-            if let status {
-                params[PixelKit.Parameters.keychainErrorCode] = "\(status)"
-            }
-            return params
-
-        case .startupEncryptionKeyRetryExhausted(let status):
-            guard let status else { return nil }
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
 
         case .appStateRestored(let trigger):
             return ["isRestartToUpdate": String(trigger == .appUpdate)]
@@ -1880,8 +1863,6 @@ enum GeneralPixel: PixelKit.Event {
                 .dbContainerInitializationError,
                 .dbInitializationError,
                 .dbValueTransformerRegistrationError,
-                .startupEncryptionKeyRetrySucceeded,
-                .startupEncryptionKeyRetryExhausted,
                 .startupEncryptionKeyPromptCancelled,
                 .dbSaveExcludedHTTPSDomainsError,
                 .dbSaveBloomFilterError,

@@ -88,6 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let urlEventHandler = URLEventHandler()
 
     private let keyStore: EncryptionKeyStoring
+    private let keychainReadOutcome: KeychainAvailabilityOutcome
     let fileStore: FileStore
 
     private let crashReporting: any CrashReporting
@@ -523,6 +524,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keychainOutcome = .availableImmediately
             fileStore = EncryptedFileStore()
         }
+        keychainReadOutcome = keychainOutcome
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         if LaunchOptionsHandler().isInternalUserRequested {
@@ -532,7 +534,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if AppVersion.runType.requiresEnvironment {
             Self.configurePixelKit(isInternalUser: internalUserDecider.isInternalUser)
-            Self.reportKeychainAvailability(keychainOutcome)
+            Self.quitIfKeychainPromptCancelled(keychainOutcome)
         }
 
         do {
@@ -1560,7 +1562,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // silently inert. Calling it twice is harmless — it re-checks already-settled state.
         eventHubIntegration.applicationDidBecomeActive()
 
-        PixelKit.fire(GeneralPixel.launch)
+        if case .availableAfterWaiting(let waitedSeconds, let status) = keychainReadOutcome {
+            // The Keychain read at init had to wait for loginwindow to unlock the Keychain.
+            // Reported here rather than from the retry loop, which runs before PixelKit is set up.
+            var parameters = ["keychain_wait_bucket": GeneralPixel.KeychainWaitBucket(seconds: waitedSeconds).description]
+            if let status {
+                parameters[PixelKit.Parameters.keychainErrorCode] = "\(status)"
+            }
+            PixelKit.fire(GeneralPixel.launch, options: .parameters(parameters))
+        } else {
+            PixelKit.fire(GeneralPixel.launch)
+        }
         profilerToken.stop()
     }
 
@@ -2600,28 +2612,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case promptCancelled
     }
 
-    /// Reports the launch-time Keychain read now that PixelKit can actually send a pixel.
-    private static func reportKeychainAvailability(_ outcome: KeychainAvailabilityOutcome) {
-        switch outcome {
-        case .availableImmediately:
-            break
+    /// The user dismissed the Keychain prompt, so the app is quitting. This is the one
+    /// Keychain outcome that has to be reported with its own pixel: the app exits here,
+    /// long before the launch pixel that carries the others would fire.
+    private static func quitIfKeychainPromptCancelled(_ outcome: KeychainAvailabilityOutcome) {
+        guard case .promptCancelled = outcome else { return }
 
-        case .availableAfterWaiting(let waitedSeconds, let status):
-            PixelKit.fire(DebugEvent(GeneralPixel.startupEncryptionKeyRetrySucceeded(waitedSeconds: waitedSeconds,
-                                                                                    status: status)),
-                          frequency: .dailyAndCount)
+        PixelKit.fire(DebugEvent(GeneralPixel.startupEncryptionKeyPromptCancelled), frequency: .dailyAndCount)
 
-        case .unavailable(let status):
-            PixelKit.fire(DebugEvent(GeneralPixel.startupEncryptionKeyRetryExhausted(status: status)),
-                          frequency: .dailyAndCount)
-
-        case .promptCancelled:
-            PixelKit.fire(DebugEvent(GeneralPixel.startupEncryptionKeyPromptCancelled), frequency: .dailyAndCount)
-
-            // Give the pixel a chance to be sent, but not too long
-            Thread.sleep(forTimeInterval: 1)
-            exit(0)
-        }
+        // Give the pixel a chance to be sent, but not too long
+        Thread.sleep(forTimeInterval: 1)
+        exit(0)
     }
 }
 

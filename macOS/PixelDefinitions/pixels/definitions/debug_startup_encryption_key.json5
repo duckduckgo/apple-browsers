@@ -1,10 +1,16 @@
 // Launch-time encryption key Keychain availability pixels
 {
-    "m_mac_debug_startup_encryption_key_retry_succeeded": {
-        "description": "Fired when the encryption key could not be read from the Keychain on the first attempt at launch but a later retry succeeded, which is the login-item case where the app starts before loginwindow has unlocked the Keychain",
+    "m_mac_debug_startup_encryption_key_prompt_cancelled": {
+        "description": "Fired when the user dismisses the Keychain prompt shown while reading the encryption key at launch, after which the app quits. Reported with its own pixel because the app exits before the launch pixel would fire",
         "owners": ["diegoreymendez"],
         "triggers": ["startup"],
         "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "ml_mac_app-launch": {
+        "description": "Fired on every app launch. When the launch-time Keychain read had to wait for loginwindow to unlock the Keychain, carries how long it waited and the error code of the first failed read",
+        "owners": ["diegoreymendez"],
+        "triggers": ["startup"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -12,23 +18,9 @@
             {
                 "key": "keychain_wait_bucket",
                 "type": "string",
-                "description": "Seconds waited before the Keychain read succeeded, bucketed to avoid reporting an exact duration",
+                "description": "Seconds the launch-time Keychain read waited before succeeding, bucketed to avoid reporting an exact duration. Absent when the first read succeeded",
                 "enum": ["0-6", "7-18", "19-36", "37-60"]
             }
         ]
-    },
-    "m_mac_debug_startup_encryption_key_retry_exhausted": {
-        "description": "Fired when the encryption key could not be read from the Keychain within the launch retry window, immediately before database initialization fails and terminates the app",
-        "owners": ["diegoreymendez"],
-        "triggers": ["startup"],
-        "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "keychainErrorCode"]
-    },
-    "m_mac_debug_startup_encryption_key_prompt_cancelled": {
-        "description": "Fired when the user dismisses the Keychain prompt shown while reading the encryption key at launch, after which the app quits without retrying",
-        "owners": ["diegoreymendez"],
-        "triggers": ["startup"],
-        "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
     }
 }

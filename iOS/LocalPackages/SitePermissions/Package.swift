@@ -34,12 +34,18 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../DuckUI"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/Persistence")
     ],
     targets: [
         .target(
             name: "SitePermissions",
             dependencies: [
+                .product(name: "DuckUI", package: "DuckUI"),
+                "DesignResourcesKit",
+                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
                 .product(name: "Persistence", package: "Persistence")
             ]
         ),

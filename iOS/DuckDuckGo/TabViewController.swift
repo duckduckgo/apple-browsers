@@ -51,9 +51,24 @@ import SERPSettings
 import AIChat
 import PixelKit
 import PrivacyConfig
+import SitePermissions
 import WebExtensions
 import DesignResourcesKitIcons
 import FeatureFlags_iOS
+
+struct SitePermissionsDependencies {
+    let store: SitePermissionsStore
+    let systemPermissionClient: SystemPermissionClient
+    let eventHandler: (SitePermissionsEvent) -> Void
+
+    init(store: SitePermissionsStore,
+         systemPermissionClient: SystemPermissionClient,
+         eventHandler: @escaping (SitePermissionsEvent) -> Void = { _ in }) {
+        self.store = store
+        self.systemPermissionClient = systemPermissionClient
+        self.eventHandler = eventHandler
+    }
+}
 
 enum WebViewPreviewSnapshotGeometry {
 
@@ -613,7 +628,8 @@ class TabViewController: UIViewController {
                                    adBlockingAvailability: AdBlockingAvailabilityProviding,
                                    eventHub: EventHubManaging,
                                    webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
-                                   pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> TabViewController {
+                                   pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+                                   sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) -> TabViewController {
 
         return TabViewController(tabModel: model,
                                  privacyConfigurationManager: privacyConfigurationManager,
@@ -651,7 +667,8 @@ class TabViewController: UIViewController {
                                  adBlockingAvailability: adBlockingAvailability,
                                  eventHub: eventHub,
                                  pixelFiring: pixelFiring,
-                                 webExtensionManagerProvider: webExtensionManagerProvider)
+                                 webExtensionManagerProvider: webExtensionManagerProvider,
+                                 sitePermissionsDependenciesProvider: sitePermissionsDependenciesProvider)
     }
 
     private var userContentController: UserContentController {
@@ -744,6 +761,32 @@ class TabViewController: UIViewController {
     let autoplaySettings: AutoplaySettings
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    var sitePermissionsDependenciesProvider: @MainActor () -> SitePermissionsDependencies?
+
+    private var sitePermissionsCoordinator: SitePermissionsCoordinator?
+    private var sitePermissionsDialogHostingController: UIViewController?
+    private var sitePermissionsRecoveryHostingController: UIViewController?
+    private var sitePermissionsRecoveryMessageView: ActionMessageView?
+    private var sitePermissionsRecoveryCompletion: (() -> Void)?
+    private var sitePermissionsRecoveryToken: UInt?
+    private var nextSitePermissionsRecoveryToken: UInt = 0
+    private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
+    private struct PendingSitePermissionRequest {
+        let context: SitePermissionRequestContext
+        let frame: WKFrameInfo
+        let decisionHandler: (WKPermissionDecision) -> Void
+    }
+    private var pendingSitePermissionRequests = [UInt64: PendingSitePermissionRequest]()
+    private var nextSitePermissionRequestToken: UInt64 = 0
+    private var sitePermissionsCommittedMainFrameURL: URL?
+    private var isSitePermissionsMainFrameNavigationProvisional = false
+    private var sitePermissionsProvisionalNavigation: WKNavigation?
+    private var sitePermissionsNavigationGeneration: UInt = 0
+    private var sitePermissionsWebContentProcessGeneration: UInt = 0
+    private var areSitePermissionsClosed = false
+
+    var sitePermissionsPromptHandlerOverride: SitePermissionsCoordinator.PromptHandler?
+    var sitePermissionsSystemSettingsOpenerOverride: (() -> Void)?
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
@@ -820,7 +863,8 @@ class TabViewController: UIViewController {
          eventHub: EventHubManaging,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil,
-         webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil }) {
+         webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
+         sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -871,6 +915,7 @@ class TabViewController: UIViewController {
         self.autoplaySettings = autoplaySettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.sitePermissionsDependenciesProvider = sitePermissionsDependenciesProvider
         self.addressBarURLFilter = addressBarURLFilter
         self.adBlockingAvailability = adBlockingAvailability
         self.eventHub = eventHub
@@ -1321,6 +1366,7 @@ class TabViewController: UIViewController {
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         instrumentation.willPrepareWebView()
+        let isReplacingWebView = webView != nil
 
         let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
                                                           privacyConfigurationManager: privacyConfigurationManager)
@@ -1333,6 +1379,14 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
+        sitePermissionsWebContentProcessGeneration &+= 1
+        sitePermissionsCommittedMainFrameURL = nil
+        isSitePermissionsMainFrameNavigationProvisional = false
+        sitePermissionsProvisionalNavigation = nil
+        if isReplacingWebView {
+            resetSitePermissionRequests(for: .webContentProcessReplacement)
+        }
+        sitePermissionsCoordinator?.observeMediaCapture(in: webView)
         if floatingUIManager.isFloatingUIEnabled {
             webView.scrollView.clipsToBounds = false
             webView.clipsToBounds = false
@@ -2319,6 +2373,9 @@ class TabViewController: UIViewController {
                 webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
             }
         }
+        MainActor.assumeIsolated {
+            closeSitePermissions()
+        }
         rulesCompilationMonitor.tabWillClose(tabModel.uid)
         eventHub.onTabClosed(tabID: eventHubTabID)
         removeObservers()
@@ -2385,6 +2442,11 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         pendingNativeLoadURL = nil
+        if webView === self.webView, isCurrentSitePermissionsProvisionalNavigation(navigation) {
+            sitePermissionsCommittedMainFrameURL = webView.url
+            isSitePermissionsMainFrameNavigationProvisional = false
+            sitePermissionsProvisionalNavigation = nil
+        }
         userScripts?.selectionFrameScript.reset()
         tabModel.clearPendingSessionRestoration()
 
@@ -2595,6 +2657,12 @@ extension TabViewController: WKNavigationDelegate {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
                 .navigationStarted(tabIdentifier: tabModel.uid, navigationKind: navigationKind)
             )
+        }
+        if webView === self.webView {
+            sitePermissionsNavigationGeneration &+= 1
+            isSitePermissionsMainFrameNavigationProvisional = true
+            sitePermissionsProvisionalNavigation = navigation
+            resetSitePermissionRequests(for: .navigation)
         }
         navigationPixelResponder.didStart(navigation)
         lastError = nil
@@ -3112,6 +3180,10 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         if #available(iOS 18.4, *) {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationFailed(tabIdentifier: tabModel.uid))
+        }
+        if webView === self.webView, isCurrentSitePermissionsProvisionalNavigation(navigation) {
+            isSitePermissionsMainFrameNavigationProvisional = false
+            sitePermissionsProvisionalNavigation = nil
         }
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         pendingNativeLoadURL = nil
@@ -4193,14 +4265,350 @@ extension TabViewController: WKUIDelegate {
                  initiatedByFrame frame: WKFrameInfo,
                  type: WKMediaCaptureType,
                  decisionHandler: @escaping (WKPermissionDecision) -> Void) {
-        guard origin.host.isDuckAIHost,
-              type == .microphone || type == .cameraAndMicrophone else {
+        if origin.host.isDuckAIHost {
+            guard type == .microphone || type == .cameraAndMicrophone else {
+                decisionHandler(.prompt)
+                return
+            }
+
+            let status = AVCaptureDevice.authorizationStatus(for: .audio)
+            decisionHandler(status == .authorized ? .grant : .deny)
+            return
+        }
+
+        guard featureFlagger.isFeatureOn(.sitePermissions) else {
             decisionHandler(.prompt)
             return
         }
 
-        let status = AVCaptureDevice.authorizationStatus(for: .audio)
-        decisionHandler(status == .authorized ? .grant : .deny)
+        guard webView === self.webView,
+              !isLinkPreview,
+              let permissionTypes = sitePermissionTypes(for: type),
+              let topLevelSite = currentSitePermissionKey(),
+              let dependencies = sitePermissionsDependenciesProvider(),
+              let coordinator = makeSitePermissionsCoordinatorIfNeeded(dependencies: dependencies) else {
+            decisionHandler(.deny)
+            return
+        }
+
+        nextSitePermissionRequestToken &+= 1
+        let requestToken = nextSitePermissionRequestToken
+        let context = SitePermissionRequestContext(
+            tabID: tabModel.uid,
+            topLevelSite: topLevelSite,
+            requestingFrameID: UInt64(UInt(bitPattern: ObjectIdentifier(frame))),
+            webContentProcessGeneration: sitePermissionsWebContentProcessGeneration,
+            navigationGeneration: sitePermissionsNavigationGeneration
+        )
+        pendingSitePermissionRequests[requestToken] = PendingSitePermissionRequest(
+            context: context,
+            frame: frame,
+            decisionHandler: decisionHandler
+        )
+
+        let promptHandler = sitePermissionsPromptHandlerOverride ?? { [weak self] prompt, completion in
+            guard let self else {
+                completion(.denyOnce)
+                return
+            }
+            presentSitePermissionDialog(prompt, completion: completion)
+        }
+
+        coordinator.request(
+            SitePermissionRequest(context: context, permissionTypes: permissionTypes),
+            promptHandler: promptHandler,
+            completion: { [weak self] resolution in
+                self?.resolveSitePermissionRequest(requestToken, with: resolution)
+            }
+        )
+    }
+
+    private func sitePermissionTypes(for captureType: WKMediaCaptureType) -> Set<SitePermissionType>? {
+        switch captureType {
+        case .camera:
+            return [.camera]
+        case .microphone:
+            return [.microphone]
+        case .cameraAndMicrophone:
+            return [.camera, .microphone]
+        @unknown default:
+            return nil
+        }
+    }
+
+    private func makeSitePermissionsCoordinatorIfNeeded(dependencies: SitePermissionsDependencies) -> SitePermissionsCoordinator? {
+        guard !areSitePermissionsClosed else { return nil }
+        if let sitePermissionsCoordinator {
+            return sitePermissionsCoordinator
+        }
+
+        sitePermissionsEventHandler = dependencies.eventHandler
+        let coordinator = SitePermissionsCoordinator(
+            store: dependencies.store,
+            systemPermissionClient: dependencies.systemPermissionClient,
+            isFireMode: tabModel.fireTab,
+            currentContext: { [weak self] tabID, requestingFrameID in
+                self?.currentSitePermissionContext(tabID: tabID, requestingFrameID: requestingFrameID)
+            },
+            recoveryHandler: { [weak self] recovery, completion in
+                guard let self else {
+                    completion()
+                    return
+                }
+                presentSitePermissionRecovery(recovery, completion: completion)
+            },
+            eventHandler: { [weak self] event in
+                self?.fireSitePermissionsEvent(event)
+            }
+        )
+        coordinator.observeMediaCapture(in: webView)
+        sitePermissionsCoordinator = coordinator
+        return coordinator
+    }
+
+    private func currentSitePermissionContext(tabID: String, requestingFrameID: UInt64) -> SitePermissionRequestContext? {
+        guard let pendingRequest = pendingSitePermissionRequests.values.first(where: {
+                  $0.context.tabID == tabID && $0.context.requestingFrameID == requestingFrameID
+              }) else {
+            return nil
+        }
+
+        // WKFrameInfo exposes identity but no public liveness API. Holding the exact frame object,
+        // together with navigation and process generations, is the strongest public validation;
+        // same-document iframe removal cannot be observed here.
+        let context = pendingRequest.context
+        guard tabID == tabModel.uid,
+              context.requestingFrameID == UInt64(UInt(bitPattern: ObjectIdentifier(pendingRequest.frame))),
+              context.webContentProcessGeneration == sitePermissionsWebContentProcessGeneration,
+              context.navigationGeneration == sitePermissionsNavigationGeneration,
+              context.topLevelSite == currentSitePermissionKey() else {
+            return nil
+        }
+        return context
+    }
+
+    private func currentSitePermissionKey() -> SitePermissionKey? {
+        guard !isSitePermissionsMainFrameNavigationProvisional else { return nil }
+        return sitePermissionsCommittedMainFrameURL.flatMap(SitePermissionKey.init(committedURL:))
+    }
+
+    private func isCurrentSitePermissionsProvisionalNavigation(_ navigation: WKNavigation?) -> Bool {
+        guard isSitePermissionsMainFrameNavigationProvisional else { return true }
+        switch (sitePermissionsProvisionalNavigation, navigation) {
+        case let (current?, callback?):
+            return current === callback
+        case (nil, nil):
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func presentSitePermissionDialog(_ prompt: SitePermissionPrompt,
+                                             completion: @escaping (SitePermissionPromptDecision) -> Void) {
+        guard let viewModel = SitePermissionDialogViewModel(prompt: prompt),
+              let pixelPermissionType = SitePermissionsEvent.PermissionType(prompt.permissionTypes) else {
+            completion(.denyOnce)
+            return
+        }
+
+        dismissSitePermissionDialog()
+        let dialog = SitePermissionDialogView(viewModel: viewModel) { [weak self] action in
+            guard let self else { return }
+            fireSitePermissionsEvent(.permissionDialogClick(type: pixelPermissionType,
+                                                             selection: pixelDialogSelection(for: action)))
+            dismissSitePermissionDialog()
+            completion(sitePermissionPromptDecision(for: action))
+        }
+        let hostingController = UIHostingController(rootView: dialog)
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.accessibilityViewIsModal = true
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        NSLayoutConstraint.activate([
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        hostingController.didMove(toParent: self)
+        sitePermissionsDialogHostingController = hostingController
+        fireSitePermissionsEvent(.permissionDialogImpression(type: pixelPermissionType))
+    }
+
+    private func presentSitePermissionRecovery(_ recovery: SitePermissionRecovery,
+                                               completion: @escaping () -> Void) {
+        nextSitePermissionsRecoveryToken &+= 1
+        let recoveryToken = nextSitePermissionsRecoveryToken
+        sitePermissionsRecoveryToken = recoveryToken
+        sitePermissionsRecoveryCompletion = completion
+
+        switch recovery {
+        case .toast(let permissionTypes):
+            guard let message = PermissionReminderDialogViewModel.sitePermissionToastMessage(for: permissionTypes) else {
+                finishSitePermissionRecovery(recoveryToken: recoveryToken)
+                return
+            }
+
+            let messageView = ActionMessageView.presentTracked(
+                message: message,
+                presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
+                onDidDismiss: { [weak self] in
+                    guard self?.sitePermissionsRecoveryToken == recoveryToken else { return }
+                    self?.sitePermissionsRecoveryMessageView = nil
+                    self?.finishSitePermissionRecovery(recoveryToken: recoveryToken)
+                }
+            )
+            guard let messageView else {
+                finishSitePermissionRecovery(recoveryToken: recoveryToken)
+                return
+            }
+            sitePermissionsRecoveryMessageView = messageView
+
+        case .reminder(let permissionTypes):
+            guard let viewModel = PermissionReminderDialogViewModel(sitePermissionTypes: permissionTypes),
+                  let pixelPermissionType = SitePermissionsEvent.PermissionType(permissionTypes) else {
+                finishSitePermissionRecovery(recoveryToken: recoveryToken)
+                return
+            }
+
+            let dialog = PermissionReminderDialogView(viewModel: viewModel) { [weak self] action in
+                guard let self else { return }
+                switch action {
+                case .changePermissions:
+                    fireSitePermissionsEvent(.permissionReminderDialog(type: pixelPermissionType, action: .settings))
+                    fireSitePermissionsEvent(.permissionSystemSettingsOpened(type: pixelPermissionType))
+                    dismissSitePermissionRecovery(recoveryToken: recoveryToken)
+                    openSitePermissionsSystemSettings()
+                case .cancel:
+                    fireSitePermissionsEvent(.permissionReminderDialog(type: pixelPermissionType, action: .cancel))
+                    dismissSitePermissionRecovery(recoveryToken: recoveryToken)
+                case .hideVoiceSearch:
+                    assertionFailure("Hide Voice Search is not available in a site permission reminder")
+                    dismissSitePermissionRecovery(recoveryToken: recoveryToken)
+                }
+            }
+            let hostingController = UIHostingController(rootView: dialog)
+            hostingController.view.backgroundColor = .clear
+            hostingController.view.accessibilityViewIsModal = true
+            hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+            addChild(hostingController)
+            view.addSubview(hostingController.view)
+            NSLayoutConstraint.activate([
+                hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+                hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
+            hostingController.didMove(toParent: self)
+            sitePermissionsRecoveryHostingController = hostingController
+            fireSitePermissionsEvent(.permissionReminderDialog(type: pixelPermissionType, action: .shown))
+        }
+    }
+
+    private func sitePermissionPromptDecision(for action: SitePermissionDialogAction) -> SitePermissionPromptDecision {
+        switch action {
+        case .allowOnce:
+            return .allowOnce
+        case .allowWhileUsingSite:
+            return .allowWhileUsingSite
+        case .neverAllow:
+            return .neverAllow
+        }
+    }
+
+    private func pixelDialogSelection(for action: SitePermissionDialogAction) -> SitePermissionsEvent.DialogSelection {
+        switch action {
+        case .allowOnce:
+            return .allowOnce
+        case .allowWhileUsingSite:
+            return .allowAlways
+        case .neverAllow:
+            return .never
+        }
+    }
+
+    private func fireSitePermissionsEvent(_ event: SitePermissionsEvent) {
+        sitePermissionsEventHandler(event)
+    }
+
+    private func openSitePermissionsSystemSettings() {
+        if let sitePermissionsSystemSettingsOpenerOverride {
+            sitePermissionsSystemSettingsOpenerOverride()
+            return
+        }
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
+    private func dismissSitePermissionDialog() {
+        guard let hostingController = sitePermissionsDialogHostingController else { return }
+        hostingController.willMove(toParent: nil)
+        hostingController.view.removeFromSuperview()
+        hostingController.removeFromParent()
+        sitePermissionsDialogHostingController = nil
+    }
+
+    private func dismissSitePermissionRecovery(recoveryToken: UInt? = nil) {
+        let recoveryToken = recoveryToken ?? sitePermissionsRecoveryToken
+        guard let recoveryToken, recoveryToken == sitePermissionsRecoveryToken else { return }
+
+        if let messageView = sitePermissionsRecoveryMessageView {
+            messageView.dismissAndFadeOut()
+            return
+        }
+
+        if let hostingController = sitePermissionsRecoveryHostingController {
+            hostingController.willMove(toParent: nil)
+            hostingController.view.removeFromSuperview()
+            hostingController.removeFromParent()
+            sitePermissionsRecoveryHostingController = nil
+        }
+        finishSitePermissionRecovery(recoveryToken: recoveryToken)
+    }
+
+    private func finishSitePermissionRecovery(recoveryToken: UInt) {
+        guard recoveryToken == sitePermissionsRecoveryToken else { return }
+        let completion = sitePermissionsRecoveryCompletion
+        sitePermissionsRecoveryCompletion = nil
+        sitePermissionsRecoveryToken = nil
+        completion?()
+    }
+
+    private func resolveSitePermissionRequest(_ requestToken: UInt64, with resolution: SitePermissionResolution) {
+        guard let pendingRequest = pendingSitePermissionRequests.removeValue(forKey: requestToken) else { return }
+
+        switch resolution {
+        case .grant:
+            pendingRequest.decisionHandler(.grant)
+        case .deny:
+            pendingRequest.decisionHandler(.deny)
+        }
+    }
+
+    private func resetSitePermissionRequests(for pageChange: SitePermissionPageChange) {
+        dismissSitePermissionDialog()
+        sitePermissionsCoordinator?.pageDidChange(pageChange)
+        dismissSitePermissionRecovery()
+        denyPendingSitePermissionRequests()
+    }
+
+    private func denyPendingSitePermissionRequests() {
+        let decisionHandlers = pendingSitePermissionRequests.values.map(\.decisionHandler)
+        pendingSitePermissionRequests.removeAll()
+        decisionHandlers.forEach { $0(.deny) }
+    }
+
+    func closeSitePermissions() {
+        areSitePermissionsClosed = true
+        dismissSitePermissionDialog()
+        sitePermissionsCoordinator?.close()
+        dismissSitePermissionRecovery()
+        sitePermissionsCoordinator = nil
+        denyPendingSitePermissionRequests()
     }
 
     func webViewDidClose(_ webView: WKWebView) {
@@ -4223,6 +4631,13 @@ extension TabViewController: WKUIDelegate {
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
         if #available(iOS 18.4, *) {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.webContentProcessTerminated(tabIdentifier: tabModel.uid))
+        }
+        if webView === self.webView {
+            sitePermissionsWebContentProcessGeneration &+= 1
+            sitePermissionsCommittedMainFrameURL = nil
+            isSitePermissionsMainFrameNavigationProvisional = false
+            sitePermissionsProvisionalNavigation = nil
+            resetSitePermissionRequests(for: .webContentProcessReplacement)
         }
         userScripts?.selectionFrameScript.reset()
 

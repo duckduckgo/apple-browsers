@@ -117,13 +117,13 @@ final class AIChatUsageWarningRingView: NSView {
         }
     }
 
-    /// Same three steps as iOS, under this platform's palette names: macOS is on the newer palette,
-    /// where the icon colour gained a `Primary` suffix and destructive split into fill and content.
+    /// Same three steps as iOS, under this platform's palette names. `destructivePrimary` is the red
+    /// itself; `destructiveContentPrimary` is what gets drawn *on* it, and is white.
     private static func progressColor(for severity: DuckAiUsageSeverity) -> DesignSystemColor {
         switch severity {
         case .info: return .iconsPrimary
         case .warning: return .alertYellow
-        case .critical, .reached: return .destructiveContentPrimary
+        case .critical, .reached: return .destructivePrimary
         }
     }
 }

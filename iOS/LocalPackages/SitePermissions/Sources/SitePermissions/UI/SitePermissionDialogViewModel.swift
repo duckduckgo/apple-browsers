@@ -63,6 +63,8 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
     enum Icon: Equatable, Sendable {
         case camera
         case microphone
+        case location
+        case duckDuckGo
     }
 
     public var title: String { title(domain: domain) }
@@ -72,10 +74,12 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
     let domain: String
     let permissionTypes: Set<SitePermissionType>
     let icon: Icon?
+    let isDuckDuckGoSERP: Bool
 
-    public init?(prompt: SitePermissionPrompt) {
+    public init?(prompt: SitePermissionPrompt, isDuckDuckGoSERP: Bool = false) {
         domain = prompt.site.host
         permissionTypes = prompt.permissionTypes
+        self.isDuckDuckGoSERP = isDuckDuckGoSERP && prompt.permissionTypes == [.location]
         switch prompt.permissionTypes {
         case [.camera]:
             icon = .camera
@@ -83,11 +87,13 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
             icon = .microphone
         case [.camera, .microphone]:
             icon = nil
+        case [.location]:
+            icon = self.isDuckDuckGoSERP ? .duckDuckGo : .location
         default:
             return nil
         }
 
-        body = nil
+        body = self.isDuckDuckGoSERP ? UserText.PermissionDialog.duckDuckGoSERPLocationBody : nil
         actions = [
             ActionItem(action: .allowOnce, title: UserText.PermissionDialog.allowOnce),
             ActionItem(action: .allowWhileUsingSite, title: UserText.PermissionDialog.allowWhileUsingSite),
@@ -103,6 +109,10 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
             return UserText.PermissionDialog.microphoneTitle(domain: domain)
         case [.camera, .microphone]:
             return UserText.PermissionDialog.cameraAndMicrophoneTitle(domain: domain)
+        case [.location] where isDuckDuckGoSERP:
+            return UserText.PermissionDialog.duckDuckGoSERPLocationTitle
+        case [.location]:
+            return UserText.PermissionDialog.locationTitle(domain: domain)
         default:
             assertionFailure("Unsupported permission dialog variant")
             return ""

@@ -1542,6 +1542,7 @@ class TabViewController: UIViewController {
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
 
+        prepareSitePermissionsForDataClearing()
         webView.navigationDelegate = nil
         webView.uiDelegate = nil
         delegate = nil
@@ -2469,6 +2470,10 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        if webView === self.webView {
+            captureSitePermissionsGeolocationPolicy(from: navigationResponse.response,
+                                                     isForMainFrame: navigationResponse.isForMainFrame)
+        }
         let httpResponse = navigationResponse.response as? HTTPURLResponse
         let didMarkAsInternal = internalUserDecider.markUserAsInternalIfNeeded(forUrl: webView.url, response: httpResponse)
         if didMarkAsInternal {
@@ -3493,8 +3498,12 @@ extension TabViewController: WKNavigationDelegate {
 
     private func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor () -> Void) -> Bool {
         // Ensure Content Blocking Assets (WKContentRuleList&UserScripts) are installed
-        if userContentController.contentBlockingAssetsInstalled
-            || !privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) {
+        let shouldWait = Self.shouldWaitForContentBlockingAssets(
+            assetsInstalled: userContentController.contentBlockingAssetsInstalled,
+            contentBlockingEnabled: privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking),
+            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions)
+        )
+        if !shouldWait {
 
             rulesCompilationMonitor.reportNavigationDidNotWaitForRules()
             return false
@@ -4472,6 +4481,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
+        configureSitePermissionsGeolocation(with: userScripts.geolocationUserScript)
         
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
         userScripts.aiChatUserScript.setFocusChatInputHandler { [weak self] in

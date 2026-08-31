@@ -32,6 +32,7 @@ public struct SitePermissionDialogView: View {
         static let iconContainerSize: CGFloat = 48
         static let iconContainerCornerRadius: CGFloat = 12
         static let headerSpacing: CGFloat = 16
+        static let bodySpacing: CGFloat = 8
         static let actionsTopPadding: CGFloat = 24
         static let buttonSpacing: CGFloat = 8
         static let cardHorizontalPadding: CGFloat = 14
@@ -56,7 +57,17 @@ public struct SitePermissionDialogView: View {
                     if let icon = viewModel.icon {
                         iconView(for: icon)
                     }
-                    title
+                    VStack(alignment: .leading, spacing: Constants.bodySpacing) {
+                        title
+                        if let body = viewModel.body {
+                            Text(body)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("SitePermissions.Dialog.Body")
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Constants.contentHorizontalPadding)
@@ -116,8 +127,8 @@ public struct SitePermissionDialogView: View {
     }
 
     private func iconView(for icon: SitePermissionDialogViewModel.Icon) -> some View {
-        Image(systemName: systemImageName(for: icon))
-            .renderingMode(.template)
+        image(for: icon)
+            .renderingMode(icon == .duckDuckGo ? .original : .template)
             .resizable()
             .scaledToFit()
             .frame(width: Constants.iconSize, height: Constants.iconSize)
@@ -130,15 +141,19 @@ public struct SitePermissionDialogView: View {
             .accessibilityHidden(true)
     }
 
-    private func systemImageName(for icon: SitePermissionDialogViewModel.Icon) -> String {
+    private func image(for icon: SitePermissionDialogViewModel.Icon) -> Image {
         switch icon {
         case .camera:
-            return "video"
+            return Image(systemName: "video")
         case .microphone:
             if #available(iOS 18.0, *) {
-                return "microphone"
+                return Image(systemName: "microphone")
             }
-            return "mic"
+            return Image(systemName: "mic")
+        case .location:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.location)
+        case .duckDuckGo:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.duckDuckGoDaxColor)
         }
     }
 

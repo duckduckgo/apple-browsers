@@ -62,6 +62,7 @@ let package = Package(
             name: "SitePermissionsTests",
             dependencies: [
                 "SitePermissions",
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "Persistence")
             ]
         )

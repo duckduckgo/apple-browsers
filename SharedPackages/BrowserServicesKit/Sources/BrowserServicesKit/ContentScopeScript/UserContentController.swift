@@ -377,7 +377,7 @@ public extension UserContentController {
 }
 
 /// Script Message Handler only added once per UserScriptController for all the Message Names (to avoid race conditions for re-added User Scripts)
-private class PermanentScriptMessageHandler: NSObject, WKScriptMessageHandler, WKScriptMessageHandlerWithReply {
+final class PermanentScriptMessageHandler: NSObject, WKScriptMessageHandler, WKScriptMessageHandlerWithReply {
 
     private struct WeakScriptMessageHandlerBox {
         weak var handler: WKScriptMessageHandler?
@@ -418,15 +418,18 @@ private class PermanentScriptMessageHandler: NSObject, WKScriptMessageHandler, W
 
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let box = self.registeredMessageHandlers[message.messageName] else {
-            assertionFailure("no registered message handler for \(message.messageName)")
+            replyHandler(nil, "Script message handler is unavailable")
             return
         }
         guard let handler = box.handler else {
-            assertionFailure("handler for \(message.messageName) has been unregistered")
+            replyHandler(nil, "Script message handler is unavailable")
             return
         }
-        assert(handler is WKScriptMessageHandlerWithReply)
-        (handler as? WKScriptMessageHandlerWithReply)?.userContentController(userContentController, didReceive: message, replyHandler: replyHandler)
+        guard let handler = handler as? WKScriptMessageHandlerWithReply else {
+            replyHandler(nil, "Script message handler does not support replies")
+            return
+        }
+        handler.userContentController(userContentController, didReceive: message, replyHandler: replyHandler)
     }
 
 }

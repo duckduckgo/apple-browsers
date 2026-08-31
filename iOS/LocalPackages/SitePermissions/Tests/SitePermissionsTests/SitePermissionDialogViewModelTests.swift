@@ -49,9 +49,27 @@ final class SitePermissionDialogViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.actions.map(\.action), [.allowOnce, .allowWhileUsingSite, .neverAllow])
     }
 
+    func testLocationPromptUsesLocationCopyAndIcon() throws {
+        let viewModel = try XCTUnwrap(SitePermissionDialogViewModel(prompt: prompt(for: [.location])))
+
+        XCTAssertEqual(viewModel.title, "“example.com” website wants to access your location")
+        XCTAssertNil(viewModel.body)
+        XCTAssertEqual(viewModel.icon, .location)
+        XCTAssertEqual(viewModel.actions.map(\.action), [.allowOnce, .allowWhileUsingSite, .neverAllow])
+    }
+
+    func testDuckDuckGoSERPLocationPromptUsesLiteralDomainBodyAndColorLogo() throws {
+        let viewModel = try XCTUnwrap(SitePermissionDialogViewModel(prompt: prompt(for: [.location]), isDuckDuckGoSERP: true))
+
+        XCTAssertEqual(viewModel.title, "“duckduckgo.com” wants to access your location")
+        XCTAssertEqual(viewModel.body, "We’ll anonymize your location and use it to deliver better results, closer to you.")
+        XCTAssertEqual(viewModel.icon, .duckDuckGo)
+        XCTAssertEqual(viewModel.actions.map(\.action), [.allowOnce, .allowWhileUsingSite, .neverAllow])
+    }
+
     func testUnsupportedPromptVariantsAreRejected() {
         XCTAssertNil(SitePermissionDialogViewModel(prompt: prompt(for: [])))
-        XCTAssertNil(SitePermissionDialogViewModel(prompt: prompt(for: [.location])))
+        XCTAssertNil(SitePermissionDialogViewModel(prompt: prompt(for: [.camera, .location])))
     }
 
     func testWhenDialogActionsAreSelectedThenDecisionsAndPixelSelectionsMatch() {

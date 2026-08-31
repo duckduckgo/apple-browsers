@@ -101,6 +101,12 @@ public enum SitePermissionResolution: Equatable, Sendable {
     case deny(systemBlocks: [SitePermissionSystemBlock])
 }
 
+public enum SitePermissionQueryState: String, Equatable, Sendable {
+    case prompt
+    case granted
+    case denied
+}
+
 public enum SitePermissionRecovery: Equatable, Sendable {
     case toast(permissionTypes: Set<SitePermissionType>)
     case reminder(permissionTypes: Set<SitePermissionType>)
@@ -221,6 +227,26 @@ public final class SitePermissionsCoordinator {
             completion(.deny(systemBlocks: []))
         case .allow, .prompt:
             enqueue(request, promptHandler: promptHandler, completion: completion)
+        }
+    }
+
+    /// Returns the synchronous Permissions API state using the same precedence as a real request.
+    /// This intentionally has no queueing, prompting, persistence, or management-state effects.
+    public func queryState(for permissionType: SitePermissionType,
+                           context: SitePermissionRequestContext) -> SitePermissionQueryState {
+        guard !isClosed,
+              isValid(context) else {
+            return .denied
+        }
+
+        let request = SitePermissionRequest(context: context, permissionTypes: [permissionType])
+        switch disposition(for: request) {
+        case .deny:
+            return .denied
+        case .prompt:
+            return .prompt
+        case .allow:
+            return authorizationState(permissionType) == .authorized ? .granted : .denied
         }
     }
 

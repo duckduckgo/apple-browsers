@@ -23,6 +23,7 @@ import Core
 import TrackerRadarKit
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
+@testable import SitePermissions
 @testable import DuckDuckGo
 
 class FireproofingMock: Fireproofing {
@@ -86,6 +87,68 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             waitForExpectations(timeout: 5, handler: nil)
             updating.stopUpdates()
         }
+    }
+
+    func testSitePermissionsWaitsForUserScriptsWhenContentBlockingIsDisabled() {
+        XCTAssertTrue(TabViewController.shouldWaitForContentBlockingAssets(
+            assetsInstalled: false,
+            contentBlockingEnabled: false,
+            sitePermissionsEnabled: true
+        ))
+        XCTAssertFalse(TabViewController.shouldWaitForContentBlockingAssets(
+            assetsInstalled: false,
+            contentBlockingEnabled: false,
+            sitePermissionsEnabled: false
+        ))
+        XCTAssertFalse(TabViewController.shouldWaitForContentBlockingAssets(
+            assetsInstalled: true,
+            contentBlockingEnabled: true,
+            sitePermissionsEnabled: true
+        ))
+    }
+
+    @MainActor
+    func testGeolocationUserScriptRegistrationFollowsSitePermissionsFlag() {
+        let sourceProvider = makeScriptSourceProvider()
+
+        let disabledScripts = UserScripts(
+            with: sourceProvider,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [])
+        )
+        XCTAssertNil(disabledScripts.geolocationUserScript)
+        XCTAssertFalse(disabledScripts.userScripts.contains { $0 is GeolocationUserScript })
+
+        let geolocationUserScript = GeolocationUserScript()
+        let enabledScripts = UserScripts(
+            with: sourceProvider,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
+            geolocationUserScript: geolocationUserScript
+        )
+        XCTAssertTrue(enabledScripts.geolocationUserScript === geolocationUserScript)
+        XCTAssertTrue(enabledScripts.userScripts.contains { ($0 as? GeolocationUserScript) === geolocationUserScript })
+
+        let tabEnabledWithDifferentGlobalFlag = UserScripts(
+            with: sourceProvider,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            sitePermissionsEnabled: true,
+            geolocationUserScript: geolocationUserScript
+        )
+        XCTAssertTrue(tabEnabledWithDifferentGlobalFlag.geolocationUserScript === geolocationUserScript)
+
+        let tabDisabledWithDifferentGlobalFlag = UserScripts(
+            with: sourceProvider,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions]),
+            sitePermissionsEnabled: false,
+            geolocationUserScript: geolocationUserScript
+        )
+        XCTAssertNil(tabDisabledWithDifferentGlobalFlag.geolocationUserScript)
+
+        let nonTabScripts = UserScripts(
+            with: sourceProvider,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        )
+        XCTAssertNil(nonTabScripts.geolocationUserScript)
+        XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationUserScript })
     }
 
     func testWhenRuleListIsRecompiledThenUpdatesAreReceived() {
@@ -286,6 +349,18 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     // MARK: - Test data
+
+    private func makeScriptSourceProvider() -> DefaultScriptSourceProvider {
+        DefaultScriptSourceProvider(dependencies: .init(appSettings: appSettings,
+                                                         sync: MockDDGSyncing(),
+                                                         privacyConfigurationManager: configManager,
+                                                         contentBlockingManager: rulesManager,
+                                                         fireproofing: FireproofingMock(),
+                                                         contentScopeExperimentsManager: MockContentScopeExperimentManager(),
+                                                         internalUserDecider: MockInternalUserDecider(),
+                                                         syncErrorHandler: CapturingAdapterErrorHandler(),
+                                                         webExtensionAvailability: nil))
+    }
 
     static let tracker = KnownTracker(domain: "tracker.com",
                                defaultAction: .block,

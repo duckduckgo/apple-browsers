@@ -109,6 +109,7 @@ protocol OnboardingActionsManaging {
 
 protocol OnboardingNavigating: AnyObject {
     func replaceTabWith(_ tab: Tab)
+    func replaceOnboardingTabWith(_ tab: Tab)
     func focusOnAddressBar()
     func showImportDataView()
     func updatePreventUserInteraction(prevent: Bool)
@@ -168,7 +169,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
         let excludedSteps = buildExcludedSteps()
 
-        let showSkip = featureFlagger.isFeatureOn(.onboardingSkipOption)
+        let showSkip: Bool? = featureFlagger.isFeatureOn(.onboardingSkipOption) ? true : nil
 
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
                                        exclude: excludedSteps,
@@ -295,6 +296,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     @MainActor
     func goToAddressBar() {
         onboardingHasFinished()
+        navigation.setOnboardingTabCloseInterceptor(nil)
         let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
         navigation.replaceTabWith(tab)
 
@@ -309,6 +311,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     @MainActor
     func goToSettings() {
         onboardingHasFinished()
+        navigation.setOnboardingTabCloseInterceptor(nil)
         let tab = Tab(content: .settings(pane: nil))
         navigation.replaceTabWith(tab)
     }
@@ -324,7 +327,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
         PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
         let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
-        navigation.replaceTabWith(tab)
+        navigation.replaceOnboardingTabWith(tab)
 
         tab.navigationDidEndPublisher
             .first()

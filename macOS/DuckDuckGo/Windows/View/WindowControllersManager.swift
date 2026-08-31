@@ -127,6 +127,8 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
+    private weak var onboardingTab: Tab?
+
     /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
     /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
     /// `self` (the `WindowControllersManager` is its source of truth for tab membership).
@@ -650,12 +652,29 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     func setOnboardingTabCloseInterceptor(_ interceptor: (@MainActor () -> Bool)?) {
-        selectedTab?.closeInterceptor = interceptor
+        if let interceptor {
+            onboardingTab = selectedTab
+            onboardingTab?.closeInterceptor = interceptor
+        } else {
+            onboardingTab?.closeInterceptor = nil
+            onboardingTab = nil
+        }
+    }
+
+    @MainActor
+    func replaceOnboardingTabWith(_ tab: Tab) {
+        guard let tabToRemove = onboardingTab else { return }
+        replaceTab(tabToRemove, with: tab)
     }
 
     @MainActor
     func replaceTabWith(_ tab: Tab) {
         guard let tabToRemove = selectedTab else { return }
+        replaceTab(tabToRemove, with: tab)
+    }
+
+    @MainActor
+    private func replaceTab(_ tabToRemove: Tab, with tab: Tab) {
         guard let mainWindowController else { return }
         guard let index = mainWindowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return }
         var tabToAppend = tab

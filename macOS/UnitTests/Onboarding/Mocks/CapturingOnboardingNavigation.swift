@@ -32,6 +32,13 @@ class CapturingOnboardingNavigation: OnboardingNavigating {
         replaceTabCalled = true
     }
 
+    var replaceOnboardingTabCalled = false
+
+    func replaceOnboardingTabWith(_ tab: Tab) {
+        self.tab = tab
+        replaceOnboardingTabCalled = true
+    }
+
     func focusOnAddressBar() {
         focusOnAddressBarCalled = true
     }

@@ -400,7 +400,7 @@ enum GeneralPixel: PixelKit.Event {
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
     case dbValueTransformerRegistrationError
-    case dbKeychainUnavailableAlertShown
+    case dbKeychainUnavailableTermination
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
     case dbSaveBloomFilterError(error: Error?)
 
@@ -1149,8 +1149,8 @@ enum GeneralPixel: PixelKit.Event {
             return "dbie"
         case .dbValueTransformerRegistrationError:
             return "db_value_transformer_registration_error"
-        case .dbKeychainUnavailableAlertShown:
-            return "db_keychain_unavailable_alert_shown"
+        case .dbKeychainUnavailableTermination:
+            return "db_keychain_unavailable_termination"
         case .dbSaveExcludedHTTPSDomainsError:
             return "database_save_excluded_https_domains_error"
         case .dbSaveBloomFilterError:
@@ -1863,7 +1863,7 @@ enum GeneralPixel: PixelKit.Event {
                 .dbContainerInitializationError,
                 .dbInitializationError,
                 .dbValueTransformerRegistrationError,
-                .dbKeychainUnavailableAlertShown,
+                .dbKeychainUnavailableTermination,
                 .dbSaveExcludedHTTPSDomainsError,
                 .dbSaveBloomFilterError,
                 .remoteMessagingSaveConfigError,

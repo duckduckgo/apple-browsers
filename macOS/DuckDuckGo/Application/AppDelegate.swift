@@ -34,6 +34,7 @@ import Configuration
 import ContentScopeScripts
 import CoreData
 import Crashes
+import CryptoKit
 import CrashReportingShared
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
@@ -512,11 +513,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
-        do {
-            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
+        var commonDatabase: Database?
+
+        if AppVersion.runType.requiresEnvironment {
+            Self.configurePixelKit(isInternalUser: false)
+
+            let (encryptionKey, db) = Self.createDatabaseRetryingKeychainAccess(
+                keyStore: keyStore,
+                startupProfiler: startupProfiler
+            )
+
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-        } catch {
-            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
+            commonDatabase = db
+        } else {
             fileStore = EncryptedFileStore()
         }
 
@@ -543,8 +552,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDatabase = BookmarkDatabase()
 
         if AppVersion.runType.requiresEnvironment {
-            let commonDatabase = Self.createDatabaseRetryingKeychainAccess(startupProfiler: startupProfiler)
-            database = commonDatabase
+            // Always set above when `requiresEnvironment`, or the app has already terminated.
+            let db = commonDatabase!
+            database = db
 
             database.db.loadStore { _, error in
                 guard let error = error else { return }
@@ -579,7 +589,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     fatalError("Could not create Bookmarks database stack: \(error?.localizedDescription ?? "err")")
                 }
 
-                let legacyDB = commonDatabase.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
+                let legacyDB = db.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
                 legacyDB.performAndWait {
                     LegacyBookmarksStoreMigration.setupAndMigrate(from: legacyDB, to: context)
                 }
@@ -2536,16 +2546,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Keychain availability
 
     /// When launched as a login item the Keychain may not be unlocked yet.
-    /// Retry for up to ~10 s to give loginwindow time to unlock it, then
-    /// show an alert and exit cleanly.
-    private static func createDatabaseRetryingKeychainAccess(startupProfiler: StartupProfiler) -> Database {
+    /// Retry for up to ~10 s to give loginwindow time to unlock it.
+    private static func createDatabaseRetryingKeychainAccess(
+        keyStore: EncryptionKeyStoring,
+        startupProfiler: StartupProfiler
+    ) -> (encryptionKey: SymmetricKey, database: Database) {
         let maxAttempts = 6
         for attempt in 1...maxAttempts {
             do {
-                return try Database()
+                let key = try keyStore.readKey()
+                let db = try Database()
+                return (key, db)
             } catch {
                 guard attempt < maxAttempts else {
-                    presentKeychainUnavailableAndTerminate(error: error)
+                    crashAfterKeychainRetryExhausted(error: error)
                 }
                 startupProfiler.invalidate()
                 Thread.sleep(forTimeInterval: 2)
@@ -2554,14 +2568,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fatalError()
     }
 
-    private static func presentKeychainUnavailableAndTerminate(error: Error) -> Never {
+    private static func crashAfterKeychainRetryExhausted(error: Error) -> Never {
         let underlyingError = (error as? Database.KeychainUnavailableError)?.underlying ?? error
         PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: underlyingError), frequency: .dailyAndCount)
-        PixelKit.fire(GeneralPixel.dbKeychainUnavailableAlertShown, frequency: .standard)
-
-        NSApp.activate(ignoringOtherApps: true)
-        NSAlert.keychainUnavailable().runModal()
-        exit(0)
+        PixelKit.fire(GeneralPixel.dbKeychainUnavailableTermination, frequency: .standard)
+        Thread.sleep(forTimeInterval: 1)
+        fatalError("Keychain unavailable after retrying: \(underlyingError.localizedDescription)")
     }
 }
 

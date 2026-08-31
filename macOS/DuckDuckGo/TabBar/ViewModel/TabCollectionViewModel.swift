@@ -647,10 +647,16 @@ final class TabCollectionViewModel: NSObject {
     private func removeUnpinnedTab(at index: Int, published: Bool = true, forceChange: Bool = false, reason: TabCloseReason = .programmatic) {
         guard changesEnabled || forceChange else { return }
 
-        if reason == .userInitiated,
-           case .loaded(let tab) = tabCollection.tabs[safe: index],
-           let interceptor = tab.closeInterceptor, interceptor(.userInitiated) {
-            return
+        if case .loaded(let tab) = tabCollection.tabs[safe: index], let interceptor = tab.closeInterceptor {
+            switch reason {
+            case .userInitiated:
+                if interceptor(.userInitiated) { return }
+            case .bulk:
+                // Side effects only — a bulk removal is not the interceptor's to cancel.
+                _ = interceptor(.bulk)
+            case .programmatic:
+                break
+            }
         }
 
         let removedTab = tabCollection.tabs[safe: index]
@@ -848,7 +854,7 @@ final class TabCollectionViewModel: NSObject {
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
-    func removeSelected(forceChange: Bool = false) -> Result<Void, Error> {
+    func removeSelected(forceChange: Bool = false, reason: TabCloseReason = .programmatic) -> Result<Void, Error> {
         guard changesEnabled || forceChange else { return .success(()) }
 
         guard let selectionIndex else {
@@ -856,7 +862,7 @@ final class TabCollectionViewModel: NSObject {
             return .failure(TabCollectionViewModelError.noTabSelected)
         }
 
-        remove(at: selectionIndex, forceChange: forceChange)
+        remove(at: selectionIndex, forceChange: forceChange, reason: reason)
         return .success(())
     }
 

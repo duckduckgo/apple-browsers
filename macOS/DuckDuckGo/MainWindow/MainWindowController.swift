@@ -169,11 +169,20 @@ final class MainWindowController: NSWindowController {
             return
         }
 
+        let isAsync = featureFlagger?.isFeatureOn(.onboardingAsync) == true
+
+        // Async onboarding leaves the UI unlocked, so a second window can open while the first is
+        // still onboarding. Only one tab hosts it at a time, otherwise the later window takes over
+        // the tracking and the earlier one is left onboarding with nothing listening.
+        if isAsync, Application.appDelegate.windowControllersManager.hasOnboardingTab {
+            return
+        }
+
         selectedTab.startOnboarding()
 
-        if featureFlagger?.isFeatureOn(.onboardingAsync) == true {
-            // Async onboarding leaves the UI unlocked, so the selected tab can change before the
-            // onboarding page loads. Record the tab now, while it is still unambiguous.
+        if isAsync {
+            // The selected tab can change before the onboarding page loads, so record it now, while
+            // it is still unambiguous.
             Application.appDelegate.windowControllersManager.setOnboardingTab(selectedTab)
         } else {
             // During Onboarding, several UI elements get disabled. In order to prevent flickering,

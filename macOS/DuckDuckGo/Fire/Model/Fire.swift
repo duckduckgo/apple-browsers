@@ -1132,7 +1132,7 @@ final class Fire: FireProtocol {
                         // If closing last Window's last Tab: Insert a new tab to prevent key window closing:
                         _=insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
                     }
-                    let result = tabCollectionViewModel.removeSelected(forceChange: true)
+                    let result = tabCollectionViewModel.removeSelected(forceChange: true, reason: .bulk)
                     measureError(result)
                 }
             }

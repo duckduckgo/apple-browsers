@@ -651,6 +651,11 @@ extension WindowControllersManager: OnboardingNavigating {
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
     }
 
+    /// Whether a tab is already hosting async onboarding. The reference is weak, so this goes back to
+    /// `false` on its own once that tab is gone.
+    @MainActor
+    var hasOnboardingTab: Bool { onboardingTab != nil }
+
     /// Records the tab hosting onboarding. Called at window setup, where the tab is unambiguous —
     /// `selectedTab` is not reliable later, because async onboarding lets the user switch tabs
     /// before the onboarding page finishes loading.
@@ -714,16 +719,18 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     private func replaceTab(_ tabToRemove: Tab, with tab: Tab) {
-        guard let mainWindowController else { return }
-        guard let index = mainWindowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return }
+        // Resolve the window that actually holds the tab, not whichever one is key — otherwise the
+        // index lookup below searches the wrong collection and silently gives up.
+        guard let windowController = windowController(containing: tabToRemove) ?? mainWindowController else { return }
+        guard let index = windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return }
         var tabToAppend = tab
-        if mainWindowController.mainViewController.isBurner {
-            let burnerMode = mainWindowController.mainViewController.tabCollectionViewModel.burnerMode
+        if windowController.mainViewController.isBurner {
+            let burnerMode = windowController.mainViewController.tabCollectionViewModel.burnerMode
             tabToAppend = Tab(content: tab.content, burnerMode: burnerMode)
         }
         // Append before remove: the tab count must never hit zero, or the window closes.
-        mainWindowController.mainViewController.tabCollectionViewModel.append(tab: tabToAppend)
-        mainWindowController.mainViewController.tabCollectionViewModel.remove(at: index)
+        windowController.mainViewController.tabCollectionViewModel.append(tab: tabToAppend)
+        windowController.mainViewController.tabCollectionViewModel.remove(at: index)
     }
 
     @MainActor

@@ -513,27 +513,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
-        // Held as a local so the Bookmarks migration closure below can use it without
-        // capturing `self` while this initializer still has properties to assign.
-        let commonDatabase: Database?
-
         if AppVersion.runType.requiresEnvironment {
-            // Set up PixelKit before the Keychain retry so that its failure path can
-            // report. Reconfigured below once the internal user decider is known; the
-            // retry only fires a pixel on the path that crashes, so it never reports
-            // under the provisional value.
-            Self.configurePixelKit(isInternalUser: false)
-
-            let (encryptionKey, database) = Self.createDatabaseRetryingKeychainAccess(
-                keyStore: keyStore,
-                startupProfiler: startupProfiler
-            )
-
+            let encryptionKey = Self.readEncryptionKeyRetryingKeychainAccess(keyStore: keyStore,
+                                                                            startupProfiler: startupProfiler)
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-            commonDatabase = database
         } else {
             fileStore = EncryptedFileStore()
-            commonDatabase = nil
         }
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
@@ -558,7 +543,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         bookmarkDatabase = BookmarkDatabase()
 
-        if let commonDatabase {
+        if AppVersion.runType.requiresEnvironment {
+            let commonDatabase = Database()
             database = commonDatabase
 
             database.db.loadStore { _, error in
@@ -2551,51 +2537,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Keychain availability
 
     /// When launched as a login item the Keychain may not be unlocked yet.
-    /// Retry for up to ~60 s to give loginwindow time to unlock it.
+    /// Retry for up to 60 s to give loginwindow time to unlock it.
     ///
-    /// Both the key and the database are produced here because `Database()`
-    /// reads the same key internally, via `registerValueTransformers` ->
-    /// `EncryptedValueTransformer.registerTransformer`. Reading the key outside
-    /// this loop would let it fail while the retried `Database()` still
-    /// succeeds, leaving the caller to build a keyless file store that
-    /// persists app state in plaintext.
-    private static func createDatabaseRetryingKeychainAccess(
+    /// Waiting here is also what keeps `Database()` from crashing further down: it reads
+    /// the same Keychain item through `registerValueTransformers`, so by the time it runs
+    /// the Keychain has had the full window to become available.
+    private static func readEncryptionKeyRetryingKeychainAccess(
         keyStore: EncryptionKeyStoring,
         startupProfiler: StartupProfiler
-    ) -> (encryptionKey: SymmetricKey, database: Database) {
+    ) -> SymmetricKey? {
         let retryInterval: TimeInterval = 6
-        let maxAttempts = 11
-        for attempt in 1...maxAttempts {
-            do {
-                let key = try keyStore.readKey()
-                let db = try Database()
-                return (key, db)
-            } catch {
-                let underlyingError = (error as? Database.KeychainUnavailableError)?.underlying ?? error
+        let deadline = Date().addingTimeInterval(60)
 
+        while true {
+            do {
+                return try keyStore.readKey()
+            } catch {
                 // The user dismissed the Keychain prompt. Retrying would only present it
-                // again, and this is their decision rather than a failure, so quit quietly
-                // without reporting it.
-                if (underlyingError as? EncryptionKeyStoreError)?.status == errSecUserCanceled {
+                // again, and this is their decision rather than a failure, so quit quietly.
+                if (error as? EncryptionKeyStoreError)?.status == errSecUserCanceled {
                     exit(0)
                 }
 
-                guard attempt < maxAttempts else {
-                    PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: underlyingError), frequency: .dailyAndCount)
-
-                    // Give Pixel a chance to be sent, but not too long
-                    Thread.sleep(forTimeInterval: 1)
-
-                    // Interpolate the error itself rather than its localizedDescription:
-                    // EncryptionKeyStoreError is not a LocalizedError, so only the raw
-                    // value carries the Keychain OSStatus into the crash report.
-                    fatalError("Keychain unavailable after retrying: \(underlyingError)")
+                // A read can block while a Keychain prompt is up, so bound the total wait
+                // rather than the number of attempts.
+                guard Date() < deadline else {
+                    // Carry on without a key, as this has always done. This is not a
+                    // supported degraded mode: `Database()` reads the same item moments
+                    // later and terminates there, reporting the failure.
+                    Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
+                    return nil
                 }
                 startupProfiler.invalidate()
                 Thread.sleep(forTimeInterval: retryInterval)
             }
         }
-        fatalError()
     }
 }
 

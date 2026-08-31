@@ -29,17 +29,13 @@ import Utilities
 
 final class Database {
 
-    struct KeychainUnavailableError: Error {
-        let underlying: Error
-    }
-
     public let db: CoreDataDatabase
 
     fileprivate struct Constants {
         static let databaseName = "Database"
     }
 
-    init() throws {
+    init() {
 #if DEBUG
         assert(![.unitTests, .xcPreviews].contains(AppVersion.runType), {
             "Use CoreData.---Container() methods for testing purposes:\n" + Thread.callStackSymbols.description
@@ -76,7 +72,9 @@ final class Database {
                 NSData.self
             ], keyStore: keyStore)
         } catch {
-            throw KeychainUnavailableError(underlying: error)
+            PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
+            Thread.sleep(forTimeInterval: 1)
+            fatalError("Could not register value transformers: \(error.localizedDescription)")
         }
 
         let httpsUpgradeModel = HTTPSUpgrade.managedObjectModel

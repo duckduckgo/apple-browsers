@@ -106,9 +106,11 @@ final class UTIFooterUsageRingView: UIView {
         progressLayer.strokeColor = UIColor(designSystemColor: Self.progressColor(for: severity)).cgColor
     }
 
+    /// Follows the Duck.ai web app's green → orange → red, as far as this palette goes: it has no
+    /// orange, so the middle step stays yellow where macOS uses one.
     private static func progressColor(for severity: DuckAiUsageSeverity) -> DesignSystemColor {
         switch severity {
-        case .info: return .icons
+        case .info: return .alertGreen
         case .warning: return .alertYellow
         case .critical, .reached: return .destructivePrimary
         }

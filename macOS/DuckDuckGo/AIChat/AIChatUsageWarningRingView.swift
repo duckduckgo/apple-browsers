@@ -117,13 +117,13 @@ final class AIChatUsageWarningRingView: NSView {
         }
     }
 
-    /// Same three steps as iOS, under this platform's palette names. `destructivePrimary` is the red
-    /// itself; `destructiveContentPrimary` is what gets drawn *on* it, and is white.
+    /// The status triad, so the ring reads the same as the Duck.ai web app's: green, then orange, then
+    /// red. iOS still steps grey → yellow → red; its palette has no orange to move to.
     private static func progressColor(for severity: DuckAiUsageSeverity) -> DesignSystemColor {
         switch severity {
-        case .info: return .iconsPrimary
-        case .warning: return .alertYellow
-        case .critical, .reached: return .destructivePrimary
+        case .info: return .statusGreen
+        case .warning: return .statusYellowPrimary
+        case .critical, .reached: return .statusRed
         }
     }
 }

@@ -61,9 +61,9 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
         case .freeDailyReached:
             return "\"Daily limit reached\" with Try for free / Subscribe (whichever the account qualifies for)"
         case .approachingDaily50:
-            return "\"50% of daily limit\", ring in the neutral icon colour"
+            return "\"50% of daily limit\", ring in green"
         case .approachingDaily75:
-            return "\"75% of daily limit\", ring in amber"
+            return "\"75% of daily limit\", ring in orange"
         case .approachingDaily90:
             return "\"90% of daily limit\", ring in red"
         case .dailyReachedWithBypass:

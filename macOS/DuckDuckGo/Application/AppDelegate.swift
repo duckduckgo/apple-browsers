@@ -2551,7 +2551,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Keychain availability
 
     /// When launched as a login item the Keychain may not be unlocked yet.
-    /// Retry for up to ~10 s to give loginwindow time to unlock it.
+    /// Retry for up to ~60 s to give loginwindow time to unlock it.
     ///
     /// Both the key and the database are produced here because `Database()`
     /// reads the same key internally, via `registerValueTransformers` ->
@@ -2563,7 +2563,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         keyStore: EncryptionKeyStoring,
         startupProfiler: StartupProfiler
     ) -> (encryptionKey: SymmetricKey, database: Database) {
-        let maxAttempts = 6
+        let retryInterval: TimeInterval = 2
+        let maxAttempts = 31
         for attempt in 1...maxAttempts {
             do {
                 let key = try keyStore.readKey()
@@ -2583,7 +2584,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     fatalError("Keychain unavailable after retrying: \(underlyingError)")
                 }
                 startupProfiler.invalidate()
-                Thread.sleep(forTimeInterval: 2)
+                Thread.sleep(forTimeInterval: retryInterval)
             }
         }
         fatalError()

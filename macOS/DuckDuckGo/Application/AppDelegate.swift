@@ -2162,14 +2162,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Duck.ai native storage
 
-    /// Base directory holding the Duck.ai native storage container.
-    ///
-    /// Unsandboxed (DMG) builds all resolve `.applicationSupportDirectory` to the same
-    /// `~/Library/Application Support`, so internal variants would open the production
-    /// app's chats. Production keeps that path — no migration needed — while every other
-    /// bundle gets the per-bundle container path the rest of the app already uses.
-    private static func duckAiNativeStorageBaseURL() -> URL? {
-        guard !NSApp.isSandboxed, Bundle.main.bundleIdentifier != productionBundleID else {
+    /// Production keeps `~/Library/Application Support`; other unsandboxed bundles get a per-bundle container so DMG variants don't share chats.
+    static func duckAiNativeStorageBaseURL(isSandboxed: Bool = NSApp.isSandboxed,
+                                           bundleID: String? = Bundle.main.bundleIdentifier) -> URL? {
+        guard !isSandboxed, bundleID != productionBundleID else {
             return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
         }
         return URL.sandboxApplicationSupportURL

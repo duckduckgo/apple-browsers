@@ -224,21 +224,21 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         updateSystemBlock(for: permissionType)
         rebuild()
 
+        onDecisionChanged(change)
         if option == .neverAllow {
             revokePermissions([permissionType])
         }
-        onDecisionChanged(change)
     }
 
     public func removePermissions() {
         let permissionTypes = relevantPermissionTypes
-        let revokedPermissionTypes = SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes
+        let revokedPermissionTypes = SitePermissionsManagementSnapshot.managedPermissionTypes
         let snapshot = isFireMode ? SitePermissionsSnapshot.empty : store.removePermissions(for: site)
 
-        revokePermissions(revokedPermissionTypes)
         onRemovePermissions(SitePermissionsRemoval(snapshot: snapshot,
                                                     permissionTypes: permissionTypes,
                                                     revokedPermissionTypes: revokedPermissionTypes))
+        revokePermissions(revokedPermissionTypes)
         dismiss()
     }
 
@@ -262,11 +262,11 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
             .union(siteAllowedPermissionTypesThisVisit)
             .union(requestedPermissionTypesThisVisit)
             .union(activeCaptureTypes)
-            .intersection(SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes)
+            .intersection(SitePermissionsManagementSnapshot.managedPermissionTypes)
     }
 
     private func rebuild() {
-        rows = SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes
+        rows = SitePermissionsManagementSnapshot.managedPermissionTypes
             .filter(relevantPermissionTypes.contains)
             .sorted { $0.managementOrder < $1.managementOrder }
             .map(makeRow)
@@ -358,11 +358,11 @@ private extension SitePermissionDecision {
 private extension SitePermissionType {
     var managementOrder: Int {
         switch self {
-        case .camera:
-            return 0
-        case .microphone:
-            return 1
         case .location:
+            return 0
+        case .camera:
+            return 1
+        case .microphone:
             return 2
         }
     }

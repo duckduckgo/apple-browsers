@@ -40,13 +40,13 @@ public struct SitePermissionsManagementSnapshot: Equatable, Sendable {
                 systemBlockedPermissionTypes: Set<SitePermissionType>) {
         self.site = site
         self.isFireMode = isFireMode
-        self.storedPermissions = storedPermissions.cameraAndMicrophoneOnly
-        self.ephemeralPermissionTypes = ephemeralPermissionTypes.cameraAndMicrophoneOnly
-        self.siteAllowedPermissionTypesThisVisit = siteAllowedPermissionTypesThisVisit.cameraAndMicrophoneOnly
-        self.requestedPermissionTypesThisVisit = requestedPermissionTypesThisVisit.cameraAndMicrophoneOnly
-        self.captureStates = captureStates.filter { Self.cameraAndMicrophoneTypes.contains($0.key) }
-        self.systemAuthorizationStates = systemAuthorizationStates.filter { Self.cameraAndMicrophoneTypes.contains($0.key) }
-        self.systemBlockedPermissionTypes = systemBlockedPermissionTypes.cameraAndMicrophoneOnly
+        self.storedPermissions = storedPermissions
+        self.ephemeralPermissionTypes = ephemeralPermissionTypes
+        self.siteAllowedPermissionTypesThisVisit = siteAllowedPermissionTypesThisVisit
+        self.requestedPermissionTypesThisVisit = requestedPermissionTypesThisVisit
+        self.captureStates = captureStates
+        self.systemAuthorizationStates = systemAuthorizationStates
+        self.systemBlockedPermissionTypes = systemBlockedPermissionTypes
     }
 
     public var relevantPermissionTypes: Set<SitePermissionType> {
@@ -68,17 +68,5 @@ public struct SitePermissionsManagementSnapshot: Equatable, Sendable {
             || captureStates.contains { $0.value != .inactive }
     }
 
-    static let cameraAndMicrophoneTypes: Set<SitePermissionType> = [.camera, .microphone]
-}
-
-private extension Dictionary where Key == SitePermissionType, Value == SitePermissionDecision {
-    var cameraAndMicrophoneOnly: Self {
-        filter { SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes.contains($0.key) }
-    }
-}
-
-private extension Set where Element == SitePermissionType {
-    var cameraAndMicrophoneOnly: Self {
-        intersection(SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes)
-    }
+    static let managedPermissionTypes = Set(SitePermissionType.allCases)
 }

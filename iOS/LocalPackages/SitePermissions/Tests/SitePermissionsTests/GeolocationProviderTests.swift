@@ -133,6 +133,191 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
     }
 
+    func testLocationActivityReportsOnlyWatchBoundaryTransitions() throws {
+        let harness = try Harness()
+        var activity = [Bool]()
+        harness.provider.locationActivityHandler = { activity.append($0) }
+
+        harness.provider.startWatch(withID: "first", context: harness.context) { _ in true }
+        harness.provider.startWatch(withID: "second", context: harness.context) { _ in true }
+        harness.provider.cancelWatch(withID: "first")
+        harness.provider.cancelWatch(withID: "second")
+
+        XCTAssertEqual(activity, [true, false])
+        XCTAssertFalse(harness.provider.isLocationActive)
+    }
+
+    func testLocationActivityReportsOneShotStartAndCompletionOnce() async throws {
+        let harness = try Harness()
+        var activity = [Bool]()
+        harness.provider.locationActivityHandler = { activity.append($0) }
+
+        let request = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
+        await waitUntil { harness.provider.isLocationActive }
+        harness.send([CLLocation(latitude: 37.3317, longitude: -122.0301)])
+        _ = await request.value
+
+        XCTAssertEqual(activity, [true, false])
+        XCTAssertFalse(harness.provider.isLocationActive)
+    }
+
+    func testCachedOneShotStillReportsACompleteActivityBoundaryWithoutRestartingLocationUpdates() async throws {
+        let harness = try Harness()
+        let cachedLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
+        harness.provider.startWatch(withID: "seed", context: harness.context) { _ in true }
+        harness.send([cachedLocation])
+        harness.provider.cancelWatch(withID: "seed")
+        let initialStartCount = harness.locationManager.startUpdatingCallCount
+        var activity = [Bool]()
+        harness.provider.locationActivityHandler = { activity.append($0) }
+
+        let result = await harness.provider.requestCurrentPosition(
+            context: harness.context,
+            options: .init(maximumAge: 60)
+        )
+
+        XCTAssertEqual(result, .success(.init(location: cachedLocation)))
+        XCTAssertEqual(activity, [true, false])
+        XCTAssertEqual(harness.locationManager.startUpdatingCallCount, initialStartCount)
+    }
+
+    func testOneShotCompletionRefreshesPermissionStatusAfterActivityHandlerExpiresAllowOnce() async throws {
+        var queryState = GeolocationPermissionState.granted
+        let harness = try Harness(queryPermission: { _ in queryState })
+        var becameActive = false
+        harness.provider.locationActivityHandler = { isActive in
+            if isActive {
+                becameActive = true
+            } else if becameActive {
+                queryState = .prompt
+            }
+        }
+        var statusStates = [GeolocationPermissionState]()
+        let initialState = harness.provider.permissionState(withID: "status", context: harness.context) {
+            statusStates.append($0)
+            return true
+        }
+
+        let request = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
+        await waitUntil { harness.provider.isLocationActive }
+        harness.send([CLLocation(latitude: 37.3317, longitude: -122.0301)])
+        _ = await request.value
+
+        XCTAssertEqual(initialState, .granted)
+        XCTAssertEqual(statusStates, [.prompt])
+    }
+
+    func testPermissionStatusRefreshesUntilDeliveryFailsOrPageIsCancelled() throws {
+        var queryState = GeolocationPermissionState.prompt
+        let harness = try Harness(queryPermission: { _ in queryState })
+        var deliveredStates = [GeolocationPermissionState]()
+
+        let initialState = harness.provider.permissionState(withID: "status",
+                                                            context: harness.context) { state in
+            deliveredStates.append(state)
+            return deliveredStates.count < 2
+        }
+        XCTAssertEqual(initialState, .prompt)
+
+        harness.provider.refreshPermissionStatuses()
+        queryState = .granted
+        harness.provider.refreshPermissionStatuses()
+        queryState = .denied
+        harness.provider.refreshPermissionStatuses()
+        harness.provider.refreshPermissionStatuses()
+
+        XCTAssertEqual(deliveredStates, [.granted, .denied])
+        XCTAssertNil(harness.provider.currentContext(tabID: harness.context.tabID,
+                                                     requestingFrameID: harness.context.requestingFrameID))
+
+        _ = harness.provider.permissionState(withID: "replacement",
+                                             context: harness.context) { _ in true }
+        harness.provider.cancelPageActivity()
+        XCTAssertNil(harness.provider.currentContext(tabID: harness.context.tabID,
+                                                     requestingFrameID: harness.context.requestingFrameID))
+    }
+
+    func testDeniedOneShotResolutionRefreshesPermissionStatus() async throws {
+        var queryState = GeolocationPermissionState.prompt
+        let harness = try Harness(
+            requestPermission: { _, completion in
+                queryState = .denied
+                completion(.deny(systemBlocks: []))
+            },
+            queryPermission: { _ in queryState }
+        )
+        var statusStates = [GeolocationPermissionState]()
+        _ = harness.provider.permissionState(withID: "status", context: harness.context) {
+            statusStates.append($0)
+            return true
+        }
+
+        let result = await harness.provider.requestCurrentPosition(context: harness.context)
+
+        XCTAssertEqual(result, .failure(.init(code: .permissionDenied, message: "Location permission was denied")))
+        XCTAssertEqual(statusStates, [.denied])
+    }
+
+    func testGrantedWatchResolutionRefreshesPermissionStatus() throws {
+        var queryState = GeolocationPermissionState.prompt
+        let harness = try Harness(
+            requestPermission: { _, completion in
+                queryState = .granted
+                completion(.grant)
+            },
+            queryPermission: { _ in queryState }
+        )
+        var statusStates = [GeolocationPermissionState]()
+        _ = harness.provider.permissionState(withID: "status", context: harness.context) {
+            statusStates.append($0)
+            return true
+        }
+
+        harness.provider.startWatch(withID: "watch", context: harness.context) { _ in true }
+
+        XCTAssertEqual(statusStates, [.granted])
+        harness.provider.cancelWatch(withID: "watch")
+    }
+
+    func testRevocationDeniesActiveWorkStopsActivityAndRefreshesPermissionStatus() async throws {
+        var queryState = GeolocationPermissionState.granted
+        var permissionRequestCount = 0
+        let harness = try Harness(
+            requestPermission: { _, completion in
+                permissionRequestCount += 1
+                completion(.grant)
+            },
+            queryPermission: { _ in queryState }
+        )
+        var activity = [Bool]()
+        var watchResults = [GeolocationPositionResult]()
+        var statusStates = [GeolocationPermissionState]()
+        harness.provider.locationActivityHandler = { activity.append($0) }
+        harness.provider.startWatch(withID: "watch", context: harness.context) {
+            watchResults.append($0)
+            return true
+        }
+        let oneShot = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
+        await waitUntil { permissionRequestCount == 2 }
+        _ = harness.provider.permissionState(withID: "status", context: harness.context) {
+            statusStates.append($0)
+            return true
+        }
+
+        queryState = .denied
+        harness.provider.revokeActivePermission()
+
+        let denied = GeolocationPositionResult.failure(
+            .init(code: .permissionDenied, message: "Location permission was denied")
+        )
+        let oneShotResult = await oneShot.value
+        XCTAssertEqual(oneShotResult, denied)
+        XCTAssertEqual(watchResults, [denied])
+        XCTAssertEqual(statusStates, [.denied])
+        XCTAssertEqual(activity, [true, false])
+        XCTAssertFalse(harness.provider.isLocationActive)
+    }
+
     func testAccuracyDemandTracksAuthorizedOneShotsAndWatches() async throws {
         let harness = try Harness()
         harness.provider.startWatch(withID: "standard", context: harness.context) { _ in true }
@@ -312,7 +497,8 @@ private final class Harness {
     let context: SitePermissionRequestContext
     let provider: GeolocationProvider
 
-    init(requestPermission: GeolocationProvider.PermissionRequestHandler? = nil) throws {
+    init(requestPermission: GeolocationProvider.PermissionRequestHandler? = nil,
+         queryPermission: @escaping GeolocationProvider.PermissionQueryHandler = { _ in .granted }) throws {
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
         context = SitePermissionRequestContext(tabID: "tab",
                                                topLevelSite: site,
@@ -330,7 +516,7 @@ private final class Harness {
             systemPermissionClient: systemPermissionClient,
             contextProvider: { _ in nil },
             requestPermission: requestPermission ?? { _, completion in completion(.grant) },
-            queryPermission: { _ in .granted }
+            queryPermission: queryPermission
         )
     }
 

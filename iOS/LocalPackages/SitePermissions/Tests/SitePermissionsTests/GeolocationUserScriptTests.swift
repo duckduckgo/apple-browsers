@@ -38,7 +38,7 @@ final class GeolocationUserScriptTests: XCTestCase {
         let source = GeolocationUserScript().source
 
         for operation in ["registerFrame", "getCurrentPosition", "watchPosition", "clearWatch", "queryPermission",
-                          "receiveWatchResult", "receiveTerminalWatchResult"] {
+                          "receiveWatchResult", "receiveTerminalWatchResult", "receivePermissionState"] {
             XCTAssertTrue(source.contains(operation), "Expected shim source to contain \(operation)")
         }
         XCTAssertTrue(source.contains("!activeWatches.has(requestID)"), "A cleared watch must compensate if native start wins the race")
@@ -129,8 +129,10 @@ final class GeolocationUserScriptTests: XCTestCase {
                       "A restrictive policy change must stop later watch deliveries")
         XCTAssertTrue(source.contains("settlePosition(isAllowedByPlatform() ? result : deniedResult(), success, error)"),
                       "A newly restrictive policy must suppress an in-flight one-shot result")
-        XCTAssertTrue(source.contains("permissionStatus(isAllowedByPlatform() ? (result?.state ?? \"denied\") : \"denied\")"),
+        XCTAssertTrue(source.contains("record.initialize(isAllowedByPlatform() ? normalizedPermissionState(result?.state) : \"denied\")"),
                       "A newly restrictive policy must suppress an in-flight query result")
+        XCTAssertTrue(source.contains("record.update(isAllowedByPlatform() ? state : \"denied\")"),
+                      "A policy change must fail closed when native refreshes an existing status")
         XCTAssertTrue(source.contains("result?.status === \"started\" && !isAllowedByPlatform()"),
                       "A newly restrictive policy must cancel an in-flight watch start")
         XCTAssertFalse(source.contains("staticConstraints"))
@@ -301,6 +303,7 @@ final class GeolocationUserScriptTests: XCTestCase {
         let laterFrameWrapper = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
         var queryBody = registrationBody()
         queryBody["kind"] = "queryPermission"
+        queryBody["statusID"] = String(repeating: "b", count: 32) + ":1"
         let queryMessage = MockWKScriptMessageObject(webView: webView,
                                                      frameInfo: laterFrameWrapper,
                                                      body: queryBody).scriptMessage
@@ -309,6 +312,31 @@ final class GeolocationUserScriptTests: XCTestCase {
 
         XCTAssertEqual(queryPayload["status"] as? String, "permission")
         XCTAssertEqual(queryPayload["state"] as? String, "denied")
+    }
+
+    func testPermissionStatusRegistryClearsOnPageReset() async throws {
+        let delegate = TestGeolocationUserScriptDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
+        script.activationHandler = { _ in true }
+        let webView = WKWebView()
+        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
+        let registrationMessage = MockWKScriptMessageObject(webView: webView,
+                                                            frameInfo: frame,
+                                                            body: registrationBody()).scriptMessage
+        _ = await script.userContentController(WKUserContentController(), didReceive: registrationMessage)
+        let statusID = String(repeating: "b", count: 32) + ":1"
+        var queryBody = registrationBody()
+        queryBody["kind"] = "queryPermission"
+        queryBody["statusID"] = statusID
+        let queryMessage = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: queryBody).scriptMessage
+
+        _ = await script.userContentController(WKUserContentController(), didReceive: queryMessage)
+        XCTAssertTrue(script.send(.granted, toPermissionStatusWithID: statusID))
+
+        script.cancelAllWatches()
+
+        XCTAssertFalse(script.send(.denied, toPermissionStatusWithID: statusID))
+        XCTAssertEqual(delegate.cancelledPermissionStatusIDs, [statusID])
     }
 
     func testWatchRegistryRoutesRepeatedResultsUntilCancellation() {
@@ -404,6 +432,8 @@ final class GeolocationUserScriptTests: XCTestCase {
 @MainActor
 private final class TestGeolocationUserScriptDelegate: GeolocationUserScriptDelegate {
 
+    private(set) var cancelledPermissionStatusIDs = [String]()
+
     func geolocationUserScript(_ userScript: GeolocationUserScript,
                                getCurrentPositionWith options: GeolocationRequestOptions,
                                constraints: GeolocationRequestConstraints,
@@ -412,6 +442,7 @@ private final class TestGeolocationUserScriptDelegate: GeolocationUserScriptDele
     }
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
+                               permissionStatusID: String,
                                constraints: GeolocationRequestConstraints,
                                permissionStateIn frame: GeolocationFrame) -> GeolocationPermissionState {
         .denied
@@ -425,4 +456,9 @@ private final class TestGeolocationUserScriptDelegate: GeolocationUserScriptDele
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
                                didCancelWatchWithID requestID: String) {}
+
+    func geolocationUserScript(_ userScript: GeolocationUserScript,
+                               didCancelPermissionStatusWithID statusID: String) {
+        cancelledPermissionStatusIDs.append(statusID)
+    }
 }

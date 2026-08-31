@@ -146,6 +146,32 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
         XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
     }
 
+    func testFireModeNeverDecisionIsEffectiveBeforeImmediateRevocationObservationWithoutWritingStore() throws {
+        let harness = try CoordinatorHarness(isFireMode: true)
+        harness.systemStates[.location] = .authorized
+        harness.store.setPersistentDecision(.allow, for: .location, at: harness.site)
+        var observedStates = [SitePermissionQueryState]()
+        let viewModel = SitePermissionsSheetViewModel(
+            snapshot: harness.coordinator.managementSnapshot(for: harness.site),
+            store: harness.store,
+            onDecisionChanged: { change in
+                harness.coordinator.applyFireModeManagementDecision(change.to, for: change.permissionType)
+                observedStates.append(harness.coordinator.queryState(for: .location, context: harness.context))
+            },
+            revokePermissions: { permissionTypes in
+                XCTAssertEqual(permissionTypes, [.location])
+                observedStates.append(harness.coordinator.queryState(for: .location, context: harness.context))
+            }
+        )
+
+        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
+
+        viewModel.select(.neverAllow, for: .location)
+
+        XCTAssertEqual(observedStates, [.denied, .denied])
+        XCTAssertEqual(harness.store.decision(for: .location, at: harness.site), .allow)
+    }
+
     func testFireModeRemoveHidesStoredRecordForSessionWithoutDeletingIt() throws {
         let harness = try CoordinatorHarness(isFireMode: true)
         harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
@@ -157,6 +183,31 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
         XCTAssertTrue(snapshot.storedPermissions.isEmpty)
         XCTAssertFalse(snapshot.showsMenuEntry)
         XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .allow)
+    }
+
+    func testFireModeRemovalClearsSessionStateBeforeImmediateRevocationObservationWithoutWritingStore() throws {
+        let harness = try CoordinatorHarness(isFireMode: true)
+        harness.systemStates[.location] = .authorized
+        harness.store.setPersistentDecision(.allow, for: .location, at: harness.site)
+        var observedStates = [SitePermissionQueryState]()
+        let viewModel = SitePermissionsSheetViewModel(
+            snapshot: harness.coordinator.managementSnapshot(for: harness.site),
+            store: harness.store,
+            onRemovePermissions: { removal in
+                harness.coordinator.removeManagementSessionState(for: removal.permissionTypes, at: harness.site)
+                observedStates.append(harness.coordinator.queryState(for: .location, context: harness.context))
+            },
+            revokePermissions: { _ in
+                observedStates.append(harness.coordinator.queryState(for: .location, context: harness.context))
+            }
+        )
+
+        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
+
+        viewModel.removePermissions()
+
+        XCTAssertEqual(observedStates, [.prompt, .prompt])
+        XCTAssertEqual(harness.store.decision(for: .location, at: harness.site), .allow)
     }
 
     func testFireModeUndoRestoresStoredRecordButNotEphemeralGrant() async throws {

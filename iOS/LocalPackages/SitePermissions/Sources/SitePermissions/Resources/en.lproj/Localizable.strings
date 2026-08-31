@@ -31,6 +31,7 @@
 "sitePermissions.management.title" = "Permissions for “%@”";
 "sitePermissions.management.camera" = "Camera";
 "sitePermissions.management.microphone" = "Microphone";
+"sitePermissions.management.location" = "Location";
 "sitePermissions.management.ask-each-time" = "Ask Each Time";
 "sitePermissions.management.allow-this-time" = "Allow This Time";
 "sitePermissions.management.always-allow" = "Always Allow";
@@ -44,5 +45,6 @@
 "sitePermissions.management.accessibility.paused" = "%@, paused";
 "sitePermissions.management.reminder" = "DuckDuckGo needs to access your %@, if you want to use related features on this site.";
 "sitePermissions.management.reminder.camera" = "camera";
+"sitePermissions.management.reminder.location" = "location";
 "sitePermissions.management.reminder.microphone" = "microphone";
 "sitePermissions.management.reminder.camera-and-microphone" = "camera and microphone";

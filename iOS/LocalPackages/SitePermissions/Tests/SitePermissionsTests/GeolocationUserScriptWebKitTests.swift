@@ -382,6 +382,45 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(delegate.permissionQueryCount, 2)
     }
 
+    func testPermissionStatusChangesOnceAndInvokesListenerAndOnchange() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        delegate.permissionState = .prompt
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script)
+        let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
+        defer { server.stop() }
+
+        try await harness.load(try XCTUnwrap(server.url))
+        try await waitUntil(in: harness.webView, expression: "Boolean(window.__ddgSitePermissionsGeolocation)")
+        let initial = try await javaScriptDictionary(in: harness.webView, body: """
+        const status = await navigator.permissions.query({ name: "geolocation" });
+        window.testPermissionStatus = status;
+        window.testPermissionChangeEvents = 0;
+        window.testPermissionOnchangeEvents = 0;
+        status.addEventListener("change", () => { window.testPermissionChangeEvents += 1; });
+        status.onchange = () => { window.testPermissionOnchangeEvents += 1; };
+        return { state: status.state };
+        """)
+        let statusID = try XCTUnwrap(delegate.permissionStatusIDs.first)
+
+        XCTAssertEqual(initial["state"] as? String, GeolocationPermissionState.prompt.rawValue)
+        XCTAssertTrue(script.send(.granted, toPermissionStatusWithID: statusID))
+        try await waitUntil(in: harness.webView, expression: "window.testPermissionStatus.state === 'granted'")
+        XCTAssertTrue(script.send(.granted, toPermissionStatusWithID: statusID))
+        let updated = try await javaScriptDictionary(in: harness.webView, body: """
+        return {
+            state: window.testPermissionStatus.state,
+            changeEvents: window.testPermissionChangeEvents,
+            onchangeEvents: window.testPermissionOnchangeEvents
+        };
+        """)
+
+        XCTAssertEqual(updated["state"] as? String, GeolocationPermissionState.granted.rawValue)
+        XCTAssertEqual(updated["changeEvents"] as? Int, 1)
+        XCTAssertEqual(updated["onchangeEvents"] as? Int, 1)
+    }
+
     private func exerciseGeolocation(in webView: WKWebView) async throws -> [String: Any] {
         try await javaScriptDictionary(in: webView, body: """
         const policy = document.permissionsPolicy ?? document.featurePolicy;
@@ -669,6 +708,8 @@ private final class WebKitTestGeolocationDelegate: GeolocationUserScriptDelegate
 
     private(set) var positionRequestCount = 0
     private(set) var permissionQueryCount = 0
+    private(set) var permissionStatusIDs = [String]()
+    var permissionState = GeolocationPermissionState.granted
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
                                getCurrentPositionWith options: GeolocationRequestOptions,
@@ -686,10 +727,12 @@ private final class WebKitTestGeolocationDelegate: GeolocationUserScriptDelegate
     }
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
+                               permissionStatusID: String,
                                constraints: GeolocationRequestConstraints,
                                permissionStateIn frame: GeolocationFrame) -> GeolocationPermissionState {
         permissionQueryCount += 1
-        return .granted
+        permissionStatusIDs.append(permissionStatusID)
+        return permissionState
     }
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
@@ -700,4 +743,7 @@ private final class WebKitTestGeolocationDelegate: GeolocationUserScriptDelegate
 
     func geolocationUserScript(_ userScript: GeolocationUserScript,
                                didCancelWatchWithID requestID: String) {}
+
+    func geolocationUserScript(_ userScript: GeolocationUserScript,
+                               didCancelPermissionStatusWithID statusID: String) {}
 }

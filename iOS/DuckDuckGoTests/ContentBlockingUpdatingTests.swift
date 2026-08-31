@@ -19,6 +19,7 @@
 
 import XCTest
 import WebKit
+import Combine
 import Core
 import TrackerRadarKit
 import BrowserServicesKit
@@ -149,6 +150,41 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         )
         XCTAssertNil(nonTabScripts.geolocationUserScript)
         XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationUserScript })
+    }
+
+    @MainActor
+    func testTabAssetsRetainMediaScriptAndRemoveGeolocationWhenSitePermissionsIsDisabled() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let mediaCaptureUserScript = MediaCaptureUserScript()
+        let geolocationUserScript = GeolocationUserScript()
+        let contentSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
+        var receivedScripts = [(MediaCaptureUserScript?, GeolocationUserScript?)]()
+        let cancellable = TabViewController.sitePermissionsContentBlockingAssetsPublisher(
+            contentSubject.eraseToAnyPublisher(),
+            featureFlagger: featureFlagger,
+            mediaCaptureUserScript: mediaCaptureUserScript,
+            geolocationUserScript: geolocationUserScript
+        ).sink { content in
+            let userScripts = content.makeUserScripts(content.sourceProvider)
+            receivedScripts.append((userScripts.mediaCaptureUserScript, userScripts.geolocationUserScript))
+        }
+
+        contentSubject.send(.init(rulesUpdate: Self.testUpdate(),
+                                  sourceProvider: makeScriptSourceProvider(),
+                                  duckAiNativeStorageHandler: nil,
+                                  sitePermissionsGeolocationUserScript: nil,
+                                  isSitePermissionsEnabled: false))
+        XCTAssertEqual(receivedScripts.count, 1)
+        XCTAssertTrue(receivedScripts[0].0 === mediaCaptureUserScript)
+        XCTAssertTrue(receivedScripts[0].1 === geolocationUserScript)
+
+        featureFlagger.enabledFeatureFlags = []
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(receivedScripts.count, 2)
+        XCTAssertTrue(receivedScripts[1].0 === mediaCaptureUserScript)
+        XCTAssertNil(receivedScripts[1].1)
+
+        withExtendedLifetime(cancellable) {}
     }
 
     func testWhenRuleListIsRecompiledThenUpdatesAreReceived() {

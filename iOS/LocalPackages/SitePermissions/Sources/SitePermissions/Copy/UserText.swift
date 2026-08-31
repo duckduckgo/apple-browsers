@@ -167,6 +167,9 @@ enum UserText {
         static let microphone = NSLocalizedString("sitePermissions.management.microphone", bundle: Bundle.module,
                                                   value: "Microphone",
                                                   comment: "Microphone permission row label.")
+        static let location = NSLocalizedString("sitePermissions.management.location", bundle: Bundle.module,
+                                                 value: "Location",
+                                                 comment: "Location permission row label.")
         static let askEachTime = NSLocalizedString("sitePermissions.management.ask-each-time", bundle: Bundle.module,
                                                    value: "Ask Each Time",
                                                    comment: "Permission picker option that asks again when a site requests access.")
@@ -205,8 +208,7 @@ enum UserText {
             case .microphone:
                 return microphone
             case .location:
-                assertionFailure("Location management lands in Phase 6")
-                return ""
+                return location
             }
         }
 
@@ -243,23 +245,26 @@ enum UserText {
                                            value: "DuckDuckGo needs to access your %@, if you want to use related features on this site.",
                                            comment: "Reminder shown when iOS blocks permissions a site is allowed to use. "
                                                + "The placeholder is a localized list of permission names. Copy requires review.")
-            let list: String
-            switch permissionTypes.intersection([.camera, .microphone]) {
-            case [.camera]:
-                list = NSLocalizedString("sitePermissions.management.reminder.camera", bundle: Bundle.module,
-                                         value: "camera",
-                                         comment: "Camera name in the system-permission reminder sentence.")
-            case [.microphone]:
-                list = NSLocalizedString("sitePermissions.management.reminder.microphone", bundle: Bundle.module,
-                                         value: "microphone",
-                                         comment: "Microphone name in the system-permission reminder sentence.")
-            case [.camera, .microphone]:
-                list = NSLocalizedString("sitePermissions.management.reminder.camera-and-microphone", bundle: Bundle.module,
-                                         value: "camera and microphone",
-                                         comment: "Camera and microphone list in the system-permission reminder sentence. Copy requires review.")
-            default:
-                return nil
-            }
+            let names = [SitePermissionType.camera, .location, .microphone]
+                .filter(permissionTypes.contains)
+                .map { permissionType in
+                    switch permissionType {
+                    case .camera:
+                        return NSLocalizedString("sitePermissions.management.reminder.camera", bundle: Bundle.module,
+                                                 value: "camera",
+                                                 comment: "Camera name in the system-permission reminder sentence.")
+                    case .location:
+                        return NSLocalizedString("sitePermissions.management.reminder.location", bundle: Bundle.module,
+                                                 value: "location",
+                                                 comment: "Location name in the system-permission reminder sentence.")
+                    case .microphone:
+                        return NSLocalizedString("sitePermissions.management.reminder.microphone", bundle: Bundle.module,
+                                                 value: "microphone",
+                                                 comment: "Microphone name in the system-permission reminder sentence.")
+                    }
+                }
+            guard !names.isEmpty else { return nil }
+            let list = ListFormatter.localizedString(byJoining: names)
             return String(format: format, list)
         }
     }

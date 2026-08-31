@@ -60,6 +60,34 @@ public final class GeolocationProvider {
     }
 
     @MainActor
+    private final class PermissionStatus {
+        weak var userScript: GeolocationUserScript?
+        let retainedFrame: RetainedFrame
+        let deliver: @MainActor (GeolocationPermissionState) -> Bool
+        var lastState: GeolocationPermissionState
+
+        init(userScript: GeolocationUserScript,
+             statusID: String,
+             retainedFrame: RetainedFrame,
+             initialState: GeolocationPermissionState) {
+            self.userScript = userScript
+            self.retainedFrame = retainedFrame
+            lastState = initialState
+            deliver = { [weak userScript] state in
+                userScript?.send(state, toPermissionStatusWithID: statusID) == true
+            }
+        }
+
+        init(retainedFrame: RetainedFrame,
+             initialState: GeolocationPermissionState,
+             deliver: @escaping @MainActor (GeolocationPermissionState) -> Bool) {
+            self.retainedFrame = retainedFrame
+            lastState = initialState
+            self.deliver = deliver
+        }
+    }
+
+    @MainActor
     private final class Watch {
         weak var userScript: GeolocationUserScript?
         let retainedFrame: RetainedFrame
@@ -109,10 +137,13 @@ public final class GeolocationProvider {
 
     private var oneShotRequests = [UUID: OneShotRequest]()
     private var watches = [String: Watch]()
-    private var queryFrames = [UUID: RetainedFrame]()
+    private var permissionStatuses = [String: PermissionStatus]()
     private var locationUpdateHandlerID: UUID?
     private var latestLocation: CLLocation?
     private var isClosed = false
+
+    private(set) var isLocationActive = false
+    public var locationActivityHandler: ((Bool) -> Void)?
 
     public init(systemPermissionClient: SystemPermissionClient,
                 contextProvider: @escaping ContextProvider,
@@ -128,7 +159,7 @@ public final class GeolocationProvider {
     public func currentContext(tabID: String, requestingFrameID: UInt64) -> SitePermissionRequestContext? {
         let retainedFrames = oneShotRequests.values.map(\.retainedFrame)
             + watches.values.map(\.retainedFrame)
-            + queryFrames.values
+            + permissionStatuses.values.map(\.retainedFrame)
         return retainedFrames.lazy
             .filter { $0.context.tabID == tabID && $0.context.requestingFrameID == requestingFrameID }
             .compactMap(validatedContext)
@@ -137,17 +168,56 @@ public final class GeolocationProvider {
 
     /// Cancels work belonging to the current page without permanently closing the provider.
     public func cancelPageActivity() {
-        let scripts = watches.values.compactMap(\.userScript)
+        var scripts = [ObjectIdentifier: GeolocationUserScript]()
+        (watches.values.compactMap(\.userScript) + permissionStatuses.values.compactMap(\.userScript)).forEach {
+            scripts[ObjectIdentifier($0)] = $0
+        }
         watches.values.forEach { $0.timeoutTask?.cancel() }
         watches.removeAll()
-        scripts.forEach { $0.cancelAllWatches() }
+        permissionStatuses.removeAll()
+        scripts.values.forEach { $0.cancelAllWatches() }
 
         let requestIDs = Array(oneShotRequests.keys)
         requestIDs.forEach {
             finishOneShot($0, with: .failure(.init(code: .positionUnavailable, message: Message.unavailable)))
         }
-        queryFrames.removeAll()
         updateLocationSubscription()
+    }
+
+    /// Re-evaluates every live page `PermissionStatus` against current native and policy state.
+    public func refreshPermissionStatuses() {
+        guard !isClosed else { return }
+
+        for statusID in Array(permissionStatuses.keys) {
+            guard let status = permissionStatuses[statusID] else { continue }
+            guard let context = validatedContext(status.retainedFrame) else {
+                if status.lastState != .denied {
+                    _ = status.deliver(.denied)
+                }
+                permissionStatuses.removeValue(forKey: statusID)
+                continue
+            }
+            let state = queryPermission(context)
+            guard state != status.lastState else { continue }
+            status.lastState = state
+            if !status.deliver(state) {
+                permissionStatuses.removeValue(forKey: statusID)
+            }
+        }
+    }
+
+    /// Stops page activity after an explicit permission denial or removal, then refreshes query state.
+    public func revokeActivePermission() {
+        guard !isClosed else { return }
+        let wasLocationActive = isLocationActive
+        let denied = GeolocationPositionResult.failure(
+            .init(code: .permissionDenied, message: Message.denied)
+        )
+        Array(oneShotRequests.keys).forEach { finishOneShot($0, with: denied) }
+        Array(watches.keys).forEach { send(denied, toWatch: $0, thenRemove: true) }
+        if !wasLocationActive {
+            refreshPermissionStatuses()
+        }
     }
 
     public func close() {
@@ -188,6 +258,7 @@ public final class GeolocationProvider {
 
     private func resolvePermission(forOneShot identifier: UUID, resolution: SitePermissionResolution) {
         guard let request = oneShotRequests[identifier] else { return }
+        refreshPermissionStatuses()
         guard resolution == .grant, validatedContext(request.retainedFrame) != nil else {
             finishOneShot(identifier, with: .failure(.init(code: .permissionDenied, message: Message.denied)))
             return
@@ -196,6 +267,9 @@ public final class GeolocationProvider {
         request.isAuthorized = true
         request.acquisitionStartedAt = Date()
         if let location = reusableLocation(maximumAge: request.options.maximumAge) {
+            // Even a cached one-shot has a complete capture lifecycle. Publish that boundary so
+            // Allow Once expires after delivery just as it does for a newly acquired fix.
+            updateLocationActivity(true)
             finishOneShot(identifier, with: .success(.init(location: location)))
         } else {
             scheduleOneShotTimeout(identifier, after: request.options.timeout)
@@ -219,6 +293,7 @@ public final class GeolocationProvider {
 
     private func resolvePermission(forWatch requestID: String, resolution: SitePermissionResolution) {
         guard let watch = watches[requestID] else { return }
+        refreshPermissionStatuses()
         guard resolution == .grant, validatedContext(watch.retainedFrame) != nil else {
             send(.failure(.init(code: .permissionDenied, message: Message.denied)), toWatch: requestID, thenRemove: true)
             return
@@ -273,6 +348,18 @@ public final class GeolocationProvider {
         } else if !needsUpdates, let locationUpdateHandlerID {
             systemPermissionClient.removeLocationUpdateHandler(locationUpdateHandlerID)
             self.locationUpdateHandlerID = nil
+        }
+        updateLocationActivity(needsUpdates)
+    }
+
+    private func updateLocationActivity(_ isActive: Bool) {
+        guard isLocationActive != isActive else { return }
+        isLocationActive = isActive
+        locationActivityHandler?(isActive)
+        if !isActive {
+            // The coordinator expires Allow Once from the activity callback above. Re-query only
+            // after that mutation so existing PermissionStatus objects observe the new state.
+            refreshPermissionStatuses()
         }
     }
 
@@ -395,6 +482,20 @@ public final class GeolocationProvider {
         watch.timeoutTask?.cancel()
         updateLocationSubscription()
     }
+
+    func permissionState(withID statusID: String,
+                         context: SitePermissionRequestContext,
+                         deliver: @escaping @MainActor (GeolocationPermissionState) -> Bool) -> GeolocationPermissionState {
+        guard !isClosed, permissionStatuses[statusID] == nil else { return .denied }
+        let retainedFrame = RetainedFrame(context: context)
+        let status = PermissionStatus(retainedFrame: retainedFrame,
+                                      initialState: .denied,
+                                      deliver: deliver)
+        permissionStatuses[statusID] = status
+        let state = queryPermission(context)
+        status.lastState = state
+        return state
+    }
 }
 
 // MARK: - GeolocationUserScriptDelegate
@@ -412,14 +513,19 @@ extension GeolocationProvider: GeolocationUserScriptDelegate {
     }
 
     public func geolocationUserScript(_ userScript: GeolocationUserScript,
+                                      permissionStatusID statusID: String,
                                       constraints: GeolocationRequestConstraints,
                                       permissionStateIn frame: GeolocationFrame) -> GeolocationPermissionState {
         guard let retainedFrame = retainedFrame(for: frame, constraints: constraints) else { return .denied }
-        let identifier = UUID()
-        queryFrames[identifier] = retainedFrame
-        defer { queryFrames.removeValue(forKey: identifier) }
-
-        return queryPermission(retainedFrame.context)
+        guard permissionStatuses[statusID] == nil else { return .denied }
+        let status = PermissionStatus(userScript: userScript,
+                                      statusID: statusID,
+                                      retainedFrame: retainedFrame,
+                                      initialState: .denied)
+        permissionStatuses[statusID] = status
+        let state = queryPermission(retainedFrame.context)
+        status.lastState = state
+        return state
     }
 
     public func geolocationUserScript(_ userScript: GeolocationUserScript,
@@ -444,5 +550,10 @@ extension GeolocationProvider: GeolocationUserScriptDelegate {
         guard let watch = watches.removeValue(forKey: requestID) else { return }
         watch.timeoutTask?.cancel()
         updateLocationSubscription()
+    }
+
+    public func geolocationUserScript(_ userScript: GeolocationUserScript,
+                                      didCancelPermissionStatusWithID statusID: String) {
+        permissionStatuses.removeValue(forKey: statusID)
     }
 }

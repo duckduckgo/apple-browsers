@@ -37,6 +37,9 @@
     const mapGet = globalThis.Map.prototype.get;
     const mapSet = globalThis.Map.prototype.set;
     const mapDelete = globalThis.Map.prototype.delete;
+    const NativeEvent = globalThis.Event;
+    const NativeEventTarget = globalThis.EventTarget;
+    const dispatchEvent = NativeEventTarget?.prototype?.dispatchEvent;
     const weakSetAdd = globalThis.WeakSet.prototype.add;
     const weakSetHas = globalThis.WeakSet.prototype.has;
     const NativeMutationObserver = globalThis.MutationObserver;
@@ -62,6 +65,7 @@
     const nativePermissions = navigator.permissions;
     const nativePermissionsQuery = nativePermissions?.query;
     const activeWatches = new Map();
+    const permissionStatuses = new Map();
     const randomToken = () => {
         if (typeof globalThis.crypto?.getRandomValues !== "function") {
             return null;
@@ -73,6 +77,7 @@
     const nonce = randomToken();
     const frameNonce = randomToken() ?? "unavailable";
     let nextWatchID = 1;
+    let nextPermissionStatusID = 1;
 
     const textEncoder = globalThis.TextEncoder ? new globalThis.TextEncoder() : null;
     const encodeText = textEncoder?.encode.bind(textEncoder);
@@ -406,16 +411,48 @@
         }
     };
 
-    const permissionStatus = (state) => {
-        const status = new EventTarget();
+    const normalizedPermissionState = (state) =>
+        state === "granted" || state === "prompt" ? state : "denied";
+
+    const permissionStatus = () => {
+        let state = "denied";
+        let initialized = false;
+        let pendingState = null;
+        const status = new NativeEventTarget();
         Object.defineProperties(status, {
-            state: { configurable: false, enumerable: true, value: state },
+            state: { configurable: false, enumerable: true, get: () => state },
             onchange: { configurable: true, enumerable: true, writable: true, value: null }
         });
         if (globalThis.PermissionStatus?.prototype) {
             Object.setPrototypeOf(status, globalThis.PermissionStatus.prototype);
         }
-        return status;
+        return {
+            status,
+            initialize: (initialState) => {
+                state = pendingState ?? initialState;
+                initialized = true;
+            },
+            update: (newState) => {
+                newState = normalizedPermissionState(newState);
+                if (!initialized) {
+                    pendingState = newState;
+                    return;
+                }
+                if (state === newState) {
+                    return;
+                }
+                state = newState;
+                const event = new NativeEvent("change");
+                apply(dispatchEvent, status, [event]);
+                if (typeof status.onchange === "function") {
+                    try {
+                        apply(status.onchange, status, [event]);
+                    } catch (exception) {
+                        scheduleTask(() => { throw exception; }, 0);
+                    }
+                }
+            }
+        };
     };
 
     const getCurrentPosition = (success, error, options) => {
@@ -511,19 +548,40 @@
         }
     };
 
+    const receivePermissionState = (statusID, state) => {
+        const record = apply(mapGet, permissionStatuses, [statusID]);
+        if (record) {
+            record.update(isAllowedByPlatform() ? state : "denied");
+        }
+    };
+
     const shim = Object.freeze({ getCurrentPosition, watchPosition, clearWatch });
     const permissionsQuery = function (descriptor) {
         if (descriptor?.name !== "geolocation" && typeof nativePermissionsQuery === "function") {
             return nativePermissionsQuery.call(nativePermissions, descriptor);
         }
         if (descriptor?.name !== "geolocation" || !isContextEligible()) {
-            return Promise.resolve(permissionStatus("denied"));
+            const record = permissionStatus();
+            record.initialize("denied");
+            return Promise.resolve(record.status);
         }
+        const statusID = `${frameNonce}:${nextPermissionStatusID++}`;
+        const record = permissionStatus();
+        apply(mapSet, permissionStatuses, [statusID, record]);
         return registerFrame().then((enabled) => enabled && isAllowedByPlatform()
-            ? postOneShot(message("queryPermission"))
+            ? postOneShot(message("queryPermission", { statusID }))
             : null)
-            .then((result) => permissionStatus(isAllowedByPlatform() ? (result?.state ?? "denied") : "denied"),
-                  () => permissionStatus("denied"));
+            .then((result) => {
+                if (result?.status !== "permission") {
+                    apply(mapDelete, permissionStatuses, [statusID]);
+                }
+                record.initialize(isAllowedByPlatform() ? normalizedPermissionState(result?.state) : "denied");
+                return record.status;
+            }, () => {
+                apply(mapDelete, permissionStatuses, [statusID]);
+                record.initialize("denied");
+                return record.status;
+            });
     };
 
     const lockValue = (target, name, value) => {
@@ -562,7 +620,7 @@
 
         Object.defineProperty(globalThis, "__ddgSitePermissionsGeolocation", {
             configurable: false,
-            value: Object.freeze({ receiveWatchResult, receiveTerminalWatchResult })
+            value: Object.freeze({ receiveWatchResult, receiveTerminalWatchResult, receivePermissionState })
         });
         return true;
     };

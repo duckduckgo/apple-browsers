@@ -556,6 +556,40 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(decision, .deny)
     }
 
+    func testPendingRequestsInSeparateTabsResolveIndependentlyAcrossTabDismissal() async {
+        let firstTab = makeSUT()
+        let secondTab = makeSUT()
+        var firstPromptCompletion: ((SitePermissionPromptDecision) -> Void)?
+        var secondPromptCompletion: ((SitePermissionPromptDecision) -> Void)?
+        let firstPromptExpectation = expectation(description: "First tab site prompt presented")
+        let secondPromptExpectation = expectation(description: "Second tab site prompt presented")
+        firstTab.sitePermissionsPromptHandlerOverride = { _, completion in
+            firstPromptCompletion = completion
+            firstPromptExpectation.fulfill()
+        }
+        secondTab.sitePermissionsPromptHandlerOverride = { _, completion in
+            secondPromptCompletion = completion
+            secondPromptExpectation.fulfill()
+        }
+
+        let firstRequest = makeBridgeRequestTask(on: firstTab,
+                                                 originHost: "top-level.example",
+                                                 captureType: .camera)
+        let secondRequest = makeBridgeRequestTask(on: secondTab,
+                                                  originHost: "top-level.example",
+                                                  captureType: .camera)
+        await fulfillment(of: [firstPromptExpectation, secondPromptExpectation], timeout: 1)
+
+        firstTab.dismiss()
+        secondPromptCompletion?(.denyOnce)
+        let secondDecision = await secondRequest.value
+        XCTAssertEqual(secondDecision, .deny)
+
+        firstPromptCompletion?(.denyOnce)
+        let firstDecision = await firstRequest.value
+        XCTAssertEqual(firstDecision, .deny)
+    }
+
     func testRequestFromReplacedWebViewIsDeniedWithoutConstructingCoordinator() {
         let sut = makeSUT()
         let staleWebView = WKWebView()
@@ -792,6 +826,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let frame = geolocationFrame(on: sut.webView, originURL: frameURL)
 
             XCTAssertEqual(delegate.geolocationUserScript(userScript,
+                                                          permissionStatusID: "policy-status",
                                                           constraints: constraints,
                                                           permissionStateIn: frame),
                            .denied,
@@ -864,6 +899,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                                                         isPolicyAllowed: true)
 
         XCTAssertEqual(delegate.geolocationUserScript(userScript,
+                                                      permissionStatusID: "serp-status",
                                                       constraints: constraints,
                                                       permissionStateIn: frame),
                        .granted)
@@ -892,7 +928,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(store.decision(for: .location, at: site), .allow)
     }
 
-    func testGeolocationProviderRoutesThroughCoordinatorAndReturnsLocationWithoutPhase6Pixels() async throws {
+    func testGeolocationProviderRoutesThroughCoordinatorReturnsLocationAndFiresFlowPixels() async throws {
         for isMainFrame in [true, false] {
             let locationManager = Phase5MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
@@ -906,11 +942,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let sut = makeSUT(systemPermissionClient: systemPermissionClient,
                               committedURL: URL(string: "https://www.example.com/page")!,
                               eventHandler: { events.append($0) })
-            var receivedPrompt: SitePermissionPrompt?
-            sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
-                receivedPrompt = prompt
-                completion(.allowOnce)
-            }
             let userScript = GeolocationUserScript(installImmediately: true)
             sut.configureSitePermissionsGeolocation(with: userScript)
             let delegate = try XCTUnwrap(userScript.delegate)
@@ -922,6 +953,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                                                             isPolicyAllowed: true)
 
             XCTAssertEqual(delegate.geolocationUserScript(userScript,
+                                                          permissionStatusID: "status-before-request",
                                                           constraints: constraints,
                                                           permissionStateIn: frame),
                            .prompt,
@@ -934,11 +966,20 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                                                      in: frame)
             }
 
+            for _ in 0..<100 where sut.children.compactMap({
+                $0 as? UIHostingController<SitePermissionDialogView>
+            }).isEmpty {
+                await Task.yield()
+            }
+            let dialog = try XCTUnwrap(sut.children.compactMap {
+                ($0 as? UIHostingController<SitePermissionDialogView>)?.rootView
+            }.first)
+            XCTAssertEqual(events, [.permissionDialogImpression(type: .geolocation)])
+            dialog.onAction(.allowOnce)
+
             for _ in 0..<100 where locationManager.startUpdatingCallCount == 0 {
                 await Task.yield()
             }
-            XCTAssertEqual(receivedPrompt?.permissionTypes, [.location], "isMainFrame: \(isMainFrame)")
-            XCTAssertEqual(receivedPrompt?.site.host, "example.com", "isMainFrame: \(isMainFrame)")
             XCTAssertEqual(locationManager.startUpdatingCallCount, 1, "isMainFrame: \(isMainFrame)")
 
             let location = CLLocation(latitude: 52.2297, longitude: 21.0122)
@@ -952,12 +993,163 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             XCTAssertEqual(position.coordinates.longitude, location.coordinate.longitude)
             XCTAssertEqual(locationManager.stopUpdatingCallCount, 1, "isMainFrame: \(isMainFrame)")
             XCTAssertEqual(delegate.geolocationUserScript(userScript,
+                                                          permissionStatusID: "status-after-request",
                                                           constraints: constraints,
                                                           permissionStateIn: frame),
-                           .granted,
+                           .prompt,
                            "isMainFrame: \(isMainFrame)")
-            XCTAssertTrue(events.isEmpty, "isMainFrame: \(isMainFrame)")
+            XCTAssertEqual(events, [
+                .permissionDialogImpression(type: .geolocation),
+                .permissionDialogClick(type: .geolocation, selection: .allowOnce)
+            ], "isMainFrame: \(isMainFrame)")
         }
+    }
+
+    func testManagerLocationDenyRefreshesLiveStatusAndRevokesWatchImmediately() async throws {
+        let committedURL = URL(string: "https://www.example.com/page")!
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: committedURL))
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        store.setPersistentDecision(.allow, for: .location, at: site)
+        let locationManager = Phase5MockLocationManager()
+        let systemPermissionClient = SystemPermissionClient(
+            locationManager: locationManager,
+            locationServicesEnabled: { true },
+            avAuthorizationStatus: { _ in .authorized },
+            avRequestAccess: { _, completion in completion(true) },
+            notificationCenter: NotificationCenter()
+        )
+        let sut = makeSUT(systemPermissionClient: systemPermissionClient,
+                          store: store,
+                          committedURL: committedURL)
+        let userScript = GeolocationUserScript(installImmediately: true)
+        sut.configureSitePermissionsGeolocation(with: userScript)
+        let provider = try XCTUnwrap(userScript.delegate as? GeolocationProvider)
+        let frame = geolocationFrame(on: sut.webView,
+                                     originURL: URL(string: "https://www.example.com/frame")!)
+        let context = try XCTUnwrap(sut.makeGeolocationSitePermissionContext(for: frame))
+        var statusStates = [GeolocationPermissionState]()
+        var watchResults = [GeolocationPositionResult]()
+
+        XCTAssertEqual(provider.permissionState(withID: "status", context: context) {
+            statusStates.append($0)
+            return true
+        }, .granted)
+        provider.startWatch(withID: "watch", context: context) {
+            watchResults.append($0)
+            return true
+        }
+        for _ in 0..<100 where locationManager.startUpdatingCallCount == 0 {
+            await Task.yield()
+        }
+
+        store.setPersistentDecision(.deny, for: .location, at: site)
+        sut.revokeSitePermissionsFromManagement([.location], for: site)
+
+        let denied = GeolocationPositionResult.failure(
+            .init(code: .permissionDenied, message: "Location permission was denied")
+        )
+        XCTAssertEqual(statusStates, [.denied])
+        XCTAssertEqual(watchResults, [denied])
+        XCTAssertEqual(locationManager.stopUpdatingCallCount, 1)
+    }
+
+    func testFlagOffPreservesPendingGeolocationPromptAndItsCompletion() async throws {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let locationManager = Phase5MockLocationManager()
+        let systemPermissionClient = SystemPermissionClient(
+            locationManager: locationManager,
+            locationServicesEnabled: { true },
+            avAuthorizationStatus: { _ in .authorized },
+            avRequestAccess: { _, completion in completion(true) },
+            notificationCenter: NotificationCenter()
+        )
+        let sut = makeSUT(featureFlagger: featureFlagger, systemPermissionClient: systemPermissionClient)
+        defer { sut.closeSitePermissions() }
+        let userScript = GeolocationUserScript(installImmediately: true)
+        sut.configureSitePermissionsGeolocation(with: userScript)
+        let delegate = try XCTUnwrap(userScript.delegate)
+        let frame = geolocationFrame(on: sut.webView,
+                                     originURL: URL(string: "https://top-level.example/frame")!)
+        let constraints = GeolocationRequestConstraints(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
+        let resultTask = Task { @MainActor in
+            await delegate.geolocationUserScript(userScript,
+                                                 getCurrentPositionWith: .init(timeout: 2),
+                                                 constraints: constraints,
+                                                 in: frame)
+        }
+        for _ in 0..<100 where sut.children.compactMap({
+            $0 as? UIHostingController<SitePermissionDialogView>
+        }).isEmpty {
+            await Task.yield()
+        }
+        let hostingController = try XCTUnwrap(sut.children.compactMap {
+            $0 as? UIHostingController<SitePermissionDialogView>
+        }.first)
+
+        featureFlagger.enabledFeatureFlags = []
+        featureFlagger.triggerUpdate()
+
+        XCTAssertTrue(hostingController.parent === sut)
+        XCTAssertTrue(userScript.delegate === delegate)
+        hostingController.rootView.onAction(.allowOnce)
+        for _ in 0..<100 where locationManager.startUpdatingCallCount == 0 {
+            await Task.yield()
+        }
+        guard locationManager.startUpdatingCallCount == 1 else {
+            XCTFail("Flag rollback must preserve the location prompt completion")
+            return
+        }
+        XCTAssertEqual(delegate.geolocationUserScript(userScript,
+                                                      permissionStatusID: "status-after-rollback",
+                                                      constraints: constraints,
+                                                      permissionStateIn: frame), .granted)
+
+        locationManager.send(CLLocation(latitude: 52.2297, longitude: 21.0122))
+        guard case .success(let position) = await resultTask.value else {
+            XCTFail("Expected the existing document's location request to finish after rollback")
+            return
+        }
+        XCTAssertEqual(position.coordinates.latitude, 52.2297)
+        XCTAssertEqual(locationManager.stopUpdatingCallCount, 1)
+    }
+
+    func testDisablingGeolocationRetainsHandlerThroughFailedProvisionalNavigationAndRetiresItOnCommit() async throws {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let sut = makeSUT(featureFlagger: featureFlagger)
+        let userScript = GeolocationUserScript(installImmediately: true)
+        sut.configureSitePermissionsGeolocation(with: userScript)
+        let frame = geolocationFrame(on: sut.webView,
+                                     originURL: URL(string: "https://top-level.example/frame")!)
+        let activationHandler = try XCTUnwrap(userScript.activationHandler)
+        XCTAssertNotNil(userScript.delegate)
+        XCTAssertTrue(activationHandler(frame))
+        XCTAssertNotNil(sut.makeGeolocationSitePermissionContext(for: frame))
+
+        featureFlagger.enabledFeatureFlags = []
+        featureFlagger.triggerUpdate()
+        sut.configureSitePermissionsGeolocation(with: nil)
+        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+        XCTAssertNotNil(userScript.delegate)
+
+        let downloadHandoffError = NSError(domain: "WebKitErrorDomain", code: 102)
+        sut.webView(sut.webView, didFailProvisionalNavigation: nil, withError: downloadHandoffError)
+        XCTAssertNotNil(userScript.delegate)
+        XCTAssertTrue(activationHandler(frame))
+        XCTAssertNotNil(sut.makeGeolocationSitePermissionContext(for: frame))
+
+        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+        sut.webView(sut.webView, didCommit: nil)
+        XCTAssertNil(userScript.delegate)
+        XCTAssertNil(userScript.activationHandler)
+
+        let reply = await userScript.handleOneShot(
+            .getCurrentPosition,
+            body: [:],
+            frame: nil,
+            constraints: .init(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
+        )
+        XCTAssertEqual(reply["status"] as? String, "error")
+        XCTAssertEqual(reply["code"] as? Int, GeolocationPositionError.Code.positionUnavailable.rawValue)
     }
 
     func testPreparingForDataClearingCancelsActiveGeolocationRequest() async throws {

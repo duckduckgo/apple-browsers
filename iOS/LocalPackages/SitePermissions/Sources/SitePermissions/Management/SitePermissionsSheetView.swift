@@ -241,9 +241,12 @@ public struct SitePermissionsSheetView: View {
             image = DesignSystemImages.Glyphs.Size24.microphoneBlocked
         case (.microphone, .solid), (.microphone, .inUse):
             image = DesignSystemImages.Glyphs.Size24.microphoneSolid
-        case (.location, _):
-            assertionFailure("Location management lands in Phase 6")
+        case (.location, .outline):
             image = DesignSystemImages.Glyphs.Size24.location
+        case (.location, .blocked):
+            image = DesignSystemImages.Glyphs.Size24.locationBlocked
+        case (.location, .solid), (.location, .inUse):
+            image = DesignSystemImages.Glyphs.Size24.locationSolid
         }
         return Image(uiImage: image)
     }

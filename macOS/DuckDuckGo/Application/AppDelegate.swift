@@ -518,10 +518,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let commonDatabase: Database?
 
         if AppVersion.runType.requiresEnvironment {
-            // Set up PixelKit before the Keychain retry so that its failure path can
-            // report. Reconfigured below once the internal user decider is available.
-            Self.configurePixelKit(isInternalUser: false)
-
             let (encryptionKey, database) = Self.createDatabaseRetryingKeychainAccess(
                 keyStore: keyStore,
                 startupProfiler: startupProfiler
@@ -2569,21 +2565,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return (key, db)
             } catch {
                 guard attempt < maxAttempts else {
-                    crashAfterKeychainRetryExhausted(error: error)
+                    // Interpolate the error itself rather than its localizedDescription:
+                    // EncryptionKeyStoreError is not a LocalizedError, so only the raw
+                    // value carries the Keychain OSStatus into the crash report.
+                    let underlyingError = (error as? Database.KeychainUnavailableError)?.underlying ?? error
+                    fatalError("Keychain unavailable after retrying: \(underlyingError)")
                 }
                 startupProfiler.invalidate()
                 Thread.sleep(forTimeInterval: 2)
             }
         }
         fatalError()
-    }
-
-    private static func crashAfterKeychainRetryExhausted(error: Error) -> Never {
-        let underlyingError = (error as? Database.KeychainUnavailableError)?.underlying ?? error
-        PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: underlyingError), frequency: .dailyAndCount)
-        PixelKit.fire(GeneralPixel.dbKeychainUnavailableTermination, frequency: .standard)
-        Thread.sleep(forTimeInterval: 1)
-        fatalError("Keychain unavailable after retrying: \(underlyingError.localizedDescription)")
     }
 }
 

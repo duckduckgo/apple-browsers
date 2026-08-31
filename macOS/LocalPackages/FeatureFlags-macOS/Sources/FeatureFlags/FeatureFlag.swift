@@ -402,7 +402,7 @@ public enum FeatureFlag: String, CaseIterable {
     case promoQueue
 
     /// Enables the Sync Favicons ("Download Missing Icons?") promo in the promo queue.
-    /// Per-promo kill switch, so the promo can be disabled remotely without taking down the whole queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667610?focus=true
     case promoQueueSyncFaviconsPromo
 
     /// Enables showing browsing history domains in the first-time quit survey

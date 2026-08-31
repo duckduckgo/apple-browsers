@@ -30,6 +30,17 @@ enum EncryptionKeyStoreError: Error, ErrorWithPixelParameters {
     case cannotTransformDataToString(OSStatus)
     case cannotTransfrotmStringToBase64Data(OSStatus)
 
+    var status: OSStatus {
+        switch self {
+        case .storageFailed(let status),
+             .readFailed(let status),
+             .deletionFailed(let status),
+             .cannotTransformDataToString(let status),
+             .cannotTransfrotmStringToBase64Data(let status):
+            return status
+        }
+    }
+
     var errorParameters: [String: String] {
         switch self {
         case .storageFailed(let status):

@@ -2571,8 +2571,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let db = try Database()
                 return (key, db)
             } catch {
+                let underlyingError = (error as? Database.KeychainUnavailableError)?.underlying ?? error
+
+                // The user dismissed the Keychain prompt. Retrying would only present it
+                // again, and this is their decision rather than a failure, so quit quietly
+                // without reporting it.
+                if (underlyingError as? EncryptionKeyStoreError)?.status == errSecUserCanceled {
+                    exit(0)
+                }
+
                 guard attempt < maxAttempts else {
-                    let underlyingError = (error as? Database.KeychainUnavailableError)?.underlying ?? error
                     PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: underlyingError), frequency: .dailyAndCount)
 
                     // Give Pixel a chance to be sent, but not too long

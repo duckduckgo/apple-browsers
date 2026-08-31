@@ -282,6 +282,7 @@ public extension DesignSystemImages {
             public static var images: DesignSystemImage { .init(resource: .images16) }
             public static var imageLink: DesignSystemImage { .init(resource: .imageLink16) }
             public static var `import`: DesignSystemImage { .init(resource: .import16) }
+            public static var importExport: DesignSystemImage { .init(resource: .importExport16) }
             public static var importLeft: DesignSystemImage { .init(resource: .importLeft16) }
             public static var info: DesignSystemImage { .init(resource: .info16) }
             public static var infoRecolorable: DesignSystemImage { .init(resource: .infoRecolorable16) }

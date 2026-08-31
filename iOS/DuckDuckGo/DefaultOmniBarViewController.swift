@@ -49,6 +49,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private var reasoningPickerController: IPadOmnibarReasoningPickerController?
     private var toolPickerController: IPadOmnibarToolPickerController?
     private var attachmentController: IPadOmnibarAttachmentController?
+    private var isUpdatedCreateImageEnabled = false
 
     override var iPadDuckAIControlValues: IPadDuckAIControlValues {
         IPadDuckAIControlValuesSnapshot(
@@ -134,6 +135,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             guard let self else { return }
             self.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
+            if !isExpanded {
+                self.toolPickerController?.clearModelSwitchNotice()
+            }
             self.handleModelPickerExpansionChanged(isExpanded: isExpanded)
         }
 
@@ -526,14 +530,32 @@ extension DefaultOmniBarViewController {
             self?.refreshReasoningPicker()
         }
 
-        let toolController = IPadOmnibarToolPickerController(store: controller.modelStore)
+        isUpdatedCreateImageEnabled = dependencies.featureFlagger.isFeatureOn(.updatedCreateImage)
+        let toolController = IPadOmnibarToolPickerController(
+            store: controller.modelStore,
+            isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled
+        )
         toolPickerController = toolController
         toolController.onToolsUpdated = { [weak self] in
+            self?.refreshModelPicker()
             self?.refreshToolPicker()
             self?.refreshReasoningPicker()
+            self?.refreshAttachButton()
+        }
+        toolController.onModelSwitchNoticeUpdated = { [weak self] notice in
+            guard let self else { return }
+            if notice != nil {
+                self.attachmentController?.handleModelChanged()
+            }
+            let message = notice.map { UTIFooterMessageMapper().message(for: $0) }
+            self.omniBarView.setCreateImageModelSwitchFooterMessage(message, animated: true)
+            self.omniDelegate?.onOmniBarExpandedContentSizeChanged()
         }
         omniBarView.onSelectedToolClearTapped = { [weak self] in
             self?.toolPickerController?.resetSelection(isUserInitiated: true)
+        }
+        omniBarView.onCreateImageModelSwitchNoticeDismissed = { [weak self] in
+            self?.toolPickerController?.clearModelSwitchNotice()
         }
 
         // The attach button shares the same store so its limits and accepted types track the selected
@@ -601,9 +623,12 @@ extension DefaultOmniBarViewController {
             self.refreshToolPicker()
             self.refreshAttachButton()
         }
-        omniBarView.aiChatModelPickerMenu = menuFiringShownPixel(menu) {
+        let isReadOnly = isUpdatedCreateImageEnabled && toolPickerController?.selectedTool == .imageGeneration
+        omniBarView.isAIChatModelPickerReadOnly = isReadOnly
+        let menuWithShownPixel = menuFiringShownPixel(menu) {
             UnifiedToggleInputCoordinatorPixelHelper.fireModelPickerShownPixel(isAITabState: false)
         }
+        omniBarView.aiChatModelPickerMenu = isReadOnly ? nil : menuWithShownPixel
     }
 
     private func refreshReasoningPicker() {

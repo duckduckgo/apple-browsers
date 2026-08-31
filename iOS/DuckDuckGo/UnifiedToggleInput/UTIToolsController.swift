@@ -67,14 +67,16 @@ final class UTIToolsController {
     func presentation(
         isActive: Bool,
         modelStore: UTIModelStore,
-        canShowCustomizeResponses: Bool
+        canShowCustomizeResponses: Bool,
+        createImagePolicy: CreateImageMenuPolicy = .legacy
     ) -> Presentation {
         let toolsMenu = buildToolsMenu(
             modelStore: modelStore,
-            canShowCustomizeResponses: canShowCustomizeResponses
+            canShowCustomizeResponses: canShowCustomizeResponses,
+            createImagePolicy: createImagePolicy
         )
         guard canShowTools(isActive: isActive),
-              hasActionableMenuItem(modelStore: modelStore, toolsMenu: toolsMenu) else {
+              hasActionableMenuItem(toolsMenu: toolsMenu) else {
             return .hidden
         }
 
@@ -85,15 +87,14 @@ final class UTIToolsController {
         )
     }
 
-    private func hasActionableMenuItem(modelStore: UTIModelStore, toolsMenu: UTIToolsMenu) -> Bool {
-        toolsMenu.items.contains { item in
-            guard let tool = item.tool else {
-                // Non-tool actions (e.g. Customize Responses) are always available and keep the tools button visible.
-                return true
-            }
-            return modelStore.selectedModelSupports(tool: tool)
-        }
+    private func hasActionableMenuItem(toolsMenu: UTIToolsMenu) -> Bool {
+        toolsMenu.items.contains { $0.isEnabled }
     }
+}
+
+enum CreateImageMenuPolicy: Equatable {
+    case legacy
+    case updated(canSwitchModel: Bool)
 }
 
 private extension UTIToolsController {
@@ -103,16 +104,28 @@ private extension UTIToolsController {
         return isActive
     }
 
-    func buildToolsMenu(modelStore: UTIModelStore, canShowCustomizeResponses: Bool) -> UTIToolsMenu {
+    func buildToolsMenu(
+        modelStore: UTIModelStore,
+        canShowCustomizeResponses: Bool,
+        createImagePolicy: CreateImageMenuPolicy
+    ) -> UTIToolsMenu {
         var items: [UTIToolsMenu.Item] = []
 
         if canShowCustomizeResponses {
             items.append(.customizeResponses)
         }
 
+        let isCreateImageEnabled = isImageGenerationEnabled(
+            modelStore: modelStore,
+            createImagePolicy: createImagePolicy
+        )
         items.append(.imageGeneration(
             isSelected: selectedTool == .imageGeneration,
-            isEnabled: modelStore.selectedModelSupports(tool: .imageGeneration)
+            isEnabled: isCreateImageEnabled,
+            subtitle: imageGenerationSubtitle(
+                isEnabled: isCreateImageEnabled,
+                createImagePolicy: createImagePolicy
+            )
         ))
         items.append(.webSearch(
             isSelected: selectedTool == .webSearch,
@@ -121,6 +134,27 @@ private extension UTIToolsController {
 
         return UTIToolsMenu(items: items)
     }
+
+    func isImageGenerationEnabled(modelStore: UTIModelStore, createImagePolicy: CreateImageMenuPolicy) -> Bool {
+        let isSupportedBySelectedModel = modelStore.selectedModelSupports(tool: .imageGeneration)
+        switch createImagePolicy {
+        case .legacy:
+            return isSupportedBySelectedModel
+        case .updated(let canSwitchModel):
+            return isSupportedBySelectedModel || canSwitchModel
+        }
+    }
+
+    func imageGenerationSubtitle(isEnabled: Bool, createImagePolicy: CreateImageMenuPolicy) -> String {
+        switch createImagePolicy {
+        case .legacy:
+            return UserText.aiChatToolbarImageGenerationToolSubtitle
+        case .updated:
+            return isEnabled
+                ? UserText.aiChatToolbarImageGenerationToolSubtitle
+                : UserText.aiChatToolbarImageGenerationToolUnavailableSubtitle
+        }
+    }
 }
 
 struct UTIToolsMenu {
@@ -128,7 +162,7 @@ struct UTIToolsMenu {
     enum Item: Equatable {
         case customizeResponses
         case webSearch(isSelected: Bool, isEnabled: Bool)
-        case imageGeneration(isSelected: Bool, isEnabled: Bool)
+        case imageGeneration(isSelected: Bool, isEnabled: Bool, subtitle: String)
 
         enum Identifier {
             case customizeResponses
@@ -157,6 +191,15 @@ struct UTIToolsMenu {
                 return .webSearch
             case .imageGeneration:
                 return .imageGeneration
+            }
+        }
+
+        var isEnabled: Bool {
+            switch self {
+            case .customizeResponses:
+                return true
+            case let .webSearch(_, isEnabled), let .imageGeneration(_, isEnabled, _):
+                return isEnabled
             }
         }
     }
@@ -191,10 +234,11 @@ struct UTIToolsMenuFactory {
                 isEnabled: isEnabled,
                 onSelect: onSelect
             )
-        case let .imageGeneration(isSelected, isEnabled):
+        case let .imageGeneration(isSelected, isEnabled, subtitle):
             return makeImageGenerationAction(
                 isSelected: isSelected,
                 isEnabled: isEnabled,
+                subtitle: subtitle,
                 onSelect: onSelect
             )
         }
@@ -233,6 +277,7 @@ struct UTIToolsMenuFactory {
     private func makeImageGenerationAction(
         isSelected: Bool,
         isEnabled: Bool,
+        subtitle: String,
         onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void
     ) -> UIAction {
         let state: UIMenuElement.State = isSelected ? .on : .off
@@ -240,7 +285,7 @@ struct UTIToolsMenuFactory {
 
         return UIAction(
             title: UserText.aiChatToolbarImageGenerationToolTitle,
-            subtitle: UserText.aiChatToolbarImageGenerationToolSubtitle,
+            subtitle: subtitle,
             image: DesignSystemImages.Glyphs.Size24.images,
             attributes: attributes,
             state: state

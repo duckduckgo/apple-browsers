@@ -319,10 +319,9 @@ final class DuckAiUsageSnapshotTests: XCTestCase {
                 XCTAssertEqual(snapshot.notice?.window, .daily)
                 XCTAssertEqual(snapshot.cta?.id, .subscribe)
                 XCTAssertEqual(snapshot.notice?.dismissible, false)
-            case .approachingDaily:
+            case .approachingDaily50, .approachingDaily75, .approachingDaily90:
                 XCTAssertEqual(snapshot.notice?.id, .approaching)
                 XCTAssertEqual(snapshot.notice?.window, .daily)
-                XCTAssertEqual(snapshot.notice?.percentUsed, 90)
                 XCTAssertEqual(snapshot.cta?.id, .switchToCheaper)
                 XCTAssertEqual(snapshot.cta?.target.candidateModelIds, targets)
             case .dailyReachedWithBypass:
@@ -347,10 +346,20 @@ final class DuckAiUsageSnapshotTests: XCTestCase {
         }
     }
 
+    /// One seed per step of the severity ladder, or the ring's colours can't be seen without a live
+    /// account near its limit.
+    func testTheApproachingSeedsCoverEverySeverityStep() {
+        let percents = [DuckAiUsageSnapshotSeed.approachingDaily50,
+                        .approachingDaily75,
+                        .approachingDaily90].map { make($0.entryValue(now: now)).notice?.percentUsed }
+
+        XCTAssertEqual(percents, [50, 75, 90])
+    }
+
     /// The seeds' own reset times differ per window, so a message that picked the wrong window's
     /// time is visible in the card rather than plausible.
     func testTheSeedsResetTimesFollowTheirWindow() {
-        let daily = make(DuckAiUsageSnapshotSeed.approachingDaily.entryValue(now: now)).notice
+        let daily = make(DuckAiUsageSnapshotSeed.approachingDaily90.entryValue(now: now)).notice
         let weekly = make(DuckAiUsageSnapshotSeed.approachingWeekly.entryValue(now: now)).notice
 
         XCTAssertEqual(daily?.resetsAt, now.addingTimeInterval(5 * 3600))
@@ -359,9 +368,9 @@ final class DuckAiUsageSnapshotTests: XCTestCase {
 
     /// A seed must never offer the model the picker is already on.
     func testSwitchSeedsExcludeTheSelectedModel() {
-        let snapshot = make(DuckAiUsageSnapshotSeed.approachingDaily.entryValue(now: now,
-                                                                                switchTargets: ["haiku", "sonnet"],
-                                                                                selectedModelId: "sonnet"))
+        let snapshot = make(DuckAiUsageSnapshotSeed.approachingDaily90.entryValue(now: now,
+                                                                                  switchTargets: ["haiku", "sonnet"],
+                                                                                  selectedModelId: "sonnet"))
 
         XCTAssertEqual(snapshot.cta?.target.candidateModelIds, ["haiku"])
     }
@@ -369,7 +378,7 @@ final class DuckAiUsageSnapshotTests: XCTestCase {
     /// Seeded without a live model list, the switch seeds render as the hidden-button case rather
     /// than offering a model that isn't in the picker.
     func testSwitchSeedsWithoutTargetsCarryNoModels() {
-        let snapshot = make(DuckAiUsageSnapshotSeed.approachingDaily.entryValue(now: now))
+        let snapshot = make(DuckAiUsageSnapshotSeed.approachingDaily90.entryValue(now: now))
 
         XCTAssertEqual(snapshot.notice?.id, .approaching)
         XCTAssertTrue(snapshot.cta?.target.isEmpty ?? false)

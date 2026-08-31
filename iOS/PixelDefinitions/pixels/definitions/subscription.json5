@@ -127,29 +127,6 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
-    // Subscription Onboarding Flow
-    "subscription_onboarding_connection-info_failure": {
-        "description": "Fired when the public IP and geolocation fetch behind the VPN activation screen fails during onboarding.",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
-    },
-    "subscription_onboarding_ai-models_failure": {
-        "description": "Fired when the Duck.ai model list fetch fails during onboarding.",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
-    },
-    "subscription_onboarding_subscription_failure": {
-        "description": "Fired when the subscription fetch behind the order confirmation screen fails during onboarding.",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
-    },
-
     // Pending Transaction Recovery
     "m_privacy-pro_purchase_success_after_pending_transaction": {
         "description": "Fired when a subscription purchase succeeds after previously being in a pending transaction state (e.g., Ask to Buy was approved)",
@@ -1038,5 +1015,26 @@
                 "description": "Whether Duck.ai was enabled in the app when the customer entered the flow"
             }
         ]
+    },
+    "subscription_onboarding_connection-info_failure": {
+        "description": "Fired when the public IP and geolocation fetch behind the VPN activation screen fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_onboarding_ai-models_failure": {
+        "description": "Fired when the Duck.ai model list fetch fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_onboarding_subscription_failure": {
+        "description": "Fired when the subscription fetch behind the order confirmation screen fails during onboarding.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
     }
 }

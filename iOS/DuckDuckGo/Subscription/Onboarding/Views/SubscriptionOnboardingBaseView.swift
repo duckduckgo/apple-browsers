@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
@@ -97,9 +98,16 @@ enum SubscriptionOnboardingFooter {
     case double(primary: SubscriptionOnboardingFooterButton, secondary: SubscriptionOnboardingFooterButton)
 }
 
+private struct FooterBlockHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 /// A generic page for the post-subscription onboarding flow: an optional leading button and centered title,
 /// an optional header, a caller-supplied body, and an optional bottom-pinned footer.
-struct SubscriptionOnboardingBaseView<Content: View>: View {
+struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View {
 
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
@@ -108,7 +116,10 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     private let scrollsContent: Bool
     private let declaresNavigationChrome: Bool
     private let footerBlur: Bool
+    private let pageBackground: PageBackground
     private let content: Content
+
+    @State private var footerBlockHeight: CGFloat = 0
 
     init(title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
@@ -117,6 +128,7 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
          scrollsContent: Bool = true,
          declaresNavigationChrome: Bool = true,
          footerBlur: Bool = false,
+         @ViewBuilder pageBackground: () -> PageBackground = { EmptyView() },
          @ViewBuilder content: () -> Content) {
         self.title = title
         self.navigationButton = navigationButton
@@ -125,6 +137,7 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
         self.scrollsContent = scrollsContent
         self.declaresNavigationChrome = declaresNavigationChrome
         self.footerBlur = footerBlur
+        self.pageBackground = pageBackground()
         self.content = content()
     }
 
@@ -142,15 +155,22 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
         }
     }
 
-    /// `footerBlur` overlays the footer on top of scrolling content instead of reserving space below it
+    /// Overlays the footer instead of reserving space below it — `footerBlur`, or always on iPad.
+    private var usesBlurredFooter: Bool {
+        footerBlur || DevicePlatform.isIpad
+    }
+
     @ViewBuilder
     private var pageWithFooter: some View {
         let page = pageContent
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background { pageBackground }
             .background(pageBackgroundColor.ignoresSafeArea())
 
-        if footerBlur {
-            page.overlay(alignment: .bottom) { blurredFooterView }
+        if usesBlurredFooter {
+            page
+                .overlay(alignment: .bottom) { blurredFooterView }
+                .onPreferenceChange(FooterBlockHeightKey.self) { footerBlockHeight = $0 }
         } else {
             page.safeAreaInset(edge: .bottom) { footerView }
         }
@@ -186,9 +206,9 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
             header
             content
         }
-        .padding(.vertical, Metrics.contentVerticalPadding)
+        .padding(.top, Metrics.contentVerticalPadding)
         .padding(.horizontal, Metrics.horizontalPadding)
-        .padding(.bottom, footerBlur ? Metrics.footerBlurFadeHeight : 0)
+        .padding(.bottom, usesBlurredFooter ? footerBlockHeight : Metrics.contentVerticalPadding)
     }
 }
 
@@ -263,6 +283,11 @@ private extension SubscriptionOnboardingBaseView {
                 footerView
                     .padding(.bottom, Metrics.contentVerticalPadding)
                     .background(pageBackgroundColor, ignoresSafeAreaEdges: .bottom)
+            }
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(key: FooterBlockHeightKey.self, value: proxy.size.height)
+                }
             }
         }
     }

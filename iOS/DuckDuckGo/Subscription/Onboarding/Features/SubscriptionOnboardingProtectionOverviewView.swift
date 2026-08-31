@@ -24,10 +24,6 @@ import SwiftUI
 /// IDTR and PIR are this screen with different content. Only the CTA differs: IDTR advances the flow, PIR
 /// pushes the Data Broker Protection screen.
 struct SubscriptionOnboardingProtectionOverviewView: View {
-    private enum Metrics {
-        static let footerBlurClearance: CGFloat = 70
-    }
-
     private let content: SubscriptionOnboardingInfoContent
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
@@ -62,7 +58,6 @@ struct SubscriptionOnboardingProtectionOverviewView: View {
             footer: .single(activateButton),
             footerBlur: true) {
             SubscriptionOnboardingInfoView(content: content)
-                .padding(.bottom, Metrics.footerBlurClearance)
         }
     }
 }

@@ -42,7 +42,8 @@ struct SubscriptionOnboardingOrderConfirmationView: View {
             navigationButton: navigationButton,
             header: header,
             footer: .single(.init(UserText.subscriptionOnboardingOrderConfirmationNextButton) { viewModel.proceed() }),
-            scrollsContent: false) {
+            scrollsContent: false,
+            pageBackground: { illustration }) {
             content
         }
         .overlay { ConfettiView() }
@@ -72,18 +73,18 @@ private extension SubscriptionOnboardingOrderConfirmationView {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(alignment: .bottom) {
-            illustration
-        }
     }
 
     var illustration: some View {
-        Image(.daxThumbupStatic)
-            .resizable()
-            .scaledToFit()
-            .padding(.horizontal, -SubscriptionOnboardingPageInsets.horizontal)
-            .padding(.bottom, -(SubscriptionOnboardingPageInsets.vertical + Metrics.illustrationOverhang))
-            .accessibilityHidden(true)
+        GeometryReader { proxy in
+            Image(.daxThumbupStatic)
+                .resizable()
+                .scaledToFit()
+                .frame(width: proxy.size.width)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .offset(y: Metrics.illustrationOverhang)
+        }
+        .accessibilityHidden(true)
     }
 }
 

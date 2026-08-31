@@ -1132,7 +1132,7 @@ extension MainViewController {
                 showFloatingAIChatShortcutCloseConfirmation(at: index, currentEvent: currentEvent) { [weak self] in
                     guard let self else { return }
                     self.aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-                    self.tabCollectionViewModel.remove(at: index)
+                    self.tabCollectionViewModel.remove(at: index, reason: .userInitiated)
                 }
                 return
             }
@@ -1169,7 +1169,7 @@ extension MainViewController {
         }
 
         aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
-        tabCollectionViewModel.remove(at: index)
+        tabCollectionViewModel.remove(at: index, reason: .userInitiated)
     }
 
     @MainActor

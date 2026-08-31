@@ -669,6 +669,17 @@ extension WindowControllersManager: OnboardingNavigating {
                                onAbandon: @escaping @MainActor () -> Void) {
         guard let onboardingTab else { return }
 
+        // Once onboarding is abandoned the tab is the user's again, so drop the interceptor first —
+        // otherwise it would go on swallowing closes of a tab that no longer hosts onboarding.
+        // Only the interceptor and the reference are cleared here: the subscription below is
+        // `.first()` and retires itself, and cancelling it from inside its own sink would release
+        // the cancellable while the content subject is still delivering.
+        let abandon: @MainActor () -> Void = { [weak self] in
+            self?.onboardingTab?.closeInterceptor = nil
+            self?.onboardingTab = nil
+            onAbandon()
+        }
+
         onboardingTab.closeInterceptor = { reason in
             switch reason {
             case .userInitiated:
@@ -676,7 +687,11 @@ extension WindowControllersManager: OnboardingNavigating {
                 onClose()
                 return true
             case .bulk:
-                onAbandon()
+                abandon()
+                return false
+            case .programmatic:
+                // Not reachable — `removeUnpinnedTab` only consults the interceptor for
+                // `.userInitiated`, and bulk paths pass `.bulk` explicitly.
                 return false
             }
         }
@@ -684,7 +699,7 @@ extension WindowControllersManager: OnboardingNavigating {
         onboardingTabCancellable = onboardingTab.$content
             .filter { if case .onboarding = $0 { false } else { true } }
             .first()
-            .sink { _ in onAbandon() }
+            .sink { _ in abandon() }
     }
 
     /// Replaces the onboarding tab, falling back to the selected tab when none is tracked

@@ -50,13 +50,17 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func closeTab(_ tab: Tab)
 }
 
-/// Why a tab is being removed, passed to `Tab.closeInterceptor`.
+/// Why a tab is being removed. Only the reasons below reach `Tab.closeInterceptor` — every other
+/// removal (`.programmatic`) leaves it alone, so an interceptor never has to guess at intent.
 enum TabCloseReason {
     /// The user closed this specific tab. The interceptor may cancel the removal.
     case userInitiated
     /// The tab is being removed as part of a bulk operation (close others, close to the side, burning).
     /// The removal proceeds regardless of what the interceptor returns.
     case bulk
+    /// Any other removal: moving the tab to another window, pinning it, a page or extension closing
+    /// itself, or internal replacement. The interceptor is not consulted.
+    case programmatic
 }
 
 @dynamicMemberLookup final class Tab: NSObject, Identifiable, ObservableObject {

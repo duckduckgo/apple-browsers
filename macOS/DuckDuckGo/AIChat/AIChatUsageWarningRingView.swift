@@ -1,6 +1,5 @@
 //
-//  UTIFooterUsageRingView.swift
-//  DuckDuckGo
+//  AIChatUsageWarningRingView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,13 +17,18 @@
 //
 
 import AIChat
+import AppKit
 import DesignResourcesKit
-import UIKit
 
-final class UTIFooterUsageRingView: UIView {
+/// How much of the allowance is spent, on the approaching message. AppKit twin of iOS's
+/// `UTIFooterUsageRingView`: same size, line width, timing and colour table.
+final class AIChatUsageWarningRingView: NSView {
 
-    private enum Constants {
+    enum Constants {
         static let size: CGFloat = 16
+    }
+
+    private enum Metrics {
         static let lineWidth: CGFloat = 2
         static let progressChangeDuration: TimeInterval = 0.25
     }
@@ -35,18 +39,18 @@ final class UTIFooterUsageRingView: UIView {
     private var progress: Double = 0
     private var severity: DuckAiUsageSeverity = .info
 
-    override var intrinsicContentSize: CGSize {
-        CGSize(width: Constants.size, height: Constants.size)
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: Constants.size, height: Constants.size)
     }
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        isUserInteractionEnabled = false
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
         for shape in [trackLayer, progressLayer] {
-            shape.fillColor = UIColor.clear.cgColor
-            shape.lineWidth = Constants.lineWidth
+            shape.fillColor = NSColor.clear.cgColor
+            shape.lineWidth = Metrics.lineWidth
             shape.lineCap = .round
-            layer.addSublayer(shape)
+            layer?.addSublayer(shape)
         }
         progressLayer.strokeEnd = 0
         applyColors()
@@ -65,6 +69,7 @@ final class UTIFooterUsageRingView: UIView {
         let clamped = min(max(progress, 0), 1)
         guard clamped != self.progress else { return }
         self.progress = clamped
+
         guard animated else {
             progressLayer.removeAnimation(forKey: "strokeEnd")
             progressLayer.strokeEnd = clamped
@@ -73,46 +78,52 @@ final class UTIFooterUsageRingView: UIView {
         let animation = CABasicAnimation(keyPath: "strokeEnd")
         animation.fromValue = progressLayer.presentation()?.value(forKey: "strokeEnd") ?? progressLayer.strokeEnd
         animation.toValue = clamped
-        animation.duration = Constants.progressChangeDuration
+        animation.duration = Metrics.progressChangeDuration
         animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         progressLayer.strokeEnd = clamped
         progressLayer.add(animation, forKey: "strokeEnd")
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        let inset = Constants.lineWidth / 2
+    override func layout() {
+        super.layout()
+
+        let inset = Metrics.lineWidth / 2
         let rect = bounds.insetBy(dx: inset, dy: inset)
-        let path = UIBezierPath(arcCenter: CGPoint(x: rect.midX, y: rect.midY),
-                                radius: min(rect.width, rect.height) / 2,
-                                startAngle: -.pi / 2,
-                                endAngle: 3 * .pi / 2,
-                                clockwise: true).cgPath
+        let path = CGMutablePath()
+        // Starts at twelve o'clock and fills clockwise. AppKit's y runs up, so the sweep ends a full
+        // turn *below* the start angle rather than above it as on iOS.
+        path.addArc(center: CGPoint(x: rect.midX, y: rect.midY),
+                    radius: min(rect.width, rect.height) / 2,
+                    startAngle: .pi / 2,
+                    endAngle: .pi / 2 - 2 * .pi,
+                    clockwise: true)
+
         for shape in [trackLayer, progressLayer] {
             shape.frame = bounds
             shape.path = path
         }
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            applyColors()
-        }
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        applyColors()
     }
 
     private func applyColors() {
-        trackLayer.strokeColor = UIColor(designSystemColor: .lines).cgColor
-        progressLayer.strokeColor = UIColor(designSystemColor: Self.progressColor(for: severity)).cgColor
+        // `CGColor` resolves once, so the drawing appearance has to be current when it is read.
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            trackLayer.strokeColor = NSColor(designSystemColor: .lines).cgColor
+            progressLayer.strokeColor = NSColor(designSystemColor: Self.progressColor(for: severity)).cgColor
+        }
     }
 
-    /// Follows the Duck.ai web app's green → orange → red, as far as this palette goes: it has no
-    /// orange, so the middle step stays yellow where macOS uses one.
+    /// The status triad, so the ring reads the same as the Duck.ai web app's: green, then orange, then
+    /// red. iOS still steps grey → yellow → red; its palette has no orange to move to.
     private static func progressColor(for severity: DuckAiUsageSeverity) -> DesignSystemColor {
         switch severity {
-        case .info: return .alertGreen
-        case .warning: return .alertYellow
-        case .critical, .reached: return .destructivePrimary
+        case .info: return .statusGreen
+        case .warning: return .statusYellowPrimary
+        case .critical, .reached: return .statusRed
         }
     }
 }

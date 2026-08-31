@@ -104,6 +104,23 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
         XCTAssertNil(warning(.weeklyReached, window: .weekly, action: nil).localizedActionTitle)
     }
 
+    // MARK: - High-usage model notice
+
+    /// The web app's and Windows' sentence, with the model named. iOS words it differently for now.
+    func testHighUsageNoticeNamesTheModel() {
+        let notice = DuckAiHighUsageModelNotice(modelId: "claude-opus-4-8", modelShortName: "Opus 4.8")
+
+        XCTAssertEqual(UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName),
+                       "Opus 4.8 reaches usage limits 2-5x sooner than basic models.")
+    }
+
+    /// Only the model the web app calls high-usage, since the models payload carries no such field.
+    func testOnlyOpusCountsAsHighUsage() {
+        XCTAssertTrue(DuckAiHighUsageModels.includes("claude-opus-4-8"))
+        XCTAssertFalse(DuckAiHighUsageModels.includes("claude-sonnet-4-6"))
+        XCTAssertFalse(DuckAiHighUsageModels.includes(nil))
+    }
+
     // MARK: - Helpers
 
     private func warning(_ message: DuckAiUsageMessage,

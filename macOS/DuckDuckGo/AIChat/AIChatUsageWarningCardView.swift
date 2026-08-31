@@ -132,6 +132,16 @@ final class AIChatUsageWarningCardView: NSView {
         return imageView
     }()
 
+    /// So a reopen on the same message doesn't replay the fill animation.
+    private var lastShownApproachingPercent: Int?
+
+    private let ringView: AIChatUsageWarningRingView = {
+        let view = AIChatUsageWarningRingView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isHidden = true
+        return view
+    }()
+
     private let titleLabel: NSTextField = {
         let label = NSTextField(labelWithString: "")
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -224,6 +234,7 @@ final class AIChatUsageWarningCardView: NSView {
         addSubview(tintView)
         addLayoutGuide(contentGuide)
         addSubview(iconImageView)
+        addSubview(ringView)
         addSubview(titleLabel)
         addSubview(actionButton)
         addSubview(closeButton)
@@ -256,6 +267,11 @@ final class AIChatUsageWarningCardView: NSView {
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
+            ringView.leadingAnchor.constraint(equalTo: iconImageView.leadingAnchor),
+            ringView.centerYAnchor.constraint(equalTo: iconImageView.centerYAnchor),
+            ringView.widthAnchor.constraint(equalToConstant: AIChatUsageWarningRingView.Constants.size),
+            ringView.heightAnchor.constraint(equalToConstant: AIChatUsageWarningRingView.Constants.size),
+
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
 
@@ -283,8 +299,25 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Content
 
+    /// Lays the row out for the high-usage model notice: no reset detail and no CTA, since it is
+    /// about which model is selected rather than about an allowance running out.
+    func update(with notice: DuckAiHighUsageModelNotice) {
+        let text = UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName)
+        applyInfoIcon()
+        titleLabel.attributedStringValue = Self.attributedNotice(text)
+        titleLabel.setAccessibilityLabel(text)
+
+        actionButton.isHidden = true
+        actionButton.collapse()
+
+        closeButton.isHidden = false
+        closeButtonWidthConstraint?.constant = Constants.closeButtonSize
+        actionCloseSpacingConstraint?.constant = Constants.actionCloseSpacing
+    }
+
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
     func update(with warning: DuckAiUsageWarning) {
+        applyIcon(for: warning)
         titleLabel.attributedStringValue = Self.attributedTitle(headline: warning.localizedHeadline,
                                                                 resetsIn: warning.localizedResetsIn)
         titleLabel.setAccessibilityLabel("\(warning.localizedHeadline). \(warning.localizedResetsIn)")
@@ -306,6 +339,43 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     /// Bold headline, regular reset detail, one string so the two can never wrap apart.
+    /// The ring tracks the percentage while the limit is only approaching; a reached limit reads as an
+    /// alert, where a nearly-full ring would say less than the copy already does.
+    private func applyInfoIcon() {
+        ringView.isHidden = true
+        iconImageView.isHidden = false
+        lastShownApproachingPercent = nil
+        iconImageView.image = DesignSystemImages.Glyphs.Size16.info
+        NSAppearance.withAppearance(appearance) {
+            iconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
+        }
+    }
+
+    private func applyIcon(for warning: DuckAiUsageWarning) {
+        let isApproaching = warning.message == .approaching
+        ringView.isHidden = !isApproaching
+        iconImageView.isHidden = isApproaching
+        // The notice swaps in the info glyph, so the alert has to be put back.
+        iconImageView.image = DesignSystemImages.Glyphs.Size16.alertRecolorable
+        iconImageView.contentTintColor = nil
+
+        guard isApproaching else { return }
+        // Animated only between two messages, so the ring doesn't wind up from zero every time the
+        // panel reopens on the same one.
+        let animated = lastShownApproachingPercent != nil && lastShownApproachingPercent != warning.percent
+        lastShownApproachingPercent = warning.percent
+        ringView.setProgress(Double(warning.percent) / 100, severity: warning.severity, animated: animated)
+    }
+
+    /// Regular weight throughout: the notice is a sentence, where the warnings lead with a headline.
+    private static func attributedNotice(_ text: String) -> NSAttributedString {
+        NSAttributedString(
+            string: text,
+            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .regular),
+                         .foregroundColor: NSColor(designSystemColor: .textPrimary)]
+        )
+    }
+
     private static func attributedTitle(headline: String, resetsIn: String) -> NSAttributedString {
         let textColor = NSColor(designSystemColor: .textPrimary)
         let result = NSMutableAttributedString(

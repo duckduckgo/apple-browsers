@@ -84,6 +84,8 @@ final class NavigationBarViewController: NSViewController {
     private var feedbackButtonSpacer: NSView?
     private var feedbackTipController: QuickFeedbackTipController?
     private var internalUserCancellable: AnyCancellable?
+    /// Owns the toolbar buttons of the loaded web extensions. `nil` when web extensions are unavailable.
+    private var webExtensionNavigationBarUpdater: AnyObject?
     private var fireWindowBackgroundView: NSImageView?
     @IBOutlet private var goBackButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var goBackButtonHeightConstraint: NSLayoutConstraint!
@@ -527,7 +529,21 @@ final class NavigationBarViewController: NSViewController {
         addDebugNotificationListeners()
 #endif
 
+        setupWebExtensionButtons()
+
         memoryUsageDisplayer.setUpMemoryMonitorView()
+    }
+
+    private func setupWebExtensionButtons() {
+        guard !burnerMode.isBurner else { return }
+
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            let updater = WebExtensionNavigationBarUpdater(webExtensionManager: webExtensionManager,
+                                                          themeManager: themeManager,
+                                                          container: menuButtons)
+            updater.startUpdating()
+            webExtensionNavigationBarUpdater = updater
+        }
     }
 
     override func viewWillAppear() {

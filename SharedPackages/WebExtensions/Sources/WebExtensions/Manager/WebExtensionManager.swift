@@ -496,7 +496,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     func notifyUpdate() {
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
+        NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: self)
     }
+}
+
+public extension Notification.Name {
+
+    /// Posted by `WebExtensionManager` when the set of loaded extensions changes.
+    ///
+    /// Unlike `extensionUpdates`, which an `AsyncStream` limits to a single consumer,
+    /// this notification reaches every observer. Per-window UI needs that, because each
+    /// browser window keeps its own set of extension toolbar buttons.
+    static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
 }
 
 // MARK: - WKWebExtensionControllerDelegate

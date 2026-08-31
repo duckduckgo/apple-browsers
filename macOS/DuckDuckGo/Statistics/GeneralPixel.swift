@@ -400,6 +400,9 @@ enum GeneralPixel: PixelKit.Event {
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
     case dbValueTransformerRegistrationError
+    case startupEncryptionKeyRetrySucceeded(waitedSeconds: Int, status: OSStatus?)
+    case startupEncryptionKeyRetryExhausted(status: OSStatus?)
+    case startupEncryptionKeyPromptCancelled
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
     case dbSaveBloomFilterError(error: Error?)
 
@@ -1148,6 +1151,12 @@ enum GeneralPixel: PixelKit.Event {
             return "dbie"
         case .dbValueTransformerRegistrationError:
             return "db_value_transformer_registration_error"
+        case .startupEncryptionKeyRetrySucceeded:
+            return "startup_encryption_key_retry_succeeded"
+        case .startupEncryptionKeyRetryExhausted:
+            return "startup_encryption_key_retry_exhausted"
+        case .startupEncryptionKeyPromptCancelled:
+            return "startup_encryption_key_prompt_cancelled"
         case .dbSaveExcludedHTTPSDomainsError:
             return "database_save_excluded_https_domains_error"
         case .dbSaveBloomFilterError:
@@ -1438,6 +1447,17 @@ enum GeneralPixel: PixelKit.Event {
 
         case .navigation(let kind):
             return ["kind": kind.description]
+
+        case .startupEncryptionKeyRetrySucceeded(let waitedSeconds, let status):
+            var params = ["keychain_wait_bucket": KeychainWaitBucket(seconds: waitedSeconds).description]
+            if let status {
+                params[PixelKit.Parameters.keychainErrorCode] = "\(status)"
+            }
+            return params
+
+        case .startupEncryptionKeyRetryExhausted(let status):
+            guard let status else { return nil }
+            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
 
         case .appStateRestored(let trigger):
             return ["isRestartToUpdate": String(trigger == .appUpdate)]
@@ -1860,6 +1880,9 @@ enum GeneralPixel: PixelKit.Event {
                 .dbContainerInitializationError,
                 .dbInitializationError,
                 .dbValueTransformerRegistrationError,
+                .startupEncryptionKeyRetrySucceeded,
+                .startupEncryptionKeyRetryExhausted,
+                .startupEncryptionKeyPromptCancelled,
                 .dbSaveExcludedHTTPSDomainsError,
                 .dbSaveBloomFilterError,
                 .remoteMessagingSaveConfigError,
@@ -2183,6 +2206,31 @@ enum GeneralPixel: PixelKit.Event {
     enum AutocompleteSource: String {
         case ntpSearchBox = "ntp_search_box"
         case addressBar = "address_bar"
+    }
+
+    /// How long the launch-time Keychain read waited before it succeeded, bucketed so the
+    /// pixel reports the shape of the delay rather than an exact duration.
+    enum KeychainWaitBucket: String, CustomStringConvertible {
+
+        var description: String { rawValue }
+
+        case upTo6 = "0-6"
+        case upTo18 = "7-18"
+        case upTo36 = "19-36"
+        case over36 = "37-60"
+
+        init(seconds: Int) {
+            switch seconds {
+            case ...6:
+                self = .upTo6
+            case ...18:
+                self = .upTo18
+            case ...36:
+                self = .upTo36
+            default:
+                self = .over36
+            }
+        }
     }
 
 }

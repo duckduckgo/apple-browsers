@@ -153,6 +153,79 @@ final class WKWebExtensionContextExtensionTests: XCTestCase {
         XCTAssertNil(context.duckDuckGoWebExtensionType)
     }
 
+    // MARK: - declaresToolbarAction
+
+    @MainActor
+    func testWhenManifestHasAction_ThenDeclaresToolbarAction() async throws {
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Dark Reader",
+            "version": "1.0",
+            "action": {
+                "default_title": "Dark Reader",
+                "default_popup": "ui/popup/index.html"
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertTrue(context.declaresToolbarAction)
+    }
+
+    @MainActor
+    func testWhenManifestHasBrowserAction_ThenDeclaresToolbarAction() async throws {
+        let manifest = """
+        {
+            "manifest_version": 2,
+            "name": "Test",
+            "version": "1.0",
+            "browser_action": {
+                "default_popup": "popup.html"
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertTrue(context.declaresToolbarAction)
+    }
+
+    @MainActor
+    func testWhenManifestHasPageAction_ThenDeclaresToolbarAction() async throws {
+        let manifest = """
+        {
+            "manifest_version": 2,
+            "name": "Test",
+            "version": "1.0",
+            "page_action": {
+                "default_popup": "popup.html"
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertTrue(context.declaresToolbarAction)
+    }
+
+    @MainActor
+    func testWhenManifestHasNoAction_ThenDeclaresNoToolbarAction() async throws {
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "DuckDuckGo Embedded Extension",
+            "version": "1.0",
+            "browser_specific_settings": {
+                "duckduckgo": {
+                    "id": "com.duckduckgo.web-extension.embedded"
+                }
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertFalse(context.declaresToolbarAction)
+    }
+
     // MARK: - Helpers
 
     @MainActor

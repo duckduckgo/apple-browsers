@@ -171,25 +171,25 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     /// The title names the model now in use; the subtitle names the one it replaced. Getting these
     /// the wrong way round produces copy that is grammatical and completely misleading.
     func test_message_modelSwitchNamesTheNewModelInTheTitleAndThePreviousOneInTheSubtitle() {
-        let message = sut.message(for: notice(previousShortName: "Mistral", newShortName: "5.6 Luna"))
+        let message = sut.message(for: createImageSwitchNotice(previousShortName: "Mistral", newShortName: "5.6 Luna"))
 
         XCTAssertEqual(message.title, "Now using 5.6 Luna")
         XCTAssertEqual(message.subtitle, "Mistral doesn't support image creation.")
     }
 
     func test_message_modelSwitchUsesTheSwitchIcon() {
-        XCTAssertEqual(sut.message(for: notice()).icon, .modelSwitch)
+        XCTAssertEqual(sut.message(for: createImageSwitchNotice()).icon, .modelSwitch)
     }
 
     func test_message_modelSwitchOffersNoActionAndCanBeDismissed() {
-        let message = sut.message(for: notice())
+        let message = sut.message(for: createImageSwitchNotice())
 
         XCTAssertNil(message.primaryAction)
         XCTAssertTrue(message.isDismissible)
     }
 
     func test_message_modelSwitchAwayFromAPrivacyPreservingModelSaysSoInTheSubtitle() {
-        let message = sut.message(for: notice(previousShortName: "Gemma",
+        let message = sut.message(for: createImageSwitchNotice(previousShortName: "Gemma",
                                               newShortName: "5.6 Luna",
                                               previousProvider: .oss))
 
@@ -200,7 +200,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     func test_message_modelSwitchAwayFromANonOSSModelKeepsTheStandardSubtitle() {
         for provider in [AIChatModel.ModelProvider.openAI, .anthropic, .meta, .mistral, .unknown] {
-            let message = sut.message(for: notice(previousShortName: "Whatever", previousProvider: provider))
+            let message = sut.message(for: createImageSwitchNotice(previousShortName: "Whatever", previousProvider: provider))
 
             XCTAssertEqual(message.subtitle, "Whatever doesn't support image creation.",
                            "unexpected subtitle for provider \(provider)")
@@ -209,9 +209,9 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func notice(previousShortName: String = "Mistral",
-                        newShortName: String = "5.6 Luna",
-                        previousProvider: AIChatModel.ModelProvider = .mistral) -> CreateImageModelSwitchNotice {
+    private func createImageSwitchNotice(previousShortName: String = "Mistral",
+                                         newShortName: String = "5.6 Luna",
+                                         previousProvider: AIChatModel.ModelProvider = .mistral) -> CreateImageModelSwitchNotice {
         CreateImageModelSwitchNotice(
             previousModel: model(shortName: previousShortName, provider: previousProvider),
             newModel: model(shortName: newShortName, provider: .openAI)

@@ -2351,7 +2351,6 @@ public struct UserText {
     public static let utiDuckAIWarningsTryForFree = NotLocalizedString("aichat.usageWarnings.action.tryForFree", value: "Try for free", comment: "Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow")
     public static let utiDuckAIWarningsSubscribe = NotLocalizedString("aichat.usageWarnings.action.subscribe", value: "Subscribe", comment: "Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow")
     public static let utiDuckAIWarningsDismissAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.dismiss.a11y", value: "Dismiss", comment: "Accessibility label for the button that dismisses the Duck.ai input footer warning")
-    public static let utiDuckAIWarningsModelPickerAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.modelPicker.a11y", value: "Choose a model", comment: "Accessibility label for the chevron on the Duck.ai input footer warning, which opens the model picker")
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 

@@ -32,13 +32,6 @@ class CapturingOnboardingNavigation: OnboardingNavigating {
         replaceTabCalled = true
     }
 
-    var replaceOnboardingTabCalled = false
-
-    func replaceOnboardingTabWith(_ tab: Tab) {
-        self.tab = tab
-        replaceOnboardingTabCalled = true
-    }
-
     func focusOnAddressBar() {
         focusOnAddressBarCalled = true
     }
@@ -57,10 +50,13 @@ class CapturingOnboardingNavigation: OnboardingNavigating {
         preventUserInteraction = prevent
     }
 
-    var closeInterceptor: (@MainActor () -> Bool)?
+    var onboardingOnClose: (@MainActor () -> Void)?
+    var onboardingOnAbandon: (@MainActor () -> Void)?
 
-    func setOnboardingTabCloseInterceptor(_ interceptor: (@MainActor () -> Bool)?) {
-        closeInterceptor = interceptor
+    func setOnboardingHandlers(onClose: @escaping @MainActor () -> Void,
+                               onAbandon: @escaping @MainActor () -> Void) {
+        onboardingOnClose = onClose
+        onboardingOnAbandon = onAbandon
     }
 
 }

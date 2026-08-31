@@ -649,7 +649,7 @@ final class TabCollectionViewModel: NSObject {
         guard changesEnabled || forceChange else { return }
 
         if case .loaded(let tab) = tabCollection.tabs[safe: index],
-           let interceptor = tab.closeInterceptor, interceptor() {
+           let interceptor = tab.closeInterceptor, interceptor(.userInitiated) {
             return
         }
 
@@ -764,8 +764,21 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
+    /// Bulk removals clear the collection directly rather than going through `removeUnpinnedTab`,
+    /// so they notify close interceptors here. The return value is ignored — bulk removals proceed
+    /// regardless, and the interceptor only gets a chance to run its side effects.
+    private func notifyCloseInterceptors(keepingIndices keptIndices: Set<Int> = []) {
+        for (index, anyTab) in tabCollection.tabs.enumerated() where !keptIndices.contains(index) {
+            if case .loaded(let tab) = anyTab, let interceptor = tab.closeInterceptor {
+                _ = interceptor(.bulk)
+            }
+        }
+    }
+
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
+
+        notifyCloseInterceptors(keepingIndices: exceptionIndex.map { [$0] } ?? [])
 
         if let exceptionTab = exceptionIndex.flatMap({ tabCollection.tabs[$0] }) {
             tabCollection.removeAll(andAppend: exceptionTab)
@@ -788,6 +801,8 @@ final class TabCollectionViewModel: NSObject {
     func removeAllTabs(andAppend tab: Tab, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
+        notifyCloseInterceptors()
+
         shouldReturnToPreviousActiveTab = true
         tabCollection.removeAll(andAppend: tab)
         handleNewTabPageSideEffects(for: tab)
@@ -798,6 +813,7 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(before index: Int) {
         guard changesEnabled else { return }
 
+        notifyCloseInterceptors(keepingIndices: Set(index..<tabCollection.tabs.count))
         tabCollection.removeTabs(before: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab {
@@ -814,6 +830,7 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(after index: Int) {
         guard changesEnabled else { return }
 
+        notifyCloseInterceptors(keepingIndices: Set(0...index))
         tabCollection.removeTabs(after: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab, !tabCollection.tabs.indices.contains(currentSelection.item) {

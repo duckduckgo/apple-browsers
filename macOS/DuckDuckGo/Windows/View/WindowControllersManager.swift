@@ -128,6 +128,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     weak var tabsPreferences: TabsPreferences?
 
     private weak var onboardingTab: Tab?
+    private var onboardingTabCancellable: AnyCancellable?
 
     /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
     /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
@@ -650,26 +651,49 @@ extension WindowControllersManager: OnboardingNavigating {
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
     }
 
+    /// Records the tab hosting onboarding. Called at window setup, where the tab is unambiguous —
+    /// `selectedTab` is not reliable later, because async onboarding lets the user switch tabs
+    /// before the onboarding page finishes loading.
     @MainActor
-    func setOnboardingTabCloseInterceptor(_ interceptor: (@MainActor () -> Bool)?) {
-        if let interceptor {
-            onboardingTab = selectedTab
-            onboardingTab?.closeInterceptor = interceptor
-        } else {
-            onboardingTab?.closeInterceptor = nil
-            onboardingTab = nil
+    func setOnboardingTab(_ tab: Tab?) {
+        onboardingTabCancellable = nil
+        onboardingTab?.closeInterceptor = nil
+        onboardingTab = tab
+    }
+
+    /// Wires the onboarding tab so that abandoning onboarding is always recorded:
+    /// `onClose` runs when the user closes the tab outright, `onAbandon` when the tab is swept up
+    /// in a bulk close or navigated away from without an explicit choice.
+    @MainActor
+    func setOnboardingHandlers(onClose: @escaping @MainActor () -> Void,
+                               onAbandon: @escaping @MainActor () -> Void) {
+        guard let onboardingTab else { return }
+
+        onboardingTab.closeInterceptor = { reason in
+            switch reason {
+            case .userInitiated:
+                // `onClose` swaps the tab out itself, so cancel the plain removal.
+                onClose()
+                return true
+            case .bulk:
+                onAbandon()
+                return false
+            }
         }
+
+        onboardingTabCancellable = onboardingTab.$content
+            .filter { if case .onboarding = $0 { false } else { true } }
+            .first()
+            .sink { _ in onAbandon() }
     }
 
-    @MainActor
-    func replaceOnboardingTabWith(_ tab: Tab) {
-        guard let tabToRemove = onboardingTab else { return }
-        replaceTab(tabToRemove, with: tab)
-    }
-
+    /// Replaces the onboarding tab, falling back to the selected tab when none is tracked
+    /// (the non-async flow keeps the UI locked, so the two are the same tab there).
     @MainActor
     func replaceTabWith(_ tab: Tab) {
-        guard let tabToRemove = selectedTab else { return }
+        // Capture before clearing — `setOnboardingTab(nil)` drops the reference this needs.
+        guard let tabToRemove = onboardingTab ?? selectedTab else { return }
+        setOnboardingTab(nil)
         replaceTab(tabToRemove, with: tab)
     }
 

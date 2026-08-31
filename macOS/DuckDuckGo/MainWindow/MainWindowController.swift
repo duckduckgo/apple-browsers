@@ -171,7 +171,11 @@ final class MainWindowController: NSWindowController {
 
         selectedTab.startOnboarding()
 
-        if featureFlagger?.isFeatureOn(.onboardingAsync) != true {
+        if featureFlagger?.isFeatureOn(.onboardingAsync) == true {
+            // Async onboarding leaves the UI unlocked, so the selected tab can change before the
+            // onboarding page loads. Record the tab now, while it is still unambiguous.
+            Application.appDelegate.windowControllersManager.setOnboardingTab(selectedTab)
+        } else {
             // During Onboarding, several UI elements get disabled. In order to prevent flickering,
             // we'll disable them right after kicking off Onboarding.
             // Locking up UI via `OnboardingUserScript.setInit` has a noticeable delay, where elements may flash.

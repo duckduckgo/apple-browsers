@@ -109,11 +109,11 @@ protocol OnboardingActionsManaging {
 
 protocol OnboardingNavigating: AnyObject {
     func replaceTabWith(_ tab: Tab)
-    func replaceOnboardingTabWith(_ tab: Tab)
     func focusOnAddressBar()
     func showImportDataView()
     func updatePreventUserInteraction(prevent: Bool)
-    func setOnboardingTabCloseInterceptor(_ interceptor: (@MainActor () -> Bool)?)
+    func setOnboardingHandlers(onClose: @escaping @MainActor () -> Void,
+                               onAbandon: @escaping @MainActor () -> Void)
 }
 
 final class OnboardingActionsManager: OnboardingActionsManaging {
@@ -276,13 +276,11 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func onboardingStarted() {
-        let isAsync = featureFlagger.isFeatureOn(.onboardingAsync)
-
-        if isAsync {
-            navigation.setOnboardingTabCloseInterceptor { [weak self] in
-                self?.skipOnboarding()
-                return true
-            }
+        if featureFlagger.isFeatureOn(.onboardingAsync) {
+            navigation.setOnboardingHandlers(
+                onClose: { [weak self] in self?.skipOnboarding() },
+                onAbandon: { [weak self] in self?.onboardingAbandoned() }
+            )
         } else {
             navigation.updatePreventUserInteraction(prevent: true)
         }
@@ -296,7 +294,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     @MainActor
     func goToAddressBar() {
         onboardingHasFinished()
-        navigation.setOnboardingTabCloseInterceptor(nil)
         let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
         navigation.replaceTabWith(tab)
 
@@ -311,23 +308,16 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     @MainActor
     func goToSettings() {
         onboardingHasFinished()
-        navigation.setOnboardingTabCloseInterceptor(nil)
         let tab = Tab(content: .settings(pane: nil))
         navigation.replaceTabWith(tab)
     }
 
     @MainActor
     func skipOnboarding() {
-        onboardingHasFinished()
-        navigation.setOnboardingTabCloseInterceptor(nil)
+        recordSkippedOnboarding()
 
-        if featureFlagger.isFeatureOn(.onboardingSkipHighlights) {
-            contextualOnboardingStateUpdater?.state = .onboardingCompleted
-        }
-
-        PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
         let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
-        navigation.replaceOnboardingTabWith(tab)
+        navigation.replaceTabWith(tab)
 
         tab.navigationDidEndPublisher
             .first()
@@ -335,6 +325,26 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                 self?.navigation.focusOnAddressBar()
             }
             .store(in: &cancellables)
+    }
+
+    /// Onboarding was left behind without an explicit choice — the tab was navigated away from, or
+    /// closed as part of a bulk action. Records the same outcome as an explicit skip, but leaves the
+    /// tab alone so whatever the user was doing goes through.
+    @MainActor
+    private func onboardingAbandoned() {
+        guard !Self.isOnboardingFinished else { return }
+        recordSkippedOnboarding()
+    }
+
+    @MainActor
+    private func recordSkippedOnboarding() {
+        onboardingHasFinished()
+
+        if featureFlagger.isFeatureOn(.onboardingSkipHighlights) {
+            contextualOnboardingStateUpdater?.state = .onboardingCompleted
+        }
+
+        PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
     }
 
     func addToDock() {

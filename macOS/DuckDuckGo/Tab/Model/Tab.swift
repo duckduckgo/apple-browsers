@@ -50,6 +50,15 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func closeTab(_ tab: Tab)
 }
 
+/// Why a tab is being removed, passed to `Tab.closeInterceptor`.
+enum TabCloseReason {
+    /// The user closed this specific tab. The interceptor may cancel the removal.
+    case userInitiated
+    /// The tab is being removed as part of a bulk operation (close others, close to the side, burning).
+    /// The removal proceeds regardless of what the interceptor returns.
+    case bulk
+}
+
 @dynamicMemberLookup final class Tab: NSObject, Identifiable, ObservableObject {
 
     private struct ExtensionDependencies: TabExtensionDependencies {
@@ -600,7 +609,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     /// When set, `TabCollectionViewModel` calls this before removing the tab.
     /// Return `true` to cancel the removal (the interceptor handled it), `false` to proceed normally.
-    var closeInterceptor: (@MainActor () -> Bool)?
+    /// Bulk removals are not cancellable, so the return value is ignored for `.bulk`.
+    var closeInterceptor: (@MainActor (TabCloseReason) -> Bool)?
 
     var isLazyLoadingInProgress = false
 

@@ -1212,7 +1212,7 @@ shipped behavior, so the flag-off checklist matters more here than anywhere else
 |---|---|
 | **OQ-2** | **One combined camera+microphone dialog.** WebKit's single decision handler makes sequential independently-answered dialogs impossible. Sites are assumed able to request camera-only or microphone-only (`WKMediaCaptureType` verification assumed yes). Combined copy default adopted (DRI 2026-08-28): title `“<domain>” website wants to access your camera and microphone`, the standard three buttons, no body — marked for later copy review. |
 | **OQ-4** | Figma copy verbatim per requirements §5–§6; prefer the multi-permission-scaling phrasing; minimal sensible strings for the still-missing cases. **Mark every new string for copy review; do not wait for it.** (Defaults adopted 2026-08-28; finalize in copy review.) |
-| OQ-1 | The OS prompt is **never** shown without the site dialog first (ratified at kick-off). After a site-dialog allow: OS prompt when `notDetermined`; the designed reminder dialog when already `denied`. |
+| OQ-1 | The OS prompt is **never** shown without the site dialog first. For a combined request, preflight camera and microphone atomically: if either requested type is already `denied`, `restricted`, or `unavailable`, request neither OS permission and show one reminder naming only the blocked type or types. If both are `notDetermined`, request both OS prompts even when the first is denied. |
 | OQ-5 | The site allow commits at choice time, so the menu entry becomes eligible immediately and the sheet would open in its reminder state. (The menu row itself lands in Phase 4.) |
 | OQ-6 | Moot — the grant animation was **cut from v1** (DRI decision 2026-08-28). No animation ships, on grant or denial. |
 | OQ-13 | The site decision commits at choice time; an OS denial **never** rewrites it. Ratified at kick-off (provisional) — copies macOS. |
@@ -1230,9 +1230,9 @@ container is genuinely new — but almost everything inside it already exists.
 
 | Need | Reuse | Anchor |
 |---|---|---|
-| Dim + blur + centered card | copy the structure and constants from `JSAlertView` | `iOS/DuckDuckGo/JSAlertView.swift:236-238` (dim: `UIColor(white: 0, alpha: 0.2)`), `:252-254` (`UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))`), `:40-47` (card width 270, corner radius 16, button height 44, button corner radius 22) |
+| Dim + material + centered card | package-owned shared card from the supplied Figma screenshots | 0.2 black dim; regular material; continuous 32-point corners; 300-point site-prompt width; 288-point reminder width; 14-point outer inset; two-layer adaptive shadow |
 | Equally-weighted buttons | DuckUI button styles | `iOS/LocalPackages/DuckUI/Sources/DuckUI/Button.swift` |
-| Title / body typography + spacing | read as a **visual reference** only | `iOS/DuckDuckGo/AutofillViews.swift:72` (`Headline`, `.daxTitle3`, centered), `:86` (`Description`, `.daxFootnoteRegular`, `textSecondary`, centered) |
+| Title / body typography + spacing | `DesignResourcesKit` body typography, matching the supplied screenshots | leading `.daxBodyBold()` title; leading `.daxBodyRegular()` body; 8-point title/body gap; 24 points before actions |
 | DuckDuckGo logo, 24px | `DesignSystemImages.Color.Size24.duckDuckGo` | `DesignSystemImages+Color.swift:420` |
 | System-Settings deep link | `NoMicPermissionAlert` | `iOS/DuckDuckGo/NoMicPermissionAlert.swift:25-38` |
 
@@ -1240,8 +1240,8 @@ container is genuinely new — but almost everything inside it already exists.
 > package, so you **cannot import it.** Read it for spacing and type scale, then build the three or
 > four small pieces you need. Do not add an app dependency to the package to get them; do not move
 > `AutofillViews` into a shared package for this. A title, an optional body, and three buttons in a
-> `VStack` is a small amount of code — the reuse that matters here is the **chrome constants** and
-> the **type scale**, not the view structs.
+> `VStack` is a small amount of code. The supplied screenshots, captured on 2026-08-31, are now the
+> source of truth for the chrome constants and type scale recorded above and in §6.5.
 >
 > The package may depend on `DesignResourcesKit`, `DesignResourcesKitIcons`, `SharedPackages/UIComponents`,
 > and `iOS/LocalPackages/DuckUI`. It must **never** depend on the app target.
@@ -1258,13 +1258,9 @@ that is how "no regressions to voice search" (requirements §8) is honored.
 The app presents it; the package owns the structure and copy. Actions surface as **closures** so
 the app can react (`ActionMessageView` is app-only and must not be referenced from the package).
 
-If the design review later decides a custom icon is not essential, `UIAlertController(preferredStyle: .alert)`
-with three actions gets the whole dialog — vertical stacking at 3+ actions, glass, dim, VoiceOver,
-Dynamic Type, RTL — for free (`iOS/DuckDuckGo/UIAlertControllerExtension.swift:23`;
-two-action call shape at `iOS/DuckDuckGo/AlertPlaygroundView.swift:56-64`, `showUIAlert()` — add a
-third `addAction` for our case). The icon is the
-only reason to hand-build. Note that trade-off in the PR description so the DRI can take the free
-version if the icon turns out to be optional.
+The supplied component screenshot confirms that the custom 48-point icon tile, continuous card,
+and DuckUI button treatment are required. Use the package-owned SwiftUI card; do not substitute a
+`UIAlertController` for the site prompt.
 
 Presentation goes through **the coordinator's own FIFO**, never through `WebJSAlert` — see §5.3
 Step 3 for why (that path declines rather than queues).
@@ -1314,12 +1310,27 @@ Not in this phase, not in any phase. Its regression test from Phase 2 must keep 
 
 #### Step 3 — Recovery
 
-**Case A — the user allows the site, then denies the OS prompt.** Decline the
-triggering request. Show the toast (no action button). The sheet gains the reminder state (visible
-from Phase 4 on).
+**Case A — the user allows the site, then denies a fresh OS prompt.** Decline the triggering
+request and show one no-action toast naming only the freshly denied type or types. For a combined
+request where both OS states were `notDetermined`, request both OS prompts even when the first is
+denied. One or two fresh denials still produce one toast. The sheet gains the reminder state
+(visible from Phase 4 on).
 
-**Case B — the user allows a site's permission but the OS permission was already `denied`.** Show
-the reminder dialog. `Change Permissions` deep-links via `UIApplication.openSettingsURLString`.
+**Case B — a requested OS permission was blocked before the site allow was processed.** Preflight
+all requested types before asking the OS for anything. If any requested type is already `denied`,
+`restricted`, or `unavailable`, request **no** OS permissions, decline WebKit, and show one reminder
+naming only the blocked type or types. Thus `camera = denied` plus `microphone = notDetermined`
+shows a camera-only reminder and triggers no microphone prompt. `Change Permissions` deep-links via
+`UIApplication.openSettingsURLString`.
+
+Use one recovery surface for a combined request — never two stacked or sequential toasts/dialogs.
+Resolve WebKit's decision handler with `.deny` before presenting recovery, but keep the coordinator's
+FIFO entry active until that recovery surface dismisses. A second queued site request must not show
+over the first request's toast or reminder.
+
+An automatic stored-Allow path participates in the same FIFO. A pre-existing `notDetermined` state
+on that path declines without a reminder; only a user gesture from the site dialog can spend the
+one-shot OS prompt.
 
 **`restricted` / `unavailable`:** no dedicated handling in v1 (OQ-15, deferred at kick-off) —
 apply the **standard denied handling** above, even though System Settings may not be able to fix
@@ -1378,9 +1389,9 @@ owns the immediate-revocation writes (`setCameraCaptureState(.none)` /
 animation frees up. The existing voice-search mic alert gets the redesigned reminder treatment.
 
 **Modify** `iOS/DuckDuckGo/NoMicPermissionAlert.swift` — today a plain `UIAlertController` that
-deep-links to system settings. Its two call sites are
-`iOS/DuckDuckGo/MainViewController.swift:3682` and
-`iOS/DuckDuckGo/AIChat/InputBox/SwitchBar/OmniBarEditingStateViewController.swift:690`.
+deep-links to system settings. Repository drift removed the former AI Chat switch-bar call site;
+the current main branch has one call site in `iOS/DuckDuckGo/MainViewController.swift`. Preserve
+that current shape and do not add a replacement call site.
 
 Restyle it to the redesigned reminder dialog:
 
@@ -1396,9 +1407,11 @@ This is the **app-feature** reminder variant — blue-primary `Change Permission
 different from the site variants' all-gray buttons (§6.5.2).
 
 - **Gate it behind the same `sitePermissions` flag.** Flag off → the current plain
-  `NoMicPermissionAlert` shows unchanged, at both call sites.
-- **The UI yield rule (§2.12) applies:** ask the user for the Figma screenshot of this dialog
-  before building it.
+  `NoMicPermissionAlert` shows unchanged at every call site. The 2026-08-31 main branch has one
+  call site in `MainViewController`; do not recreate the older removed call site.
+- The Figma screenshot was supplied on 2026-08-31. It uses the same 288-point, 32-point-corner
+  reminder card as the site variant, with no icon; the only styling difference is the blue-primary
+  `Change Permissions` button followed by gray `Hide Voice Search` and `Cancel` buttons.
 - `Hide Voice Search` flips the **existing** voice-search setting off — do not invent a new
   preference.
 - **Pixels:** the restyled prompt fires
@@ -1461,6 +1474,19 @@ only the first three:
   raw value)
 - **dialog selection:** `allow_once`, `allow_always`, `never` — matching the dialog's three buttons
 
+Combined-event rules, resolved 2026-08-31:
+
+- Dialog impression and click use `camera_and_microphone` for a combined site request.
+- OS prompt results are always individual `camera` or `microphone` events, once per OS prompt that
+  actually completed. Fire the result immediately when the async OS request returns, before a later
+  liveness check can discard the WebKit request.
+- Reminder and system-settings events describe the surface's blocked coverage. Use
+  `camera_and_microphone` only when both are blocked; a mixed denied/not-determined request uses the
+  single blocked token and triggers no OS prompt.
+- Voice Search `Change Permissions` fires both `voice_search_permission_prompt_settings` and
+  `permission_system_settings_opened_microphone`.
+- Case A toasts fire no pixel.
+
 These names are deliberately **not** a mirror of macOS's four families
 (`macOS/DuckDuckGo/Statistics/PermissionPixel.swift:69-83`); the one shape kept for cross-platform
 analysis is `permission_center_changed` (Phase 4 Step 7). The impression family has no macOS
@@ -1492,13 +1518,15 @@ cd iOS && npm run validate-pixel-defs
 | Duck.ai in both states | identical decisions with the flag on and off, for all three types and all `.audio` states |
 | Dialog view model | correct variant per type; combined variant lists both permissions; three buttons in order, none primary |
 | FIFO presentation | two queued requests both presented and both answered; **neither declined** |
-| Case A | OS denial after a site allow → decline, toast, stored decision **unchanged** |
-| Case B | stored/chosen allow + OS already `denied` → reminder dialog; `Change Permissions` opens Settings; the request is declined |
+| Case A | fresh single/subset/both denial after a site allow → all needed OS prompts complete; decline; exactly one type-accurate toast; stored decision **unchanged** |
+| Case B | single/both pre-existing `denied` / `restricted` / `unavailable` → zero OS prompts; one type-accurate reminder; `Change Permissions` opens Settings; decline |
+| Combined preflight | `denied + notDetermined` and equivalent mixed blocked states request neither OS permission and name only the blocked coverage in one reminder |
+| Combined fresh prompts | both `notDetermined` request camera and microphone individually even if the first denies; prompt-result pixels remain individual |
 | `restricted` / `unavailable` | treated as `denied` — the standard denied handling applies (OQ-15 deferred at kick-off); the states stay distinct in the system client |
 | FR-5 invariant | an OS denial never rewrites a stored site Allow |
 | In-use KVO | active → in-use; `.muted` → paused, **not** in-use; `.none` → inactive |
 | Voice Search prompt | flag **off** → the legacy `NoMicPermissionAlert` shows unchanged; flag **on** → the redesigned dialog; `Hide Voice Search` turns the voice-search setting off; `Change Permissions` opens System Settings |
-| Pixels | one impression per dialog shown; one click per selection, **fired at tap time** (not at the OS outcome); correct type and selection tokens; **no domain in any parameter** |
+| Pixels | one impression per dialog shown; one click per selection at tap time; one individual result per actual OS prompt; combined reminder/settings tokens only when both are blocked; **no Case A toast pixel**; **no domain in any parameter** |
 
 No snapshot tests (§5.4).
 
@@ -1513,7 +1541,21 @@ stop and ask for a screenshot of the specific Figma element. Never improvise a d
 
 A custom modal over a **dimmed page** — the page stays visible behind it. Requirements §7 notes the
 design is iOS 26 / Liquid Glass styled, SF Pro; **dark mode is fully designed**, so every colour
-must come from a `DesignSystemColor` token, never a literal.
+must come from a `DesignSystemColor` token, never a literal. The 2026-08-31 screenshot of Figma set
+372:7918 supplies these exact layout constraints:
+
+- 300-point card width, 32-point continuous corners, regular material, and 0.2 black page dim.
+- 14-point card inset. Copy and the icon tile receive 8 additional horizontal points.
+- A 24-point glyph centered in a 48-by-48 rounded `surfaceSecondary` tile with 12-point continuous
+  corners. The tile is leading-aligned; it is not a freestanding centered glyph.
+- Leading `.daxBodyBold()` title, not centered title typography. Use 16 points between the icon tile
+  and title, then 24 points between copy and actions.
+- Three full-width DuckUI `SecondaryFillButtonStyle` buttons with 8-point gaps. Let DuckUI own the
+  approximately 50-point button height and capsule geometry.
+- Adaptive two-layer shadow: light mode black at 0.08 / radius 16 / y 8, then 0.10 / radius 6 / y 2;
+  dark mode uses 0.20 and 0.16 respectively.
+- Center vertically when it fits; wrap the card in a vertical scroll view with at least 20 points of
+  top and bottom margin for Dynamic Type and compact heights.
 
 **Anatomy, top to bottom:** icon · title · optional body · three buttons stacked vertically.
 
@@ -1545,8 +1587,9 @@ Note the curly quotes `“ ”` — they are in the Figma copy and must be prese
 inconsistencies flagged under OQ-4 but shipping as-is: microphone says **"the** microphone" where
 camera and location say **"your**", and the SERP variant drops the word "website".
 
-**Combined camera+microphone (OQ-2 — default adopted 2026-08-28; no Figma design exists).** One
-dialog, because WebKit passes a single decision handler for the pair. Title:
+**Combined camera+microphone (OQ-2 — default adopted 2026-08-28).** One dialog, because WebKit
+passes a single decision handler for the pair. The supplied component-set screenshot confirms the
+one-card treatment. Title:
 `“<domain>” website wants to access your camera and microphone` — the standard three buttons
 (Allow Once / Allow While Using Site / Never Allow), no body. Icon: the camera glyph
 (`Glyphs.Size24.video`) — one slot, and camera is the more visually specific of the pair. **The
@@ -1566,10 +1609,11 @@ Decision semantics:
 
 For a combined request, one tap resolves **both** permissions the same way.
 
-**Ordering (FR-2):** DDG's dialog first. The OS dialog only if the user chose Allow Once or Allow
-While Using Site **and** the OS permission is `notDetermined`. If the OS permission is already
-granted, **skip** the OS step. If the user declines DDG's dialog, the OS prompt is **never**
-triggered — that is the entire point: it protects the one-shot OS prompt for later.
+**Ordering (FR-2):** DDG's dialog first. After a site allow, atomically preflight every requested OS
+type. If all are `authorized` or `notDetermined`, skip authorized types and request every
+not-determined type, even if an earlier prompt is denied. If any is already `denied`, `restricted`,
+or `unavailable`, request none and use Case B. If the user declines DDG's dialog, the OS prompt is
+**never** triggered — that is the entire point: it protects the one-shot OS prompt for later.
 
 **Accessibility:** every button needs a VoiceOver label; the dialog needs a title trait so
 VoiceOver announces it on presentation; the icon is decorative and must be hidden from VoiceOver
@@ -1598,7 +1642,10 @@ House conventions, both from recent code:
 
 #### 6.5.2 The Case B reminder dialog
 
-Figma set 380:46545. Same modal treatment as the permission dialog.
+Figma set 380:46545. The supplied screenshot specifies a 288-point card with the same 32-point
+continuous corners, material, dim, 14-point outer inset, 8-point copy inset, two-layer shadow, and
+scrolling behavior as the permission dialog. It has no icon. Use a leading `.daxBodyBold()` title,
+a leading `.daxBodyRegular()` body 8 points below it, then 24 points before the actions.
 
 | Element | Copy |
 |---|---|
@@ -1606,6 +1653,16 @@ Figma set 380:46545. Same modal treatment as the permission dialog.
 | Body | `<Type> permissions are needed if you want to use <type> features on this site.` |
 | Button 1 | `Change Permissions` |
 | Button 2 | `Cancel` |
+
+Combined camera-and-microphone Case B copy (copy-review default, supplied 2026-08-31):
+
+| Element | Copy |
+|---|---|
+| Title | `DuckDuckGo needs to access your camera and microphone` |
+| Body | `Camera and microphone permissions are needed if you want to use related features on this site.` |
+
+For a mixed combined request, the surface names only the pre-existing blocked coverage. For
+example, camera denied plus microphone not determined uses the camera-only title and body.
 
 **Both buttons are gray for the site variants** — no primary. This matters: Figma also contains
 **app-feature** reminder variants (Voice Search, Duck.ai Voice Chat) with a **blue-primary**
@@ -1631,6 +1688,7 @@ which hides the button (`:174-181`).
 | Location | `DuckDuckGo couldn’t share location with this site` |
 | Camera | `DuckDuckGo couldn’t give camera access to this site` |
 | Microphone | `DuckDuckGo couldn’t give microphone access to this site` |
+| Camera + microphone | `DuckDuckGo couldn’t give camera and microphone access to this site` |
 
 Note the inconsistent verb — "share location with" vs "give camera access to". Figma copy; ships as-is
 (OQ-4). Note the curly apostrophe in `couldn’t`.
@@ -1638,6 +1696,9 @@ Note the inconsistent verb — "share location with" vs "give camera access to".
 Presentation location follows the app's convention:
 `presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom)`
 — precedent `TabViewControllerMenuBuilderExtension.swift:726`.
+
+For a combined request, freshly denied coverage is coalesced into exactly one toast. There is no
+Case A toast pixel.
 
 #### 6.5.4 Icon states (shared with Phase 4)
 
@@ -1669,8 +1730,8 @@ This is the highest-risk phase for flag-off regressions. Do all six.
       frozen test, you changed shipped behavior.
 - [ ] The Duck.ai branch is evaluated **before** the flag check and is identical in both states.
 - [ ] `AIChatWebViewController` diff is **empty**.
-- [ ] No dialog and no toast can be reached with the flag off — and the Voice Search flow shows
-      the unmodified legacy `NoMicPermissionAlert` at both call sites.
+- [ ] No dialog and no toast can be reached with the flag off — and every current Voice Search
+      denial call site shows the unmodified legacy `NoMicPermissionAlert` (current main has one).
 - [ ] No user-script registration in this phase at all.
 - [ ] No menu row and no Settings row exist yet, in either flag state.
 
@@ -2587,7 +2648,7 @@ gate; proceed on the documented default and finalize later in a working build.
 
 | OQ | Question | Default applied | Kind | Phase |
 |---|---|---|---|---|
-| OQ-1 | Show a system dialog directly instead of the Case B reminder dialog? | Ratified at kick-off (2026-08-28): the OS prompt is **never** shown without the site dialog first — there is no "show the OS prompt directly" path anywhere. After a site-dialog allow, request the OS prompt when OS state is `notDetermined`; the designed reminder dialog applies when the OS permission is already `denied`. | R | 3, 5 |
+| OQ-1 | Show a system dialog directly instead of the Case B reminder dialog? | Ratified at kick-off and completed by the combined-state answer on 2026-08-31: never show an OS prompt without the site dialog. Preflight all requested types; any pre-existing `denied`, `restricted`, or `unavailable` state suppresses every OS prompt and produces one type-accurate reminder. Otherwise request every not-determined type, even after an earlier fresh denial. | R | 3, 5 |
 | **OQ-2** | **Combined camera+microphone: two sequential dialogs or one combined?** | **One combined dialog.** WebKit hands a single decision handler for the pair (`TabViewController.swift:3938-3951`), so two independently-answered dialogs are physically impossible. Copy default adopted (DRI 2026-08-28): title `“<domain>” website wants to access your camera and microphone`, the standard three buttons, no body — marked for later copy review. Sites are assumed able to request camera-only or microphone-only (`WKMediaCaptureType` has `.camera` and `.microphone` cases — verification assumed yes). | **A** | **3** |
 | OQ-3 | Copy for multiple denied location; mixed running-plus-denied state | Reuse the bracketed dynamic-list footer from FR-4 for multi-permission text. The mixed state is sheet **state 2** (Permissions + Reminder) — rows first, then the `Remove Permissions` + `Go to System Settings` group, then the footer. Still-missing strings (multi-denied, mixed granted+reminder) get minimal sensible copy, marked for later copy review. (Default adopted 2026-08-28.) | A | 4, 6 |
 | **OQ-4** | **Two competing footer phrasings; title and punctuation inconsistencies** | **Use the Figma copy verbatim as captured in requirements §5–§6.** Where two phrasings coexist, prefer the one that **scales to multiple permissions** — i.e. `DuckDuckGo needs to access your <list>, if you want to use related features on this site.` over `needs access to this device <type>`. Keep `Reload the page for changes to take effect.` with the period. **Mark every new string for copy review; do not wait for it.** (Defaults adopted 2026-08-28; finalize in copy review.) | **A** | **3, 4, 5, 6** |
@@ -2608,7 +2669,7 @@ gate; proceed on the documented default and finalize later in a working build.
 | OQ-19 | Presentation of WebKit's `.muted` capture state | **Resolved at kick-off (platform rule):** `.muted` maps to **paused** — allowed, **not** shown as in-use (no red); the VoiceOver label reflects it. No design change. | R | 3, 4 |
 | OQ-20 | Mid-session changes | **Resolved (macOS model):** an explicit per-site deny or Remove Permissions **immediately** revokes active use (`setCameraCaptureState(.none)` / `setMicrophoneCaptureState(.none)`, geolocation watches stopped). Grants and every other change apply on reload / next request. | R | 4, 6 |
 | OQ-21 | Host-only key collapses scheme and port | **Host-only key** — leading `www.` dropped, punycode for IDN, scheme and port collapsed. Ratified at kick-off (2026-08-28); the privacy ping is assumed fine and blocks nothing — the for-the-record ping can still be sent. Platform gating still restricts grants to secure contexts. | R | 1 |
-| — | Voice Search denied-permission prompt (scope addition, not an original OQ) | **In scope** (DRI decision 2026-08-28): `NoMicPermissionAlert` is restyled to the redesigned reminder dialog — `Change Permissions` (primary, System Settings deep link) / `Hide Voice Search` (turns the voice-search setting off) / `Cancel` — behind `sitePermissions`; flag off shows the legacy alert unchanged. Ask for the Figma screenshot before building (§2.12). See Phase 3 Step 5. | R | 3 |
+| — | Voice Search denied-permission prompt (scope addition, not an original OQ) | **In scope** (DRI decision 2026-08-28; screenshot supplied 2026-08-31): `NoMicPermissionAlert` is restyled to the shared 288-point reminder card — primary `Change Permissions` / gray `Hide Voice Search` / gray `Cancel` — behind `sitePermissions`; flag off shows the legacy alert unchanged. | R | 3 |
 
 ---
 

@@ -3,11 +3,10 @@
 ## Current handoff
 
 - Goal: Implement the six-PR on-site permission manager stack from `implementation-plan.md` without pushing.
-- Status: Phases 1 and 2 are complete. Phase 3 steps 0–2 are committed. Work is paused before step 3 at the first design blocker.
-- Completed: `bartosz/on-site-permissions-3` contains commit `0bb7913527` on top of Phase 2. It adds the localized site-permission dialog and browser media-capture routing while preserving the legacy and Duck.ai behavior.
-- Next: Obtain the combined camera-and-microphone recovery UX, then implement Phase 3 step 3.
-- Blocker: The plan specifies recovery UI only for one failed permission type. It does not define Case A or Case B for combined camera-and-microphone failures, including mixed preexisting and after-request failures. Implementation needs the number and order of surfaces, exact title, body, and toast copy, and whether recovery pixels use `camera_and_microphone` or individual type tokens.
-- Later blocker: Phase 3 step 5 requires the missing Voice Search design from Figma node `1087:27674`. This step has not been reached.
+- Status: Phases 1–3 are complete. There is no active blocker.
+- Completed: `bartosz/on-site-permissions-3` contains the squashed Phase 3 commit `f0603bafa5` directly on Phase 2. It adds the complete camera and microphone flow, including recovery, in-use observation, Voice Search treatment, and approved pixels.
+- Next: Create `bartosz/on-site-permissions-4` from Phase 3 and implement the management sheet, Settings screens, both menu paths, removal and Undo, immediate revocation, and management pixels.
+- Blocker: None. The supplied 2026-08-31 spec and screenshots resolved the combined recovery and Voice Search design gaps.
 
 ## Decisions
 
@@ -59,6 +58,18 @@
 - Why: A link preview is not a committed browsing context and must not present permission UI.
 - Consequences: Only normal tabs can enter the site-permission coordinator path.
 
+### 2026-08-31 — Preflight combined recovery atomically
+
+- Decision: For a combined camera and microphone allow, classify both OS states before requesting either permission. Any pre-existing blocked state suppresses every OS prompt and produces one reminder naming only the blocked type or types. Otherwise, request every undetermined type, even after an earlier fresh denial, and coalesce fresh failures into one toast.
+- Why: The DRI's supplied answer resolves the known multi-permission design gap and protects an unused one-shot OS prompt when the combined WebKit request must fail anyway.
+- Consequences: One combined request always produces at most one recovery surface. Site-level Allow remains committed, and OS-result pixels stay individual because iOS prompts each type separately.
+
+### 2026-08-31 — Keep recovery in the request FIFO until dismissal
+
+- Decision: Resolve WebKit with deny before showing recovery, but retain the active coordinator entry until the toast or reminder is dismissed.
+- Why: WebKit must be answered promptly, while the per-tab FIFO must prevent a second request from stacking another permission surface.
+- Consequences: App-owned recovery surfaces report dismissal through a completion callback. Navigation, process replacement, and tab closure invalidate stale callbacks safely.
+
 ## Review outcomes
 
 ### Phase 1
@@ -80,7 +91,27 @@
 - Correctness review: Fixed provisional-navigation tracking so a stale failure cannot validate a request during a newer navigation. Also denied link-preview requests without constructing site-permission dependencies. The final review found no remaining issues.
 - Ponytail review: No findings. The custom domain truncation is required because native text truncation would truncate the whole localized title, and the navigation state is the minimum needed to preserve the last committed URL safely.
 
+### Phase 3 complete
+
+- Correctness review: No findings in combined atomic preflight, recovery FIFO ordering, stale-context handling, or generation-guarded capture observation. The reviewer confirmed that WebKit denial precedes recovery and that initial inactive observations do not expire Allow Once.
+- Contract review: No production mismatch in flag-off behavior, Duck.ai precedence, supplied UI and copy, accessibility, pixels, or project registration. The review identified missing app-level action coverage; focused tests now exercise dialog impression and selection, Case B denial-before-reminder ordering, the Settings action, the unchanged legacy Voice Search alert, the redesigned alert, and every Voice Search action.
+- Ponytail review: Kept `presentTracked` because the existing public overload must retain its protocol-compatible `Void` signature and recovery must dismiss only its exact toast. Kept the injected Settings opener because the new integration test uses it. Applied the recommendation to add app-level tests and simplified the coordinator helper that exceeded the lint complexity limit.
+- Follow-up verification: The final focused run passed 104 tests with no failures or skips. The production build passed. No feature-specific compiler or lint warnings remain.
+
 ## Recent progress
+
+### 2026-08-31
+
+- Received and inspected the six supplied Figma screenshots. Updated the implementation plan with the exact card widths, corners, material, dim, spacing, shadows, button treatment, Voice Search variant, combined copy, and recovery event rules.
+- Applied the supplied combined-recovery decision: one surface per combined request, atomic OS preflight, no prompt spending in mixed blocked states, both fresh prompts attempted, and type-accurate coverage in recovery copy and pixels.
+- Added camera and microphone capture observation. Active, paused, and inactive states are tracked independently; only the matching Allow Once grant expires when capture ends.
+- Added Case A no-action toasts and Case B reminder dialogs. Recovery remains in the coordinator FIFO through dismissal, and page, process, and tab lifecycle changes dismiss only the feature-owned surface.
+- Restyled the denied-microphone Voice Search prompt behind `sitePermissions`. The flag-off `UIAlertController` remains unchanged; the new variant supports Change Permissions, Hide Voice Search, and Cancel.
+- Added all six approved Phase 3 pixel families through PixelKit. Combined site events use `camera_and_microphone`; OS prompt results remain individual; no event contains a domain, host, URL, or origin.
+- Validated `site_permissions.json5` against product target 7.234.0 and checked it with Prettier. The repository-wide validator also reached and validated the new file, then failed on unrelated existing wide-event generated schemas; no generated schema changes remain in the worktree.
+- Ran the full `SitePermissionsTests` and `UnitTests` gate: 6,668 passed, zero failed, and 37 baseline skips. After review changes and new app-level tests, ran the focused package, routing, and pixel suites: 104 passed, zero failed, and zero skipped.
+- Built the production app with the `iOS Browser` scheme and normal project deployment target through XcodeBuildMCP. The build passed with pre-existing repository warnings only.
+- Squashed Phase 3 into commit `f0603bafa5` directly on `fd03017631`. The implementation worktree is clean, and nothing was pushed.
 
 ### 2026-08-29
 
@@ -101,11 +132,11 @@
 - Built `DuckDuckGo.xcworkspace` with the `iOS Browser` scheme through XcodeBuildMCP on an iPhone 17 simulator. The normal configured-target build succeeded with pre-existing warnings only.
 - Initialized the pinned `privacy-reference-tests` submodule after the first full run exposed missing fixture files. The submodule remains at `c2b49fe7ce4a75404c6a79e4dd1053710a9869ee` and is not part of the implementation diff.
 - Ran `SitePermissionsTests` and all `UnitTests` through the `iOS Browser` simulator scheme after review fixes: 6,629 passed, zero failed, and 37 baseline skips. The test-only iOS 16 deployment-target override remains necessary for the unrelated current-main `UIMenuElement.subtitle` compilation issue.
-- Created `bartosz/on-site-permissions-3` from `bartosz/on-site-permissions-2` and committed Phase 3 steps 0–2 as `0bb7913527`.
+- Created `bartosz/on-site-permissions-3` from `bartosz/on-site-permissions-2` and committed Phase 3 steps 0–2 as `0bb7913527`. The partial commit was later squashed into the final Phase 3 commit recorded above.
 - Added camera, microphone, and combined site-prompt dialogs with the specified copy, design-system controls, localized resources, Dynamic Type support, domain-only middle truncation, modal VoiceOver behavior, and stable accessibility identifiers.
 - Added lazy per-tab media-capture coordination. Duck.ai handling remains first, flag-off behavior remains unchanged, and flag-on requests use only the last committed top-level URL.
 - Added request identity and lifecycle checks for the exact web view and frame, provisional-navigation identity, web-process generation, navigation generation, and tab closure. Navigation, process replacement, and closure drain pending handlers exactly once.
 - Denied requests from link previews, replaced web views, uncommitted pages, and pages in provisional navigation without constructing the coordinator.
 - Ran the focused Phase 3 package and browser-routing suites through the `iOS Browser` simulator scheme: 72 passed, zero failed, and zero skipped. Re-ran the frozen `TabViewController` legacy matrix after the final fixes: one passed, zero failed, and zero skipped.
 - Built the production app through XcodeBuildMCP with the `iOS Browser` scheme and the normal project deployment setting. The build passed. Focused tests used the existing test-only iOS 16 deployment-target override for unrelated current-main tests that require iOS 16 APIs.
-- Stopped before Phase 3 step 3 because combined camera-and-microphone recovery behavior is not specified. The required design decision is recorded in the current handoff.
+- Stopped before Phase 3 step 3 because combined camera-and-microphone recovery behavior was not specified. That blocker was recorded in the handoff at the time and resolved by the supplied answer on 2026-08-31.

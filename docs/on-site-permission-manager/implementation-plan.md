@@ -2248,7 +2248,7 @@ answer is don't.
 
 - The `navigator.geolocation` shim: a dedicated app-registered `UserScript`, with reply-handler
   one-shots, request IDs for watches, frame routing, secure-context and Permissions-Policy gating,
-  and the cross-site-iframe guard.
+  and the v1 exact-same-origin frame gate.
 - The geolocation provider in the package, wired to Phase 2's shared `CLLocationManager`.
 - Coordinator wiring for location requests.
 - The **Location** and **Location on DuckDuckGo SERP** dialog variants.
@@ -2271,6 +2271,7 @@ answer is don't.
 | OQ-3 | Multi-permission copy uses the bracketed dynamic-list footer pattern. |
 | OQ-4 | Figma copy verbatim from requirements §5–§6; multi-scaling phrasing preferred; mark for copy review. |
 | OQ-21 | Host-only key from the committed main-frame URL; the requesting frame's origin is kept separately for gating and routing. |
+| V1 policy gate | Use one best-effort shim path on every supported iOS version. Allow the top-level document and exact same-origin iframes, subject to the main-frame `Permissions-Policy` response header. Deny every cross-origin, opaque, synthetic, insecure, or sandboxed frame. |
 
 ### 8.3 Ordered implementation steps
 
@@ -2380,10 +2381,27 @@ The geolocation shim needs per-tab state, so follow the second.
 
 - an insecure context;
 - a sandboxed frame;
-- an iframe not delegated by Permissions Policy.
+- a main-frame response whose `Permissions-Policy` header explicitly excludes geolocation;
+- an opaque or synthetic frame (`about:blank`, `srcdoc`, an empty native security origin);
+- any cross-origin iframe, including a same-site iframe with `allow="geolocation"`.
 
-**Cross-site iframe guard:** if the requesting frame and the top-level page differ at **eTLD+1**,
-**deny outright.** Android's shipped guard, adopted.
+Use one best-effort policy path on every supported iOS version. In the shim, use the browser's
+Permissions Policy introspection API when it exists. When it does not exist, treat the top-level
+document and exact same-origin iframes as allowed by the default `self` policy. Capture the
+**main-frame** `Permissions-Policy` response header in the existing navigation-response delegate
+hook and minimally parse its `geolocation` directive. If that directive excludes the page (for
+example, `geolocation=()`), deny the top-level document and every child frame.
+
+**V1 cross-origin limitation:** deny every cross-origin iframe, including same-site origins and
+frames with explicit attribute delegation. Public WebKit APIs do not expose enough information to
+combine a subframe's response header with its `allow` attribute reliably. This is deliberately
+stricter than a browser engine and never more permissive. Revisit only after breakage evidence or
+as an availability-gated enhancement when an OS-managed public API can help; it is not a v1
+dependency.
+
+Derive frame identity and origin only from `WKScriptMessage.frameInfo.securityOrigin`. JavaScript
+payloads never supply an origin. The native handler independently rejects empty or opaque native
+origins because document-start injection is unreliable in synthetic frames.
 
 **Never store or match** for `duck://`, `file:`, or error-page origins.
 
@@ -2437,13 +2455,17 @@ The privacy-test-pages fixtures **already exist** — verified in a local checko
 2. An **Allow Once** reload / navigation / tab-close matrix.
 3. **OS-denied recovery.**
 4. A **manager-originated mutation while a `PermissionStatus` change listener is attached**.
+5. A paired geolocation policy matrix covering the top-level page, an exact same-origin iframe,
+   same-site and cross-site cross-origin iframes, an insecure page, and a main-frame
+   `Permissions-Policy: geolocation=()` response. Each case reports both `permissions.query` and
+   the subsequent request outcome.
 
 ### 8.4 Tests
 
 | Area | Cases |
 |---|---|
-| iframe attribution | same-origin, same-site, and **cross-site** requesters; the cross-site eTLD+1 guard denies |
-| Platform gating | insecure context, sandboxed frame, and Permissions-Policy-undelegated iframe are all denied **despite a stored allow** |
+| iframe attribution | first-party and exact same-origin requesters succeed; same-site cross-origin and cross-site requesters are denied |
+| Platform gating | insecure, sandboxed, opaque, and synthetic frames are denied; a main-frame `geolocation=()` header denies the page; request and `query` agree in every case **despite a stored allow** |
 | `permissions.query` | agrees with the next real request in every precedence branch; answered immediately, never queued |
 | Watch lifecycle | cancelled on navigation and on process swap; `clearWatch` works; no callback after cancellation |
 | Reply handlers | one-shots resolve; **a deallocated handler leaves no hanging promise** |
@@ -2463,22 +2485,22 @@ xcodebuildmcp simulator test --workspace-path DuckDuckGo.xcworkspace --scheme "i
 
 ### 8.6 Flag-off safety checklist
 
-- [ ] **The shim is not registered when the flag is off** — assert it is absent from
+- [x] **The shim is not registered when the flag is off** — assert it is absent from
       `UserScripts.userScripts`.
-- [ ] Already-loaded pages keep the shim until reload. **This is documented, expected behavior** —
+- [x] Already-loaded pages keep the shim until reload. **This is documented, expected behavior** —
       note it in the PR description. Phase 6 tests the ON→OFF path properly.
-- [ ] With the flag off, `navigator.geolocation` behaves exactly as it does on `main` today:
+- [x] With the flag off, `navigator.geolocation` behaves exactly as it does on `main` today:
       WebKit's own prompt, no interception.
-- [ ] Location dialog variants unreachable with the flag off.
-- [ ] Camera/mic behavior from Phases 3–4 unchanged.
+- [x] Location dialog variants unreachable with the flag off.
+- [x] Camera/mic behavior from Phases 3–4 unchanged.
 
 ### 8.7 Exit criteria
 
-- [ ] Build green; targeted tests green.
-- [ ] Fixture extensions committed to the privacy-test-pages checkout (not to this repo) — note the
+- [x] Build green; targeted tests green.
+- [x] Fixture extensions committed to the privacy-test-pages checkout (not to this repo) — note the
       branch/commit in the PR description.
-- [ ] Review loop completed; findings applied or logged.
-- [ ] History clean; `project_log.md` and `pr5-description.md` on the documentation branch.
+- [x] Review loop completed; findings applied or logged.
+- [x] History clean; `project_log.md` and `pr5-description.md` on the documentation branch.
 
 ---
 
@@ -2532,7 +2554,8 @@ Deliver an authoritative table covering **every** source state and the `change` 
 - stored allow / stored deny / stored explicit ask;
 - active allow-once;
 - all OS states — `notDetermined`, `authorized`, `denied`, `restricted`, `unavailable`;
-- policy denial (insecure context, sandboxed frame, undelegated iframe, cross-site iframe).
+- policy denial (insecure, sandboxed, opaque, synthetic, main-header-blocked, or any cross-origin
+  frame).
 
 **The invariant to test:** `permissions.query` and the next real request must **never disagree**.
 This is the Android defect the docs single out — its query checks existing grants before
@@ -2670,6 +2693,7 @@ gate; proceed on the documented default and finalize later in a working build.
 | OQ-20 | Mid-session changes | **Resolved (macOS model):** an explicit per-site deny or Remove Permissions **immediately** revokes active use (`setCameraCaptureState(.none)` / `setMicrophoneCaptureState(.none)`, geolocation watches stopped). Grants and every other change apply on reload / next request. | R | 4, 6 |
 | OQ-21 | Host-only key collapses scheme and port | **Host-only key** — leading `www.` dropped, punycode for IDN, scheme and port collapsed. Ratified at kick-off (2026-08-28); the privacy ping is assumed fine and blocks nothing — the for-the-record ping can still be sent. Platform gating still restricts grants to secure contexts. | R | 1 |
 | — | Voice Search denied-permission prompt (scope addition, not an original OQ) | **In scope** (DRI decision 2026-08-28; screenshot supplied 2026-08-31): `NoMicPermissionAlert` is restyled to the shared 288-point reminder card — primary `Change Permissions` / gray `Hide Voice Search` / gray `Cancel` — behind `sitePermissions`; flag off shows the legacy alert unchanged. | R | 3 |
+| — | Geolocation Permissions-Policy enforcement (v1 platform decision) | **One best-effort path on all supported iOS versions.** The top-level document and exact same-origin iframes may request geolocation unless the main-frame `Permissions-Policy` header excludes it. Every cross-origin iframe is denied, including same-site and explicitly delegated frames. Opaque, synthetic, insecure, and sandboxed frames are denied. This is intentionally stricter than a full engine because public WebKit cannot reliably expose subframe header plus attribute delegation. Revisit only on breakage evidence or when an OS-managed public API can provide an optional enhancement. | R | 5 |
 
 ---
 

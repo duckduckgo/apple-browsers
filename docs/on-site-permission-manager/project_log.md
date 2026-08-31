@@ -3,10 +3,10 @@
 ## Current handoff
 
 - Goal: Implement the six-PR on-site permission manager stack from `implementation-plan.md` without pushing.
-- Status: Phases 1–4 are complete. There is no active blocker.
-- Completed: `bartosz/on-site-permissions-4` contains commit `1003ae5ef4` directly on Phase 3 commit `f0603bafa5`. It adds the camera and microphone management sheet, Settings surfaces, both browser-menu paths, removal with Undo, immediate cross-tab revocation, and management pixels.
-- Next: Create `bartosz/on-site-permissions-5` from `bartosz/on-site-permissions-4` and implement the geolocation shim, provider, dialogs, recovery, and browser integration.
-- Stack state: Phase 4 is based on `bartosz/on-site-permissions-3` at `f0603bafa5`. The stack remains local; nothing has been pushed.
+- Status: Phases 1–5 are complete. There is no active blocker.
+- Completed: `bartosz/on-site-permissions-5` contains commit `f407befeab` directly on Phase 4 commit `1003ae5ef4`. It adds the geolocation shim, shared provider, location dialogs and recovery, app integration, the single-path v1 policy gate, and focused tests. The privacy-test-pages fixture branch is committed locally at `d91ba2b` and `f330b4f2`.
+- Next: Create `bartosz/on-site-permissions-6` directly from Phase 5 and implement location management, authoritative `PermissionStatus` transitions, geolocation pixels, rollback, and integration hardening.
+- Stack state: Phase 5 is based on `bartosz/on-site-permissions-4` at `1003ae5ef4`. The implementation stack and fixture branch remain unpushed.
 - Blocker: None.
 
 ## Decisions
@@ -89,6 +89,12 @@
 - Why: Another matching tab can still be using a permission that is absent from the initiating tab's visible state.
 - Consequences: Grants and resets still wait for reload or the next request. Explicit denial and removal stop matching active capture immediately.
 
+### 2026-08-31 — Use a best-effort geolocation policy gate on every supported iOS version
+
+- Decision: Use one shim path for the full deployment range. Allow the top-level document and exact same-origin iframes unless the main-frame `Permissions-Policy` header excludes geolocation. Deny every cross-origin, opaque, synthetic, insecure, or sandboxed frame.
+- Why: `WKWebView` does not expose document-level Permissions Policy introspection on the tested iOS 26.4 runtime, and public WebKit cannot reliably combine a subframe response header with attribute delegation. Limiting the feature to iOS 27 or using private WebKit API is not acceptable.
+- Consequences: Delegated cross-origin iframes do not receive geolocation in v1, even when they are same-site or declare `allow="geolocation"`. This is intentionally stricter than a full engine. Revisit only after breakage evidence or when a public OS-managed API can provide an optional enhancement.
+
 ## Review outcomes
 
 ### Phase 1
@@ -124,9 +130,29 @@
 - Test follow-up: The first focused run passed 143 of 144 tests and exposed that `BrowsingMenuModel.Entry` ignored its explicit Open Bookmarks tag. The tag propagation was fixed, the targeted regression test passed, and the fresh focused run passed all 148 tests: 106 `SitePermissionsTests` and 42 selected `UnitTests`.
 - Release audit: No blockers. Scope, feature gating, frozen matrices, Fire isolation, telemetry, project wiring, headers, and submodule state all matched the Phase 4 contract.
 
+### Phase 5
+
+- Correctness review: Fixed an immediate sandbox-attribute-removal race by retaining sandbox ancestry history from document start. Re-sampled the browser policy API for every operation and before delivering late one-shot, watch, and query results. The native path rejects insecure, empty, opaque, cross-origin, stale, provisional, link-preview, error-page, and header-blocked contexts independently of JavaScript attribution.
+- Contract review: Seeded a real stored Allow in the policy-override regression, added the DuckDuckGo SERP repeated-request regression, and verified exact same-origin success plus same-site and cross-site denial. Main-frame `Permissions-Policy: geolocation=()` is captured provisionally and promoted only on commit; a failed provisional load preserves the prior page.
+- Provider review: Core Location batches now use the newest valid fix, invalid batches are ignored, permission denial terminates authorized work, and the shared manager remains active until its final subscriber leaves. `enableHighAccuracy` is aggregated across active consumers, and transient `locationUnknown` failures keep requests alive for a later fix or timeout.
+- Ponytail review: Replaced two duplicate enums with standard or existing result/query types and removed the obsolete singleton location callback. Kept the sandbox ancestry and authenticated bridge machinery because it enforces the required fail-closed behavior.
+- Deferred finding: The page currently returns fixed-state `PermissionStatus` objects. Phase 6 owns the queried-frame registry, authoritative transition table, manager-mutation propagation, and `change`/`onchange` events.
+- Verification: The production simulator build passed. Focused runs passed 165 `SitePermissionsTests`, 36 selected app integration tests, 109 `WebViewUnitTests`, and 9 shared `UserContentControllerTests`, with no failures or skips. The 35-test geolocation script subset includes real-WebKit sandbox-removal and policy-resampling regressions. JavaScript syntax, Swift parsing, localization syntax, and `git diff --check` pass.
+
 ## Recent progress
 
 ### 2026-08-31
+
+- Committed Phase 5 as `f407befeab` (`Add on-site geolocation permission flows`) directly on Phase 4. The implementation branch remains local and unpushed.
+- Read the validated geolocation spike on `origin/bartosz/on-site-permissions-geo-hack` at `ea39b8a39e` without merging it. Production retains its own authenticated reply bridge, shared location manager, real store, host key, and coordinator FIFO.
+- Resumed Phase 5 after the DRI selected the single-path best-effort Permissions-Policy design. Main-frame header enforcement, exact same-origin gating, cross-origin denial, and request/query agreement are being implemented and tested.
+- Extended the privacy-test-pages geolocation policy matrix on local branch `bartosz/on-site-permissions-5` in commit `f330b4f2`. The fixture pairs query and request results for top-level, same-origin, same-site cross-origin, cross-site, insecure, and main-frame header-deny cases. Its lint, syntax, and local response-header smoke checks pass.
+- Completed the Phase 5 single-path policy implementation. Top-level and exact same-origin frames follow the normal permission model; every cross-origin, insecure, sandboxed, opaque, synthetic, or main-header-blocked context is denied before prompting or telemetry.
+- Hardened the page bridge against forged and stale messages with a private capability, per-document nonces, native `WKScriptMessage.frameInfo.securityOrigin` attribution, navigation/process generations, and frame-targeted callbacks. Navigation and web-process replacement cancel active watches and late work.
+- Added the shared Core Location provider with one-shots, watches, cancellation, cache age, timeouts, accuracy aggregation, newest-valid-fix delivery, and per-tab subscriber fan-out over the Phase 2 manager.
+- Added Location and DuckDuckGo SERP dialog variants plus location toast and reminder recovery. The SERP persistent-Allow regression confirms repeated requests do not re-prompt after the page clears its own location value.
+- Completed Phase 5 correctness and ponytail reviews. `PermissionStatus` change delivery remains intentionally assigned to Phase 6, where manager mutations and authoritative state transitions are integrated.
+- Passed 319 focused tests across `SitePermissionsTests`, app routing/content-blocking tests, `WebViewUnitTests`, and shared reply-handler tests. The production simulator build also passed with only pre-existing repository warnings.
 
 - Created `bartosz/on-site-permissions-4` directly from Phase 3 commit `f0603bafa5`. The branch remains local and nothing has been pushed.
 - Added the three-state on-site camera and microphone management sheet with content-fitting detents, the iOS 15 fallback, iPad popover behavior, Dynamic Type, VoiceOver state values, and the approved in-use icon treatment.

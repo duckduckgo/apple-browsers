@@ -64,6 +64,18 @@ enum AIChatToolMode: Equatable {
     }
 }
 
+struct AIChatCreateImageModelSwitchNotice: Equatable {
+    let previousModelShortName: String
+    let newModelShortName: String
+    let previousModelHasExtraPrivacyProtections: Bool
+
+    init(previousModel: AIChatModel, newModel: AIChatModel) {
+        previousModelShortName = previousModel.shortName
+        newModelShortName = newModel.shortName
+        previousModelHasExtraPrivacyProtections = previousModel.provider == .oss
+    }
+}
+
 /// Controller that manages the state and actions for the AI Chat omnibar.
 /// This controller is shared between AIChatOmnibarContainerViewController and AIChatOmnibarTextContainerViewController
 /// to coordinate text input and submission.
@@ -220,6 +232,10 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatOmnibarImageGeneration)
     }
 
+    var isUpdatedCreateImageEnabled: Bool {
+        featureFlagger.isFeatureOn(.updatedCreateImage)
+    }
+
     /// Whether the web search tool is available.
     var isWebSearchEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarWebSearch)
@@ -268,8 +284,16 @@ final class AIChatOmnibarController {
             && featureFlagger.isFeatureOn(.aiChatOmnibarAttachMoreTabs)
     }
 
-    func toggleImageGenerationMode() {
-        activeToolMode = isImageGenerationMode ? nil : .imageGeneration
+    @discardableResult
+    func toggleImageGenerationMode() -> AIChatCreateImageModelSwitchNotice? {
+        guard !isImageGenerationMode else {
+            activeToolMode = nil
+            return nil
+        }
+
+        let notice = switchToImageGenerationModelIfNeeded()
+        activeToolMode = .imageGeneration
+        return notice
     }
 
     func toggleWebSearchMode() {
@@ -823,7 +847,20 @@ final class AIChatOmnibarController {
         if let selectedModel, selectedModel.supportsTool(.imageGeneration) {
             return selectedModel
         }
-        return models.first(where: { $0.entityHasAccess && $0.supportsTool(.imageGeneration) })
+        let candidates = models.filter { $0.entityHasAccess && $0.supportsTool(.imageGeneration) }
+        return candidates.first(where: \.isSuggestedForImageCreation) ?? candidates.first
+    }
+
+    private func switchToImageGenerationModelIfNeeded() -> AIChatCreateImageModelSwitchNotice? {
+        guard isUpdatedCreateImageEnabled,
+              let previousModel = selectedModel,
+              !previousModel.supportsTool(.imageGeneration),
+              let fallbackModel = imageGenerationModel else {
+            return nil
+        }
+
+        updateSelectedModel(fallbackModel.id)
+        return AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
     }
 
     /// The model ID to use for the current submission. In image-generation mode an

@@ -349,6 +349,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case updatedModelPicker
 
+    /// Enables updated `Create Image` tool behavior.
+    case updatedCreateImage
+
     /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
     /// roll out the new Duck.ai-tab nav UI (no toggle on chat) independently of the master flag.

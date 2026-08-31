@@ -1839,6 +1839,7 @@
 		AABB0001000100010001000B /* UTIModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB0001000100010001000C /* UTIModelStore.swift */; };
 		AABB0001000100010001000D /* UTIModelStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB0001000100010001000E /* UTIModelStoreTests.swift */; };
 		AABB0001000100010001FF01 /* UTIToolsControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB0001000100010001FF02 /* UTIToolsControllerTests.swift */; };
+		AABB0001000100010002FF01 /* CreateImageModelSwitcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB0001000100010002FF02 /* CreateImageModelSwitcherTests.swift */; };
 		AABB0001000100010001000F /* UTIToolsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010010 /* UTIToolsController.swift */; };
 		AABB00010001000100010101 /* UnifiedToggleInputViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010100 /* UnifiedToggleInputViewTests.swift */; };
 		AABB00010001000100010201 /* UnifiedToggleInputToggleViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB00010001000100010200 /* UnifiedToggleInputToggleViewTests.swift */; };
@@ -2750,6 +2751,7 @@
 		F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3352506A037002D07D7 /* OHHTTPStubs */; };
 		F486D3382506A225002D07D7 /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3372506A225002D07D7 /* OHHTTPStubsSwift */; };
 		F4C1A6E0302C000100000002 /* UpdatedCreateImageFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C1A6E0302C000100000001 /* UpdatedCreateImageFeature.swift */; };
+		F4C1A6E1302C000100000002 /* CreateImageModelSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C1A6E1302C000100000001 /* CreateImageModelSwitcher.swift */; };
 		F4CE6D1B257EA33C00D0A6AA /* FireButtonAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CE6D1A257EA33C00D0A6AA /* FireButtonAnimator.swift */; };
 		F4D7221026F29A70007D6193 /* BookmarkDetailsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4D7220F26F29A70007D6193 /* BookmarkDetailsCell.swift */; };
 		F4D7F634298C00C3006C3AE9 /* FindInPageIOSJSSupport in Frameworks */ = {isa = PBXBuildFile; productRef = F4D7F633298C00C3006C3AE9 /* FindInPageIOSJSSupport */; };
@@ -4706,6 +4708,7 @@
 		AABB0001000100010001000C /* UTIModelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIModelStore.swift; sourceTree = "<group>"; };
 		AABB0001000100010001000E /* UTIModelStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIModelStoreTests.swift; sourceTree = "<group>"; };
 		AABB0001000100010001FF02 /* UTIToolsControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIToolsControllerTests.swift; sourceTree = "<group>"; };
+		AABB0001000100010002FF02 /* CreateImageModelSwitcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateImageModelSwitcherTests.swift; sourceTree = "<group>"; };
 		AABB00010001000100010010 /* UTIToolsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIToolsController.swift; sourceTree = "<group>"; };
 		AABB00010001000100010100 /* UnifiedToggleInputViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputViewTests.swift; sourceTree = "<group>"; };
 		AABB00010001000100010200 /* UnifiedToggleInputToggleViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputToggleViewTests.swift; sourceTree = "<group>"; };
@@ -5683,6 +5686,7 @@
 		F46FEC5627987A5F0061D9DF /* KeychainItemsDebugViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeychainItemsDebugViewController.swift; sourceTree = "<group>"; };
 		F47E53DA250A9A1C0037C686 /* OnboardingAnimations.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = OnboardingAnimations.xcassets; sourceTree = "<group>"; };
 		F4C1A6E0302C000100000001 /* UpdatedCreateImageFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatedCreateImageFeature.swift; sourceTree = "<group>"; };
+		F4C1A6E1302C000100000001 /* CreateImageModelSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateImageModelSwitcher.swift; sourceTree = "<group>"; };
 		F4CE6D1A257EA33C00D0A6AA /* FireButtonAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonAnimator.swift; sourceTree = "<group>"; };
 		F4D7220F26F29A70007D6193 /* BookmarkDetailsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkDetailsCell.swift; sourceTree = "<group>"; };
 		F4D9C4F925117A0F00814B71 /* HomeMessageStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMessageStorage.swift; sourceTree = "<group>"; };
@@ -10182,6 +10186,7 @@
 				C18390BA2F4F6F54001939B9 /* UnifiedToggleInputCoordinator.swift */,
 				97D45F47302B5F59002388C8 /* UpdatedModelPickerFeature.swift */,
 				F4C1A6E0302C000100000001 /* UpdatedCreateImageFeature.swift */,
+				F4C1A6E1302C000100000001 /* CreateImageModelSwitcher.swift */,
 				977C2D422FC06B6100C39A04 /* UnifiedToggleInputCoordinatorPixelHelper.swift */,
 				BBA0000000000000000A0001 /* TabInputState.swift */,
 				BBA0000000000000000B0001 /* UnifiedInputStateStoring.swift */,
@@ -10246,6 +10251,7 @@
 				AABB00010001000100010200 /* UnifiedToggleInputToggleViewTests.swift */,
 				AABB0001000100010001000E /* UTIModelStoreTests.swift */,
 				AABB0001000100010001FF02 /* UTIToolsControllerTests.swift */,
+				AABB0001000100010002FF02 /* CreateImageModelSwitcherTests.swift */,
 				FBA1C0DE0000000000000004 /* IPadOmnibarModelPickerControllerTests.swift */,
 				AABB00010001000100010004 /* UTIRenderStateTests.swift */,
 				33CC9145E578E99B3052757F /* UnifiedToggleInputModelMenuTests.swift */,
@@ -14321,6 +14327,7 @@
 				6FB2A67E2C2DAFB4004D20C8 /* NewTabPageGridView.swift in Sources */,
 				97D45F48302B5F59002388C8 /* UpdatedModelPickerFeature.swift in Sources */,
 				F4C1A6E0302C000100000002 /* UpdatedCreateImageFeature.swift in Sources */,
+				F4C1A6E1302C000100000002 /* CreateImageModelSwitcher.swift in Sources */,
 				80A09D4E2F6B80B900AACDEE /* WebsiteDataFireWorker.swift in Sources */,
 				31D4CD4B2D4D1C2D00BC27C6 /* ToolbarStateHandling.swift in Sources */,
 				1DEAADEC2BA45B4500E25A97 /* SettingsAccessibilityView.swift in Sources */,
@@ -15209,6 +15216,7 @@
 				6F6446202FDBEE2A00D699B9 /* SuggestionListKeyboardSelectionTests.swift in Sources */,
 				AABB0001000100010001000D /* UTIModelStoreTests.swift in Sources */,
 				AABB0001000100010001FF01 /* UTIToolsControllerTests.swift in Sources */,
+				AABB0001000100010002FF01 /* CreateImageModelSwitcherTests.swift in Sources */,
 				FBA1C0DE0000000000000003 /* IPadOmnibarModelPickerControllerTests.swift in Sources */,
 				AABB00010001000100010003 /* UTIRenderStateTests.swift in Sources */,
 				275A9E842551836ECC9E6873 /* UnifiedToggleInputModelMenuTests.swift in Sources */,

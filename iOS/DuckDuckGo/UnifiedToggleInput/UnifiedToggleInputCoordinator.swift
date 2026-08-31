@@ -263,6 +263,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
     private let isUpdatedCreateImageEnabled: Bool
+    private let createImageModelSwitcher: CreateImageModelSwitcher
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -325,6 +326,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.isUpdatedCreateImageEnabled = updatedCreateImageFeature.isAvailable
+        self.createImageModelSwitcher = CreateImageModelSwitcher(isFeatureEnabled: updatedCreateImageFeature.isAvailable)
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
@@ -1553,10 +1555,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
-        let notice = tool == .imageGeneration ? switchModelForImageGenerationIfNeeded() : nil
-        toolsController.select(tool, for: modelStore)
-        if let notice {
-            footerController?.showModelSwitchNotice(notice)
+        if tool == .imageGeneration {
+            selectImageGeneration()
+        } else {
+            toolsController.select(tool, for: modelStore)
         }
         refreshToolsPresentation()
         recordUserChoiceToStore()
@@ -1645,27 +1647,28 @@ extension UnifiedToggleInputCoordinator {
 
     /// Selecting Create Image on a model that can't generate images moves the user to one that can, and says so in the footer.
     private func toggleImageGenerationSelection() {
-        let isSelecting = toolsController.selectedTool != .imageGeneration
-        let notice = isSelecting ? switchModelForImageGenerationIfNeeded() : nil
-        toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
-        if let notice {
-            footerController?.showModelSwitchNotice(notice)
-        }
+        let notice = createImageModelSwitcher.toggle(
+            toolsController: toolsController,
+            modelStore: modelStore,
+            canSwitchModel: canSwitchModelForImageGeneration,
+            applyModel: { modelSelector.updateSelectedModel($0) }
+        )
+        showModelSwitchNoticeIfNeeded(notice)
     }
 
-    /// Moves the user onto an image-capable model when the selected one can't generate images, and
-    /// returns the notice to raise — without raising it.
-    private func switchModelForImageGenerationIfNeeded() -> CreateImageModelSwitchNotice? {
-        guard isUpdatedCreateImageEnabled,
-              !modelStore.selectedModelSupports(tool: .imageGeneration),
-              canSwitchModelForImageGeneration,
-              let previousModel = modelStore.selectedModel,
-              let fallbackModel = modelStore.imageGenerationFallbackModel else {
-            return nil
-        }
+    private func selectImageGeneration() {
+        let notice = createImageModelSwitcher.select(
+            toolsController: toolsController,
+            modelStore: modelStore,
+            canSwitchModel: canSwitchModelForImageGeneration,
+            applyModel: { modelSelector.updateSelectedModel($0) }
+        )
+        showModelSwitchNoticeIfNeeded(notice)
+    }
 
-        modelSelector.updateSelectedModel(fallbackModel.id)
-        return CreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+    private func showModelSwitchNoticeIfNeeded(_ notice: CreateImageModelSwitchNotice?) {
+        guard let notice else { return }
+        footerController?.showModelSwitchNotice(notice)
     }
 
     private func fireToolToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {

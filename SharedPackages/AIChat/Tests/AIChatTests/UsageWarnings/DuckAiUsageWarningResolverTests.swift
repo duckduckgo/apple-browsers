@@ -23,206 +23,213 @@ final class DuckAiUsageWarningResolverTests: XCTestCase {
 
     private let now = Date(timeIntervalSince1970: 1_755_000_000) // 2025-08-12T12:00:00Z
     private var dismissalStore: InMemoryDuckAiUsageWarningDismissalStore!
-    private var sut: DuckAiUsageWarningResolver!
+    private let switchTarget = DuckAiModelSuggestion(modelId: "haiku", modelShortName: "Haiku")
 
     override func setUp() {
         super.setUp()
         dismissalStore = InMemoryDuckAiUsageWarningDismissalStore()
-        sut = DuckAiUsageWarningResolver(dismissalStore: dismissalStore)
     }
 
     override func tearDown() {
         dismissalStore = nil
-        sut = nil
         super.tearDown()
     }
 
-    // MARK: - Visibility
+    // MARK: - Rendering the notice web sent
 
-    func testWhenThereIsNoDataThenNothingIsShown() {
-        XCTAssertNil(resolve(.noData))
+    func testWhenThereIsNoNoticeThenNothingIsShown() {
+        XCTAssertEqual(reason(.noData), .noNotice)
     }
 
-    /// Gated on the raw percentage, not the rounded one, so a 49.6% window never renders as "50%".
-    func testWhenUsageIsJustBelowTheFloorThenNothingIsShown() {
-        XCTAssertNil(resolve(limits(daily: 49.6)))
-    }
-
-    func testWhenUsageIsJustAboveTheFloorThenTheRoundedPercentageIsShown() {
-        XCTAssertEqual(resolve(limits(daily: 50.4))?.percent, 50)
-    }
-
-    // MARK: - Severity
-
-    /// Whole numbers, so this pins the ladder itself; rounding is covered separately below.
-    func testSeverityLaddersOnTheDocumentedBoundaries() {
-        XCTAssertEqual(resolve(limits(daily: 50))?.severity, .info)
-        XCTAssertEqual(resolve(limits(daily: 74))?.severity, .info)
-        XCTAssertEqual(resolve(limits(daily: 75))?.severity, .warning)
-        XCTAssertEqual(resolve(limits(daily: 89))?.severity, .warning)
-        XCTAssertEqual(resolve(limits(daily: 90))?.severity, .critical)
-        XCTAssertEqual(resolve(limits(daily: 100))?.severity, .reached)
-    }
-
-    /// The ring and the headline are read together, so a percentage that rounds up to a threshold must
-    /// take that threshold's severity with it.
-    func testSeverityFollowsTheDisplayedPercentageNotTheRawOne() {
-        XCTAssertEqual(resolve(limits(daily: 74.6))?.percent, 75)
-        XCTAssertEqual(resolve(limits(daily: 74.6))?.severity, .warning)
-        XCTAssertEqual(resolve(limits(daily: 89.6))?.percent, 90)
-        XCTAssertEqual(resolve(limits(daily: 89.6))?.severity, .critical)
-    }
-
-    /// Rounding down must not promote severity either.
-    func testSeverityStaysDownWhenThePercentageRoundsDown() {
-        XCTAssertEqual(resolve(limits(daily: 74.4))?.percent, 74)
-        XCTAssertEqual(resolve(limits(daily: 74.4))?.severity, .info)
-    }
-
-    // MARK: - Percentage
-
-    /// The percentage is capped at 99 until the window is actually blocked, so "100%" only ever appears
-    /// alongside the reached message.
-    func testWhenUsageWouldRoundToOneHundredThenItIsCappedAtNinetyNine() {
-        XCTAssertEqual(resolve(limits(daily: 99.6))?.percent, 99)
-        XCTAssertEqual(resolve(limits(daily: 99.9))?.percent, 99)
-    }
-
-    func testWhenBlockedThenPercentageIsOneHundred() {
-        let warning = resolve(limits(daily: 100))
-        XCTAssertEqual(warning?.percent, 100)
-        XCTAssertEqual(warning?.message.isReached, true)
-    }
-
-    // MARK: - Audience
-
-    func testWhenTierIsPaidOrInternalThenApproachingIsShown() {
-        for tier in [AIChatUserTier.plus, .pro] {
-            XCTAssertEqual(resolve(limits(daily: 75), tier: tier)?.message, .approaching, "\(tier)")
+    func testTheMessageIsTheNoticeID() {
+        for id in [DuckAiUsageNotice.ID.approaching, .freeReached, .dailyReached,
+                   .weeklyReachedDegraded, .weeklyReached] {
+            XCTAssertEqual(resolve(snapshot(notice(id: id)))?.message, id, id.rawValue)
         }
-        XCTAssertEqual(resolve(limits(daily: 75), tier: .free, isInternalUser: true)?.message, .approaching)
     }
 
-    func testWhenTierIsFreeThenApproachingIsHidden() {
-        XCTAssertNil(resolve(limits(daily: 75), tier: .free))
-        XCTAssertNil(resolve(limits(daily: 99), tier: .free))
-    }
+    /// Web caps the percentage; native shows what it was sent rather than recomputing it.
+    func testTheWindowPercentAndResetComeStraightFromTheNotice() {
+        let warning = resolve(snapshot(notice(id: .approaching, window: .weekly, percentUsed: 99,
+                                              resetsAt: now.addingTimeInterval(3 * 24 * 3600))))
 
-    /// The reached message is the one thing every tier sees.
-    func testWhenTierIsFreeThenReachedIsStillShownAndCannotBeDismissed() {
-        let warning = resolve(limits(daily: 100), tier: .free)
-        XCTAssertEqual(warning?.message.isReached, true)
-        XCTAssertFalse(warning?.isDismissible ?? true)
-    }
-
-    func testReachedIsNeverDismissibleEvenForPaidTiers() {
-        XCTAssertFalse(resolve(limits(daily: 100), tier: .pro)?.isDismissible ?? true)
-    }
-
-    func testApproachingIsDismissibleForPaidTiers() {
-        XCTAssertTrue(resolve(limits(daily: 60), tier: .pro)?.isDismissible ?? false)
-    }
-
-    // MARK: - Window precedence
-
-    func testWhenBothWindowsQualifyThenTheMoreSevereWins() {
-        let warning = resolve(limits(daily: 60, weekly: 92))
         XCTAssertEqual(warning?.window, .weekly)
-        XCTAssertEqual(warning?.severity, .critical)
+        XCTAssertEqual(warning?.percent, 99)
+        XCTAssertEqual(warning?.resetsIn, .days(3))
     }
 
-    func testWhenSeveritiesMatchThenTheHigherPercentageWins() {
-        XCTAssertEqual(resolve(limits(daily: 76, weekly: 88))?.window, .weekly)
-        XCTAssertEqual(resolve(limits(daily: 88, weekly: 76))?.window, .daily)
+    func testDismissibilityComesStraightFromTheNotice() {
+        XCTAssertEqual(resolve(snapshot(notice(id: .approaching, dismissible: true)))?.isDismissible, true)
+        XCTAssertEqual(resolve(snapshot(notice(id: .approaching, dismissible: false)))?.isDismissible, false)
+        XCTAssertEqual(resolve(snapshot(notice(id: .weeklyReached, reached: true)))?.isDismissible, false)
     }
 
-    func testWhenSeverityAndPercentageMatchThenDailyWins() {
-        XCTAssertEqual(resolve(limits(daily: 80, weekly: 80))?.window, .daily)
-    }
+    // MARK: - CTAs
 
-    func testWhenOneWindowIsBlockedThenItOutranksAnApproachingOne() {
-        let warning = resolve(limits(daily: 60, weekly: 100))
-        XCTAssertEqual(warning?.window, .weekly)
-        XCTAssertEqual(warning?.message.isReached, true)
-    }
+    func testSwitchToCheaperOffersTheResolvedModelAndThePicker() {
+        let warning = resolve(snapshot(notice(id: .approaching), cta: DuckAiUsageCta(id: .switchToCheaper)),
+                              suggestion: .suggestion(switchTarget))
 
-    // MARK: - Advanced-models weekly variant
-
-    /// The discriminator isn't in the payload yet, so weekly-blocked defaults to the plain copy.
-    func testWeeklyBlockedDefaultsToPlainWeeklyCopy() {
-        XCTAssertEqual(resolve(limits(weekly: 100))?.message, .weeklyLimitReached)
-    }
-
-    func testWeeklyBlockedUsesAdvancedCopyWhenTheWindowIsNamed() {
-        let outcome = sut.resolve(limits: limits(weekly: 100),
-                                  tier: .pro,
-                                  isInternalUser: false,
-                                  isTrialEligible: false,
-                                  advancedModelsWindow: .weekly,
-                                  now: now)
-        guard case .warning(let warning, _) = outcome else { return XCTFail("expected a warning") }
-
-        XCTAssertEqual(warning.message, .advancedModelsLimitReached)
+        XCTAssertEqual(warning?.action, .switchToModel(switchTarget))
+        XCTAssertTrue(warning?.offersModelPicker ?? false)
     }
 
     /// The free-model CTA is still a model switch, so it carries the `>` into the native picker.
-    func testAdvancedModelsReachedOffersTheFreeModelSwitchAndThePicker() {
-        let resolver = DuckAiUsageWarningResolver(
-            dismissalStore: dismissalStore,
-            modelSuggester: StubFreeModelSuggester(
-                free: .suggestion(DuckAiModelSuggestion(modelId: "gpt-5.4-mini", modelShortName: "5.4 mini"))
-            )
-        )
-        let outcome = resolver.resolve(limits: limits(weekly: 100),
-                                       tier: .pro,
-                                       isInternalUser: false,
-                                       isTrialEligible: false,
-                                       advancedModelsWindow: .weekly,
-                                       now: now)
-        guard case .warning(let warning, _) = outcome else { return XCTFail("expected a warning") }
+    func testSwitchToFreeOffersTheResolvedModelAndThePicker() {
+        let warning = resolve(snapshot(notice(id: .weeklyReachedDegraded, reached: true),
+                                       cta: DuckAiUsageCta(id: .switchToFree)),
+                              suggestion: .suggestion(switchTarget))
 
-        XCTAssertEqual(warning.action, .switchToFreeModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
-                                                                               modelShortName: "5.4 mini")))
-        XCTAssertTrue(warning.offersModelPicker)
+        XCTAssertEqual(warning?.action, .switchToFreeModel(switchTarget))
+        XCTAssertTrue(warning?.offersModelPicker ?? false)
     }
 
-    // MARK: - Reset copy
+    /// The contract's already-on-the-cheapest-model case, and also what happens when nothing web
+    /// offered can handle the current draft.
+    func testWhenNoModelSurvivesThenTheButtonGoesAndTheNoticeStays() {
+        let warning = resolve(snapshot(notice(id: .approaching), cta: DuckAiUsageCta(id: .switchToCheaper)),
+                              suggestion: .none(reason: .noTargetForSelectedModel))
 
-    func testResetCopyComesFromTheWinningWindow() {
-        let limits = DuckAiUsageLimits(
-            daily: DuckAiUsageLimitWindow(percentUsed: 60, resetsAt: now.addingTimeInterval(5 * 3600)),
-            weekly: DuckAiUsageLimitWindow(percentUsed: 95, resetsAt: now.addingTimeInterval(3 * 86400))
-        )
-        let warning = resolve(limits)
-        XCTAssertEqual(warning?.window, .weekly)
-        XCTAssertEqual(warning?.resetsIn.shortDescription, "3d")
+        XCTAssertEqual(warning?.message, .approaching)
+        XCTAssertNil(warning?.action)
+        XCTAssertFalse(warning?.offersModelPicker ?? true)
+    }
+
+    func testSubscribeCopyFollowsTrialEligibility() {
+        let cta = DuckAiUsageCta(id: .subscribe)
+
+        XCTAssertEqual(resolve(snapshot(notice(id: .freeReached, reached: true), cta: cta),
+                               isTrialEligible: true)?.action,
+                       .tryForFree(isTrialEligible: true))
+        XCTAssertEqual(resolve(snapshot(notice(id: .freeReached, reached: true), cta: cta),
+                               isTrialEligible: false)?.action,
+                       .tryForFree(isTrialEligible: false))
+    }
+
+    /// Web names the key and the value; native carries them through untouched.
+    func testBypassWeeklyCarriesTheEntriesWebNamed() {
+        let entries = [DuckAiNativeStorageEntry(key: "duckai.fixedCostWindowBypassResetAtById",
+                                                value: "{\"day\":\"2026-08-22T00:00:00.000Z\"}")]
+        let warning = resolve(snapshot(notice(id: .dailyReached, reached: true),
+                                       cta: DuckAiUsageCta(id: .bypassWeekly, putEntries: entries)))
+
+        XCTAssertEqual(warning?.action, .startUsingWeeklyLimit(entries: entries))
+        XCTAssertFalse(warning?.offersModelPicker ?? true)
+    }
+
+    /// Nothing to write means nothing would happen on tap.
+    func testBypassWeeklyWithNoEntriesOffersNoButton() {
+        let warning = resolve(snapshot(notice(id: .dailyReached, reached: true),
+                                       cta: DuckAiUsageCta(id: .bypassWeekly)))
+
+        XCTAssertEqual(warning?.message, .dailyReached)
+        XCTAssertNil(warning?.action)
+    }
+
+    func testANoticeWithoutACtaOffersNoButton() {
+        XCTAssertNil(resolve(snapshot(notice(id: .weeklyReached, reached: true)))?.action)
+    }
+
+    // MARK: - Dismissal
+
+    func testADismissedNoticeStaysHiddenForThatResetPeriod() {
+        let notice = notice(id: .approaching)
+        dismissalStore.setDismissal(DuckAiUsageWarningDismissal(notice: notice))
+
+        XCTAssertEqual(reason(snapshot(notice)), .dismissedUntilReset)
+    }
+
+    /// Once the window rolls over, the record is stale and the message comes back — no threshold
+    /// ladder involved, because web decides when to send the next notice.
+    func testADismissalDoesNotOutliveItsResetPeriod() {
+        dismissalStore.setDismissal(DuckAiUsageWarningDismissal(notice: notice(id: .approaching)))
+
+        let nextPeriod = notice(id: .approaching, resetsAt: now.addingTimeInterval(2 * 24 * 3600))
+        XCTAssertEqual(resolve(snapshot(nextPeriod))?.message, .approaching)
+    }
+
+    /// A dismissed approaching message must not hide the reached one that follows it.
+    func testADismissalOnlyAppliesToItsOwnNotice() {
+        dismissalStore.setDismissal(DuckAiUsageWarningDismissal(notice: notice(id: .approaching)))
+
+        XCTAssertEqual(resolve(snapshot(notice(id: .dailyReached, reached: true)))?.message, .dailyReached)
+    }
+
+    // MARK: - Acting on a notice
+
+    /// The payload it was offered from still says the limit is hit, so the same drawer would come
+    /// straight back and read as the button having done nothing.
+    func testANoticeActedOnStaysHiddenUntilWebPublishesAgain() {
+        let notice = notice(id: .dailyReached, reached: true)
+        let acted = snapshot(notice, signature: "snapshot-1")
+        dismissalStore.setActedSnapshot(DuckAiUsageWarningActedSnapshot(noticeID: notice.id.rawValue,
+                                                                       signature: "snapshot-1"))
+
+        XCTAssertEqual(reason(acted), .actedOnThisSnapshot)
+        XCTAssertEqual(resolve(snapshot(notice, signature: "snapshot-2"))?.message, .dailyReached)
+    }
+
+    func testActingOnOneNoticeDoesNotHideAnother() {
+        dismissalStore.setActedSnapshot(DuckAiUsageWarningActedSnapshot(noticeID: "dailyReached",
+                                                                       signature: "snapshot-1"))
+
+        XCTAssertEqual(resolve(snapshot(notice(id: .weeklyReached, reached: true),
+                                        signature: "snapshot-1"))?.message, .weeklyReached)
+    }
+
+    /// An unsigned snapshot can't be compared; showing the message again is the safe failure.
+    func testAnUnsignedSnapshotIsNeverSuppressed() {
+        let notice = notice(id: .dailyReached, reached: true)
+        dismissalStore.setActedSnapshot(DuckAiUsageWarningActedSnapshot(noticeID: notice.id.rawValue,
+                                                                       signature: "snapshot-1"))
+
+        XCTAssertEqual(resolve(snapshot(notice, signature: nil))?.message, .dailyReached)
     }
 
     // MARK: - Helpers
 
-    private func resolve(_ limits: DuckAiUsageLimits,
-                         tier: AIChatUserTier = .pro,
-                         isInternalUser: Bool = false) -> DuckAiUsageWarning? {
-        guard case .warning(let warning, _) = sut.resolve(limits: limits,
-                                                          tier: tier,
-                                                          isInternalUser: isInternalUser,
-                                                          isTrialEligible: false,
+    private func resolve(_ snapshot: DuckAiUsageSnapshot,
+                         suggestion: DuckAiModelSuggestionOutcome = .none(reason: .notApplicable),
+                         isTrialEligible: Bool = false) -> DuckAiUsageWarning? {
+        let sut = DuckAiUsageWarningResolver(dismissalStore: dismissalStore,
+                                            modelSuggester: StubModelSuggester(outcome: suggestion))
+        guard case .warning(let warning, _) = sut.resolve(snapshot: snapshot,
+                                                          isTrialEligible: isTrialEligible,
                                                           now: now) else { return nil }
         return warning
     }
 
-    private func limits(daily: Double? = nil, weekly: Double? = nil) -> DuckAiUsageLimits {
-        let resetsAt = now.addingTimeInterval(5 * 3600)
-        return DuckAiUsageLimits(
-            daily: daily.map { DuckAiUsageLimitWindow(percentUsed: $0, resetsAt: resetsAt) },
-            weekly: weekly.map { DuckAiUsageLimitWindow(percentUsed: $0, resetsAt: resetsAt) }
-        )
+    private func reason(_ snapshot: DuckAiUsageSnapshot) -> DuckAiUsageWarningResolver.NoWarningReason? {
+        let sut = DuckAiUsageWarningResolver(dismissalStore: dismissalStore)
+        guard case .none(let reason) = sut.resolve(snapshot: snapshot,
+                                                   isTrialEligible: false,
+                                                   now: now) else { return nil }
+        return reason
+    }
+
+    private func notice(id: DuckAiUsageNotice.ID,
+                        window: DuckAiUsageWindow = .daily,
+                        percentUsed: Int = 75,
+                        resetsAt: Date? = nil,
+                        reached: Bool = false,
+                        dismissible: Bool? = nil) -> DuckAiUsageNotice {
+        DuckAiUsageNotice(id: id,
+                          window: window,
+                          percentUsed: percentUsed,
+                          resetsAt: resetsAt ?? now.addingTimeInterval(5 * 3600),
+                          reached: reached,
+                          dismissible: dismissible ?? !reached)
+    }
+
+    private func snapshot(_ notice: DuckAiUsageNotice,
+                          cta: DuckAiUsageCta? = nil,
+                          signature: String? = "snapshot-1") -> DuckAiUsageSnapshot {
+        DuckAiUsageSnapshot(notice: notice, cta: cta, signature: signature)
     }
 }
 
-private struct StubFreeModelSuggester: DuckAiModelSuggesting {
-    let free: DuckAiModelSuggestionOutcome
+struct StubModelSuggester: DuckAiModelSuggesting {
+    let outcome: DuckAiModelSuggestionOutcome
 
-    func cheaperModel() -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
-    func freeModel() -> DuckAiModelSuggestionOutcome { free }
+    func resolve(_ cta: DuckAiUsageCta) -> DuckAiModelSuggestionOutcome { outcome }
 }

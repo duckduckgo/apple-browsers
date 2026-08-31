@@ -43,12 +43,6 @@ final class UTIFooterCardView: UIView {
     var onPrimaryTap: (() -> Void)?
     var onDismissTap: (() -> Void)?
 
-    /// The toolbar's model-picker menu, reused so the card offers the same list. UIKit presents it
-    /// from the chevron, which is what anchors the menu to the control the user tapped.
-    var modelPickerMenu: UIMenu? {
-        didSet { actionButton.modelPickerMenu = modelPickerMenu }
-    }
-
     let contentView = UIView()
 
     private let usageRing = UTIFooterUsageRingView()
@@ -60,6 +54,8 @@ final class UTIFooterCardView: UIView {
 
     private var actionCollapsedWidthConstraint: NSLayoutConstraint?
     private var actionTrailingConstraint: NSLayoutConstraint?
+    private var iconSlotWidthConstraint: NSLayoutConstraint?
+    private var iconTextGapConstraint: NSLayoutConstraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -73,22 +69,33 @@ final class UTIFooterCardView: UIView {
 
     func configure(with message: UTIFooterMessage, animateIcon: Bool) {
         switch message.icon {
-        case .usageRing(let progress):
+        case .none:
+            usageRing.isHidden = true
+            alertIcon.isHidden = true
+        case .usageRing(let progress, let severity):
             usageRing.isHidden = false
             alertIcon.isHidden = true
-            usageRing.setProgress(progress, animated: animateIcon)
+            usageRing.setProgress(progress, severity: severity, animated: animateIcon)
         case .alert:
             usageRing.isHidden = true
             alertIcon.isHidden = false
         }
+        let hasIcon = message.icon != UTIFooterMessage.Icon.none
+        iconSlotWidthConstraint?.constant = hasIcon ? Constants.iconSize : 0
+        iconTextGapConstraint?.constant = hasIcon ? Constants.iconTextGap : 0
 
+        // A title above a reset line is a headline that truncates; a standalone one is body copy.
+        let isStandaloneCopy = message.subtitle == nil
+        titleLabel.numberOfLines = isStandaloneCopy ? 2 : 1
+        titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
         titleLabel.text = message.title
+
         subtitleLabel.text = message.subtitle
         subtitleLabel.isHidden = message.subtitle?.isEmpty ?? true
 
         if let primaryAction = message.primaryAction {
             actionButton.isHidden = false
-            actionButton.configure(title: primaryAction.title, showsModelPicker: primaryAction.showsModelPicker)
+            actionButton.configure(title: primaryAction.title)
         } else {
             actionButton.isHidden = true
         }
@@ -111,6 +118,7 @@ final class UTIFooterCardView: UIView {
     @objc private func dismissTapped() {
         onDismissTap?()
     }
+
 }
 
 // MARK: - Setup
@@ -122,6 +130,7 @@ private extension UTIFooterCardView {
         layer.cornerCurve = .continuous
         layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         clipsToBounds = true
+        accessibilityIdentifier = "AIChat.Footer.Card"
 
         contentView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(contentView)
@@ -132,6 +141,8 @@ private extension UTIFooterCardView {
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
             contentView.addSubview($0)
         }
+        usageRing.accessibilityIdentifier = "AIChat.Footer.Icon.UsageRing"
+        alertIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Alert"
         alertIcon.contentMode = .scaleAspectFit
         alertIcon.isHidden = true
 
@@ -142,7 +153,9 @@ private extension UTIFooterCardView {
             label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         }
         titleLabel.font = .daxFootnoteSemibold()
+        titleLabel.accessibilityIdentifier = "AIChat.Footer.Label.Title"
         subtitleLabel.font = .daxCaption1()
+        subtitleLabel.accessibilityIdentifier = "AIChat.Footer.Label.Subtitle"
 
         let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         textStack.axis = .vertical
@@ -158,6 +171,7 @@ private extension UTIFooterCardView {
         dismissButton.translatesAutoresizingMaskIntoConstraints = false
         dismissButton.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
         dismissButton.accessibilityLabel = UserText.utiDuckAIWarningsDismissAccessibilityLabel
+        dismissButton.accessibilityIdentifier = "AIChat.Footer.Button.Dismiss"
         dismissButton.setContentHuggingPriority(.required, for: .horizontal)
         dismissButton.addTarget(self, action: #selector(dismissTapped), for: .primaryActionTriggered)
         contentView.addSubview(dismissButton)
@@ -174,6 +188,12 @@ private extension UTIFooterCardView {
                                                                    constant: -Constants.dismissTrailingFootprint)
         actionTrailingConstraint = actionTrailing
 
+        let iconSlotWidth = usageRing.widthAnchor.constraint(equalToConstant: Constants.iconSize)
+        iconSlotWidthConstraint = iconSlotWidth
+        let iconTextGap = textStack.leadingAnchor.constraint(equalTo: usageRing.trailingAnchor,
+                                                            constant: Constants.iconTextGap)
+        iconTextGapConstraint = iconTextGap
+
         NSLayoutConstraint.activate([
             contentTop,
             contentView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.contentLeading),
@@ -182,7 +202,7 @@ private extension UTIFooterCardView {
 
             usageRing.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             usageRing.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
-            usageRing.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            iconSlotWidth,
             usageRing.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             alertIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
@@ -190,7 +210,7 @@ private extension UTIFooterCardView {
             alertIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             alertIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
-            textStack.leadingAnchor.constraint(equalTo: usageRing.trailingAnchor, constant: Constants.iconTextGap),
+            iconTextGap,
             textStack.topAnchor.constraint(equalTo: contentView.topAnchor),
             textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
 
@@ -223,42 +243,18 @@ private extension UTIFooterCardView {
 
 // MARK: - Action button
 
-/// The card's CTA: a pill with the primary action, and optionally a divider and the chevron that
-/// opens the model picker.
-///
-/// Two hit regions because the view model exposes them separately — the title applies the suggested
-/// model, the chevron offers the whole list.
+/// The card's CTA: a plain pill. The model picker lives in the toolbar, not here.
 final class UTIFooterActionButton: UIView {
 
     private enum Constants {
         static let height: CGFloat = 34
         static let titleHorizontalPadding: CGFloat = 14
-        static let chevronRegionWidth: CGFloat = 28
-        static let chevronSize: CGFloat = 16
-        static let dividerWidth: CGFloat = 1
-        static let dividerVerticalInset: CGFloat = 8
         static let strokeWidth: CGFloat = 0.5
     }
 
     var onPrimaryTap: (() -> Void)?
 
-    /// The chevron stays down without a menu to show: a control that opens nothing is worse than none.
-    var modelPickerMenu: UIMenu? {
-        didSet {
-            pickerButton.menu = modelPickerMenu
-            pickerButton.showsMenuAsPrimaryAction = modelPickerMenu != nil
-            applyPickerVisibility()
-        }
-    }
-
     private let primaryButton = UIButton(type: .system)
-    private let pickerButton = UIButton(type: .system)
-    private let dividerView = UIView()
-
-    private var showsModelPicker = false
-
-    private var dividerWidthConstraint: NSLayoutConstraint?
-    private var pickerRegionWidthConstraint: NSLayoutConstraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -270,10 +266,8 @@ final class UTIFooterActionButton: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configure(title: String, showsModelPicker: Bool) {
+    func configure(title: String) {
         primaryButton.configuration?.title = title
-        self.showsModelPicker = showsModelPicker
-        applyPickerVisibility()
     }
 
     override func layoutSubviews() {
@@ -284,9 +278,7 @@ final class UTIFooterActionButton: UIView {
     func applyColors() {
         backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
         layer.borderColor = UIColor(designSystemColor: .lines).cgColor
-        dividerView.backgroundColor = UIColor(designSystemColor: .lines)
         primaryButton.configuration?.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
-        pickerButton.tintColor = UIColor(designSystemColor: .textPrimary)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -302,66 +294,31 @@ final class UTIFooterActionButton: UIView {
         layer.borderWidth = Constants.strokeWidth
 
         primaryButton.translatesAutoresizingMaskIntoConstraints = false
+        primaryButton.accessibilityIdentifier = "AIChat.Footer.Button.Primary"
         primaryButton.configuration = Self.makePrimaryConfiguration()
         // The label gives before the pill does, so a zero-width collapse can't break the layout.
         primaryButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         primaryButton.addTarget(self, action: #selector(primaryTapped), for: .primaryActionTriggered)
         addSubview(primaryButton)
 
-        dividerView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(dividerView)
-
-        pickerButton.translatesAutoresizingMaskIntoConstraints = false
-        pickerButton.setImage(DesignSystemImages.Glyphs.Size16.chevronDownMedium, for: .normal)
-        pickerButton.accessibilityLabel = UserText.utiDuckAIWarningsModelPickerAccessibilityLabel
-        addSubview(pickerButton)
-
-        let dividerWidth = dividerView.widthAnchor.constraint(equalToConstant: Constants.dividerWidth)
-        dividerWidthConstraint = dividerWidth
-        let pickerRegionWidth = pickerButton.widthAnchor.constraint(equalToConstant: Constants.chevronRegionWidth)
-        pickerRegionWidthConstraint = pickerRegionWidth
-
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: Constants.height),
 
             primaryButton.leadingAnchor.constraint(equalTo: leadingAnchor),
+            primaryButton.trailingAnchor.constraint(equalTo: trailingAnchor),
             primaryButton.topAnchor.constraint(equalTo: topAnchor),
-            primaryButton.bottomAnchor.constraint(equalTo: bottomAnchor),
-
-            dividerView.leadingAnchor.constraint(equalTo: primaryButton.trailingAnchor),
-            dividerWidth,
-            dividerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.dividerVerticalInset),
-            dividerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.dividerVerticalInset),
-
-            pickerButton.leadingAnchor.constraint(equalTo: dividerView.trailingAnchor),
-            pickerButton.trailingAnchor.constraint(equalTo: trailingAnchor),
-            pickerButton.topAnchor.constraint(equalTo: topAnchor),
-            pickerButton.bottomAnchor.constraint(equalTo: bottomAnchor),
-            pickerRegionWidth
+            primaryButton.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
 
-        applyPickerVisibility()
         applyColors()
-    }
-
-    /// The chevron needs both an offer and a menu; the trailing padding grows back without it, so a
-    /// plain pill keeps its symmetry.
-    private func applyPickerVisibility() {
-        let isVisible = showsModelPicker && modelPickerMenu != nil
-        dividerView.isHidden = !isVisible
-        pickerButton.isHidden = !isVisible
-        dividerWidthConstraint?.constant = isVisible ? Constants.dividerWidth : 0
-        pickerRegionWidthConstraint?.constant = isVisible ? Constants.chevronRegionWidth : 0
-        primaryButton.configuration?.contentInsets = NSDirectionalEdgeInsets(
-            top: 0,
-            leading: Constants.titleHorizontalPadding,
-            bottom: 0,
-            trailing: isVisible ? Constants.titleHorizontalPadding - Constants.chevronRegionWidth / 2 : Constants.titleHorizontalPadding
-        )
     }
 
     private static func makePrimaryConfiguration() -> UIButton.Configuration {
         var configuration = UIButton.Configuration.plain()
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 0,
+                                                              leading: Constants.titleHorizontalPadding,
+                                                              bottom: 0,
+                                                              trailing: Constants.titleHorizontalPadding)
         configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
             outgoing.font = .daxFootnoteRegular()

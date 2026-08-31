@@ -1164,7 +1164,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
             guard let self else { return }
-            presentModelPicker(anchoredTo: usageWarningCardView.modelPickerAnchor)
+            let offersFreeModelsOnly = omnibarController.usageWarningViewModel?.warning?
+                .modelPickerOffersFreeModelsOnly ?? false
+            presentModelPicker(anchoredTo: usageWarningCardView.modelPickerAnchor,
+                               freeModelsOnly: offersFreeModelsOnly,
+                               raisedFromUsageCard: true)
         }
 
         subscribeToUsageWarnings()
@@ -1211,11 +1215,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         backgroundViewBottomConstraint?.constant = visible
             ? -AIChatUsageWarningCardView.Constants.contentHeight
             : 0
-        // `castsShadowOverCard` just flipped, so repaint the chrome and mount the shadow.
+        // Only while the panel's own shadow is up: `cleanup()` takes it down and then hides the card,
+        // so without this guard teardown puts it straight back on the window.
         applyTheme(theme: themeManager.theme)
-        addShadowToWindow()
+        if shadowView.superview != nil {
+            addShadowToWindow()
+        }
         return true
     }
+
+    private var isPresentingModelPickerFromUsageCard = false
 
     /// The last known suggestions height before image gen mode suppressed it.
     private var lastKnownSuggestionsHeight: CGFloat = 0
@@ -2074,17 +2083,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     /// Anchored, so a menu raised from the card's `>` lands under the control the user clicked.
-    private func presentModelPicker(anchoredTo anchor: NSView) {
+    private func presentModelPicker(anchoredTo anchor: NSView,
+                                    freeModelsOnly: Bool = false,
+                                    raisedFromUsageCard: Bool = false) {
+        // `popUp` tracks modally, so this still reads true inside `modelSelected`.
+        isPresentingModelPickerFromUsageCard = raisedFromUsageCard
+        defer { isPresentingModelPickerFromUsageCard = false }
+
         // Resolved once and passed on: `modelPickerItems` records a free-trial badge impression, so
         // asking for it twice per open would burn through the badge's view cap at double speed.
-        let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId)
+        let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId,
+                                                       freeModelsOnly: freeModelsOnly)
         // Only a picker that actually shows a gated row is a subscription-funnel impression.
         if items.contains(where: { if case .gatedModel = $0 { return true } else { return false } }) {
             omnibarController.pixelHandler.fire(.modelPickerShown)
         }
         let menu = buildModelPickerMenu(items: items)
-        // Align menu's trailing edge with the anchor's trailing edge, with a small gap below
-        let point = NSPoint(x: anchor.bounds.width - menu.size.width, y: -5)
+        // The y comes off the anchor's geometry because `NSButton` is flipped and `NSView` is not:
+        // a hardcoded -5 opens below the toolbar's picker but over the card.
+        let gap: CGFloat = 5
+        let belowAnchor = anchor.isFlipped ? anchor.bounds.maxY + gap : anchor.bounds.minY - gap
+        let point = NSPoint(x: anchor.bounds.width - menu.size.width, y: belowAnchor)
 
         // Only a `FocusRingControlling` anchor has a ring modal tracking would leave lit.
         if let focusRingAnchor = anchor as? (NSView & FocusRingControlling) {
@@ -2110,18 +2129,23 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelsCancellable = omnibarController.$models
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                modelPickerButton.isHidden = !shouldShowModelPicker
-                // Refresh button label once models arrive
-                modelPickerButton.modelName = persistedModelShortName
-                // Refresh image upload visibility with updated supportsImageUpload
-                updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
-                // Refresh tool button visibility so the Web Search chip reflects the loaded
-                // model's `supportedTools` (belt-and-braces — the controller also clears
-                // `activeToolMode` when the persisted model doesn't support web search).
-                updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
-                updateReasoningPickerVisibility()
+                self?.refreshForSelectedModel()
             }
+
+        // Or a switch made outside the picker leaves the label naming the model we just left.
+        omnibarController.onSelectedModelChanged = { [weak self] in
+            self?.refreshForSelectedModel()
+        }
+    }
+
+    /// Everything keyed off the selected model — the tools button would otherwise pop an empty menu
+    /// for a model that supports none of them.
+    private func refreshForSelectedModel() {
+        modelPickerButton.isHidden = !shouldShowModelPicker
+        modelPickerButton.modelName = persistedModelShortName
+        updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
+        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
+        updateReasoningPickerVisibility()
     }
 
     private func buildModelPickerMenu(items: [AIChatModelPickerItem]) -> NSMenu {
@@ -2195,14 +2219,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func modelSelected(_ sender: NSMenuItem) {
         guard let model = sender.representedObject as? AIChatModel else { return }
+        // `updateSelectedModel` calls back into `refreshForSelectedModel`, whichever route changed it.
         omnibarController.updateSelectedModel(model.id)
-        modelPickerButton.modelName = model.shortName
-        updateImageUploadVisibility(supportsImageUpload: model.supportsImageUpload)
-        // Refresh tool button visibility so the tools button disappears / reappears when the
-        // new model changes what the menu would show (e.g. only Web Search is flag-enabled and
-        // the newly selected model doesn't support it — the button would otherwise pop an empty menu).
-        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
-        updateReasoningPickerVisibility()
+        if isPresentingModelPickerFromUsageCard {
+            omnibarController.usageWarningViewModel?.modelSwitchedFromMessage()
+        }
         omnibarController.pixelHandler.fire(.modelSelected)
     }
 

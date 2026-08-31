@@ -19,23 +19,26 @@
 import Foundation
 import Persistence
 
-/// Scoped to one window *and* one reset period: once `resetsAt` moves on, the record is stale and the
-/// message comes back. Native equivalent of web's `duckaiUsageLimitBannerDismissal`.
+/// Scoped to the reset period it was dismissed in, so the message comes back once `resetsAt` moves on.
 public struct DuckAiUsageWarningDismissal: Equatable, Codable {
 
-    /// Whole seconds, not a `Date`: this is compared for exact equality, and `Codable` can drift a
-    /// `Date` by a fraction of a second.
+    /// Raw, so a message web adds later can still be recorded as dismissed.
+    public let noticeID: String
+
+    /// Whole seconds: this is compared for equality, and `Codable` can drift a `Date`.
     public let resetsAtEpochSeconds: Int
 
-    public let threshold: Int
-
-    public init(resetsAt: Date, threshold: Int) {
+    public init(noticeID: String, resetsAt: Date) {
+        self.noticeID = noticeID
         self.resetsAtEpochSeconds = Self.epochSeconds(for: resetsAt)
-        self.threshold = threshold
     }
 
-    public func applies(to resetsAt: Date) -> Bool {
-        resetsAtEpochSeconds == Self.epochSeconds(for: resetsAt)
+    public init(notice: DuckAiUsageNotice) {
+        self.init(noticeID: notice.id.rawValue, resetsAt: notice.resetsAt)
+    }
+
+    public func applies(to notice: DuckAiUsageNotice) -> Bool {
+        noticeID == notice.id.rawValue && resetsAtEpochSeconds == Self.epochSeconds(for: notice.resetsAt)
     }
 
     private static func epochSeconds(for date: Date) -> Int {
@@ -43,23 +46,37 @@ public struct DuckAiUsageWarningDismissal: Equatable, Codable {
     }
 }
 
+/// The contract's rule: do not re-show a notice the user acted on until `usageLimits` itself changes.
+public struct DuckAiUsageWarningActedSnapshot: Equatable, Codable {
+
+    public let noticeID: String
+    public let signature: String
+
+    public init(noticeID: String, signature: String) {
+        self.noticeID = noticeID
+        self.signature = signature
+    }
+
+    /// An unsigned snapshot can't be compared, and showing the message again is the safe failure.
+    public func applies(to notice: DuckAiUsageNotice, signature: String?) -> Bool {
+        guard let signature else { return false }
+        return noticeID == notice.id.rawValue && self.signature == signature
+    }
+}
+
 public protocol DuckAiUsageWarningDismissalStoring {
-    func dismissal(for window: DuckAiUsageWindow) -> DuckAiUsageWarningDismissal?
-    func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?, for window: DuckAiUsageWindow)
+    func dismissal() -> DuckAiUsageWarningDismissal?
+    func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?)
+    func actedSnapshot() -> DuckAiUsageWarningActedSnapshot?
+    func setActedSnapshot(_ actedSnapshot: DuckAiUsageWarningActedSnapshot?)
 }
 
 public struct DuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStoring {
 
     private enum Key: String {
-        case daily = "aichat.usage-warning.dismissal.daily"
-        case weekly = "aichat.usage-warning.dismissal.weekly"
-
-        init(_ window: DuckAiUsageWindow) {
-            switch window {
-            case .daily: self = .daily
-            case .weekly: self = .weekly
-            }
-        }
+        // One notice at a time, so a single key replaces the earlier per-window pair.
+        case dismissal = "aichat.usage-warning.dismissal"
+        case actedSnapshot = "aichat.usage-warning.acted-snapshot"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -68,34 +85,52 @@ public struct DuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStori
         self.keyValueStore = keyValueStore
     }
 
-    public func dismissal(for window: DuckAiUsageWindow) -> DuckAiUsageWarningDismissal? {
-        guard let data = try? keyValueStore.object(forKey: Key(window).rawValue) as? Data else { return nil }
-        // Undecodable reads as not-dismissed: showing the message again is the safe failure.
-        return try? JSONDecoder().decode(DuckAiUsageWarningDismissal.self, from: data)
+    public func dismissal() -> DuckAiUsageWarningDismissal? {
+        read(DuckAiUsageWarningDismissal.self, forKey: .dismissal)
     }
 
-    public func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?, for window: DuckAiUsageWindow) {
-        let key = Key(window).rawValue
-        guard let dismissal, let data = try? JSONEncoder().encode(dismissal) else {
-            try? keyValueStore.removeObject(forKey: key)
+    public func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?) {
+        write(dismissal, forKey: .dismissal)
+    }
+
+    public func actedSnapshot() -> DuckAiUsageWarningActedSnapshot? {
+        read(DuckAiUsageWarningActedSnapshot.self, forKey: .actedSnapshot)
+    }
+
+    public func setActedSnapshot(_ actedSnapshot: DuckAiUsageWarningActedSnapshot?) {
+        write(actedSnapshot, forKey: .actedSnapshot)
+    }
+
+    /// Undecodable reads as absent: showing the message again is the safe failure.
+    private func read<T: Decodable>(_ type: T.Type, forKey key: Key) -> T? {
+        guard let data = try? keyValueStore.object(forKey: key.rawValue) as? Data else { return nil }
+        return try? JSONDecoder().decode(type, from: data)
+    }
+
+    private func write<T: Encodable>(_ value: T?, forKey key: Key) {
+        guard let value, let data = try? JSONEncoder().encode(value) else {
+            try? keyValueStore.removeObject(forKey: key.rawValue)
             return
         }
-        try? keyValueStore.set(data, forKey: key)
+        try? keyValueStore.set(data, forKey: key.rawValue)
     }
 }
 
 /// For tests and any caller that wants dismissals to die with the session.
 public final class InMemoryDuckAiUsageWarningDismissalStore: DuckAiUsageWarningDismissalStoring {
 
-    private var dismissals: [DuckAiUsageWindow: DuckAiUsageWarningDismissal] = [:]
+    private var storedDismissal: DuckAiUsageWarningDismissal?
+    private var storedActedSnapshot: DuckAiUsageWarningActedSnapshot?
 
     public init() {}
 
-    public func dismissal(for window: DuckAiUsageWindow) -> DuckAiUsageWarningDismissal? {
-        dismissals[window]
-    }
+    public func dismissal() -> DuckAiUsageWarningDismissal? { storedDismissal }
 
-    public func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?, for window: DuckAiUsageWindow) {
-        dismissals[window] = dismissal
+    public func setDismissal(_ dismissal: DuckAiUsageWarningDismissal?) { storedDismissal = dismissal }
+
+    public func actedSnapshot() -> DuckAiUsageWarningActedSnapshot? { storedActedSnapshot }
+
+    public func setActedSnapshot(_ actedSnapshot: DuckAiUsageWarningActedSnapshot?) {
+        storedActedSnapshot = actedSnapshot
     }
 }

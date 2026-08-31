@@ -141,6 +141,10 @@ final class AIChatOmnibarController {
     /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
+    /// The panel's label, image-upload button, tool chips and reasoning picker all key off the
+    /// selected model, and the picker menu is not the only thing that can change it.
+    var onSelectedModelChanged: (() -> Void)?
+
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
@@ -150,9 +154,9 @@ final class AIChatOmnibarController {
             subscriptionUpsellPresenter.routeGatedSelection(requiredTier: .plus,
                                                             userTier: userTier,
                                                             origin: surface.usageLimitFunnelOrigin)
-        case .startUsingWeeklyLimit:
-            // The card offers no button for this until web sets the value it needs.
-            Logger.aiChat.debug("Duck.ai usage warning: start-using-weekly-limit tapped, no native action yet")
+        case .startUsingWeeklyLimit(let entries):
+            // Web reads the entry on its next hydration, so there is nothing to reload here.
+            usageLimitsStore?.write(entries)
         }
     }
 
@@ -336,7 +340,6 @@ final class AIChatOmnibarController {
 
     private func setUpUsageWarnings() {
         usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
-            tierProvider: { [weak self] in self?.userTier ?? .free },
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
                 currentModelIdProvider: { [weak self] in self?.currentModelId },
@@ -349,6 +352,12 @@ final class AIChatOmnibarController {
             self?.performUsageWarningAction(action)
         }
         // `onOpenModelPicker` is set by the container VC, which owns the anchor the menu pops from.
+
+        // Also what brings a message back after the user has acted on the previous one.
+        usageLimitsStore?.snapshotUpdates?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshUsageWarnings() }
+            .store(in: &cancellables)
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;
@@ -438,6 +447,10 @@ final class AIChatOmnibarController {
     }
 
     private func refreshUsageWarnings() {
+        // `cleanup()` clears the message on the switch back to search; without this a snapshot
+        // published after that would re-resolve it under a search omnibar.
+        guard hasBeenActivated else { return }
+
         usageWarningViewModel?.refresh()
     }
 
@@ -841,6 +854,7 @@ final class AIChatOmnibarController {
         clearStaleReasoningEffortIfNeeded()
         deactivateWebSearchIfUnsupported()
         deactivateImageGenerationIfUnsupported()
+        onSelectedModelChanged?()
     }
 
     /// Clears Web Search mode if the currently selected model doesn't support the WebSearch tool.
@@ -1593,8 +1607,10 @@ struct AIChatReasoningPickerItem {
 
 extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
-    func modelPickerItems(selectedModelId: String?) -> [AIChatModelPickerItem] {
-        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
+    /// `freeModelsOnly` is the free-model CTA's chevron: advanced models are what it has run out of.
+    func modelPickerItems(selectedModelId: String?, freeModelsOnly: Bool = false) -> [AIChatModelPickerItem] {
+        let source = freeModelsOnly ? models.filter { !$0.isAdvanced } : models
+        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: source)
         // Recommended = backend-labelled models, shown first with the label as a subtitle.
         let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
 
@@ -1607,7 +1623,7 @@ extension AIChatOmnibarController {
             .model(model, isSelected: model.id == selectedModelId)
         }
 
-        guard !gated.isEmpty else { return items }
+        guard !gated.isEmpty, !freeModelsOnly else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {

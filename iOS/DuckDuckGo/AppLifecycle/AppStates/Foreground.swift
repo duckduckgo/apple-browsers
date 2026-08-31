@@ -238,6 +238,7 @@ extension Foreground {
     /// Use this method only to pause specific tasks, like video playback, when the app displays a system alert.
     func willLeave() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
+        services.applicationShortcutItemsService.suspend()
     }
 
     /// Called when the app resumes activity after being **paused** or when transitioning from launching or background.
@@ -246,6 +247,7 @@ extension Foreground {
     /// Use this method to revert any actions performed in `willLeave()` (if applicable).
     func didReturn() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
+        services.applicationShortcutItemsService.resume()
     }
 
 }

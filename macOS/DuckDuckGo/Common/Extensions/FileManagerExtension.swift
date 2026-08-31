@@ -120,4 +120,36 @@ extension FileManager {
         throw CocoaError(.fileWriteFileExists)
     }
 
+    func directoryExists(atPath path: String) -> Bool {
+        var isDirectory: ObjCBool = false
+        guard fileExists(atPath: path, isDirectory: &isDirectory) else {
+            return false
+        }
+
+        return isDirectory.boolValue
+    }
+
+    /// `true` when the directory can be listed. Any failure - including unknown ones - reports `false`.
+    func isDirectoryReadable(atPath path: String) -> Bool {
+        do {
+            _ = try contentsOfDirectory(atPath: path)
+            return true
+        } catch {
+            Logger.general.error("Failed to list directory contents: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// `true` only when the directory exists but listing it failed because of missing permissions.
+    func requiresReadPermission(atPath path: String) -> Bool {
+        do {
+            _ = try contentsOfDirectory(atPath: path)
+        } catch let error as CocoaError where error.code == .fileReadNoPermission {
+            return true
+        } catch {
+            Logger.general.error("Failed to list directory contents: \(error.localizedDescription)")
+        }
+
+        return false
+    }
 }

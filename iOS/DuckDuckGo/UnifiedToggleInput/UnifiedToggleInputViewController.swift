@@ -20,6 +20,7 @@
 import AIChat
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import os.log
 import UIKit
 
 // MARK: - Delegate Protocol
@@ -44,6 +45,8 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapFooterPrimaryAction(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -195,6 +198,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     func presentModelPickerMenu() -> Bool {
         inputBarView.presentModelPickerMenu()
     }
+    
+    @discardableResult
+    func presentReasoningPickerMenu() -> Bool {
+        inputBarView.presentReasoningPickerMenu()
+    }
 
     var toolsMenu: UIMenu? {
         get { inputBarView.toolsMenu }
@@ -338,6 +346,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.prepareForOmnibarEditingShow()
     }
 
+    func prepareForOmnibarMaterialTransition(duration: TimeInterval) {
+        inputBarView.prepareForOmnibarMaterialTransition(duration: duration)
+    }
+
     func applyOmnibarEditingShowPose() {
         inputBarView.applyOmnibarEditingShowPose()
     }
@@ -449,6 +461,14 @@ final class UnifiedToggleInputViewController: UIViewController {
             guard let self else { return }
             delegate?.unifiedToggleInputVCDidTapAIChatShortcut(self)
         }
+        barView.onFooterPrimaryTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidTapFooterPrimaryAction(self)
+        }
+        barView.onFooterDismissTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVCDidDismissFooter(self)
+        }
         let containerView = UnifiedToggleInputContainerView(inputView: barView)
         containerView.cardPosition = barView.cardPosition
         if let attachmentValidationMessage {
@@ -459,6 +479,22 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     private func notifyHeightDidChange() {
         delegate?.unifiedToggleInputVCDidChangeHeight(self)
+    }
+}
+
+// MARK: - UTIFooterPresenting
+
+extension UnifiedToggleInputViewController: UTIFooterPresenting {
+
+    func applyFooterMessage(_ message: UTIFooterMessage?) {
+        guard inputBarView.setFooterMessage(message) else { return }
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] pushing new bar height to host")
+        delegate?.unifiedToggleInputVCDidChangeHeight(self)
+        view.superview?.layoutIfNeeded()
+    }
+
+    func clearPendingFooterMessage() {
+        inputBarView.clearPendingFooterMessage()
     }
 }
 

@@ -25,7 +25,6 @@ class FireWindowTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
 
         settingsGeneralButton = app.buttons["PreferencesSidebar.generalButton"]
@@ -52,8 +51,7 @@ class FireWindowTests: UITestCase {
         app.openFireWindow()
         openThreeSitesOnFireWindow()
 
-        app.terminate()
-        app.launch()
+        app.restart(forceTerminate: true)
 
         assertSitesOpenedInNormalWindowAreRestored()
         assertSitesOpenedOnFireWindowAreNotRestored()
@@ -274,11 +272,11 @@ class FireWindowTests: UITestCase {
     }
 
     private func assertSitesOpenedInNormalWindowAreRestored() {
-        XCTAssertTrue(app.staticTexts["Sample text for Page #3"].waitForExistence(timeout: UITests.Timeouts.navigation), "Page #3 should exist.")
+        XCTAssertTrue(app.staticTexts["Sample text for Page #3"].waitForExistence(timeout: UITests.Timeouts.localTestServer), "Page #3 should exist.")
         app.typeKey("[", modifierFlags: [.command, .shift])
-        XCTAssertTrue(app.staticTexts["Sample text for Page #2"].waitForExistence(timeout: UITests.Timeouts.navigation), "Page #2 should exist.")
+        XCTAssertTrue(app.staticTexts["Sample text for Page #2"].waitForExistence(timeout: UITests.Timeouts.localTestServer), "Page #2 should exist.")
         app.typeKey("[", modifierFlags: [.command, .shift])
-        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.navigation), "Page #1 should exist.")
+        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.localTestServer), "Page #1 should exist.")
     }
 
     private func assertSitesOpenedOnFireWindowAreNotRestored() {

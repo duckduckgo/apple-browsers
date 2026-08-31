@@ -55,12 +55,7 @@ extension TabViewController {
 
         if shouldShowAIChatInMenu {
             
-            var chatEntry: BrowsingMenuEntry
-            if aiChatFullModeFeature.isAvailable {
-                chatEntry = buildNewAIChatEntry()
-            } else {
-                chatEntry = buildChatEntry(withSmallIcon: false)
-            }
+            let chatEntry = devicePlatform.isIphone ? buildNewAIChatEntry() : buildChatEntry(withSmallIcon: false)
 
             entries.append(newTabEntry)
             entries.append(chatEntry)
@@ -292,12 +287,7 @@ extension TabViewController {
             }))
 
             if shouldShowAIChatInMenu {
-                var chatEntry: BrowsingMenuEntry
-                if aiChatFullModeFeature.isAvailable {
-                    chatEntry = buildNewAIChatEntry(withSmallIcon: true)
-                } else {
-                    chatEntry = buildChatEntry(withSmallIcon: true)
-                }
+                let chatEntry = devicePlatform.isIphone ? buildNewAIChatEntry(withSmallIcon: true) : buildChatEntry(withSmallIcon: true)
                 entries.append(chatEntry)
             }
 
@@ -413,8 +403,7 @@ extension TabViewController {
         return BrowsingMenuEntry.regular(name: UserText.actionCopy, image: image, action: { [weak self] in
             guard let strongSelf = self else { return }
             if !strongSelf.isError, let url = strongSelf.webView.url {
-                // `webView.url` carries the search-token param on SERP navigations; strip it before it hits the pasteboard.
-                strongSelf.onCopyAction(forUrl: SerpSearchTokenInterceptor.strippingToken(from: url))
+                strongSelf.onCopyAction(forUrl: url)
             } else if let text = self?.chromeDelegate?.omniBar.text {
                 strongSelf.onCopyAction(for: text)
             }
@@ -781,6 +770,8 @@ extension TabViewController {
     }
     
     private func firePixelForActivityType(_ activityType: UIActivity.ActivityType) {
+        let addToHomeScreen: UIActivity.ActivityType? = if #available(iOS 16.4, *) { .addToHomeScreen } else { nil }
+
         switch activityType {
         case .copyToPasteboard:
             Pixel.fire(pixel: .shareSheetActivityCopy)
@@ -794,6 +785,8 @@ extension TabViewController {
             Pixel.fire(pixel: .shareSheetActivityPrint)
         case .addToReadingList:
             Pixel.fire(pixel: .shareSheetActivityAddToReadingList)
+        case addToHomeScreen:
+            Pixel.fire(pixel: .shareSheetActivityAddToHomeScreen)
         default:
             Pixel.fire(pixel: .shareSheetActivityOther)
         }
@@ -1066,7 +1059,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             return buildDuckAIHeaderTile()
         }
 
-        if aiChatFullModeFeature.isAvailable {
+        if devicePlatform.isIphone {
             return buildNewAIChatEntry(withSmallIcon: false)
         } else {
             return buildChatEntry(withSmallIcon: false)

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Core
 import Foundation
 import PixelKit
@@ -56,8 +57,8 @@ protocol AIChatContextualModePixelFiring {
                                surface: AIChatContextualSuggestionsSurface)
     func fireSuggestionsContextCollectionTimedOut()
 
-    // MARK: - Recent Chats Popup
-    func fireRecentChatsPopupDisplayed()
+    // MARK: - Recent Chats Menu
+    func fireRecentChatsMenuDisplayed()
     func fireRecentChatSelected()
     func fireViewAllChatsTapped()
 
@@ -116,6 +117,7 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     private let firePixel: (Pixel.Event) -> Void
     private let firePixelWithParameters: (Pixel.Event, [String: String]) -> Void
     private let fireSelectionPixel: (PixelKit.Event, PixelKit.Frequency) -> Void
+    private let featureDiscovery: FeatureDiscovery
 
     // MARK: - Public Properties
 
@@ -131,10 +133,12 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
          },
          fireSelectionPixel: @escaping (PixelKit.Event, PixelKit.Frequency) -> Void = {
              PixelKit.fire($0, frequency: $1)
-         }) {
+         },
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.firePixel = firePixel
         self.firePixelWithParameters = firePixelWithParameters
         self.fireSelectionPixel = fireSelectionPixel
+        self.featureDiscovery = featureDiscovery
     }
 
     // MARK: - Sheet Lifecycle
@@ -277,11 +281,22 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     // MARK: - Prompt Submission
 
     func firePromptSubmittedWithContext() {
-        firePixel(.aiChatContextualPromptSubmittedWithContextNative)
+        firePromptSubmissionPixel(.aiChatContextualPromptSubmittedWithContextNative)
     }
 
     func firePromptSubmittedWithoutContext() {
-        firePixel(.aiChatContextualPromptSubmittedWithoutContextNative)
+        firePromptSubmissionPixel(.aiChatContextualPromptSubmittedWithoutContextNative)
+    }
+
+    /// Marking after the fire keeps the first-prompt claim on this submission's pixel; the UTI
+    /// prompt pixel for the same submission fires earlier in the flow, so it reads the same state.
+    private func firePromptSubmissionPixel(_ event: Pixel.Event) {
+        if featureDiscovery.isFirstDuckAIPromptNewInstall {
+            firePixelWithParameters(event, [PixelParameters.aiChatFirstPromptNewInstall: "true"])
+            featureDiscovery.markDuckAIPromptSubmitted()
+        } else {
+            firePixel(event)
+        }
     }
 
     // MARK: - Suggested Prompts
@@ -313,9 +328,9 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualSuggestionsContextCollectionTimedOut)
     }
 
-    // MARK: - Recent Chats Popup
+    // MARK: - Recent Chats Menu
 
-    func fireRecentChatsPopupDisplayed() {
+    func fireRecentChatsMenuDisplayed() {
         firePixel(.aiChatContextualRecentChatsPopupDisplayed)
     }
 
@@ -356,14 +371,17 @@ enum AIChatContextualSuggestionsSurface: String {
     case sheet
 }
 
-enum AIChatContextualSelectionPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum AIChatContextualSelectionPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case attached
     case limitReached
     case removed
     case promptSubmitted(selectionCount: String)
     case toolDeliveryTimedOut
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 
     var name: String {
         switch self {

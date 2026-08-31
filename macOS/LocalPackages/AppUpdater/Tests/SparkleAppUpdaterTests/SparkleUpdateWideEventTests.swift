@@ -18,8 +18,7 @@
 
 import AppUpdaterShared
 import BrowserServicesKitTestsUtils
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import SparkleAppUpdater
 import XCTest

@@ -191,6 +191,10 @@ final class MainCoordinator {
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
+        let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
+        let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
+            await appSwitcherSnapshotCleaner.clearSnapshots()
+        }
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
@@ -228,7 +232,8 @@ final class MainCoordinator {
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
-                                eventHub: eventHub)
+                                eventHub: eventHub,
+                                clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -246,7 +251,8 @@ final class MainCoordinator {
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         fireModeStorageController: contentBlockingService.fireModeStorageController,
-                                        wideEvent: wideEvent)
+                                        wideEvent: wideEvent,
+                                        clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,
             syncService: syncService.sync
@@ -435,6 +441,7 @@ final class MainCoordinator {
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            searchTokenProvider: controller,
             scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
@@ -507,8 +514,6 @@ final class MainCoordinator {
     @available(iOS 18.4, *)
     private func deferUntilProtectedDataAvailable(_ operation: @escaping () -> Void) {
         pendingProtectedDataWork.append(operation)
-        DailyPixel.fireDailyAndCount(pixel: .webExtensionDeferredProtectedDataUnavailable,
-                                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
 
         guard protectedDataCancellable == nil else { return }
         protectedDataCancellable = NotificationCenter.default
@@ -520,8 +525,6 @@ final class MainCoordinator {
                     let pendingWork = self.pendingProtectedDataWork
                     self.pendingProtectedDataWork.removeAll()
                     guard !pendingWork.isEmpty else { return }
-                    DailyPixel.fireDailyAndCount(pixel: .webExtensionResumedProtectedDataAvailable,
-                                                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
                     pendingWork.forEach { $0() }
                 }
             }
@@ -573,6 +576,12 @@ final class MainCoordinator {
         }
         if controller.adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
+        }
+        let searchTokenCohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort
+        // The search-token extension pulls its token over native messaging,
+        // so skipping this extension builds without that support (Alpha)
+        if searchTokenCohort == .treatment, nativeMessagingSupport.isSupported {
+            enabledTypes.insert(.searchToken)
         }
         return enabledTypes
     }

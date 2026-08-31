@@ -18,12 +18,11 @@
 //
 
 import BrowserServicesKit
-import Persistence
+@_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 import Combine
 import ConcurrencyExtensions
 import Core
-import PersistenceTestingUtils
 import PrivacyConfig
 import SubscriptionTestingUtilities
 import XCTest
@@ -73,6 +72,21 @@ final class TabManagerTests: XCTestCase {
         manager.remove(tab: exampleTab)
         // We expect the new current index to be the previous index
         XCTAssertEqual(0, tabsModel.currentIndex)
+    }
+
+    func testWhenTabRemovedAndSnapshotClearingIsEnabledThenAppSwitcherSnapshotsAreCleared() async throws {
+        let tabsModel = TabsModel(desktop: false)
+        let tab = try XCTUnwrap(tabsModel.tabs.first)
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.appSwitcherSnapshotClearing]
+        let snapshotsCleared = expectation(description: "App switcher snapshots cleared")
+        let manager = try makeManager(tabsModel,
+                                      featureFlagger: featureFlagger,
+                                      clearAppSwitcherSnapshots: { snapshotsCleared.fulfill() })
+
+        manager.remove(tab: tab)
+
+        await fulfillment(of: [snapshotsCleared], timeout: 1.0)
     }
 
     func testWhenAppBecomesActiveAndExcessPreviewsThenCleanUpHappens() async throws {
@@ -652,7 +666,8 @@ final class TabManagerTests: XCTestCase {
                      tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
                      privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(),
                      applicationState: (@MainActor () -> UIApplication.State)? = nil,
-                     isPad: Bool = false) throws -> TabManager {
+                     isPad: Bool = false,
+                     clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {}) throws -> TabManager {
         FireModeCapability.resolve(using: featureFlagger)
         let normalStore = try normalStore ?? MockKeyValueFileStore(throwOnInit: nil)
         let tabsPersistence = TabsModelPersistence(normalStore: normalStore,
@@ -697,7 +712,8 @@ final class TabManagerTests: XCTestCase {
                           tabTerminationTelemetry: tabTerminationTelemetry,
                           tabTerminationErrorPageDetector: tabTerminationErrorPageDetector,
                           applicationState: applicationState,
-                          isPad: isPad)
+                          isPad: isPad,
+                          clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
     }
 
     private func makePrivacyConfigurationManager(settings: String) -> MockPrivacyConfigurationManager {

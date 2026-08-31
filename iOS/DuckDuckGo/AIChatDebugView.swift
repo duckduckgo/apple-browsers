@@ -17,11 +17,11 @@
 //  limitations under the License.
 //
 
-
 import SwiftUI
 import Combine
 import AIChat
 import AIChatDebugServer
+import os.log
 import DebugServer
 
 struct AIChatDebugView: View {
@@ -35,6 +35,10 @@ struct AIChatDebugView: View {
     var body: some View {
         List {
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+
+#if DEBUG || ALPHA
+            AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+#endif
 
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
                 NavigationLink(destination: AIChatDebugHostnameEntryView(viewModel: viewModel)) {
@@ -302,6 +306,140 @@ private struct AIChatDebugSessionTimerEntryView: View {
         }
     }
 }
+
+#if DEBUG || ALPHA
+// Matches the `debugOverride` gate in DuckAiUsageLimitsStore — Release must not carry the override.
+private struct AIChatUsageWarningsSection: View {
+
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+
+    @State private var status: String?
+    @State private var lastSeededCase: DuckAiUsageSnapshotSeed?
+
+    private var defaultFooter: String {
+        "Writes a synthetic snapshot to the reserved `usageLimits` entry — the same one the web app "
+        + "writes — so the real read path drives the footer. Needs the utiDuckAIWarnings flag on. "
+        + "\"Try for free\" vs \"Subscribe\" is not seeded: it follows the account's trial eligibility."
+    }
+
+    var body: some View {
+        Section(header: Text(verbatim: "Duck.ai Usage Warnings — Free"),
+                footer: Text(verbatim: status ?? defaultFooter)) {
+            seedButtons(DuckAiUsageSnapshotSeed.freeSeeds)
+        }
+
+        Section(header: Text(verbatim: "Duck.ai Usage Warnings — Paid")) {
+            seedButtons(DuckAiUsageSnapshotSeed.paidSeeds)
+        }
+
+        Section {
+            Button {
+                guard let lastSeededCase else {
+                    status = "Pick a case first."
+                    return
+                }
+                seed(lastSeededCase)
+            } label: {
+                Text(verbatim: "Re-seed the last case (simulates a republish)")
+            }
+            .foregroundColor(.primary)
+
+            Button {
+                clearDismissals()
+            } label: {
+                Text(verbatim: "Clear dismissals")
+            }
+            .foregroundColor(.primary)
+
+            Button {
+                clear()
+            } label: {
+                Text(verbatim: "Clear snapshot")
+            }
+            .foregroundColor(.red)
+        }
+    }
+
+    private func seedButtons(_ seeds: [DuckAiUsageSnapshotSeed]) -> some View {
+        ForEach(seeds, id: \.rawValue) { seed in
+            Button {
+                self.seed(seed)
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: seed.displayName)
+                    Text(verbatim: seed.expectation)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .foregroundColor(.primary)
+        }
+    }
+
+    /// Model ids come from the live list so the switch CTAs offer something selectable.
+    private func seed(_ seed: DuckAiUsageSnapshotSeed) {
+        lastSeededCase = seed
+        status = "Seeding \(seed.displayName)…"
+
+        Task { @MainActor in
+            let selectedModelId = AIChatPreferencesPersistor().selectedModelId
+            let switchTargets = await accessibleModelIds().filter { $0 != selectedModelId }
+            let json = seed.entryValue(switchTargets: switchTargets, selectedModelId: selectedModelId)
+
+            DuckAiUsageLimitsStore.debugOverride = DuckAiUsageSnapshot.make(entryValue: json, now: Date())
+
+            guard let duckAiNativeStorageHandler else {
+                status = "Override set; native storage unavailable so nothing was written to it."
+                return
+            }
+            do {
+                try duckAiNativeStorageHandler.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue,
+                                                        value: json)
+                status = "Seeded \(seed.displayName). Expect: \(seed.expectation)"
+                    + (switchTargets.isEmpty ? " (no model list, so any switch button is hidden)" : "")
+                Logger.duckAIUsageWarnings.debug("[UsageWarnings] debug seeded usageLimits=\(json, privacy: .public)")
+            } catch {
+                status = "Failed to seed: \(error)"
+                Logger.duckAIUsageWarnings.error("[UsageWarnings] debug seed failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    /// Resolved against the free tier: every account can select those, so a seed is never refused.
+    private func accessibleModelIds() async -> [String] {
+        do {
+            let response = try await AIChatModelsService().fetchModels()
+            return response.models
+                .map { AIChatModel(remoteModel: $0, userTier: .free) }
+                .filter(\.entityHasAccess)
+                .map(\.id)
+        } catch {
+            Logger.duckAIUsageWarnings.error("[UsageWarnings] debug seed models fetch failed: \(error.localizedDescription, privacy: .public)")
+            return []
+        }
+    }
+
+    /// Brings back a message dismissed with its close button, and one whose CTA has been run.
+    private func clearDismissals() {
+        let store = DuckAiUsageWarningDismissalStore()
+        store.setDismissal(nil)
+        store.setActedSnapshot(nil)
+        status = "Dismissals cleared."
+    }
+
+    private func clear() {
+        DuckAiUsageLimitsStore.debugOverride = nil
+        lastSeededCase = nil
+        do {
+            try duckAiNativeStorageHandler?.deleteEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue)
+            status = "Snapshot cleared."
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] debug cleared usageLimits")
+        } catch {
+            status = "Failed to clear: \(error)"
+        }
+    }
+}
+#endif
 
 private struct AIChatStorageServerSection: View {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?

@@ -59,7 +59,7 @@ let package = Package(
             name: "PixelKitTests",
             dependencies: [
                 "PixelKit",
-                .product(name: "PersistenceTestingUtils", package: "Persistence"),
+                .product(name: "Persistence", package: "Persistence"),
             ]
         ),
     ]

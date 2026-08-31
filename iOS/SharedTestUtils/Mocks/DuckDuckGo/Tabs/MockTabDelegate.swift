@@ -25,12 +25,11 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import EventHub
 import PrivacyDashboard
-import Persistence
+@_spi(Testing) import Persistence
 import Subscription
 import SubscriptionTestingUtilities
 import SpecialErrorPages
 import MaliciousSiteProtection
-import PersistenceTestingUtils
 @testable import DuckDuckGo
 import Combine
 @testable import Core
@@ -61,6 +60,8 @@ final class MockTabDelegate: TabDelegate {
                             clearTabHistory: Bool) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewDuckAITabForUrl url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestReopenClosedTabAt url: URL) {}
 

@@ -123,6 +123,7 @@ public extension DesignSystemImages {
             public static var siteBreakage: DesignSystemImage { .init(resource: .siteBreakage12) }
             public static var storageCard: DesignSystemImage { .init(resource: .storageCard12) }
             public static var subscription: DesignSystemImage { .init(resource: .subscription12) }
+            public static var swap: DesignSystemImage { .init(resource: .swap12) }
             public static var sync: DesignSystemImage { .init(resource: .sync12) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew12) }
             public static var textSelectedRight: DesignSystemImage { .init(resource: .textSelectedRight12) }
@@ -239,6 +240,7 @@ public extension DesignSystemImages {
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation16) }
             public static var exclamationRecolorable: DesignSystemImage { .init(resource: .exclamationRecolorable16) }
             public static var exclamationRecolorableInvert: DesignSystemImage { .init(resource: .exclamationRecolorableInvert16) }
+            public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid16) }
             public static var expand: DesignSystemImage { .init(resource: .expand16) }
             public static var export: DesignSystemImage { .init(resource: .export16) }
             public static var exportRight: DesignSystemImage { .init(resource: .exportRight16) }

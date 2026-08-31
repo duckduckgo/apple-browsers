@@ -118,6 +118,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
     case dbpOptOutRetryError96Hours
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217280986826116
+    case dbpPerformanceMetrics
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217396600005661
     case dbpExtractedProfileRefresh
 
@@ -290,10 +293,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534812?focus=true
     case heuristicAction
 
-    /// Cookie Pop-up Preference picker in settings
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215960699028461?focus=true
-    case cookiePopupPreferenceSetting
-
     /// Cookie Pop-up Protection opt-in dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
@@ -318,6 +317,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case aiChatMultiplePageContexts
+
+    /// Hands a PDF tab to Duck.ai as page context — the document's bytes instead of page markdown.
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1217621296618559
+    case aiChatPdfPageContext
 
     /// Enables the image generation mode toggle in the Duck.ai omnibar
     case aiChatOmnibarImageGeneration
@@ -605,6 +608,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true, category: .dbp)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours), category: .dbp)
+        case .dbpPerformanceMetrics:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.performanceMetrics), category: .dbp)
         case .dbpExtractedProfileRefresh:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.extractedProfileRefresh), supportsLocalOverriding: true, category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
@@ -707,8 +712,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
-        case .cookiePopupPreferenceSetting:
-            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupPreferenceSetting), category: .popupBlocking)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
         case .cookiePopupOptInDialogExperiment:
@@ -723,6 +726,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsDeletion))
         case .aiChatMultiplePageContexts:
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts), category: .duckAI)
+        case .aiChatPdfPageContext:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
         case .aiChatOmnibarImageGeneration:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarImageGeneration), category: .duckAI)
         case .aiChatOmnibarWebSearch:

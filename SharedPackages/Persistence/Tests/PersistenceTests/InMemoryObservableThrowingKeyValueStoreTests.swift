@@ -18,8 +18,7 @@
 
 import Combine
 import Foundation
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import Testing
 
 final class InMemoryObservableThrowingKeyValueStoreTests {

@@ -57,7 +57,6 @@ class BookmarksAndFavoritesTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
@@ -797,7 +796,7 @@ private extension BookmarksAndFavoritesTests {
         )
         addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         if bookmarkingViaDialog {

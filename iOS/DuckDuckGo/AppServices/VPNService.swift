@@ -116,6 +116,11 @@ final class VPNService: NSObject {
         // No-op
     }
 
+    @MainActor
+    var isSubscriptionPresent: Bool {
+        subscriptionManager.isSubscriptionPresent()
+    }
+
     /// Checks if the shortcut item should be shown by asking if a subscription is present, and if so, is the network protection feature included - avoiding calls to the API.
     @MainActor
     func shortcutItem() async -> UIApplicationShortcutItem? {

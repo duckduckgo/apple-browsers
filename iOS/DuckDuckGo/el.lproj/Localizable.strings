@@ -403,6 +403,15 @@
 /* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
 "aiChat.history.swipe.unpin.a11y" = "Ξεκαρφίτσωμα συνομιλίας";
 
+/* Section header for Pro-only models shown to DuckDuckGo Plus subscribers */
+"aichat.model-picker.pro-plan-exclusive" = "Αποκλειστικά για το πρόγραμμα Pro";
+
+/* Section header for subscription models shown to users who are not eligible for a free trial */
+"aichat.model-picker.subscriber-exclusive" = "Αποκλειστικά για συνδρομητές";
+
+/* Section header for subscription models shown to free users */
+"aichat.model-picker.try-free" = "Δοκιμάστε το δωρεάν";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
 
@@ -1912,6 +1921,9 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Αποστέλλεται με το μήνυμά σας στο Duck.ai";
 
+/* Row in the contextual chat's chats popup that opens Duck.ai in a new tab */
+"duckai.contextual.open.duckai" = "Άνοιξε το Duck.ai";
+
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Πρόσφατες συνομιλίες";
 
@@ -2542,14 +2554,17 @@
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Τελευταία χρήση καρτέλας Fire";
 
-/* Menu item that closes the open tab referenced by the escape hatch card */
-"escapeHatch.menu.closeTab" = "Κλείσιμο καρτέλας";
+/* Menu item that closes the last used open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeLastUsedTab" = "Κλείσιμο τελευταίας καρτέλας που χρησιμοποιήθηκε";
 
 /* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
 "escapeHatch.menu.deleteTab" = "Διαγραφή καρτέλας";
 
-/* Menu item that returns the user to the open tab from the escape hatch card */
-"escapeHatch.menu.returnToTab" = "Επιστροφή στην καρτέλα";
+/* Menu item that hides the ‘Return to’ shortcut so only the tab switcher is shown after inactivity */
+"escapeHatch.menu.hideReturnToShortcut" = "Απόκρυψη συντόμευσης «Επιστροφή σε»";
+
+/* Menu item that returns the user to the last used open tab from the escape hatch card */
+"escapeHatch.menu.returnToLastUsedTab" = "Επιστροφή στην τελευταία καρτέλα που χρησιμοποιήθηκε";
 
 /* Accessibility label for the more options button on the escape hatch card */
 "escapeHatch.moreButton.accessibility.label" = "Περισσότερες επιλογές";
@@ -2562,6 +2577,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Επιστροφή σε %1$@, %2$@";
+
+/* Swipe action that closes the open tab referenced by the escape hatch card */
+"escapeHatch.swipeAction.closeTab" = "Κλείσιμο καρτέλας";
 
 /* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
 "escapeHatch.tabSwitcher.privateTabs.label" = "Ιδιωτικές καρτέλες";
@@ -4216,11 +4234,11 @@
 /* Settings picker label for the inactivity duration before showing New Tab */
 "settings.afterInactivity.interval.label" = "Χρονόμετρο αδράνειας";
 
-/* Option: show last used tab when returning after inactivity */
-"settings.afterInactivity.option.lastUsedTab" = "Τελευταία καρτέλα που χρησιμοποιήθηκε";
+/* Option: open last used tab when returning after inactivity */
+"settings.afterInactivity.option.openLastUsedTab" = "Άνοιγμα τελευταίας καρτέλας που χρησιμοποιήθηκε";
 
-/* Option: show New Tab when returning after inactivity */
-"settings.afterInactivity.option.newTab" = "Νέα καρτέλα";
+/* Option: open New Tab when returning after inactivity */
+"settings.afterInactivity.option.openNewTab" = "Άνοιγμα νέας καρτέλας";
 
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Μετά από αδράνεια";
@@ -4528,11 +4546,13 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Πληκτρολόγιο";
 
+/* Settings toggle subtitle describing the ‘Return to’ Shortcut option */
+"settings.lastTabShortcut.subtitle" = "Εμφανίζει έναν σύνδεσμο για επιστροφή στην τελευταία καρτέλα που χρησιμοποίησες όταν ανοίγεις την εφαρμογή μετά από αδράνεια.";
+
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Μάθετε περισσότερα";
 
 /* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Επιτρέψτε στο DuckDuckGo να διαχειρίζεται τα αναδυόμενα παράθυρα συναίνεσης για cookies";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Κωδικοί πρόσβασης και Αυτόματη συμπλήρωση";
@@ -4590,6 +4610,9 @@
 
 /* Settings screen cell text for setting the refresh button position. */
 "settings.refreshButton.position.title" = "Θέση κουμπιού επαναφόρτωσης";
+
+/* Settings toggle label for showing a shortcut back to the last used tab on the New Tab Page after inactivity */
+"settings.returnToShortcut.label" = "Συντόμευση «Επιστροφή σε»";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Ρυθμίσεις αναζήτησης";

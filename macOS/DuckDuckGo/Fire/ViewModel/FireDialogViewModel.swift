@@ -363,7 +363,7 @@ final class FireDialogViewModel: ObservableObject {
         didSet {
             updateItems(for: clearingOption)
             settings.lastSelectedClearingOption = clearingOption
-            pixelFiring?.fire(FireDialogPixel.fireDialogToggleMode, frequency: .dailyAndCount, options: .unenforcedPrefix)
+            pixelFiring?.fire(FireDialogPixel.fireDialogToggleMode, frequency: .dailyAndCount)
         }
     }
 
@@ -373,8 +373,8 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeTabsAndWindows: Bool {
         didSet {
             settings.lastIncludeTabsAndWindowsState = includeTabsAndWindows
-            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, options: .unenforcedPrefix)
-            pixelFiring?.fire(FireDialogPixel.fireDialogToggleCloseTabs, frequency: .dailyAndCount, options: .unenforcedPrefix)
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName)
+            pixelFiring?.fire(FireDialogPixel.fireDialogToggleCloseTabs, frequency: .dailyAndCount)
         }
     }
 
@@ -389,8 +389,8 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeHistory: Bool {
         didSet {
             settings.lastIncludeHistoryState = includeHistory
-            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, options: .unenforcedPrefix)
-            pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearHistory, frequency: .dailyAndCount, options: .unenforcedPrefix)
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName)
+            pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearHistory, frequency: .dailyAndCount)
         }
     }
 
@@ -403,8 +403,8 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeCookiesAndSiteData: Bool {
         didSet {
             settings.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
-            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, options: .unenforcedPrefix)
-            pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearSiteData, frequency: .dailyAndCount, options: .unenforcedPrefix)
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName)
+            pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearSiteData, frequency: .dailyAndCount)
         }
     }
     /// When true, all Duck.ai chat history is cleared.
@@ -417,8 +417,8 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeChatHistorySetting: Bool {
         didSet {
             settings.lastIncludeChatHistoryState = includeChatHistorySetting
-            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, options: .unenforcedPrefix)
-            pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearAIChats, frequency: .dailyAndCount, options: .unenforcedPrefix)
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName)
+            pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearAIChats, frequency: .dailyAndCount)
         }
     }
 
@@ -642,7 +642,7 @@ final class FireDialogViewModel: ObservableObject {
 
     /// Presents the Manage Fireproof Sites dialog stacked above the Fire dialog, then refreshes the scope.
     func showManageFireproofSites() {
-        pixelFiring?.fire(FireDialogPixel.fireDialogManageFireproofedSites, frequency: .dailyAndCount, options: .unenforcedPrefix)
+        pixelFiring?.fire(FireDialogPixel.fireDialogManageFireproofedSites, frequency: .dailyAndCount)
         Task { @MainActor in
             await dataClearingPreferences.presentManageFireproofSitesDialog()
             // Refresh selectable/fireproofed lists in case fireproofing changed.
@@ -652,7 +652,7 @@ final class FireDialogViewModel: ObservableObject {
 
     /// Dismisses the dialog and opens the per-site history/deletion view.
     func deleteIndividualSites() {
-        pixelFiring?.fire(FireDialogPixel.fireDialogDeleteIndividualSitesClicked, frequency: .dailyAndCount, options: .unenforcedPrefix)
+        pixelFiring?.fire(FireDialogPixel.fireDialogDeleteIndividualSitesClicked, frequency: .dailyAndCount)
         dismissDialog()
         windowControllersManager.lastKeyMainWindowController?
             .mainViewController

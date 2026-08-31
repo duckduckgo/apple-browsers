@@ -71,6 +71,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user requests a new Duck.ai voice chat.
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator)
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -731,7 +734,8 @@ private extension AIChatContextualSheetCoordinator {
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
-            start: start
+            start: start,
+            usageLimitsStore: duckAiUsageLimitsStore
         )
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
@@ -751,6 +755,10 @@ private extension AIChatContextualSheetCoordinator {
         }
         host.onPromptDelivered = { [weak self] in
             self?.sessionState.markUTIContextDelivered()
+        }
+        host.onDuckAIPromptSubmitted = { [weak self] origin in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: origin)
         }
         host.onAttachmentsChanged = { [weak self] in
             self?.sessionState.refreshForAttachmentChange()
@@ -958,6 +966,13 @@ private extension AIChatContextualSheetCoordinator {
             DuckAiLastUsedModelProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
         }
     }
+
+    /// Fire tabs run an isolated Duck.ai session with no usage worth warning about, so the feature
+    /// never even gets a store there.
+    var duckAiUsageLimitsStore: DuckAiUsageLimitsStore? {
+        guard !isFireTab else { return nil }
+        return duckAiNativeStorageHandler.map { DuckAiUsageLimitsStore(storageHandler: $0) }
+    }
     
     /// Starts the session timer after the sheet is dismissed.
     /// Timer will automatically reset the chat to native input after configured inactivity period.
@@ -1035,8 +1050,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
         switch action {
         case .askAboutPage:
-            // Only offered while the strip isn't showing its own re-attach button, so this is the sole
-            // affordance when it appears rather than a duplicate of it.
+            // Only offered before an explicit removal, so it never competes with the attachment menu.
             requestManualPageContextAttach()
         case .summarize, .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()
@@ -1158,6 +1172,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
         selectionJourneyInstrumentation.promptSubmitted()
         sessionState.handlePromptSubmission(prompt)
+        delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: .contextualChat)
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,

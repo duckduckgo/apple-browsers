@@ -203,7 +203,7 @@ jobs:
     - name: Start log stream in background
       working-directory: macOS
       run: |
-        log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
+        log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner" OR process == "tests-server" OR (process == "logger" AND eventMessage CONTAINS "[tests-server]")' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
 
     - name: Resolve package dependencies

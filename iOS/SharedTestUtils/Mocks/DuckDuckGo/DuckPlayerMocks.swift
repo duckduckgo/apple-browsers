@@ -634,6 +634,8 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { .zero }
 
+    var floatingNewTabPageTopObscuredHeight: CGFloat = 0
+
     var omniBar: OmniBar = DefaultOmniBarViewController(
         dependencies: MockOmnibarDependency(
             voiceSearchHelper: MockVoiceSearchHelper(

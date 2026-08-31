@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKitTestsUtils
 import Combine
 import Common
 import Foundation
@@ -80,6 +81,22 @@ final class UserContentControllerTests: XCTestCase {
 
         XCTAssertTrue(ucc.registeredScriptHandlerNames.contains("message1"))
         XCTAssertTrue(ucc.registeredScriptHandlerNames.contains("message2"))
+    }
+
+    @MainActor
+    func testWhenReplyHandlerTargetIsDeallocatedThenReplyReturnsAnError() async throws {
+        let messageName = UUID().uuidString
+        let permanentHandler = PermanentScriptMessageHandler()
+        permanentHandler.register(MockReplyUserScript(messageNames: [messageName]), for: messageName)
+        XCTAssertNil(permanentHandler.messageHandler(for: messageName))
+
+        var reply: (result: Any?, error: String?)?
+        permanentHandler.userContentController(ucc, didReceive: .mock(name: messageName)) { result, error in
+            reply = (result, error)
+        }
+
+        XCTAssertNil(reply?.result)
+        XCTAssertEqual(reply?.error, "Script message handler is unavailable")
     }
 
     @MainActor
@@ -375,5 +392,14 @@ class MockUserScript: NSObject, UserScript {
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    }
+}
+
+final class MockReplyUserScript: MockUserScript, WKScriptMessageHandlerWithReply {
+
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage,
+                               replyHandler: @escaping (Any?, String?) -> Void) {
+        replyHandler(nil, nil)
     }
 }

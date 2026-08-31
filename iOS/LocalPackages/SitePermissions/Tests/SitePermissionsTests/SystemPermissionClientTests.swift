@@ -68,7 +68,7 @@ final class SystemPermissionClientTests: XCTestCase {
         let expectedLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
         var receivedLocation: CLLocation?
         let client = makeClient(locationManager: manager)
-        client.locationUpdateHandler = { result in
+        let updateHandler = client.addLocationUpdateHandler { result in
             receivedLocation = try? result.get()
         }
 
@@ -81,13 +81,113 @@ final class SystemPermissionClientTests: XCTestCase {
         let authorizationState = await authorizationTask.value
         XCTAssertEqual(authorizationState, .authorized)
 
-        client.startUpdatingLocation()
         manager.delegate?.locationManager?(manager, didUpdateLocations: [expectedLocation])
-        client.stopUpdatingLocation()
+        client.removeLocationUpdateHandler(updateHandler)
 
         XCTAssertEqual(manager.startUpdatingCallCount, 1)
         XCTAssertEqual(manager.stopUpdatingCallCount, 1)
         XCTAssertEqual(receivedLocation, expectedLocation)
+    }
+
+    func testLocationUpdateHandlersShareOneManagerUntilLastHandlerIsRemoved() {
+        let manager = MockLocationManager()
+        let client = makeClient(locationManager: manager)
+        var firstLocations = [CLLocation]()
+        var secondLocations = [CLLocation]()
+
+        let first = client.addLocationUpdateHandler { result in
+            if let location = try? result.get() {
+                firstLocations.append(location)
+            }
+        }
+        let second = client.addLocationUpdateHandler { result in
+            if let location = try? result.get() {
+                secondLocations.append(location)
+            }
+        }
+        let firstLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
+        manager.delegate?.locationManager?(manager, didUpdateLocations: [firstLocation])
+
+        client.removeLocationUpdateHandler(first)
+        let secondLocation = CLLocation(latitude: 51.5072, longitude: -0.1276)
+        manager.delegate?.locationManager?(manager, didUpdateLocations: [secondLocation])
+        client.removeLocationUpdateHandler(second)
+
+        XCTAssertEqual(manager.startUpdatingCallCount, 1)
+        XCTAssertEqual(manager.stopUpdatingCallCount, 1)
+        XCTAssertEqual(firstLocations, [firstLocation])
+        XCTAssertEqual(secondLocations, [firstLocation, secondLocation])
+    }
+
+    func testLocationUpdateHandlersAggregateAccuracyAcrossConsumers() {
+        let manager = MockLocationManager()
+        let client = makeClient(locationManager: manager)
+
+        let standardAccuracy = client.addLocationUpdateHandler(highAccuracy: false) { _ in }
+        XCTAssertEqual(manager.desiredAccuracy, kCLLocationAccuracyHundredMeters)
+        XCTAssertEqual(manager.startUpdatingCallCount, 1)
+
+        let highAccuracy = client.addLocationUpdateHandler(highAccuracy: true) { _ in }
+        XCTAssertEqual(manager.desiredAccuracy, kCLLocationAccuracyBest)
+        XCTAssertEqual(manager.startUpdatingCallCount, 1)
+
+        client.updateLocationUpdateHandler(standardAccuracy, highAccuracy: true)
+        client.removeLocationUpdateHandler(highAccuracy)
+        XCTAssertEqual(manager.desiredAccuracy, kCLLocationAccuracyBest)
+        XCTAssertEqual(manager.stopUpdatingCallCount, 0)
+
+        client.updateLocationUpdateHandler(standardAccuracy, highAccuracy: false)
+        XCTAssertEqual(manager.desiredAccuracy, kCLLocationAccuracyHundredMeters)
+
+        client.removeLocationUpdateHandler(standardAccuracy)
+        XCTAssertEqual(manager.desiredAccuracy, kCLLocationAccuracyHundredMeters)
+        XCTAssertEqual(manager.stopUpdatingCallCount, 1)
+    }
+
+    func testLocationUpdateHandlersReceiveOnlyNewestBatchedLocation() {
+        let manager = MockLocationManager()
+        let client = makeClient(locationManager: manager)
+        var receivedLocations = [CLLocation]()
+        let handler = client.addLocationUpdateHandler { result in
+            if let location = try? result.get() {
+                receivedLocations.append(location)
+            }
+        }
+        let olderLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
+        let newestLocation = CLLocation(latitude: 51.5072, longitude: -0.1276)
+
+        manager.delegate?.locationManager?(manager, didUpdateLocations: [olderLocation, newestLocation])
+        client.removeLocationUpdateHandler(handler)
+
+        XCTAssertEqual(receivedLocations, [newestLocation])
+    }
+
+    func testLocationUpdateHandlersReceiveNewestValidFixAndIgnoreAllInvalidBatch() {
+        let manager = MockLocationManager()
+        let client = makeClient(locationManager: manager)
+        var receivedLocations = [CLLocation]()
+        let handler = client.addLocationUpdateHandler { result in
+            if let location = try? result.get() {
+                receivedLocations.append(location)
+            }
+        }
+        let olderValid = CLLocation(latitude: 37.3317, longitude: -122.0301)
+        let invalidAccuracy = CLLocation(coordinate: .init(latitude: 48.8566, longitude: 2.3522),
+                                         altitude: 0,
+                                         horizontalAccuracy: -1,
+                                         verticalAccuracy: -1,
+                                         timestamp: Date())
+        let newestValid = CLLocation(latitude: 51.5072, longitude: -0.1276)
+        let invalidCoordinate = CLLocation(latitude: 100, longitude: 0)
+
+        manager.delegate?.locationManager?(
+            manager,
+            didUpdateLocations: [olderValid, invalidAccuracy, newestValid, invalidCoordinate]
+        )
+        manager.delegate?.locationManager?(manager, didUpdateLocations: [invalidAccuracy, invalidCoordinate])
+        client.removeLocationUpdateHandler(handler)
+
+        XCTAssertEqual(receivedLocations, [newestValid])
     }
 
     func testWhenAppBecomesActiveWithPendingLocationRequestThenRequestCompletesWithRefreshedState() async {

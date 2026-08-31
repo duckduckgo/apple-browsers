@@ -47,6 +47,7 @@ final class UTIFooterCardView: UIView {
 
     private let usageRing = UTIFooterUsageRingView()
     private let alertIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.alertRecolorable)
+    private let infoIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.info)
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
     private let actionButton = UTIFooterActionButton()
@@ -72,13 +73,20 @@ final class UTIFooterCardView: UIView {
         case .none:
             usageRing.isHidden = true
             alertIcon.isHidden = true
+            infoIcon.isHidden = true
         case .usageRing(let progress, let severity):
             usageRing.isHidden = false
             alertIcon.isHidden = true
+            infoIcon.isHidden = true
             usageRing.setProgress(progress, severity: severity, animated: animateIcon)
         case .alert:
             usageRing.isHidden = true
             alertIcon.isHidden = false
+            infoIcon.isHidden = true
+        case .info:
+            usageRing.isHidden = true
+            alertIcon.isHidden = true
+            infoIcon.isHidden = false
         }
         let hasIcon = message.icon != UTIFooterMessage.Icon.none
         iconSlotWidthConstraint?.constant = hasIcon ? Constants.iconSize : 0
@@ -135,7 +143,7 @@ private extension UTIFooterCardView {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(contentView)
 
-        [usageRing, alertIcon].forEach {
+        [usageRing, alertIcon, infoIcon].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             $0.setContentHuggingPriority(.required, for: .horizontal)
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -143,8 +151,11 @@ private extension UTIFooterCardView {
         }
         usageRing.accessibilityIdentifier = "AIChat.Footer.Icon.UsageRing"
         alertIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Alert"
-        alertIcon.contentMode = .scaleAspectFit
-        alertIcon.isHidden = true
+        infoIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Info"
+        [alertIcon, infoIcon].forEach {
+            $0.contentMode = .scaleAspectFit
+            $0.isHidden = true
+        }
 
         for label in [titleLabel, subtitleLabel] {
             label.numberOfLines = 1
@@ -210,6 +221,11 @@ private extension UTIFooterCardView {
             alertIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             alertIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
+            infoIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            infoIcon.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
+            infoIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            infoIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
             iconTextGap,
             textStack.topAnchor.constraint(equalTo: contentView.topAnchor),
             textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
@@ -236,6 +252,7 @@ private extension UTIFooterCardView {
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
+        infoIcon.tintColor = UIColor(designSystemColor: .icons)
         dismissButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
         actionButton.applyColors()
     }

@@ -382,6 +382,14 @@ struct Launching: LaunchingHandling {
         )
 
         let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
+        let aiChatService = AIChatService(aiChatSettings: aiChatSettings)
+        let applicationShortcutItemsService = ApplicationShortcutItemsService(shortcutItemProviders: [
+            { aiChatService.shortcutItem() },
+            { await vpnService.shortcutItem() }
+        ], shortcutItemsFilter: { shortcutItems in
+            guard !vpnService.isSubscriptionPresent else { return shortcutItems }
+            return shortcutItems.filter { $0.type != ShortcutKey.openVPNSettings }
+        })
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
@@ -416,7 +424,8 @@ struct Launching: LaunchingHandling {
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
                                wideEventService: wideEventService,
-                               aiChatService: AIChatService(aiChatSettings: aiChatSettings),
+                               aiChatService: aiChatService,
+                               applicationShortcutItemsService: applicationShortcutItemsService,
                                eventHubService: eventHubService
         )
 

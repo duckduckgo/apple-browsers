@@ -145,6 +145,10 @@ final class AIChatOmnibarController {
     /// selected model, and the picker menu is not the only thing that can change it.
     var onSelectedModelChanged: (() -> Void)?
 
+    /// The high-usage notice has no publisher of its own, so it re-resolves on the same beats the
+    /// warning does — activation included, which is what `cleanup()` dropped it for.
+    var onUsageWarningsRefreshed: (() -> Void)?
+
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
@@ -461,6 +465,7 @@ final class AIChatOmnibarController {
         guard hasBeenActivated else { return }
 
         usageWarningViewModel?.refresh()
+        onUsageWarningsRefreshed?()
     }
 
     private func fetchModels() {

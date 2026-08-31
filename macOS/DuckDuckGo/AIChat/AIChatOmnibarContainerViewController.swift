@@ -1178,6 +1178,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
 
         subscribeToUsageWarnings()
+        omnibarController.onUsageWarningsRefreshed = { [weak self] in
+            self?.refreshUsageCard()
+        }
         highUsageNoticeSource?.refresh()
     }
 

@@ -17,11 +17,16 @@
 //  limitations under the License.
 //
 
+import AVFoundation
 import Bookmarks
+import BrowserServicesKitTestsUtils
 import Core
+import CoreLocation
 @_spi(Testing) import Persistence
 import PrivacyDashboard
+@testable import SitePermissions
 import UIKit
+import WebKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -74,6 +79,165 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         ])
     }
 
+    func testWebsiteMenuPlacesSitePermissionsBeforeBookmarkInBothLayouts() throws {
+        for mergesActionsAndBookmarks in [false, true] {
+            let entryBuilder = MockBrowsingMenuEntryBuilder(
+                chatsEntry: nil,
+                includesBookmarkEntries: true,
+                sitePermissionsEntry: .named(MockBrowsingMenuEntryBuilder.sitePermissionsName)
+            )
+            let model = try XCTUnwrap(makeWebsiteMenu(
+                entryBuilder: entryBuilder,
+                mergesActionsAndBookmarks: mergesActionsAndBookmarks
+            ))
+
+            XCTAssertEqual(Array(model.sections.flatMap(\.items).map(\.name).prefix(2)), [
+                MockBrowsingMenuEntryBuilder.sitePermissionsName,
+                MockBrowsingMenuEntryBuilder.bookmarkName
+            ])
+        }
+    }
+
+    func testWebsiteMenuOmitsSitePermissionsInBothLayoutsWhenEntryIsUnavailable() throws {
+        for mergesActionsAndBookmarks in [false, true] {
+            let entryBuilder = MockBrowsingMenuEntryBuilder(
+                chatsEntry: nil,
+                includesBookmarkEntries: true,
+                sitePermissionsEntry: nil
+            )
+            let model = try XCTUnwrap(makeWebsiteMenu(
+                entryBuilder: entryBuilder,
+                mergesActionsAndBookmarks: mergesActionsAndBookmarks
+            ))
+
+            XCTAssertFalse(model.sections.flatMap(\.items).contains { $0.name == MockBrowsingMenuEntryBuilder.sitePermissionsName })
+        }
+    }
+
+    func testWebsiteMenuPreferredDetentTracksOpenBookmarksPosition() throws {
+        let scenarios: [(
+            sitePermissionsEntry: BrowsingMenuEntry?,
+            includesYouTubeEntry: Bool,
+            includesTabActions: Bool,
+            mergesActionsAndBookmarks: Bool
+        )] = [
+            (nil, false, true, false),
+            (.named(MockBrowsingMenuEntryBuilder.sitePermissionsName), false, true, true),
+            (.named(MockBrowsingMenuEntryBuilder.sitePermissionsName), true, true, false),
+            (nil, false, false, true)
+        ]
+        let expectedCounts = [7, 8, 9, 4]
+
+        for (scenario, expectedCount) in zip(scenarios, expectedCounts) {
+            let entryBuilder = MockBrowsingMenuEntryBuilder(
+                chatsEntry: nil,
+                includesBookmarkEntries: true,
+                sitePermissionsEntry: scenario.sitePermissionsEntry,
+                includesTabActions: scenario.includesTabActions,
+                includesYouTubeEntry: scenario.includesYouTubeEntry
+            )
+            let model = try XCTUnwrap(makeWebsiteMenu(
+                entryBuilder: entryBuilder,
+                mergesActionsAndBookmarks: scenario.mergesActionsAndBookmarks
+            ))
+            let openBookmarksIndex = try XCTUnwrap(model.sections.flatMap(\.items).firstIndex { $0.tag == .openBookmarks })
+
+            XCTAssertEqual(model.preferredDetentItemCount, expectedCount)
+            XCTAssertEqual(model.preferredDetentItemCount, openBookmarksIndex + 1)
+        }
+    }
+
+    @MainActor
+    func testSitePermissionsEntryIsShownForStoredRecordInLegacyAndSheetMenus() {
+        assertSitePermissionsEntry(isPresent: true, featureEnabled: true, storedDecision: .allow)
+    }
+
+    @MainActor
+    func testSitePermissionsEntryIsShownForExplicitAskInLegacyAndSheetMenus() {
+        assertSitePermissionsEntry(isPresent: true, featureEnabled: true, storedDecision: .ask)
+    }
+
+    @MainActor
+    func testSitePermissionsEntryIsHiddenWithoutRecordInLegacyAndSheetMenus() {
+        assertSitePermissionsEntry(isPresent: false, featureEnabled: true, storedDecision: nil)
+    }
+
+    @MainActor
+    func testSitePermissionsEntryIsHiddenWithFlagOffInLegacyAndSheetMenus() {
+        assertSitePermissionsEntry(isPresent: false, featureEnabled: false, storedDecision: .allow)
+    }
+
+    @MainActor
+    func testSitePermissionsEntryIsShownForCurrentEphemeralSessionInLegacyAndSheetMenus() async {
+        let sut = makeTabViewController(featureEnabled: true, storedDecision: nil)
+        await grantCurrentSessionCameraPermission(on: sut)
+
+        assertSitePermissionsEntry(isPresent: true, on: sut)
+    }
+
+    @MainActor
+    func testRevokingMatchingSiteClearsCurrentSessionMenuEligibility() async {
+        let sut = makeTabViewController(featureEnabled: true, storedDecision: nil)
+        await grantCurrentSessionCameraPermission(on: sut)
+        XCTAssertTrue(sut.isSitePermissionsManagementAvailable)
+
+        let matchingSite = SitePermissionKey(committedURL: URL(string: "https://example.com")!)!
+        sut.revokeSitePermissions([.camera], for: matchingSite)
+
+        XCTAssertFalse(sut.isSitePermissionsManagementAvailable)
+    }
+
+    @MainActor
+    func testRevokingNonmatchingSiteKeepsCurrentSessionMenuEligibility() async {
+        let sut = makeTabViewController(featureEnabled: true, storedDecision: nil)
+        await grantCurrentSessionCameraPermission(on: sut)
+        XCTAssertTrue(sut.isSitePermissionsManagementAvailable)
+
+        let nonmatchingSite = SitePermissionKey(committedURL: URL(string: "https://other.example")!)!
+        sut.revokeSitePermissions([.camera], for: nonmatchingSite)
+
+        XCTAssertTrue(sut.isSitePermissionsManagementAvailable)
+    }
+
+    @MainActor
+    func testNormalManagementRevocationPropagatesToOtherMatchingTabs() async {
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        var secondaryTab: TabViewController?
+        let primaryTab = makeTabViewController(
+            featureEnabled: true,
+            storedDecision: nil,
+            store: store,
+            revokePermissionsInOtherTabs: { site, permissionTypes, _ in
+                secondaryTab?.revokeSitePermissions(permissionTypes, for: site)
+            }
+        )
+        secondaryTab = makeTabViewController(featureEnabled: true, storedDecision: nil, store: store)
+        guard let secondaryTab else {
+            XCTFail("Expected secondary tab")
+            return
+        }
+        await grantCurrentSessionCameraPermission(on: primaryTab)
+        await grantCurrentSessionCameraPermission(on: secondaryTab)
+        let site = SitePermissionKey(committedURL: URL(string: "https://example.com")!)!
+
+        primaryTab.revokeSitePermissionsFromManagement([.camera], for: site)
+
+        XCTAssertFalse(primaryTab.isSitePermissionsManagementAvailable)
+        XCTAssertFalse(secondaryTab.isSitePermissionsManagementAvailable)
+    }
+
+    @MainActor
+    func testManagementPresenterRefusesFlagOffAndStaleCommittedSite() {
+        let flagOff = makeTabViewController(featureEnabled: false, storedDecision: .allow)
+        flagOff.presentSitePermissionsManagement()
+        XCTAssertNil(flagOff.presentedViewController)
+
+        let staleCommittedSite = makeTabViewController(featureEnabled: true, storedDecision: .allow)
+        staleCommittedSite.webView(staleCommittedSite.webView, didStartProvisionalNavigation: nil)
+        staleCommittedSite.presentSitePermissionsManagement()
+        XCTAssertNil(staleCommittedSite.presentedViewController)
+    }
+
     // MARK: - Privacy Protection toggle SERP gating
 
     func testToggleProtectionDomainIsNilOnSERP() {
@@ -111,21 +275,168 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         BrowsingMenuBuilder(entryBuilder: entryBuilder)
     }
 
+    private func makeWebsiteMenu(
+        entryBuilder: BrowsingMenuEntryBuilding,
+        mergesActionsAndBookmarks: Bool = false
+    ) -> BrowsingMenuModel? {
+        BrowsingMenuBuilder(
+            entryBuilder: entryBuilder,
+            options: .init(mergeActionsAndBookmarks: mergesActionsAndBookmarks)
+        ).buildMenu(
+            context: .website,
+            bookmarksInterface: MockMenuBookmarksInteractor(),
+            mobileCustomization: makeMobileCustomization(),
+            clearTabsAndData: {}
+        )
+    }
+
     private func makeMobileCustomization() -> MobileCustomization {
         MobileCustomization(keyValueStore: MockKeyValueStore(), isPad: false)
+    }
+
+    @MainActor
+    private func assertSitePermissionsEntry(
+        isPresent: Bool,
+        featureEnabled: Bool,
+        storedDecision: SitePermissionDecision?,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let sut = makeTabViewController(featureEnabled: featureEnabled, storedDecision: storedDecision)
+        assertSitePermissionsEntry(isPresent: isPresent, on: sut, file: file, line: line)
+    }
+
+    @MainActor
+    private func assertSitePermissionsEntry(
+        isPresent: Bool,
+        on sut: TabViewController,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let bookmarksInterface = MockMenuBookmarksInteractor()
+        let legacyNames = sut.buildBrowsingMenu(
+            with: bookmarksInterface,
+            mobileCustomization: makeMobileCustomization(),
+            clearTabsAndData: {}
+        ).compactMap(\.name)
+        let sheetNames = sut.buildSheetBrowsingMenu(
+            context: .website,
+            with: bookmarksInterface,
+            mobileCustomization: makeMobileCustomization(),
+            browsingMenuSheetCapability: BrowsingMenuSheetDefaultCapability(),
+            clearTabsAndData: {}
+        )?.sections.flatMap(\.items).map(\.name) ?? []
+
+        XCTAssertEqual(legacyNames.contains(UserText.sitePermissions), isPresent, file: file, line: line)
+        XCTAssertEqual(sheetNames.contains(UserText.sitePermissions), isPresent, file: file, line: line)
+
+        guard isPresent else { return }
+        guard let legacySitePermissionsIndex = legacyNames.firstIndex(of: UserText.sitePermissions),
+              let legacyBookmarkIndex = legacyNames.firstIndex(of: UserText.actionSaveBookmark),
+              let sheetSitePermissionsIndex = sheetNames.firstIndex(of: UserText.sitePermissions),
+              let sheetBookmarkIndex = sheetNames.firstIndex(of: UserText.actionSaveBookmark) else {
+            XCTFail("Expected Site Permissions and Add Bookmark entries", file: file, line: line)
+            return
+        }
+        XCTAssertLessThan(legacySitePermissionsIndex, legacyBookmarkIndex, file: file, line: line)
+        XCTAssertLessThan(sheetSitePermissionsIndex, sheetBookmarkIndex, file: file, line: line)
+    }
+
+    @MainActor
+    private func makeTabViewController(
+        featureEnabled: Bool,
+        storedDecision: SitePermissionDecision?,
+        store: SitePermissionsStore? = nil,
+        revokePermissionsInOtherTabs: @escaping (SitePermissionKey, Set<SitePermissionType>, String) -> Void = { _, _, _ in }
+    ) -> TabViewController {
+        let url = URL(string: "https://example.com/path")!
+        let store = store ?? SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        let site = SitePermissionKey(committedURL: url)!
+        if storedDecision == .ask {
+            store.resetDecision(for: .camera, at: site)
+        } else if let storedDecision {
+            store.setPersistentDecision(storedDecision, for: .camera, at: site)
+        }
+
+        let sut = TabViewController.fake(
+            customWebView: { SitePermissionsMenuURLWebView(url: url, configuration: $0) },
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : []),
+            link: Link(title: nil, url: url)
+        )
+        sut.sitePermissionsDependenciesProvider = {
+            SitePermissionsDependencies(
+                store: store,
+                systemPermissionClient: SystemPermissionClient(
+                    locationManager: CLLocationManager(),
+                    locationServicesEnabled: { false },
+                    avAuthorizationStatus: { _ in .authorized },
+                    avRequestAccess: { _, completion in completion(true) },
+                    notificationCenter: NotificationCenter()
+                ),
+                revokePermissionsInOtherTabs: revokePermissionsInOtherTabs
+            )
+        }
+        sut.webView(sut.webView, didCommit: nil)
+        return sut
+    }
+
+    @MainActor
+    private func grantCurrentSessionCameraPermission(on sut: TabViewController,
+                                                     file: StaticString = #filePath,
+                                                     line: UInt = #line) async {
+        let decisionExpectation = expectation(description: "Ephemeral camera permission granted")
+        var decisions = [WKPermissionDecision]()
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in
+            completion(.allowOnce)
+        }
+        let origin = MockWKSecurityOrigin.new(host: "requesting-frame.example")
+        let frame = WKFrameInfo.mock(
+            isMainFrame: false,
+            securityOrigin: origin,
+            webView: sut.webView,
+            request: URLRequest(url: URL(string: "https://requesting-frame.example/frame")!)
+        )
+
+        sut.webView(sut.webView,
+                    requestMediaCapturePermissionFor: origin,
+                    initiatedByFrame: frame,
+                    type: .camera,
+                    decisionHandler: {
+                        decisions.append($0)
+                        decisionExpectation.fulfill()
+                    })
+
+        await fulfillment(of: [decisionExpectation], timeout: 1)
+        XCTAssertEqual(decisions, [.grant], file: file, line: line)
     }
 }
 
 private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
 
     static let chatsName = "Chats"
+    static let bookmarkName = "Bookmark"
     static let downloadsName = "Downloads"
     static let openBookmarksName = "Bookmarks"
+    static let sitePermissionsName = "Site Permissions"
 
     private let chatsEntry: BrowsingMenuEntry?
+    private let includesBookmarkEntries: Bool
+    private let sitePermissionsEntry: BrowsingMenuEntry?
+    private let includesTabActions: Bool
+    private let includesYouTubeEntry: Bool
 
-    init(chatsEntry: BrowsingMenuEntry?) {
+    init(
+        chatsEntry: BrowsingMenuEntry?,
+        includesBookmarkEntries: Bool = false,
+        sitePermissionsEntry: BrowsingMenuEntry? = nil,
+        includesTabActions: Bool = false,
+        includesYouTubeEntry: Bool = false
+    ) {
         self.chatsEntry = chatsEntry
+        self.includesBookmarkEntries = includesBookmarkEntries
+        self.sitePermissionsEntry = sitePermissionsEntry
+        self.includesTabActions = includesTabActions
+        self.includesYouTubeEntry = includesYouTubeEntry
     }
 
     func makeShortcutsMenu() -> [BrowsingMenuEntry] { [] }
@@ -147,17 +458,21 @@ private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
     func makeAutoFillEntry() -> BrowsingMenuEntry? { nil }
     func makeVPNEntry() -> BrowsingMenuEntry? { nil }
     func makeOpenBookmarksEntry() -> BrowsingMenuEntry { .named(Self.openBookmarksName) }
-    func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? { nil }
-    func makeFindInPageEntry() -> BrowsingMenuEntry? { nil }
-    func makeZoomEntry() -> BrowsingMenuEntry? { nil }
-    func makeDesktopSiteEntry() -> BrowsingMenuEntry? { nil }
+    func makeSitePermissionsEntry() -> BrowsingMenuEntry? { sitePermissionsEntry }
+    func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? {
+        guard includesBookmarkEntries else { return nil }
+        return (.named(Self.bookmarkName), .named("Favorite"))
+    }
+    func makeFindInPageEntry() -> BrowsingMenuEntry? { includesTabActions ? .named("Find in Page") : nil }
+    func makeZoomEntry() -> BrowsingMenuEntry? { includesTabActions ? .named("Zoom") : nil }
+    func makeDesktopSiteEntry() -> BrowsingMenuEntry? { includesTabActions ? .named("Desktop Site") : nil }
     func makeReloadEntry() -> BrowsingMenuEntry? { nil }
     func makeToggleProtectionEntry() -> BrowsingMenuEntry? { nil }
     func makeReportBrokenSiteEntry() -> BrowsingMenuEntry? { nil }
     func makeClearDataEntry(mobileCustomization: MobileCustomization, clearTabsAndData: @escaping () -> Void) -> BrowsingMenuEntry? { nil }
     func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry? { nil }
     func makeKeepSignInEntry() -> BrowsingMenuEntry? { nil }
-    func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? { nil }
+    func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? { includesYouTubeEntry ? .named("YouTube Ad Block") : nil }
 }
 
 private final class MockMenuBookmarksInteractor: MenuBookmarksInteracting {
@@ -172,7 +487,31 @@ private final class MockMenuBookmarksInteractor: MenuBookmarksInteracting {
 
 private extension BrowsingMenuEntry {
 
+    var name: String? {
+        guard case let .regular(name, _, _, _, _, _, _, _, _) = self else { return nil }
+        return name
+    }
+
     static func named(_ name: String) -> BrowsingMenuEntry {
         .regular(name: name, image: UIImage(), action: {})
+    }
+}
+
+private final class SitePermissionsMenuURLWebView: WKWebView {
+
+    private let fixedURL: URL
+
+    init(url: URL, configuration: WKWebViewConfiguration) {
+        fixedURL = url
+        super.init(frame: .zero, configuration: configuration)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var url: URL? {
+        fixedURL
     }
 }

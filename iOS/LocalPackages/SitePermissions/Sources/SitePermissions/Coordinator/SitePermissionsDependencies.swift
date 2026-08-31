@@ -21,12 +21,15 @@ public struct SitePermissionsDependencies {
     public let store: SitePermissionsStore
     public let systemPermissionClient: SystemPermissionClient
     public let eventHandler: (SitePermissionsEvent) -> Void
+    public let revokePermissionsInOtherTabs: (SitePermissionKey, Set<SitePermissionType>, String) -> Void
 
     public init(store: SitePermissionsStore,
                 systemPermissionClient: SystemPermissionClient,
-                eventHandler: @escaping (SitePermissionsEvent) -> Void = { _ in }) {
+                eventHandler: @escaping (SitePermissionsEvent) -> Void = { _ in },
+                revokePermissionsInOtherTabs: @escaping (SitePermissionKey, Set<SitePermissionType>, String) -> Void = { _, _, _ in }) {
         self.store = store
         self.systemPermissionClient = systemPermissionClient
         self.eventHandler = eventHandler
+        self.revokePermissionsInOtherTabs = revokePermissionsInOtherTabs
     }
 }

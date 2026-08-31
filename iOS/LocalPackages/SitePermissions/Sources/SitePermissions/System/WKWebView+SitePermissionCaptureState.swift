@@ -52,4 +52,14 @@ extension WKWebView {
     var sitePermissionMicrophoneCaptureState: SitePermissionCaptureState {
         SitePermissionCaptureState(microphoneCaptureState)
     }
+
+    @MainActor
+    public func revokeSitePermissions(_ permissionTypes: Set<SitePermissionType>) {
+        if permissionTypes.contains(.camera) {
+            setCameraCaptureState(.none, completionHandler: {})
+        }
+        if permissionTypes.contains(.microphone) {
+            setMicrophoneCaptureState(.none, completionHandler: {})
+        }
+    }
 }

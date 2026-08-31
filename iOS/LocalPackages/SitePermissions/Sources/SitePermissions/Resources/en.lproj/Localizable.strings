@@ -21,3 +21,22 @@
 
 /* Body of the reminder shown when iOS microphone access for Duck.ai Voice Chat is blocked. */
 "sitePermissions.voice-chat.reminder.body" = "Microphone permissions are needed if you want to use Voice Chat in Duck.ai.";
+
+"sitePermissions.management.title" = "Permissions for “%@”";
+"sitePermissions.management.camera" = "Camera";
+"sitePermissions.management.microphone" = "Microphone";
+"sitePermissions.management.ask-each-time" = "Ask Each Time";
+"sitePermissions.management.allow-this-time" = "Allow This Time";
+"sitePermissions.management.always-allow" = "Always Allow";
+"sitePermissions.management.never-allow" = "Never Allow";
+"sitePermissions.management.reload-caption" = "Reload the page for changes to take effect.";
+"sitePermissions.management.remove-permissions" = "Remove Permissions";
+"sitePermissions.management.permissions-removed" = "Permissions removed for %@";
+"sitePermissions.management.go-to-system-settings" = "Go to System Settings";
+"sitePermissions.management.close" = "Close";
+"sitePermissions.management.accessibility.in-use" = "%@, in use";
+"sitePermissions.management.accessibility.paused" = "%@, paused";
+"sitePermissions.management.reminder" = "DuckDuckGo needs to access your %@, if you want to use related features on this site.";
+"sitePermissions.management.reminder.camera" = "camera";
+"sitePermissions.management.reminder.microphone" = "microphone";
+"sitePermissions.management.reminder.camera-and-microphone" = "camera and microphone";

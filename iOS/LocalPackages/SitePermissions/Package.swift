@@ -38,7 +38,9 @@ let package = Package(
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
-        .package(path: "../../../SharedPackages/Persistence")
+        .package(path: "../../../SharedPackages/Infrastructure/MetricBuilder"),
+        .package(path: "../../../SharedPackages/Persistence"),
+        .package(path: "../../../SharedPackages/UIComponents")
     ],
     targets: [
         .target(
@@ -48,7 +50,9 @@ let package = Package(
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 "DesignResourcesKit",
                 .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
-                .product(name: "Persistence", package: "Persistence")
+                .product(name: "MetricBuilder", package: "MetricBuilder"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "UIComponents", package: "UIComponents")
             ],
             resources: [
                 .process("jsSources")

@@ -179,11 +179,17 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
 
     @MainActor
+    lazy var sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())
+
+    @MainActor
     private lazy var sitePermissionsDependencies = SitePermissionsDependencies(
-        store: SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+        store: sitePermissionsStore,
         systemPermissionClient: SystemPermissionClient(),
         eventHandler: { [sitePermissionsPixelHandler] event in
             sitePermissionsPixelHandler.fire(event)
+        },
+        revokePermissionsInOtherTabs: { [weak self] site, permissionTypes, sourceTabID in
+            self?.revokeSitePermissions(permissionTypes, for: site, excluding: sourceTabID)
         }
     )
 
@@ -439,6 +445,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
+    }
+
+    func revokeSitePermissions(_ permissionTypes: Set<SitePermissionType>,
+                               for site: SitePermissionKey,
+                               excluding excludedTabID: String? = nil) {
+        for tab in allTabsModel.tabs where tab.uid != excludedTabID {
+            controller(for: tab)?.revokeSitePermissions(permissionTypes, for: site)
+        }
     }
 
     @MainActor

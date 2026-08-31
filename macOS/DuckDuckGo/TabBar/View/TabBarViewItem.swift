@@ -568,6 +568,11 @@ final class TabBarViewItem: NSCollectionViewItem {
         static let maximum: CGFloat = 240
     }
 
+    /// The Background Leading + Trailing Ramp(s) are rendered outside bounds, by design. This constant will be required for accurate frame calculations when scrolling
+    static var horizontalInset: CGFloat {
+        TabBackgroundView.Metrics.tabRampSize.width
+    }
+
     private var widthStage: TabBarItemCellView.WidthStage {
         if isPinned {
             return .pinned

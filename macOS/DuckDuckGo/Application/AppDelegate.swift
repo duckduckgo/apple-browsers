@@ -513,20 +513,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
-        var commonDatabase: Database?
+        // Held as a local so the Bookmarks migration closure below can use it without
+        // capturing `self` while this initializer still has properties to assign.
+        let commonDatabase: Database?
 
         if AppVersion.runType.requiresEnvironment {
+            // Set up PixelKit before the Keychain retry so that its failure path can
+            // report. Reconfigured below once the internal user decider is available.
             Self.configurePixelKit(isInternalUser: false)
 
-            let (encryptionKey, db) = Self.createDatabaseRetryingKeychainAccess(
+            let (encryptionKey, database) = Self.createDatabaseRetryingKeychainAccess(
                 keyStore: keyStore,
                 startupProfiler: startupProfiler
             )
 
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-            commonDatabase = db
+            commonDatabase = database
         } else {
             fileStore = EncryptedFileStore()
+            commonDatabase = nil
         }
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
@@ -551,10 +556,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         bookmarkDatabase = BookmarkDatabase()
 
-        if AppVersion.runType.requiresEnvironment {
-            // Always set above when `requiresEnvironment`, or the app has already terminated.
-            let db = commonDatabase!
-            database = db
+        if let commonDatabase {
+            database = commonDatabase
 
             database.db.loadStore { _, error in
                 guard let error = error else { return }
@@ -589,7 +592,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     fatalError("Could not create Bookmarks database stack: \(error?.localizedDescription ?? "err")")
                 }
 
-                let legacyDB = db.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
+                let legacyDB = commonDatabase.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
                 legacyDB.performAndWait {
                     LegacyBookmarksStoreMigration.setupAndMigrate(from: legacyDB, to: context)
                 }

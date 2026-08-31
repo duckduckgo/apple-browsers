@@ -28,6 +28,7 @@ import XCTest
 @MainActor
 final class SyncFaviconsPromoDelegateTests: XCTestCase {
 
+    private var featureFlagger: MockFeatureFlagger!
     private var ddgSyncing: MockDDGSyncing!
     private var syncBookmarksAdapter: SyncBookmarksAdapter!
     private var windowControllersManager: WindowControllersManagerMock!
@@ -39,6 +40,8 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
     override func setUp() {
         super.setUp()
         setUpDatabase()
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.promoQueueSyncFaviconsPromo]
         ddgSyncing = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
         syncBookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase,
                                                     bookmarkManager: MockBookmarkManager(),
@@ -59,6 +62,7 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
         windowControllersManager = nil
         syncBookmarksAdapter = nil
         ddgSyncing = nil
+        featureFlagger = nil
         tearDownDatabase()
         UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsEligibleForFaviconsFetcherOnboarding.rawValue)
         UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsFaviconsFetcherEnabled.rawValue)
@@ -67,7 +71,8 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
     }
 
     private func makeSUT() -> SyncFaviconsPromoDelegate {
-        SyncFaviconsPromoDelegate(syncService: ddgSyncing,
+        SyncFaviconsPromoDelegate(featureFlagger: featureFlagger,
+                                  syncService: ddgSyncing,
                                   syncBookmarksAdapter: syncBookmarksAdapter,
                                   windowControllersManager: windowControllersManager)
     }
@@ -95,6 +100,12 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
         XCTAssertTrue(sut.isEligible)
     }
 
+    func testWhenPromoFeatureFlagOffThenNotEligible() {
+        featureFlagger.enabledFeatureFlags = []
+
+        XCTAssertFalse(sut.isEligible)
+    }
+
     func testWhenSyncUIFeatureFlagOffThenNotEligible() {
         ddgSyncing.featureFlags = []
 
@@ -114,13 +125,13 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
     }
 
     func testWhenSyncServiceIsNilThenNotEligible() {
-        sut = SyncFaviconsPromoDelegate(syncService: nil, syncBookmarksAdapter: syncBookmarksAdapter, windowControllersManager: windowControllersManager)
+        sut = SyncFaviconsPromoDelegate(featureFlagger: featureFlagger, syncService: nil, syncBookmarksAdapter: syncBookmarksAdapter, windowControllersManager: windowControllersManager)
 
         XCTAssertFalse(sut.isEligible)
     }
 
     func testWhenSyncBookmarksAdapterIsNilThenNotEligible() {
-        sut = SyncFaviconsPromoDelegate(syncService: ddgSyncing, syncBookmarksAdapter: nil, windowControllersManager: windowControllersManager)
+        sut = SyncFaviconsPromoDelegate(featureFlagger: featureFlagger, syncService: ddgSyncing, syncBookmarksAdapter: nil, windowControllersManager: windowControllersManager)
 
         XCTAssertFalse(sut.isEligible)
     }
@@ -183,7 +194,7 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
     }
 
     func testDismissResult_whenDependenciesAreNil_stillReturnsCorrectResultWithoutCrashing() {
-        sut = SyncFaviconsPromoDelegate(syncService: nil, syncBookmarksAdapter: nil, windowControllersManager: windowControllersManager)
+        sut = SyncFaviconsPromoDelegate(featureFlagger: featureFlagger, syncService: nil, syncBookmarksAdapter: nil, windowControllersManager: windowControllersManager)
 
         XCTAssertEqual(sut.dismissResult(enableFaviconsFetching: false), .ignored())
         XCTAssertEqual(sut.dismissResult(enableFaviconsFetching: true), .actioned)

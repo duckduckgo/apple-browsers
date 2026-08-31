@@ -20,16 +20,18 @@ import AppKit
 import Combine
 import DDGSync
 import Foundation
+import PrivacyConfig
 import SyncUI_macOS
 
 /// Presents the "Download Missing Icons?" dialog through the promo queue, offering to turn on
 /// automatic favicon fetching for bookmarks synced from other devices.
 ///
-/// Shown only while Sync UI is enabled, favicons fetching isn't already on, and the user is
-/// syncing with 2+ devices; confirming or dismissing both permanently retire the promo (there is
-/// no legacy "remind me later" behavior to preserve).
+/// Shown only while the promo's feature flag is on, Sync UI is enabled, favicons fetching isn't
+/// already on, and the user is syncing with 2+ devices; confirming or dismissing both permanently
+/// retire the promo (there is no legacy "remind me later" behavior to preserve).
 final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
 
+    private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing?
     private let syncBookmarksAdapter: SyncBookmarksAdapter?
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -39,7 +41,11 @@ final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
     private var windowController: NSWindowController?
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
 
-    init(syncService: DDGSyncing?, syncBookmarksAdapter: SyncBookmarksAdapter?, windowControllersManager: WindowControllersManagerProtocol) {
+    init(featureFlagger: FeatureFlagger,
+         syncService: DDGSyncing?,
+         syncBookmarksAdapter: SyncBookmarksAdapter?,
+         windowControllersManager: WindowControllersManagerProtocol) {
+        self.featureFlagger = featureFlagger
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
         self.windowControllersManager = windowControllersManager
@@ -57,6 +63,7 @@ final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
+        guard featureFlagger.isFeatureOn(.promoQueueSyncFaviconsPromo) else { return false }
         guard let syncService, let syncBookmarksAdapter else { return false }
         return syncService.featureFlags.contains(.userInterface)
             && !syncBookmarksAdapter.isFaviconsFetchingEnabled

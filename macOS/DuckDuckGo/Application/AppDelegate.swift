@@ -1562,17 +1562,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // silently inert. Calling it twice is harmless — it re-checks already-settled state.
         eventHubIntegration.applicationDidBecomeActive()
 
-        if case .availableAfterWaiting(let waitedSeconds, let status) = keychainReadOutcome {
-            // The Keychain read at init had to wait for loginwindow to unlock the Keychain.
-            // Reported here rather than from the retry loop, which runs before PixelKit is set up.
-            var parameters = ["keychain_wait_bucket": GeneralPixel.KeychainWaitBucket(seconds: waitedSeconds).description]
-            if let status {
-                parameters[PixelKit.Parameters.keychainErrorCode] = "\(status)"
-            }
-            PixelKit.fire(GeneralPixel.launch, options: .parameters(parameters))
-        } else {
-            PixelKit.fire(GeneralPixel.launch)
-        }
+        fireLaunchPixel()
         profilerToken.stop()
     }
 
@@ -2610,6 +2600,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case availableAfterWaiting(waitedSeconds: Int, status: OSStatus?)
         case unavailable(status: OSStatus?)
         case promptCancelled
+    }
+
+    /// Fires the launch pixel. When the Keychain read at init had to wait for loginwindow
+    /// to unlock the Keychain, the pixel carries how long it waited and the error code of
+    /// the first failed read — reported here rather than from the retry loop, which runs
+    /// before PixelKit is set up.
+    private func fireLaunchPixel() {
+        guard case .availableAfterWaiting(let waitedSeconds, let status) = keychainReadOutcome else {
+            PixelKit.fire(GeneralPixel.launch)
+            return
+        }
+
+        var parameters = ["keychain_wait_bucket": GeneralPixel.KeychainWaitBucket(seconds: waitedSeconds).description]
+        if let status {
+            parameters[PixelKit.Parameters.keychainErrorCode] = "\(status)"
+        }
+        PixelKit.fire(GeneralPixel.launch, options: .parameters(parameters))
     }
 
     /// The user dismissed the Keychain prompt, so the app is quitting. This is the one

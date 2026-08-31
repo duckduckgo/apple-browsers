@@ -2547,6 +2547,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// When launched as a login item the Keychain may not be unlocked yet.
     /// Retry for up to ~10 s to give loginwindow time to unlock it.
+    ///
+    /// Both the key and the database are produced here because `Database()`
+    /// reads the same key internally, via `registerValueTransformers` ->
+    /// `EncryptedValueTransformer.registerTransformer`. Reading the key outside
+    /// this loop would let it fail while the retried `Database()` still
+    /// succeeds, leaving the caller to build a keyless file store that
+    /// persists app state in plaintext.
     private static func createDatabaseRetryingKeychainAccess(
         keyStore: EncryptionKeyStoring,
         startupProfiler: StartupProfiler

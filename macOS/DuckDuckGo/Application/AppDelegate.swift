@@ -514,6 +514,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if AppVersion.runType.requiresEnvironment {
+            // PixelKit must be available before the retry loop so that the
+            // failure path can fire its diagnostic pixels.
+            Self.configurePixelKit(isInternalUser: false)
+
             let encryptionKey = Self.readEncryptionKeyRetryingKeychainAccess(keyStore: keyStore, startupProfiler: startupProfiler)
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
         } else {

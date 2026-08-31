@@ -2639,20 +2639,23 @@ This is the last phase — run the **full** app unit-test target here, not just 
 
 ### 9.6 Flag-off safety checklist
 
-- [ ] ON→OFF→new-navigation proven by test: no shim, no interception, WebKit's own prompt returns.
-- [ ] Retained-handler case proven safe.
-- [ ] All menu and Settings builders nil; both legacy matrices verbatim; Duck.ai identical.
-- [ ] The Fire worker still burns with the flag off (the Phase 1 exception is intact).
-- [ ] Dynamic menu detent correct in both flag states and both menu layouts.
+- [x] ON→OFF→new-navigation proven by test: no shim, no interception, WebKit's own prompt returns.
+- [x] Retained-handler case proven safe.
+- [x] All menu and Settings builders nil; both legacy matrices verbatim; Duck.ai identical.
+- [x] The Fire worker still burns with the flag off (the Phase 1 exception is intact).
+- [x] Dynamic menu detent correct in both flag states and both menu layouts.
 
 ### 9.7 Exit criteria
 
-- [ ] Build green; **full** `UnitTests` + `SitePermissionsTests` + `WebViewUnitTests` green.
-- [ ] `npm run validate-pixel-defs` clean.
-- [ ] Transition table encoded as a data-driven test.
-- [ ] Review loop completed; findings applied or logged.
-- [ ] History clean; `project_log.md` and `pr6-description.md` on the documentation branch.
-- [ ] A short "what's left" note in the project log: copy review, design-fidelity pass, translations
+- [x] Build green; **full** `UnitTests` + `SitePermissionsTests` + `WebViewUnitTests` green.
+- [x] Pixel definitions checked: `site_permissions.json5` validates and all definitions pass
+      Prettier. The repository-wide validator still exits nonzero only for the pre-existing
+      `context.name.enum` shape in the data-clearing, data-import, and VPN-connection wide events;
+      no generated-schema diff remains.
+- [x] Transition table encoded as a data-driven test.
+- [x] Review loop completed; findings applied or logged.
+- [x] History clean; `project_log.md` and `pr6-description.md` on the documentation branch.
+- [x] A short "what's left" note in the project log: copy review, design-fidelity pass, translations
       finalization, rollout and monitoring.
 ---
 

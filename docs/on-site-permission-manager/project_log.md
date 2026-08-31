@@ -3,11 +3,18 @@
 ## Current handoff
 
 - Goal: Implement the six-PR on-site permission manager stack from `implementation-plan.md` without pushing.
-- Status: Phases 1–5 are complete. There is no active blocker.
-- Completed: `bartosz/on-site-permissions-5` contains commit `f407befeab` directly on Phase 4 commit `1003ae5ef4`. It adds the geolocation shim, shared provider, location dialogs and recovery, app integration, the single-path v1 policy gate, and focused tests. The privacy-test-pages fixture branch is committed locally at `d91ba2b` and `f330b4f2`.
-- Next: Create `bartosz/on-site-permissions-6` directly from Phase 5 and implement location management, authoritative `PermissionStatus` transitions, geolocation pixels, rollback, and integration hardening.
-- Stack state: Phase 5 is based on `bartosz/on-site-permissions-4` at `1003ae5ef4`. The implementation stack and fixture branch remain unpushed.
+- Status: All six phases are complete. There is no active blocker.
+- Completed: `bartosz/on-site-permissions-6` contains commit `071faf3791` directly on Phase 5 commit `f407befeab`. It completes location management, live `PermissionStatus` transitions, geolocation pixels, rollback behavior, and integration hardening. The privacy-test-pages fixture branch is committed locally at `d91ba2b` and `f330b4f2`.
+- Next: Push and open the six stacked PRs when authorized, then complete the copy review, design-fidelity pass, translation finalization, rollout, and monitoring work listed below.
+- Stack state: `main` → `bartosz/on-site-permissions-1` → `-2` → `-3` → `-4` → `-5` → `-6`. The implementation stack and fixture branch remain unpushed.
 - Blocker: None.
+
+## What's left
+
+- Complete the copy review for provisional strings, including combined and location-specific copy.
+- Run the final design-fidelity pass against the supplied Figma screenshots.
+- Finalize translations for every string added across the stack.
+- Push and open the six stacked PRs only after authorization, then plan rollout and monitor permission failures, recovery, and site breakage.
 
 ## Decisions
 
@@ -95,6 +102,18 @@
 - Why: `WKWebView` does not expose document-level Permissions Policy introspection on the tested iOS 26.4 runtime, and public WebKit cannot reliably combine a subframe response header with attribute delegation. Limiting the feature to iOS 27 or using private WebKit API is not acceptable.
 - Consequences: Delegated cross-origin iframes do not receive geolocation in v1, even when they are same-site or declare `allow="geolocation"`. This is intentionally stricter than a full engine. Revisit only after breakage evidence or when a public OS-managed API can provide an optional enhancement.
 
+### 2026-08-31 — Keep live permission statuses page-scoped
+
+- Decision: Retain each live geolocation `PermissionStatus` registration until delivery fails, navigation commits, the web-content process changes, or the tab closes. Do not impose an arbitrary count or least-recently-used cap.
+- Why: A cap would silently stop `change` delivery to a page-held status object. Public WebKit does not expose a stable frame identity that would let native code safely merge registrations, and every registration is cleared at the document boundary.
+- Consequences: A document can create many registrations during its lifetime, as it can create other JavaScript objects. Revisit only with a cleanup design that preserves every live listener and the query/request agreement contract.
+
+### 2026-08-31 — Apply flag changes at the document boundary
+
+- Decision: A page loaded while `sitePermissions` is on keeps its geolocation shim and handler until the next committed navigation. A flag-off update rebuilds the script set immediately for the next document without changing the already-loaded document's permission behavior.
+- Why: Removing the native path before its injected page script disappears creates a hybrid state in which a live `PermissionStatus` can report granted while the next request is denied.
+- Consequences: Rollback becomes effective on reload or navigation. Retired handlers answer safely and are released when the new document commits.
+
 ## Review outcomes
 
 ### Phase 1
@@ -139,9 +158,25 @@
 - Deferred finding: The page currently returns fixed-state `PermissionStatus` objects. Phase 6 owns the queried-frame registry, authoritative transition table, manager-mutation propagation, and `change`/`onchange` events.
 - Verification: The production simulator build passed. Focused runs passed 165 `SitePermissionsTests`, 36 selected app integration tests, 109 `WebViewUnitTests`, and 9 shared `UserContentControllerTests`, with no failures or skips. The 35-test geolocation script subset includes real-WebKit sandbox-removal and policy-resampling regressions. JavaScript syntax, Swift parsing, localization syntax, and `git diff --check` pass.
 
+### Phase 6
+
+- Correctness review: Fixed flag rollback so the old document keeps one coherent path until commit, and new documents receive no shim after the flag turns off. Fixed initial permission queries by retaining the native frame before coordinator validation. Fixed Fire-mode management ordering so mutations become authoritative before status refresh and immediate revocation.
+- Contract and coverage review: Added request assertions to every source-state × OS-state transition-table row. Added app seams for manager-driven status changes, location revocation, independent requests in separate tabs, and rollback reply lifetime. Added Fire-mode ordering tests. The final audit found no remaining material Phase 6 gaps.
+- Ponytail review: Replaced the public location-activity state and initial callback replay with a private implementation detail. Kept native same-state filtering because it avoids unnecessary page-process calls after unrelated store changes. Kept the small page-scoped status registry because a cap or LRU would silently drop live listeners. Kept the managed-type name because it documents the management boundary. The final correctness review found no remaining actionable findings.
+- Pixel validation: The validator reached and validated `site_permissions.json5` for product target 7.234.0, and Prettier passed every definition. The command then hit the existing `context.name.enum` schema defect in data-clearing, data-import, and VPN-connection wide events. The generated output was restored, and Phase 6 has no pixel-definition diff.
+- Verification: The focused release gate passed 352 tests with no failures or skips. The required combined `UnitTests` + `SitePermissionsTests` + `WebViewUnitTests` run passed 6,928 tests with zero failures and 37 baseline skips. The normal-deployment `iOS Browser` simulator build passed. JavaScript syntax after template substitution, localization syntax, and `git diff --check` also pass.
+
 ## Recent progress
 
 ### 2026-08-31
+
+- Completed Phase 6 and committed it locally as `071faf3791` (`Complete on-site permission management`) directly on Phase 5. The implementation worktree is clean and nothing has been pushed.
+- Added Location to the on-site sheet and Settings surfaces, including all three icon states, global Ask/Never behavior, per-site choices, reminder copy, removal, Undo, and immediate watch revocation.
+- Added live geolocation `PermissionStatus` state with `change` listeners and `onchange`. Durable manager changes, Fire-session changes, OS-state refreshes, Allow Once expiry, and explicit revocation re-evaluate the original native frame.
+- Enabled the approved geolocation flow pixels without adding a new family or leaking a site value.
+- Hardened rollback so flag updates rebuild the next document's script set, the already-loaded document remains coherent until navigation, and retained handlers resolve safely without hanging.
+- Hardened manager mutation during a pending FIFO request, independent concurrent tabs, Fire no-write ordering, cached one-shot activity, and location capture lifecycle reporting.
+- Passed the final 6,928-test combined gate and the production build. The three repository-wide pixel-validator errors are unchanged baseline wide-event schema defects; the feature definition and formatting pass.
 
 - Committed Phase 5 as `f407befeab` (`Add on-site geolocation permission flows`) directly on Phase 4. The implementation branch remains local and unpushed.
 - Read the validated geolocation spike on `origin/bartosz/on-site-permissions-geo-hack` at `ea39b8a39e` without merging it. Production retains its own authenticated reply bridge, shared location manager, real store, host key, and coordinator FIFO.

@@ -116,6 +116,7 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
             return
         }
         let viewModel = DataImportViewModel(
+//            screen: .passwordEntryHelp,   // TODO: remove — debug only
             syncFeatureVisibility: syncFeatureVisibility,
             onFinished: onFinished,
             onCancelled: onCancelled

@@ -116,7 +116,6 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
             return
         }
         let viewModel = DataImportViewModel(
-//            screen: .passwordEntryHelp,   // TODO: remove — debug only
             syncFeatureVisibility: syncFeatureVisibility,
             onFinished: onFinished,
             onCancelled: onCancelled
@@ -127,6 +126,14 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
             syncFeatureVisibility: syncFeatureVisibility,
             pinningManager: pinningManager
         ).show(in: window, completion: completion)
+    }
+
+    /// Launches the data import flow directly at the given screen.
+    ///
+    /// - Important: Only intended for the `Debug → Data Import` flow. Regular entry points always start at the beginning of the flow.
+    @MainActor
+    func launchDataImport(at screen: DataImportViewModel.Screen) {
+        relaunchDataImport(model: DataImportViewModel(screen: screen, syncFeatureVisibility: syncFeatureVisibility))
     }
 
     @MainActor

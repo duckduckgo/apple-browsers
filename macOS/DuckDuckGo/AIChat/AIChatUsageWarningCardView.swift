@@ -128,8 +128,7 @@ final class AIChatUsageWarningCardView: NSView {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.imageScaling = .scaleProportionallyDown
-        imageView.image = DesignSystemImages.Glyphs.Size16.alert
-        imageView.contentTintColor = NSColor(designSystemColor: .destructivePrimary)
+        imageView.image = DesignSystemImages.Glyphs.Size16.alertRecolorable
         return imageView
     }()
 
@@ -361,8 +360,6 @@ final class AIChatUsageWarningCardView: NSView {
         NSAppearance.withAppearance(appearance) {
             tintView.backgroundColor = NSColor(designSystemColor: .surfacePrimary)
                 .withAlphaComponent(Constants.tintAlpha)
-            // The same red the ring uses at its top step, so the two icon states agree.
-            iconImageView.contentTintColor = NSColor(designSystemColor: .destructivePrimary)
         }
         // Re-assert last, or an appearance change repaints a fill the style had hidden.
         apply(backgroundStyle)

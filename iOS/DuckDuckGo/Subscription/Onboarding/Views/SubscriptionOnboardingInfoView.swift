@@ -79,14 +79,6 @@ struct SubscriptionOnboardingInfoView: View {
         }
         return attributed
     }
-
-    private func underlinedLinks(in markdown: String) -> AttributedString {
-        var attributed = (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
-        for run in attributed.runs where run.link != nil {
-            attributed[run.range].underlineStyle = .single
-        }
-        return attributed
-    }
 }
 
 // MARK: - Header

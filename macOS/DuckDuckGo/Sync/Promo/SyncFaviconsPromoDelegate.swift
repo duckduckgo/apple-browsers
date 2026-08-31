@@ -20,35 +20,41 @@ import AppKit
 import Combine
 import DDGSync
 import Foundation
+import Persistence
 import PrivacyConfig
 import SyncUI_macOS
 
+struct SyncFaviconsPromoSettings: StoringKeys {
+    let didPresentLegacyDialog = StorageKey<Bool>(UserDefaultsKeys.syncDidPresentFaviconsFetcherOnboarding,
+                                                  assertionHandler: { _ in })
+}
+
 /// Presents the "Download Missing Icons?" dialog through the promo queue, offering to turn on
 /// automatic favicon fetching for bookmarks synced from other devices.
-///
-/// Shown only while the promo's feature flag is on, Sync UI is enabled, favicons fetching isn't
-/// already on, and the user is syncing with 2+ devices; confirming or dismissing both permanently
-/// retire the promo (there is no legacy "remind me later" behavior to preserve).
 final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
 
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing?
     private let syncBookmarksAdapter: SyncBookmarksAdapter?
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let storage: KeyedStorage<SyncFaviconsPromoSettings>
 
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
     private var viewModel: FaviconsFetcherOnboardingViewModel?
     private var windowController: NSWindowController?
+    private var windowCloseObservers: [NSObjectProtocol] = []
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
 
     init(featureFlagger: FeatureFlagger,
          syncService: DDGSyncing?,
          syncBookmarksAdapter: SyncBookmarksAdapter?,
-         windowControllersManager: WindowControllersManagerProtocol) {
+         windowControllersManager: WindowControllersManagerProtocol,
+         storage: KeyedStorage<SyncFaviconsPromoSettings>? = nil) {
         self.featureFlagger = featureFlagger
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
         self.windowControllersManager = windowControllersManager
+        self.storage = storage ?? KeyedStorage(storage: UserDefaults.standard)
         refreshEligibility()
     }
 
@@ -72,9 +78,7 @@ final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        // Migration: retire for anyone who already saw (and dismissed, either way) the pre-Promo-Queue
-        // "Download Missing Icons?" dialog, recorded by this now-read-only legacy flag.
-        if !force, UserDefaultsWrapper(key: .syncDidPresentFaviconsFetcherOnboarding, defaultValue: false).wrappedValue {
+        if !force, storage.didPresentLegacyDialog == true {
             return .retired
         }
 
@@ -100,6 +104,8 @@ final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
                 self.resolve(with: self.dismissResult(enableFaviconsFetching: viewModel.isFaviconsFetchingEnabled))
             }
 
+            observeWindowClose([parentWindow, window])
+
             Task { @MainActor in
                 parentWindow.beginSheet(window)
             }
@@ -111,14 +117,22 @@ final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
         resolve(with: .noChange)
     }
 
-    /// Applies the "Keep Bookmarks Icons Updated" side effect (if chosen) and returns the result the
-    /// session should resolve with. Internal (rather than private) so the one-shot resolution semantics
-    /// can be tested directly without driving the actual sheet.
     func dismissResult(enableFaviconsFetching: Bool) -> PromoResult {
         guard enableFaviconsFetching else { return .ignored() }
         syncBookmarksAdapter?.isFaviconsFetchingEnabled = true
         syncService?.scheduler.notifyDataChanged()
         return .actioned
+    }
+
+    private func observeWindowClose(_ windows: [NSWindow]) {
+        windowCloseObservers = windows.map { window in
+            NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification,
+                                                   object: window,
+                                                   queue: .main) { [weak self] _ in
+                // Closing the window is declining, not a retraction.
+                self?.resolve(with: .ignored())
+            }
+        }
     }
 
     private func resolve(with result: PromoResult) {
@@ -129,6 +143,8 @@ final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
     }
 
     private func tearDown() {
+        windowCloseObservers.forEach { NotificationCenter.default.removeObserver($0) }
+        windowCloseObservers = []
         if let window = windowController?.window, let sheetParent = window.sheetParent {
             sheetParent.endSheet(window)
         }

@@ -32,6 +32,7 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
     private var ddgSyncing: MockDDGSyncing!
     private var syncBookmarksAdapter: SyncBookmarksAdapter!
     private var windowControllersManager: WindowControllersManagerMock!
+    private var storage: KeyedStorage<SyncFaviconsPromoSettings>!
     private var sut: SyncFaviconsPromoDelegate!
 
     private var bookmarksDatabase: CoreDataDatabase!
@@ -54,11 +55,13 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
                                                     syncErrorHandler: SyncErrorHandler())
         syncBookmarksAdapter.isEligibleForFaviconsFetcherOnboarding = true
         windowControllersManager = WindowControllersManagerMock()
+        storage = KeyedStorage(storage: InMemoryKeyValueStore())
         sut = makeSUT()
     }
 
     override func tearDown() {
         sut = nil
+        storage = nil
         windowControllersManager = nil
         syncBookmarksAdapter = nil
         ddgSyncing = nil
@@ -66,7 +69,6 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
         tearDownDatabase()
         UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsEligibleForFaviconsFetcherOnboarding.rawValue)
         UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsFaviconsFetcherEnabled.rawValue)
-        UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncDidPresentFaviconsFetcherOnboarding.rawValue)
         super.tearDown()
     }
 
@@ -74,7 +76,8 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
         SyncFaviconsPromoDelegate(featureFlagger: featureFlagger,
                                   syncService: ddgSyncing,
                                   syncBookmarksAdapter: syncBookmarksAdapter,
-                                  windowControllersManager: windowControllersManager)
+                                  windowControllersManager: windowControllersManager,
+                                  storage: storage)
     }
 
     private func setUpDatabase() {
@@ -125,13 +128,13 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
     }
 
     func testWhenSyncServiceIsNilThenNotEligible() {
-        sut = SyncFaviconsPromoDelegate(featureFlagger: featureFlagger, syncService: nil, syncBookmarksAdapter: syncBookmarksAdapter, windowControllersManager: windowControllersManager)
+        sut = SyncFaviconsPromoDelegate(featureFlagger: featureFlagger, syncService: nil, syncBookmarksAdapter: syncBookmarksAdapter, windowControllersManager: windowControllersManager, storage: storage)
 
         XCTAssertFalse(sut.isEligible)
     }
 
     func testWhenSyncBookmarksAdapterIsNilThenNotEligible() {
-        sut = SyncFaviconsPromoDelegate(featureFlagger: featureFlagger, syncService: ddgSyncing, syncBookmarksAdapter: nil, windowControllersManager: windowControllersManager)
+        sut = SyncFaviconsPromoDelegate(featureFlagger: featureFlagger, syncService: ddgSyncing, syncBookmarksAdapter: nil, windowControllersManager: windowControllersManager, storage: storage)
 
         XCTAssertFalse(sut.isEligible)
     }
@@ -158,7 +161,7 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
     }
 
     func testWhenLegacyDialogWasAlreadyShownThenShowRetiresThePromo() async {
-        UserDefaultsWrapper(key: .syncDidPresentFaviconsFetcherOnboarding, defaultValue: false).wrappedValue = true
+        storage.didPresentLegacyDialog = true
 
         let result = await sut.show(history: PromoHistoryRecord(id: PromoServiceFactory.syncFaviconsPromoID), force: false)
 
@@ -194,7 +197,7 @@ final class SyncFaviconsPromoDelegateTests: XCTestCase {
     }
 
     func testDismissResult_whenDependenciesAreNil_stillReturnsCorrectResultWithoutCrashing() {
-        sut = SyncFaviconsPromoDelegate(featureFlagger: featureFlagger, syncService: nil, syncBookmarksAdapter: nil, windowControllersManager: windowControllersManager)
+        sut = SyncFaviconsPromoDelegate(featureFlagger: featureFlagger, syncService: nil, syncBookmarksAdapter: nil, windowControllersManager: windowControllersManager, storage: storage)
 
         XCTAssertEqual(sut.dismissResult(enableFaviconsFetching: false), .ignored())
         XCTAssertEqual(sut.dismissResult(enableFaviconsFetching: true), .actioned)

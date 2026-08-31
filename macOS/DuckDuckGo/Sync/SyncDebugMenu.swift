@@ -18,6 +18,7 @@
 
 import AppKit
 import DDGSync
+import Persistence
 import Bookmarks
 
 final class SyncDebugMenu: NSMenu {
@@ -141,11 +142,8 @@ final class SyncDebugMenu: NSMenu {
         DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .aiChat, completion: nil)
     }
 
-    /// Clears the pre-Promo-Queue "already presented" flag, which the Sync Favicons promo still reads to
-    /// retire itself for users who saw the standalone dialog. Promo history is reset separately, from the
-    /// Promo Queue debug menu.
     @objc func resetFaviconsFetcherOnboardingDialog(_ sender: NSMenuItem) {
-        UserDefaultsWrapper<Bool?>(key: .syncDidPresentFaviconsFetcherOnboarding).clear()
+        KeyedStorage<SyncFaviconsPromoSettings>(storage: UserDefaults.standard).didPresentLegacyDialog = nil
     }
 
 }

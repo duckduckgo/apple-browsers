@@ -170,7 +170,7 @@ final class HistoryMenu: NSMenu {
         let oldMenuItems = recentlyVisitedMenuItems
         recentlyVisitedMenuItems = makeRecentlyVisitedMenuItems()
         insert(recentlyVisitedMenuItems, before: anchorSeparator)
-        oldMenuItems.filter { $0.menu === self }.forEach(removeItem)
+        removeMenuItems(oldItems: oldMenuItems)
     }
 
     private var anchorSeparator: NSMenuItem {
@@ -199,6 +199,10 @@ final class HistoryMenu: NSMenu {
             insertItem(menuItem, at: insertionIndex)
             insertionIndex += 1
         }
+    }
+
+    private func removeMenuItems(oldItems: [NSMenuItem]) {
+        oldItems.filter { $0.menu === self }.forEach(removeItem)
     }
 }
 

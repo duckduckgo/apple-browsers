@@ -154,6 +154,7 @@ final class BrowserToolbarView: UIView {
             return view
         }
     }()
+    private var materialInterfaceStyle: UIUserInterfaceStyle?
 
     private let buttonStack: UIStackView = {
         let stack = UIStackView()
@@ -439,6 +440,7 @@ final class BrowserToolbarView: UIView {
         ])
         
         updateCornerStyle()
+        scheduleHostedOmnibarMaterialRefresh()
     }
 
     func prepareForOmnibarDetachment() {
@@ -470,6 +472,7 @@ final class BrowserToolbarView: UIView {
 
     func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle) {
         guard isFloatingStyleEnabled else { return }
+        materialInterfaceStyle = interfaceStyle
         UIView.performWithoutAnimation {
             materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
             materialBackgroundView.effect = nil
@@ -480,10 +483,12 @@ final class BrowserToolbarView: UIView {
     }
 
     private func scheduleHostedOmnibarMaterialRefresh() {
+        guard isFloatingStyleEnabled else { return }
         let omnibarView = hostedOmnibarView as? DefaultOmniBarView
+        let interfaceStyle = materialInterfaceStyle
         DispatchQueue.main.async { [weak self, weak omnibarView] in
             guard let self, let omnibarView, hostedOmnibarView === omnibarView else { return }
-            omnibarView.refreshMaterialAppearance()
+            omnibarView.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
         }
     }
 

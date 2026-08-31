@@ -415,6 +415,25 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         }
     }
 
+    func testWhenToolbarMaterialAppearanceRefreshesThenHostedOmnibarUsesSettledStyle() {
+        let toolbar = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 390, height: 200))
+        toolbar.overrideUserInterfaceStyle = .light
+        toolbar.setFloatingStyleEnabled(true)
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        toolbar.setOmnibarView(barView, height: barView.expectedHeight)
+
+        toolbar.refreshMaterialAppearance(interfaceStyle: .dark)
+
+        let refreshCompleted = expectation(description: "Nested material refreshed")
+        DispatchQueue.main.async {
+            let glassView = self.firstGlassView(in: barView.searchContainer)
+            XCTAssertEqual(glassView?.overrideUserInterfaceStyle.rawValue, UIUserInterfaceStyle.dark.rawValue)
+            refreshCompleted.fulfill()
+        }
+        wait(for: [refreshCompleted], timeout: 1)
+    }
+
     func testWhenFloatingFieldMovesBetweenTopAndBottomThenContentRemainsInsideCurrentGlass() throws {
         let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)

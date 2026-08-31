@@ -973,6 +973,7 @@ extension SwipeTabsCoordinator {
         
         if scrollToSelected {
             scrollToCurrent()
+            collectionView.layoutIfNeeded()
         }
     }
 

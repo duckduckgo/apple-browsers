@@ -721,13 +721,21 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private lazy var glassEffect: UIVisualEffectView = makeGlassEffectView(configuration: desiredGlassConfiguration)
     private var glassEffectConfiguration: FloatingFieldGlassConfiguration?
+    private var embeddedGlassInterfaceStyle: UIUserInterfaceStyle?
 
     private var desiredGlassConfiguration: FloatingFieldGlassConfiguration {
         FloatingFieldGlassConfiguration(
             kind: isBottomFloatingField && !isFloatingMinimalChromeBar ? .embedded : .regular,
             fireMode: fireMode,
-            interfaceStyle: window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
+            interfaceStyle: desiredGlassInterfaceStyle
         )
+    }
+
+    private var desiredGlassInterfaceStyle: UIUserInterfaceStyle {
+        if isBottomFloatingField, !isFloatingMinimalChromeBar, let embeddedGlassInterfaceStyle {
+            return embeddedGlassInterfaceStyle
+        }
+        return window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
     }
 
     private func makeGlassEffectView(configuration: FloatingFieldGlassConfiguration) -> UIVisualEffectView {
@@ -742,6 +750,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 view = UIVisualEffectView(effect: effect)
                 view.cornerConfiguration = .capsule()
             }
+        }
+        if configuration.kind == .embedded {
+            view.overrideUserInterfaceStyle = configuration.interfaceStyle
         }
         return view
     }
@@ -890,7 +901,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         makeGlass()
     }
 
-    func refreshMaterialAppearance() {
+    func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle? = nil) {
+        if let interfaceStyle {
+            embeddedGlassInterfaceStyle = interfaceStyle
+        }
         glassEffectConfiguration = nil
         updateFireModeAppearance()
     }
@@ -1273,6 +1287,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
+        if isBottomFloatingField, !isFloatingMinimalChromeBar, !fireMode, let embeddedGlassInterfaceStyle {
+            glassEffect.overrideUserInterfaceStyle = embeddedGlassInterfaceStyle
+        }
         // When floating, the chrome (and the address text) lives inside `floatingGlassContentHostView`,
         // which in non-fire mode is reparented into `glassEffect.contentView` and so isn't reached by
         // the loop above. Apply the style directly so it resets to `.unspecified` in non-fire mode and

@@ -165,10 +165,6 @@ final class HistoryMenu: NSMenu {
 
     private var recentlyVisitedMenuItems = [NSMenuItem]()
 
-    /// Replaces the recently-visited section in place: the fresh items are inserted before the
-    /// old ones are removed, so that no separator is ever adjacent to another or trailing, not
-    /// even transiently. macOS 27 evaluates separator auto-hiding eagerly during item mutations
-    /// and latches the hidden state into the first render of a directly-clicked menu.
     @MainActor
     private func updateRecentlyVisited() {
         let oldMenuItems = recentlyVisitedMenuItems
@@ -177,8 +173,6 @@ final class HistoryMenu: NSMenu {
         oldMenuItems.filter { $0.menu === self }.forEach(removeItem)
     }
 
-    /// The recently-visited section sits directly above the bottom block,
-    /// whose leading separator anchors the insertion.
     private var anchorSeparator: NSMenuItem {
         location == .mainMenu ? showHistorySeparator : clearAllHistorySeparator
     }

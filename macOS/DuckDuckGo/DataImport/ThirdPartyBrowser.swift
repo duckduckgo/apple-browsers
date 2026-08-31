@@ -197,6 +197,10 @@ enum ThirdPartyBrowser: CaseIterable {
             let fm = FileManager()
             let profilesDirectories = self.profilesDirectories(applicationSupportURL: applicationSupportURL)
             return profilesDirectories.reduce(into: []) { result, profilesDir in
+                if fm.requiresReadPermission(atPath: profilesDir.path) {
+                    return
+                }
+
                 result.append(contentsOf: (try? fm.contentsOfDirectory(at: profilesDir,
                                                                        includingPropertiesForKeys: nil,
                                                                        options: [.skipsHiddenFiles])

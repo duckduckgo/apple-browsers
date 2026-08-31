@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Persistence
 
 enum SitePermissionsStorageKeyNames: String, StorageKeyDescribing {
@@ -45,6 +46,14 @@ public struct SitePermissionsSnapshot: Equatable, Sendable {
 public final class SitePermissionsStore {
 
     public typealias SitePermissionRecord = [SitePermissionType: SitePermissionDecision]
+
+    private let changesSubject = PassthroughSubject<Void, Never>()
+
+    /// Emits whenever a durable permission setting changes. The signal intentionally carries no
+    /// site value, so consumers recompute only their own context without broadcasting domains.
+    public var changesPublisher: AnyPublisher<Void, Never> {
+        changesSubject.eraseToAnyPublisher()
+    }
 
     private let storage: any KeyedStoring<SitePermissionsStoringKeys>
 
@@ -95,11 +104,13 @@ public final class SitePermissionsStore {
         guard defaults[permissionType.rawValue] != decision.rawValue else { return }
         defaults[permissionType.rawValue] = decision.rawValue
         storage.globalDefaults = defaults
+        changesSubject.send()
     }
 
     public func resetGlobalDefaults() {
         guard storage.globalDefaults != nil else { return }
         storage.removeValue(for: \.globalDefaults)
+        changesSubject.send()
     }
 
     @discardableResult
@@ -150,7 +161,7 @@ public final class SitePermissionsStore {
         guard record[permissionType.rawValue] != rawDecision else { return }
         record[permissionType.rawValue] = rawDecision
         permissions[site.host] = record
-        storage.perSitePermissions = permissions
+        storeRawSitePermissions(permissions)
     }
 
     private func removeSitePermissions(where shouldRemove: (String) -> Bool) -> SitePermissionsSnapshot {
@@ -176,5 +187,6 @@ public final class SitePermissionsStore {
         } else {
             storage.perSitePermissions = permissions
         }
+        changesSubject.send()
     }
 }

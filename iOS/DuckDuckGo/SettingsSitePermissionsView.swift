@@ -40,7 +40,7 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
 
     typealias UndoToastPresenter = (_ message: String, _ undo: @escaping () -> Void) -> Void
 
-    static let supportedPermissionTypes: [SitePermissionType] = [.camera, .microphone]
+    static let supportedPermissionTypes: [SitePermissionType] = [.location, .camera, .microphone]
 
     @Published private(set) var storedSites = [SitePermissionKey]()
     @Published private var globalDefaults = [SitePermissionType: GlobalSitePermissionDecision]()

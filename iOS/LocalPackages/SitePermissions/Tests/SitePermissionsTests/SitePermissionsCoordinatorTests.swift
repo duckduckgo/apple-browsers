@@ -162,6 +162,103 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         }
     }
 
+    func testPermissionQueryTransitionTableCoversEverySourceAndSystemState() async throws {
+        enum SourceState: CaseIterable, Equatable {
+            case noDecision
+            case storedAsk
+            case storedAllow
+            case storedDeny
+            case globalNever
+            case allowOnce
+            case denyOnce
+        }
+
+        let systemStates: [SystemPermissionAuthorizationState] = [
+            .notDetermined,
+            .authorized,
+            .denied,
+            .restricted,
+            .unavailable
+        ]
+        for sourceState in SourceState.allCases {
+            for systemState in systemStates {
+                let harness = try Harness()
+                switch sourceState {
+                case .noDecision:
+                    break
+                case .storedAsk:
+                    harness.store.resetDecision(for: .location, at: harness.site)
+                case .storedAllow:
+                    harness.store.setPersistentDecision(.allow, for: .location, at: harness.site)
+                case .storedDeny:
+                    harness.store.setPersistentDecision(.deny, for: .location, at: harness.site)
+                case .globalNever:
+                    harness.store.setGlobalDefault(.deny, for: .location)
+                case .allowOnce, .denyOnce:
+                    let activated = expectation(description: "Activate \(sourceState)")
+                    harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                        respond(sourceState == .allowOnce ? .allowOnce : .denyOnce)
+                    }, completion: { _ in activated.fulfill() })
+                    await fulfillment(of: [activated], timeout: 1)
+                }
+                harness.systemStates[.location] = systemState
+
+                let expectedState: SitePermissionQueryState
+                switch sourceState {
+                case .storedDeny, .globalNever, .denyOnce:
+                    expectedState = .denied
+                case .storedAllow, .allowOnce:
+                    expectedState = systemState == .authorized ? .granted : .denied
+                case .noDecision, .storedAsk:
+                    expectedState = .prompt
+                }
+
+                XCTAssertEqual(
+                    harness.coordinator.queryState(for: .location, context: harness.context),
+                    expectedState,
+                    "Unexpected query state for \(sourceState), OS \(systemState)"
+                )
+
+                var promptCount = 0
+                var resolution: SitePermissionResolution?
+                harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                    promptCount += 1
+                    respond(.denyOnce)
+                }, completion: { resolution = $0 })
+
+                switch expectedState {
+                case .prompt:
+                    XCTAssertEqual(promptCount, 1, "Expected one prompt for \(sourceState), OS \(systemState)")
+                    XCTAssertEqual(resolution, .deny(systemBlocks: []))
+                case .granted:
+                    XCTAssertEqual(promptCount, 0, "Granted state must not prompt for \(sourceState), OS \(systemState)")
+                    XCTAssertEqual(resolution, .grant)
+                case .denied:
+                    XCTAssertEqual(promptCount, 0, "Denied state must not prompt for \(sourceState), OS \(systemState)")
+                    guard case .some(.deny) = resolution else {
+                        XCTFail("Expected denial for \(sourceState), OS \(systemState); got \(String(describing: resolution))")
+                        continue
+                    }
+                }
+            }
+        }
+    }
+
+    func testManagerDenyWhilePromptIsPendingWinsWithoutBeingOverwritten() throws {
+        let harness = try Harness()
+        var respond: ((SitePermissionPromptDecision) -> Void)?
+        var resolution: SitePermissionResolution?
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, promptResponse in
+            respond = promptResponse
+        }, completion: { resolution = $0 })
+
+        harness.store.setPersistentDecision(.deny, for: .location, at: harness.site)
+        respond?(.allowWhileUsingSite)
+
+        XCTAssertEqual(resolution, .deny(systemBlocks: []))
+        XCTAssertEqual(harness.store.decision(for: .location, at: harness.site), .deny)
+    }
+
     func testPermissionQueryAndRequestBothRejectStaleContext() throws {
         let harness = try Harness()
         let staleContext = harness.context
@@ -575,6 +672,67 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(promptedTypes, [[.camera], [.microphone]])
         responders[1](.allowOnce)
         await fulfillment(of: [secondCompletion], timeout: 1)
+    }
+
+    func testWhenMediaPermissionsResetThenMediaDismissesBeforeQueuedLocationPrompts() throws {
+        let harness = try Harness()
+        var events = [String]()
+        var respondToMedia: ((SitePermissionPromptDecision) -> Void)?
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            events.append("media prompt")
+            respondToMedia = respond
+        }, completion: { _ in
+            XCTFail("The caller resolves canceled media bridge replies")
+        })
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+            events.append("location prompt")
+            respond(.denyOnce)
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .deny(systemBlocks: []))
+            events.append("location completion")
+        })
+
+        harness.coordinator.resetMediaPermissions {
+            events.append("media dismissal")
+        }
+
+        XCTAssertEqual(events, ["media prompt", "media dismissal", "location prompt", "location completion"])
+        try XCTUnwrap(respondToMedia)(.neverAllow)
+        XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
+    }
+
+    func testWhenMediaPermissionsResetThenActiveLocationAndItsSessionGrantSurvive() async throws {
+        let harness = try Harness()
+        var respondToLocation: ((SitePermissionPromptDecision) -> Void)?
+        let locationCompleted = expectation(description: "Location completes after media rollback")
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+            respondToLocation = respond
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .grant)
+            locationCompleted.fulfill()
+        })
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, _ in
+            XCTFail("Queued media requests must be discarded")
+        }, completion: { _ in
+            XCTFail("The caller resolves canceled media bridge replies")
+        })
+
+        harness.coordinator.resetMediaPermissions {
+            XCTFail("The active location prompt must remain visible")
+        }
+        try XCTUnwrap(respondToLocation)(.allowOnce)
+        await fulfillment(of: [locationCompleted], timeout: 1)
+
+        harness.coordinator.resetMediaPermissions {
+            XCTFail("No media presentation remains")
+        }
+        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
+        var nextLocationResolution: SitePermissionResolution?
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+            XCTFail("The location session grant must survive media rollback")
+        }, completion: { nextLocationResolution = $0 })
+        XCTAssertEqual(nextLocationResolution, .grant)
+        XCTAssertNil(harness.store.decision(for: .location, at: harness.site))
     }
 
     func testWhenFirstQueuedRequestChoosesNeverAllowThenSecondIsSilentlyDenied() throws {

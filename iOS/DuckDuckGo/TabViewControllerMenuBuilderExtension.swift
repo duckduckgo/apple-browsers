@@ -321,6 +321,10 @@ extension TabViewController {
 
         var entries = [BrowsingMenuEntry]()
 
+        if let sitePermissionsEntry = buildSitePermissionsEntry() {
+            entries.append(sitePermissionsEntry)
+        }
+
         let bookmarkEntries = buildBookmarkEntries(for: link, with: bookmarksInterface)
         entries.append(bookmarkEntries.bookmark)
         entries.append(bookmarkEntries.favorite)
@@ -348,6 +352,18 @@ extension TabViewController {
         entries.append(buildFindInPageEntry(forLink: link))
                 
         return entries
+    }
+
+    private func buildSitePermissionsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
+        guard isSitePermissionsManagementAvailable else { return nil }
+
+        return .regular(
+            name: UserText.sitePermissions,
+            image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.options : DesignSystemImages.Glyphs.Size24.options,
+            action: { [weak self] in
+                self?.presentSitePermissionsManagement()
+            }
+        )
     }
     
     private func buildAITabLinkEntries(useSmallIcon: Bool = true, addPrint: Bool = true, useDetailTextForZoom: Bool) -> [BrowsingMenuEntry] {
@@ -1140,6 +1156,10 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? {
         guard let link = validLink else { return nil }
         return buildBookmarkEntries(for: link, with: bookmarksInterface, useSmallIcon: false)
+    }
+
+    func makeSitePermissionsEntry() -> BrowsingMenuEntry? {
+        buildSitePermissionsEntry(useSmallIcon: false)
     }
     
     func makeFindInPageEntry() -> BrowsingMenuEntry? {

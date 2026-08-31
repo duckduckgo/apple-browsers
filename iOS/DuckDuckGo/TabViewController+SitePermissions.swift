@@ -24,10 +24,24 @@ import Combine
 import Core
 import FeatureFlags_iOS
 import Foundation
+import MetricBuilder
 import PrivacyConfig
 import SitePermissions
 import SwiftUI
 import WebKit
+
+private final class SitePermissionsManagementPresentationDelegate: NSObject, UIAdaptivePresentationControllerDelegate {
+
+    private let onDismiss: () -> Void
+
+    init(onDismiss: @escaping () -> Void) {
+        self.onDismiss = onDismiss
+    }
+
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        onDismiss()
+    }
+}
 
 // Keeps teardown independent of the controller's lifetime while confining permission state to this file.
 @MainActor
@@ -36,6 +50,10 @@ final class SitePermissionsState {
     fileprivate var mediaCaptureUserScript: MediaCaptureUserScript?
     fileprivate var dialogHostingController: UIViewController?
     fileprivate var recoveryHostingController: UIViewController?
+    fileprivate var managementHostingController: UIHostingController<SitePermissionsSheetView>?
+    fileprivate var managementViewModel: SitePermissionsSheetViewModel?
+    fileprivate var managementPresentationDelegate: SitePermissionsManagementPresentationDelegate?
+    fileprivate var managementCancellables = Set<AnyCancellable>()
     fileprivate var recoveryMessageView: ActionMessageView?
     fileprivate var recoveryCompletion: (() -> Void)?
     fileprivate var recoveryToken: UInt?
@@ -118,11 +136,51 @@ final class SitePermissionsState {
         completion?()
     }
 
+    fileprivate func handleManagementDismissal(_ dismissal: SitePermissionsSheetDismissal) {
+        if dismissal == .dirty {
+            eventHandler(.permissionCenterDismissedDirty)
+        }
+
+        managementCancellables.removeAll()
+        guard let hostingController = managementHostingController else {
+            clearManagementPresentation()
+            return
+        }
+        if hostingController.presentingViewController != nil {
+            hostingController.dismiss(animated: true) { [weak self, weak hostingController] in
+                guard let self, let hostingController,
+                      self.managementHostingController === hostingController else {
+                    return
+                }
+                self.clearManagementPresentation()
+            }
+        } else {
+            clearManagementPresentation()
+        }
+    }
+
+    fileprivate func dismissManagement() {
+        if let managementViewModel {
+            managementViewModel.dismiss()
+        } else if let managementHostingController {
+            managementHostingController.dismiss(animated: false)
+            clearManagementPresentation()
+        }
+    }
+
+    fileprivate func clearManagementPresentation() {
+        managementCancellables.removeAll()
+        managementHostingController = nil
+        managementViewModel = nil
+        managementPresentationDelegate = nil
+    }
+
     fileprivate func resetRequests(for pageChange: SitePermissionPageChange) {
         dismissDialog()
         denyPendingBridgeRequests()
         handledBridgeRequestIDs.removeAll()
         mediaCapturePreapprovals.removeAll()
+        dismissManagement()
         coordinator?.pageDidChange(pageChange)
         dismissRecovery()
     }
@@ -152,6 +210,7 @@ final class SitePermissionsState {
         denyPendingBridgeRequests()
         handledBridgeRequestIDs.removeAll()
         mediaCapturePreapprovals.removeAll()
+        dismissManagement()
         coordinator?.close()
         dismissRecovery()
         coordinator = nil
@@ -300,6 +359,218 @@ extension TabViewController {
             return
         }
         decisionHandler(.grant)
+    }
+
+    var isSitePermissionsManagementAvailable: Bool {
+        guard featureFlagger.isFeatureOn(.sitePermissions),
+              let site = currentSitePermissionKey(),
+              let dependencies = sitePermissionsDependenciesProvider() else {
+            return false
+        }
+
+        let storedPermissions = dependencies.store.permissions(for: site)
+        if storedPermissions[.camera] != nil || storedPermissions[.microphone] != nil {
+            return true
+        }
+
+        return sitePermissionsState.coordinator?.managementSnapshot(for: site).showsMenuEntry == true
+    }
+
+    func presentSitePermissionsManagement() {
+        guard sitePermissionsState.managementHostingController == nil,
+              isSitePermissionsManagementAvailable,
+              let site = currentSitePermissionKey(),
+              let dependencies = sitePermissionsDependenciesProvider(),
+              let coordinator = makeSitePermissionsCoordinatorIfNeeded(dependencies: dependencies) else {
+            return
+        }
+
+        let snapshot = coordinator.managementSnapshot(for: site)
+        guard snapshot.showsMenuEntry else { return }
+
+        let viewModel = SitePermissionsSheetViewModel(
+            snapshot: snapshot,
+            store: dependencies.store,
+            onDecisionChanged: { [weak self, weak coordinator] change in
+                guard let self else { return }
+                if self.tabModel.fireTab {
+                    coordinator?.applyFireModeManagementDecision(change.to, for: change.permissionType)
+                }
+                self.fireSitePermissionsEvent(
+                    .permissionCenterChanged(type: change.permissionType, from: change.from, to: change.to)
+                )
+            },
+            onRemovePermissions: { [weak self, weak coordinator] removal in
+                guard let self else { return }
+                coordinator?.removeManagementSessionState(for: removal.permissionTypes, at: site)
+                let restore: () -> Void
+                if self.tabModel.fireTab {
+                    restore = { [weak coordinator] in
+                        coordinator?.restoreFireModeManagementState(for: removal.permissionTypes, at: site)
+                    }
+                } else {
+                    restore = { [store = dependencies.store] in
+                        store.restore(removal.snapshot)
+                    }
+                }
+                self.presentSitePermissionsRemovalUndo(domain: site.host, restore: restore)
+                self.fireSitePermissionsEvent(.permissionRemoveSite)
+            },
+            onOpenSystemSettings: { [weak self] permissionTypes in
+                guard let self,
+                      let pixelPermissionType = SitePermissionsEvent.PermissionType(permissionTypes) else {
+                    return
+                }
+                self.fireSitePermissionsEvent(.permissionSystemSettingsOpened(type: pixelPermissionType))
+                self.openSitePermissionsSystemSettings()
+            },
+            onDismiss: { [weak sitePermissionsState] dismissal in
+                sitePermissionsState?.handleManagementDismissal(dismissal)
+            },
+            revokePermissions: { [weak self] permissionTypes in
+                self?.revokeSitePermissionsFromManagement(permissionTypes, for: site)
+            }
+        )
+        let hostingController = UIHostingController(rootView: SitePermissionsSheetView(viewModel: viewModel))
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
+        hostingController.modalTransitionStyle = .coverVertical
+        hostingController.modalPresentationStyle = DevicePlatform.isIpad ? .popover : .pageSheet
+
+        sitePermissionsState.managementViewModel = viewModel
+        sitePermissionsState.managementHostingController = hostingController
+        configureSitePermissionsManagementPresentation(for: hostingController)
+
+        let presentationDelegate = SitePermissionsManagementPresentationDelegate { [weak viewModel] in
+            viewModel?.dismiss()
+        }
+        sitePermissionsState.managementPresentationDelegate = presentationDelegate
+        hostingController.presentationController?.delegate = presentationDelegate
+        observeSitePermissionsManagement(coordinator: coordinator, site: site, viewModel: viewModel)
+
+        present(hostingController, animated: true) { [weak self, weak hostingController] in
+            guard let self,
+                  let hostingController,
+                  self.sitePermissionsState.managementHostingController === hostingController,
+                  hostingController.presentingViewController != nil else {
+                return
+            }
+            self.fireSitePermissionsEvent(.permissionCenterOpened)
+        }
+    }
+
+    private func observeSitePermissionsManagement(coordinator: SitePermissionsCoordinator,
+                                                  site: SitePermissionKey,
+                                                  viewModel: SitePermissionsSheetViewModel) {
+        sitePermissionsState.managementCancellables.removeAll()
+
+        coordinator.$captureStates
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self, weak coordinator, weak viewModel] _ in
+                guard let self, let coordinator, let viewModel else { return }
+                self.refreshSitePermissionsManagement(coordinator: coordinator, site: site, viewModel: viewModel)
+            }
+            .store(in: &sitePermissionsState.managementCancellables)
+
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self, weak coordinator, weak viewModel] _ in
+                guard let self, let coordinator, let viewModel else { return }
+                self.refreshSitePermissionsManagement(coordinator: coordinator, site: site, viewModel: viewModel)
+            }
+            .store(in: &sitePermissionsState.managementCancellables)
+    }
+
+    private func refreshSitePermissionsManagement(coordinator: SitePermissionsCoordinator,
+                                                  site: SitePermissionKey,
+                                                  viewModel: SitePermissionsSheetViewModel) {
+        guard featureFlagger.isFeatureOn(.sitePermissions), currentSitePermissionKey() == site else {
+            viewModel.dismiss()
+            return
+        }
+        viewModel.refresh(with: coordinator.managementSnapshot(for: site))
+    }
+
+    private func configureSitePermissionsManagementPresentation(for hostingController: UIHostingController<SitePermissionsSheetView>) {
+        let presentingWidth = view.frame.width
+
+        if let popover = hostingController.popoverPresentationController {
+            guard let sourceView = chromeDelegate?.omniBar.barView.menuButton ?? view else { return }
+            popover.sourceView = sourceView
+            popover.sourceRect = sourceView.bounds
+
+            let height = sitePermissionsManagementContentHeight(for: hostingController, width: 375)
+            hostingController.preferredContentSize = CGSize(width: 375, height: height)
+            if #available(iOS 16.4, *) {
+                hostingController.safeAreaRegions = [.container]
+            }
+            configureSitePermissionsManagementDetents(
+                popover.adaptiveSheetPresentationController,
+                hostingController: hostingController,
+                presentingWidth: presentingWidth
+            )
+        }
+
+        if let sheet = hostingController.sheetPresentationController {
+            configureSitePermissionsManagementDetents(
+                sheet,
+                hostingController: hostingController,
+                presentingWidth: presentingWidth
+            )
+        }
+    }
+
+    private func configureSitePermissionsManagementDetents(_ sheet: UISheetPresentationController,
+                                                           hostingController: UIHostingController<SitePermissionsSheetView>,
+                                                           presentingWidth: CGFloat) {
+        if #available(iOS 16.0, *) {
+            let contentHeight = sitePermissionsManagementContentHeight(for: hostingController, width: presentingWidth)
+            sheet.detents = [.custom { context in
+                min(contentHeight, context.maximumDetentValue * 0.9)
+            }]
+            sheet.prefersEdgeAttachedInCompactHeight = true
+            sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
+        } else {
+            sheet.detents = [.medium()]
+        }
+        sheet.prefersGrabberVisible = true
+        if #unavailable(iOS 26) {
+            sheet.preferredCornerRadius = SheetMetrics.cornerRadius
+        }
+    }
+
+    private func sitePermissionsManagementContentHeight(for hostingController: UIHostingController<SitePermissionsSheetView>,
+                                                        width: CGFloat) -> CGFloat {
+        guard #available(iOS 16.0, *) else { return 520 }
+        let sizingController = UIHostingController(rootView: hostingController.rootView)
+        sizingController.disableSafeArea()
+        return sizingController.sizeThatFits(in: CGSize(width: width, height: .infinity)).height
+    }
+
+    private func presentSitePermissionsRemovalUndo(domain: String, restore: @escaping () -> Void) {
+        ActionMessageView.present(
+            message: String(format: UserText.settingsSitePermissionsRemovedSiteFormat, domain),
+            actionTitle: UserText.actionGenericUndo,
+            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
+            onAction: { [weak self] in
+                restore()
+                self?.fireSitePermissionsEvent(.permissionRemoveUndo)
+            }
+        )
+    }
+
+    func revokeSitePermissions(_ permissionTypes: Set<SitePermissionType>, for site: SitePermissionKey) {
+        let committedSite = sitePermissionsState.committedMainFrameURL.flatMap(SitePermissionKey.init(committedURL:))
+        guard committedSite == site else { return }
+
+        webView.revokeSitePermissions(permissionTypes)
+        sitePermissionsState.coordinator?.revokeManagementSessionState(for: permissionTypes, at: site)
+    }
+
+    func revokeSitePermissionsFromManagement(_ permissionTypes: Set<SitePermissionType>, for site: SitePermissionKey) {
+        revokeSitePermissions(permissionTypes, for: site)
+        guard !tabModel.fireTab, let dependencies = sitePermissionsDependenciesProvider() else { return }
+        dependencies.revokePermissionsInOtherTabs(site, permissionTypes, tabModel.uid)
     }
 
     private func sitePermissionTypes(for captureType: WKMediaCaptureType) -> Set<SitePermissionType>? {
@@ -563,6 +834,7 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
         guard let userScript else {
             // Keep the reply handler alive for existing and back-forward-cached documents.
             sitePermissionsState.dismissDialog()
+            sitePermissionsState.dismissManagement()
             sitePermissionsState.coordinator?.pageDidChange(.navigation)
             sitePermissionsState.dismissRecovery()
             sitePermissionsState.bypassPendingBridgeRequests()

@@ -40,6 +40,7 @@ import SERPSettings
 import Networking
 import FeatureFlags_iOS
 import PixelKit
+import SitePermissions
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
@@ -174,6 +175,15 @@ final class SettingsViewModel: ObservableObject {
     /// `nil` unless a real `MainViewController` is available; the onboarding flow falls back to `SubscriptionOnboardingDuckAIChatLauncher` when unset.
     var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
+    @MainActor private var sitePermissionsStore: SitePermissionsStore?
+    @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
+    @MainActor private var sitePermissionsRevocationHandler: (SitePermissionKey, Set<SitePermissionType>) -> Void = { _, _ in }
+
+    @MainActor
+    private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
+        store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+        callbacks: makeSitePermissionsCallbacks()
+    )
 
     // View State
     @Published private(set) var state: SettingsState
@@ -1095,6 +1105,62 @@ final class SettingsViewModel: ObservableObject {
         startForwardingAdapterWillChangeEvents(lastTabShortcutAdapter)
     }
 
+    @MainActor
+    func configureSitePermissions(store: SitePermissionsStore,
+                                  eventHandler: @escaping (SitePermissionsEvent) -> Void,
+                                  revocationHandler: @escaping (SitePermissionKey, Set<SitePermissionType>) -> Void) {
+        sitePermissionsStore = store
+        sitePermissionsEventHandler = eventHandler
+        sitePermissionsRevocationHandler = revocationHandler
+    }
+
+    @MainActor
+    private func makeSitePermissionsCallbacks() -> SettingsSitePermissionsViewModel.Callbacks {
+        Self.makeSitePermissionsCallbacks(
+            eventHandler: sitePermissionsEventHandler,
+            revocationHandler: sitePermissionsRevocationHandler
+        )
+    }
+
+    @MainActor
+    static func makeSitePermissionsCallbacks(
+        eventHandler: @escaping (SitePermissionsEvent) -> Void,
+        revocationHandler: @escaping (SitePermissionKey, Set<SitePermissionType>) -> Void
+    ) -> SettingsSitePermissionsViewModel.Callbacks {
+        var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+        callbacks.didOpen = {
+            eventHandler(.settingsSitePermissionsOpen)
+        }
+        callbacks.didChangeGlobalDefault = { permissionType, decision in
+            eventHandler(
+                .settingsSitePermissionsGlobalChanged(type: permissionType, to: decision)
+            )
+        }
+        callbacks.didChangeSiteDecision = { permissionType, from, to in
+            eventHandler(
+                .permissionCenterChanged(type: permissionType, from: from, to: to)
+            )
+        }
+        callbacks.didOpenSystemSettings = {
+            eventHandler(
+                .permissionSystemSettingsOpened(type: .cameraAndMicrophone)
+            )
+        }
+        callbacks.didRequestRevocation = { site, permissionTypes in
+            revocationHandler(site, permissionTypes)
+        }
+        callbacks.didRemoveSite = {
+            eventHandler(.permissionRemoveSite)
+        }
+        callbacks.didRemoveAll = {
+            eventHandler(.permissionRemoveAll)
+        }
+        callbacks.didUndoRemoval = {
+            eventHandler(.permissionRemoveUndo)
+        }
+        return callbacks
+    }
+
     deinit {
         subscriptionSignOutObserver = nil
         textZoomObserver = nil
@@ -1160,6 +1226,7 @@ extension SettingsViewModel {
             voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
             speechRecognitionAvailable: voiceSearchHelper.isSpeechRecognizerAvailable,
             loginsEnabled: featureFlagger.isFeatureOn(.autofillAccessCredentialManagement),
+            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
             networkProtectionConnected: false,
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),

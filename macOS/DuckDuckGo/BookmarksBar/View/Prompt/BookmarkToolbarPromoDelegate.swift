@@ -19,7 +19,12 @@
 import AppKit
 import Combine
 import Foundation
+import Persistence
 import PrivacyConfig
+
+struct BookmarkToolbarPromoSettings: StoringKeys {
+    let didShowLegacyPopover = StorageKey<Bool>(UserDefaultsKeys.bookmarksBarPromptShown, assertionHandler: { _ in })
+}
 
 /// Presents the "Show Bookmarks Bar?" popover through the promo queue, offering to turn on the
 /// bookmarks bar after the user creates their first bookmark or imports bookmarks.
@@ -27,14 +32,18 @@ final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
 
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let storage: KeyedStorage<BookmarkToolbarPromoSettings>
 
     private var resultContinuation: CheckedContinuation<PromoResult, Never>?
     private weak var presentedBookmarksBarViewController: BookmarksBarViewController?
     private var pendingPresentation: DispatchWorkItem?
 
-    init(featureFlagger: FeatureFlagger, windowControllersManager: WindowControllersManagerProtocol) {
+    init(featureFlagger: FeatureFlagger,
+         windowControllersManager: WindowControllersManagerProtocol,
+         storage: KeyedStorage<BookmarkToolbarPromoSettings>? = nil) {
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
+        self.storage = storage ?? KeyedStorage(storage: UserDefaults.standard)
     }
 
     var isEligible: Bool {
@@ -53,7 +62,7 @@ final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        if !force, UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false).wrappedValue {
+        if !force, storage.didShowLegacyPopover == true {
             return .retired
         }
 

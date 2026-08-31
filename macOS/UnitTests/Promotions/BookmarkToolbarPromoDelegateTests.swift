@@ -17,6 +17,7 @@
 //
 
 import Combine
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
@@ -27,6 +28,7 @@ final class BookmarkToolbarPromoDelegateTests: XCTestCase {
 
     private var featureFlagger: MockFeatureFlagger!
     private var windowControllersManager: WindowControllersManagerMock!
+    private var storage: KeyedStorage<BookmarkToolbarPromoSettings>!
     private var sut: BookmarkToolbarPromoDelegate!
 
     override func setUp() {
@@ -34,19 +36,20 @@ final class BookmarkToolbarPromoDelegateTests: XCTestCase {
         featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.promoQueueBookmarkToolbarPromo]
         windowControllersManager = WindowControllersManagerMock()
+        storage = KeyedStorage(storage: InMemoryKeyValueStore())
         sut = makeSUT()
     }
 
     override func tearDown() {
         sut = nil
         windowControllersManager = nil
+        storage = nil
         featureFlagger = nil
-        UserDefaultsWrapper<Bool?>(key: .bookmarksBarPromptShown).clear()
         super.tearDown()
     }
 
     private func makeSUT() -> BookmarkToolbarPromoDelegate {
-        BookmarkToolbarPromoDelegate(featureFlagger: featureFlagger, windowControllersManager: windowControllersManager)
+        BookmarkToolbarPromoDelegate(featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, storage: storage)
     }
 
     // MARK: - Eligibility
@@ -78,7 +81,7 @@ final class BookmarkToolbarPromoDelegateTests: XCTestCase {
     }
 
     func testWhenLegacyPopoverWasAlreadyShownThenShowRetiresThePromo() async {
-        UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false).wrappedValue = true
+        storage.didShowLegacyPopover = true
 
         let result = await sut.show(history: PromoHistoryRecord(id: PromoServiceFactory.bookmarkToolbarPromoID), force: false)
 
@@ -86,7 +89,7 @@ final class BookmarkToolbarPromoDelegateTests: XCTestCase {
     }
 
     func testWhenLegacyPopoverWasAlreadyShownThenForceShowBypassesRetirement() async {
-        UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false).wrappedValue = true
+        storage.didShowLegacyPopover = true
 
         let result = await sut.show(history: PromoHistoryRecord(id: PromoServiceFactory.bookmarkToolbarPromoID), force: true)
 

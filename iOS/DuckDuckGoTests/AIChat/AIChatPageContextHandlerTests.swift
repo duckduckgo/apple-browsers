@@ -615,7 +615,10 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             mimeTypeProvider: { _ in "application/pdf" },
             extractionPixelHandler: extractionPixels,
             isDocumentContextEnabled: { true },
-            makeDocumentContext: { _, _, _ in .document(document) }
+            makeDocumentContext: { _, _, _ in
+                didReadDocument = true
+                return .document(document)
+            }
         )
 
         let expectation = XCTestExpectation(description: "Metadata published")
@@ -646,6 +649,8 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let mockScript = MockPageContextCollecting()
         let extractionPixels = MockPageContextExtractionPixelFiring()
         let pdfURL = URL(string: "https://example.com/spec.pdf")!
+        // Non-nil favicon so enrichWithFavicon's copy path runs and must keep the document's bytes/mimeType.
+        let encodedFavicon = "data:image/png;base64,\(Self.onePixelPNGBase64)"
         let document = AIChatPageContextData.document(
             title: "Spec",
             url: pdfURL.absoluteString,
@@ -655,6 +660,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         let handler = makeHandler(
             webViewProvider: { WKWebView() },
             userScriptProvider: { mockScript },
+            faviconProvider: { _ in encodedFavicon },
             attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
             currentURLProvider: { pdfURL },
             mimeTypeProvider: { _ in "application/pdf" },
@@ -668,8 +674,10 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         }
 
         XCTAssertEqual(mockScript.collectCallCount, 0)
-        XCTAssertEqual(received?.contextData.data, "JVBERi0=")
+        XCTAssertEqual(received?.contextData.data, "JVBERi0=", "Favicon enrichment must not drop document bytes")
         XCTAssertEqual(received?.contextData.mimeType, AIChatPageContextData.pdfMIMEType)
+        XCTAssertEqual(received?.contextData.favicon, [.init(href: encodedFavicon, rel: "icon")])
+        XCTAssertNotNil(received?.favicon, "Encoded favicon should decode to a UIImage")
         XCTAssertEqual(received?.title, "Spec")
         XCTAssertTrue(received?.contextData.hasAttachedPage ?? false)
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .success)

@@ -56,8 +56,6 @@ typealias PageContextURLProvider = () -> URL?
 /// `nil` when unknown (restored / cached / back-forward navigations with no observed response).
 typealias PageContextMIMETypeProvider = (URL) -> String?
 
-/// Reads a document tab into page context. Production uses `DocumentPageContextProvider.makeDocumentContext`;
-/// tests inject a stub so a user-attach can assert bytes without a real WKWebView PDF.
 typealias DocumentContextMaking = @MainActor (MainResourceDataProviding, URL, String) async -> DocumentPageContextProvider.Result
 
 // MARK: - Page Context Collection Protocol

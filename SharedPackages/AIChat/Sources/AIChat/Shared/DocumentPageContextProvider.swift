@@ -73,7 +73,7 @@ public enum DocumentPageContextProvider {
             favicon: favicon,
             url: url.absoluteString,
             mimeType: AIChatPageContextData.pdfMIMEType,
-            data: data.base64EncodedString()
+            data: await Task.detached(priority: .userInitiated) { data.base64EncodedString() }.value
         ))
     }
 

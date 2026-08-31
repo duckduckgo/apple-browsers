@@ -24,6 +24,36 @@ public enum DuckAiUsageWindow: String, CaseIterable {
     case weekly
 }
 
+/// Presentation only: which colour the usage ring draws in. Not a decision — web says which message
+/// to show, this just reads the percentage it sent.
+public enum DuckAiUsageSeverity: Int, Comparable {
+    case info
+    case warning
+    case critical
+    case reached
+
+    public static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
+
+    static func from(percentUsed: Int, reached: Bool) -> Self {
+        guard !reached else { return .reached }
+
+        switch percentUsed {
+        case 90...: return .critical
+        case 75...: return .warning
+        default: return .info
+        }
+    }
+
+    var loggingName: String {
+        switch self {
+        case .info: return "info"
+        case .warning: return "warning"
+        case .critical: return "critical"
+        case .reached: return "reached"
+        }
+    }
+}
+
 public enum DuckAiUsageResetInterval: Equatable {
     case days(Int)
     case hours(Int)
@@ -109,6 +139,7 @@ public struct DuckAiUsageWarning: Equatable {
     public let window: DuckAiUsageWindow
     public let message: DuckAiUsageMessage
     /// As sent: capped at 99 web-side until the limit is reached.
+    public let severity: DuckAiUsageSeverity
     public let percent: Int
     public let resetsIn: DuckAiUsageResetInterval
     public let isDismissible: Bool
@@ -118,6 +149,7 @@ public struct DuckAiUsageWarning: Equatable {
 
     public init(window: DuckAiUsageWindow,
                 message: DuckAiUsageMessage,
+                severity: DuckAiUsageSeverity,
                 percent: Int,
                 resetsIn: DuckAiUsageResetInterval,
                 isDismissible: Bool,
@@ -125,6 +157,7 @@ public struct DuckAiUsageWarning: Equatable {
                 offersModelPicker: Bool = false) {
         self.window = window
         self.message = message
+        self.severity = severity
         self.percent = percent
         self.resetsIn = resetsIn
         self.isDismissible = isDismissible

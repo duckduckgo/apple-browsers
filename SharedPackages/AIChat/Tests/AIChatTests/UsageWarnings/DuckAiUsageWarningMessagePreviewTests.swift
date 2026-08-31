@@ -105,6 +105,7 @@ final class DuckAiUsageWarningMessagePreviewTests: XCTestCase {
                          action: DuckAiUsageAction? = nil) -> DuckAiUsageWarning {
         DuckAiUsageWarning(window: window,
                            message: message,
+                           severity: message == .approaching ? .warning : .reached,
                            percent: percent,
                            resetsIn: .days(4),
                            isDismissible: message == .approaching,

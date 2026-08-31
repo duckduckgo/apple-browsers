@@ -64,6 +64,7 @@ public struct DuckAiUsageWarningResolver {
         let warning = DuckAiUsageWarning(
             window: notice.window,
             message: notice.id,
+            severity: .from(percentUsed: notice.percentUsed, reached: notice.reached),
             percent: notice.percentUsed,
             resetsIn: .from(now: now, resetsAt: notice.resetsAt),
             isDismissible: notice.dismissible,

@@ -50,7 +50,17 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     /// The ring tracks the real percentage, not the threshold rung it crossed.
     func test_message_approachingFillsTheRingToTheReportedPercentage() {
         XCTAssertEqual(sut.message(for: warning(.approaching, window: .weekly, percent: 76)).icon,
-                       .usageRing(progress: 0.76))
+                       .usageRing(progress: 0.76, severity: .warning))
+    }
+
+    /// The ring is colour-coded by rung — neutral, amber, then red — so the severity has to reach it.
+    func test_message_ringCarriesTheSeverityThatColoursIt() {
+        XCTAssertEqual(sut.message(for: warning(.approaching, window: .weekly, percent: 50, severity: .info)).icon,
+                       .usageRing(progress: 0.5, severity: .info))
+        XCTAssertEqual(sut.message(for: warning(.approaching, window: .weekly, percent: 75, severity: .warning)).icon,
+                       .usageRing(progress: 0.75, severity: .warning))
+        XCTAssertEqual(sut.message(for: warning(.approaching, window: .weekly, percent: 90, severity: .critical)).icon,
+                       .usageRing(progress: 0.9, severity: .critical))
     }
 
     func test_message_reachedShowsTheAlertIcon() {
@@ -84,27 +94,21 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     // MARK: - Action titles
 
-    func test_message_modelSwitchNamesTheSuggestedModel() {
-        let action = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
-                                                                          modelShortName: "5.4 mini"))
-        XCTAssertEqual(sut.message(for: warning(.approaching, window: .daily, action: action)).primaryAction?.title,
-                       "Switch to 5.4 mini")
-    }
+    /// Named or not, stepping down a tier or across to a free model — all one word.
+    func test_message_everyModelSwitchReadsSwitch() {
+        let named = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
+                                                                         modelShortName: "5.4 mini"))
+        let unnamed = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
+                                                                           modelShortName: nil))
+        let free = DuckAiUsageAction.switchToFreeModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
+                                                                            modelShortName: "5.4 mini"))
 
-    /// A suggestion can arrive without a display name, and "Switch to " with nothing after it would
-    /// be worse than a generic label.
-    func test_message_modelSwitchFallsBackWhenTheModelHasNoShortName() {
-        let action = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
-                                                                          modelShortName: nil))
-        XCTAssertEqual(sut.message(for: warning(.approaching, window: .daily, action: action)).primaryAction?.title,
-                       "Switch Model")
-    }
-
-    func test_message_freeModelSwitchUsesItsOwnCopyRatherThanTheModelName() {
-        let action = DuckAiUsageAction.switchToFreeModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
-                                                                              modelShortName: "5.4 mini"))
-        XCTAssertEqual(sut.message(for: warning(.weeklyReachedDegraded, window: .weekly, action: action)).primaryAction?.title,
-                       "Switch to a Free Model")
+        XCTAssertEqual(sut.message(for: warning(.approaching, window: .daily, action: named)).primaryAction?.title,
+                       "Switch")
+        XCTAssertEqual(sut.message(for: warning(.approaching, window: .daily, action: unnamed)).primaryAction?.title,
+                       "Switch")
+        XCTAssertEqual(sut.message(for: warning(.weeklyReachedDegraded, window: .weekly, action: free)).primaryAction?.title,
+                       "Switch")
     }
 
     func test_message_upsellCopyFollowsTrialEligibility() {
@@ -124,50 +128,61 @@ final class UTIFooterMessageMapperTests: XCTestCase {
                        "Start using weekly limit")
     }
 
-    /// Web sends one id for a free user whichever window ran out, so the window picks the noun.
+    /// One id whichever window ran out, so the window picks the noun.
     func test_message_freeReachedFollowsItsWindow() {
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily)).title, "Daily limit reached")
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .weekly)).title, "Weekly usage limit reached")
     }
 
-    /// How a switch with nothing usable to switch to renders, as well as a notice web sent no cta for.
     func test_message_noActionOffersNoButton() {
         XCTAssertNil(sut.message(for: warning(.weeklyReached, window: .weekly, action: nil)).primaryAction)
     }
 
-    // MARK: - Chevron and dismissal
-
-    func test_message_carriesTheModelPickerOfferThrough() {
-        let action = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
-                                                                          modelShortName: "5.4 mini"))
-        let offered = sut.message(for: warning(.approaching, window: .daily, action: action, offersModelPicker: true))
-        let notOffered = sut.message(for: warning(.dailyReached, window: .daily,
-                                                  action: .tryForFree(isTrialEligible: true)))
-
-        XCTAssertEqual(offered.primaryAction?.showsModelPicker, true)
-        XCTAssertEqual(notOffered.primaryAction?.showsModelPicker, false)
-    }
+    // MARK: - Dismissal
 
     func test_message_dismissibilityComesFromTheWarning() {
         XCTAssertTrue(sut.message(for: warning(.approaching, window: .weekly, isDismissible: true)).isDismissible)
         XCTAssertFalse(sut.message(for: warning(.weeklyReached, window: .weekly, isDismissible: false)).isDismissible)
     }
 
+    // MARK: - High-usage model notice
+
+    func test_message_highUsageNoticeNamesTheModel() {
+        XCTAssertEqual(sut.message(for: notice).title,
+                       "Opus 4.8 uses limits up to 2-5x faster than basic models.")
+    }
+
+    /// Keyed off the selected model, not the allowance, so there is no percentage and no reset line.
+    func test_message_highUsageNoticeShowsNoIconAndNoResetLine() {
+        XCTAssertEqual(sut.message(for: notice).icon, UTIFooterMessage.Icon.none)
+        XCTAssertNil(sut.message(for: notice).subtitle)
+    }
+
+    func test_message_highUsageNoticeOffersNoButton() {
+        XCTAssertNil(sut.message(for: notice).primaryAction)
+    }
+
+    func test_message_highUsageNoticeIsDismissible() {
+        XCTAssertTrue(sut.message(for: notice).isDismissible)
+    }
+
     // MARK: - Helpers
+
+    private let notice = DuckAiHighUsageModelNotice(modelId: "claude-opus-4-8", modelShortName: "Opus 4.8")
 
     private func warning(_ message: DuckAiUsageMessage,
                          window: DuckAiUsageWindow,
                          percent: Int = 100,
+                         severity: DuckAiUsageSeverity? = nil,
                          resetsIn: DuckAiUsageResetInterval = .days(1),
                          isDismissible: Bool = true,
-                         action: DuckAiUsageAction? = nil,
-                         offersModelPicker: Bool = false) -> DuckAiUsageWarning {
+                         action: DuckAiUsageAction? = nil) -> DuckAiUsageWarning {
         DuckAiUsageWarning(window: window,
                            message: message,
+                           severity: severity ?? (message == .approaching ? .warning : .reached),
                            percent: percent,
                            resetsIn: resetsIn,
                            isDismissible: isDismissible,
-                           action: action,
-                           offersModelPicker: offersModelPicker)
+                           action: action)
     }
 }

@@ -35,8 +35,6 @@ final class UTIModelSelector {
     struct ViewSurface {
         let setModelName: (String) -> Void
         let setModelPickerMenu: (UIMenu?) -> Void
-        /// The usage card's chevron pops its own menu — see `setFooterMenuOffersFreeModelsOnly`.
-        let setFooterModelPickerMenu: (UIMenu?) -> Void
         let setModelChipHidden: (Bool) -> Void
         let setSelectedReasoningMode: (AIChatReasoningMode?) -> Void
         let setReasoningButtonHidden: (Bool) -> Void
@@ -68,9 +66,6 @@ final class UTIModelSelector {
     private let view: ViewSurface
     private let environment: Environment
     private let callbacks: Callbacks
-    /// The card's picker applies the model itself, so the message it hangs off has to hear about it.
-    var onFooterModelSelected: (() -> Void)?
-    private var footerMenuOffersFreeModelsOnly = false
     private let modelMenuFactory: UnifiedToggleInputModelMenuFactory
     private let reasoningMenuFactory: UnifiedToggleInputReasoningMenuFactory
     private let reasoningAccessResolver: ReasoningModeAccessResolving
@@ -102,11 +97,9 @@ final class UTIModelSelector {
 
     // MARK: - Model selection
 
-    /// `true` when the model was applied; `false` when the row was gated and only opened the upsell.
-    @discardableResult
-    func handleModelSelection(_ modelId: String) -> Bool {
+    func handleModelSelection(_ modelId: String) {
         guard let model = modelStore.models.first(where: { $0.id == modelId }) else {
-            return false
+            return
         }
 
         if model.entityHasAccess {
@@ -120,13 +113,11 @@ final class UTIModelSelector {
                 pixelReporter.reportModelSelected(modelId: modelId)
             }
             callbacks.onModelApplied(modelId)
-            return true
         } else {
             if routeGatedModelSelection(model) {
                 pendingGatedModelId = modelId
             }
             refreshModelPickerMenuAfterRejectedSelection()
-            return false
         }
     }
 
@@ -267,40 +258,17 @@ final class UTIModelSelector {
             view.setModelName(shortName)
         }
         view.setModelPickerMenu(makeModelPickerMenu(selectedId: selectedId))
-        updateFooterModelPickerMenu()
     }
 
-    /// "Switch to a Free Model" must not offer the models whose allowance is spent; the toolbar's
-    /// picker still offers everything.
-    func setFooterMenuOffersFreeModelsOnly(_ freeModelsOnly: Bool) {
-        guard footerMenuOffersFreeModelsOnly != freeModelsOnly else { return }
-        footerMenuOffersFreeModelsOnly = freeModelsOnly
-        updateFooterModelPickerMenu()
-    }
-
-    private func updateFooterModelPickerMenu() {
-        view.setFooterModelPickerMenu(makeModelPickerMenu(selectedId: modelStore.persistedModelId,
-                                                          freeModelsOnly: footerMenuOffersFreeModelsOnly,
-                                                          onSelected: { [weak self] in self?.onFooterModelSelected?() }))
-    }
-
-    /// "Free" is the model's own `isAdvanced`, not what this account can reach: a paid user's advanced
-    /// models are exactly the ones they have run out of.
-    private func makeModelPickerMenu(selectedId: String?,
-                                     freeModelsOnly: Bool = false,
-                                     onSelected: (() -> Void)? = nil) -> UIMenu? {
-        let models = freeModelsOnly ? modelStore.models.filter { !$0.isAdvanced } : modelStore.models
-        guard !models.isEmpty else { return nil }
+    private func makeModelPickerMenu(selectedId: String?) -> UIMenu? {
+        guard !modelStore.models.isEmpty else { return nil }
 
         let onSelect: (String) -> Void = { [weak self] modelId in
-            // Only on a real switch: a gated row opens the upsell and leaves the model as it was.
-            if self?.handleModelSelection(modelId) == true {
-                onSelected?()
-            }
+            self?.handleModelSelection(modelId)
         }
 
         return modelMenuFactory.makeMenu(
-            models: models,
+            models: modelStore.models,
             selectedId: selectedId,
             userTier: modelStore.subscriptionState.userTier,
             freeTrialEligibility: modelStore.freeTrialEligibility,

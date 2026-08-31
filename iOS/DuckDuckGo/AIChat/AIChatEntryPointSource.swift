@@ -52,7 +52,7 @@ enum AIChatEntryPointPixel: PixelKit.Event {
     }
 }
 
-enum AIChatEntryPointSource: String {
+public enum AIChatEntryPointSource: String {
     case addressBarPrompt = "address_bar_prompt"
     case addressBarIcon = "address_bar_icon"
     case addressBarShortcutChip = "address_bar_shortcut_chip"

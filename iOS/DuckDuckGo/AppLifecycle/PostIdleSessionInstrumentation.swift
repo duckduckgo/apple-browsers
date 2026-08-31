@@ -77,6 +77,10 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// ignored for every other reason.
     func sessionEnded(reason: ReturnSessionWideEventData.StatusReason, promptOrigin: AIChatEntryPointSource?)
 
+    func promptSubmittedWithoutNavigation(origin: AIChatEntryPointSource?)
+
+    func duckAIOpenedWithoutPrompt()
+
     /// App was backgrounded with a session still active. Completes as CANCELLED.
     func sessionCancelledByBackground()
 }
@@ -169,26 +173,16 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
 
     func sessionEnded(reason: ReturnSessionWideEventData.StatusReason, promptOrigin: AIChatEntryPointSource?) {
         let now = dateProvider()
+        completeReturnSession(reason: reason, promptOrigin: promptOrigin, at: now)
+        completePostIdleSession(reason: reason, at: now)
+    }
 
-        if let globalID = returnSessionID,
-           let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID) {
-            data.statusReason = reason
-            data.promptOrigin = reason == .aiPromptSubmitted ? promptOrigin?.rawValue : nil
-            data.sessionInterval.end = now
-            markFirstInteractionIfNeeded(on: data, at: now)
-            wideEvent.completeFlow(data, status: .success(reason: reason.rawValue), onComplete: { _, _ in })
-        }
-        returnSessionID = nil
+    func promptSubmittedWithoutNavigation(origin: AIChatEntryPointSource?) {
+        completeReturnSession(reason: .aiPromptSubmitted, promptOrigin: origin, at: dateProvider())
+    }
 
-        if let globalID = postIdleSessionID,
-           let data = wideEvent.getFlowData(PostIdleSessionWideEventData.self, globalID: globalID) {
-            let postIdleReason = reason.postIdleReason
-            data.statusReason = postIdleReason
-            data.sessionInterval.end = now
-            markFirstInteractionIfNeeded(on: data, at: now)
-            wideEvent.completeFlow(data, status: .success(reason: postIdleReason.rawValue), onComplete: { _, _ in })
-        }
-        postIdleSessionID = nil
+    func duckAIOpenedWithoutPrompt() {
+        completePostIdleSession(reason: .aiPromptSubmitted, at: dateProvider())
     }
 
     func sessionCancelledByBackground() {
@@ -212,6 +206,32 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     }
 
     // MARK: - Helpers
+
+    private func completeReturnSession(reason: ReturnSessionWideEventData.StatusReason,
+                                       promptOrigin: AIChatEntryPointSource?,
+                                       at now: Date) {
+        if let globalID = returnSessionID,
+           let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID) {
+            data.statusReason = reason
+            data.promptOrigin = reason == .aiPromptSubmitted ? promptOrigin?.rawValue : nil
+            data.sessionInterval.end = now
+            markFirstInteractionIfNeeded(on: data, at: now)
+            wideEvent.completeFlow(data, status: .success(reason: reason.rawValue), onComplete: { _, _ in })
+        }
+        returnSessionID = nil
+    }
+
+    private func completePostIdleSession(reason: ReturnSessionWideEventData.StatusReason, at now: Date) {
+        if let globalID = postIdleSessionID,
+           let data = wideEvent.getFlowData(PostIdleSessionWideEventData.self, globalID: globalID) {
+            let postIdleReason = reason.postIdleReason
+            data.statusReason = postIdleReason
+            data.sessionInterval.end = now
+            markFirstInteractionIfNeeded(on: data, at: now)
+            wideEvent.completeFlow(data, status: .success(reason: postIdleReason.rawValue), onComplete: { _, _ in })
+        }
+        postIdleSessionID = nil
+    }
 
     private func completeOrphanedFlows() {
         for orphan in wideEvent.getAllFlowData(ReturnSessionWideEventData.self) {

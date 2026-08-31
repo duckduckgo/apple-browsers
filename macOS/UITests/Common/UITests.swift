@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
-import ObjectiveC
-import SharedTestUtilities
 import Carbon
+import Foundation
+import ObjectiveC
+import os.log
+import SharedTestUtilities
+import XCTest
 
 /// Helper values for the UI tests
 enum UITests {
@@ -106,16 +107,8 @@ enum UITests {
         app.typeKey("w", modifierFlags: [.command, .option])
     }
 
-    static func dismissNotificationCenterMessages() {
-        let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
-        if notificationCenter.exists { // If tests-server is asking for network permissions, deny them.
-            notificationCenter.typeKey(.escape, modifierFlags: [])
-        }
-    }
-
     /// Avoid some first-run states that we aren't testing.
     static func firstRun(_ callback: (XCUIApplication) -> Void = { _ in }) {
-        dismissNotificationCenterMessages()
         let app = XCUIApplication.setUp()
         app.typeKey("n", modifierFlags: .command)
         callback(app)
@@ -125,10 +118,35 @@ enum UITests {
 }
 
 class TestFailureObserver: NSObject, XCTestObservation {
+
     func testCase(_ testCase: XCTestCase, didRecord issue: XCTIssue) {
-        print("Failed test with name: \(testCase.name)")
+        guard !issue.description.hasPrefix("Runtime Issue:") else {
+            Logger.log("🟣 \(issue)")
+            return
+        }
+        Logger.log("🔴 Issue recorded: \(issue)")
+        if XCUIApplication.notificationCenter.buttons.firstMatch.exists {
+            let descr = (try? XCUIApplication.notificationCenter.snapshot().toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar])) ??? "<nil>"
+            Logger.log("⚠️ TCC prompt shown: \(descr)")
+        }
+        Logger.log("🌐 tests-server \(Self.probeTestsServer())")
         let screenshotName = "\(testCase.name)-failure"
         testCase.takeScreenshot(screenshotName)
+    }
+
+    private static func probeTestsServer() -> String {
+        let url = URL.testsServer.appendingTestParameters(data: Data("ok".utf8))
+        var result: String?
+        let session = URLSession(configuration: .ephemeral)
+        session.dataTask(with: URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)) { data, response, error in
+            let status = (response as? HTTPURLResponse)?.statusCode ??? "nil"
+            result = "status=\(status) error=\(error ??? "nil") body=\(data.flatMap { String(data: $0, encoding: .utf8) } ??? "nil")"
+        }.resume()
+        let deadline = Date().addingTimeInterval(UITests.Timeouts.elementExistence)
+        while result == nil, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+        return result ?? "timeout"
     }
 }
 
@@ -139,7 +157,12 @@ class UITestCase: XCTestCase {
     private static let failureObserver = TestFailureObserver()
     private var cleanupPaths: Set<String> = []
 
+    private static var didCallFirstRun = false
+    private static var systemPermissionPromptPollingTimer: Timer?
+    var isSystemPermissionPromptPollingTimerEnabled: Bool { true }
+
     override class func setUp() {
+        Logger.log("🟠 class \(self.self).setUp()")
         // Set up method swizzling to enable precise keyboard/mouse event simulation.
         // This allows tests to simulate "hold key" scenarios (keyDown/keyUp with proper timing)
         // and middle-click events that aren't directly supported by XCTest's standard APIs.
@@ -147,13 +170,53 @@ class UITestCase: XCTestCase {
         _ = XCUIDevice.swizzlePerformWithKeyModifiersOnce
         super.setUp()
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
+    }
 
-        Logger.log("Resetting environment for the first run")
-        UITests.firstRun()
+    /// System TCC alerts can appear asynchronously mid-test and steal key focus. A repeating timer
+    /// on the main run loop fires during XCTest waits and dismisses them before the next click.
+    private func startSystemPermissionPromptDismissTimerIfNeeded() {
+        guard Self.systemPermissionPromptPollingTimer == nil else { return }
+
+        let timer = Timer(timeInterval: 5, repeats: true) { _ in
+            Logger.log("⏰ Checking for TCC prompts")
+            _ = XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        Self.systemPermissionPromptPollingTimer = timer
     }
 
     override class func tearDown() {
+        systemPermissionPromptPollingTimer?.invalidate()
+        systemPermissionPromptPollingTimer = nil
         XCTestObservationCenter.shared.removeTestObserver(failureObserver)
+        super.tearDown()
+    }
+
+    // Handles both super.setUp() and super.setUpWithError() calls.
+    override func setUpWithError() throws {
+        Logger.log("🟠 \(self.className).setUpWithError()")
+        try super.setUpWithError()
+
+        continueAfterFailure = false
+
+        addUIInterruptionMonitor(withDescription: "Interruption Monitor") { element in
+            Logger.log("🟠 Received interruption event: \((try? element.snapshot().toDictionary()) ??? "<nil>")")
+            return XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
+        }
+
+        if isSystemPermissionPromptPollingTimerEnabled {
+            startSystemPermissionPromptDismissTimerIfNeeded()
+        }
+        if !Self.didCallFirstRun {
+            Self.didCallFirstRun = true
+            Logger.log("🥇 Resetting environment for the first run")
+            UITests.firstRun()
+        }
+    }
+
+    override func tearDown() {
+        cleanupTrackedFiles()
+        cleanupPaths.removeAll()
         super.tearDown()
     }
 
@@ -277,24 +340,6 @@ extension UITestCase {
         set {}
     }
 
-    override func setUp() {
-        super.setUp()
-        // The macOS "find devices on local networks?" permission prompt is a TCC alert owned by
-        // another process. It can surface asynchronously mid-test, float above our window and
-        // steal focus, making the next interaction fail at a nondeterministic point. XCTest invokes
-        // this monitor when it detects an interaction being interrupted; the paired proactive
-        // `dismissLocalNetworkPromptIfPresent` calls cover the gaps where the monitor doesn't fire.
-        addUIInterruptionMonitor(withDescription: "Local Network Permission") { _ in
-            XCUIApplication.dismissLocalNetworkPromptIfPresent()
-        }
-    }
-
-    override func tearDown() {
-        cleanupTrackedFiles()
-        cleanupPaths.removeAll()
-        super.tearDown()
-    }
-
     static func log(_ message: String) {
         Logger.log(message)
     }
@@ -393,11 +438,7 @@ extension UITestCase {
 }
 
 struct Logger {
-    static var debug: Logger = Logger()
-
-    func log(_ message: String) {
-        Logger.log(message)
-    }
+    private static let logger = os.Logger()
 
     /// Log a debug message using XCTest's private debug log handler
     /// - Parameter message: The message to log
@@ -411,6 +452,8 @@ struct Logger {
         // Escape any %-escaped values in the message before passing it as the format string
         let escapedMessage = message.replacingOccurrences(of: "%", with: "%%")
         _ = context.perform(logFormatSelector, with: escapedMessage)
+
+        logger.log(level: .info, "\(message)")
     }
 }
 

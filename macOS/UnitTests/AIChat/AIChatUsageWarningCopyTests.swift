@@ -113,6 +113,7 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
                          action: DuckAiUsageAction? = nil) -> DuckAiUsageWarning {
         DuckAiUsageWarning(window: window,
                            message: message,
+                           severity: message == .approaching ? .warning : .reached,
                            percent: percent,
                            resetsIn: resetsIn,
                            isDismissible: message == .approaching,

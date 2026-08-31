@@ -20,7 +20,8 @@
 import AIChat
 import Foundation
 
-/// The module's `messagePreview` is debug-log-only, so the user-facing strings come from here.
+/// The card's copy. `DuckAiUsageWarning` has already decided what to say and what to offer; the
+/// module's own `messagePreview` is debug-log-only, so the user-facing strings come from here.
 struct UTIFooterMessageMapper {
 
     private let resetDescriber: UTIFooterResetDescriber
@@ -39,11 +40,21 @@ struct UTIFooterMessageMapper {
         )
     }
 
-    /// A reached limit reads as an alert rather than a full ring.
+    func message(for notice: DuckAiHighUsageModelNotice) -> UTIFooterMessage {
+        UTIFooterMessage(
+            icon: .none,
+            title: String(format: UserText.utiDuckAIWarningsHighUsageModel, notice.modelShortName),
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: true
+        )
+    }
+
+    /// The ring tracks the real percentage; a reached limit reads as an alert rather than a full ring.
     private static func icon(for warning: DuckAiUsageWarning) -> UTIFooterMessage.Icon {
         switch warning.message {
         case .approaching:
-            return .usageRing(progress: Double(warning.percent) / 100)
+            return .usageRing(progress: Double(warning.percent) / 100, severity: warning.severity)
         case .freeReached, .dailyReached, .weeklyReached, .weeklyReachedDegraded:
             return .alert
         }
@@ -73,7 +84,7 @@ struct UTIFooterMessageMapper {
 
     private static func primaryAction(for warning: DuckAiUsageWarning) -> UTIFooterMessage.PrimaryAction? {
         guard let title = actionTitle(for: warning.action) else { return nil }
-        return UTIFooterMessage.PrimaryAction(title: title, showsModelPicker: warning.offersModelPicker)
+        return UTIFooterMessage.PrimaryAction(title: title)
     }
 
     /// `nil` hides the button, which is also how a switch with nothing to switch to renders.
@@ -81,11 +92,8 @@ struct UTIFooterMessageMapper {
         switch action {
         case .none:
             return nil
-        case .switchToModel(let suggestion):
-            return suggestion.modelShortName.map { String(format: UserText.utiDuckAIWarningsSwitchToModel, $0) }
-                ?? UserText.utiDuckAIWarningsSwitchModel
-        case .switchToFreeModel:
-            return UserText.utiDuckAIWarningsSwitchToFreeModel
+        case .switchToModel, .switchToFreeModel:
+            return UserText.utiDuckAIWarningsSwitch
         case .tryForFree(let isTrialEligible):
             return isTrialEligible ? UserText.utiDuckAIWarningsTryForFree : UserText.utiDuckAIWarningsSubscribe
         case .startUsingWeeklyLimit:

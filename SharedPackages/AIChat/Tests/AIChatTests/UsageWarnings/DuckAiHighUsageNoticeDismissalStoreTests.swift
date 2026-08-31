@@ -70,6 +70,16 @@ final class DuckAiHighUsageNoticeDismissalStoreTests: XCTestCase {
         XCTAssertEqual(stored, ["claude-opus-4-8"])
     }
 
+    func testWhenDismissalsAreClearedThenEveryModelIsShownAgain() {
+        sut.setDismissed(modelId: "claude-opus-4-8")
+        sut.setDismissed(modelId: "some-future-model")
+
+        sut.clearDismissals()
+
+        XCTAssertFalse(sut.isDismissed(modelId: "claude-opus-4-8"))
+        XCTAssertFalse(sut.isDismissed(modelId: "some-future-model"))
+    }
+
     /// Unreadable reads as "not dismissed": showing the notice again is the safe failure.
     func testWhenTheStoredValueIsUnreadableThenNothingIsDismissed() {
         try? keyValueStore.set("not a list", forKey: "aichat.high-usage-notice.dismissed-models")

@@ -347,6 +347,13 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
             + view.subviews.reduce(0) { $0 + glassViewCount(in: $1) }
     }
 
+    private func floatingContentHost(in view: UIView) -> DefaultOmniBarView.FloatingGlassContentHostView? {
+        if let host = view as? DefaultOmniBarView.FloatingGlassContentHostView {
+            return host
+        }
+        return view.subviews.lazy.compactMap(floatingContentHost(in:)).first
+    }
+
     func testWhenFloatingMinimalChromeBarEnabledThenLeadingAndTrailingGlassGroupsAreAddedAndRemoved() {
         let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
@@ -391,6 +398,87 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertEqual(glassView.frame, searchContainer.bounds)
     }
 
+    func testWhenFloatingFieldIsAtBottomThenContentIsHostedInsideUntintedGlass() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.isUsingSmallTopSpacing = true
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let glassView = try XCTUnwrap(firstGlassView(in: searchContainer))
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+
+        XCTAssertTrue(contentHost.isDescendant(of: glassView.contentView))
+        XCTAssertEqual(searchContainer.backgroundColor, .clear)
+        if #available(iOS 26.0, *) {
+            XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
+        }
+    }
+
+    func testWhenToolbarMaterialAppearanceRefreshesThenHostedOmnibarUsesSettledStyle() {
+        let toolbar = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 390, height: 200))
+        toolbar.overrideUserInterfaceStyle = .light
+        toolbar.setFloatingStyleEnabled(true)
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        toolbar.setOmnibarView(barView, height: barView.expectedHeight)
+
+        toolbar.refreshMaterialAppearance(interfaceStyle: .dark)
+
+        let refreshCompleted = expectation(description: "Nested material refreshed")
+        DispatchQueue.main.async {
+            let glassView = self.firstGlassView(in: barView.searchContainer)
+            XCTAssertEqual(glassView?.overrideUserInterfaceStyle.rawValue, UIUserInterfaceStyle.dark.rawValue)
+            refreshCompleted.fulfill()
+        }
+        wait(for: [refreshCompleted], timeout: 1)
+    }
+
+    func testWhenFloatingFieldMovesBetweenTopAndBottomThenContentRemainsInsideCurrentGlass() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+        let initialTopGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
+        XCTAssertTrue(contentHost.isDescendant(of: initialTopGlass.contentView))
+
+        barView.isUsingSmallTopSpacing = true
+        let bottomGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
+        XCTAssertFalse(bottomGlass === initialTopGlass)
+        XCTAssertTrue(contentHost.isDescendant(of: bottomGlass.contentView))
+
+        barView.isUsingSmallTopSpacing = false
+        let secondTopGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
+        XCTAssertFalse(secondTopGlass === bottomGlass)
+        XCTAssertTrue(contentHost.isDescendant(of: secondTopGlass.contentView))
+
+        barView.isUsingSmallTopSpacing = true
+        let secondBottomGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
+        XCTAssertFalse(secondBottomGlass === secondTopGlass)
+        XCTAssertTrue(contentHost.isDescendant(of: secondBottomGlass.contentView))
+        XCTAssertEqual(glassViewCount(in: searchContainer), 1)
+    }
+
+    func testWhenBottomFloatingFieldLeavesFireModeThenContentReturnsToGlass() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.isUsingSmallTopSpacing = true
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+
+        barView.refreshFireMode(fireMode: true)
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertFalse(searchContainer.backgroundColor == .clear)
+
+        barView.refreshFireMode(fireMode: false)
+        let glassView = try XCTUnwrap(firstGlassView(in: searchContainer))
+        XCTAssertTrue(contentHost.isDescendant(of: glassView.contentView))
+        XCTAssertEqual(searchContainer.backgroundColor, .clear)
+    }
+
     func testWhenGlassAppearanceIsUnchangedThenMakingGlassPreservesGlassView() throws {
         let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
@@ -400,6 +488,18 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         barView.makeGlass()
 
         XCTAssertTrue(firstGlassView(in: barView.searchContainer) === glassView)
+    }
+
+    func testWhenMaterialAppearanceRefreshesThenGlassViewIsRebuilt() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.isUsingSmallTopSpacing = true
+        barView.layoutIfNeeded()
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        barView.refreshMaterialAppearance()
+
+        XCTAssertFalse(firstGlassView(in: barView.searchContainer) === glassView)
     }
 
     func testWhenFireModeChangesThenGlassViewIsRebuilt() throws {

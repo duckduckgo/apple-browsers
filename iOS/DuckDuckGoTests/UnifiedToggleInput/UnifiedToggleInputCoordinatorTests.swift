@@ -2742,7 +2742,33 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         coordinator.handleToolsMenuSelection(.imageGeneration)
 
-        XCTAssertEqual(coordinator.modelStore.persistedModelId, "gpt-5.6-luna")
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "image-capable")
+        XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
+    }
+
+    func test_selectingCreateImage_landsOnExactlyTheModelTheResolverProposed() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+        let proposed = coordinator.modelStore.imageGenerationFallbackModel?.id
+        XCTAssertNotNil(proposed)
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, proposed)
+    }
+
+    func test_selectingCreateImage_prefersTheEndorsedImageCapableModel() {
+        let coordinator = makeCreateImageCoordinator()
+        coordinator.modelStore.models = [
+            makeModel(id: "mistral", access: true),
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "endorsed-image-model", access: true, supportedTools: [.imageGeneration], label: .everydayUse)
+        ]
+        coordinator.modelStore.updateSelectedModel("mistral", isNewChatContext: true)
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "endorsed-image-model")
         XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
     }
 
@@ -2787,7 +2813,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         let coordinator = makeCreateImageCoordinator()
         coordinator.modelStore.models = [
             makeModel(id: "mistral", access: true),
-            makeModel(id: "gpt-5.6-luna", access: false, supportedTools: [.imageGeneration])
+            makeModel(id: "image-capable", access: false, supportedTools: [.imageGeneration])
         ]
         coordinator.modelStore.updateSelectedModel("mistral", isNewChatContext: true)
 
@@ -2813,12 +2839,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         let coordinator = makeCreateImageCoordinator()
         seedModels(coordinator, selecting: "mistral")
         coordinator.handleToolsMenuSelection(.imageGeneration)
-        XCTAssertEqual(coordinator.modelStore.persistedModelId, "gpt-5.6-luna")
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "image-capable")
 
         coordinator.handleToolsMenuSelection(.imageGeneration)
 
         XCTAssertNil(coordinator.selectedTool)
-        XCTAssertEqual(coordinator.modelStore.persistedModelId, "gpt-5.6-luna")
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "image-capable")
     }
 
     // MARK: - "New Image" from the chat header
@@ -2829,7 +2855,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         coordinator.selectTool(.imageGeneration)
 
-        XCTAssertEqual(coordinator.modelStore.persistedModelId, "gpt-5.6-luna")
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "image-capable")
         XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
     }
 
@@ -2925,7 +2951,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         coordinator.modelStore.models = [
             makeModel(id: "mistral", access: true),
             makeModel(id: "image-capable", access: true, supportedTools: [.imageGeneration]),
-            makeModel(id: "gpt-5.6-luna", access: true, supportedTools: [.imageGeneration])
+            makeModel(id: "second-image-capable", access: true, supportedTools: [.imageGeneration])
         ]
         coordinator.modelStore.updateSelectedModel(id, isNewChatContext: true)
         coordinator.modelStore.onModelsUpdated?()
@@ -2936,10 +2962,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
                            supportsImageUpload: Bool = false,
                            supportedTools: [AIChatRAGTool] = [],
                            accessTier: [String] = [],
-                           supportedReasoningEffort: [AIChatReasoningEffort] = []) -> AIChatModel {
+                           supportedReasoningEffort: [AIChatReasoningEffort] = [],
+                           label: AIChatModelLabel? = nil) -> AIChatModel {
         AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload,
                     supportedTools: supportedTools, entityHasAccess: access,
-                    accessTier: accessTier, supportedReasoningEffort: supportedReasoningEffort)
+                    accessTier: accessTier, supportedReasoningEffort: supportedReasoningEffort,
+                    label: label)
     }
 
     private func hasQueryItem(in components: URLComponents?, name: String, value: String) -> Bool {

@@ -37,8 +37,8 @@ public enum AIChatModelSectionBuilder {
         return (accessible, gated)
     }
 
-    /// Groups models by the presence of a backend-provided editorial label while preserving API order within each group.
-    public static func groupByEditorialLabel(models: [AIChatModel]) -> (withLabel: [AIChatModel], withoutLabel: [AIChatModel]) {
+    /// Groups models by the presence of a backend-provided recommendation label while preserving API order within each group.
+    public static func groupByRecommendationLabel(models: [AIChatModel]) -> (withLabel: [AIChatModel], withoutLabel: [AIChatModel]) {
         let withLabel = models.filter { $0.label != nil }
         let withoutLabel = models.filter { $0.label == nil }
         return (withLabel, withoutLabel)

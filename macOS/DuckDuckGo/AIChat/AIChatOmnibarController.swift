@@ -1596,7 +1596,7 @@ extension AIChatOmnibarController {
     func modelPickerItems(selectedModelId: String?) -> [AIChatModelPickerItem] {
         let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
         // Recommended = backend-labelled models, shown first with the label as a subtitle.
-        let (recommended, rest) = AIChatModelSectionBuilder.groupByEditorialLabel(models: accessible)
+        let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
 
         var items: [AIChatModelPickerItem] = recommended.map { model in
             .model(model,

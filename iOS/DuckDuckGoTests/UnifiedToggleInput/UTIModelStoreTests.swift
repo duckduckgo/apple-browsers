@@ -490,33 +490,94 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertNil(sut.imageGenerationFallbackModel)
     }
 
-    func test_imageGenerationFallbackModel_resolvesTheHardcodedModel() {
+    func test_imageGenerationFallbackModel_skipsModelsThatCannotGenerateImages() {
         sut.models = [
             makeModel(id: "mistral", access: true),
-            makeModel(id: "gpt-5.6-luna", access: true, supportedTools: [.imageGeneration])
+            makeModel(id: "image-capable", access: true, supportedTools: [.imageGeneration])
         ]
 
-        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "gpt-5.6-luna")
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "image-capable")
     }
 
-    func test_imageGenerationFallbackModel_isNilWhenTheModelIsAbsent() {
-        sut.models = [makeModel(id: "some-other-image-model", access: true, supportedTools: [.imageGeneration])]
+    func test_imageGenerationFallbackModel_takesTheFirstImageCapableModelTheBackendOffers() {
+        sut.models = [
+            makeModel(id: "first-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "second-image-model", access: true, supportedTools: [.imageGeneration])
+        ]
 
-        XCTAssertNil(sut.imageGenerationFallbackModel)
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "first-image-model")
     }
 
-    /// `persistedModelId` drops an inaccessible id and falls back to the first accessible model, so
-    /// switching to one would leave the user on a third model while the footer card names this one.
     func test_imageGenerationFallbackModel_isNilWithoutEntityAccess() {
-        sut.models = [makeModel(id: "gpt-5.6-luna", access: false, supportedTools: [.imageGeneration])]
+        sut.models = [makeModel(id: "image-capable", access: false, supportedTools: [.imageGeneration])]
 
         XCTAssertNil(sut.imageGenerationFallbackModel)
     }
 
     func test_imageGenerationFallbackModel_isNilWhenTheModelCannotGenerateImages() {
-        sut.models = [makeModel(id: "gpt-5.6-luna", access: true, supportedTools: [.webSearch])]
+        sut.models = [makeModel(id: "text-only", access: true, supportedTools: [.webSearch])]
 
         XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
+    // MARK: - imageGenerationFallbackModel: editorial label preference
+
+    func test_imageGenerationFallbackModel_prefersAnEndorsedModelOverAnEarlierUnlabelledOne() {
+        sut.models = [
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "endorsed-image-model", access: true, supportedTools: [.imageGeneration], label: .everydayUse)
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "endorsed-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresACaveatLabelAndKeepsBackendOrder() {
+        sut.models = [
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "caveat-image-model", access: true, supportedTools: [.imageGeneration], label: .usesLimitsFaster)
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "unlabelled-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresAnUnknownLabelAndKeepsBackendOrder() {
+        sut.models = [
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "unknown-label-image-model",
+                      access: true,
+                      supportedTools: [.imageGeneration],
+                      label: .unknown("FUTURE_LABEL"))
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "unlabelled-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_withoutAnyLabelsFallsBackToBackendOrder() {
+        sut.models = [
+            makeModel(id: "mistral", access: true),
+            makeModel(id: "first-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "second-image-model", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "first-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresAnEndorsedModelTheUserCannotAccess() {
+        sut.models = [
+            makeModel(id: "accessible-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "endorsed-gated-model", access: false, supportedTools: [.imageGeneration], label: .everydayUse)
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "accessible-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresAnEndorsedModelThatCannotGenerateImages() {
+        sut.models = [
+            makeModel(id: "endorsed-text-model", access: true, supportedTools: [.webSearch], label: .everydayUse),
+            makeModel(id: "image-capable", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "image-capable")
     }
 
     // MARK: - Helpers
@@ -543,7 +604,8 @@ final class UTIModelStoreTests: XCTestCase {
         supportsImageUpload: Bool = false,
         supportedFileTypes: [String] = [],
         supportedTools: [AIChatRAGTool] = [],
-        supportedReasoningEffort: [AIChatReasoningEffort] = []
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
+        label: AIChatModelLabel? = nil
     ) -> AIChatModel {
         AIChatModel(
             id: id,
@@ -553,7 +615,8 @@ final class UTIModelStoreTests: XCTestCase {
             supportedFileTypes: supportedFileTypes,
             supportedTools: supportedTools,
             entityHasAccess: access,
-            supportedReasoningEffort: supportedReasoningEffort
+            supportedReasoningEffort: supportedReasoningEffort,
+            label: label
         )
     }
 }

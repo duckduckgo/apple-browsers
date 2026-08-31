@@ -27,9 +27,6 @@ import Suggestions
 import UIKit
 import WebKit
 import FeatureFlags_iOS
-#if DEBUG
-import os.log
-#endif
 
 // MARK: - Unified Toggle Input Setup
 
@@ -1085,10 +1082,8 @@ extension MainViewController {
             return
         }
         applyUnifiedInputChromeBackground(.standardChrome)
-        logBottomSearchLayout(event: "Dismiss", stage: "before-deactivate", coordinator: coordinator)
         // Resign up-front so the keyboard descent runs concurrent with the bar collapse.
         coordinator.viewController.deactivateInput()
-        logBottomSearchLayout(event: "Dismiss", stage: "after-deactivate", coordinator: coordinator)
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
@@ -1101,6 +1096,9 @@ extension MainViewController {
         let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
+        let preservesRecentChatsInsetDuringDismiss = isFloatingUIEnabled
+            && coordinator.cardPosition.isBottom
+            && coordinator.contentViewController.isShowingRecentChatsWithoutEscapeHatch
         // A floating-bottom List relayout briefly moves its live Search content presentation during collapse.
         // Keep the existing favorites-only snapshot on other bottom layouts.
         let snapshotsBottomNTPSearchContent = coordinator.cardPosition.isBottom
@@ -1117,30 +1115,28 @@ extension MainViewController {
         } else if !isSearchContentToSearchContent {
             coordinator.contentViewController.beginDismissFade()
         }
-        if coordinator.inputMode == .aiChat {
-            newTabPageViewController?.setFavoritesHidden(false, animationDuration: min(duration, 0.2))
-        } else {
+        if coordinator.inputMode == .search {
             prepareSearchContentForDismiss(coordinator: coordinator, isSearchContentToSearchContent: isSearchContentToSearchContent)
         }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
-        let finishDismiss: () -> Void = { [weak self, weak coordinator] in
-            self?.finishBottomSearchDismiss(coordinator: coordinator, completion: completion)
+        let finishDismiss: () -> Void = { [weak self] in
+            self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
         }
 
-#if DEBUG
-        scheduleBottomSearchLayoutLogs(event: "Dismiss",
-                                       stages: bottomSearchAnimationLayoutStages(duration: duration),
-                                       coordinator: coordinator)
-#endif
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             contentSnapshot: stationaryContentSnapshot,
             additionalAnimations: { [weak self, weak coordinator] in
                 guard let self, let coordinator else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.superview.layoutIfNeeded()
-                if !coordinator.cardPosition.isBottom || !keepsFocusedContentStationary {
-                    coordinator.pushContentInsets(forInputHeight: self.viewCoordinator.standardNavigationBarContainerHeight)
+                // Top content follows the collapsing UTI. Bottom stationary content retains its inset until
+                // the focused host is hidden so UIKit does not animate the List's presentation bounds origin.
+                if !coordinator.cardPosition.isBottom
+                    || (!keepsFocusedContentStationary && !preservesRecentChatsInsetDuringDismiss) {
+                    coordinator.pushContentInsets(
+                        forInputHeight: self.viewCoordinator.standardNavigationBarContainerHeight
+                    )
                 }
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
@@ -1171,16 +1167,8 @@ extension MainViewController {
         // Render the pixel-aligned NTP favorites behind the opaque focused List before their final handoff.
         if coordinator.cardPosition.isBottom, isSearchContentToSearchContent {
             newTabPageViewController?.setFavoritesHidden(false)
-            logBottomSearchLayout(event: "Dismiss", stage: "after-prerender", coordinator: coordinator)
         }
-        logBottomSearchLayout(event: "Dismiss", stage: "before-prepare", coordinator: coordinator)
         coordinator.contentViewController.prepareForDismissAnimation()
-        logBottomSearchLayout(event: "Dismiss", stage: "after-prepare", coordinator: coordinator)
-#if DEBUG
-        scheduleBottomSearchLayoutLogs(event: "Dismiss",
-                                       stages: bottomSearchDeferredLayoutStages(prefix: "post-prepare"),
-                                       coordinator: coordinator)
-#endif
     }
 
     private func makeStationaryFocusedContentSnapshotIfNeeded(keepsFocusedContentStationary: Bool,
@@ -1191,9 +1179,6 @@ extension MainViewController {
               let superview = contentContainer.superview else {
             return nil
         }
-#if DEBUG
-        snapshot.accessibilityIdentifier = "UTIBottomDismissContentSnapshot"
-#endif
         snapshot.frame = contentContainer.convert(contentContainer.bounds, to: superview)
         snapshot.isUserInteractionEnabled = false
         superview.insertSubview(snapshot, aboveSubview: contentContainer)
@@ -1207,45 +1192,22 @@ extension MainViewController {
         newTabPageViewController?.setFavoritesHidden(false)
     }
 
-    private func finishBottomSearchDismiss(coordinator: UnifiedToggleInputCoordinator?, completion: (() -> Void)?) {
-        if let coordinator {
-            logBottomSearchLayout(event: "Dismiss", stage: "completion-before-handoff", coordinator: coordinator)
-        }
-        finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
-        if let coordinator {
-            logBottomSearchLayout(event: "Dismiss", stage: "completion-after-handoff", coordinator: coordinator)
-#if DEBUG
-            scheduleBottomSearchLayoutLogs(
-                event: "Dismiss",
-                stages: bottomSearchDeferredLayoutStages(prefix: "post-handoff"),
-                coordinator: coordinator
-            )
-#endif
-        }
-    }
-
     private func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        logBottomSearchLayout(event: "Dismiss", stage: "finish-start", coordinator: coordinator)
         applyUnifiedInputChromeBackground(.standardChrome)
         applyFloatingUIIfNeeded()
-        logBottomSearchLayout(event: "Dismiss", stage: "finish-after-floating-ui", coordinator: coordinator)
         coordinator.contentViewController.setActive(false)
-        logBottomSearchLayout(event: "Dismiss", stage: "finish-after-content-inactive", coordinator: coordinator)
         if coordinator.cardPosition.isBottom,
            newTabPageViewController?.restingContentIsSearchContent == true {
             // Keyboard teardown leaves a transient bottom inset. Settle the resting NTP behind the focused content
             // so the final floating-chrome reconciliation cannot move it after the handoff.
             newTabPageViewController?.additionalSafeAreaInsets.bottom = viewCoordinator.omniBar.barView.expectedHeight
         }
-        logBottomSearchLayout(event: "Dismiss", stage: "finish-after-resting-inset", coordinator: coordinator)
         newTabPageViewController?.setLogoHidden(false)
         newTabPageViewController?.setFavoritesHidden(false)
         newTabPageViewController?.view.setNeedsLayout()
         newTabPageViewController?.view.layoutIfNeeded()
-        logBottomSearchLayout(event: "Dismiss", stage: "finish-after-ntp-layout", coordinator: coordinator)
         viewCoordinator.hideUnifiedInputContent()
-        logBottomSearchLayout(event: "Dismiss", stage: "finish-after-hide-focused", coordinator: coordinator)
         coordinator.contentViewController.setContentInset(top: 0, bottom: 0)
         hideSuggestionTray()
         coordinator.viewController.setTextHorizontalShift(0)
@@ -1254,242 +1216,8 @@ extension MainViewController {
         coordinator.clearText()
         reconcileToolbarVisibilityForCurrentTab()
         reconcileFloatingLayoutAfterUTIExit()
-        logBottomSearchLayout(event: "Dismiss", stage: "finish-after-reconcile", coordinator: coordinator)
         completion?()
     }
-
-    func logBottomSearchLayout(event: String, stage: String, coordinator: UnifiedToggleInputCoordinator) {
-#if DEBUG
-        guard coordinator.cardPosition.isBottom, coordinator.inputMode == .search else { return }
-        writeBottomSearchLayout(event: event, stage: stage, coordinator: coordinator)
-#endif
-    }
-
-#if DEBUG
-    func bottomSearchAnimationLayoutStages(duration: TimeInterval) -> [(String, TimeInterval)] {
-        [0.1, 0.25, 0.5, 0.75, 0.95].map { progress in
-            ("animation-\(Int(progress * 100))", duration * progress)
-        }
-    }
-
-    func bottomSearchDeferredLayoutStages(prefix: String) -> [(String, TimeInterval)] {
-        [
-            ("\(prefix)-next-runloop", 0),
-            ("\(prefix)-16ms", 0.016),
-            ("\(prefix)-50ms", 0.05),
-            ("\(prefix)-150ms", 0.15),
-            ("\(prefix)-300ms", 0.3)
-        ]
-    }
-
-    func scheduleBottomSearchLayoutLogs(event: String,
-                                        stages: [(String, TimeInterval)],
-                                        coordinator: UnifiedToggleInputCoordinator) {
-        guard coordinator.cardPosition.isBottom, coordinator.inputMode == .search else { return }
-        for (stage, delay) in stages {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self, weak coordinator] in
-                guard let self, let coordinator else { return }
-                self.writeBottomSearchLayout(event: event, stage: stage, coordinator: coordinator)
-            }
-        }
-    }
-
-    private func writeBottomSearchLayout(event: String, stage: String, coordinator: UnifiedToggleInputCoordinator) {
-        let focusedRoot = viewCoordinator.unifiedInputContentContainer
-        let restingRoot = newTabPageViewController?.view
-        let rmfShadowColor = UIColor(designSystemColor: .shadowPrimary).resolvedColor(with: view.traitCollection).cgColor
-        let focusedRMFUsesAmbientShadow = isFloatingUIEnabled && coordinator.cardPosition.isBottom
-        let message = "[UTIBottom\(event)] stage=\(stage) os=\(UIDevice.current.systemVersion) "
-            + "floatingUI=\(isFloatingUIEnabled) keyboardTop=\(view.keyboardLayoutGuide.layoutFrame.minY) "
-            + "expectedOmnibarHeight=\(viewCoordinator.omniBar.barView.expectedHeight) "
-            + "navHeight=\(viewCoordinator.constraints.navigationBarContainerHeight.constant) "
-            + "toolbarHeight=\(viewCoordinator.constraints.toolbarHeight.constant) inputEditing=\(coordinator.isInputEditing) "
-            + "isActive=\(coordinator.isActive) isOmnibarSession=\(coordinator.isOmnibarSession) "
-            + "input={\(viewLayoutSummary(coordinator.viewController.view))} "
-            + "nav={\(viewLayoutSummary(viewCoordinator.navigationBarContainer))} "
-            + "toolbar={\(viewLayoutSummary(viewCoordinator.toolbar))} "
-            + "focusedRoot={\(viewLayoutSummary(focusedRoot))} ntp={\(viewLayoutSummary(restingRoot))} "
-            + "focusedState={\(coordinator.contentViewController.bottomSearchLayoutDebugSummary)} "
-            + "ntpState={\(newTabPageViewController?.bottomSearchLayoutDebugSummary ?? "none")} "
-            + "rmfShadow={color=\(String(describing: rmfShadowColor.components)) "
-            + "primary=(opacity=colorAlpha,radius=12,offset=(0,4),spread=0,path=roundedRect) "
-            + "ambient=(unfocused=true,focused=\(focusedRMFUsesAmbientShadow),opacity=colorAlpha,radius=48,offset=(0,16),spread=0,path=roundedRect)} "
-            + "snapshot={\(viewLayoutSummary(descendantViews(in: view).first { $0.accessibilityIdentifier == "UTIBottomDismissContentSnapshot" }))} "
-            + "\(probeSummary(named: "focusedMessages", identifier: "FocusedMessagesPositionProbe", in: focusedRoot)) "
-            + "\(probeSummary(named: "focusedMessageCard", identifier: "FocusedMessageCardPositionProbe", in: focusedRoot)) "
-            + "\(probeSummary(named: "shadowOverflowProbe", identifier: "ListCellShadowOverflowProbe", in: focusedRoot)) "
-            + "\(ambientShadowClippingSummary(named: "focusedAmbientShadow", identifier: "FocusedMessageCardPositionProbe", in: focusedRoot)) "
-            + "\(probeSummary(named: "focusedFavorites", identifier: "FavoritesPositionProbe", in: focusedRoot)) "
-            + "\(probeSummary(named: "focusedHatch", identifier: "EscapeHatchPositionProbe", in: focusedRoot)) "
-            + "\(probeSummary(named: "restingMessages", identifier: "RestingMessagePositionProbe", in: restingRoot)) "
-            + "\(probeSummary(named: "restingFavorites", identifier: "FavoritesPositionProbe", in: restingRoot)) "
-            + "\(probeSummary(named: "restingHatch", identifier: "EscapeHatchPositionProbe", in: restingRoot)) "
-            + "\(scrollViewLayoutSummary(named: "focusedScroll", in: focusedRoot)) "
-            + "\(scrollViewLayoutSummary(named: "restingScroll", in: restingRoot))"
-        Logger.unifiedInputState.notice("\(message, privacy: .public)")
-    }
-
-    private func probeSummary(named name: String, identifier: String, in rootView: UIView?) -> String {
-        guard let rootView else { return "\(name)=none" }
-        let probes = descendantViews(in: rootView).filter { $0.accessibilityIdentifier == identifier }
-        guard !probes.isEmpty else { return "\(name)=none" }
-        return probes.enumerated().map { index, probe in
-            "\(name)[\(index)]={\(viewLayoutSummary(probe)) "
-                + "effectiveVisibility={\(effectiveVisibilitySummary(probe))} "
-                + "renderingAncestors={\(renderingAncestorsSummary(from: probe, through: rootView))}}"
-        }.joined(separator: " || ")
-    }
-
-    private func scrollViewLayoutSummary(named name: String, in rootView: UIView?) -> String {
-        guard let rootView else { return "\(name)=none" }
-        let scrollViews = descendantViews(in: rootView).compactMap { $0 as? UIScrollView }
-        guard !scrollViews.isEmpty else { return "\(name)=none" }
-        return scrollViews.enumerated().map { index, scrollView in
-            let contentOriginY = scrollView.convert(.zero, to: nil).y
-            let children = scrollView.subviews
-                .filter { !$0.isHidden && $0.alpha > 0 }
-                .prefix(6)
-                .map { "\(String(describing: type(of: $0)))={\(viewLayoutSummary($0))}" }
-                .joined(separator: ",")
-            return "\(name)[\(index)] type=\(String(describing: type(of: scrollView))) {\(viewLayoutSummary(scrollView))} "
-                + "bounds=\(scrollView.bounds) offset=\(scrollView.contentOffset) adjusted=\(scrollView.adjustedContentInset) "
-                + "size=\(scrollView.contentSize) contentOriginY=\(contentOriginY) children={\(children)}"
-        }.joined(separator: " || ")
-    }
-
-    private func viewLayoutSummary(_ view: UIView?) -> String {
-        guard let view else { return "none" }
-        let modelFrame = view.convert(view.bounds, to: nil)
-        let presentationFrame = view.layer.presentation().map { String(describing: $0.convert($0.bounds, to: nil)) } ?? "nil"
-        return "frame=\(modelFrame)/presentation=\(presentationFrame) bounds=\(view.bounds) hidden=\(view.isHidden) "
-            + "alpha=\(view.alpha)/presentationAlpha=\(String(describing: view.layer.presentation()?.opacity)) "
-            + "clips=\(view.clipsToBounds) masks=\(view.layer.masksToBounds) mask=\(view.layer.mask != nil) "
-            + "corner=(radius=\(view.layer.cornerRadius),curve=\(view.layer.cornerCurve.rawValue),"
-            + "masked=\(view.layer.maskedCorners.rawValue)) maskLayer={\(layerMaskSummary(view.layer.mask))} "
-            + "shadow=(color=\(String(describing: view.layer.shadowColor?.components)),opacity=\(view.layer.shadowOpacity),"
-            + "radius=\(view.layer.shadowRadius),offset=\(view.layer.shadowOffset),path=\(view.layer.shadowPath != nil)) "
-            + "safeArea=\(view.safeAreaInsets) animations=\(view.layer.animationKeys() ?? [])"
-    }
-
-    private func effectiveVisibilitySummary(_ view: UIView) -> String {
-        var currentView: UIView? = view
-        var modelAlpha: CGFloat = 1
-        var presentationAlpha: Float = 1
-        var hidden = false
-        while let current = currentView {
-            modelAlpha *= current.alpha
-            presentationAlpha *= current.layer.presentation()?.opacity ?? current.layer.opacity
-            hidden = hidden || current.isHidden
-            currentView = current.superview
-        }
-        return "hidden=\(hidden) alpha=\(modelAlpha)/presentationAlpha=\(presentationAlpha)"
-    }
-
-    private func renderingAncestorsSummary(from view: UIView, through rootView: UIView) -> String {
-        var currentView = view.superview
-        var summaries: [String] = []
-        while let current = currentView {
-            if current.clipsToBounds
-                || current.layer.masksToBounds
-                || current.layer.mask != nil
-                || current.layer.shadowOpacity > 0
-                || current === rootView {
-                summaries.append("\(String(describing: type(of: current)))={\(viewLayoutSummary(current))}")
-            }
-            if current === rootView { break }
-            currentView = current.superview
-        }
-        return summaries.isEmpty ? "none" : summaries.joined(separator: ",")
-    }
-
-    private func ambientShadowClippingSummary(named name: String, identifier: String, in rootView: UIView?) -> String {
-        guard let rootView else { return "\(name)=none" }
-        let probes = descendantViews(in: rootView).filter { $0.accessibilityIdentifier == identifier }
-        guard !probes.isEmpty else { return "\(name)=none" }
-        return probes.enumerated().map { index, probe in
-            let expectedShadowBounds = probe.bounds
-                .insetBy(dx: -48, dy: -48)
-                .offsetBy(dx: 0, dy: 16)
-            let viewAncestors = ambientShadowViewAncestors(from: probe,
-                                                           expectedShadowBounds: expectedShadowBounds,
-                                                           through: rootView)
-            let layerAncestors = ambientShadowLayerAncestors(from: probe,
-                                                             expectedShadowBounds: expectedShadowBounds,
-                                                             through: rootView)
-            return "\(name)[\(index)]={expectedInCard=\(expectedShadowBounds) "
-                + "viewAncestors={\(viewAncestors)} layerAncestors={\(layerAncestors)}}"
-        }.joined(separator: " || ")
-    }
-
-    private func ambientShadowViewAncestors(from view: UIView,
-                                            expectedShadowBounds: CGRect,
-                                            through rootView: UIView) -> String {
-        var currentView = view.superview
-        var summaries: [String] = []
-        while let current = currentView {
-            if current.clipsToBounds || current.layer.masksToBounds || current.layer.mask != nil || current.layer.cornerRadius > 0 {
-                let shadowRect = view.convert(expectedShadowBounds, to: current)
-                let cellContent = (current as? UICollectionViewCell)
-                    .map { " contentView={\(viewLayoutSummary($0.contentView))}" } ?? ""
-                summaries.append("\(String(describing: type(of: current)))={shadowRect=\(shadowRect) "
-                                 + "clippedEdges=\(clippedEdges(of: shadowRect, by: current.bounds)) "
-                                 + "\(viewLayoutSummary(current))\(cellContent)}")
-            }
-            if current === rootView { break }
-            currentView = current.superview
-        }
-        return summaries.isEmpty ? "none" : summaries.joined(separator: ",")
-    }
-
-    private func ambientShadowLayerAncestors(from view: UIView,
-                                             expectedShadowBounds: CGRect,
-                                             through rootView: UIView) -> String {
-        var currentLayer = view.layer.superlayer
-        var summaries: [String] = []
-        while let current = currentLayer {
-            if current.masksToBounds || current.mask != nil || current.cornerRadius > 0 {
-                let shadowRect = view.layer.convert(expectedShadowBounds, to: current)
-                summaries.append("\(String(describing: type(of: current)))={shadowRect=\(shadowRect) "
-                                 + "clippedEdges=\(clippedEdges(of: shadowRect, by: current.bounds)) "
-                                 + "\(layerLayoutSummary(current, rootLayer: rootView.layer))}")
-            }
-            if current === rootView.layer { break }
-            currentLayer = current.superlayer
-        }
-        return summaries.isEmpty ? "none" : summaries.joined(separator: ",")
-    }
-
-    private func layerLayoutSummary(_ layer: CALayer, rootLayer: CALayer) -> String {
-        let modelFrame = layer.convert(layer.bounds, to: rootLayer)
-        let presentationFrame = layer.presentation().map { presentationLayer in
-            let presentationRoot = rootLayer.presentation() ?? rootLayer
-            return String(describing: presentationLayer.convert(presentationLayer.bounds, to: presentationRoot))
-        } ?? "nil"
-        return "frame=\(modelFrame)/presentation=\(presentationFrame) bounds=\(layer.bounds) "
-            + "masks=\(layer.masksToBounds) maskLayer={\(layerMaskSummary(layer.mask))} "
-            + "corner=(radius=\(layer.cornerRadius),curve=\(layer.cornerCurve.rawValue),masked=\(layer.maskedCorners.rawValue)) "
-            + "animations=\(layer.animationKeys() ?? [])"
-    }
-
-    private func layerMaskSummary(_ mask: CALayer?) -> String {
-        guard let mask else { return "none" }
-        return "type=\(String(describing: type(of: mask))) frame=\(mask.frame) bounds=\(mask.bounds) "
-            + "corner=(radius=\(mask.cornerRadius),curve=\(mask.cornerCurve.rawValue),masked=\(mask.maskedCorners.rawValue))"
-    }
-
-    private func clippedEdges(of contentRect: CGRect, by clippingBounds: CGRect) -> String {
-        var edges: [String] = []
-        if contentRect.minX < clippingBounds.minX { edges.append("left") }
-        if contentRect.minY < clippingBounds.minY { edges.append("top") }
-        if contentRect.maxX > clippingBounds.maxX { edges.append("right") }
-        if contentRect.maxY > clippingBounds.maxY { edges.append("bottom") }
-        return edges.isEmpty ? "none" : edges.joined(separator: "+")
-    }
-
-    private func descendantViews(in rootView: UIView) -> [UIView] {
-        rootView.subviews.flatMap { [$0] + descendantViews(in: $0) }
-    }
-#endif
 
     /// Routes a UTI omnibar-session dismiss to the matching chrome — Duck.ai header restore for
     /// AI tabs, standard omnibar morph for everything else.

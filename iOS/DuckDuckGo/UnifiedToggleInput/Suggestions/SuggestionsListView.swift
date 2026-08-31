@@ -38,6 +38,7 @@ struct SuggestionsListView: View {
     var showsRestingContent = false
     var showsFavorites = false
     var showsSuggestionRows = true
+    var usesWholeListDismissFade = false
     var animationModel: UnifiedSuggestionsAnimationModel
     var isFloatingPopover: Bool = false
 
@@ -110,7 +111,8 @@ struct SuggestionsListView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                         .modifier(DisableListRowSelection())
-                        .modifier(DismissFade(animationModel: animationModel))
+                        .modifier(DismissFade(animationModel: animationModel,
+                                              isEnabled: !usesWholeListDismissFade))
                         .background {
                             if showsAmbientMessageShadow {
                                 ListCellShadowOverflowView(raisesCellAbovePreviousRow: escapeHatch != nil)
@@ -124,7 +126,8 @@ struct SuggestionsListView: View {
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
-                            .modifier(DismissFade(animationModel: animationModel))
+                            .modifier(DismissFade(animationModel: animationModel,
+                                                  isEnabled: !usesWholeListDismissFade))
                     }
                     if showsSuggestionRows, let firstSection = viewModel.sections.first {
                         if hasVisibleChromeRows, let title = firstSection.title, !title.isEmpty {
@@ -259,7 +262,8 @@ struct SuggestionsListView: View {
             .listRowBackground(rowBackground(for: row,
                                              roundsTop: roundsFirstRowTop && row.id == section.rows.first?.id))
             .modifier(SeparatorTrailingToContentModifier())
-            .modifier(DismissFade(animationModel: animationModel))
+            .modifier(DismissFade(animationModel: animationModel,
+                                  isEnabled: !usesWholeListDismissFade))
             // Pointer hover highlights the row, reusing the keyboard-selection highlight (matches the
             // legacy autocomplete). Touch never fires onHover, so this is pointer-only.
             .onHover { isHovering in
@@ -386,9 +390,6 @@ private struct ListCellShadowOverflowView: UIViewRepresentable {
         view.raisesCellAbovePreviousRow = raisesCellAbovePreviousRow
         view.isUserInteractionEnabled = false
         view.accessibilityElementsHidden = true
-#if DEBUG
-        view.accessibilityIdentifier = "ListCellShadowOverflowProbe"
-#endif
         return view
     }
 

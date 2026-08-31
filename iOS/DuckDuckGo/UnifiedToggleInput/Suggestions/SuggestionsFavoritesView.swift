@@ -34,19 +34,9 @@ struct FocusedNewTabPageMessagesView: View {
                 HomeMessageView(viewModel: messageModel, showsAmbientShadow: showsAmbientShadow)
                     .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
                     .transition(.scale.combined(with: .opacity))
-                    .background {
-#if DEBUG
-                        BottomSearchLayoutProbe(identifier: "FocusedMessageCardPositionProbe")
-#endif
-                    }
             }
         }
         .frame(maxWidth: .infinity)
-        .background {
-#if DEBUG
-            BottomSearchLayoutProbe(identifier: "FocusedMessagesPositionProbe")
-#endif
-        }
     }
 
     private enum Metrics {

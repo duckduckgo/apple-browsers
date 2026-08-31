@@ -235,11 +235,6 @@ private extension NewTabPageView {
             HomeMessageView(viewModel: messageModel)
                 .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
                 .transition(.scale.combined(with: .opacity))
-                .background {
-#if DEBUG
-                    BottomSearchLayoutProbe(identifier: "RestingMessagePositionProbe")
-#endif
-                }
         }
     }
 

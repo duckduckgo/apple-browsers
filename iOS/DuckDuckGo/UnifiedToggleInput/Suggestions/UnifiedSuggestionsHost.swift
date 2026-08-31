@@ -18,6 +18,7 @@
 //
 
 import Combine
+import DesignResourcesKit
 import SwiftUI
 import UIKit
 
@@ -26,8 +27,13 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
+        guard let listScrollView = firstScrollView(in: view) else { return }
+        // `.scrollContentBackground(.hidden)` leaves the native List backing view with its system
+        // background. Keep that layer semantic when SwiftUI reconfigures the List during a mode switch.
+        listScrollView.backgroundColor = UIColor(designSystemColor: .background)
+
         if #available(iOS 16, *) { return }
-        guard let tableView = firstTableView(in: view) else { return }
+        guard let tableView = listScrollView as? UITableView else { return }
         // Match AutocompleteView's legacy insetGrouped top compensation.
         var contentInset = tableView.contentInset
         guard contentInset.top != -28 else { return }
@@ -35,10 +41,10 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
         tableView.contentInset = contentInset
     }
 
-    private func firstTableView(in view: UIView) -> UITableView? {
-        if let tableView = view as? UITableView { return tableView }
+    private func firstScrollView(in view: UIView) -> UIScrollView? {
+        if let scrollView = view as? UIScrollView { return scrollView }
         for subview in view.subviews {
-            if let tableView = firstTableView(in: subview) { return tableView }
+            if let scrollView = firstScrollView(in: subview) { return scrollView }
         }
         return nil
     }
@@ -161,14 +167,11 @@ final class UnifiedSuggestionsHost {
     }
     var isShowingFavorites: Bool { viewModel.isShowingFavorites }
 
-#if DEBUG
-    var bottomSearchLayoutDebugSummary: String {
-        "content=\(String(describing: viewModel.content)) messages=\(config.messagesModel.homeMessageViewModels.count) "
-            + "favorites=\(config.favoritesViewModel.allFavorites.count) escapeHatch=\(escapeHatch != nil) "
-            + "contentInsets=\(contentInsets) scrollTop=\(viewModel.scrollContentInsetTop) "
-            + "hostingTopForDismiss=\(usesHostingTopInsetForDismissal) dismiss=\(String(describing: viewModel.dismissBehavior))"
+    var isShowingRecentChatsWithoutEscapeHatch: Bool {
+        guard escapeHatch == nil else { return false }
+        if case .list(.recents) = viewModel.content { return true }
+        return false
     }
-#endif
 
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
     func setIsFireTab(_ value: Bool) {

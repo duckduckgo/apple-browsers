@@ -74,6 +74,10 @@ struct UnifiedSuggestionsView: View {
         return .search
     }
 
+    private var usesWholeListDismissFade: Bool {
+        activeListKind == .recents
+    }
+
     private var listLayer: some View {
         SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
                             isAddressBarAtBottom: isAddressBarAtBottom,
@@ -86,7 +90,12 @@ struct UnifiedSuggestionsView: View {
                             showsRestingContent: !isTypingList,
                             showsFavorites: viewModel.isShowingFavorites,
                             showsSuggestionRows: isShowingList,
+                            usesWholeListDismissFade: usesWholeListDismissFade,
                             animationModel: viewModel.animationModel)
+            // Match main's dismissal unit for Recent Chats: fade the complete List so its native
+            // cell surfaces and separators cannot outlive the SwiftUI row labels.
+            .modifier(DismissFade(animationModel: viewModel.animationModel,
+                                  isEnabled: usesWholeListDismissFade))
             .accessibilityHidden(viewModel.isFireTab && !isTypingList)
     }
 }
@@ -176,11 +185,13 @@ struct UnifiedSuggestionsLogoView: View {
 /// focus) snaps, so the logo reappears instantly instead of replaying a fade-in.
 struct DismissFade: ViewModifier {
     @ObservedObject var animationModel: UnifiedSuggestionsAnimationModel
+    var isEnabled = true
 
     func body(content: Content) -> some View {
+        let isDismissing = isEnabled && animationModel.isDismissing
         content
-            .opacity(animationModel.isDismissing ? 0 : 1)
-            .animation(animationModel.isDismissing ? .easeInOut(duration: 0.2) : nil,
-                       value: animationModel.isDismissing)
+            .opacity(isDismissing ? 0 : 1)
+            .animation(isDismissing ? .easeInOut(duration: 0.2) : nil,
+                       value: isDismissing)
     }
 }

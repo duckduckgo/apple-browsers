@@ -59,14 +59,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         messagesModel.homeMessageViewModels.isEmpty && !favoritesModel.isEmpty
     }
 
-#if DEBUG
-    var bottomSearchLayoutDebugSummary: String {
-        "messages=\(messagesModel.homeMessageViewModels.count) favorites=\(favoritesModel.allFavorites.count) "
-            + "favoritesHidden=\(newTabPageViewModel.isFavoritesHidden) logoHidden=\(newTabPageViewModel.isLogoHidden) "
-            + "escapeHatch=\(newTabPageViewModel.escapeHatch != nil) additionalSafeArea=\(additionalSafeAreaInsets)"
-    }
-#endif
-
     func setLogoHidden(_ hidden: Bool) {
         newTabPageViewModel.isLogoHidden = hidden
     }

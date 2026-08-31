@@ -172,6 +172,7 @@ extension URL {
     static let favicons = URL(string: "duck://favicons")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
+    static let errorPageReportBrokenSite = URL(string: "duck://error/report-broken-site")!
 
     static let dataBrokerProtection = URL(string: "duck://personal-information-removal")!
 

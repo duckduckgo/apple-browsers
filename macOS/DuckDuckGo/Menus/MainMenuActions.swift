@@ -31,6 +31,7 @@ import HistoryView
 import os.log
 import PixelKit
 import PrivacyConfig
+import PrivacyDashboard
 import Subscription
 import SwiftUI
 import Utilities
@@ -282,9 +283,13 @@ extension AppDelegate {
     }
 
     @objc func openReportBrokenSite(_ sender: Any?) {
+        openReportBrokenSite(entryPoint: .report)
+    }
+
+    func openReportBrokenSite(entryPoint: PrivacyDashboardEntryPoint) {
         let privacyDashboardViewController = PrivacyDashboardViewController(
             privacyInfo: nil,
-            entryPoint: .report,
+            entryPoint: entryPoint,
             contentBlocking: privacyFeatures.contentBlocking,
             permissionManager: permissionManager,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences

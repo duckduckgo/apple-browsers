@@ -18,6 +18,7 @@
 
 import Combine
 import FeatureFlags_macOS
+import Navigation
 import PixelKit
 import PrivacyConfig
 import WebKit
@@ -74,6 +75,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
 
     var firePixelCallCount: Int = 0
     var firePixelHandler: (PixelKit.Event, [String: String]) -> Void = { _, _ in }
+    var reportBrokenSiteCallCount = 0
 
     @MainActor
     override func setUp() async throws {
@@ -87,6 +89,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
 
         firePixelCallCount = 0
         firePixelHandler = { _, _ in }
+        reportBrokenSiteCallCount = 0
 
         tabCrashErrorPayloads = []
         cancellables.forEach { $0.cancel() }
@@ -101,6 +104,9 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
             firePixel: {
                 self.firePixelCallCount += 1
                 self.firePixelHandler($0, $1)
+            },
+            reportBrokenSite: {
+                self.reportBrokenSiteCallCount += 1
             },
             tabCrashAggregator: TabCrashAggregator()
         )
@@ -123,6 +129,32 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
         contentSubject.send(.url(.duckDuckGo, credential: nil, source: .historyEntry))
     }
 
+    private func makeNavigationAction(url: URL = .errorPageReportBrokenSite,
+                                      isUserInitiated: Bool = true,
+                                      sourceIsMainFrame: Bool = true,
+                                      targetIsMainFrame: Bool = true,
+                                      sourceURL: URL = .error) -> NavigationAction {
+        NavigationAction(
+            request: URLRequest(url: url),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: isUserInitiated,
+            sourceFrame: FrameInfo(webView: webView,
+                                   handle: FrameHandle(rawValue: 1 as UInt64)!,
+                                   isMainFrame: sourceIsMainFrame,
+                                   url: sourceURL,
+                                   securityOrigin: .empty),
+            targetFrame: FrameInfo(webView: webView,
+                                   handle: FrameHandle(rawValue: 1 as UInt64)!,
+                                   isMainFrame: targetIsMainFrame,
+                                   url: sourceURL,
+                                   securityOrigin: .empty),
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+    }
+
     @MainActor
     override func tearDown() {
         featureFlagger = nil
@@ -138,6 +170,75 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
         tabCrashErrorPayloads = []
         firePixelCallCount = 0
         firePixelHandler = { _, _ in }
+        reportBrokenSiteCallCount = 0
+    }
+
+    @MainActor
+    func testWhenReportBrokenSiteNavigationIsEligibleThenItIsCancelledAndReportIsOpened() async {
+        setUpRegularTab()
+        webViewErrorSubject.send(WKError(.webContentProcessTerminated))
+        var preferences = NavigationPreferences.default
+
+        let policy = await tabCrashRecoveryExtension.decidePolicy(for: makeNavigationAction(), preferences: &preferences)
+
+        XCTAssertEqual(policy.debugDescription, "cancel")
+        XCTAssertEqual(reportBrokenSiteCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenEligibleReportNavigationStartsAtOriginalURLThenReportIsOpened() async {
+        setUpRegularTab()
+        webViewErrorSubject.send(WKError(.webContentProcessTerminated))
+        var preferences = NavigationPreferences.default
+        let action = makeNavigationAction(sourceURL: .duckDuckGo)
+
+        let policy = await tabCrashRecoveryExtension.decidePolicy(for: action, preferences: &preferences)
+
+        XCTAssertEqual(policy.debugDescription, "cancel")
+        XCTAssertEqual(reportBrokenSiteCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenReportBrokenSiteNavigationIsNotEligibleThenItIsCancelledWithoutOpeningReport() async {
+        setUpRegularTab()
+        webViewErrorSubject.send(WKError(.webContentProcessTerminated))
+        var preferences = NavigationPreferences.default
+        let actions = [
+            makeNavigationAction(isUserInitiated: false),
+            makeNavigationAction(sourceIsMainFrame: false),
+            makeNavigationAction(targetIsMainFrame: false)
+        ]
+
+        for action in actions {
+            let policy = await tabCrashRecoveryExtension.decidePolicy(for: action, preferences: &preferences)
+            XCTAssertEqual(policy.debugDescription, "cancel")
+        }
+
+        XCTAssertEqual(reportBrokenSiteCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenReportBrokenSiteNavigationOccursWithoutTerminationErrorThenItIsCancelledWithoutOpeningReport() async {
+        setUpRegularTab()
+        var preferences = NavigationPreferences.default
+
+        let policy = await tabCrashRecoveryExtension.decidePolicy(for: makeNavigationAction(), preferences: &preferences)
+
+        XCTAssertEqual(policy.debugDescription, "cancel")
+        XCTAssertEqual(reportBrokenSiteCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenNavigationDoesNotTargetReportBrokenSiteThenDecisionPassesToNextResponder() async {
+        setUpRegularTab()
+        webViewErrorSubject.send(WKError(.webContentProcessTerminated))
+        var preferences = NavigationPreferences.default
+        let action = makeNavigationAction(url: .duckDuckGo)
+
+        let policy = await tabCrashRecoveryExtension.decidePolicy(for: action, preferences: &preferences)
+
+        XCTAssertEqual(policy.debugDescription, "next")
+        XCTAssertEqual(reportBrokenSiteCallCount, 0)
     }
 
     @MainActor

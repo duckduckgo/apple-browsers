@@ -379,6 +379,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                                             contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
                                                                             setContent: { tabGetter()?.setContent($0) },
                                                                             closeTab: { tabGetter().map { $0.delegate?.closeTab($0) } },
+                                                                            reportBrokenSite: {
+                                                                                Application.appDelegate.openReportBrokenSite(entryPoint: .errorPage)
+                                                                            },
                                                                             titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
                                                                             errorPublisher: _error.projectedValue.eraseToAnyPublisher(),
                                                                             userScriptsPublisher: userScriptsPublisher,

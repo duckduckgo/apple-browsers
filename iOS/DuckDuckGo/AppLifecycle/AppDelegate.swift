@@ -24,7 +24,9 @@ import Common
 
     let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
-    static let defaultOrientationMask: UIInterfaceOrientationMask = .allButUpsideDown
+    static var defaultOrientationMask: UIInterfaceOrientationMask {
+        UIDevice.current.userInterfaceIdiom == .pad ? .all : .allButUpsideDown
+    }
 
     /// Tightened while content needing a fixed orientation is on screen — see `SubscriptionOnboardingLauncher`.
     static var orientationLock = defaultOrientationMask

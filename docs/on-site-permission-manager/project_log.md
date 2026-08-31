@@ -3,10 +3,11 @@
 ## Current handoff
 
 - Goal: Implement the six-PR on-site permission manager stack from `implementation-plan.md` without pushing.
-- Status: Phases 1–3 are complete. There is no active blocker.
-- Completed: `bartosz/on-site-permissions-3` contains the squashed Phase 3 commit `f0603bafa5` directly on Phase 2. It adds the complete camera and microphone flow, including recovery, in-use observation, Voice Search treatment, and approved pixels.
-- Next: Create `bartosz/on-site-permissions-4` from Phase 3 and implement the management sheet, Settings screens, both menu paths, removal and Undo, immediate revocation, and management pixels.
-- Blocker: None. The supplied 2026-08-31 spec and screenshots resolved the combined recovery and Voice Search design gaps.
+- Status: Phases 1–4 are complete. There is no active blocker.
+- Completed: `bartosz/on-site-permissions-4` contains commit `1003ae5ef4` directly on Phase 3 commit `f0603bafa5`. It adds the camera and microphone management sheet, Settings surfaces, both browser-menu paths, removal with Undo, immediate cross-tab revocation, and management pixels.
+- Next: Create `bartosz/on-site-permissions-5` from `bartosz/on-site-permissions-4` and implement the geolocation shim, provider, dialogs, recovery, and browser integration.
+- Stack state: Phase 4 is based on `bartosz/on-site-permissions-3` at `f0603bafa5`. The stack remains local; nothing has been pushed.
+- Blocker: None.
 
 ## Decisions
 
@@ -70,6 +71,24 @@
 - Why: WebKit must be answered promptly, while the per-tab FIFO must prevent a second request from stacking another permission surface.
 - Consequences: App-owned recovery surfaces report dismissal through a completion callback. Navigation, process replacement, and tab closure invalidate stale callbacks safely.
 
+### 2026-08-31 — Keep Fire-mode management session-local
+
+- Decision: Apply management choices and removals only to the Fire tab's session state. Do not write or delete durable records from a Fire tab. Persistent denial or removal initiated outside Fire clears conflicting Fire-session overrides.
+- Why: Fire browsing must not create durable permission history, but persistent changes from Settings or a normal tab must still revoke access consistently.
+- Consequences: Fire-originated revocation stays local. Normal-mode denial and removal propagate to every matching live tab.
+
+### 2026-08-31 — Separate sheet membership from menu eligibility
+
+- Decision: Build sheet rows from stored, active, and requested-this-visit state, but show the browser-menu entry only for a stored record or active session state. Do not track a globally denied no-record request as requested-this-visit.
+- Why: The sheet must explain requests from the current visit without making a temporary menu entry appear merely because the global default silently blocked a request.
+- Consequences: Explicit Ask records remain visible, successful session grants remain manageable, and global Never creates neither a row nor a menu entry by itself.
+
+### 2026-08-31 — Revoke matching tabs after durable changes
+
+- Decision: Write a denial or removal first, then revoke the affected capture in every matching normal tab. Removal revokes both camera and microphone even when only one type appears in the current snapshot.
+- Why: Another matching tab can still be using a permission that is absent from the initiating tab's visible state.
+- Consequences: Grants and resets still wait for reload or the next request. Explicit denial and removal stop matching active capture immediately.
+
 ## Review outcomes
 
 ### Phase 1
@@ -98,9 +117,30 @@
 - Ponytail review: Kept `presentTracked` because the existing public overload must retain its protocol-compatible `Void` signature and recovery must dismiss only its exact toast. Kept the injected Settings opener because the new integration test uses it. Applied the recommendation to add app-level tests and simplified the coordinator helper that exceeded the lint complexity limit.
 - Follow-up verification: The final focused run passed 104 tests with no failures or skips. The production build passed. No feature-specific compiler or lint warnings remain.
 
+### Phase 4
+
+- Correctness review: Fixed normal-mode denial and removal so revocation propagates across matching live tabs, while Fire-originated changes remain local and external persistent changes clear conflicting Fire overrides. Removal now revokes both managed permission types after the store mutation.
+- Contract review: Fixed globally denied no-record requests so they do not enter requested-this-visit state or create management rows. The final review found no remaining findings.
+- Test follow-up: The first focused run passed 143 of 144 tests and exposed that `BrowsingMenuModel.Entry` ignored its explicit Open Bookmarks tag. The tag propagation was fixed, the targeted regression test passed, and the fresh focused run passed all 148 tests: 106 `SitePermissionsTests` and 42 selected `UnitTests`.
+- Release audit: No blockers. Scope, feature gating, frozen matrices, Fire isolation, telemetry, project wiring, headers, and submodule state all matched the Phase 4 contract.
+
 ## Recent progress
 
 ### 2026-08-31
+
+- Created `bartosz/on-site-permissions-4` directly from Phase 3 commit `f0603bafa5`. The branch remains local and nothing has been pushed.
+- Added the three-state on-site camera and microphone management sheet with content-fitting detents, the iOS 15 fallback, iPad popover behavior, Dynamic Type, VoiceOver state values, and the approved in-use icon treatment.
+- Added Settings › Site Permissions with two-option global defaults, a locale-sorted persistent-site list, per-site three-option pickers, favicons, the System Settings link, and per-site and all-sites removal with conflict-safe Undo.
+- Added the temporary Site Permissions entry to both browser-menu paths. Visibility covers persistent records, explicit Ask, and active session state while remaining absent with the flag off or no eligible state.
+- Replaced the sheet menu's literal preferred-detent count with the flattened position of the tagged Open Bookmarks entry. The tests cover both menu layouts, the permission row present and absent, optional entries, and the YouTube Ad Block section.
+- Added store-first immediate revocation for denial and removal. Normal-mode changes propagate across matching tabs; Fire-mode changes remain session-local; removal revokes both camera and microphone.
+- Added the approved management pixels through PixelKit. `permission_center_changed` keeps `from` as a parameter, and no management event contains site metadata.
+- The first focused run passed 143 of 144 tests and exposed an ignored explicit detent tag. After the fix, the targeted test passed, and the final focused run passed 148 tests with no failures: 106 `SitePermissionsTests` and 42 selected `UnitTests`.
+- Ran the full `SitePermissionsTests` and `UnitTests` gate: 6,726 passed, zero failed, and 37 baseline skips.
+- Built the production `iOS Browser` scheme on an iPhone 17 Pro simulator running iOS 26.4 with the normal project deployment target. The build passed.
+- Validated `site_permissions.json5` for product target 7.234.0 and checked it with Prettier. Both checks passed.
+- Ran Swift parser checks, property-list syntax checks, and `git diff --check`; all passed.
+- Squashed Phase 4 into `1003ae5ef4` directly on `f0603bafa5`. Nothing was pushed.
 
 - Received and inspected the six supplied Figma screenshots. Updated the implementation plan with the exact card widths, corners, material, dim, spacing, shadows, button treatment, Voice Search variant, combined copy, and recovery event rules.
 - Applied the supplied combined-recovery decision: one surface per combined request, atomic OS preflight, no prompt spending in mixed blocked states, both fresh prompts attempted, and type-accurate coverage in recovery copy and pixels.

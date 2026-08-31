@@ -29,7 +29,7 @@ Full field/table reference: [reference.md](reference.md).
 
 - **Writing a technical design.** Work through Steps 1–2 (including 2.1 and 2.2) below and write up their answers with rationale — that *is* the design. Skip Steps 3–7 (implementation detail), except the file-placement table at the top of Step 3, which the design should state. Write "Flag these back" items as open questions/risks for engineering and product to resolve before implementation starts, rather than resolving them yourself.
 - **Implementing.** Work through Steps 1–2 first, ending with the Step 2.2 guidance check. The moment any "Flag these back" trigger applies, stop — see that section, it's a hard gate, not an FYI. Once every open item from Steps 1–2 has an explicit answer *from the user*, work through Steps 3–5 in order, then Step 6 (verify) and Step 7 (self-review) before calling it done.
-- **Migrating UI that already ships** (an existing notification, popover, or banner presented by its own code) rather than adding something new: do all of the above **plus** "Migrating existing UI onto the queue". Read that section before you start editing — the largest failure mode in this system is treating a migration as a plain addition and silently changing frequency, priority, and flag-off behavior along the way.
+- **Migrating UI that already ships** (an existing notification, popover, or banner presented by its own code) rather than adding something new: do all of the above **plus** "Migrating existing UI onto the queue". Read that section before you start editing — the largest failure mode in this system is treating a migration as a plain addition and silently changing frequency, priority, and who has already seen it along the way.
 - **Reviewing someone else's implementation or PR.** Skip straight to "Reviewing an implementation" near the end — treat each step above as something to verify against the actual diff, not something to newly decide.
 
 ## Step 1 — Internal or External? Decide this first, explicitly
@@ -73,7 +73,7 @@ Answer these, in order (mirrors DDG's own promo-authoring doc):
 
    `.global` conflicts with every other context by default (see checkRules details in [reference.md](reference.md)), which is the point: chrome-anchored UI overlaps everything visually. If a spec asks for chrome placement *and* coexistence with a page-level promo, that's a mutual `coexistingPromoIDs` decision, not a reason to add a new context. `PromoContext` *can* be extended when a genuinely new surface exists (DDG's own guidance allows it), but it's a shared-enum edit affecting every promo's conflict checks and deserves the same explicit sign-off as a new `PromoTrigger` case (see Step 2.1 and [reference.md](reference.md)) — not something to fold silently into one `PromoServiceFactory+*.swift` file.
 5. **Any exceptions to default behavior?** → `coexistingPromoIDs`, `respectsGlobalCooldown`, `setsGlobalCooldown`. Defaults are almost always correct. Only deviate with explicit design/product sign-off (e.g. a PFR) — say so if a request implies deviating without that sign-off already having happened.
-6. **Does it come back?** → **one-shot or recurring.** Promo history is keyed by `id` alone and persists for the life of the profile, with no per-version or per-occurrence scoping: `.actioned` and bare `.ignored()` are **permanently** terminal. A recurring promo must resolve every path with `.ignored(cooldown:)` or `.noChange`. Write down which kind yours is and what the recurrence interval is — then check the resolution paths in your delegate actually match, including the CTA-tap path. See the `PromoResult` section in [reference.md](reference.md); this is the single easiest way to ship a promo that works once and vanishes forever.
+6. **Does it come back?** → **one-shot or recurring.** Promo history is keyed by `id` alone and persists for the life of the profile, with no per-version or per-occurrence scoping: `.actioned` and bare `.ignored()` are **permanently** terminal. A recurring promo must resolve every path with `.ignored(cooldown:)` or `.noChange` — `.retired` is permanent too, and is for "never offer this to this user at all" (they already saw the legacy UI, they already use the feature), not for an ordinary dismissal. Write down which kind yours is and what the recurrence interval is — then check the resolution paths in your delegate actually match, including the CTA-tap path. See the `PromoResult` section in [reference.md](reference.md); this is the single easiest way to ship a promo that works once and vanishes forever.
 7. **How urgent is it, relative to every other promo?** → its **position in `makeAllPromos`**, which is the priority order (see Step 5). There is no default answer here and nothing in the spec usually states it. **Ask the user where it goes relative to the existing promos — name the current list back to them and propose a position with your reasoning, rather than asking an open question.** Appending at the end is a decision ("lowest priority in the app"), not a neutral placeholder.
 
 ### Choosing `initiated` — app vs. user
@@ -156,6 +156,16 @@ When you find yourself writing — in a doc comment, a factory-file comment, a P
 2. **A different field is wrong.** The conflict is a symptom. Re-derive each field from its own question: `context` from *where it renders*, `promoType` from *how much it interrupts*, `initiated` from *what caused it to appear*, cooldowns from *how often product wants it*. Usually one of them was set to reach an outcome instead of to describe reality, and fixing that one dissolves the conflict.
 
 Every field has exactly one honest source. Test each comment you write: **does it describe what the promo *is*, or what it's trying to *get around*?** Only the first kind belongs in the code.
+
+## Comments — the repo's rule, and the three ways promo code breaks it
+
+`.cursor/rules/code-style.mdc` is the authority and it is short: **comments explain WHY, not WHAT**, and Swift-style `//` / `///` only — never `/* */`. Promo code attracts three specific violations. Check your diff for all three before you finish:
+
+1. **Restating the declaration.** `/// Builds the Bookmark Toolbar Promo.` above `static func bookmarkToolbar(dependencies:) -> Promo` adds nothing the signature doesn't already say — and the existing factory files are full of exactly that shape, so don't take them as the standard (equally, don't churn them). Make yours earn its place by naming what the reader *can't* see from the code — the user-facing string, or the legacy UI it replaces: `/// Builds the Bookmark Toolbar Promo (migrated from the standalone "Show Bookmarks Bar?" popover).`
+2. **Documenting behavior the fields already declare — which then goes stale.** A delegate doc comment reading "shown at most once ever, regardless of outcome" duplicates the `PromoResult`s in `show()` and becomes a lie the moment one path changes to `.ignored(cooldown:)`. Delete it; let the resolution paths be the statement, and put the intent in a test name.
+3. **Justifying a field by the rule it evades.** That's the smell test above — a wrong field wearing a comment, not a comment problem. Deleting the comment doesn't fix it.
+
+What *is* worth a comment here is the non-obvious why the code genuinely can't express: why a presentation is deferred by one run loop (`// This won't work until the bookmarks bar is actually visible, which it isn't until the next UI cycle.`), why a window close resolves as a dismissal rather than a retraction, why a user who already has the UI visible is retired instead of shown.
 
 ## Step 3 — Write the delegate
 
@@ -270,16 +280,77 @@ If the promo already exists as shipped UI presented by its own code (an update n
 | "Should show?" gating | `isEligible` / `refreshEligibility()` | Must re-derive from current state, not from having observed an event |
 | Auto-dismiss timer | `PromoType.timeoutInterval` | Delete the old timer, don't leave both. Compare the *durations* — base-type defaults are often shorter than the legacy value. Also note `PopoverMessageViewController` pauses its own timer while the pointer is over it; `PromoService`'s timeout does not, so hover-to-keep-open is lost in the move |
 | *(nothing — the queue adds this)* | `evaluateTriggers` hard-returns unless onboarding is complete | **A gate your legacy UI probably didn't have.** It's a bare `return`, so triggers arriving during onboarding are discarded with no retry. Note the asymmetry: `restoreVisiblePromos` has no onboarding check at all |
-| Presentation call site | delegate's `show()` | — |
+| A `UserDefaults` "already shown" flag | read-only check in `show()` returning `.retired` (item 5) | Promo history starts empty — skip this and every user who saw the legacy UI sees it again. Migrate the read off `UserDefaultsWrapper`; never write the flag again |
+| *(nothing — you are adding this)* | a per-promo `FeatureFlag` kill switch gating `isEligible` (item 3) | Without it the only way to disable the promo is `.promoQueue`, which disables all of them |
+| Presentation call site | delegate's `show()` | Delete it, don't flag it off (item 4) |
 | Pixels | delegate | Decide which move and which stay; note any that now fire at a different moment |
 
-**3. Keep the legacy path working with the feature flag off.** The whole queue lives behind `featureFlagger.isFeatureOn(.promoQueue)`. If you delete the old presentation call and replace it with only a trigger post, **users outside the rollout lose the feature entirely.** Gate the legacy path on the flag being off, or keep its call site and have the promo suppress it. Never delete the legacy path in the same change that adds the promo.
+**3. Give the promo its own kill-switch feature flag.** `.promoQueue` is all-or-nothing — turning it off to disable one migrated promo takes every other promo down with it. A promo that replaces shipping UI needs to be switchable off on its own, so add one flag per migrated promo:
 
-**4. Prove the two paths can't both present.** Once both exist, check there's no state where the flag-on path and the legacy path both fire.
+| Edit | File |
+|---|---|
+| `case promoQueue<Name>Promo`, with a `///` line linking its Asana task | `macOS/LocalPackages/FeatureFlags-macOS/Sources/FeatureFlags/FeatureFlag.swift` |
+| The matching arm in that file's `FeatureFlagDescribing` switch: `Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.<name>Promo))` | same file |
+| `case <name>Promo` on `PromoQueueSubfeature` | `SharedPackages/BrowserServicesKit/Sources/PrivacyConfig/Features/PrivacyFeature.swift` |
 
-**5. Don't strand the old code.** Removing the only production caller of a presenter method leaves dead UI code that will drift from the live copy — either delete it or point the remaining caller (often a debug menu) at the promo's force-show path. Check for now-unread state too: a `lastShownDate` whose only reader you just deleted is a dead write that will mislead the next reader. Rename methods whose behavior changed (a `showXIfNeeded` that no longer shows anything is a trap), and fix doc comments that still describe the old cap.
+`defaultValue: .enabled` over a `.remoteReleasable` subfeature is the shape you want: the promo ships on, and the flag exists to switch it *off*. It's a kill switch, not a rollout gate — only default it `.disabled` if product asked for a staged rollout.
 
-**6. Every number that differs from shipping behavior is a "Flag these back" item.** Not a judgment call you make and mention afterwards.
+**Gate it in the delegate's eligibility, never in the factory.** A factory function that conditionally omits the promo hides it from the priority list *and* from the id-uniqueness test (Step 5):
+
+```swift
+var isEligible: Bool {
+    featureFlagger.isFeatureOn(.promoQueueBookmarkToolbarPromo)
+}
+
+var isEligiblePublisher: AnyPublisher<Bool, Never> {
+    featureFlagger.updatesPublisher
+        .map { [featureFlagger] _ in featureFlagger.isFeatureOn(.promoQueueBookmarkToolbarPromo) }
+        .prepend(isEligible)
+        .removeDuplicates()
+        .eraseToAnyPublisher()
+}
+```
+
+If the delegate already derives eligibility from feature state through a `CurrentValueSubject` + `refreshEligibility()` (as `SyncFaviconsPromoDelegate` does), fold the flag in as the first `guard` of that computation rather than adding a second publisher.
+
+**4. Delete the legacy presentation path in the same change.** A migration is a *full* migration: don't keep the old call site behind `!featureFlagger.isFeatureOn(.promoQueue)`, and don't leave both paths alive "until the rollout finishes". The per-promo kill switch from item 3 is the fallback; a second presentation path is not. Two live paths means two frequency caps, two sets of pixels, and states where both can present.
+
+Concretely: remove the observer or `showXIfNeeded()` that used to present it, remove the gating the old call site applied (its "already shown" check moves to item 5, its eligibility to `isEligible`), and post the notification the old code listened for as a `PromoTrigger` instead. The Bookmark Toolbar migration deleted `MainViewController.registerForBookmarkBarPromptNotifications()` and `showBookmarkPromptIfNeeded()` outright.
+
+**If the spec explicitly asks for a `.promoQueue`-off fallback, build one.** The predicate is the spec's own written words asking for the promo to keep working with the queue off — not your read of how critical the promo is, and not "the old code was there anyway". Expect this for a small number of critical promos and for nothing else. **A spec that is silent means delete.** If you think a promo warrants a fallback and the spec doesn't say so, that's a "Flag these back" question for the user, not a call you make mid-edit.
+
+When the spec does ask for one:
+- Quote the line that asked for it in the PR description, and gate the legacy call site on `!featureFlagger.isFeatureOn(.promoQueue)`.
+- Make the two paths mutually exclusive *by construction* — one `.promoQueue` check deciding which path gets wired, not two independent checks that can both pass. Then walk the states where they could overlap: the flag flipping at runtime, and restore-after-restart.
+- Say which path owns the legacy "already shown" flag. The legacy path still writes it; the promo path only reads it (item 5). Two writers is how you end up retiring the promo for someone who never saw it.
+
+**5. Retire the promo for users who already saw the legacy UI.** The old path almost always recorded "shown" in `UserDefaults` (`bookmarks.bar.prompt.shown`, `sync.did-present-favicons-fetcher-onboarding`). Promo history starts empty, so unless the promo reads that flag, **every user who already saw the legacy UI is shown it a second time.**
+
+Read it in `show()` and return **`.retired`** — permanently dismissed, and unlike `.ignored()` it records no dismissal, so those users don't burn the global cooldown on a promo that never appeared. Let `force` bypass it so the debug menu's Force Show still previews the UI:
+
+```swift
+if !force, storage.didShowLegacyPopover == true {
+    return .retired
+}
+```
+
+**Move the flag off the deprecated `UserDefaultsWrapper` while you're in there.** `@UserDefaultsWrapper` is marked `@available(*, deprecated)`; the current API is `KeyedStorage` over a `StoringKeys` struct (`import Persistence`). Declare the key in `UserDefaultsKeys` under a `// MARK: - Promo Queue Legacy Flags` section, keeping its **existing raw string** — changing it orphans the shipped value and re-shows the promo to everyone — and inject the store so tests use `InMemoryKeyValueStore` rather than mutating real defaults:
+
+```swift
+struct BookmarkToolbarPromoSettings: StoringKeys {
+    let didShowLegacyPopover = StorageKey<Bool>(UserDefaultsKeys.bookmarksBarPromptShown, assertionHandler: { _ in })
+}
+
+init(..., storage: KeyedStorage<BookmarkToolbarPromoSettings>? = nil) {
+    self.storage = storage ?? KeyedStorage(storage: UserDefaults.standard)
+}
+```
+
+The promo **reads** this flag and never writes it — the queue's history is the record from now on. That makes it a read-only migration artifact, so name it as one (`didShowLegacyPopover`, not `promoShown`), and migrate every other reader and any debug-menu action that clears it off `UserDefaultsWrapper` too, or QA loses the ability to reset it.
+
+**6. Don't strand the old code.** Removing the only production caller of a presenter method leaves dead UI code that will drift from the live copy — either delete it or point the remaining caller (often a debug menu) at the promo's force-show path. Check for now-unread state too: a `lastShownDate` whose only reader you just deleted is a dead write that will mislead the next reader. Rename methods whose behavior changed (a `showXIfNeeded` that no longer shows anything is a trap), and fix doc comments that still describe the old cap.
+
+**7. Every number that differs from shipping behavior is a "Flag these back" item.** Not a judgment call you make and mention afterwards.
 
 ## Step 6 — Verify it actually builds, tests, and shows
 
@@ -304,10 +375,11 @@ xcodebuild -project macOS/DuckDuckGo-macOS.xcodeproj -scheme "macOS Browser" bui
 - eligibility flipping false while showing (the retraction path)
 - `hide()` called before any resolution, and `hide()` called twice
 - if you added a trigger: that posting the notification actually yields your `PromoTrigger` case
+- if it's a migration: `isEligible` false with the promo's own flag off; `show()` returning `.retired` when the legacy "already shown" key is set, and *not* retiring when `force: true`. Back these with an injected `KeyedStorage(storage: InMemoryKeyValueStore())` and a `MockFeatureFlagger`, so no test touches `UserDefaults.standard`
 
 Also update `PromoRegistryTests` and `PromoServiceFactoryTests.makeDependencies()` for any new `PromoDependencies` field, and make sure your promo is actually *present* in the service the registry test builds (see [reference.md](reference.md)).
 
-**Then see it on screen.** The debug menu (`PromoDebugMenu`) is the manual path and answers "why isn't my promo showing": per-promo **Force Show**, **Undismiss**, **Undismiss + Clear History**; **Fire Test Trigger** (debug/review builds); **Advance Simulated Date** by hour/day/week/month to exercise cooldowns; **Reset All Promo State**. Note Force Show applies no timeout — it doesn't create a `TimedFlag` — so a promo relying on `PromoType.timeoutInterval` won't auto-dismiss under Force Show. And confirm the feature flag is on, or nothing will show at all.
+**Then see it on screen.** The debug menu (`PromoDebugMenu`) is the manual path and answers "why isn't my promo showing": per-promo **Force Show**, **Undismiss**, **Undismiss + Clear History**; **Fire Test Trigger** (debug/review builds); **Advance Simulated Date** by hour/day/week/month to exercise cooldowns; **Reset All Promo State**. Note Force Show applies no timeout — it doesn't create a `TimedFlag` — so a promo relying on `PromoType.timeoutInterval` won't auto-dismiss under Force Show. And confirm **both** `.promoQueue` and the promo's own `promoQueue<Name>Promo` flag are on, or nothing will show at all.
 
 ## Step 7 — Self-review before you finish (implementation only)
 
@@ -375,8 +447,9 @@ Same model, reviewer direction — check the diff against each, and cite the spe
 12. **Does `initiated` describe what caused the promo to appear**, or was it picked for its cooldown length? (See "Choosing `initiated`".)
 13. **Is the promo's position in `makeAllPromos` justified in the PR description?** An unexplained append to the end is a finding — ask what it should lose to and why.
 14. **Are only the promo definition files under `Promotions/`?** The delegate and UI belong with the feature. A new `YourPromoDelegate.swift` under `macOS/DuckDuckGo/Promotions/` is a finding on its own.
-15. **Does any comment or PR sentence justify a field by the rule it avoids** ("chosen because X would suppress it", "otherwise it conflicts with Y")? Treat every one as either an unflagged rule break or a wrong value elsewhere — see the smell test. Don't accept it as documented rationale just because it's documented.
-16. **If this is a migration:** does the legacy path still work with `.promoQueue` off; is the old frequency cap preserved or explicitly signed off as changed; is the old auto-dismiss timer removed rather than doubled; is there dead presenter code or a now-unread `lastShown`-style property left behind; do any doc comments still describe the old behavior?
+15. **Do the comments follow `.cursor/rules/code-style.mdc`** — WHY not WHAT, `//`/`///` not `/* */`? A doc comment that restates the signature, or that describes frequency/severity the fields already declare, is a finding: it adds nothing now and goes stale later.
+16. **Does any comment or PR sentence justify a field by the rule it avoids** ("chosen because X would suppress it", "otherwise it conflicts with Y")? Treat every one as either an unflagged rule break or a wrong value elsewhere — see the smell test. Don't accept it as documented rationale just because it's documented.
+17. **If this is a migration:** is the legacy presentation path actually *gone* — or, if it's kept behind a `.promoQueue`-off branch, does the PR quote the spec line that asked for that fallback, and are the two paths mutually exclusive by construction; does the promo have its own `promoQueue<Name>Promo` kill switch, gating `isEligible` rather than the factory; does `show()` read the legacy "already shown" flag and return `.retired` (with `force` bypassing it); is that flag read through `KeyedStorage` with the store injectable, not through the deprecated `UserDefaultsWrapper`, and is its raw string unchanged; is the old frequency cap preserved or explicitly signed off as changed; is the old auto-dismiss timer removed rather than doubled; is there dead presenter code or a now-unread `lastShown`-style property left behind; do any doc comments still describe the old behavior?
 
 ## Common mistakes
 
@@ -392,7 +465,13 @@ Same model, reviewer direction — check the diff against each, and cite the spe
 | Resolving a recurring promo's CTA with `.actioned` | Retires it permanently — history is keyed by `id` with no version scoping, so it never shows again for any future release. The user who engaged is the one you silence. |
 | Setting a short `customTimeoutResult` cooldown on a medium+ promo | Silently floored by the shared global cooldown (1 day for `.app`) unless `setsGlobalCooldown: false` too. |
 | Marking the delegate class `@MainActor` | Compiles under current settings, but `PromoService` reads `isEligible`/`refreshEligibility()` on a background queue. Hard error under Swift 6. |
-| Deleting the legacy presentation path when migrating | The queue is behind `.promoQueue`; flag-off users lose the feature entirely. |
+| Keeping the legacy presentation path alive without the spec asking for it | Two frequency caps, two sets of pixels, and states where both present. Migration is a full migration by default — the per-promo kill switch is the fallback, not the old code path. A `.promoQueue`-off fallback is built only when the spec asks for one in writing. |
+| Migrating a promo without a flag of its own | The only way left to disable it is `.promoQueue`, which takes every other promo down with it. |
+| Gating the promo's feature flag in the factory instead of `isEligible` | A conditionally-omitted promo vanishes from the priority list and from the id-uniqueness test. |
+| Not reading the legacy "already shown" flag when migrating | Promo history starts empty, so everyone who already saw the legacy UI is shown it a second time. |
+| Reading a legacy flag through `@UserDefaultsWrapper` | Deprecated API, and it hardcodes `UserDefaults.standard`, so tests have to mutate real defaults. Use `KeyedStorage` over a `StoringKeys` struct with the store injected. |
+| Renaming a legacy flag's raw `UserDefaults` string during the migration | Orphans the shipped value — the retirement check reads `nil` and the promo re-shows to every user who already saw the legacy UI. |
+| Doc comments restating what the promo's fields already declare | Duplicates `PromoResult`/`PromoType` and goes stale on the first change. Comments explain WHY (`.cursor/rules/code-style.mdc`). |
 | Forgetting the pbxproj entries for new files | Cannot-find-type errors in files you never touched. Needs both app targets' Sources phases. |
 | Relying on a single one-shot trigger | If `checkRules` fails at that instant the promo is skipped with no retry and no log. Pair with a recurring trigger. |
 | Assuming `checkRules` gates all shows | `restoreVisiblePromos` bypasses it entirely — including permanent dismissal — for anything on screen when the app was killed. |

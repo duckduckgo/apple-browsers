@@ -10,11 +10,13 @@ sed -n '/^struct PromoType/,/^}/p' macOS/DuckDuckGo/Promotions/PromoTypes/PromoT
 
 The header comment of `PromoTypes/PromoType.swift` links the two canonical DDG docs — **Promo types** and **Attribute rules**. Read those links out of the file; they are the product-side source of truth for which treatment is appropriate, and this reference only covers what the code enforces.
 
-## The whole queue is behind a feature flag
+## The whole queue is behind a feature flag — and each migrated promo behind its own
 
 `PromoService` is only constructed inside `if featureFlagger.isFeatureOn(.promoQueue)` in `AppDelegate.applicationDidFinishLaunching`. With the flag off there is no queue and no promo shows at all — `PromoDebugMenu` even renders "Promo Queue unavailable (feature flag off)".
 
-Consequences: a brand-new promo simply doesn't appear for users outside the rollout (usually fine). **But when migrating existing UI onto the queue, deleting the legacy presentation path removes the feature entirely for flag-off users.** See "Migrating existing UI" in SKILL.md.
+`.promoQueue` is therefore all-or-nothing and is **not** a per-promo switch. A promo migrated from shipping UI carries its own flag as well — `promoQueue<Name>Promo`, `defaultValue: .enabled`, `source: .remoteReleasable(PromoQueueSubfeature.<name>Promo)` — checked inside its delegate's `isEligible`, so it can be killed remotely without taking every other promo down with it. That per-promo flag is the fallback for a migration; keeping the legacy presentation path alive is not — unless the spec explicitly asks for the promo to keep working with `.promoQueue` off, which is rare and reserved for critical promos. See "Migrating existing UI" in SKILL.md for the three files it touches.
+
+So a promo shows only when `.promoQueue` **and** its own flag are on. When debugging "it never appears", check both.
 
 ## `Promo` protocol fields
 
@@ -183,13 +185,16 @@ Also resolve on presentation *failure* — if your `show` path can fail to prese
 | `.actioned` | User engaged the CTA | **Permanent. Never eligible again, ever.** Sets `actioned = true` + `nextEligibleDate = .distantFuture` |
 | `.ignored()` (cooldown `nil`, default) | Dismissed without engaging | **Permanent.** Sets `nextEligibleDate = .distantFuture` |
 | `.ignored(cooldown: interval)` | Dismissed without engaging | Temporarily dismissed — eligible again after `interval` |
+| `.retired` | Promo declined to offer itself to this user at all | **Permanent**, but records *no* dismissal — `timesDismissed` and `lastDismissed` are untouched, so it doesn't consume the global cooldown. Also clears `lastShown`. This is the value for "this user already saw the legacy UI" and "this user obviously knows about the feature already" |
 | `.noChange` | Retracted or errored | Clears `lastShown` (so it won't be restored after a restart); otherwise no change — eligible again on next trigger |
 
 ### "Permanent" means permanent — and history is keyed by `id` alone
 
 `PromoHistoryRecord.isEligible(asOf:)` opens with `guard !actioned else { return false }`. There is **no** per-version, per-occurrence, or per-session scoping on a promo's history — just the `id` string, persisted for the life of the profile. Nothing resets it outside the debug menu's Undismiss.
 
-**So a recurring promo must never resolve `.actioned` or bare `.ignored()`.** This is the single easiest way to ship a promo that works once and then silently disappears forever.
+`.retired` is permanent too, and `guard !actioned` doesn't cover it — it works by pinning `nextEligibleDate = .distantFuture`. Use it only for "never offer this to this user", not as a quiet way out of a resolution path.
+
+**So a recurring promo must never resolve `.actioned`, bare `.ignored()`, or `.retired`.** This is the single easiest way to ship a promo that works once and then silently disappears forever.
 
 Decide explicitly which kind you have:
 

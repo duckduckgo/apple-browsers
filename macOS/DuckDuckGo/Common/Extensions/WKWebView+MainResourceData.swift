@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import ConcurrencyExtensions
 import Foundation
 import WebKit
@@ -25,16 +26,16 @@ import WebKit
     func getMainResourceData(completionHandler: @escaping (NSData?, NSError?) -> Void)
 }
 
-extension WKWebView {
+extension WKWebView: @retroactive MainResourceDataProviding {
 
     private static let getMainResourceDataSelector = NSSelectorFromString("_getMainResourceDataWithCompletionHandler:")
 
-    /// The bytes of the currently displayed main-frame document, read straight from WebKit with no
-    /// refetch — so it works for content the page can't serialize itself and for web views that
-    /// aren't in the foreground.
+    /// The bytes of the currently displayed main-frame document, straight from WebKit — no refetch,
+    /// so it also works for documents the page-context user script can't see (PDFs) and for tabs
+    /// that aren't in the foreground.
     ///
-    /// Returns nil when the runtime doesn't expose this (private) API, or when the call doesn't
-    /// answer within `timeout`.
+    /// Returns nil when the runtime doesn't expose the API (it's private) or the call doesn't answer
+    /// within `timeout`; callers treat that as "no document context", which is today's behaviour.
     @MainActor
     public func mainResourceData(timeout: TimeInterval = 5) async -> Data? {
         guard responds(to: Self.getMainResourceDataSelector) else {

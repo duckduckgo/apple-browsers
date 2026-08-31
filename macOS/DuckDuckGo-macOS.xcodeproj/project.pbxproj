@@ -3352,6 +3352,8 @@
 		B658BAB72B0F848D00D1F2C7 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B658BAB52B0F845D00D1F2C7 /* Localizable.xcstrings */; };
 		B65C7DFB2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65C7DFA2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift */; };
 		B65C7DFC2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65C7DFA2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift */; };
+		AA5E1EC72A0000000000E002 /* WKWebView+MainResourceData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5E1EC72A0000000000E001 /* WKWebView+MainResourceData.swift */; };
+		AA5E1EC72A0000000000E003 /* WKWebView+MainResourceData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5E1EC72A0000000000E001 /* WKWebView+MainResourceData.swift */; };
 		B65CD8D52B316FCA00A595BB /* __Snapshots__ in Resources */ = {isa = PBXBuildFile; fileRef = B65CD8D42B316FCA00A595BB /* __Snapshots__ */; };
 		B65CD8D62B316FCA00A595BB /* __Snapshots__ in Resources */ = {isa = PBXBuildFile; fileRef = B65CD8D42B316FCA00A595BB /* __Snapshots__ */; };
 		B65DA5EF2A77CC3A00CBEE8D /* Bundle+NetworkProtectionExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B602E81F2A1E2603006D261F /* Bundle+NetworkProtectionExtensions.swift */; };
@@ -6631,6 +6633,7 @@
 		B657841E25FA497600D8DB33 /* NSException+Catch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSException+Catch.swift"; sourceTree = "<group>"; };
 		B658BAB52B0F845D00D1F2C7 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		B65C7DFA2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKPDFHUDViewWrapper.swift; sourceTree = "<group>"; };
+		AA5E1EC72A0000000000E001 /* WKWebView+MainResourceData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WKWebView+MainResourceData.swift"; sourceTree = "<group>"; };
 		B65CD8D42B316FCA00A595BB /* __Snapshots__ */ = {isa = PBXFileReference; lastKnownFileType = folder; path = __Snapshots__; sourceTree = "<group>"; };
 		B65CD8D72B341FD300A595BB /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		B65E5DAE2B74DE6D00480415 /* TrackerNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerNetwork.swift; sourceTree = "<group>"; };
@@ -12134,6 +12137,7 @@
 				B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */,
 				B68412242B6A67920092F66A /* WKBackForwardListItemExtension.swift */,
 				B65C7DFA2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift */,
+				AA5E1EC72A0000000000E001 /* WKWebView+MainResourceData.swift */,
 				B645D8F529FA95440024461F /* WKProcessPoolExtension.swift */,
 				84DDB9092C92B667008C997B /* WKVisitedLinkStoreWrapper.swift */,
 				4B7A60A0273E0BE400BBDFEB /* WKWebsiteDataStoreExtension.swift */,
@@ -15781,6 +15785,7 @@
 				B6F1B02B2BCE675C005E863C /* NetworkProtectionControllerTabExtension.swift in Sources */,
 				F1A2E11F2DCB9FB00086F538 /* LogExporter.swift in Sources */,
 				B65C7DFC2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */,
+				AA5E1EC72A0000000000E003 /* WKWebView+MainResourceData.swift in Sources */,
 				3706FAF4293F65D500E42796 /* SafariBookmarksReader.swift in Sources */,
 				36E8D3722F857F9000861037 /* SubscriptionPromoTabExtension.swift in Sources */,
 				376E8C1B2D41186B00D5D2EC /* DefaultRecentActivityActionsHandler.swift in Sources */,
@@ -18011,6 +18016,7 @@
 				C172E7372C93968E00521D9A /* SyncPromoPixelKitEvent.swift in Sources */,
 				B684121C2B6A1D880092F66A /* ErrorPageHTMLTemplate.swift in Sources */,
 				B65C7DFB2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */,
+				AA5E1EC72A0000000000E002 /* WKWebView+MainResourceData.swift in Sources */,
 				CC9B678D2E607AD9003353C3 /* SessionRestorePromptPixel.swift in Sources */,
 				B68458CD25C7EB9000DC17B6 /* WKWebViewConfigurationExtensions.swift in Sources */,
 				1D01A3D82B88DF8B00FE8150 /* PreferencesSyncView.swift in Sources */,

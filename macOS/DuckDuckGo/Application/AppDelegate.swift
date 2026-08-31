@@ -34,7 +34,6 @@ import Configuration
 import ContentScopeScripts
 import CoreData
 import Crashes
-import CryptoKit
 import CrashReportingShared
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
@@ -513,14 +512,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
-        if AppVersion.runType.requiresEnvironment {
-            // PixelKit must be available before the retry loop so that the
-            // failure path can fire its diagnostic pixels.
-            Self.configurePixelKit(isInternalUser: false)
-
-            let encryptionKey = Self.readEncryptionKeyRetryingKeychainAccess(keyStore: keyStore, startupProfiler: startupProfiler)
+        do {
+            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-        } else {
+        } catch {
+            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
             fileStore = EncryptedFileStore()
         }
 
@@ -547,12 +543,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDatabase = BookmarkDatabase()
 
         if AppVersion.runType.requiresEnvironment {
-            let commonDatabase: Database
-            do {
-                commonDatabase = try Database()
-            } catch {
-                Self.presentKeychainUnavailableAndTerminate(error: error)
-            }
+            let commonDatabase = Self.createDatabaseRetryingKeychainAccess(startupProfiler: startupProfiler)
             database = commonDatabase
 
             database.db.loadStore { _, error in
@@ -2547,11 +2538,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// When launched as a login item the Keychain may not be unlocked yet.
     /// Retry for up to ~10 s to give loginwindow time to unlock it, then
     /// show an alert and exit cleanly.
-    private static func readEncryptionKeyRetryingKeychainAccess(keyStore: EncryptionKeyStoring, startupProfiler: StartupProfiler) -> SymmetricKey {
+    private static func createDatabaseRetryingKeychainAccess(startupProfiler: StartupProfiler) -> Database {
         let maxAttempts = 6
         for attempt in 1...maxAttempts {
             do {
-                return try keyStore.readKey()
+                return try Database()
             } catch {
                 guard attempt < maxAttempts else {
                     presentKeychainUnavailableAndTerminate(error: error)

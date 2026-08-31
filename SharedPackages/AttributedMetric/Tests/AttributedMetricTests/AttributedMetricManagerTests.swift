@@ -1022,6 +1022,51 @@ final class AttributedMetricManagerTests: XCTestCase {
         XCTAssertEqual(capturedMonth, 2, "Converted trial user must advance to month=2+, not re-fire month=1")
     }
 
+    /// The ongoing-month (month=2+) pixel must fire once per month, not on every active day within the same month.
+    /// (month=2 and month=3 both bucket to param value 2, so this counts pixel fires, not the param.)
+    func testProcessSubscriptionCheck_month2Plus_firesOncePerMonthNotPerDay() async {
+        let firstMonthFire = XCTestExpectation(description: "month bucket fired for month 2")
+        let noRefireSameMonth = XCTestExpectation(description: "not re-fired within same month")
+        noRefireSameMonth.isInverted = true
+        let nextMonthFire = XCTestExpectation(description: "fired again for month 3")
+        var subscribedFireCount = 0
+
+        let fixture = createTestFixture(
+            pixelHandler: { pixelName, _, _, _, _, _ in
+                guard pixelName == "attributed_metric_subscribed" else { return }
+                subscribedFireCount += 1
+                switch subscribedFireCount {
+                case 1: firstMonthFire.fulfill()
+                case 2: nextMonthFire.fulfill()
+                default: noRefireSameMonth.fulfill()
+                }
+            },
+            subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
+        )
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionMonth1Fired = true
+
+        // Day 31: first launch past one month → fires once.
+        fixture.timeMachine.travel(by: .day, value: 31)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        await fulfillment(of: [firstMonthFire], timeout: 5.0)
+
+        // Day 32: still the same month bucket → must NOT re-fire.
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        await fulfillment(of: [noRefireSameMonth], timeout: 2.0)
+
+        // Day 57: crosses into month 3 → fires again.
+        fixture.timeMachine.travel(by: .day, value: 25)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        await fulfillment(of: [nextMonthFire], timeout: 5.0)
+
+        XCTAssertEqual(subscribedFireCount, 2, "month=2+ must fire once per month, not once per active day")
+    }
+
     // MARK: - Sync Tests
 
     /// Tests sync pixel for valid device counts (< 3 devices)

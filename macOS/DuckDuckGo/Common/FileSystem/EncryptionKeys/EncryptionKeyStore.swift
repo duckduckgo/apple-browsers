@@ -42,18 +42,7 @@ enum EncryptionKeyStoreError: Error, ErrorWithPixelParameters {
     }
 
     var errorParameters: [String: String] {
-        switch self {
-        case .storageFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .readFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .deletionFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .cannotTransformDataToString(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .cannotTransfrotmStringToBase64Data(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        }
+        [PixelKit.Parameters.keychainErrorCode: "\(status)"]
     }
 }
 

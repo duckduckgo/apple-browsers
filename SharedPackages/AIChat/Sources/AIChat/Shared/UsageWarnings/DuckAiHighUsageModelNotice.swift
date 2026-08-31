@@ -71,6 +71,11 @@ public struct DuckAiHighUsageNoticeDismissalStore: DuckAiHighUsageNoticeDismissa
         try? keyValueStore.set(ids, forKey: Self.key)
     }
 
+    /// The debug menu's reset: there is no product path back once a model's notice is dismissed.
+    public func clearDismissals() {
+        try? keyValueStore.removeObject(forKey: Self.key)
+    }
+
     /// Unreadable reads as "not dismissed": showing the notice again is the safe failure.
     private func dismissedModelIds() -> [String] {
         (try? keyValueStore.object(forKey: Self.key) as? [String]) ?? []

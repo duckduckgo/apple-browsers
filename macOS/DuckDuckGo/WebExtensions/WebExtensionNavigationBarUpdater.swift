@@ -35,9 +35,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private enum Constants {
         static let buttonSize: CGFloat = 28
         static let iconSize = CGSize(width: 16, height: 16)
-
-        /// Time the popup of another window needs to close before this window opens its own.
-        static let popupReopenDelay: TimeInterval = 2.0 / 3.0
     }
 
     let themeManager: ThemeManaging
@@ -173,19 +170,18 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
             return
         }
 
-        if let popover = context.action(for: nil)?.popupPopover, popover.isShown {
-            popover.close()
-
-            // The popup belongs to a different window, so give the popover time to close
-            // before the other window reopens it.
-            if sender.window != popover.mainWindow {
-                DispatchQueue.main.asyncAfter(deadline: .now() + Constants.popupReopenDelay) {
-                    context.performAction(for: nil)
-                }
-            }
+        // A second click on the button of the open popup closes it.
+        if let popupPresenter, popupPresenter.isShown(for: context) {
+            popupPresenter.close()
             return
         }
 
         context.performAction(for: nil)
+    }
+
+    /// The presenter that hosts extension popups, owned by the manager's window/tab provider.
+    private var popupPresenter: WebExtensionPopupPresenter? {
+        guard let manager = webExtensionManager as? WebExtensionManager else { return nil }
+        return (manager.windowTabProvider as? WebExtensionWindowTabProvider)?.popupPresenter
     }
 }

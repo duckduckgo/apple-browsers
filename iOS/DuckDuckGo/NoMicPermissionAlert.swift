@@ -18,9 +18,17 @@
 //
 
 import Foundation
+import SitePermissions
+import SwiftUI
 import UIKit
 
+@MainActor
 struct NoMicPermissionAlert {
+
+    static func build(isRedesigned: Bool,
+                      onAction: @escaping (PermissionReminderDialogAction) -> Void) -> UIViewController {
+        isRedesigned ? buildReminder(onAction: onAction) : buildAlert()
+    }
     
     static func buildAlert() -> UIAlertController {
         let alertController = UIAlertController(title: UserText.noVoicePermissionAlertTitle,
@@ -36,5 +44,56 @@ struct NoMicPermissionAlert {
         alertController.addAction(openSettingsButton)
         alertController.addAction(cancelAction)
         return alertController
+    }
+
+    static func buildReminder(onAction: @escaping (PermissionReminderDialogAction) -> Void) -> UIViewController {
+        let reminder = PermissionReminderDialogView(viewModel: .voiceSearch, onAction: onAction)
+        let hostingController = UIHostingController(rootView: reminder)
+        hostingController.modalPresentationStyle = .overFullScreen
+        hostingController.modalTransitionStyle = .crossDissolve
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.accessibilityViewIsModal = true
+        return hostingController
+    }
+}
+
+@MainActor
+struct VoiceSearchPermissionPromptActionHandler {
+
+    typealias DismissHandler = (_ completion: (() -> Void)?) -> Void
+
+    private let eventHandler: (SitePermissionsEvent) -> Void
+    private let disableVoiceSearch: () -> Void
+    private let dismiss: DismissHandler
+    private let openSystemSettings: () -> Void
+
+    init(eventHandler: @escaping (SitePermissionsEvent) -> Void,
+         disableVoiceSearch: @escaping () -> Void,
+         dismiss: @escaping DismissHandler,
+         openSystemSettings: @escaping () -> Void) {
+        self.eventHandler = eventHandler
+        self.disableVoiceSearch = disableVoiceSearch
+        self.dismiss = dismiss
+        self.openSystemSettings = openSystemSettings
+    }
+
+    func didShow() {
+        eventHandler(.voiceSearchPermissionPrompt(action: .shown))
+    }
+
+    func handle(_ action: PermissionReminderDialogAction) {
+        switch action {
+        case .changePermissions:
+            eventHandler(.voiceSearchPermissionPrompt(action: .settings))
+            eventHandler(.permissionSystemSettingsOpened(type: .microphone))
+            dismiss(openSystemSettings)
+        case .hideVoiceSearch:
+            eventHandler(.voiceSearchPermissionPrompt(action: .hide))
+            disableVoiceSearch()
+            dismiss(nil)
+        case .cancel:
+            eventHandler(.voiceSearchPermissionPrompt(action: .cancel))
+            dismiss(nil)
+        }
     }
 }

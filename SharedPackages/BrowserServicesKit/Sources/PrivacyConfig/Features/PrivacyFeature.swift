@@ -823,6 +823,9 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
     case featureEnabled
+
+    /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
+    case bookmarkToolbarPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

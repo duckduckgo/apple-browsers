@@ -32,7 +32,10 @@ extension PromoServiceFactory {
             promoType: PromoType(.semiModal),
             context: .global,
             coexistingPromoIDs: [PromoServiceFactory.nextSteps.id],
-            delegate: BookmarkToolbarPromoDelegate(windowControllersManager: dependencies.windowControllersManager)
+            delegate: BookmarkToolbarPromoDelegate(
+                featureFlagger: dependencies.featureFlagger,
+                windowControllersManager: dependencies.windowControllersManager
+            )
         )
     }
 }

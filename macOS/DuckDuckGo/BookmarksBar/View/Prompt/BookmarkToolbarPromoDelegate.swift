@@ -19,25 +19,36 @@
 import AppKit
 import Combine
 import Foundation
+import PrivacyConfig
 
 /// Presents the "Show Bookmarks Bar?" popover through the promo queue, offering to turn on the
 /// bookmarks bar after the user creates their first bookmark or imports bookmarks.
 final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
 
+    private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
 
     private var resultContinuation: CheckedContinuation<PromoResult, Never>?
     private weak var presentedBookmarksBarViewController: BookmarksBarViewController?
     private var pendingPresentation: DispatchWorkItem?
 
-    init(windowControllersManager: WindowControllersManagerProtocol) {
+    init(featureFlagger: FeatureFlagger, windowControllersManager: WindowControllersManagerProtocol) {
+        self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
     }
 
-    var isEligible: Bool { true }
+    var isEligible: Bool {
+        featureFlagger.isFeatureOn(.promoQueueBookmarkToolbarPromo)
+    }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        Just(true).eraseToAnyPublisher()
+        featureFlagger.updatesPublisher
+            .map { [featureFlagger] _ in
+                featureFlagger.isFeatureOn(.promoQueueBookmarkToolbarPromo)
+            }
+            .prepend(isEligible)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
     }
 
     @MainActor

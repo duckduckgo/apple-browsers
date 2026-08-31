@@ -17,17 +17,22 @@
 //
 
 import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 final class BookmarkToolbarPromoDelegateTests: XCTestCase {
 
+    private var featureFlagger: MockFeatureFlagger!
     private var windowControllersManager: WindowControllersManagerMock!
     private var sut: BookmarkToolbarPromoDelegate!
 
     override func setUp() {
         super.setUp()
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.promoQueueBookmarkToolbarPromo]
         windowControllersManager = WindowControllersManagerMock()
         sut = makeSUT()
     }
@@ -35,18 +40,25 @@ final class BookmarkToolbarPromoDelegateTests: XCTestCase {
     override func tearDown() {
         sut = nil
         windowControllersManager = nil
+        featureFlagger = nil
         UserDefaultsWrapper<Bool?>(key: .bookmarksBarPromptShown).clear()
         super.tearDown()
     }
 
     private func makeSUT() -> BookmarkToolbarPromoDelegate {
-        BookmarkToolbarPromoDelegate(windowControllersManager: windowControllersManager)
+        BookmarkToolbarPromoDelegate(featureFlagger: featureFlagger, windowControllersManager: windowControllersManager)
     }
 
     // MARK: - Eligibility
 
-    func testIsEligibleIsAlwaysTrue() {
+    func testIsEligibleWhenFeatureFlagIsOn() {
         XCTAssertTrue(sut.isEligible)
+    }
+
+    func testIsEligibleWhenFeatureFlagIsOff() {
+        featureFlagger.enabledFeatureFlags = []
+
+        XCTAssertFalse(sut.isEligible)
     }
 
     func testIsEligiblePublisherReplaysCurrentValue() {

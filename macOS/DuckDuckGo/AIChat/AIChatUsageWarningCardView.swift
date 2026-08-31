@@ -132,6 +132,16 @@ final class AIChatUsageWarningCardView: NSView {
         return imageView
     }()
 
+    /// So a reopen on the same message doesn't replay the fill animation.
+    private var lastShownApproachingPercent: Int?
+
+    private let ringView: AIChatUsageWarningRingView = {
+        let view = AIChatUsageWarningRingView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isHidden = true
+        return view
+    }()
+
     private let titleLabel: NSTextField = {
         let label = NSTextField(labelWithString: "")
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -224,6 +234,7 @@ final class AIChatUsageWarningCardView: NSView {
         addSubview(tintView)
         addLayoutGuide(contentGuide)
         addSubview(iconImageView)
+        addSubview(ringView)
         addSubview(titleLabel)
         addSubview(actionButton)
         addSubview(closeButton)
@@ -256,6 +267,11 @@ final class AIChatUsageWarningCardView: NSView {
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
+            ringView.leadingAnchor.constraint(equalTo: iconImageView.leadingAnchor),
+            ringView.centerYAnchor.constraint(equalTo: iconImageView.centerYAnchor),
+            ringView.widthAnchor.constraint(equalToConstant: AIChatUsageWarningRingView.Constants.size),
+            ringView.heightAnchor.constraint(equalToConstant: AIChatUsageWarningRingView.Constants.size),
+
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
 
@@ -285,6 +301,7 @@ final class AIChatUsageWarningCardView: NSView {
 
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
     func update(with warning: DuckAiUsageWarning) {
+        applyIcon(for: warning)
         titleLabel.attributedStringValue = Self.attributedTitle(headline: warning.localizedHeadline,
                                                                 resetsIn: warning.localizedResetsIn)
         titleLabel.setAccessibilityLabel("\(warning.localizedHeadline). \(warning.localizedResetsIn)")
@@ -306,6 +323,21 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     /// Bold headline, regular reset detail, one string so the two can never wrap apart.
+    /// The ring tracks the percentage while the limit is only approaching; a reached limit reads as an
+    /// alert, where a nearly-full ring would say less than the copy already does.
+    private func applyIcon(for warning: DuckAiUsageWarning) {
+        let isApproaching = warning.message == .approaching
+        ringView.isHidden = !isApproaching
+        iconImageView.isHidden = isApproaching
+
+        guard isApproaching else { return }
+        // Animated only between two messages, so the ring doesn't wind up from zero every time the
+        // panel reopens on the same one.
+        let animated = lastShownApproachingPercent != nil && lastShownApproachingPercent != warning.percent
+        lastShownApproachingPercent = warning.percent
+        ringView.setProgress(Double(warning.percent) / 100, severity: warning.severity, animated: animated)
+    }
+
     private static func attributedTitle(headline: String, resetsIn: String) -> NSAttributedString {
         let textColor = NSColor(designSystemColor: .textPrimary)
         let result = NSMutableAttributedString(

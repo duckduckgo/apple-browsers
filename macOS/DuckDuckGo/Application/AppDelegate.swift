@@ -2563,8 +2563,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         keyStore: EncryptionKeyStoring,
         startupProfiler: StartupProfiler
     ) -> (encryptionKey: SymmetricKey, database: Database) {
-        let retryInterval: TimeInterval = 2
-        let maxAttempts = 31
+        let retryInterval: TimeInterval = 6
+        let maxAttempts = 11
         for attempt in 1...maxAttempts {
             do {
                 let key = try keyStore.readKey()

@@ -88,6 +88,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let urlEventHandler = URLEventHandler()
 
     private let keyStore: EncryptionKeyStoring
+    /// Error code of the first failed launch-time Keychain read, when a retry later succeeded.
+    /// Carried by the launch pixel; nil when the first read succeeded.
+    private let keychainReadErrorStatus: OSStatus?
     let fileStore: FileStore
 
     private let crashReporting: any CrashReporting
@@ -514,10 +517,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if AppVersion.runType.requiresEnvironment {
-            let encryptionKey = Self.readEncryptionKeyRetryingKeychainAccess(keyStore: keyStore,
-                                                                            startupProfiler: startupProfiler)
-            fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
+            let keyRead = Self.readEncryptionKeyRetryingKeychainAccess(keyStore: keyStore,
+                                                                      startupProfiler: startupProfiler)
+            keychainReadErrorStatus = keyRead.firstFailureStatus
+            fileStore = EncryptedFileStore(encryptionKey: keyRead.key)
         } else {
+            keychainReadErrorStatus = nil
             fileStore = EncryptedFileStore()
         }
 
@@ -1556,7 +1561,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // silently inert. Calling it twice is harmless — it re-checks already-settled state.
         eventHubIntegration.applicationDidBecomeActive()
 
-        PixelKit.fire(GeneralPixel.launch)
+        fireLaunchPixel()
         profilerToken.stop()
     }
 
@@ -2536,6 +2541,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Keychain availability
 
+    /// Fires the launch pixel. When the launch-time Keychain read failed before a retry
+    /// succeeded, the pixel carries the first failure's error code — reported here rather
+    /// than from the retry loop, which runs before PixelKit is set up.
+    private func fireLaunchPixel() {
+        guard let keychainReadErrorStatus else {
+            PixelKit.fire(GeneralPixel.launch)
+            return
+        }
+
+        PixelKit.fire(GeneralPixel.launch,
+                      options: .parameters([PixelKit.Parameters.keychainErrorCode: "\(keychainReadErrorStatus)"]))
+    }
+
     /// When launched as a login item the Keychain may not be unlocked yet.
     /// Retry for up to 60 s to give loginwindow time to unlock it.
     ///
@@ -2545,17 +2563,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private static func readEncryptionKeyRetryingKeychainAccess(
         keyStore: EncryptionKeyStoring,
         startupProfiler: StartupProfiler
-    ) -> SymmetricKey? {
+    ) -> (key: SymmetricKey?, firstFailureStatus: OSStatus?) {
         let retryInterval: TimeInterval = 6
         let deadline = Date().addingTimeInterval(60)
+        var firstFailureStatus: OSStatus?
 
         while true {
             do {
-                return try keyStore.readKey()
+                return (try keyStore.readKey(), firstFailureStatus)
             } catch {
+                let status = (error as? EncryptionKeyStoreError)?.status
+                if firstFailureStatus == nil {
+                    firstFailureStatus = status
+                }
+
                 // The user dismissed the Keychain prompt. Retrying would only present it
                 // again, and this is their decision rather than a failure, so quit quietly.
-                if (error as? EncryptionKeyStoreError)?.status == errSecUserCanceled {
+                if status == errSecUserCanceled {
                     exit(0)
                 }
 
@@ -2566,7 +2590,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     // supported degraded mode: `Database()` reads the same item moments
                     // later and terminates there, reporting the failure.
                     Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
-                    return nil
+                    return (nil, firstFailureStatus)
                 }
                 startupProfiler.invalidate()
                 Thread.sleep(forTimeInterval: retryInterval)

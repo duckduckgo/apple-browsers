@@ -34,6 +34,7 @@ import Configuration
 import ContentScopeScripts
 import CoreData
 import Crashes
+import CryptoKit
 import CrashReportingShared
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
@@ -512,11 +513,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
-        do {
-            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
+        if AppVersion.runType.requiresEnvironment {
+            let encryptionKey = Self.readEncryptionKeyRetryingKeychainAccess(keyStore: keyStore, startupProfiler: startupProfiler)
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-        } catch {
-            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
+        } else {
             fileStore = EncryptedFileStore()
         }
 
@@ -543,7 +543,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDatabase = BookmarkDatabase()
 
         if AppVersion.runType.requiresEnvironment {
-            let commonDatabase = Self.createDatabaseRetryingKeychainAccess(startupProfiler: startupProfiler)
+            let commonDatabase: Database
+            do {
+                commonDatabase = try Database()
+            } catch {
+                Self.presentKeychainUnavailableAndTerminate(error: error)
+            }
             database = commonDatabase
 
             database.db.loadStore { _, error in
@@ -2538,11 +2543,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// When launched as a login item the Keychain may not be unlocked yet.
     /// Retry for up to ~10 s to give loginwindow time to unlock it, then
     /// show an alert and exit cleanly.
-    private static func createDatabaseRetryingKeychainAccess(startupProfiler: StartupProfiler) -> Database {
+    private static func readEncryptionKeyRetryingKeychainAccess(keyStore: EncryptionKeyStoring, startupProfiler: StartupProfiler) -> SymmetricKey {
         let maxAttempts = 6
         for attempt in 1...maxAttempts {
             do {
-                return try Database()
+                return try keyStore.readKey()
             } catch {
                 guard attempt < maxAttempts else {
                     presentKeychainUnavailableAndTerminate(error: error)
@@ -2555,7 +2560,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private static func presentKeychainUnavailableAndTerminate(error: Error) -> Never {
-        PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
+        let underlyingError = (error as? Database.KeychainUnavailableError)?.underlying ?? error
+        PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: underlyingError), frequency: .dailyAndCount)
         PixelKit.fire(GeneralPixel.dbKeychainUnavailableAlertShown, frequency: .standard)
 
         NSApp.activate(ignoringOtherApps: true)

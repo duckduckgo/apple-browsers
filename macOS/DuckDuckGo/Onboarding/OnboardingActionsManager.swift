@@ -132,6 +132,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private weak var contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater?
     private var cancellables = Set<AnyCancellable>()
+    private var hasSkipped = false
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
     static var isOnboardingFinished: Bool
@@ -314,6 +315,13 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     @MainActor
     func skipOnboarding() {
+        // A repeated message would otherwise fire the pixel again and, with the onboarding tab
+        // already released, replace whichever tab the user happens to be on. Guarded per instance
+        // rather than on `isOnboardingFinished`, which a developer replaying onboarding via launch
+        // options leaves set — that would make skipping do nothing for them.
+        guard !hasSkipped else { return }
+        hasSkipped = true
+
         recordSkippedOnboarding()
 
         let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))

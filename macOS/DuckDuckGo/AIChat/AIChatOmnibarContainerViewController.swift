@@ -1156,7 +1156,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.omnibarController.usageWarningViewModel?.performAction()
         }
         usageWarningCardView.onDismiss = { [weak self] in
-            self?.omnibarController.usageWarningViewModel?.dismiss()
+            guard let self else { return }
+            if omnibarController.usageWarningViewModel?.warning != nil {
+                omnibarController.usageWarningViewModel?.dismiss()
+            } else {
+                highUsageNoticeSource?.dismissCurrent()
+            }
+            refreshUsageCard()
         }
         usageWarningCardView.onOpenModelPicker = { [weak self] in
             self?.omnibarController.usageWarningViewModel?.openModelPicker()
@@ -1172,6 +1178,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
 
         subscribeToUsageWarnings()
+        highUsageNoticeSource?.refresh()
     }
 
     private func subscribeToUsageWarnings() {
@@ -1190,8 +1197,26 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
         if let warning {
             usageWarningCardView.update(with: warning)
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
         }
-        setUsageWarningVisible(warning != nil && !isSuggestionsCollapsedByUnfocus)
+        applyHighUsageNotice()
+    }
+
+    /// The fallback when no allowance message applies: web shows the same one, and shows it here too.
+    private func applyHighUsageNotice() {
+        guard let notice = highUsageNoticeSource?.notice else {
+            return setUsageWarningVisible(false)
+        }
+        usageWarningCardView.update(with: notice)
+        setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+    }
+
+    /// Re-resolves the notice and re-applies whichever message wins. The warning half is published,
+    /// so it only needs re-reading when the selected model changes.
+    private func refreshUsageCard() {
+        highUsageNoticeSource?.refresh()
+        applyUsageWarning(omnibarController.usageWarningViewModel?.warning)
     }
 
     private func setUsageWarningVisible(_ visible: Bool) {
@@ -1225,6 +1250,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private var isPresentingModelPickerFromUsageCard = false
+
+    /// Beside the usage warnings rather than part of them: it keys off the selected model, not the
+    /// allowance. The warning wins the card when both apply.
+    private lazy var highUsageNoticeSource: AIChatHighUsageNoticeSource? = {
+        omnibarController.makeHighUsageNoticeSource()
+    }()
 
     /// The last known suggestions height before image gen mode suppressed it.
     private var lastKnownSuggestionsHeight: CGFloat = 0
@@ -1319,6 +1350,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         suggestionsHeight = 0
         suggestionsHeightConstraint?.constant = 0
         // The reservation has to come off too, or the next open sizes the panel as if it were up.
+        highUsageNoticeSource?.clear()
         applyUsageWarningVisibility(false)
         usageWarningShadowView.removeFromSuperview()
     }
@@ -2141,6 +2173,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Everything keyed off the selected model — the tools button would otherwise pop an empty menu
     /// for a model that supports none of them.
     private func refreshForSelectedModel() {
+        refreshUsageCard()
         modelPickerButton.isHidden = !shouldShowModelPicker
         modelPickerButton.modelName = persistedModelShortName
         updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)

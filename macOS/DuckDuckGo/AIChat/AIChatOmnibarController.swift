@@ -338,6 +338,15 @@ final class AIChatOmnibarController {
         setUpUsageWarnings()
     }
 
+    /// The persisted id, matching what the warning's own suggester reasons about.
+    func makeHighUsageNoticeSource() -> AIChatHighUsageNoticeSource? {
+        usageLimitsStore?.makeHighUsageNoticeSource(modelProvider: { [weak self] in
+            guard let self else { return (nil, nil) }
+            let modelId = persistedModelId
+            return (modelId, models.first { $0.id == modelId }?.shortName ?? cachedModelShortName)
+        })
+    }
+
     private func setUpUsageWarnings() {
         usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
             modelSuggester: DuckAiModelSuggester(

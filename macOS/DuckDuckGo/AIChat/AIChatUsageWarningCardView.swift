@@ -299,6 +299,22 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Content
 
+    /// Lays the row out for the high-usage model notice: no reset detail and no CTA, since it is
+    /// about which model is selected rather than about an allowance running out.
+    func update(with notice: DuckAiHighUsageModelNotice) {
+        let text = UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName)
+        applyInfoIcon()
+        titleLabel.attributedStringValue = Self.attributedNotice(text)
+        titleLabel.setAccessibilityLabel(text)
+
+        actionButton.isHidden = true
+        actionButton.collapse()
+
+        closeButton.isHidden = false
+        closeButtonWidthConstraint?.constant = Constants.closeButtonSize
+        actionCloseSpacingConstraint?.constant = Constants.actionCloseSpacing
+    }
+
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
     func update(with warning: DuckAiUsageWarning) {
         applyIcon(for: warning)
@@ -325,10 +341,23 @@ final class AIChatUsageWarningCardView: NSView {
     /// Bold headline, regular reset detail, one string so the two can never wrap apart.
     /// The ring tracks the percentage while the limit is only approaching; a reached limit reads as an
     /// alert, where a nearly-full ring would say less than the copy already does.
+    private func applyInfoIcon() {
+        ringView.isHidden = true
+        iconImageView.isHidden = false
+        lastShownApproachingPercent = nil
+        iconImageView.image = DesignSystemImages.Glyphs.Size16.info
+        NSAppearance.withAppearance(appearance) {
+            iconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
+        }
+    }
+
     private func applyIcon(for warning: DuckAiUsageWarning) {
         let isApproaching = warning.message == .approaching
         ringView.isHidden = !isApproaching
         iconImageView.isHidden = isApproaching
+        // The notice swaps in the info glyph, so the alert has to be put back.
+        iconImageView.image = DesignSystemImages.Glyphs.Size16.alertRecolorable
+        iconImageView.contentTintColor = nil
 
         guard isApproaching else { return }
         // Animated only between two messages, so the ring doesn't wind up from zero every time the
@@ -336,6 +365,15 @@ final class AIChatUsageWarningCardView: NSView {
         let animated = lastShownApproachingPercent != nil && lastShownApproachingPercent != warning.percent
         lastShownApproachingPercent = warning.percent
         ringView.setProgress(Double(warning.percent) / 100, severity: warning.severity, animated: animated)
+    }
+
+    /// Regular weight throughout: the notice is a sentence, where the warnings lead with a headline.
+    private static func attributedNotice(_ text: String) -> NSAttributedString {
+        NSAttributedString(
+            string: text,
+            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .regular),
+                         .foregroundColor: NSColor(designSystemColor: .textPrimary)]
+        )
     }
 
     private static func attributedTitle(headline: String, resetsIn: String) -> NSAttributedString {

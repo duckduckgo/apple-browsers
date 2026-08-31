@@ -240,7 +240,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             pinningManager: pinningManager,
             featureFlagger: featureFlagger,
             reinstallUserDetection: reinstallUserDetection,
-            installDateProvider: installDateProvider
+            installDateProvider: installDateProvider,
+            contextualOnboardingStateUpdater: Application.appDelegate.onboardingContextualDialogsManager
         )
     }
 

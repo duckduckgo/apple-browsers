@@ -338,7 +338,11 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     @MainActor
     private func recordSkippedOnboarding() {
-        onboardingHasFinished()
+        // Skipping is reachable from any step, so the completion side effects are deliberately left
+        // out: marking the Duck.ai toggle step as seen would suppress a popover the user never got,
+        // and the final-step pixels would report a step that never displayed. `onboardingSkipped`
+        // below is what this path reports instead.
+        finalizeOnboarding()
 
         if featureFlagger.isFeatureOn(.onboardingSkipHighlights) {
             contextualOnboardingStateUpdater?.state = .onboardingCompleted
@@ -534,9 +538,16 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
     }
 
-    private func onboardingHasFinished() {
+    /// The state that has to settle however onboarding ended, including when it was cut short.
+    /// Unlocking the UI belongs here: a window that skipped is otherwise left with no way out.
+    private func finalizeOnboarding() {
         Self.isOnboardingFinished = true
         navigation.updatePreventUserInteraction(prevent: false)
+        Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
+    }
+
+    private func onboardingHasFinished() {
+        finalizeOnboarding()
 
         let userSawToggleOnboarding = wasToggleOnboardingStepShown()
 
@@ -545,8 +556,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         if userSawToggleOnboarding {
             aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
         }
-
-        Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
 
         fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
     }

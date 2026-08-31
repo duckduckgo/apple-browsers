@@ -251,11 +251,7 @@ final class UnifiedToggleInputView: UIView {
 
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
-        set {
-            toolsToolbar.modelPickerMenu = newValue
-            // The usage card's chevron offers the same list, popped from the chevron itself.
-            footerCard.modelPickerMenu = newValue
-        }
+        set { toolsToolbar.modelPickerMenu = newValue }
     }
 
     @discardableResult
@@ -342,6 +338,13 @@ final class UnifiedToggleInputView: UIView {
     /// The owning view controller sets this.
     var onNeedsHierarchyLayout: (() -> Void)?
     var onAttachmentsLayoutDidChange: (() -> Void)?
+
+    private var isApplyingDismissPose = false
+
+    private func requestHierarchyLayout() {
+        guard !isApplyingDismissPose else { return }
+        onNeedsHierarchyLayout?()
+    }
 
     var isVoiceSearchAvailable = false {
         didSet { handler.isVoiceSearchEnabled = isVoiceSearchAvailable }
@@ -435,7 +438,7 @@ final class UnifiedToggleInputView: UIView {
               editReplaceDisclaimerCard.isHidden else { return }
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] view joining expand animation with pending message")
         applyPendingFooterMessage(pending)
-        onNeedsHierarchyLayout?()
+        requestHierarchyLayout()
     }
 
     private func applyPendingFooterMessage(_ message: UTIFooterMessage) {
@@ -785,7 +788,7 @@ final class UnifiedToggleInputView: UIView {
             expandedShadowView.shadows = currentLayout == .flanked ? flankedShadows : expandedShadows
             // The disclaimer card's shadowColor is a snapshotted cgColor; re-resolve it here.
             editReplaceDisclaimerCard.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
-            if isExpanded {
+            if cardView.layer.borderWidth > 0 {
                 cardView.layer.borderColor = expandedBorderColor
             }
             refreshGlassAITabAccessoryConfigurations()
@@ -1133,7 +1136,10 @@ final class UnifiedToggleInputView: UIView {
             aiTabCollapsedFireButton.isHidden = true
             aiTabCollapsedMenuButton.isHidden = true
         }
-        guard layout != currentLayout else { return }
+        guard layout != currentLayout else {
+            updateExpandedBorderVisibility(expanded && layout.showsToggle)
+            return
+        }
         currentLayout = layout
 
         let showsToggle = layout.showsToggle
@@ -1202,8 +1208,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.maskedCorners = Constants.allCorners
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
-        cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
-        cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
+        updateExpandedBorderVisibility(expanded && showsToggle)
         let changes = {
             self.setCardFlanked(layout == .flanked)
             // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything
@@ -1330,6 +1335,8 @@ final class UnifiedToggleInputView: UIView {
     /// Shadow swap is deferred to `finalizeOmnibarEditingDismiss` so the dominant expanded shadow
     /// stays visible during collapse instead of snapping off mid-animation.
     func applyOmnibarEditingDismissPose() {
+        isApplyingDismissPose = true
+        defer { isApplyingDismissPose = false }
         if omnibarMaterialTransitionBackgroundColor != nil {
             ensureOmnibarMaterialTransitionViews()
             applyCardBackgroundColor(.clear)
@@ -1445,6 +1452,7 @@ final class UnifiedToggleInputView: UIView {
     /// Designed to be invoked inside an animation context (UIView.animate or UIViewPropertyAnimator).
     func applyToggleRevealChanges() {
         let showToolbar = toggleView.selectedMode == .aiChat
+        currentLayout = .expanded(showsToggle: true, showsToolbar: showToolbar)
         cardView.layer.cornerRadius = Constants.cardCornerRadiusExpanded
         // Width animation: this reveal path bypasses `applyCardLayout`, so set the expanded margins here.
         cardLeadingConstraint.constant = expandedCardHorizontalMargin
@@ -1455,8 +1463,7 @@ final class UnifiedToggleInputView: UIView {
         applyInlineDismissVisibility(true)
         inputTopConstraint.constant = Constants.toggleBottomPadding
         toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
-        cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
-        cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
+        updateExpandedBorderVisibility(true)
         toolbarHeightConstraint.constant = showToolbar ? Constants.toolbarHeight : 0
         toolsToolbar.alpha = showToolbar ? 1 : 0
         updateAttachmentsStripLayout()
@@ -1465,6 +1472,7 @@ final class UnifiedToggleInputView: UIView {
     /// The property mutations that hide the toggle, returning the card to its slim
     /// omnibar-editing pose. Designed to be invoked inside an animation context.
     func applyToggleHideChanges() {
+        currentLayout = .expanded(showsToggle: false, showsToolbar: false)
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         toggleTopConstraint.constant = 0
         toggleHeightConstraint.constant = 0
@@ -1477,6 +1485,8 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStripHeightConstraint.constant = 0
         attachmentsStrip.alpha = 0
         textEntryView.isExpandable = false
+        updateExpandedBorderVisibility(false)
+        applyFooterForCardLayout(expanded: false)
     }
 
     func setInactiveCardAppearance(_ inactive: Bool) {
@@ -1509,7 +1519,7 @@ final class UnifiedToggleInputView: UIView {
                 self.toolsToolbar.alpha = showToolbar ? 1 : 0
             }
             self.layoutIfNeeded()
-            self.onNeedsHierarchyLayout?()
+            self.requestHierarchyLayout()
         }
     }
 
@@ -1535,8 +1545,9 @@ final class UnifiedToggleInputView: UIView {
         if isToggleEnabled {
             toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         }
-        cardView.layer.borderWidth = showToolbar ? Constants.expandedBorderWidth : 0
-        cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
+        if case .expanded(let showsToggle, _) = currentLayout {
+            currentLayout = .expanded(showsToggle: showsToggle, showsToolbar: showToolbar)
+        }
         updateAttachmentsStripLayout()
 
         guard animated else {
@@ -1553,12 +1564,17 @@ final class UnifiedToggleInputView: UIView {
             self.toolsToolbar.alpha = showToolbar ? 1 : 0
             self.attachmentsStrip.alpha = self.attachmentsStripHeightConstraint.constant > 0 ? 1 : 0
             self.layoutIfNeeded()
-            self.onNeedsHierarchyLayout?()
+            self.requestHierarchyLayout()
         } completion: { _ in
             if showToolbar {
                 self.toolsToolbar.finalizeToolbarShown()
             }
         }
+    }
+
+    private func updateExpandedBorderVisibility(_ isVisible: Bool) {
+        cardView.layer.borderWidth = isVisible ? Constants.expandedBorderWidth : 0
+        cardView.layer.borderColor = isVisible ? expandedBorderColor : UIColor.clear.cgColor
     }
 
     private func updateAttachmentsStripLayout() {
@@ -1659,6 +1675,7 @@ private extension UnifiedToggleInputView {
         button.layer.cornerRadius = Constants.inlineDismissSize / 2
         button.translatesAutoresizingMaskIntoConstraints = false
         button.accessibilityLabel = UserText.backButtonTitle
+        button.accessibilityIdentifier = "UnifiedToggleInput.Button.Dismiss"
         button.alpha = 0
         button.isUserInteractionEnabled = false
         return button
@@ -1794,7 +1811,7 @@ private extension UnifiedToggleInputView {
             updateAttachmentsStripLayout()
             updateSubmitButtonAvailability()
             layoutIfNeeded()
-            onNeedsHierarchyLayout?()
+            requestHierarchyLayout()
             onAttachmentsLayoutDidChange?()
         }
         attachmentsStrip.onAttachmentRemoved = { [weak self] id, attachment, isUserInitiated in
@@ -1986,7 +2003,7 @@ private extension UnifiedToggleInputView {
 
         textEntryView.textHeightChangeSubject
             .sink { [weak self] in
-                self?.onNeedsHierarchyLayout?()
+                self?.requestHierarchyLayout()
             }
             .store(in: &cancellables)
     }

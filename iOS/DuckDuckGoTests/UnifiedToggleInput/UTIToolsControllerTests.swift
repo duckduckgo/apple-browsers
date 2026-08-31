@@ -23,9 +23,6 @@ import SubscriptionTestingUtilities
 import XCTest
 @testable import DuckDuckGo
 
-/// The tools menu's presentation rules. `.legacy` is the pre-`updatedCreateImage` behaviour and is
-/// also what the iPad address bar gets, since it never passes a policy — so the `.legacy` cases here
-/// double as regression cover for that surface.
 @MainActor
 final class UTIToolsControllerTests: XCTestCase {
 

@@ -57,17 +57,91 @@ final class UTIFooterCardViewTests: XCTestCase {
         XCTAssertGreaterThan(height(of: sut), UTIFooterCardView.overlap + 34)
     }
 
-    func test_cardHeight_isUnchangedByTheModelPickerChevron() {
+    /// A warning truncates beside its reset line; the notice has the second line free.
+    func test_title_allowsTwoLinesOnlyWhenThereIsNoSubtitle() {
         let sut = UTIFooterCardView()
-        sut.modelPickerMenu = UIMenu(children: [UIAction(title: "5.4 mini") { _ in }])
 
-        sut.configure(with: makeMessage(showsModelPicker: false), animateIcon: false)
-        let plain = height(of: sut)
+        sut.configure(with: makeMessage(), animateIcon: false)
+        XCTAssertEqual(titleLabel(in: sut)?.numberOfLines, 1)
 
-        sut.configure(with: makeMessage(showsModelPicker: true), animateIcon: false)
-        let withChevron = height(of: sut)
+        sut.configure(with: makeNotice(), animateIcon: false)
+        XCTAssertEqual(titleLabel(in: sut)?.numberOfLines, 2)
+    }
 
-        XCTAssertEqual(plain, withChevron, accuracy: 0.5)
+    /// A standalone paragraph reads as body copy, not as a heading.
+    func test_title_usesBodyWeightWhenThereIsNoSubtitle() {
+        let sut = UTIFooterCardView()
+
+        sut.configure(with: makeMessage(), animateIcon: false)
+        XCTAssertEqual(titleLabel(in: sut)?.font, UIFont.daxFootnoteSemibold())
+
+        sut.configure(with: makeNotice(), animateIcon: false)
+        XCTAssertEqual(titleLabel(in: sut)?.font, UIFont.daxFootnoteRegular())
+    }
+
+    /// The notice copy has to actually need the second line at phone width, or allowing it is moot.
+    func test_title_wrapsTheNoticeCopyAtPhoneWidth() {
+        let sut = UTIFooterCardView()
+        sut.frame = CGRect(x: 0, y: 0, width: phoneWidth, height: 200)
+        sut.configure(with: makeNotice(), animateIcon: false)
+        sut.setNeedsLayout()
+        sut.layoutIfNeeded()
+
+        guard let label = titleLabel(in: sut) else {
+            return XCTFail("Expected the title to be part of the card")
+        }
+        let needed = label.sizeThatFits(CGSize(width: label.bounds.width, height: .greatestFiniteMagnitude)).height
+        XCTAssertGreaterThan(needed, label.font.lineHeight * 1.5)
+    }
+
+    /// The reset line beside a CTA has to stay on one line; a card with the pill gone can spend two.
+    func test_subtitle_allowsTwoLinesOnlyWithoutACTA() {
+        let sut = UTIFooterCardView()
+
+        sut.configure(with: makeMessage(), animateIcon: false)
+        XCTAssertEqual(subtitleLabel(in: sut)?.numberOfLines, 1)
+
+        sut.configure(with: makeSwitchNotice(), animateIcon: false)
+        XCTAssertEqual(subtitleLabel(in: sut)?.numberOfLines, 2)
+    }
+
+    /// The switch notice's copy has to actually need the second line at phone width, or allowing it
+    /// is moot.
+    func test_subtitle_wrapsTheSwitchNoticeCopyAtPhoneWidth() {
+        let sut = UTIFooterCardView()
+        sut.frame = CGRect(x: 0, y: 0, width: phoneWidth, height: 200)
+        sut.configure(with: makeSwitchNotice(), animateIcon: false)
+        sut.setNeedsLayout()
+        sut.layoutIfNeeded()
+
+        guard let label = subtitleLabel(in: sut) else {
+            return XCTFail("Expected the subtitle to be part of the card")
+        }
+        let needed = label.sizeThatFits(CGSize(width: label.bounds.width, height: .greatestFiniteMagnitude)).height
+        XCTAssertGreaterThan(needed, label.font.lineHeight * 1.5)
+    }
+
+    /// The card is measured bottom-up by the host, so the wrapped line has to reach its height.
+    func test_cardHeight_growsForTheWrappedSwitchNoticeCopy() {
+        let sut = UTIFooterCardView()
+
+        sut.configure(with: makeSwitchNotice(subtitle: "Mistral can't create images."), animateIcon: false)
+        let compact = height(of: sut)
+
+        sut.configure(with: makeSwitchNotice(), animateIcon: false)
+        let wrapped = height(of: sut)
+
+        XCTAssertGreaterThan(wrapped, compact)
+    }
+
+    /// A message with no icon must not reserve the ring's room: the copy takes the leading edge.
+    func test_cardWidth_collapsesTheIconWhenThereIsNone() {
+        let sut = UTIFooterCardView()
+
+        let withIcon = titleLeadingEdge(in: sut, message: makeMessage())
+        let withoutIcon = titleLeadingEdge(in: sut, message: makeNotice())
+
+        XCTAssertLessThan(withoutIcon, withIcon)
     }
 
     /// A message with no CTA must leave no gap where the pill would have been.
@@ -147,13 +221,38 @@ final class UTIFooterCardViewTests: XCTestCase {
                                             verticalFittingPriority: .fittingSizeLevel).height
     }
 
+    /// The title's leading edge in the card's own coordinates, laid out at phone width.
+    private func titleLeadingEdge(in card: UTIFooterCardView, message: UTIFooterMessage) -> CGFloat {
+        card.frame = CGRect(x: 0, y: 0, width: phoneWidth, height: 200)
+        card.configure(with: message, animateIcon: false)
+        card.setNeedsLayout()
+        card.layoutIfNeeded()
+
+        guard let label = titleLabel(in: card) else {
+            XCTFail("Expected the title to be part of the card")
+            return 0
+        }
+        return card.convert(label.bounds, from: label).minX
+    }
+
+    /// The first arranged subview of the card's text stack.
+    private func titleLabel(in card: UTIFooterCardView) -> UILabel? {
+        card.subviews.flatMap(\.subviews)
+            .compactMap { $0 as? UIStackView }.first?.arrangedSubviews.first as? UILabel
+    }
+
+    /// The second arranged subview of the card's text stack.
+    private func subtitleLabel(in card: UTIFooterCardView) -> UILabel? {
+        card.subviews.flatMap(\.subviews)
+            .compactMap { $0 as? UIStackView }.first?.arrangedSubviews.last as? UILabel
+    }
+
     private func makeMessage(title: String = "90% of weekly limit",
                              subtitle: String? = "Resets in 2 days",
-                             showsModelPicker: Bool = false,
                              isDismissible: Bool = true) -> UTIFooterMessage {
         makeMessage(title: title,
                     subtitle: subtitle,
-                    primaryAction: .init(title: "Switch to 5.4 mini", showsModelPicker: showsModelPicker),
+                    primaryAction: .init(title: "Switch"),
                     isDismissible: isDismissible)
     }
 
@@ -161,10 +260,29 @@ final class UTIFooterCardViewTests: XCTestCase {
                              subtitle: String? = "Resets in 2 days",
                              primaryAction: UTIFooterMessage.PrimaryAction?,
                              isDismissible: Bool = true) -> UTIFooterMessage {
-        UTIFooterMessage(icon: .usageRing(progress: 0.9),
+        UTIFooterMessage(icon: .usageRing(progress: 0.9, severity: .critical),
                          title: title,
                          subtitle: subtitle,
                          primaryAction: primaryAction,
                          isDismissible: isDismissible)
+    }
+
+    /// The Create Image switch card: a headline over body copy, with no CTA to compete for width.
+    private func makeSwitchNotice(
+        subtitle: String = "Mistral can't create images. Its extra privacy protections won't apply until you switch back."
+    ) -> UTIFooterMessage {
+        UTIFooterMessage(icon: .modelSwitch,
+                         title: "Now using 5.6 Luna",
+                         subtitle: subtitle,
+                         primaryAction: nil,
+                         isDismissible: true)
+    }
+
+    private func makeNotice(title: String = "Opus 4.8 uses limits up to 2-5x faster than basic models.") -> UTIFooterMessage {
+        UTIFooterMessage(icon: .none,
+                         title: title,
+                         subtitle: nil,
+                         primaryAction: nil,
+                         isDismissible: true)
     }
 }

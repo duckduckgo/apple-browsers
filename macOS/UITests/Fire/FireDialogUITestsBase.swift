@@ -34,11 +34,7 @@ extension FireDialogUITests {
     var fireDialogDetailsDisclosureButton: XCUIElement { app.fireDialogDetailsDisclosureButton }
 
     func setUpFireDialogUITests(featureFlags: [String: Bool] = [:]) {
-        continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: featureFlags)
-        // Clear the Local Network permission prompt if it surfaced during launch, before the
-        // debug-menu / fire-button clicks below (which it would otherwise intercept).
-        XCUIApplication.dismissLocalNetworkPromptIfPresent()
         app.enforceSingleWindow()
 
         // Reset fireproof sites

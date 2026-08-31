@@ -123,6 +123,7 @@ public extension DesignSystemImages {
             public static var siteBreakage: DesignSystemImage { .init(resource: .siteBreakage12) }
             public static var storageCard: DesignSystemImage { .init(resource: .storageCard12) }
             public static var subscription: DesignSystemImage { .init(resource: .subscription12) }
+            public static var swap: DesignSystemImage { .init(resource: .swap12) }
             public static var sync: DesignSystemImage { .init(resource: .sync12) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew12) }
             public static var textSelectedRight: DesignSystemImage { .init(resource: .textSelectedRight12) }

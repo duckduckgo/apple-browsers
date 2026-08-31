@@ -26,12 +26,41 @@ final class FloatingDomainCapsuleController {
 
     static let handoffBandHalfWidth: CGFloat = 0.02
 
-    /// Gap between the pill and the edge of the safe area at its resting position.
+    /// Gap between the pill and the adjacent edge of its expanded chrome at its resting position.
+    /// The collapsed bottom capsule sits `restBottomInsetReduction` closer to the device bottom so
+    /// the chrome morphs down into the pill rather than gaining space above it.
     static let restEdgePadding: CGFloat = 8
+
+    /// Extra downward shift of the collapsed bottom capsule, in points, relative to `restEdgePadding`
+    /// above the home indicator. Clamped so the pill cannot leave the screen on devices with no
+    /// home-indicator inset.
+    static let restBottomInsetReduction: CGFloat = 12
 
     /// Extra clearance kept between a page-fixed footer and the top of the resting capsule so the two
     /// don't visually touch.
     static let fixedElementClearance: CGFloat = 4
+
+    /// Distance from the physical bottom of the view to the bottom of the collapsed capsule.
+    static func restPaddingFromPhysicalBottom(safeAreaBottom: CGFloat) -> CGFloat {
+        max(0, safeAreaBottom + restEdgePadding - restBottomInsetReduction)
+    }
+
+    static func restCenterY(addressBarPosition: AddressBarPosition,
+                            expandedFrame: CGRect,
+                            boundsMaxY: CGFloat,
+                            safeAreaInsets: UIEdgeInsets,
+                            capsuleHeight: CGFloat) -> CGFloat {
+        let halfHeight = capsuleHeight / 2
+        switch addressBarPosition {
+        case .top:
+            guard !expandedFrame.isEmpty else {
+                return safeAreaInsets.top + restEdgePadding + halfHeight
+            }
+            return expandedFrame.maxY - restEdgePadding - halfHeight
+        case .bottom:
+            return boundsMaxY - restPaddingFromPhysicalBottom(safeAreaBottom: safeAreaInsets.bottom) - halfHeight
+        }
+    }
 
     /// The pill's resting height, hugging the domain label. Independent of the label text (driven by
     /// the font line height), so it is stable enough to size the web view's obscured bottom inset.
@@ -39,11 +68,20 @@ final class FloatingDomainCapsuleController {
         domainLabel.intrinsicContentSize.height + 12
     }
 
-    /// Height of the region obscured by the resting capsule, measured from the safe area edge (the
-    /// `restEdgePadding` gap plus the pill height). Used by the floating web view inset so a page-fixed
-    /// footer pins above the capsule once the bars have hidden.
-    var restObscuredHeightAboveSafeArea: CGFloat {
-        Self.restEdgePadding + capsuleHeight
+    /// Height obscured by the resting capsule, measured from the matching screen edge, so a
+    /// page-fixed footer pins above the pill once the bars have hidden.
+    func restObscuredHeightFromScreenEdge(for addressBarPosition: AddressBarPosition,
+                                          safeAreaInsets: UIEdgeInsets,
+                                          expandedFrame: CGRect = .zero) -> CGFloat {
+        switch addressBarPosition {
+        case .top:
+            guard !expandedFrame.isEmpty else {
+                return safeAreaInsets.top + Self.restEdgePadding + capsuleHeight
+            }
+            return expandedFrame.maxY - Self.restEdgePadding
+        case .bottom:
+            return Self.restPaddingFromPhysicalBottom(safeAreaBottom: safeAreaInsets.bottom) + capsuleHeight
+        }
     }
 
     private let onTap: () -> Void
@@ -73,6 +111,7 @@ final class FloatingDomainCapsuleController {
         button.layer.cornerCurve = .continuous
         button.layer.cornerRadius = 14
         button.layer.masksToBounds = true
+        button.accessibilityIdentifier = "Browser.FloatingDomainCapsule"
         button.addTarget(self, action: #selector(onCapsuleTapped), for: .touchUpInside)
         return button
     }()
@@ -198,9 +237,12 @@ final class FloatingDomainCapsuleController {
         let labelSize = domainLabel.intrinsicContentSize
         let capsuleHeight = self.capsuleHeight
         let capsuleWidth = min(labelSize.width + 24, max(0, view.bounds.width - 32))
-        let restCenterY = addressBarPosition == .top
-            ? view.safeAreaInsets.top + Self.restEdgePadding + capsuleHeight / 2
-            : view.bounds.maxY - view.safeAreaInsets.bottom - Self.restEdgePadding - capsuleHeight / 2
+        let restCenterY = Self.restCenterY(
+            addressBarPosition: addressBarPosition,
+            expandedFrame: expandedFrame,
+            boundsMaxY: view.bounds.maxY,
+            safeAreaInsets: view.safeAreaInsets,
+            capsuleHeight: capsuleHeight)
 
         let morphP = (reduceMotion || expandedFrame.isEmpty) ? 0 : min(1, p / Self.handoffStart)
         let width = capsuleWidth + (expandedFrame.width - capsuleWidth) * morphP

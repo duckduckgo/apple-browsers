@@ -76,7 +76,7 @@ struct PasswordEntryRetryPromptView: View {
             Text(UserText.passwordEntryHelpShowMacOSMessageButton)
                 .padding(.horizontal, 12)
         }
-        .buttonStyle(DefaultActionButtonStyle(enabled: true))
+        .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         .padding(.bottom, 8)
     }
 

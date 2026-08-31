@@ -135,6 +135,12 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func scriptletDebugInfo() -> [ScriptletDebugInfo]
+
+    /// Wakes the search-token extension's background worker so it re-pulls the live token
+    /// and refreshes its DNR session rule. No-op when the extension isn't loaded.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func performSearchTokenRefresh()
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -176,5 +182,12 @@ public extension WebExtensionManaging {
         scriptletDebugInfo()
             .first { $0.extensionType == .adBlockingExtension }?
             .cachedVersion
+    }
+
+    @MainActor
+    func performSearchTokenRefresh() {
+        guard let context = loadedExtensions.first(where: { $0.duckDuckGoWebExtensionType == .searchToken }),
+              let command = context.commands.first(where: { $0.id == "refresh-token" }) else { return }
+        context.performCommand(command)
     }
 }

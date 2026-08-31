@@ -32,6 +32,11 @@ final class HistoryMenu: NSMenu {
         case mainMenu, moreOptionsMenu
     }
 
+    private enum Constants {
+        static let maxRecentlyVisitedItems = 12
+        static let itemNotFoundIndex = -1
+    }
+
     let backMenuItem = NSMenuItem(title: UserText.navigateBack, action: #selector(MainViewController.back), keyEquivalent: "[")
         .withImage(DesignSystemImages.Glyphs.Size12.arrowLeft)
     let forwardMenuItem = NSMenuItem(title: UserText.navigateForward, action: #selector(MainViewController.forward), keyEquivalent: "]")
@@ -122,19 +127,9 @@ final class HistoryMenu: NSMenu {
         updateRecentlyClosedMenu()
         updateReopenLastClosedMenuItem()
 
-        clearOldVariableMenuItems()
-        addRecentlyVisited()
-        addClearAllAndShowHistoryOnTheBottom()
+        updateRecentlyVisited()
 
         alignItemTextWithIcons()
-    }
-
-    private func clearOldVariableMenuItems() {
-        items.removeAll { menuItem in
-            recentlyVisitedMenuItems.contains(menuItem) ||
-            menuItem == clearAllHistoryMenuItem ||
-            (menuItem == showHistoryMenuItem && location == .mainMenu)
-        }
     }
 
     // MARK: - Last Closed & Recently Closed
@@ -170,37 +165,46 @@ final class HistoryMenu: NSMenu {
 
     private var recentlyVisitedMenuItems = [NSMenuItem]()
 
+    /// Replaces the recently-visited section in place: the fresh items are inserted before the
+    /// old ones are removed, so that no separator is ever adjacent to another or trailing, not
+    /// even transiently. macOS 27 evaluates separator auto-hiding eagerly during item mutations
+    /// and latches the hidden state into the first render of a directly-clicked menu.
     @MainActor
-    private func addRecentlyVisited() {
-        recentlyVisitedMenuItems = [recentlyVisitedHeaderMenuItem]
-        let recentVisits = historyGroupingProvider.getRecentVisits(maxCount: 12)
-        for (index, visit) in zip(
-            recentVisits.indices, recentVisits
-        ) {
-            let visitMenuItem = VisitMenuItem(visitViewModel: VisitViewModel(visit: visit))
-            visitMenuItem.setAccessibilityIdentifier("HistoryMenu.recentlyVisitedMenuItem.\(index)")
-            recentlyVisitedMenuItems.append(visitMenuItem)
-        }
-        for recentlyVisitedMenuItem in recentlyVisitedMenuItems {
-            addItem(recentlyVisitedMenuItem)
-        }
+    private func updateRecentlyVisited() {
+        let oldMenuItems = recentlyVisitedMenuItems
+        recentlyVisitedMenuItems = makeRecentlyVisitedMenuItems()
+        insert(recentlyVisitedMenuItems, before: anchorSeparator)
+        oldMenuItems.filter { $0.menu === self }.forEach(removeItem)
     }
 
-    // MARK: - Clear All History
+    /// The recently-visited section sits directly above the bottom block,
+    /// whose leading separator anchors the insertion.
+    private var anchorSeparator: NSMenuItem {
+        location == .mainMenu ? showHistorySeparator : clearAllHistorySeparator
+    }
 
-    private func addClearAllAndShowHistoryOnTheBottom() {
-        if location == .mainMenu {
-            if showHistorySeparator.menu != nil {
-                removeItem(showHistorySeparator)
-            }
-            addItem(showHistorySeparator)
-            addItem(showHistoryMenuItem)
+    @MainActor
+    private func makeRecentlyVisitedMenuItems() -> [NSMenuItem] {
+        var menuItems = [recentlyVisitedHeaderMenuItem]
+        let recentVisits = historyGroupingProvider.getRecentVisits(maxCount: Constants.maxRecentlyVisitedItems)
+        for (index, visit) in zip(recentVisits.indices, recentVisits) {
+            let visitMenuItem = VisitMenuItem(visitViewModel: VisitViewModel(visit: visit))
+            visitMenuItem.setAccessibilityIdentifier("HistoryMenu.recentlyVisitedMenuItem.\(index)")
+            menuItems.append(visitMenuItem)
         }
-        if clearAllHistorySeparator.menu != nil {
-            removeItem(clearAllHistorySeparator)
+        return menuItems
+    }
+
+    private func insert(_ menuItems: [NSMenuItem], before anchor: NSMenuItem) {
+        var insertionIndex = index(of: anchor)
+        guard insertionIndex != Constants.itemNotFoundIndex else {
+            assertionFailure("HistoryMenu: anchor separator missing")
+            return
         }
-        addItem(clearAllHistorySeparator)
-        addItem(clearAllHistoryMenuItem)
+        for menuItem in menuItems {
+            insertItem(menuItem, at: insertionIndex)
+            insertionIndex += 1
+        }
     }
 }
 

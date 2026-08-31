@@ -28,7 +28,6 @@ final class UTIFooterControllerTests: XCTestCase {
     private var presenter: SpyUTIFooterPresenter!
     private var viewModel: DuckAiUsageWarningViewModel!
     private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
-    private var tier: AIChatUserTier = .plus
     private var animationCount = 0
     private var sut: UTIFooterController!
 
@@ -39,7 +38,6 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider = StubUsageLimitsProvider()
         presenter = SpyUTIFooterPresenter()
         selectedModel = (nil, nil)
-        tier = .plus
         animationCount = 0
         viewModel = makeViewModel()
         sut = UTIFooterController(viewModel: viewModel,
@@ -121,7 +119,9 @@ final class UTIFooterControllerTests: XCTestCase {
 
     /// The dismissal is recorded against a rung of the redisplay ladder, so crossing the next one
     /// brings the card back.
-    func test_dismissCurrent_doesNotHideTheNextThreshold() {
+    /// Per the spec an approaching message is suppressed until `resetsAt`, so a higher percentage in
+    /// the same period is the same message and stays gone.
+    func test_dismissCurrent_keepsTheSameNoticeHiddenForThatResetPeriod() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
         sut.dismissCurrent()
@@ -129,7 +129,19 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = weeklyUsage(90)
         sut.refresh()
 
-        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("90%") ?? false)
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    /// A dismissed approaching message must not take the reached one with it.
+    func test_dismissCurrent_doesNotHideADifferentNotice() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.dismissCurrent()
+
+        limitsProvider.limits = weeklyReached()
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Weekly usage limit reached") ?? false)
     }
 
     // MARK: - Suppression
@@ -245,10 +257,13 @@ final class UTIFooterControllerTests: XCTestCase {
     }
 
     /// Recorded against a rung like a close, not a blanket kill, so the next one still shows.
-    func test_performPrimaryAction_doesNotHideTheNextThreshold() {
+    /// Acting is keyed to the snapshot, not the reset period: a republished snapshot is web's answer
+    /// to what the user just did, so the message it carries is shown.
+    func test_performPrimaryAction_showsTheMessageAgainWhenWebRepublishes() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
         sut.performPrimaryAction()
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
 
         limitsProvider.limits = weeklyUsage(90)
         sut.refresh()
@@ -258,8 +273,16 @@ final class UTIFooterControllerTests: XCTestCase {
 
     /// The upsell is not a switch: the user is still blocked, so the message stays up.
     func test_performPrimaryAction_keepsTheMessageWhenTheActionIsTheUpsell() {
-        tier = .free
-        limitsProvider.limits = weeklyUsage(100)
+        limitsProvider.limits = DuckAiUsageSnapshot(
+            notice: DuckAiUsageNotice(id: .freeReached,
+                                      window: .daily,
+                                      percentUsed: 100,
+                                      resetsAt: now.addingTimeInterval(172_800),
+                                      reached: true,
+                                      dismissible: false),
+            cta: DuckAiUsageCta(id: .subscribe),
+            signature: "snapshot-free-reached"
+        )
         sut.refresh()
 
         sut.performPrimaryAction()
@@ -349,40 +372,58 @@ final class UTIFooterControllerTests: XCTestCase {
 
     private func makeViewModel() -> DuckAiUsageWarningViewModel {
         DuckAiUsageWarningViewModel(
-            limitsProvider: limitsProvider,
-            tierProvider: { [unowned self] in tier },
-            isInternalUser: { false },
+            snapshotProvider: limitsProvider,
             dismissalStore: InMemoryDuckAiUsageWarningDismissalStore(),
             modelSuggester: StubCheaperModelSuggester(),
             dateProvider: { [unowned self] in now }
         )
     }
 
-    private func weeklyUsage(_ percent: Double) -> DuckAiUsageLimits {
-        DuckAiUsageLimits(daily: nil,
-                          weekly: DuckAiUsageLimitWindow(percentUsed: percent,
-                                                         resetsAt: now.addingTimeInterval(172_800)))
+    /// An approaching notice with a cheaper-model CTA — what the footer shows most of the time.
+    private func weeklyUsage(_ percent: Int) -> DuckAiUsageSnapshot {
+        DuckAiUsageSnapshot(
+            notice: DuckAiUsageNotice(id: .approaching,
+                                      window: .weekly,
+                                      percentUsed: percent,
+                                      resetsAt: now.addingTimeInterval(172_800),
+                                      reached: false,
+                                      dismissible: true),
+            cta: DuckAiUsageCta(id: .switchToCheaper,
+                                target: .init(modelId: "gpt-5.4-mini", modelIds: ["gpt-5.4-mini"])),
+            signature: "snapshot-\(percent)"
+        )
+    }
+
+    private func weeklyReached() -> DuckAiUsageSnapshot {
+        DuckAiUsageSnapshot(
+            notice: DuckAiUsageNotice(id: .weeklyReached,
+                                      window: .weekly,
+                                      percentUsed: 100,
+                                      resetsAt: now.addingTimeInterval(172_800),
+                                      reached: true,
+                                      dismissible: false),
+            cta: nil,
+            signature: "snapshot-reached"
+        )
     }
 }
 
 // MARK: - Test doubles
 
-private final class StubUsageLimitsProvider: DuckAiUsageLimitsProviding {
-    var limits: DuckAiUsageLimits = .noData
+private final class StubUsageLimitsProvider: DuckAiUsageSnapshotProviding {
+    var limits: DuckAiUsageSnapshot = .noData
     var readCount = 0
 
-    func currentUsageLimits() -> DuckAiUsageLimits {
+    func currentSnapshot() -> DuckAiUsageSnapshot {
         readCount += 1
         return limits
     }
 }
 
 private struct StubCheaperModelSuggester: DuckAiModelSuggesting {
-    func cheaperModel() -> DuckAiModelSuggestionOutcome {
+    func resolve(_ cta: DuckAiUsageCta) -> DuckAiModelSuggestionOutcome {
         .suggestion(DuckAiModelSuggestion(modelId: "gpt-5.4-mini", modelShortName: "5.4 mini"))
     }
-
-    func freeModel() -> DuckAiModelSuggestionOutcome { .none(reason: .notApplicable) }
 }
 
 @MainActor

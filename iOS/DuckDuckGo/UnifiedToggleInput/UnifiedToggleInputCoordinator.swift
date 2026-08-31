@@ -887,7 +887,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func setUpUsageWarnings(subscriptionManager: any SubscriptionManager) {
         let viewModel = usageLimitsStore?.makeWarningViewModel(
-            tierProvider: { [weak self] in self?.subscriptionState.userTier ?? .free },
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
                 // The persisted id, not the live one: before a chat starts it is what a prompt would use.
@@ -907,6 +906,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         footerController = UTIFooterController(viewModel: viewModel,
                                               highUsageNotice: makeHighUsageNoticeSource())
         footerController?.presenter = viewController
+
+        // Also what brings a message back after the user has acted on the previous one.
+        usageLimitsStore?.snapshotUpdates?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.footerController?.refresh() }
+            .store(in: &cancellables)
     }
 
     /// Stops the cheaper-model CTA suggesting something that can't handle the current draft.
@@ -931,13 +936,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func handleUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
-            // Routed through the selector so a gated suggestion still lands on the upsell.
+            // Routed through the selector so a gated suggestion still lands on the upsell — the
+            // suggester only offers accessible models, so this always applies one.
             modelSelector.handleModelSelection(suggestion.modelId)
         case .tryForFree:
             subscriptionUpsellPresenter.presentPurchaseFlow(origin: usageWarningFunnelOrigin)
-        case .startUsingWeeklyLimit:
-            // The card offers no button for this until web sets the value it needs.
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] start-using-weekly-limit has no native action yet")
+        case .startUsingWeeklyLimit(let entries):
+            // Web reads the entry before its next /status and /chat, so there is nothing to reload.
+            usageLimitsStore?.write(entries)
         }
     }
 

@@ -52,6 +52,16 @@ final class DuckAiUsageLimitsStore {
         )
     }
 
+    /// `nil` when the feature is inactive, matching `makeWarningViewModel` — the notice shares the
+    /// card, so it must not outlive the flag that gates it.
+    func makeHighUsageNoticeSource(
+        modelProvider: @escaping () -> (id: String?, shortName: String?)
+    ) -> AIChatHighUsageNoticeSource? {
+        guard featureFlagger.isFeatureOn(.aiChatUsageWarnings) else { return nil }
+
+        return AIChatHighUsageNoticeSource(modelProvider: modelProvider)
+    }
+
     /// Lets an open surface update instead of waiting for the next activation, and is what releases
     /// a message the user has already acted on.
     var snapshotUpdates: AnyPublisher<Void, Never>? {
@@ -86,5 +96,51 @@ final class DuckAiUsageLimitsStore {
             }
         }
         return didWriteAll
+    }
+}
+
+/// The "this model spends your allowance quickly" notice. Keyed off the selected model rather than
+/// the allowance, so it sits beside the usage warnings instead of being one. AppKit twin of iOS's
+/// `UTIFooterHighUsageNoticeSource`.
+final class AIChatHighUsageNoticeSource {
+
+    private let resolver: DuckAIHighUsageModelNoticeResolver
+    private let dismissalStore: DuckAiHighUsageNoticeDismissalStoring
+    /// Re-read per refresh, so switching models mid-session is picked up.
+    private let modelProvider: () -> (id: String?, shortName: String?)
+
+    private(set) var notice: DuckAiHighUsageModelNotice?
+
+    init(dismissalStore: DuckAiHighUsageNoticeDismissalStoring = DuckAiHighUsageNoticeDismissalStore(),
+         modelProvider: @escaping () -> (id: String?, shortName: String?)) {
+        self.dismissalStore = dismissalStore
+        self.resolver = DuckAIHighUsageModelNoticeResolver(dismissalStore: dismissalStore)
+        self.modelProvider = modelProvider
+    }
+
+    func refresh() {
+        let model = modelProvider()
+        switch resolver.resolve(modelId: model.id, modelShortName: model.shortName) {
+        case .notice(let notice):
+            self.notice = notice
+            Logger.aiChat.debug("Duck.ai high-usage notice: model=\(notice.modelId, privacy: .public)")
+        case .none(let reason):
+            notice = nil
+            Logger.aiChat.debug("Duck.ai high-usage notice: none — reason=\(reason.rawValue, privacy: .public)")
+        }
+    }
+
+    /// One-time per model: there is no reset window for it to expire against.
+    func dismissCurrent() {
+        guard let notice else { return }
+
+        dismissalStore.setDismissed(modelId: notice.modelId)
+        self.notice = nil
+        Logger.aiChat.debug("Duck.ai high-usage notice dismissed: model=\(notice.modelId, privacy: .public)")
+    }
+
+    /// Teardown: drops the notice without recording a dismissal.
+    func clear() {
+        notice = nil
     }
 }

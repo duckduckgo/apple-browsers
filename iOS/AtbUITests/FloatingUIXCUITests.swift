@@ -184,10 +184,11 @@ class FloatingUIXCUITestCase: XCTestCase {
     }
 
     func verifyRuntimeAddressBarRelocation() {
+        openPage(path: "/long-page", heading: Page.longHeading)
+
         let destination = barPosition.opposite
         moveAddressBar(to: destination)
 
-        openPage(path: "/long-page", heading: Page.longHeading)
         collapseChrome()
         domainCapsule.tap()
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
@@ -215,6 +216,16 @@ class FloatingUIXCUITestCase: XCTestCase {
         menuButton.tap()
         XCTAssertTrue(app.descendants(matching: .any)["Settings"].waitForExistence(timeout: timeout))
         XCTAssertTrue(app.descendants(matching: .any)["New Tab"].exists)
+    }
+
+    func verifyConsecutiveAddressBarRelocation() {
+        openPage(path: "/long-page", heading: Page.longHeading)
+
+        moveAddressBar(to: barPosition.opposite)
+        moveAddressBar(to: barPosition)
+
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        assertConfiguredBarPosition()
     }
 
     func verifyFloatingContentInsets() {
@@ -709,6 +720,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testNewTabPageScenarios() { verifyNewTabPageScenarios() }
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
     func testRuntimeAddressBarRelocation() { verifyRuntimeAddressBarRelocation() }
+    func testConsecutiveAddressBarRelocation() { verifyConsecutiveAddressBarRelocation() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }
@@ -733,6 +745,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testNewTabPageScenarios() { verifyNewTabPageScenarios() }
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
     func testRuntimeAddressBarRelocation() { verifyRuntimeAddressBarRelocation() }
+    func testConsecutiveAddressBarRelocation() { verifyConsecutiveAddressBarRelocation() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }

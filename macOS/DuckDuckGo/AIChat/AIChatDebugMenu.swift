@@ -29,8 +29,6 @@ final class AIChatDebugMenu: NSMenu {
     private let debugStorage: any KeyedStoring<AIChatDebugURLSettings>
 
     private var storageDebugServer: DuckAiStorageDebugServer?
-    /// So "re-seed" can rewrite the same case with fresh reset times, which is what a republish looks like.
-    private var lastSeededCase: DuckAiUsageSnapshotSeed?
     private lazy var storageServerMenuItem = NSMenuItem(
         title: "Start Storage Server",
         action: #selector(toggleStorageServer),
@@ -79,9 +77,6 @@ final class AIChatDebugMenu: NSMenu {
         addSeeds(DuckAiUsageSnapshotSeed.paidSeeds, to: submenu)
         submenu.addItem(.separator())
 
-        submenu.addItem(menuItem(title: "Re-seed the last case (simulates a republish)",
-                                 action: #selector(reseedLastUsageSnapshot)))
-        submenu.addItem(.separator())
         submenu.addItem(menuItem(title: "Clear usage snapshot", action: #selector(clearUsageSnapshot)))
         submenu.addItem(menuItem(title: "Clear dismissals", action: #selector(clearUsageDismissals)))
 
@@ -114,22 +109,11 @@ final class AIChatDebugMenu: NSMenu {
         guard let rawValue = sender.representedObject as? String,
               let seed = DuckAiUsageSnapshotSeed(rawValue: rawValue) else { return }
 
-        lastSeededCase = seed
         writeUsageSnapshot(seed)
-    }
-
-    /// A fresh reset time makes a new signature, which is what releases an acted-on message.
-    @objc private func reseedLastUsageSnapshot() {
-        guard let lastSeededCase else {
-            showAlert("Nothing to re-seed", "Pick a case first.")
-            return
-        }
-        writeUsageSnapshot(lastSeededCase)
     }
 
     @objc private func clearUsageSnapshot() {
         guard let handler = storageHandlerOrAlert() else { return }
-        lastSeededCase = nil
         try? handler.deleteEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue)
     }
 

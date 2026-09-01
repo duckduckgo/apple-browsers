@@ -4702,9 +4702,10 @@ extension MainViewController: BrowserChromeDelegate {
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
     }
 
-    /// No hide/show bars on scroll. On when bar hides behind web keyboard (else page jerks), and while the system
-    /// find-in-page navigator is visible so swipes can't reveal the chrome — the user must dismiss find first.
+    /// No hide/show bars on scroll. On when bar hides behind web keyboard (else page jerks), while the address bar
+    /// is moving, and while the system find-in-page navigator is visible so swipes can't reveal the chrome.
     var isChromeScrollInteractionDisabled: Bool {
+        if isAddressBarMoveInProgress { return true }
         if isBottomAddressBarHiddenForWebKeyboard { return true }
         if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage),
            currentTab?.webView.findInteraction?.isFindNavigatorVisible == true {
@@ -5552,6 +5553,7 @@ extension MainViewController: OmniBarDelegate {
                     } completion: {
                         self?.isAddressBarMoveInProgress = false
                         self?.omniBar.moveTransitionCompleted()
+                        self?.revealFloatingChromeImmediately()
                         self?.decorate()
                     }
 

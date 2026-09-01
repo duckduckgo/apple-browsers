@@ -47,6 +47,7 @@ final class UTIFooterCardView: UIView {
 
     private let usageRing = UTIFooterUsageRingView()
     private let alertIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.alertRecolorable)
+    private let infoIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.info)
     private let modelSwitchIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.importExport)
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
@@ -73,19 +74,28 @@ final class UTIFooterCardView: UIView {
         case .none:
             usageRing.isHidden = true
             alertIcon.isHidden = true
+            infoIcon.isHidden = true
             modelSwitchIcon.isHidden = true
         case .usageRing(let progress, let severity):
             usageRing.isHidden = false
             alertIcon.isHidden = true
+            infoIcon.isHidden = true
             modelSwitchIcon.isHidden = true
             usageRing.setProgress(progress, severity: severity, animated: animateIcon)
         case .alert:
             usageRing.isHidden = true
             alertIcon.isHidden = false
+            infoIcon.isHidden = true
+            modelSwitchIcon.isHidden = true
+        case .info:
+            usageRing.isHidden = true
+            alertIcon.isHidden = true
+            infoIcon.isHidden = false
             modelSwitchIcon.isHidden = true
         case .modelSwitch:
             usageRing.isHidden = true
             alertIcon.isHidden = true
+            infoIcon.isHidden = true
             modelSwitchIcon.isHidden = false
         }
         let hasIcon = message.icon != UTIFooterMessage.Icon.none
@@ -144,7 +154,7 @@ private extension UTIFooterCardView {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(contentView)
 
-        [usageRing, alertIcon, modelSwitchIcon].forEach {
+        [usageRing, alertIcon, infoIcon, modelSwitchIcon].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             $0.setContentHuggingPriority(.required, for: .horizontal)
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -152,11 +162,12 @@ private extension UTIFooterCardView {
         }
         usageRing.accessibilityIdentifier = "AIChat.Footer.Icon.UsageRing"
         alertIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Alert"
+        infoIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Info"
         modelSwitchIcon.accessibilityIdentifier = "AIChat.Footer.Icon.ModelSwitch"
-        alertIcon.contentMode = .scaleAspectFit
-        alertIcon.isHidden = true
-        modelSwitchIcon.contentMode = .scaleAspectFit
-        modelSwitchIcon.isHidden = true
+        [alertIcon, infoIcon, modelSwitchIcon].forEach {
+            $0.contentMode = .scaleAspectFit
+            $0.isHidden = true
+        }
 
         for label in [titleLabel, subtitleLabel] {
             label.numberOfLines = 1
@@ -222,6 +233,11 @@ private extension UTIFooterCardView {
             alertIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             alertIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
+            infoIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            infoIcon.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
+            infoIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            infoIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
             modelSwitchIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             modelSwitchIcon.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
             modelSwitchIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
@@ -253,6 +269,7 @@ private extension UTIFooterCardView {
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
+        infoIcon.tintColor = UIColor(designSystemColor: .icons)
         modelSwitchIcon.tintColor = UIColor(designSystemColor: .icons)
         dismissButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
         actionButton.applyColors()

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import UIKit
 import XCTest
 @testable import DuckDuckGo
@@ -139,9 +140,30 @@ final class UTIFooterCardViewTests: XCTestCase {
         let sut = UTIFooterCardView()
 
         let withIcon = titleLeadingEdge(in: sut, message: makeMessage())
-        let withoutIcon = titleLeadingEdge(in: sut, message: makeNotice())
+        let withoutIcon = titleLeadingEdge(in: sut, message: makeIconlessMessage())
 
         XCTAssertLessThan(withoutIcon, withIcon)
+    }
+
+    /// The notice carries a glyph of its own, so its copy starts where a warning's copy starts.
+    func test_cardWidth_reservesTheIconSlotForTheNotice() {
+        let sut = UTIFooterCardView()
+
+        let withRing = titleLeadingEdge(in: sut, message: makeMessage())
+        let withInfo = titleLeadingEdge(in: sut, message: makeNotice())
+
+        XCTAssertEqual(withInfo, withRing, accuracy: 0.5)
+    }
+
+    func test_icon_showsTheInfoGlyphOnlyForTheNotice() {
+        let sut = UTIFooterCardView()
+
+        sut.configure(with: makeMessage(), animateIcon: false)
+        XCTAssertEqual(infoIcon(in: sut)?.isHidden, true)
+
+        sut.configure(with: makeNotice(), animateIcon: false)
+        XCTAssertEqual(infoIcon(in: sut)?.isHidden, false)
+        XCTAssertEqual(infoIcon(in: sut)?.image, DesignSystemImages.Glyphs.Size16.info)
     }
 
     /// A message with no CTA must leave no gap where the pill would have been.
@@ -201,6 +223,12 @@ final class UTIFooterCardViewTests: XCTestCase {
             return 0
         }
         return card.convert(subview.bounds, from: subview).maxX
+    }
+
+    private func infoIcon(in card: UTIFooterCardView) -> UIImageView? {
+        card.subviews.flatMap(\.subviews)
+            .compactMap { $0 as? UIImageView }
+            .first { $0.accessibilityIdentifier == "AIChat.Footer.Icon.Info" }
     }
 
     private func actionButton(in card: UTIFooterCardView) -> UTIFooterActionButton? {
@@ -279,10 +307,18 @@ final class UTIFooterCardViewTests: XCTestCase {
     }
 
     private func makeNotice(title: String = "Opus 4.8 uses limits up to 2-5x faster than basic models.") -> UTIFooterMessage {
-        UTIFooterMessage(icon: .none,
+        UTIFooterMessage(icon: .info,
                          title: title,
                          subtitle: nil,
                          primaryAction: nil,
+                         isDismissible: true)
+    }
+
+    private func makeIconlessMessage() -> UTIFooterMessage {
+        UTIFooterMessage(icon: .none,
+                         title: "90% of weekly limit",
+                         subtitle: "Resets in 2 days",
+                         primaryAction: .init(title: "Switch"),
                          isDismissible: true)
     }
 }

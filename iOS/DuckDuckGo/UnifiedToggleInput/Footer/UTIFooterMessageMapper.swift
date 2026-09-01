@@ -56,7 +56,7 @@ struct UTIFooterMessageMapper {
 
     func message(for notice: DuckAiHighUsageModelNotice) -> UTIFooterMessage {
         UTIFooterMessage(
-            icon: .none,
+            icon: .info,
             title: String(format: UserText.utiDuckAIWarningsHighUsageModel, notice.modelShortName),
             subtitle: nil,
             primaryAction: nil,

@@ -26,7 +26,9 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
     case freeDailyReached
 
     // Paid
-    case approachingDaily
+    case approachingDaily50
+    case approachingDaily75
+    case approachingDaily90
     case dailyReachedWithBypass
     case approachingWeekly
     case weeklyReachedDegraded
@@ -36,13 +38,16 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
     public static let freeSeeds: [Self] = [.freeDailyReached]
 
     public static let paidSeeds: [Self] = [
-        .approachingDaily, .dailyReachedWithBypass, .approachingWeekly, .weeklyReachedDegraded, .weeklyReached
+        .approachingDaily50, .approachingDaily75, .approachingDaily90,
+        .dailyReachedWithBypass, .approachingWeekly, .weeklyReachedDegraded, .weeklyReached
     ]
 
     public var displayName: String {
         switch self {
         case .freeDailyReached: return "Daily limit reached"
-        case .approachingDaily: return "Approaching daily limit (90%)"
+        case .approachingDaily50: return "Approaching daily limit — 50%"
+        case .approachingDaily75: return "Approaching daily limit — 75% (warning)"
+        case .approachingDaily90: return "Approaching daily limit — 90% (critical)"
         case .dailyReachedWithBypass: return "Daily limit reached"
         case .approachingWeekly: return "Approaching weekly limit (90%)"
         case .weeklyReachedDegraded: return "Weekly limit reached, free models left"
@@ -55,8 +60,12 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
         switch self {
         case .freeDailyReached:
             return "\"Daily limit reached\" with Try for free / Subscribe (whichever the account qualifies for)"
-        case .approachingDaily:
-            return "\"90% of daily limit\" with Switch to {model} and the chevron"
+        case .approachingDaily50:
+            return "\"50% of daily limit\", ring in green"
+        case .approachingDaily75:
+            return "\"75% of daily limit\", ring in orange"
+        case .approachingDaily90:
+            return "\"90% of daily limit\", ring in red"
         case .dailyReachedWithBypass:
             return "\"Daily limit reached\" with Start using weekly limit; the card clears once tapped"
         case .approachingWeekly:
@@ -91,9 +100,10 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
                 "cta": ["id": "subscribe"]
             ]
 
-        case .approachingDaily:
+        case .approachingDaily50, .approachingDaily75, .approachingDaily90:
             return [
-                "notice": notice(id: "approaching", window: "daily", percentUsed: 90, resetsAt: Self.daily(now)),
+                "notice": notice(id: "approaching", window: "daily",
+                                 percentUsed: approachingPercent, resetsAt: Self.daily(now)),
                 "cta": switchCta(id: "switchToCheaper", modelIds: Array(targets.prefix(2)))
             ]
 
@@ -128,6 +138,15 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
                 "notice": notice(id: "weeklyReached", window: "weekly", percentUsed: 100,
                                  resetsAt: Self.weekly(now), reached: true)
             ]
+        }
+    }
+
+    /// The three steps of the severity ladder, so the ring's colours can be seen without a live account.
+    private var approachingPercent: Int {
+        switch self {
+        case .approachingDaily75: return 75
+        case .approachingDaily90: return 90
+        default: return 50
         }
     }
 

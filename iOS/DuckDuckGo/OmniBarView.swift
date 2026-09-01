@@ -129,7 +129,7 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func makeGlass()
     func makeOpaque()
 
-    /// Re-asserts the field's resting background for the current position. No-op unless floating UI.
+    /// Re-asserts the field's resting appearance for the current position. No-op unless floating UI.
     func restoreFloatingFieldAppearance()
 
     /// Swaps the omnibar Duck.ai button glyph to reflect a contextual session on this tab: a surface

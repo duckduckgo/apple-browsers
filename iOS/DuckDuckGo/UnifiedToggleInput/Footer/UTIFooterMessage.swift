@@ -38,6 +38,7 @@ struct UTIFooterMessage: Equatable {
         case none
         case usageRing(progress: Double, severity: DuckAiUsageSeverity)
         case alert
+        case info
         case modelSwitch
     }
 

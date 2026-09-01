@@ -39,7 +39,8 @@ extension XCUIElementSnapshot {
                                         "title",
                                         "value",
                                         "isEnabled",
-                                        "frame"]) -> [String: Any] {
+                                        "frame"],
+                      ignoringElementsOfType: [XCUIElement.ElementType] = []) -> [String: Any] {
         var dict: [String: Any] = [:]
 
         // Add requested properties
@@ -52,7 +53,10 @@ extension XCUIElementSnapshot {
         }
 
         // Recurse on children
-        dict["children"] = children.map { $0.toDictionary(keys: keys) }
+        dict["children"] = children.compactMap { element -> [String: Any]? in
+            guard !ignoringElementsOfType.contains(element.elementType) else { return nil }
+            return element.toDictionary(keys: keys, ignoringElementsOfType: ignoringElementsOfType)
+        }
 
         return dict
     }

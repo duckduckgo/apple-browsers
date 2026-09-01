@@ -55,6 +55,9 @@ final class PinnedTabsCollectionView: TabBarCollectionView {
 
 open class TabBarCollectionView: NSCollectionView {
 
+    /// We account for extra room in `TabBarItemView`, as the leading + trailing Ramp(s) are rendered beyond its bounds
+    var horizontalScrollInset: CGFloat = 0
+
     open override var acceptsFirstResponder: Bool {
         return false
     }
@@ -99,18 +102,23 @@ open class TabBarCollectionView: NSCollectionView {
             assertionFailure("TabBarCollectionView: Index path out of bounds")
             return
         }
-        let rect = frameForItem(at: indexPath.item)
+        let rect = scrollTargetRect(for: indexPath)
         performAnimatedUpdate { [self] in
             animator().scrollToVisible(rect)
         } completionHandler: { [weak self] didFinish in
             guard let self, didFinish, isIndexPathValid(indexPath) else { return }
-            let newRect = frameForItem(at: indexPath.item)
+            let newRect = scrollTargetRect(for: indexPath)
             // make extra pass to make sure the cell is really visible after the animation finishes:
             // in overflown mode the cells are expanded when selected and may get partly hidden
             if rect != newRect, !visibleRect.contains(newRect) {
                 self.scroll(to: indexPath)
             }
         }
+    }
+
+    private func scrollTargetRect(for indexPath: IndexPath) -> CGRect {
+        frameForItem(at: indexPath.item)
+            .insetBy(dx: -horizontalScrollInset, dy: 0)
     }
 
     func scrollToEnd(completionHandler: ((Bool) -> Void)? = nil) {

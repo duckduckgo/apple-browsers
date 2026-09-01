@@ -81,6 +81,10 @@ enum WebViewPreviewSnapshotGeometry {
                                      right: 0)
         return visibleRect(webViewBounds: webViewBounds, contentInset: cropInset)
     }
+
+    static func snapshotWidth(for rect: CGRect, windowSize: CGSize) -> CGFloat {
+        min(rect.width, TabSwitcherGridLayoutGeometry.maximumPreviewWidth(for: windowSize))
+    }
 }
 
 enum WebViewPreviewSnapshotPolicy {
@@ -491,7 +495,7 @@ class TabViewController: UIViewController {
     public var link: Core.Link? {
         if isError {
             if let url = url ?? webView.url ?? URL(string: "") {
-                return Link(title: errorText, url: SerpSearchTokenInterceptor.strippingToken(from: url))
+                return Link(title: errorText, url: url)
             }
         }
         
@@ -499,9 +503,7 @@ class TabViewController: UIViewController {
             return tabModel.link
         }
                         
-        // Strip the search-token param so it never surfaces to the user via this link (address bar,
-        // bookmarks, favorites, copy/share all read `link`). The live network request keeps the token.
-        let finalURL = SerpSearchTokenInterceptor.strippingToken(from: duckPlayerNavigationHandler.getDuckURLFor(url))
+        let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
         let activeLink = Link(title: title, url: finalURL)
         guard let storedLink = tabModel.link else {
             return activeLink
@@ -1073,6 +1075,26 @@ class TabViewController: UIViewController {
         }
     }
 
+    /// Assigns `WKWebView.obscuredContentInsets` only when the running OS actually implements it.
+    ///
+    /// `#available(iOS 26, *)` is not sufficient on its own: on early iOS 26 betas (e.g. build
+    /// 23A5297m) the availability check passes but the `obscuredContentInsets` selector is not yet
+    /// implemented, so *both* the getter and setter abort with an unrecognized-selector exception
+    /// (SIGABRT). We therefore gate on the setter's `responds(to:)` and avoid touching the property
+    /// at all — including the getter comparison — when it is unsupported.
+    @discardableResult
+    private func setWebViewObscuredContentInsetsIfSupported(_ insets: UIEdgeInsets) -> Bool {
+        guard #available(iOS 26, *),
+              let webView,
+              webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) else {
+            return false
+        }
+        if webView.obscuredContentInsets != insets {
+            webView.obscuredContentInsets = insets
+        }
+        return true
+    }
+
     private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat) {
         guard #available(iOS 26, *) else {
             assertionFailure("Floating UI requires iOS 26")
@@ -1115,9 +1137,7 @@ class TabViewController: UIViewController {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
             hasAppliedFloatingUIScrollViewInsets = true
         }
-        if webView.obscuredContentInsets != obscuredInsets {
-            webView.obscuredContentInsets = obscuredInsets
-        }
+        setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
     }
 
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
@@ -1125,9 +1145,7 @@ class TabViewController: UIViewController {
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
-        if #available(iOS 26, *) {
-            webView.obscuredContentInsets = .zero
-        }
+        setWebViewObscuredContentInsetsIfSupported(.zero)
         if hasAppliedFloatingUIScrollViewInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
             hasAppliedFloatingUIScrollViewInsets = false
@@ -1216,9 +1234,6 @@ class TabViewController: UIViewController {
     
     func updateTabModel() {
         if let url = url {
-            // Strip the search-token param before it persists into `tabModel.link` (read directly by the
-            // tab switcher, autocomplete, and tab restore). Shadow `url` so the comparison below matches.
-            let url = SerpSearchTokenInterceptor.strippingToken(from: url)
             let hasTitle = title != nil && !title!.isEmpty
             let previousTitle = (tabModel.link?.url == url) ? tabModel.link?.title : nil
             let link = Link(title: hasTitle ? title : previousTitle, url: url)
@@ -2649,9 +2664,10 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
-            let configuration = WKSnapshotConfiguration()
-            configuration.rect = visibleRect
-            configuration.afterScreenUpdates = true
+            let configuration = makePreviewSnapshotConfiguration(
+                rect: visibleRect,
+                windowSize: webView.window?.bounds.size ?? visibleRect.size,
+                afterScreenUpdates: true)
             webView.takeSnapshot(with: configuration) { image, _ in
                 completion(image)
             }
@@ -2675,14 +2691,27 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        let configuration = WKSnapshotConfiguration()
-        configuration.rect = rect
-        configuration.afterScreenUpdates = false
+        let configuration = makePreviewSnapshotConfiguration(
+            rect: rect,
+            windowSize: webView.window?.bounds.size ?? rect.size,
+            afterScreenUpdates: false)
         webView.takeSnapshot(with: configuration) { image, _ in
             DispatchQueue.main.async {
                 completion(image)
             }
         }
+    }
+
+    private func makePreviewSnapshotConfiguration(rect: CGRect,
+                                                  windowSize: CGSize,
+                                                  afterScreenUpdates: Bool) -> WKSnapshotConfiguration {
+        let configuration = WKSnapshotConfiguration()
+        configuration.rect = rect
+        if featureFlagger.isFeatureOn(.tabPreviewPerformanceOptimization) {
+            configuration.snapshotWidth = NSNumber(value: WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize))
+        }
+        configuration.afterScreenUpdates = afterScreenUpdates
+        return configuration
     }
 
     /// Renders the web view on the calling thread. `drawHierarchy` blocks until the render server
@@ -3270,13 +3299,13 @@ extension TabViewController: WKNavigationDelegate {
             didModifyRequest = true
         }
 
-        // Attach Search Token experiment signals (dindexexp + dindextoken URL params) to SERP navigations.
+        // Attach Search Token experiment signals (dindexexp param + X-DDG-Search-Token header) to SERP navigations.
         // Enrolled devices only, skipping back/forward so we don't wipe forward history.
         if navigationAction.isTargetingMainFrame(),
            navigationAction.navigationType != .backForward,
            let url = navigationAction.request.url,
            SerpSearchTokenInterceptor.isSerpURL(url),
-           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV3) as? FeatureFlag.SearchTokenExperimentCohort {
+           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort {
             // Pin the UA this SERP navigation will send so it can't inherit a stale `customUserAgent`
             // from a prior (non-DDG) navigation. Matches the UA the token was warmed against.
             webView.customUserAgent = userAgentManager.userAgent(isDesktop: tabModel.isDesktop, url: url)
@@ -3554,7 +3583,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func shouldUpgradeToHttps(url: URL, navigationAction: WKNavigationAction) -> Bool {
-        return !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame()
+        return url.isHttp && url.port == nil && !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame()
     }
 
     private func performExternalNavigationFor(url: URL, action: SchemeHandler.Action) {

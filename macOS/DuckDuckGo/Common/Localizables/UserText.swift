@@ -972,6 +972,10 @@ struct UserText {
     static let aiChatUsageWarningsDailyLimitReached = NotLocalizedString("aichat.usageWarnings.daily-limit-reached", value: "Daily limit reached", comment: "Headline on the Duck.ai usage card when the user's daily allowance is fully spent")
     static let aiChatUsageWarningsWeeklyLimitReached = NotLocalizedString("aichat.usageWarnings.weekly-limit-reached", value: "Weekly usage limit reached", comment: "Headline on the Duck.ai usage card when the user's weekly allowance is fully spent")
     static let aiChatUsageWarningsAdvancedModelsLimitReached = NotLocalizedString("aichat.usageWarnings.advanced-models-limit-reached", value: "Advanced AI models limit reached", comment: "Headline on the Duck.ai usage card when the allowance for advanced AI models specifically is spent, while free models remain available")
+    static func aiChatUsageWarningsHighUsageModel(_ modelShortName: String) -> String {
+        let message = NotLocalizedString("aichat.usageWarnings.high-usage-model", value: "%@ reaches usage limits 2-5x sooner than basic models.", comment: "Duck.ai usage card notice shown while a model that spends the allowance quickly is selected. Parameter is the model's short name, e.g. \"Opus 4.8\".")
+        return String(format: message, modelShortName)
+    }
     static func aiChatUsageWarningsResetsIn(_ interval: String) -> String {
         let message = NotLocalizedString("aichat.usageWarnings.resets-in", value: "Resets in %@", comment: "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".")
         return String(format: message, interval)
@@ -982,6 +986,7 @@ struct UserText {
     }
     static let aiChatUsageWarningsSwitchModel = NotLocalizedString("aichat.usageWarnings.switch-model", value: "Switch Model", comment: "Button on the Duck.ai usage card offering a model that uses the allowance more slowly, used when the suggested model has no short name to show")
     static let aiChatUsageWarningsSwitchToFreeModel = NotLocalizedString("aichat.usageWarnings.switch-to-free-model", value: "Switch to a Free Model", comment: "Button on the Duck.ai usage card offering a free-tier model, shown once the advanced-model allowance is spent")
+    static let aiChatUsageWarningsStartUsingWeeklyLimit = NotLocalizedString("aichat.usageWarnings.start-using-weekly-limit", value: "Start using weekly limit", comment: "Button on the Duck.ai usage card letting a paid user keep chatting on their weekly allowance after the daily one is spent")
     static let aiChatUsageWarningsTryForFree = NotLocalizedString("aichat.usageWarnings.try-for-free", value: "Try for free", comment: "Button on the Duck.ai usage card taking a user who is still eligible for a free trial to the subscription flow")
     static let aiChatUsageWarningsSubscribe = NotLocalizedString("aichat.usageWarnings.subscribe", value: "Subscribe", comment: "Button on the Duck.ai usage card taking a user who has already used their free trial to the subscription flow")
     static let aiChatUsageWarningsDismissAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.dismiss.accessibility", value: "Dismiss", comment: "Accessibility label for the close button on the Duck.ai usage card")

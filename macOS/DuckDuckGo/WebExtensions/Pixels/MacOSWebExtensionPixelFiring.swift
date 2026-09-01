@@ -216,6 +216,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedInstalled
         case .darkReader: return .darkReaderInstalled
         case .adBlockingExtension: return .adBlockingExtensionInstalled
+        case .searchToken: return nil
         }
     }
 
@@ -224,6 +225,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedUpgraded(fromVersion: fromVersion, toVersion: toVersion)
         case .darkReader: return .darkReaderUpgraded(fromVersion: fromVersion, toVersion: toVersion)
         case .adBlockingExtension: return .adBlockingExtensionUpgraded(fromVersion: fromVersion, toVersion: toVersion)
+        case .searchToken: return nil
         }
     }
 
@@ -232,6 +234,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedInstallError(error: error)
         case .darkReader: return .darkReaderInstallError(error: error)
         case .adBlockingExtension: return .adBlockingExtensionInstallError(error: error)
+        case .searchToken: return nil
         }
     }
 
@@ -240,6 +243,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedNotLoaded
         case .darkReader: return .darkReaderNotLoaded
         case .adBlockingExtension: return .adBlockingExtensionNotLoaded
+        case .searchToken: return nil
         }
     }
 }

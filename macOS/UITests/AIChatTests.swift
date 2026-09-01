@@ -49,7 +49,6 @@ class AIChatTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: ["aiChatChromeSidebar": true, "aiChatSidebarFloating": true, "aiChatChromeMenuButton": false])
 
         addressBarTextField = app.addressBar
@@ -155,7 +154,6 @@ class AIChatTests: UITestCase {
 
         // Open tab B and navigate to a website
         app.openNewTab()
-        addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
         XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
@@ -435,7 +433,6 @@ class AIChatTests: UITestCase {
 
         // Open tab B before detaching (avoids keyboard shortcuts going to floating window)
         app.openNewTab()
-        addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 
         // Switch back to tab A and detach sidebar
@@ -477,7 +474,6 @@ class AIChatTests: UITestCase {
 
         // Open tab B before detaching (avoids keyboard shortcuts going to floating window)
         app.openNewTab()
-        addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 
         // Switch back to tab A and detach sidebar
@@ -545,7 +541,6 @@ class AIChatTests: UITestCase {
 
         // Open a second tab so closing tab A doesn't close the window
         app.openNewTab()
-        addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 
         // Switch back to tab A and detach sidebar

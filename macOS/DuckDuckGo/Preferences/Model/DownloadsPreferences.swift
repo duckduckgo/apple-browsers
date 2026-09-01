@@ -138,6 +138,10 @@ final class DownloadsPreferences: ObservableObject {
     private func setSelectedDownloadLocation(_ url: URL?) {
         selectedDownloadLocationController = url.map { SecurityScopedFileURLController(url: $0) }
         let locationString: String?
+
+        /// When Sandboxed, we have the `com.apple.security.files.downloads.read-write` entitlement: safe to exclude `~/Downloads`.
+        /// Otherwise `bookmarkData(options: .withSecurityScope)`  will trigger a Permissions Prompt, at launch, before the Window is even visible.
+        ///
         if NSApp.isSandboxed, let url, url.isSystemDownloadsDirectory == false {
             locationString = (try? url.bookmarkData(options: .withSecurityScope).base64EncodedString()) ?? url.absoluteString
         } else {

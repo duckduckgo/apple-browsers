@@ -154,10 +154,13 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1214798984829406
     case subscriptionPromoForExistingUsers
 
-    /// ABN test on the subscription onboarding flow (control vs. treatment), September 2026.
-    /// `control` is held back from the flow entirely.
-    /// https://app.asana.com/1/137249556945/task/1215581300423035?focus=true
-    case subscriptionOnboardingSep2026
+    /// ABN test on the subscription onboarding flow, free-trial subscribers. Mutually exclusive with
+    /// `subscriptionOnboardingPaidSubsSep2026`. https://app.asana.com/1/137249556945/task/1215581300423035?focus=true
+    case subscriptionOnboardingFreeTrialsSep2026
+
+    /// ABN test on the subscription onboarding flow, paid (non-trial) subscribers. Mutually exclusive with
+    /// `subscriptionOnboardingFreeTrialsSep2026`. https://app.asana.com/1/137249556945/task/1215581300423035?focus=true
+    case subscriptionOnboardingPaidSubsSep2026
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
@@ -569,8 +572,14 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    /// Cohorts for the `subscriptionOnboardingSep2026` ABN test.
-    public enum SubscriptionOnboardingSep2026Cohort: String, FeatureFlagCohortDescribing {
+    /// Cohorts for the `subscriptionOnboardingFreeTrialsSep2026` ABN test.
+    public enum SubscriptionOnboardingFreeTrialsSep2026Cohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the `subscriptionOnboardingPaidSubsSep2026` ABN test.
+    public enum SubscriptionOnboardingPaidSubsSep2026Cohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -682,8 +691,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionExpirationReminderNotification))
         case .subscriptionPromoForExistingUsers:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
-        case .subscriptionOnboardingSep2026:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingSep2026), cohortType: SubscriptionOnboardingSep2026Cohort.self)
+        case .subscriptionOnboardingFreeTrialsSep2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingFreeTrialsSep2026), cohortType: SubscriptionOnboardingFreeTrialsSep2026Cohort.self)
+        case .subscriptionOnboardingPaidSubsSep2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingPaidSubsSep2026), cohortType: SubscriptionOnboardingPaidSubsSep2026Cohort.self)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:

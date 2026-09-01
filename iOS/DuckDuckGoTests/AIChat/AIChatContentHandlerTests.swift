@@ -27,6 +27,7 @@ import UserScript
 import XCTest
 import WebKit
 import Subscription
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 @testable import Core
 
@@ -40,6 +41,7 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockFreeTrialConversionService: MockFreeTrialConversionInstrumentationService!
     var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
     var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
+    var mockSubscriptionManager: SubscriptionManagerMock!
 
     override func setUpWithError() throws {
         PixelKit.configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger(),
@@ -53,6 +55,8 @@ final class AIChatContentHandlerTests: XCTestCase {
         mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
         mockIPadDuckAIControlsFeature = MockIPadDuckAIControlsFeatureProvider()
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, activeOffers: []))
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
@@ -61,6 +65,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            subscriptionManager: mockSubscriptionManager,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
             iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature

@@ -130,9 +130,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
     }
 
     /// Reads the customer's current subscription and reports whether onboarding should be presented for it.
+    /// Skips enrollment entirely on a fetch failure rather than defaulting to "not on trial".
     static func isOnboardingFeatureEnabled(subscriptionManager: any SubscriptionManager, featureFlagger: FeatureFlagger, locale: Locale = .current) async -> Bool {
-        let isOnFreeTrial = await subscriptionManager.isOnFreeTrial()
-        return SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: isOnFreeTrial, locale: locale) == .treatment
+        guard let subscription = try? await subscriptionManager.getSubscription() else { return false }
+        return SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: subscription.hasActiveTrialOffer, locale: locale) == .treatment
     }
 
     /// Called when the App Store purchase itself completes
@@ -240,8 +241,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
             }
         }
 
-        subFeature.onPurchaseCompleted = {
-            Task { await self.requestOnboardingIfNeeded() }
+        subFeature.onPurchaseCompleted = { [weak self] in
+            guard let strongSelf = self else { return }
+            Task { await strongSelf.requestOnboardingIfNeeded() }
         }
 
          subFeature.onFeatureSelected = { feature in

@@ -68,6 +68,7 @@ final class AIChatViewControllerManager {
     private var productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let subscriptionManager: any SubscriptionManager
     private let statisticsLoader: StatisticsLoader
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
@@ -85,6 +86,7 @@ final class AIChatViewControllerManager {
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording = NullSubscriptionOnboardingActivationRecorder(),
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          statisticsLoader: StatisticsLoader = .shared,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil) {
 
@@ -100,6 +102,7 @@ final class AIChatViewControllerManager {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
         self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.subscriptionManager = subscriptionManager
         self.statisticsLoader = statisticsLoader
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
     }
@@ -646,7 +649,9 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
                 freeTrialConversionService.markDuckAIActivated()
                 // Also completes the subscription onboarding checklist's Duck.ai step
                 onboardingActivationRecorder.recordDuckAIActivated()
-                SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: true)
+                Task {
+                    SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: await subscriptionManager.isActiveSubscription())
+                }
             }
 
             DispatchQueue.main.async {

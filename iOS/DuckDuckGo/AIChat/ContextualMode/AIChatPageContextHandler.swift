@@ -77,7 +77,7 @@ protocol AIChatPageContextHandling: AnyObject {
     /// Publisher for context updates. Subscribe to receive results after triggering collection.
     var contextPublisher: AnyPublisher<AIChatPageContext?, Never> { get }
 
-    /// True while a document tab's bytes are being read; drives the attachment chip's loading state.
+    /// True while a document tab's bytes are being read;
     var documentReadInProgressPublisher: AnyPublisher<Bool, Never> { get }
 
     /// Triggers context collection from JS. Does not return the result directly.
@@ -365,7 +365,6 @@ private extension AIChatPageContextHandler {
         extractionResolver.reset()
         didReportExtractionForCurrentNavigation = false
         lastCollectedURL = nil
-        // Clear the loading flag so an abandoned read can't keep the start surface hidden.
         documentReadInProgressSubject.send(false)
     }
 

@@ -883,6 +883,14 @@ extension URL {
         return isDirectory.boolValue
     }
 
+    var isSystemDownloadsDirectory: Bool {
+        guard let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
+            return false
+        }
+
+        return resolvingSymlinksInPath() == downloads.resolvingSymlinksInPath()
+    }
+
     mutating func setFileHidden(_ hidden: Bool) throws {
         var resourceValues = URLResourceValues()
         resourceValues.isHidden = true

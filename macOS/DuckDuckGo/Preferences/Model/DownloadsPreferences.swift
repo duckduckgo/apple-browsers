@@ -138,8 +138,8 @@ final class DownloadsPreferences: ObservableObject {
     private func setSelectedDownloadLocation(_ url: URL?) {
         selectedDownloadLocationController = url.map { SecurityScopedFileURLController(url: $0) }
         let locationString: String?
-        if NSApp.isSandboxed {
-            locationString = (try? url?.bookmarkData(options: .withSecurityScope).base64EncodedString()) ?? url?.absoluteString
+        if NSApp.isSandboxed, let url, url.isSystemDownloadsDirectory == false {
+            locationString = (try? url.bookmarkData(options: .withSecurityScope).base64EncodedString()) ?? url.absoluteString
         } else {
             locationString = url?.absoluteString
         }

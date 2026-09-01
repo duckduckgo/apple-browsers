@@ -24,36 +24,58 @@ import PixelKit
 import PixelExperimentKit
 import FeatureFlags_iOS
 
-/// The `subscriptionOnboardingSep2026` ABN test (control vs. treatment)
-///
-/// Click-through rate per step is not this file's concern — it's read from the existing
-/// `SubscriptionOnboardingInstrumentation` step-funnel pixels, joined against this experiment's
-/// `experiment_enroll_subscriptionOnboardingSep2026_{cohort}` pixel to split by cohort.
+/// Two mutually exclusive ABN tests split by trial status: free-trials vs. paid-subs. Click-through per step
+/// is reported separately via `SubscriptionOnboardingInstrumentation`, not here.
 enum SubscriptionOnboardingExperiment {
-    private static let subfeatureID = PrivacyProSubfeature.subscriptionOnboardingSep2026.rawValue
-    private static let conversionWindowDays: ConversionWindow = 0...3
+
+    /// Unifies the two ABN tests' cohort types — callers only need "is this in treatment", not which test.
+    enum Cohort: String, Equatable {
+        case control
+        case treatment
+    }
+
+    private static let freeTrialsFlag = FeatureFlag.subscriptionOnboardingFreeTrialsSep2026
+    private static let paidSubsFlag = FeatureFlag.subscriptionOnboardingPaidSubsSep2026
+    private static let flags: [FeatureFlag] = [freeTrialsFlag, paidSubsFlag]
+
+    /// Per-experiment, not per-metric: every activation metric uses the same window within an experiment.
+    private static let activationMetricTargets: [(subfeatureID: SubfeatureID, conversionWindowDays: ConversionWindow)] = [
+        (PrivacyProSubfeature.subscriptionOnboardingFreeTrialsSep2026.rawValue, 0...7),
+        (PrivacyProSubfeature.subscriptionOnboardingPaidSubsSep2026.rawValue, 0...30)
+    ]
 
     private enum Metric {
         static let vpnActivated = "vpnActivated"
         static let duckAiPaidUsed = "duckAiPaidUsed"
+        static let pirActivated = "pirActivated"
     }
 
-    /// Enrolls the device in the experiment if it isn't already, assigning and reporting a cohort.
-    ///
-    /// - Returns: The device's cohort, or `nil` if the experiment isn't active for this device.
+    /// Enrolls in whichever ABN test matches trial status, unless already assigned to either — an existing
+    /// assignment always wins, so a trial-to-paid conversion can't cause double-enrollment.
+    /// - Returns: The device's cohort, or `nil` if neither experiment is active for this device.
     @discardableResult
-    static func resolveCohort(using featureFlagger: FeatureFlagger, isOnFreeTrial: Bool, locale: Locale) -> FeatureFlag.SubscriptionOnboardingSep2026Cohort? {
-        if let assigned = featureFlagger.assignedCohort(for: FeatureFlag.subscriptionOnboardingSep2026) as? FeatureFlag.SubscriptionOnboardingSep2026Cohort {
+    static func resolveCohort(using featureFlagger: FeatureFlagger, isOnFreeTrial: Bool, locale: Locale) -> Cohort? {
+        if let assigned = assignedCohort(using: featureFlagger) {
             return assigned
         }
-        guard isOnFreeTrial, locale.isEnglishUnitedStates else { return nil }
-        return featureFlagger.resolveCohort(for: FeatureFlag.subscriptionOnboardingSep2026) as? FeatureFlag.SubscriptionOnboardingSep2026Cohort
+        guard locale.isEnglishUnitedStates else { return nil }
+        let flag = isOnFreeTrial ? freeTrialsFlag : paidSubsFlag
+        return featureFlagger.resolveCohort(for: flag).flatMap { Cohort(rawValue: $0.rawValue) }
     }
 
-    /// A read-only check for an already-enrolled device. Still subject to the
-    /// experiment's remote kill switch
+    /// Reads whichever experiment this device is already enrolled in, without enrolling it in either.
+    private static func assignedCohort(using featureFlagger: FeatureFlagger) -> Cohort? {
+        for flag in flags {
+            if let cohort = featureFlagger.assignedCohort(for: flag), let mapped = Cohort(rawValue: cohort.rawValue) {
+                return mapped
+            }
+        }
+        return nil
+    }
+
+    /// A read-only check for an already-enrolled device. Still subject to each experiment's remote kill switch.
     static func isEnrolledInTreatment(using featureFlagger: FeatureFlagger) -> Bool {
-        featureFlagger.assignedCohort(for: FeatureFlag.subscriptionOnboardingSep2026) as? FeatureFlag.SubscriptionOnboardingSep2026Cohort == .treatment
+        assignedCohort(using: featureFlagger) == .treatment
     }
 
     /// Whether the Settings re-entry point should show: the flow was already opened from post-checkout,
@@ -62,17 +84,29 @@ enum SubscriptionOnboardingExperiment {
         hasStartedFlow && isEnrolledInTreatment(using: featureFlagger) && hasActiveSubscription
     }
 
-    /// Reports that the VPN was activated while the customer had an active subscription, within the
-    /// experiment's 0-3 day conversion window. No-ops for a device not enrolled in the experiment.
+    /// Reports VPN activation while the subscription is active. No-ops if not enrolled in either experiment.
     static func fireVPNActivatedMetric(isSubscriptionActive: Bool) {
         guard isSubscriptionActive else { return }
-        PixelKit.fireExperimentPixel(for: subfeatureID, metric: Metric.vpnActivated, conversionWindowDays: conversionWindowDays, value: "1")
+        fireActivationMetric(Metric.vpnActivated)
     }
 
-    /// Reports that a paid Duck.ai chat was used while the customer had an active subscription, within
-    /// the experiment's 0-3 day conversion window. No-ops for a device not enrolled in the experiment.
+    /// Reports a paid Duck.ai chat while the subscription is active. No-ops if not enrolled in either experiment.
     static func fireDuckAIPaidUsedMetric(isSubscriptionActive: Bool) {
         guard isSubscriptionActive else { return }
-        PixelKit.fireExperimentPixel(for: subfeatureID, metric: Metric.duckAiPaidUsed, conversionWindowDays: conversionWindowDays, value: "1")
+        fireActivationMetric(Metric.duckAiPaidUsed)
+    }
+
+    /// Reports PIR activation while the subscription is active. No-ops if not enrolled in either experiment.
+    static func firePIRActivatedMetric(isSubscriptionActive: Bool) {
+        guard isSubscriptionActive else { return }
+        fireActivationMetric(Metric.pirActivated)
+    }
+
+    /// Fires `metric` against every experiment's subfeature ID, each with its own window; `fireExperimentPixel`
+    /// no-ops for whichever one the device isn't enrolled in, so only one call ever actually records.
+    private static func fireActivationMetric(_ metric: String) {
+        for target in activationMetricTargets {
+            PixelKit.fireExperimentPixel(for: target.subfeatureID, metric: metric, conversionWindowDays: target.conversionWindowDays, value: "1")
+        }
     }
 }

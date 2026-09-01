@@ -68,11 +68,18 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 pixelHandler: notificationPixelHandler
             )
+            let subscriptionManager = appDependencies.subscriptionManager
             let eventsHandler = BrokerProfileJobEventsHandler(
                 userNotificationService: notificationService,
                 freemiumUserStateManager: freemiumDBPUserStateManager,
-                // Records the subscription onboarding checklist's PIR step at the moment it is earned
-                onProfileSaved: { onboardingActivationRecorder.recordPIRActivated() }
+                // Marks the onboarding checklist's PIR step and reports the PIR-activated experiment metric.
+                // Fires for freemium saves too, so subscription status is checked rather than assumed.
+                onProfileSaved: {
+                    onboardingActivationRecorder.recordPIRActivated()
+                    Task {
+                        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: await subscriptionManager.isActiveSubscription())
+                    }
+                }
             )
 
             #if DEBUG

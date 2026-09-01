@@ -44,8 +44,8 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
     private static let enUS = Locale(identifier: "en_US")
     private static let nonEnUS = Locale(identifier: "fr_FR")
 
-    func testResolveCohortEnrollsAndReturnsControlWhenEligibleAndNotYetEnrolled() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.control, isAlreadyAssigned: false)
+    func test_resolveCohort_eligibleForFreeTrialsAndNotYetEnrolled_enrollsAndReturnsControl() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.control, isAlreadyAssigned: false)
 
         let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
 
@@ -53,8 +53,8 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
     }
 
-    func testResolveCohortEnrollsAndReturnsTreatmentWhenEligibleAndNotYetEnrolled() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment, isAlreadyAssigned: false)
+    func test_resolveCohort_eligibleForFreeTrialsAndNotYetEnrolled_enrollsAndReturnsTreatment() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment, isAlreadyAssigned: false)
 
         let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
 
@@ -62,7 +62,16 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
     }
 
-    func testResolveCohortReturnsNilWhenNotEnrolled() {
+    func test_resolveCohort_eligibleForPaidSubsAndNotYetEnrolled_enrollsAndReturnsTreatment() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsSep2026Cohort.treatment, isAlreadyAssigned: false)
+
+        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: false, locale: Self.enUS)
+
+        XCTAssertEqual(cohort, .treatment)
+        XCTAssertTrue(featureFlagger.didCallResolveCohort)
+    }
+
+    func test_resolveCohort_notEnrolled_returnsNil() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: nil, isAlreadyAssigned: false)
 
         let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
@@ -71,8 +80,8 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
     }
 
-    func testResolveCohortDoesNotEnrollWhenLocaleIsNotEnUS() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment, isAlreadyAssigned: false)
+    func test_resolveCohort_localeIsNotEnUS_doesNotEnroll() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment, isAlreadyAssigned: false)
 
         let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.nonEnUS)
 
@@ -80,17 +89,9 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         XCTAssertFalse(featureFlagger.didCallResolveCohort)
     }
 
-    func testResolveCohortDoesNotEnrollWhenNotOnFreeTrial() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment, isAlreadyAssigned: false)
-
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: false, locale: Self.enUS)
-
-        XCTAssertNil(cohort)
-        XCTAssertFalse(featureFlagger.didCallResolveCohort)
-    }
-
-    func testResolveCohortReturnsExistingCohortEvenWhenNoLongerEligible() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment)
+    /// An existing assignment always wins over current trial status — no re-enrollment on conversion.
+    func test_resolveCohort_trialStatusChangedAfterEnrollment_returnsExistingCohort() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment)
 
         let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: false, locale: Self.nonEnUS)
 
@@ -100,20 +101,20 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
 
     // MARK: - Enrolled-in-treatment read
 
-    func testIsEnrolledInTreatmentReturnsTrueForAnAssignedTreatmentCohort() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment)
+    func test_isEnrolledInTreatment_assignedTreatmentCohort_returnsTrue() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment)
 
         XCTAssertTrue(SubscriptionOnboardingExperiment.isEnrolledInTreatment(using: featureFlagger))
         XCTAssertFalse(featureFlagger.didCallResolveCohort)
     }
 
-    func testIsEnrolledInTreatmentReturnsFalseForAnAssignedControlCohort() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.control)
+    func test_isEnrolledInTreatment_assignedControlCohort_returnsFalse() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.control)
 
         XCTAssertFalse(SubscriptionOnboardingExperiment.isEnrolledInTreatment(using: featureFlagger))
     }
 
-    func testIsEnrolledInTreatmentReturnsFalseWhenNotEnrolled() {
+    func test_isEnrolledInTreatment_notEnrolled_returnsFalse() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: nil)
 
         XCTAssertFalse(SubscriptionOnboardingExperiment.isEnrolledInTreatment(using: featureFlagger))
@@ -121,53 +122,64 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
 
     // MARK: - Settings re-entry
 
-    func testSettingsReEntryEnabledOnlyWhenAllThreeConditionsHold() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment)
+    func test_isSettingsReEntryEnabled_allConditionsHold_returnsTrue() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment)
 
         XCTAssertTrue(SubscriptionOnboardingExperiment.isSettingsReEntryEnabled(using: featureFlagger, hasStartedFlow: true, hasActiveSubscription: true))
     }
 
-    func testSettingsReEntryDisabledWhenFlowNeverStarted() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment)
+    func test_isSettingsReEntryEnabled_flowNeverStarted_returnsFalse() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment)
 
         XCTAssertFalse(SubscriptionOnboardingExperiment.isSettingsReEntryEnabled(using: featureFlagger, hasStartedFlow: false, hasActiveSubscription: true))
     }
 
-    func testSettingsReEntryDisabledWhenNoLongerInTreatment() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.control)
+    func test_isSettingsReEntryEnabled_noLongerInTreatment_returnsFalse() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.control)
 
         XCTAssertFalse(SubscriptionOnboardingExperiment.isSettingsReEntryEnabled(using: featureFlagger, hasStartedFlow: true, hasActiveSubscription: true))
     }
 
-    func testSettingsReEntryDisabledWhenSubscriptionNoLongerActive() {
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment)
+    func test_isSettingsReEntryEnabled_subscriptionNoLongerActive_returnsFalse() {
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment)
 
         XCTAssertFalse(SubscriptionOnboardingExperiment.isSettingsReEntryEnabled(using: featureFlagger, hasStartedFlow: true, hasActiveSubscription: false))
     }
 
     // MARK: - VPN activated metric
 
-    func testFireVPNActivatedMetricFiresWhenSubscriptionActiveAndEnrolled() {
-        seedActiveExperiment(cohort: "treatment")
+    func test_fireVPNActivatedMetric_subscriptionActiveAndEnrolled_fires() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
 
         SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: true)
 
         XCTAssertEqual(firedEvents.count, 1)
-        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingSep2026_treatment")
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_treatment")
         XCTAssertEqual(firedEvents.first?.parameters?["metric"], "vpnActivated")
-        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-3")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-7")
         XCTAssertEqual(firedEvents.first?.parameters?["value"], "1")
     }
 
-    func testFireVPNActivatedMetricDoesNotFireWhenSubscriptionInactive() {
-        seedActiveExperiment(cohort: "treatment")
+    /// Proves the window is per-experiment: paid-subs uses 0-30, not free-trials' 0-7.
+    func test_fireVPNActivatedMetric_enrolledInPaidSubsExperiment_firesWithThirtyDayWindow() {
+        seedActiveExperiment(.subscriptionOnboardingPaidSubsSep2026, cohort: "treatment")
+
+        SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: true)
+
+        XCTAssertEqual(firedEvents.count, 1)
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingPaidSubsSep2026_treatment")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-30")
+    }
+
+    func test_fireVPNActivatedMetric_subscriptionInactive_doesNotFire() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
 
         SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: false)
 
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
-    func testFireVPNActivatedMetricDoesNotFireWhenNotEnrolled() {
+    func test_fireVPNActivatedMetric_notEnrolled_doesNotFire() {
         SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: true)
 
         XCTAssertTrue(firedEvents.isEmpty)
@@ -175,28 +187,67 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
 
     // MARK: - Duck.ai paid used metric
 
-    func testFireDuckAIPaidUsedMetricFiresWhenSubscriptionActiveAndEnrolled() {
-        seedActiveExperiment(cohort: "control")
+    func test_fireDuckAIPaidUsedMetric_subscriptionActiveAndEnrolled_fires() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "control")
 
         SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: true)
 
         XCTAssertEqual(firedEvents.count, 1)
-        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingSep2026_control")
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_control")
         XCTAssertEqual(firedEvents.first?.parameters?["metric"], "duckAiPaidUsed")
-        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-3")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-7")
         XCTAssertEqual(firedEvents.first?.parameters?["value"], "1")
     }
 
-    func testFireDuckAIPaidUsedMetricDoesNotFireWhenSubscriptionInactive() {
-        seedActiveExperiment(cohort: "control")
+    func test_fireDuckAIPaidUsedMetric_subscriptionInactive_doesNotFire() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "control")
 
         SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: false)
 
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
-    func testFireDuckAIPaidUsedMetricDoesNotFireWhenNotEnrolled() {
+    func test_fireDuckAIPaidUsedMetric_notEnrolled_doesNotFire() {
         SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetric(isSubscriptionActive: true)
+
+        XCTAssertTrue(firedEvents.isEmpty)
+    }
+
+    // MARK: - PIR activated metric
+
+    func test_firePIRActivatedMetric_enrolledInFreeTrialsExperiment_firesWithSevenDayWindow() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
+
+        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: true)
+
+        XCTAssertEqual(firedEvents.count, 1)
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_treatment")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "pirActivated")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-7")
+        XCTAssertEqual(firedEvents.first?.parameters?["value"], "1")
+    }
+
+    func test_firePIRActivatedMetric_enrolledInPaidSubsExperiment_firesWithThirtyDayWindow() {
+        seedActiveExperiment(.subscriptionOnboardingPaidSubsSep2026, cohort: "treatment")
+
+        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: true)
+
+        XCTAssertEqual(firedEvents.count, 1)
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingPaidSubsSep2026_treatment")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "pirActivated")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-30")
+    }
+
+    func test_firePIRActivatedMetric_subscriptionInactive_doesNotFire() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
+
+        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: false)
+
+        XCTAssertTrue(firedEvents.isEmpty)
+    }
+
+    func test_firePIRActivatedMetric_notEnrolled_doesNotFire() {
+        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: true)
 
         XCTAssertTrue(firedEvents.isEmpty)
     }
@@ -211,16 +262,16 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         )
     }
 
-    /// Seeds a device already enrolled in `subscriptionOnboardingSep2026`, enrolled today (inside the
-    /// experiment's 0-3 day conversion window).
-    private func seedActiveExperiment(cohort: String) {
+    /// Seeds a device enrolled in `subfeature` only — the other subfeature ID is left unseeded, so a fire
+    /// attempted against it no-ops.
+    private func seedActiveExperiment(_ subfeature: PrivacyProSubfeature, cohort: String) {
         let experimentData = ExperimentData(
-            parentID: PrivacyProSubfeature.subscriptionOnboardingSep2026.parent.rawValue,
+            parentID: subfeature.parent.rawValue,
             cohortID: cohort,
             enrollmentDate: Date()
         )
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(
-            allActiveExperiments: [PrivacyProSubfeature.subscriptionOnboardingSep2026.rawValue: experimentData]
+            allActiveExperiments: [subfeature.rawValue: experimentData]
         )
         configurePixelKit(featureFlagger: featureFlagger)
     }

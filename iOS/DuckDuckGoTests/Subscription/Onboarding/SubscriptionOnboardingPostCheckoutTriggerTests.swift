@@ -27,40 +27,40 @@ import SubscriptionTestingUtilities
 /// The rule deciding whether a purchase flow offers post-checkout onboarding.
 final class SubscriptionOnboardingPostCheckoutTriggerTests: XCTestCase {
 
-    func testWhenAFirstPurchaseCompletesThenOnboardingIsRequested() async {
+    func test_shouldRequestOnboarding_firstPurchaseCompletes_returnsTrue() async {
         let result = await shouldRequest()
 
         XCTAssertTrue(result)
     }
 
-    func testWhenTheFlowIsAPlanUpdateThenOnboardingIsNotRequested() async {
+    func test_shouldRequestOnboarding_flowIsPlanUpdate_returnsFalse() async {
         let result = await shouldRequest(flowType: .planUpdate)
 
         XCTAssertFalse(result)
     }
 
     /// The restore, email, and plan-update flows are built without a store, which is what keeps them out.
-    func testWhenTheFlowHasNoOnboardingStoreThenOnboardingIsNotRequested() async {
+    func test_shouldRequestOnboarding_noOnboardingStore_returnsFalse() async {
         let result = await shouldRequest(hasOnboardingStore: false)
 
         XCTAssertFalse(result)
     }
 
-    func testWhenTheFeatureIsDisabledThenOnboardingIsNotRequested() async {
+    func test_shouldRequestOnboarding_featureDisabled_returnsFalse() async {
         let result = await shouldRequest(isFeatureEnabled: false)
 
         XCTAssertFalse(result)
     }
 
     /// A defensive re-invocation of the purchase-completed hook must not re-offer the flow.
-    func testWhenOnboardingWasAlreadyRequestedThenItIsNotRequestedAgain() async {
+    func test_shouldRequestOnboarding_alreadyRequested_returnsFalse() async {
         let result = await shouldRequest(didAlreadyRequest: true)
 
         XCTAssertFalse(result)
     }
 
     /// `isFeatureEnabled` costs a network round trip, so the cheap conditions must be checked first.
-    func testWhenOnboardingWasAlreadyRequestedThenTheFeatureCheckIsNeverEvaluated() async {
+    func test_shouldRequestOnboarding_alreadyRequested_neverEvaluatesFeatureCheck() async {
         var wasEvaluated = false
 
         _ = await SubscriptionFlowViewModel.shouldRequestOnboarding(flowType: .firstPurchase,
@@ -92,29 +92,40 @@ final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
 
     private static let enUS = Locale(identifier: "en_US")
 
-    func testWhenOnFreeTrialAndEnrolledAsTreatmentThenFeatureIsEnabled() async {
-        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true)
+    func test_isOnboardingFeatureEnabled_onFreeTrialAndEnrolledAsTreatment_returnsTrue() async {
+        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true,
+                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment)
 
         XCTAssertTrue(isEnabled)
     }
 
-    func testWhenNotOnFreeTrialThenFeatureIsDisabled() async {
-        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: false)
+    /// A paid (non-trial) subscriber is eligible too, via the separate paid-subs experiment.
+    func test_isOnboardingFeatureEnabled_notOnFreeTrialAndEnrolledAsTreatment_returnsTrue() async {
+        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: false,
+                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsSep2026Cohort.treatment)
+
+        XCTAssertTrue(isEnabled)
+    }
+
+    func test_isOnboardingFeatureEnabled_onFreeTrialButNotEnrolled_returnsFalse() async {
+        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true, resolveCohortStub: nil)
 
         XCTAssertFalse(isEnabled)
     }
 
-    func testWhenSubscriptionFetchFailsThenFeatureIsDisabled() async {
+    /// Stubbed to enroll-as-treatment if reached, proving the fetch failure skips enrollment entirely.
+    func test_isOnboardingFeatureEnabled_subscriptionFetchFails_returnsFalseAndQueriesNeitherExperiment() async {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.resultSubscription = .failure(TestError.fetchFailed)
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment,
-                                                               isAlreadyAssigned: false)
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsSep2026Cohort.treatment)
 
         let isEnabled = await SubscriptionFlowViewModel.isOnboardingFeatureEnabled(subscriptionManager: subscriptionManager,
                                                                                    featureFlagger: featureFlagger,
                                                                                    locale: Self.enUS)
 
         XCTAssertFalse(isEnabled)
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
+        XCTAssertFalse(featureFlagger.didCallAssignedCohort)
     }
 
     // MARK: - Helper
@@ -123,14 +134,13 @@ final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
         case fetchFailed
     }
 
-    private func isFeatureEnabled(hasActiveTrialOffer: Bool) async -> Bool {
+    private func isFeatureEnabled(hasActiveTrialOffer: Bool, resolveCohortStub: (any FeatureFlagCohortDescribing)?) async -> Bool {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             activeOffers: hasActiveTrialOffer ? [DuckDuckGoSubscription.Offer(type: .trial)] : []
         ))
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingSep2026Cohort.treatment,
-                                                               isAlreadyAssigned: false)
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: resolveCohortStub, isAlreadyAssigned: false)
         return await SubscriptionFlowViewModel.isOnboardingFeatureEnabled(subscriptionManager: subscriptionManager,
                                                                           featureFlagger: featureFlagger,
                                                                           locale: Self.enUS)

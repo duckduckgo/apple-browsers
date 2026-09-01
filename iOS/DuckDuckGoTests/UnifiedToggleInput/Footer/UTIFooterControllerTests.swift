@@ -152,6 +152,41 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Weekly usage limit reached") ?? false)
     }
 
+    // MARK: - Model switch
+
+    /// The message asked for a switch; one made from the bar's picker settles it as the CTA would.
+    func test_userSwitchedModel_hidesTheFooter() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+
+        sut.userSwitchedModel()
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    func test_userSwitchedModel_keepsTheMessageHiddenUntilWebPublishesAgain() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.userSwitchedModel()
+
+        sut.refresh()
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+
+        limitsProvider.limits = weeklyUsage(80)
+        sut.refresh()
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("80%") ?? false)
+    }
+
+    func test_userSwitchedModel_leavesAMessageThatAskedForNoSwitchUp() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        sut.refresh()
+
+        sut.userSwitchedModel()
+
+        XCTAssertEqual(presenter.appliedMessages.count, 1)
+        XCTAssertNotNil(presenter.appliedMessages.last ?? nil)
+    }
+
     // MARK: - Suppression
 
     func test_setSuppressed_hidesTheFooterWithoutForgettingTheWarning() {
@@ -517,12 +552,12 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(measurementFiring.events.last, .promptSubmitted(approachingExposure(percentBucket: 75)))
     }
 
-    func test_recordModelSwitched_reportsAgainstTheWarningTheUserSaw() {
+    func test_userSwitchedModel_reportsAgainstTheWarningTheUserSaw() {
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
 
-        sut.recordModelSwitched()
+        sut.userSwitchedModel()
 
         XCTAssertEqual(measurementFiring.events.last, .modelSwitched(approachingExposure(percentBucket: 75)))
     }

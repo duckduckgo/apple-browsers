@@ -141,9 +141,11 @@ final class UTIFooterController {
         measurement.promptSubmitted()
     }
 
-    /// A switch the user made themselves; the card's own switch CTA reports its own tap.
-    func recordModelSwitched() {
+    /// A switch the user made from the bar's picker; the card's own CTA reports and retires itself.
+    func userSwitchedModel() {
         measurement.modelSwitched()
+        viewModel.userSwitchedModel()
+        applyCurrentState()
     }
 
     /// Picking the model the card suggests is its CTA by another route, so it retires the card too.

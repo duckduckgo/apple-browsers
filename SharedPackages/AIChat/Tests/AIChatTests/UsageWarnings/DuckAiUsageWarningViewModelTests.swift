@@ -202,6 +202,50 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertEqual(dismissalStore.actedSnapshot()?.noticeID, "approaching")
     }
 
+    /// The bar's own picker applies the model itself, so a switch made there has to stand the message
+    /// down the same way the card's button does.
+    func testWhenTheUserSwitchesModelThenTheMessageIsStoodDown() {
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching),
+                                             cta: DuckAiUsageCta(id: .switchToCheaper),
+                                             signature: "snapshot-1")
+        let sut = makeSUT(suggestion: .suggestion(DuckAiModelSuggestion(modelId: "haiku", modelShortName: "Haiku")))
+        sut.refresh()
+
+        sut.userSwitchedModel()
+
+        XCTAssertNil(sut.warning)
+        XCTAssertEqual(dismissalStore.actedSnapshot()?.noticeID, "approaching")
+    }
+
+    /// The picker re-resolves before reporting the switch, so by then a switch to the cheapest model
+    /// has already left the message with no button. It still asked for the switch the user just made.
+    func testWhenTheUserSwitchesToTheCheapestModelThenTheMessageIsStillStoodDown() {
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching),
+                                             cta: DuckAiUsageCta(id: .switchToCheaper),
+                                             signature: "snapshot-1")
+        let sut = makeSUT(suggestion: .none(reason: .noTargetForSelectedModel))
+        sut.refresh()
+        XCTAssertNil(sut.warning?.action)
+
+        sut.userSwitchedModel()
+
+        XCTAssertNil(sut.warning)
+        XCTAssertEqual(dismissalStore.actedSnapshot()?.noticeID, "approaching")
+    }
+
+    /// Only a message that asked for a model switch is settled by one.
+    func testWhenTheUserSwitchesModelButTheMessageAskedForNoSwitchThenItStaysUp() {
+        snapshotProvider.snapshot = snapshot(notice(id: .freeReached, reached: true),
+                                             cta: DuckAiUsageCta(id: .subscribe))
+        let sut = makeSUT()
+        sut.refresh()
+
+        sut.userSwitchedModel()
+
+        XCTAssertEqual(sut.warning?.message, .freeReached)
+        XCTAssertNil(dismissalStore.actedSnapshot())
+    }
+
     /// A spent allowance takes the input with it: the card is the only thing left to act on.
     func testAReachedMessageBlocksTheInput() {
         for id in [DuckAiUsageNotice.ID.freeReached, .dailyReached, .weeklyReachedDegraded, .weeklyReached] {

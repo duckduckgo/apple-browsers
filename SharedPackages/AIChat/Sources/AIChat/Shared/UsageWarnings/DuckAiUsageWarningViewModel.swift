@@ -117,6 +117,15 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         return recordActedOnCurrentSnapshot()
     }
 
+    /// A switch the user made from any picker stands the message down until web publishes against the
+    /// new model. Keyed on the CTA: iOS re-resolves first, and the cheapest model has no action left.
+    public func userSwitchedModel() {
+        guard lastReadSnapshot.cta?.id.asksForModelSwitch == true else { return }
+
+        Logger.aiChat.debug("Duck.ai usage warning stood down: user switched model")
+        recordActedOnCurrentSnapshot()
+    }
+
     @discardableResult
     private func recordActedOnCurrentSnapshot() -> Bool {
         guard let notice = lastReadSnapshot.notice,

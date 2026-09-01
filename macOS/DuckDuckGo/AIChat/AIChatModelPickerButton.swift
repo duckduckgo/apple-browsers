@@ -99,6 +99,19 @@ final class AIChatModelPickerButton: NSView {
         }
     }
 
+    /// Greys the chip out and makes it inert, for the usage-limit block. Not an `NSControl`, so
+    /// there is no inherited `isEnabled` to lean on.
+    var isEnabled: Bool = true {
+        didSet {
+            guard isEnabled != oldValue else { return }
+            if !isEnabled {
+                isMouseDown = false
+                isHovered = false
+            }
+            updateAppearance()
+        }
+    }
+
     /// Stroke colour for the keyboard-focus ring. Defaults to the design-system primary
     /// accent; the container VC re-assigns this from `theme.colorsProvider.accentPrimaryColor`
     /// via `applyTheme(theme:)` so the ring follows in-app theme switches (Pink, Blue, etc.).
@@ -159,7 +172,7 @@ final class AIChatModelPickerButton: NSView {
 
     var onTabPressed: (() -> Void)?
 
-    override var acceptsFirstResponder: Bool { true }
+    override var acceptsFirstResponder: Bool { isEnabled }
     override var canBecomeKeyView: Bool { true }
 
     override func becomeFirstResponder() -> Bool {
@@ -273,7 +286,11 @@ final class AIChatModelPickerButton: NSView {
         CATransaction.setDisableActions(true)
 
         NSAppearance.withAppAppearance {
-            if isMouseDown {
+            // Checked before the transient flags, so a press or hover recorded on the way into the
+            // disabled state can't leave a fill behind.
+            if !isEnabled {
+                backgroundLayer.opacity = 0
+            } else if isMouseDown {
                 backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
                 backgroundLayer.opacity = 1
             } else if isHovered {
@@ -283,8 +300,9 @@ final class AIChatModelPickerButton: NSView {
                 backgroundLayer.opacity = 0
             }
 
-            nameLabel.textColor = tintColor
-            chevronImageView.contentTintColor = tintColor
+            let contentColor = isEnabled ? tintColor : NSColor.secondaryLabelColor
+            nameLabel.textColor = contentColor
+            chevronImageView.contentTintColor = contentColor
         }
 
         CATransaction.commit()
@@ -319,7 +337,7 @@ final class AIChatModelPickerButton: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        isHovered = true
+        isHovered = isEnabled
         NSCursor.arrow.set()
     }
 
@@ -333,7 +351,7 @@ final class AIChatModelPickerButton: NSView {
 
     /// For the cases where the tracking area can't be trusted — see `sendMenuOpeningAction`.
     private func refreshHoverState() {
-        guard let window else {
+        guard isEnabled, let window else {
             isHovered = false
             return
         }
@@ -346,16 +364,19 @@ final class AIChatModelPickerButton: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
         wantsFocusRing = false
         isMouseDown = true
     }
 
     override func mouseDragged(with event: NSEvent) {
+        guard isEnabled else { return }
         let locationInView = convert(event.locationInWindow, from: nil)
         isMouseDown = bounds.contains(locationInView)
     }
 
     override func mouseUp(with event: NSEvent) {
+        guard isEnabled else { return }
         let locationInView = convert(event.locationInWindow, from: nil)
         if bounds.contains(locationInView) && isMouseDown {
             if let action, let target {
@@ -377,7 +398,7 @@ final class AIChatModelPickerButton: NSView {
                 super.keyDown(with: event)
             }
         case 49, 36: // Space, Return - trigger action
-            if let action, let target {
+            if isEnabled, let action, let target {
                 NSApp.sendAction(action, to: target, from: self)
             }
         default:

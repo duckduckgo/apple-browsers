@@ -236,15 +236,15 @@ final class AIChatContextualSheetCoordinator {
             }
         self.documentReadCancellable = pageContextHandler.documentReadInProgressPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] inProgress in
-                self?.sessionState.setDocumentReadInProgress(inProgress)
-                guard let chip = self?.persistentUTIHost?.chipViewModel else { return }
-                if inProgress {
-                    chip.beginLoading()
-                } else {
-                    chip.endLoading()
-                }
-            }
+            .sink { [weak self] in self?.handleDocumentReadInProgress($0) }
+    }
+
+    /// Drives both loading effects together: the chip shows the dots, and the start surface hides
+    /// only when that chip is actually loading (needs the UTI host), so they can't decouple.
+    private func handleDocumentReadInProgress(_ inProgress: Bool) {
+        let chip = persistentUTIHost?.chipViewModel
+        if inProgress { chip?.beginLoading() } else { chip?.endLoading() }
+        sessionState.setDocumentChipLoading(inProgress && chip != nil)
     }
 
     // MARK: - Public Methods

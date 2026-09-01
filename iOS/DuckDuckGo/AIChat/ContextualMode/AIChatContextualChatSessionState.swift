@@ -171,8 +171,8 @@ final class AIChatContextualChatSessionState {
     private var isManualAttachInProgress = false
     private var isManualAttachFromFrontend = false
 
-    /// True while a document's bytes are read
-    private var isDocumentReadInProgress = false
+    /// True while the loading chip is showing; the start surface is suppressed only then.
+    private var isDocumentChipLoading = false
 
     /// Flag to prevent duplicate navigation processing
     private var isProcessingNavigation = false
@@ -399,6 +399,7 @@ final class AIChatContextualChatSessionState {
         userDowngradedToPlaceholder = false
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
+        isDocumentChipLoading = false
         isProcessingNavigation = false
         pendingSignalsOnlyCollection = false
         suggestionsResolveTask?.cancel()
@@ -560,9 +561,9 @@ final class AIChatContextualChatSessionState {
         suppressesAutoAttachForSelectionEntry = false
     }
 
-    func setDocumentReadInProgress(_ inProgress: Bool) {
-        guard isDocumentReadInProgress != inProgress else { return }
-        isDocumentReadInProgress = inProgress
+    func setDocumentChipLoading(_ isLoading: Bool) {
+        guard isDocumentChipLoading != isLoading else { return }
+        isDocumentChipLoading = isLoading
         rebuildViewState()
     }
 
@@ -838,11 +839,11 @@ private extension AIChatContextualChatSessionState {
     /// Beyond one attachment a single-line suggestion can no longer say which part of the prompt it
     /// acts on.
     private var shouldHideSuggestions: Bool {
-        attachmentCount > 1 || isDocumentReadInProgress
+        attachmentCount > 1 || isDocumentChipLoading
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
-        if isDocumentReadInProgress {
+        if isDocumentChipLoading {
             return []
         }
         if !attachedSelections.isEmpty, frontendState == .noChat {
@@ -932,7 +933,7 @@ private extension AIChatContextualChatSessionState {
             chipState: chipState,
             quickActions: quickActions,
             suggestions: shouldHideSuggestions ? [] : visibleSuggestions(reserving: quickActions.count),
-            suggestionsLoadState: isDocumentReadInProgress ? .loaded : suggestionsLoadState,
+            suggestionsLoadState: isDocumentChipLoading ? .loaded : suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
             suggestionsPageType: suggestionsPageType,
             suggestionsScope: suggestionsScope

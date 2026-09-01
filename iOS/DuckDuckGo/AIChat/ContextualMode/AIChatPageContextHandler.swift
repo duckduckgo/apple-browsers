@@ -365,6 +365,8 @@ private extension AIChatPageContextHandler {
         extractionResolver.reset()
         didReportExtractionForCurrentNavigation = false
         lastCollectedURL = nil
+        // Clear the loading flag so an abandoned read can't keep the start surface hidden.
+        documentReadInProgressSubject.send(false)
     }
 
     /// No pending request => a duplicate or a collect we didn't initiate; skip.

@@ -59,7 +59,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     /// Presentation-only pending/delivered flag; set solely by `setAttached`, never decided by the chip.
     private var attachmentDeliveryState: PageContextAttachmentDeliveryState = .pendingSubmit
     private var isShowingAttachAffordance = false
-    /// True while the page's bytes are read; shows the loading chip.
     private var isLoading = false
     private var cancellables = Set<AnyCancellable>()
 
@@ -165,7 +164,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         let isMatching = attachedURL != nil && attachedURL == originatingURL
         let branch: String
 
-        if isLoading, attachedContext == nil {
+        if isLoading {
             state = .loading
             isVisible = true
             branch = "loading"

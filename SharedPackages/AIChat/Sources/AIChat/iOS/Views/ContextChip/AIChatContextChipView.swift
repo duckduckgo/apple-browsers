@@ -225,8 +225,6 @@ private extension AIChatContextChipView {
             faviconView.isHidden = true
             titleLabel.isHidden = true
             removeButton.isHidden = true
-            // The chip draws the pill (same size as the attached chip); the loading view lends only its
-            // dots. Hug them rather than the fixed attached width.
             backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
             applyBorder(width: Constants.borderWidth)
             fixedWidthConstraint.isActive = false

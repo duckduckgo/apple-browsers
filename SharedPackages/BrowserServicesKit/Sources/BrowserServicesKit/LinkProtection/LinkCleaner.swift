@@ -119,10 +119,12 @@ private struct PercentEncodedQueryFilter {
         let preservedItemByteCount: Int
     }
 
-    private let parameterNames: [String]
+    private let parameterNames: Set<String>
+    private let maximumParameterNameByteCount: Int
 
     init(parameterNames: [String]) {
-        self.parameterNames = parameterNames
+        self.parameterNames = Set(parameterNames)
+        self.maximumParameterNameByteCount = parameterNames.map { $0.utf8.count }.max() ?? 0
     }
 
     func filter(url: URL) -> URL? {
@@ -137,7 +139,7 @@ private struct PercentEncodedQueryFilter {
         let queryStart = bytes.index(after: questionMark)
         let queryRange = queryStart..<fragmentStart
         guard !queryRange.isEmpty,
-              let inspection = inspectQuery(in: bytes, range: queryRange) else { return nil }
+              let inspection = inspectQuery(in: source, bytes: bytes, range: queryRange) else { return nil }
 
         let cleanedURLString = rebuildURLString(
             source,
@@ -151,13 +153,17 @@ private struct PercentEncodedQueryFilter {
         return URL(string: cleanedURLString, relativeTo: url.baseURL)
     }
 
-    private func inspectQuery(in bytes: String.UTF8View, range: Range<String.Index>) -> QueryInspection? {
+    private func inspectQuery(
+        in source: String,
+        bytes: String.UTF8View,
+        range: Range<String.Index>
+    ) -> QueryInspection? {
         var didRemoveParameters = false
         var preservedItemCount = 0
         var preservedItemByteCount = 0
 
         forEachQueryItem(in: bytes, range: range) { itemRange in
-            if isTrackingParameter(in: bytes, itemRange: itemRange) {
+            if isTrackingParameter(in: source, bytes: bytes, itemRange: itemRange) {
                 didRemoveParameters = true
             } else {
                 preservedItemCount += 1
@@ -196,7 +202,7 @@ private struct PercentEncodedQueryFilter {
             var didAppendItem = false
 
             forEachQueryItem(in: bytes, range: queryRange) { itemRange in
-                guard !isTrackingParameter(in: bytes, itemRange: itemRange) else {
+                guard !isTrackingParameter(in: source, bytes: bytes, itemRange: itemRange) else {
                     return
                 }
 
@@ -232,11 +238,17 @@ private struct PercentEncodedQueryFilter {
     }
 
     private func isTrackingParameter(
-        in bytes: String.UTF8View,
+        in source: String,
+        bytes: String.UTF8View,
         itemRange: Range<String.Index>
     ) -> Bool {
         let nameEnd = bytes[itemRange].firstIndex(of: ASCII.equalsSign) ?? itemRange.upperBound
-        let name = bytes[itemRange.lowerBound..<nameEnd]
-        return parameterNames.contains { name.elementsEqual($0.utf8) }
+        // A name longer than every configured name can't match, and rejecting it here keeps the
+        // temporary String bounded by configuration rather than by page-controlled input.
+        let nameBytes = bytes[itemRange.lowerBound..<nameEnd]
+        guard nameBytes.dropFirst(maximumParameterNameByteCount).isEmpty else {
+            return false
+        }
+        return parameterNames.contains(String(source[itemRange.lowerBound..<nameEnd]))
     }
 }

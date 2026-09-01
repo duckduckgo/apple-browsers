@@ -167,6 +167,17 @@ final class URLParameterTests: XCTestCase {
         XCTAssertFalse(linkCleaner.urlParametersRemoved)
     }
 
+    func testURLParamStrippingPreservesLargeParameterNameWithoutValue() throws {
+        let largeName = String(repeating: "a", count: 1_000_000)
+        let url = try XCTUnwrap(URL(string: "https://example.com/?\(largeName)&utm_source=value#fragment"))
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+
+        let result = linkCleaner.cleanTrackingParameters(initiator: nil, url: url)
+
+        XCTAssertEqual(result?.absoluteString, "https://example.com/?\(largeName)#fragment")
+        XCTAssertTrue(linkCleaner.urlParametersRemoved)
+    }
+
     func testURLParamStrippingPreservesRelativeURLAndBaseURL() throws {
         let baseURL = try XCTUnwrap(URL(string: "https://example.com/root/"))
         let url = try XCTUnwrap(URL(string: "page?safe=1&utm_source=value#fragment", relativeTo: baseURL))

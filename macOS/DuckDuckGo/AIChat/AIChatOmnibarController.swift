@@ -359,7 +359,7 @@ final class AIChatOmnibarController {
                 currentModelIdProvider: { [weak self] in self?.currentModelId },
                 requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
             ),
-            isTrialEligible: { [weak self] in self?.subscriptionManager.isUserEligibleForFreeTrial() ?? false },
+            isTrialEligible: { [weak self] in self?.shouldOfferFreeTrial ?? false },
             isFireMode: { [weak self] in self?.isBurner ?? false }
         )
         usageWarningViewModel?.onAction = { [weak self] action in

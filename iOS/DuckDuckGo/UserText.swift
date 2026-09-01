@@ -464,7 +464,7 @@ public struct UserText {
 
     public static let tabSwitcherBookmarkAllTabs = NSLocalizedString("tab.switcher.bookmarkAll", value: "Bookmark All Tabs", comment: "Bookmark all tabs menu item")
 
-    public static let tabSwitcherDeleteTabAndData = NSLocalizedString(
+    public static let tabSwitcherDeleteTabAndData = NotLocalizedString(
         "tab.switcher.delete.tab.and.data",
         value: "Delete Tab and Data",
         comment: "Delete a tab and its site data menu item")

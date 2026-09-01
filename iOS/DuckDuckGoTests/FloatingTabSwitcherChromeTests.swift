@@ -138,11 +138,12 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         }
         XCTAssertLessThan(closeTabsIndex, fireIndex)
         XCTAssertLessThan(fireIndex, doneIndex)
-        XCTAssertNil(items[doneIndex].title)
-        XCTAssertNotNil(items[doneIndex].image)
         XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.first?.menu)
 
         if #available(iOS 26.0, *) {
+            // On iOS 26 Done is a title-less glyph; earlier versions still use the system Done item.
+            XCTAssertNil(items[doneIndex].title)
+            XCTAssertNotNil(items[doneIndex].image)
             XCTAssertEqual(items.count, 4)
             XCTAssertEqual([items[closeTabsIndex], items[fireIndex], items[doneIndex]].map(\.sharesBackground), [false, false, false])
         }

@@ -293,7 +293,7 @@ extension TabSwitcherViewController {
 
         chrome.update(state: state,
                       tabsStyle: tabsStyle,
-                      canShowSelectionMenu: canShowSelectionMenu,
+                      canShowSelectionMenu: multiSelectMenuState.canShowSelectionMenu,
                       isEditing: isEditing)
         applyCollectionContentInsets()
         chrome.trackScrollEdge(of: collectionView)
@@ -309,11 +309,12 @@ extension TabSwitcherViewController {
         }
     }
     
-    func createMultiSelectionMenu() -> UIMenu {
-        let selectedIndexPaths = selectedTabs
-        let selectedTabObjects = selectedIndexPaths.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
+    /// Describes the selection menu for the current selection, so that both the menu contents and
+    /// the enabled state of the control presenting it are derived from the same, up to date, state.
+    var multiSelectMenuState: TabSwitcherMultiSelectMenuState {
+        let selectedTabObjects = selectedTabs.compactMap { tabsModel.get(tabAt: $0.row) }
         let isFloatingTabSwitcherEnabled = floatingUIManager.isFloatingTabSwitcherEnabled
-        let state = TabSwitcherMultiSelectMenuState(
+        return TabSwitcherMultiSelectMenuState(
             selectedCount: selectedTabObjects.count,
             totalCount: tabsModel.count,
             selectedContainsWebPages: selectedTabObjects.contains(where: { $0.link != nil }),
@@ -321,7 +322,10 @@ extension TabSwitcherViewController {
             shouldShowSelectionToggleActions: !isFloatingTabSwitcherEnabled,
             shouldShowCloseSelectedAction: !isFloatingTabSwitcherEnabled || interfaceMode.isLarge
         )
-        canShowSelectionMenu = state.canShowSelectionMenu
+    }
+
+    func createMultiSelectionMenu() -> UIMenu {
+        let state = multiSelectMenuState
         return menuBuilder.multiSelectionMenu(state: state, actions: TabSwitcherMultiSelectMenuActions(
             onDeselectAll: { [weak self] in self?.deselectAllTabs() },
             onSelectAll: { [weak self] in self?.selectAllTabs() },

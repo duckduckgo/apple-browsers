@@ -142,7 +142,6 @@ class TabSwitcherViewController: UIViewController {
 
     var tabsStyle: TabsStyle = .list
     var interfaceMode: InterfaceMode = .regularSize
-    var canShowSelectionMenu = false
     var shouldEnterMultiSelectAfterEditMenuDismissal = false
     var menuBuilder: TabSwitcherMenuBuilding = DefaultTabSwitcherMenuBuilder()
 

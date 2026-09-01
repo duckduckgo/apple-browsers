@@ -5062,9 +5062,6 @@ Take back control of your personal information with the browser designed for dat
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Bookmark All Tabs";
 
-/* Delete a tab and its site data menu item */
-"tab.switcher.delete.tab.and.data" = "Delete Tab and Data";
-
 /* Action button to hide tracker count banner */
 "tab.switcher.tracker.count.hide.action" = "Hide";
 

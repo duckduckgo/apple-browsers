@@ -84,7 +84,11 @@ final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
 
             // This won't work until the bookmarks bar is actually visible, which it isn't until the next UI cycle.
             let presentation = DispatchWorkItem { [weak mainViewController, weak self] in
-                mainViewController?.bookmarksBarViewController.showBookmarksBarPrompt { result in
+                guard let mainViewController else {
+                    self?.resume(with: .noChange)
+                    return
+                }
+                mainViewController.bookmarksBarViewController.showBookmarksBarPrompt { result in
                     self?.resume(with: result)
                 }
             }
@@ -100,8 +104,8 @@ final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
         // If the user hasn't made a choice yet, this is the queue retracting the promo. Undo the
         // visibility we forced on in show(), otherwise the bar is left on with no way back and a
         // later show() mistakes it for the user already knowing about the bar.
-        if resultContinuation != nil {
-            presentedMainViewController?.updateBookmarksBarViewVisibility(visible: false)
+        if resultContinuation != nil, let mainViewController = presentedMainViewController {
+            mainViewController.updateBookmarksBarViewVisibility(visible: mainViewController.shouldShowBookmarksBar)
         }
 
         resume(with: .noChange)

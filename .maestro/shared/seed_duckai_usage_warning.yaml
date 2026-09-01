@@ -20,10 +20,12 @@ appId: com.duckduckgo.mobile.ios
     centerElement: false
 - tapOn: "All debug options"
 
-# The debug screen is pushed asynchronously. Without this anchor the scroll below can start while
+# The debug screen is pushed asynchronously. Without this wait the scroll below can start while
 # Settings is still up, walk it to the bottom looking for a row it does not have, and fail with
-# `No visible element found: "AI Chat"`. First row of the debug screen, so it needs no scrolling.
-- assertVisible: "Shake to Open Debug Menu"
+# `No visible element found: "AI Chat"`. Deliberately not anchored on a row: the first row sits
+# under the search bar, and asserting it failed on the second seed in a flow that seeds twice.
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - scrollUntilVisible:
     element:

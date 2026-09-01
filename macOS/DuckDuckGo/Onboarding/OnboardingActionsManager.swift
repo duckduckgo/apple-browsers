@@ -113,7 +113,7 @@ protocol OnboardingNavigating: AnyObject {
     func showImportDataView()
     func updatePreventUserInteraction(prevent: Bool)
     func setOnboardingHandlers(onClose: @escaping @MainActor () -> Void,
-                               onAbandon: @escaping @MainActor () -> Void)
+                               onSkipInPlace: @escaping @MainActor () -> Void)
 }
 
 final class OnboardingActionsManager: OnboardingActionsManaging {
@@ -128,6 +128,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
+    private let nonBlockingExperiment: OnboardingNonBlockingExperiment
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private weak var contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater?
@@ -271,16 +272,17 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
+        self.nonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
         self.contextualOnboardingStateUpdater = contextualOnboardingStateUpdater
     }
 
     func onboardingStarted() {
-        if featureFlagger.isFeatureOn(.onboardingAsync) {
+        if nonBlockingExperiment.isNonBlocking {
             navigation.setOnboardingHandlers(
                 onClose: { [weak self] in self?.skipOnboarding() },
-                onAbandon: { [weak self] in self?.onboardingAbandoned() }
+                onSkipInPlace: { [weak self] in self?.recordSkipInPlace() }
             )
         } else {
             navigation.updatePreventUserInteraction(prevent: true)
@@ -335,11 +337,11 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             .store(in: &cancellables)
     }
 
-    /// Onboarding was left behind without an explicit choice — the tab was navigated away from, or
-    /// closed as part of a bulk action. Records the same outcome as an explicit skip, but leaves the
-    /// tab alone so whatever the user was doing goes through.
+    /// Onboarding went away on its own — the tab was navigated away from, swept up in a bulk close,
+    /// or carried off by its window closing. Records the same skip as closing the tab, but leaves
+    /// the tab alone so whatever the user was doing goes through.
     @MainActor
-    private func onboardingAbandoned() {
+    private func recordSkipInPlace() {
         guard !Self.isOnboardingFinished else { return }
         recordSkippedOnboarding()
     }
@@ -357,16 +359,19 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
 
         PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
+        nonBlockingExperiment.fireMetric(.onboardingSkipped)
     }
 
     func addToDock() {
         dockCustomization.addToDock()
         onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
+        nonBlockingExperiment.fireMetric(.addToDockRequested)
     }
 
     @MainActor
     func importData() async -> Bool {
         onboardingSharedPixelHandler.fire(.importData(.clicked(.engage)))
+        nonBlockingExperiment.fireMetric(.importRequested)
         return await withCheckedContinuation { continuation in
             dataImportProvider.showImportWindow(customTitle: UserText.importDataTitleOnboarding, completion: { [weak self] in
                 guard let self else {
@@ -590,6 +595,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
         fireSharedPixelForFinalStep(userSawToggleOnboarding)
         chromeExtensionExperiment.fireMetric(.onboardingCompleted)
+        nonBlockingExperiment.fireMetric(.onboardingCompleted)
 
         guard userSawToggleOnboarding else { return }
 

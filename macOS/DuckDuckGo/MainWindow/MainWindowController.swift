@@ -164,23 +164,43 @@ final class MainWindowController: NSWindowController {
         startOnboardingIfNeeded()
     }
 
+    /// The experiment audience is first-time installers running as real users, not automation or an
+    /// overridden onboarding state, since either of those would draw a random cohort for a session
+    /// that isn't representative of a real install.
+    private var isEligibleForNonBlockingExperiment: Bool {
+        guard !LaunchOptionsHandler().isAutomationSession else { return false }
+
+        guard case .notOverridden = LaunchOptionsHandler().onboardingStatus else { return false }
+
+        let reinstallDetector = DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore)
+        return !reinstallDetector.isReinstallingUser
+    }
+
     private func startOnboardingIfNeeded() {
         guard shouldShowOnboarding, let selectedTab = mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab else {
             return
         }
 
-        let isAsync = featureFlagger?.isFeatureOn(.onboardingAsync) == true
+        // Enroll here, after the guard so we don't enroll on every window, and before reading
+        // `isNonBlocking` so the cohort is assigned before it's read (enroll() is the only thing
+        // that assigns; isNonBlocking/cohort never do).
+        let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
+        if isEligibleForNonBlockingExperiment {
+            experiment?.enroll()
+        }
+        // No flagger means we can't evaluate the experiment: keep today's blocking behavior.
+        let isNonBlocking = experiment?.isNonBlocking == true
 
-        // Async onboarding leaves the UI unlocked, so a second window can open while the first is
+        // Non-blocking onboarding leaves the UI unlocked, so a second window can open while the first is
         // still onboarding. Only one tab hosts it at a time, otherwise the later window takes over
         // the tracking and the earlier one is left onboarding with nothing listening.
-        if isAsync, Application.appDelegate.windowControllersManager.hasOnboardingTab {
+        if isNonBlocking, Application.appDelegate.windowControllersManager.hasOnboardingTab {
             return
         }
 
         selectedTab.startOnboarding()
 
-        if isAsync {
+        if isNonBlocking {
             // The selected tab can change before the onboarding page loads, so record it now, while
             // it is still unambiguous.
             Application.appDelegate.windowControllersManager.setOnboardingTab(selectedTab)

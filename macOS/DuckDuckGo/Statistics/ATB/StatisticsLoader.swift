@@ -45,6 +45,7 @@ final class StatisticsLoader {
     private let fireDuckAISearchExperimentPixels: () -> Void
     private let fireAppRetentionExperimentPixels: () -> Void
     private let fireNewAIPromptExperimentPixels: () -> Void
+    private let fireOnboardingNonBlockingAppRetentionExperimentPixel: () -> Void
 
     /// Experiments that were already running when Duck.ai prompts began counting toward the search metric.
     /// They keep the previous definition (search navigation only, no Duck.ai) so their in-flight pre/post
@@ -72,7 +73,8 @@ final class StatisticsLoader {
         fireDuckAISearchExperimentPixels: @escaping () -> Void = {
             StatisticsLoader.fireSearchExperimentPixelsForDuckAIEligibleExperiments()
         },
-        fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels
+        fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels,
+        fireOnboardingNonBlockingAppRetentionExperimentPixel: @escaping () -> Void = StatisticsLoader.fireOnboardingNonBlockingAppRetentionExperimentPixel
     ) {
         self.statisticsStore = statisticsStore
         self.emailManager = emailManager
@@ -83,6 +85,7 @@ final class StatisticsLoader {
         self.fireDuckAISearchExperimentPixels = fireDuckAISearchExperimentPixels
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
         self.fireNewAIPromptExperimentPixels = fireNewAIPromptExperimentPixels
+        self.fireOnboardingNonBlockingAppRetentionExperimentPixel = fireOnboardingNonBlockingAppRetentionExperimentPixel
     }
 
     /// Transitional: preserves the previous 8-15 search window for experiments already running when
@@ -104,6 +107,20 @@ final class StatisticsLoader {
                 )
             }
         }
+    }
+
+    /// Fires the app-use metric for the non-blocking onboarding experiment over a 1...3 day conversion
+    /// window, in addition to the per-day (1...1, 2...2, 3...3) windows `fireAppRetentionExperimentPixels`
+    /// already fires for every active experiment. The primary metric is "any app use on day 1, 2, or 3",
+    /// which the per-day pixels can't reconstruct at analysis time (they're aggregate counts with no
+    /// per-user identifier to de-duplicate on), so this experiment gets its own union window.
+    static func fireOnboardingNonBlockingAppRetentionExperimentPixel() {
+        PixelKit.fireExperimentPixelIfThresholdReached(
+            for: MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue,
+            metric: PixelKit.Constants.appUseMetricValue,
+            conversionWindowDays: 1...3,
+            threshold: 1
+        )
     }
 
     /// Fires the search experiment metric for a Duck.ai prompt, but only for experiments that should count
@@ -168,8 +185,10 @@ final class StatisticsLoader {
             if !self.statisticsStore.isAppRetentionFiredToday {
                 self.refreshAppRetentionAtb(completion: completion)
                 self.fireAppRetentionExperimentPixels()
+                self.fireOnboardingNonBlockingAppRetentionExperimentPixel()
             } else {
                 self.fireAppRetentionExperimentPixels()
+                self.fireOnboardingNonBlockingAppRetentionExperimentPixel()
                 completion()
             }
         }

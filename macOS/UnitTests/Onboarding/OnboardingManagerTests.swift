@@ -46,6 +46,7 @@ class OnboardingManagerTests: XCTestCase {
     var importProvider: CapturingDataImportProvider!
     private var onboardingSharedPixelHandler: MockOnboardingSharedPixelHandler!
     private var chromeExtensionInstaller: MockThirdPartyBrowserExtensionInstalling!
+    private var experimentFiredEvents: [PixelKit.Event]!
 
     @MainActor override func setUp() {
         navigationDelegate = CapturingOnboardingNavigation()
@@ -70,6 +71,7 @@ class OnboardingManagerTests: XCTestCase {
         importProvider = CapturingDataImportProvider()
         onboardingSharedPixelHandler = MockOnboardingSharedPixelHandler()
         chromeExtensionInstaller = MockThirdPartyBrowserExtensionInstalling()
+        experimentFiredEvents = []
         manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -96,6 +98,7 @@ class OnboardingManagerTests: XCTestCase {
         importProvider = nil
         onboardingSharedPixelHandler = nil
         chromeExtensionInstaller = nil
+        experimentFiredEvents = nil
     }
 
     func testReturnsExpectedOnboardingConfig_WhenNoFlagsAreOn_ExcludesAddressBarMode() {
@@ -778,6 +781,95 @@ class OnboardingManagerTests: XCTestCase {
         )
     }
 
+    // MARK: Non-blocking onboarding experiment
+
+    func testOnboardingStarted_TreatmentCohort_TakesNonBlockingBranch() {
+        // Given
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let managerWithTreatment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithTreatment.onboardingStarted()
+
+        // Then
+        XCTAssertFalse(navigationDelegate.updatePreventUserInteractionCalled)
+        XCTAssertNotNil(navigationDelegate.onboardingOnClose)
+    }
+
+    func testOnboardingStarted_ControlCohort_TakesLockingBranch() {
+        // Given
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.control)
+        let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithControl.onboardingStarted()
+
+        // Then
+        XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
+        XCTAssertTrue(navigationDelegate.preventUserInteraction ?? false)
+        XCTAssertNil(navigationDelegate.onboardingOnClose)
+    }
+
+    func testOnboardingStarted_UnassignedCohort_TakesLockingBranch() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        let managerWithoutEnrollment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithoutEnrollment.onboardingStarted()
+
+        // Then
+        XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
+        XCTAssertTrue(navigationDelegate.preventUserInteraction ?? false)
+        XCTAssertNil(navigationDelegate.onboardingOnClose)
+    }
+
+    @MainActor
+    func testGoToAddressBar_FiresOnboardingCompletedMetric_NotOnboardingSkipped() {
+        // Given
+        let cohort = FeatureFlag.OnboardingNonBlockingCohort.control
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
+        configureNonBlockingExperimentKit(cohort: cohort, featureFlagger: featureFlagger)
+        let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithControl.goToAddressBar()
+
+        // Then
+        XCTAssertTrue(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingCompleted" }))
+        XCTAssertFalse(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingSkipped" }))
+    }
+
+    @MainActor
+    func testSkipOnboarding_FiresOnboardingSkippedMetric_NotOnboardingCompleted() {
+        // Given
+        let cohort = FeatureFlag.OnboardingNonBlockingCohort.control
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
+        configureNonBlockingExperimentKit(cohort: cohort, featureFlagger: featureFlagger)
+        let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithControl.skipOnboarding()
+
+        // Then
+        XCTAssertTrue(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingSkipped" }))
+        XCTAssertFalse(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingCompleted" }))
+    }
+
+    @MainActor
+    func testNoNonBlockingExperimentMetricFires_WhenNotEnrolled() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        configureNonBlockingExperimentKit(cohort: nil, featureFlagger: featureFlagger)
+        let managerWithoutEnrollment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithoutEnrollment.goToAddressBar()
+
+        // Then
+        XCTAssertTrue(experimentFiredEvents.isEmpty)
+    }
+
 }
 
 // MARK: - Chrome extension experiment test helpers
@@ -804,5 +896,45 @@ private extension OnboardingManagerTests {
 
     func makeFeatureFlagger(cohort: FeatureFlag.OnboardingChromeExtensionCohort?) -> MockFeatureFlagger {
         MockFeatureFlagger(resolveCohortStub: cohort)
+    }
+}
+
+// MARK: - Non-blocking onboarding experiment test helpers
+
+private extension OnboardingManagerTests {
+
+    func makeNonBlockingExperimentManager(featureFlagger: MockFeatureFlagger) -> OnboardingActionsManager {
+        OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
+        )
+    }
+
+    func configureNonBlockingExperimentKit(cohort: FeatureFlag.OnboardingNonBlockingCohort?,
+                                           featureFlagger: MockFeatureFlagger) {
+        if let cohort {
+            let subfeatureID = MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue
+            featureFlagger.allActiveExperiments = [
+                subfeatureID: ExperimentData(
+                    parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
+                    cohortID: cohort.rawValue,
+                    enrollmentDate: Date()
+                )
+            ]
+        } else {
+            featureFlagger.allActiveExperiments = [:]
+        }
+        PixelKit.configureExperimentKit(
+            featureFlagger: featureFlagger,
+            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+            fire: { [weak self] event, _, _ in self?.experimentFiredEvents.append(event) }
+        )
     }
 }

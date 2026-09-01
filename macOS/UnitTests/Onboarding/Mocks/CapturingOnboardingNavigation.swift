@@ -51,12 +51,12 @@ class CapturingOnboardingNavigation: OnboardingNavigating {
     }
 
     var onboardingOnClose: (@MainActor () -> Void)?
-    var onboardingOnAbandon: (@MainActor () -> Void)?
+    var onboardingOnSkipInPlace: (@MainActor () -> Void)?
 
     func setOnboardingHandlers(onClose: @escaping @MainActor () -> Void,
-                               onAbandon: @escaping @MainActor () -> Void) {
+                               onSkipInPlace: @escaping @MainActor () -> Void) {
         onboardingOnClose = onClose
-        onboardingOnAbandon = onAbandon
+        onboardingOnSkipInPlace = onSkipInPlace
     }
 
 }

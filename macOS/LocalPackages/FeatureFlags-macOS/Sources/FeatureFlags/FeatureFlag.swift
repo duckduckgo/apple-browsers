@@ -42,6 +42,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
     case onboardingChromeExtension
 
+    /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
+    case onboardingNonBlocking
+
     /// Subscription upsell screen at the end of contextual onboarding
     /// https://app.asana.com/1/137249556945/task/1210565180535541
     case onboardingSubscriptionUpsell
@@ -524,6 +527,12 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
+    /// Cohorts for the non-blocking onboarding experiment
+    public enum OnboardingNonBlockingCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     /// Cohorts for the onboarding subscription upsell experiment
     public enum OnboardingSubscriptionUpsellCohort: String, FeatureFlagCohortDescribing {
         case control
@@ -568,6 +577,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
+        case .onboardingNonBlocking:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlocking), cohortType: OnboardingNonBlockingCohort.self)
         case .onboardingSubscriptionUpsell:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),

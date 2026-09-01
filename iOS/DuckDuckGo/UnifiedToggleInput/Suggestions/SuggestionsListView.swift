@@ -407,7 +407,7 @@ private final class ListCellShadowOverflowProbe: UIView {
     private weak var containingCell: UICollectionViewCell?
     private var originalCellClipsToBounds: Bool?
     private var originalCellZPosition: CGFloat?
-    private var clippingUpdateGeneration = 0
+    private var cellMaskObservation: NSKeyValueObservation?
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
@@ -421,15 +421,6 @@ private final class ListCellShadowOverflowProbe: UIView {
 
     func updateContainingCellClipping() {
         applyContainingCellClipping()
-
-        // SwiftUI's List reapplies the cell configuration after updating the hosted row.
-        // Reassert overflow after that pass so UIKit cannot restore masksToBounds on the cell.
-        clippingUpdateGeneration += 1
-        let generation = clippingUpdateGeneration
-        DispatchQueue.main.async { [weak self] in
-            guard let self, clippingUpdateGeneration == generation else { return }
-            applyContainingCellClipping()
-        }
     }
 
     private func applyContainingCellClipping() {
@@ -442,6 +433,15 @@ private final class ListCellShadowOverflowProbe: UIView {
             containingCell = cell
             originalCellClipsToBounds = cell.clipsToBounds
             originalCellZPosition = cell.layer.zPosition
+            // SwiftUI can restore this mask without laying out the hosted row. Keep the actual
+            // clipping owner disabled for as long as this overflow row owns the cell.
+            cellMaskObservation = cell.layer.observe(\.masksToBounds, options: [.new]) { [weak self] layer, change in
+                guard let self, change.newValue == true, layer === containingCell?.layer else { return }
+                layer.masksToBounds = false
+                if raisesCellAbovePreviousRow {
+                    layer.zPosition = 1
+                }
+            }
         }
         cell.clipsToBounds = false
         // The ambient shadow overlaps the preceding Escape Hatch row, so its cell must paint above that sibling.
@@ -449,7 +449,8 @@ private final class ListCellShadowOverflowProbe: UIView {
     }
 
     func restoreContainingCellClipping() {
-        clippingUpdateGeneration += 1
+        cellMaskObservation?.invalidate()
+        cellMaskObservation = nil
         if let containingCell, let originalCellClipsToBounds, let originalCellZPosition {
             containingCell.clipsToBounds = originalCellClipsToBounds
             containingCell.layer.zPosition = originalCellZPosition

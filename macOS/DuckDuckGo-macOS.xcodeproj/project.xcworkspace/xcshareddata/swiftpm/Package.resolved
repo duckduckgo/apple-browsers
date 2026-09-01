@@ -1,5 +1,5 @@
 {
-  "originHash" : "d62d0d87019e9f5ff483e8f0820bfd0bbc37ea8d0cbbcd6dbc6a63b4f5d40f5e",
+  "originHash" : "babd9e9bda5d4e51e5c8bce8d455e8f33ce513723ca70c48e6938f613fe53155",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -150,8 +150,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-clocks.git",
       "state" : {
-        "revision" : "72d749bf341b78851203066ab421869b783ec42a",
-        "version" : "1.1.0"
+        "revision" : "82440fa0a8b1c381a6d1e8e0fc7bbba53ec63204",
+        "version" : "1.1.1"
       }
     },
     {
@@ -249,8 +249,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "dfd70507def84cb5fb821278448a262c6ff2bbad",
-        "version" : "1.9.0"
+        "revision" : "d9308ad679143c26a30dec52daefe82f54af2b82",
+        "version" : "1.13.1"
       }
     },
     {

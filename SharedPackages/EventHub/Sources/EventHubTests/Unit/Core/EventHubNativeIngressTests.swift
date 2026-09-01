@@ -27,7 +27,7 @@ struct EventHubNativeIngressTests {
     static let immediateConfig = """
     { "telemetry": { "webEvent_impression": {
         "state": "enabled",
-        "trigger": { "type": "immediate", "source": "impression" },
+        "trigger": { "type": "immediate_v2", "source": "impression" },
         "parameters": {}
     } } }
     """
@@ -35,7 +35,7 @@ struct EventHubNativeIngressTests {
     static let immediateDataConfig = """
     { "telemetry": { "webEvent_login": {
         "state": "enabled",
-        "trigger": { "type": "immediate", "source": "login" },
+        "trigger": { "type": "immediate_v2", "source": "login" },
         "parameters": { "loginState": { "template": "data", "dataKey": "loginState" } }
     } } }
     """
@@ -60,7 +60,7 @@ struct EventHubNativeIngressTests {
     // method can be shown to drive only its own trigger type.
     static let bothConfig = """
     { "telemetry": {
-        "imm": { "state": "enabled", "trigger": { "type": "immediate", "source": "test" }, "parameters": {} },
+        "imm": { "state": "enabled", "trigger": { "type": "immediate_v2", "source": "test" }, "parameters": {} },
         "per": { "state": "enabled", "trigger": { "period": { "seconds": 86400 } },
             "parameters": { "count": { "template": "counter", "source": "test", "buckets": { "0": {"gte": 0, "lt": 1}, "1+": {"gte": 1} } } } }
     } }

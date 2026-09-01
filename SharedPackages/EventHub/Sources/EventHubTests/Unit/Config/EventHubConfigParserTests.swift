@@ -209,6 +209,35 @@ struct EventHubConfigParserTests {
         #expect(parser.parseTelemetry(json).isEmpty)
     }
 
+    @Test("the retired immediate trigger type is skipped")
+    func retiredImmediateTriggerTypeIsSkipped() {
+        // `immediate` was renamed to `immediate_v2` when web events began de-duplicating at the hub.
+        // Config still written for the old name belongs to clients that fire on every occurrence, so
+        // this client must not honour it — see `TelemetryTriggerType`.
+        let json = settingsDictionary("""
+        { "telemetry": { "test": {
+            "state": "enabled",
+            "trigger": { "type": "immediate", "source": "e" },
+            "parameters": { "d": { "template": "data", "dataKey": "k" } }
+        } } }
+        """)
+
+        #expect(parser.parseTelemetry(json).isEmpty)
+    }
+
+    @Test("the immediate_v2 trigger type is parsed")
+    func immediateV2TriggerTypeIsParsed() {
+        let json = settingsDictionary("""
+        { "telemetry": { "test": {
+            "state": "enabled",
+            "trigger": { "type": "immediate_v2", "source": "e" },
+            "parameters": { "d": { "template": "data", "dataKey": "k" } }
+        } } }
+        """)
+
+        #expect(parser.parseTelemetry(json).first?.trigger.type == .immediateV2)
+    }
+
     @Test("parseSinglePixelConfig with malformed JSON returns nil")
     func parseSinglePixelConfigWithMalformedJSONReturnsNil() {
         #expect(parser.parseSinglePixelConfig(name: "test", json: "not json") == nil)
@@ -260,12 +289,12 @@ struct EventHubConfigParserTests {
         let config = TelemetryPixelConfig(
             name: "test",
             state: "enabled",
-            trigger: TelemetryTriggerConfig(type: .immediate, source: "e"),
+            trigger: TelemetryTriggerConfig(type: .immediateV2, source: "e"),
             parameters: ["d": TelemetryParameterConfig(template: .data, dataKey: "k")])
 
         let json = try #require(parser.serializePixelConfig(config))
 
-        #expect(json.contains("\"type\":\"immediate\""))
+        #expect(json.contains("\"type\":\"immediate_v2\""))
         #expect(json.contains("\"template\":\"data\""))
     }
 

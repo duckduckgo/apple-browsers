@@ -89,17 +89,19 @@ public final class EventHubConfigParser {
 
     private static func toTrigger(_ dto: TriggerDTO, pixelName: String) -> TelemetryTriggerConfig? {
         // An omitted type means `period`; a present but unrecognised one is a config we cannot honour.
+        // That includes the retired `immediate`, which this client no longer understands — see
+        // `TelemetryTriggerType`.
         guard let type = dto.type.map(TelemetryTriggerType.init(rawValue:)) ?? .period else {
             Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, unknown trigger type \(dto.type ?? "<none>", privacy: .public)")
             return nil
         }
         switch type {
-        case .immediate:
+        case .immediateV2:
             guard let source = dto.source, !source.isEmpty else {
                 Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, immediate trigger with no source")
                 return nil
             }
-            return TelemetryTriggerConfig(type: .immediate, source: source)
+            return TelemetryTriggerConfig(type: .immediateV2, source: source)
         case .period:
             guard let period = dto.period, period.seconds > 0 else {
                 Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, period seconds missing or not positive")

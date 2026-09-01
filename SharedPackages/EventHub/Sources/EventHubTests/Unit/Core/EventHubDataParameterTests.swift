@@ -24,7 +24,7 @@ struct EventHubDataParameterTests {
     static let immediateDataConfig = """
     { "telemetry": { "webEvent_login": {
         "state": "enabled",
-        "trigger": { "type": "immediate", "source": "login" },
+        "trigger": { "type": "immediate_v2", "source": "login" },
         "parameters": { "loginState": { "template": "data", "dataKey": "loginState" } }
     } } }
     """
@@ -42,7 +42,7 @@ struct EventHubDataParameterTests {
         let config = """
         { "telemetry": { "webEvent_login": {
             "state": "enabled",
-            "trigger": { "type": "immediate", "source": "login" },
+            "trigger": { "type": "immediate_v2", "source": "login" },
             "parameters": { "payload": { "template": "data", "dataKey": "payload" } }
         } } }
         """
@@ -60,12 +60,14 @@ struct EventHubDataParameterTests {
         #expect(f.fired.first?.parameters["loginState"] == "null")
     }
 
-    @Test("immediate data param is omitted when the key is absent")
-    func immediateDataParamOmittedWhenKeyAbsent() {
+    @Test("an immediate pixel does not fire when its only data param is absent")
+    func immediatePixelDoesNotFireWhenOnlyDataParamAbsent() {
+        // A pixel that declares data parameters but resolves none of them has nothing to report. A
+        // pixel declaring no parameters at all still fires on the event alone — see
+        // `EventHubImmediatePixelTests`.
         let f = EventHubFixture.active(Self.immediateDataConfig)
         f.manager.handleWebEvent(EventHubFixture.eventWithData("login", dataJSON: #"{ "other": "x" }"#), tabID: .new())
-        #expect(f.fired.count == 1)
-        #expect(f.fired.first?.parameters["loginState"] == nil)
+        #expect(f.fired.isEmpty)
     }
 
     @Test("aggregate data param uses the last value from a matching source")

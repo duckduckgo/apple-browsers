@@ -20,13 +20,13 @@ import Foundation
 import os.log
 
 /// A single pixel parameter's runtime behavior. `CounterParameter` owns its counter value and the
-/// stop-at-max-bucket logic, and makes the per-tab dedup decision against the hub-owned `DedupStore`
-/// (native/`.empty`-tab events are never deduped). `DataParameter` owns only its last-seen value.
+/// stop-at-max-bucket logic; `DataParameter` owns only its last-seen value. Neither de-duplicates:
+/// the hub takes that decision once at ingestion, so everything reaching a parameter is a delivery.
 protocol Parameter: AnyObject {
     /// Processes an event whose source already matched this parameter's config source (or, for an
     /// immediate-trigger's data param, the triggering event itself). Returns `true` if state changed.
     @discardableResult
-    func handle(data: [String: Any]?, tabID: EventHubTabID) -> Bool
+    func handle(data: [String: Any]?) -> Bool
 
     var state: ParamState { get }
     func restoreState(_ state: ParamState)
@@ -37,11 +37,10 @@ protocol Parameter: AnyObject {
 }
 
 enum ParameterFactory {
-    /// Builds the parameter for a pixel's running period. `dedupKey` identifies this parameter within
-    /// its pixel (pixel×param×source) for `dedupStore` lookups.
-    static func make(_ config: TelemetryParameterConfig, dedupKey: String, dedupStore: DedupStore) -> Parameter? {
+    /// Builds the parameter for a pixel's running period.
+    static func make(_ config: TelemetryParameterConfig) -> Parameter? {
         if config.template == .counter, let buckets = config.buckets {
-            return CounterParameter(buckets: buckets, dedupKey: dedupKey, dedupStore: dedupStore)
+            return CounterParameter(buckets: buckets)
         }
         if config.template == .data {
             return DataParameter(dataKey: config.dataKey)
@@ -53,28 +52,18 @@ enum ParameterFactory {
 
 final class CounterParameter: Parameter {
     private let buckets: BucketList
-    /// Identifies this parameter (pixel×param×source) inside the shared, tab-keyed `DedupStore`.
-    private let dedupKey: String
-    /// Hub-owned, so dedup outlives this parameter — see `DedupStore`.
-    private let dedupStore: DedupStore
     private var value: Int
     private var stopCounting: Bool
 
-    init(buckets: BucketList, dedupKey: String, dedupStore: DedupStore, initialState: ParamState = ParamState(value: 0)) {
+    init(buckets: BucketList, initialState: ParamState = ParamState(value: 0)) {
         self.buckets = buckets
-        self.dedupKey = dedupKey
-        self.dedupStore = dedupStore
         self.value = initialState.value
         self.stopCounting = initialState.stopCounting
     }
 
     @discardableResult
-    func handle(data: [String: Any]?, tabID: EventHubTabID) -> Bool {
+    func handle(data: [String: Any]?) -> Bool {
         guard !stopCounting else { return false }
-        // Native events (tabID == .empty) opt out of dedup: every call is a genuine occurrence.
-        if tabID != .empty {
-            guard dedupStore.markSeen(key: dedupKey, tabID: tabID) else { return false }
-        }
         if BucketCounter.shouldStopCounting(value, buckets: buckets) {
             stopCounting = true
         } else {
@@ -106,15 +95,28 @@ final class DataParameter: Parameter {
         self.lastValue = initialState.lastDataValue
     }
 
+    /// Every event of the parameter's source assigns, so an event whose payload lacks `dataKey`
+    /// leaves the parameter with *no* value rather than the previous one — the pixel then reports what
+    /// the latest event carried, not a stale reading from an earlier one.
     @discardableResult
-    func handle(data: [String: Any]?, tabID: EventHubTabID) -> Bool {
-        guard let dataKey, let data, let raw = data[dataKey] else { return false }
+    func handle(data: [String: Any]?) -> Bool {
+        guard let dataKey else { return false }
+        guard let raw = data?[dataKey] else { return clear() }
         guard let encoded = try? JSONSerialization.data(withJSONObject: raw, options: [.fragmentsAllowed]),
               let compact = String(data: encoded, encoding: .utf8) else {
             Logger.eventHub.error("data parameter for key \(dataKey, privacy: .public) is not JSON-serialisable, value dropped")
-            return false
+            return clear()
         }
-        lastValue = compact.addingPercentEncoding(withAllowedCharacters: Self.unreservedCharacters)
+        let encodedValue = compact.addingPercentEncoding(withAllowedCharacters: Self.unreservedCharacters)
+        guard lastValue != encodedValue else { return false }
+        lastValue = encodedValue
+        return true
+    }
+
+    /// Drops any recorded value, reporting whether that was a change.
+    private func clear() -> Bool {
+        guard lastValue != nil else { return false }
+        lastValue = nil
         return true
     }
 

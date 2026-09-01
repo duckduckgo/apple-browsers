@@ -1177,6 +1177,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                                raisedFromUsageCard: true)
         }
 
+        omnibarController.onSubscriptionUpsellDialogRequested = { [weak self] origin in
+            // Free tier only, so `.plus` always resolves to the purchase flow rather than an upgrade.
+            self?.presentSubscriptionUpsellDialog(requiredTier: .plus, origin: origin)
+        }
+
         subscribeToUsageWarnings()
         omnibarController.onUsageWarningsRefreshed = { [weak self] in
             self?.refreshUsageCard()

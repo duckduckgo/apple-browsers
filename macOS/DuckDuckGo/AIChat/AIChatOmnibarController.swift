@@ -149,15 +149,16 @@ final class AIChatOmnibarController {
     /// warning does — activation included, which is what `cleanup()` dropped it for.
     var onUsageWarningsRefreshed: (() -> Void)?
 
+    /// The card's subscribe CTA. The container VC owns the dialog, and the window it has to open in.
+    var onSubscriptionUpsellDialogRequested: ((SubscriptionFunnelOrigin) -> Void)?
+
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
             updateSelectedModel(suggestion.modelId)
         case .tryForFree:
-            // Free tier only, so `.plus` always resolves to the purchase flow rather than an upgrade.
-            subscriptionUpsellPresenter.routeGatedSelection(requiredTier: .plus,
-                                                            userTier: userTier,
-                                                            origin: surface.usageLimitFunnelOrigin)
+            // Confirms first, the same as a gated pick in either picker, rather than navigating on tap.
+            onSubscriptionUpsellDialogRequested?(surface.usageLimitFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
             // Web reads the entry on its next hydration, so there is nothing to reload here.
             usageLimitsStore?.write(entries)

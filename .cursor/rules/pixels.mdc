@@ -17,7 +17,7 @@ Pixels have the following requirements:
 - Do not use values that are overly precise, e.g. if using an integer value in a parameter, bucket it into ranges rather than including the value verbatim
 - Never include PII, URLs, or other forms of user-identifiable information in pixel names or parameters
 
-For new production iOS code, use PixelKit instead of the legacy iOS `Pixel`, `DailyPixel`, `UniquePixel`, `TimedPixel`, or `PersistentPixel` APIs. Danger exempts only the legacy infrastructure files named by its check, plus test and mock files; these exemptions do not apply to other production code.
+PixelKit is the only pixel-firing API on iOS and macOS. The legacy iOS `Pixel`, `DailyPixel`, `UniquePixel`, `TimedPixel`, and `PersistentPixel` classes, and their `PixelFiring`/`PixelFiringAsync`/`DailyPixelFiring` protocols, have been removed; `PixelFiringMock` and the other legacy test mocks went with them - use `PixelKitMock` instead. `Pixel.Event` and `PixelParameters` survive as the catalogue of already-defined iOS pixel names and parameter keys (see below) - they are the only pieces of the old system still in use.
 
 ## Types of Pixels
 
@@ -49,15 +49,17 @@ pixelKit.fire(uniqueEvent, frequency: .uniqueByName)
 
 ## Pixel Definition Patterns
 
-### Legacy iOS Pixels
+### Existing iOS Pixels (`Pixel.Event`)
 
-Existing legacy iOS pixels are defined as cases on `Pixel.Event` in `iOS/Core/PixelEvent.swift`. Each enum case maps to an HTTP pixel name string via a computed `name` property. This section is reference material for that existing system only.
+Every iOS pixel defined before the PixelKit migration is a case on `Pixel.Event` in `iOS/Core/PixelEvent.swift`. Each enum case maps to an HTTP pixel name string via a computed `name` property, and every one of them fires through PixelKit: `PixelKit.fire(Pixel.Event.someCase, ...)`.
 
-#### Existing Legacy Structure
+**`iOS/Core/PixelEvent.swift` does not take new pixels.** The file carries a top-of-file notice to that effect, and a Danger check hard-fails a PR that adds a new case (to the enum or to the `name` switch) - see `iOS Pixel Injection Pattern (PixelKit)` in `.cursor/BUGBOT.md`. Modifying or removing an existing case is fine. Define a new iOS pixel as its own `PixelKit.Event`-conforming type in a new file instead, the same way macOS already does (see `macOS Pixels (PixelKit)` below).
 
-1. Enum cases are declared in `iOS/Core/PixelEvent.swift`.
+#### Existing Structure
+
+1. Enum cases are declared in `iOS/Core/PixelEvent.swift` (do not add new ones - see above).
 2. The `name` computed property in the same file maps cases to pixel name strings.
-3. Existing callers use `Pixel.fire`, `DailyPixel.fireDailyAndCount`, or `UniquePixel.fire`.
+3. `PixelEvent+PixelKit.swift` conforms `Pixel.Event` to `PixelKit.Event`, so every case fires through `PixelKit.fire`/`fireAsync`.
 4. Matching definitions live in `iOS/PixelDefinitions/pixels/definitions/*.json5` - see the `Pixel Validation` section below for more.
 
 #### Enum Case Definition
@@ -115,9 +117,9 @@ Examples:
 | Legacy | `.appLaunch` | `"ml"` | Avoid this style for new pixels |
 | Legacy | `.privacyDashboardOpened` | `"mp"` | Avoid this style for new pixels |
 
-### Existing Legacy Parameterized iOS Cases
+### Existing Parameterized iOS Cases
 
-Some existing legacy enum cases have associated values that are interpolated into the pixel name:
+Some existing `Pixel.Event` cases have associated values that are interpolated into the pixel name:
 
 ```swift
 // Enum definition with associated value
@@ -198,13 +200,7 @@ pixelKit.fire(event, options: .parameters([Parameter.source: "keyboard_shortcut"
 
 ## PixelFiring Protocol
 
-There are two unrelated protocols with this name. Use the PixelKit protocol for new production code. The legacy iOS protocol below documents existing infrastructure and testing support.
-
-### Legacy iOS (`iOS/Core/Pixel`)
-
-Existing legacy iOS code uses the deprecated `PixelFiring` protocol in `iOS/Core/PixelFiring.swift` for dependency injection and testing.
-
-### PixelKit (iOS, macOS, and shared packages)
+`PixelFiring` is PixelKit's protocol, used for dependency injection and testing on iOS, macOS, and shared packages alike. A consumer module can reference it as `PixelKitFiring` (a public typealias PixelKit exports for exactly this) to avoid any risk of colliding with a same-named type of its own.
 
 ```swift
 // SharedPackages/PixelKit/Sources/PixelKit/PixelFiring.swift
@@ -217,7 +213,21 @@ public protocol PixelFiring {
 ```
 
 Conformers implement only that requirement. Callers use one of two entry points, never the
-requirement directly:
+requirement directly.
+
+A type that injects pixel firing for testability declares the dependency as
+`(any PixelKitFiring)? = PixelKit.shared`, not a concrete type:
+
+```swift
+private let pixelFiring: (any PixelKitFiring)?
+
+init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+    self.pixelFiring = pixelFiring
+}
+```
+
+Tests inject `PixelKitMock` (`@_spi(Testing) import PixelKit`) and assert against its
+`actualFireCalls`, each entry carrying the fired `pixel`, `frequency`, and `additionalParameters`.
 
 ```swift
 // Fire and forget. Correct for almost every pixel: telemetry should not make the caller wait.
@@ -322,8 +332,7 @@ Pixels have some default values, please check the Pixel implementation in the re
 
 ## Related Files
 
-- `iOS/Core/Pixel.swift` - iOS pixel firing implementation
-- `iOS/Core/DailyPixel.swift` - Daily pixel implementation
-- `iOS/Core/UniquePixel.swift` - Unique pixel implementation
-- `iOS/Core/PixelEvent.swift` - iOS pixel event definitions
-- `SharedPackages/PixelKit/Sources/PixelKit/` - Shared PixelKit implementation
+- `iOS/Core/PixelEvent.swift` - existing iOS pixel event definitions (closed to new cases)
+- `iOS/Core/PixelEvent+PixelKit.swift` - conforms `Pixel.Event` to `PixelKit.Event`
+- `iOS/Core/Pixel.swift` - `PixelParameters` (parameter key catalogue) and `Pixel.BuildTarget`
+- `SharedPackages/PixelKit/Sources/PixelKit/` - the PixelKit implementation

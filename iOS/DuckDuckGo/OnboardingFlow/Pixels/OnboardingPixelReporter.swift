@@ -27,24 +27,6 @@ import PixelKit
 import PixelExperimentKit
 import FeatureFlags_iOS
 
-// MARK: - Pixel Fire Interface
-
-protocol OnboardingPixelFiring {
-    static func fire(pixel: Pixel.Event, withAdditionalParameters params: [String: String], includedParameters: [Pixel.QueryParameters])
-}
-
-extension Pixel: OnboardingPixelFiring {
-    static func fire(pixel: Event, withAdditionalParameters params: [String: String], includedParameters: [QueryParameters]) {
-        self.fire(pixel: pixel, withAdditionalParameters: params, includedParameters: includedParameters, onComplete: { _ in })
-    }
-}
-
-extension UniquePixel: OnboardingPixelFiring {
-    static func fire(pixel: Pixel.Event, withAdditionalParameters params: [String: String], includedParameters: [Pixel.QueryParameters]) {
-        self.fire(pixel: pixel, withAdditionalParameters: params, includedParameters: includedParameters, onComplete: { _ in })
-    }
-}
-
 // MARK: - OnboardingPixelReporter
 
 protocol OnboardingIntroImpressionReporting {
@@ -148,8 +130,7 @@ typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & Onboarding
 // MARK: - Implementation
 
 final class OnboardingPixelReporter {
-    private let pixel: OnboardingPixelFiring.Type
-    private let uniquePixel: OnboardingPixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private let statisticsStore: StatisticsStore
     private let calendar: Calendar
     private let dateProvider: () -> Date
@@ -160,8 +141,7 @@ final class OnboardingPixelReporter {
     private let downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric
 
     init(
-        pixel: OnboardingPixelFiring.Type = Pixel.self,
-        uniquePixel: OnboardingPixelFiring.Type = UniquePixel.self,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
         statisticsStore: StatisticsStore = StatisticsUserDefaults(),
         calendar: Calendar = .current,
         dateProvider: @escaping () -> Date = Date.init,
@@ -170,8 +150,7 @@ final class OnboardingPixelReporter {
         sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil,
         downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric = OnboardingDownloadReasonExperimentMetric()
     ) {
-        self.pixel = pixel
-        self.uniquePixel = uniquePixel
+        self.pixelFiring = pixelFiring
         self.statisticsStore = statisticsStore
         self.calendar = calendar
         self.dateProvider = dateProvider
@@ -185,12 +164,11 @@ final class OnboardingPixelReporter {
         self.downloadReasonExperimentMetric = downloadReasonExperimentMetric
     }
 
-    private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:], includedParameters: [Pixel.QueryParameters] = [.appVersion]) {
-        if unique {
-            uniquePixel.fire(pixel: event, withAdditionalParameters: additionalParameters, includedParameters: includedParameters)
-        } else {
-            pixel.fire(pixel: event, withAdditionalParameters: additionalParameters, includedParameters: includedParameters)
-        }
+    private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:]) {
+        // `.legacyInitial`: fires once ever, like legacy UniquePixel.fire, but without UniquePixel's
+        // `_u`/`_unique` name-suffix requirement (every onboarding "unique" case ends in `Unique`,
+        // whose name ends in `_unique` - `.uniqueByName` would assert-fail and drop these).
+        pixelFiring?.fire(event, frequency: unique ? .legacyInitial : .standard, options: .parameters(additionalParameters))
     }
 
     // Fires a shared onboarding pixel with the current stored context (source, flow and variant).

@@ -403,9 +403,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Recovery Picker Session Pixels
 
     func test_recoveryPickerSession_fullFunnel_smokeTest() {
-        let previousDryRun = Pixel.isDryRun
-        Pixel.isDryRun = true
-        defer { Pixel.isDryRun = previousDryRun }
 
         _ = sut.prepareExternalPromptSubmission()
         let userScript = makeBridgeReadyUserScript()
@@ -420,9 +417,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_recoveryPickerSession_submitChangeModelPixel_smokeTest_withoutRecoveryPin() {
-        let previousDryRun = Pixel.isDryRun
-        Pixel.isDryRun = true
-        defer { Pixel.isDryRun = previousDryRun }
 
         _ = sut.prepareExternalPromptSubmission()
         let userScript = makeBridgeReadyUserScript()
@@ -437,9 +431,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_recoveryPickerSession_promptSentPixel_notFiredWithoutRecoveryPin() {
-        let previousDryRun = Pixel.isDryRun
-        Pixel.isDryRun = true
-        defer { Pixel.isDryRun = previousDryRun }
 
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first prompt", mode: .aiChat)

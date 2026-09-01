@@ -64,18 +64,6 @@ enum AIChatToolMode: Equatable {
     }
 }
 
-struct AIChatCreateImageModelSwitchNotice: Equatable {
-    let previousModelShortName: String
-    let newModelShortName: String
-    let previousModelHasExtraPrivacyProtections: Bool
-
-    init(previousModel: AIChatModel, newModel: AIChatModel) {
-        previousModelShortName = previousModel.shortName
-        newModelShortName = newModel.shortName
-        previousModelHasExtraPrivacyProtections = previousModel.provider == .oss
-    }
-}
-
 /// Controller that manages the state and actions for the AI Chat omnibar.
 /// This controller is shared between AIChatOmnibarContainerViewController and AIChatOmnibarTextContainerViewController
 /// to coordinate text input and submission.

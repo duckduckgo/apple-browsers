@@ -116,28 +116,6 @@ private final class BottomEdgeStrokeView: NSView {
     }
 }
 
-struct AIChatCreateImagePresentationPolicy {
-    let isImageGenerationEnabled: Bool
-    let isUpdatedCreateImageEnabled: Bool
-    let selectedModelSupportsImageGeneration: Bool
-    let isOmnibarToolsEnabled: Bool
-    let hasModelPickerContent: Bool
-    let isImageGenerationMode: Bool
-
-    var isImageGenerationItemVisible: Bool {
-        isImageGenerationEnabled && (isUpdatedCreateImageEnabled || selectedModelSupportsImageGeneration)
-    }
-
-    var shouldShowModelPicker: Bool {
-        guard isOmnibarToolsEnabled && hasModelPickerContent else { return false }
-        return !isImageGenerationMode || isUpdatedCreateImageEnabled
-    }
-
-    var shouldMakeModelPickerReadOnly: Bool {
-        isUpdatedCreateImageEnabled && isImageGenerationMode
-    }
-}
-
 final class AIChatOmnibarContainerViewController: NSViewController {
 
     private enum Constants {

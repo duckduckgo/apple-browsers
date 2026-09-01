@@ -1,4 +1,3 @@
-SharedPackages/AIChat/Tests/AIChatTests/AIChatModelImageGenerationTests.swift
 //
 //  AIChatModelImageGenerationTests.swift
 //

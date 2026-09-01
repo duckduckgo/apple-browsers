@@ -325,12 +325,33 @@ final class BrowserToolbarView: UIView {
             right: Self.embeddedRestStateInnerInset(guideInset: guideInsets.right))
     }
 
+    /// Distance from the physical bottom edge of `view` to its corner-adapted safe area guide.
+    /// Reports zero for an unresolved guide, for the same reason as `horizontalGuideInsets(in:)`.
+    @available(iOS 26.0, *)
+    static func verticalGuideBottomInset(in view: UIView) -> CGFloat {
+        let layoutFrame = view.layoutGuide(for: .safeArea(cornerAdaptation: .vertical)).layoutFrame
+        guard !layoutFrame.isEmpty else { return 0 }
+        return max(0, view.bounds.maxY - layoutFrame.maxY)
+    }
+
+    /// Shift that puts combined bottom chrome `floatingEmbeddedConcentricInset` from the physical
+    /// bottom. The layout slot's bottom sits on the guide, so a guide gap wider than the inset
+    /// shifts the glass down and a narrower one shifts it up; it is not clamped to a downward
+    /// shift, or the glass would sit flush on devices whose guide already reaches the bottom.
+    static func embeddedRestStateBottomOffset(guideBottomGap: CGFloat) -> CGFloat {
+        guideBottomGap - floatingEmbeddedConcentricInset
+    }
+
     /// Distance from each physical edge of `view` to its corner-adapted safe area guide.
+    /// The guide only resolves once the view is in a window; until then its layout frame is
+    /// empty, which carries no inset information. Reporting zero keeps callers from reading an
+    /// unresolved guide as "the whole width is unsafe".
     @available(iOS 26.0, *)
     static func horizontalGuideInsets(in view: UIView) -> (left: CGFloat, right: CGFloat) {
-        let guide = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
-        return (max(0, guide.layoutFrame.minX),
-                max(0, view.bounds.maxX - guide.layoutFrame.maxX))
+        let layoutFrame = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal)).layoutFrame
+        guard !layoutFrame.isEmpty else { return (0, 0) }
+        return (max(0, layoutFrame.minX),
+                max(0, view.bounds.maxX - layoutFrame.maxX))
     }
 
     private var currentButtonRowHorizontalPadding: CGFloat {
@@ -854,12 +875,11 @@ final class BrowserToolbarView: UIView {
                 right = guideInsets.right + Self.embeddedRestStateInnerInset(guideInset: guideInsets.right)
                 bottom = bounds.maxY - Self.floatingEmbeddedConcentricInset
             } else {
-                let horizontalGuide = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
-                let verticalGuide = view.layoutGuide(for: .safeArea(cornerAdaptation: .vertical))
+                let guideInsets = Self.horizontalGuideInsets(in: view)
                 let glassInset = currentBarOuterInsets.left
-                left = max(0, horizontalGuide.layoutFrame.minX) + glassInset
-                right = max(0, bounds.maxX - horizontalGuide.layoutFrame.maxX) + glassInset
-                bottom = verticalGuide.layoutFrame.maxY
+                left = guideInsets.left + glassInset
+                right = guideInsets.right + glassInset
+                bottom = bounds.maxY - Self.verticalGuideBottomInset(in: view)
             }
         } else {
             let insets = currentBarOuterInsets
@@ -870,7 +890,7 @@ final class BrowserToolbarView: UIView {
             bottom = bounds.maxY - safeBottom + offset
         }
 
-        let width = bounds.width - left - right
+        let width = max(0, bounds.width - left - right)
         return CGRect(x: bounds.minX + left, y: bottom - height, width: width, height: height)
     }
 
@@ -924,9 +944,8 @@ final class BrowserToolbarView: UIView {
         let target: CGFloat
         if #available(iOS 26.0, *), isFloatingStyleEnabled {
             if usesCombinedBottomChromeGeometry, let host = superview, host.bounds.height > 0 {
-                let verticalGuide = host.layoutGuide(for: .safeArea(cornerAdaptation: .vertical))
-                let guideBottomGap = max(0, host.bounds.maxY - verticalGuide.layoutFrame.maxY)
-                target = max(0, guideBottomGap - Self.floatingEmbeddedConcentricInset)
+                let guideBottomGap = Self.verticalGuideBottomInset(in: host)
+                target = Self.embeddedRestStateBottomOffset(guideBottomGap: guideBottomGap)
             } else {
                 target = 0
             }

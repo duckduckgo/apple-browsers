@@ -254,6 +254,48 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(container.bounds.width - frame.maxX, concentric - 0.01)
     }
 
+    func testWhenGuideGapExceedsConcentricInsetThenGlassShiftsDown() {
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        // Home indicator: the guide stops short of the bottom, so the glass moves down to it.
+        XCTAssertEqual(
+            BrowserToolbarView.embeddedRestStateBottomOffset(guideBottomGap: 34),
+            34 - concentric,
+            accuracy: 0.01)
+    }
+
+    func testWhenGuideReachesPhysicalBottomThenGlassShiftsUpToKeepTheInset() {
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        // No home indicator: the guide already sits at the bottom, so the glass must move up to
+        // leave the same inset that restingCapsuleFrame reports, rather than sitting flush.
+        XCTAssertEqual(
+            BrowserToolbarView.embeddedRestStateBottomOffset(guideBottomGap: 0),
+            -concentric,
+            accuracy: 0.01)
+        XCTAssertEqual(
+            BrowserToolbarView.embeddedRestStateBottomOffset(guideBottomGap: concentric),
+            0,
+            accuracy: 0.01)
+    }
+
+    func testWhenSafeAreaGuideIsUnresolvedThenCapsuleStaysWithinBounds() {
+        guard #available(iOS 26.0, *) else { return }
+        // No window, so the corner-adapted guide never resolves and its layout frame is empty.
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+
+        for embedded in [true, false] {
+            let sut = makeSUT(embeddedOmnibar: embedded)
+            container.addSubview(sut)
+            container.layoutIfNeeded()
+
+            let frame = sut.restingCapsuleFrame(in: container)
+
+            XCTAssertGreaterThanOrEqual(frame.width, 0, "embedded: \(embedded)")
+            XCTAssertGreaterThanOrEqual(frame.minX, 0, "embedded: \(embedded)")
+            XCTAssertLessThanOrEqual(frame.maxX, container.bounds.maxX, "embedded: \(embedded)")
+            sut.removeFromSuperview()
+        }
+    }
+
     func testWhenBottomOmnibarDetachesForFocusThenOuterInsetsStayUnchanged() {
         let sut = makeSUT(embeddedOmnibar: true)
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))

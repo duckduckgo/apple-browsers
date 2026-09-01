@@ -631,14 +631,6 @@
                                             <constraint firstItem="LBz-Pz-Fw5" firstAttribute="leading" secondItem="JKb-5c-xaD" secondAttribute="leading" constant="12" id="XGh-oj-HqL"/>
                                             <constraint firstItem="LBz-Pz-Fw5" firstAttribute="centerY" secondItem="JKb-5c-xaD" secondAttribute="centerY" id="bQo-e4-IPs"/>
                                         </constraints>
-                                        <userDefinedRuntimeAttributes>
-                                            <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
-                                                <color key="value" name="ButtonMouseOverColor"/>
-                                            </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                                <real key="value" value="6"/>
-                                            </userDefinedRuntimeAttribute>
-                                        </userDefinedRuntimeAttributes>
                                     </customView>
                                 </subviews>
                                 <constraints>
@@ -647,8 +639,8 @@
                                     <constraint firstAttribute="trailing" secondItem="JKb-5c-xaD" secondAttribute="trailing" id="bpq-Ui-dn5"/>
                                 </constraints>
                                 <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
-                                        <color key="value" name="AddressBarBackgroundColor"/>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="6"/>
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </customView>

@@ -817,19 +817,6 @@
         }
       }
     },
-    "aichat.title" : {
-      "comment" : "Title for DuckDuckGo AI Chat. Should not be translated",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Duck.ai"
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
     "duckai.contextual.ask.about.page" : {
       "comment" : "Title for the button that re-attaches the current page's content after the user removed it",
       "extractionState" : "extracted_with_value",

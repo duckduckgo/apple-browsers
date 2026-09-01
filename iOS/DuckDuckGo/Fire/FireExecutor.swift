@@ -81,8 +81,6 @@ protocol FireExecutorDelegate: AnyObject {
     func didFinishBurningTabs(fireRequest: FireRequest)
     func willStartBurningData(fireRequest: FireRequest)
     func didFinishBurningData(fireRequest: FireRequest)
-    func willStartBurningAIHistory(fireRequest: FireRequest)
-    func didFinishBurningAIHistory(fireRequest: FireRequest)
     func didFinishBurning(fireRequest: FireRequest)
 }
 
@@ -288,7 +286,7 @@ class FireExecutor: FireExecuting {
         // Start async tasks
         async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(request: request, applicationState: applicationState, domains: domains) : ()
         
-        async let aiTask: Void = shouldBurnAIChats ? burnAIHistoryWithDelegateCallbacks(request: request) : ()
+        async let aiTask: Void = shouldBurnAIChats ? burnAIHistory(request: request) : ()
 
         // Execute sync tasks
         cancelOngoingDownloadsIfNeeded(request)
@@ -393,13 +391,6 @@ class FireExecutor: FireExecuting {
         delegate?.willStartBurningData(fireRequest: request)
         await burnData(scope: request.scope, applicationState: applicationState, domains: domains)
         delegate?.didFinishBurningData(fireRequest: request)
-    }
-    
-    @MainActor
-    private func burnAIHistoryWithDelegateCallbacks(request: FireRequest) async {
-        delegate?.willStartBurningAIHistory(fireRequest: request)
-        await burnAIHistory(request: request)
-        delegate?.didFinishBurningAIHistory(fireRequest: request)
     }
     
     // MARK: Burn Tabs Helpers

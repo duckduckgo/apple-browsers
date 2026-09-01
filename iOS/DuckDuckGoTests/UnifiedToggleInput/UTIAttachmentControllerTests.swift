@@ -140,7 +140,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         config.limits = makeLimits()
         let sut = makeController()
 
-        sut.reportRejectedPaste(reason: .fileTooLarge)
+        sut.reportRejectedPastedFiles(reason: .fileTooLarge)
 
         XCTAssertEqual(view.validationMessage, UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 5))
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
@@ -154,7 +154,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         config.inputMode = .aiChat
         let sut = makeController()
 
-        sut.reportRejectedPaste(reason: .fileTooLarge)
+        sut.reportRejectedPastedFiles(reason: .fileTooLarge)
         XCTAssertNotNil(view.validationMessage)
 
         // A re-sync with no attachment-derived error must fall back to the transient banner, not clear it.

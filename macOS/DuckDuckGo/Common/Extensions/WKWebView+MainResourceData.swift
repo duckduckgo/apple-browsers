@@ -16,30 +16,17 @@
 //  limitations under the License.
 //
 
+import AIChat
 import ConcurrencyExtensions
 import Foundation
 import WebKit
-
-/// Read access to the bytes of the document a web view is displaying.
-///
-/// Exists as a protocol so callers can be unit-tested without the private WebKit API behind the
-/// `WKWebView` implementation.
-protocol MainResourceDataProviding: AnyObject {
-    @MainActor func mainResourceData(timeout: TimeInterval) async -> Data?
-}
-
-extension MainResourceDataProviding {
-    @MainActor func mainResourceData() async -> Data? {
-        await mainResourceData(timeout: 5)
-    }
-}
 
 @objc private protocol WKWebViewMainResourcePrivate {
     @objc(_getMainResourceDataWithCompletionHandler:)
     func getMainResourceData(completionHandler: @escaping (NSData?, NSError?) -> Void)
 }
 
-extension WKWebView: MainResourceDataProviding {
+extension WKWebView: @retroactive MainResourceDataProviding {
 
     private static let getMainResourceDataSelector = NSSelectorFromString("_getMainResourceDataWithCompletionHandler:")
 
@@ -50,7 +37,7 @@ extension WKWebView: MainResourceDataProviding {
     /// Returns nil when the runtime doesn't expose the API (it's private) or the call doesn't answer
     /// within `timeout`; callers treat that as "no document context", which is today's behaviour.
     @MainActor
-    func mainResourceData(timeout: TimeInterval = 5) async -> Data? {
+    public func mainResourceData(timeout: TimeInterval = 5) async -> Data? {
         guard responds(to: Self.getMainResourceDataSelector) else {
             assertionFailure("WKWebView doesn‘t respond to _getMainResourceDataWithCompletionHandler:")
             return nil

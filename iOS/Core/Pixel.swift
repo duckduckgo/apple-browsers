@@ -236,4 +236,3 @@ public struct PixelParameters {
     public static let suggestionsPageType = "pageType"
     public static let suggestionsAreSmart = "isSmart"
 }
-

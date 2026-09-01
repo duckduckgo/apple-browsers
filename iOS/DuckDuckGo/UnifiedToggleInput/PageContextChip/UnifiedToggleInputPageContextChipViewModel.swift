@@ -100,7 +100,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         recompute()
     }
 
-    /// Show the loading chip until `setAttached` lands, or `endLoading` clears it if the read fails.
     func beginLoading() {
         guard !isLoading else { return }
         isLoading = true

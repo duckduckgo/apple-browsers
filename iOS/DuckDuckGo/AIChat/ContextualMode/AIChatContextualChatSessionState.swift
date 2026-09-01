@@ -171,7 +171,7 @@ final class AIChatContextualChatSessionState {
     private var isManualAttachInProgress = false
     private var isManualAttachFromFrontend = false
 
-    /// True while the loading chip is showing; the start surface is suppressed only then.
+    /// True while the loading chip is showing;
     private var isDocumentChipLoading = false
 
     /// Flag to prevent duplicate navigation processing

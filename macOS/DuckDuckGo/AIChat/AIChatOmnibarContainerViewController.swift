@@ -324,7 +324,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     var isModelPickerButtonAvailableForFocus: Bool {
-        !modelPickerButton.isHidden
+        !modelPickerButton.isHidden && !modelPickerButton.isReadOnly
     }
 
     /// Returns the first visible and enabled tool button available for focus.
@@ -704,9 +704,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private var shouldShowModelPicker: Bool {
-        guard !omnibarController.isImageGenerationMode else { return false }
         let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
-        return omnibarController.isOmnibarToolsEnabled && hasContent
+        guard omnibarController.isOmnibarToolsEnabled && hasContent else { return false }
+        return !omnibarController.isImageGenerationMode || omnibarController.isUpdatedCreateImageEnabled
+    }
+
+    private var shouldMakeModelPickerReadOnly: Bool {
+        omnibarController.isUpdatedCreateImageEnabled && omnibarController.isImageGenerationMode
     }
 
     private func updateToolButtonsVisibility(isEnabled: Bool) {
@@ -719,6 +723,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // omits the image item itself when full), so the outer button stays interactive.
         imageUploadButton.isEnabled = omnibarController.isOmnibarTabPickerEnabled || !omnibarController.isActiveTabImageAttachmentsFull
         modelPickerButton.isHidden = !shouldShowModelPicker
+        modelPickerButton.isReadOnly = shouldMakeModelPickerReadOnly
+        modelPickerButton.toolTip = shouldMakeModelPickerReadOnly ? nil : UserText.aiChatModelPickerButtonTooltip
+        modelPickerButton.setAccessibilityLabel(
+            shouldMakeModelPickerReadOnly ? persistedModelShortName : UserText.aiChatModelPickerButtonTooltip
+        )
         toolsButton.label = omnibarController.activeToolMode != nil ? nil : UserText.aiChatToolsButtonLabel
 
         // The carousel row's height is recomputed centrally via `updateAttachmentsCarouselLayout()`.

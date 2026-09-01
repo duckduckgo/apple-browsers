@@ -116,8 +116,7 @@ final class UTIModelStore {
 
     /// The accessible image-capable model used when Create Image is selected from an unsupported model.
     var imageGenerationFallbackModel: AIChatModel? {
-        let candidates = models.filter { $0.entityHasAccess && $0.supportsTool(.imageGeneration) }
-        return candidates.first(where: \.isSuggestedForImageCreation) ?? candidates.first
+        AIChatModel.preferredImageGenerationModel(in: models)
     }
 
     private var firstAccessibleModelId: String? {

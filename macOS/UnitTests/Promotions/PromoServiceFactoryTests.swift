@@ -87,7 +87,7 @@ final class PromoServiceFactoryTests: XCTestCase {
         let promo = await PromoServiceFactory.bookmarkToolbar(dependencies: dependencies)
 
         XCTAssertEqual(promo.id, "bookmark-toolbar")
-        XCTAssertEqual(promo.triggers, [.bookmarkPromptShouldShow])
+        XCTAssertEqual(promo.triggers, [.bookmarkAdded, .bookmarksImported])
         XCTAssertEqual(promo.initiated, .user)
         XCTAssertEqual(promo.promoType.severity, .medium)
         XCTAssertNil(promo.promoType.timeoutInterval)

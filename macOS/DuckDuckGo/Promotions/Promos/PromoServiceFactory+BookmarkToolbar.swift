@@ -27,7 +27,7 @@ extension PromoServiceFactory {
     static func bookmarkToolbar(dependencies: PromoDependencies) -> Promo {
         InternalPromo(
             id: bookmarkToolbarPromoID,
-            triggers: [.bookmarkPromptShouldShow],
+            triggers: [.bookmarkAdded, .bookmarksImported],
             initiated: .user,
             promoType: PromoType(.semiModal),
             context: .global,

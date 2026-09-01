@@ -105,13 +105,25 @@ final class BookmarkToolbarPromoDelegateTests: XCTestCase {
 
     // MARK: - Trigger wiring
 
-    func testWhenBookmarkPromptShouldShowNotificationPosted_thenPromoTriggerFires() {
+    func testWhenBookmarkAddedNotificationPosted_thenPromoTriggerFires() {
         let expectation = expectation(description: "trigger fired")
         let cancellable = PromoTrigger.triggerPublisher
-            .filter { $0 == .bookmarkPromptShouldShow }
+            .filter { $0 == .bookmarkAdded }
             .sink { _ in expectation.fulfill() }
 
-        NotificationCenter.default.post(name: .bookmarkPromptShouldShow, object: nil)
+        NotificationCenter.default.post(name: .bookmarkAdded, object: nil)
+
+        waitForExpectations(timeout: 1)
+        cancellable.cancel()
+    }
+
+    func testWhenBookmarksImportedNotificationPosted_thenPromoTriggerFires() {
+        let expectation = expectation(description: "trigger fired")
+        let cancellable = PromoTrigger.triggerPublisher
+            .filter { $0 == .bookmarksImported }
+            .sink { _ in expectation.fulfill() }
+
+        NotificationCenter.default.post(name: .bookmarksImported, object: nil)
 
         waitForExpectations(timeout: 1)
         cancellable.cancel()

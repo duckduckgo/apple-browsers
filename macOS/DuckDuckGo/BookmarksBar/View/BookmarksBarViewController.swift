@@ -771,9 +771,3 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
     }
 
 }
-
-extension Notification.Name {
-
-    static let bookmarkPromptShouldShow = Notification.Name(rawValue: "bookmarkPromptShouldShow")
-
-}

@@ -202,6 +202,48 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertEqual(dismissalStore.actedSnapshot()?.noticeID, "approaching")
     }
 
+    /// Picking the suggested model in the normal picker leaves the user exactly where the button
+    /// would have, so the message has to go the same way.
+    func testPickingTheSuggestedModelElsewhereStandsItsMessageDown() {
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching),
+                                             cta: DuckAiUsageCta(id: .switchToCheaper),
+                                             signature: "snapshot-1")
+        let sut = makeSUT(suggestion: .suggestion(DuckAiModelSuggestion(modelId: "haiku", modelShortName: "Haiku")))
+        sut.refresh()
+
+        XCTAssertTrue(sut.modelSwitchedToSuggestion("haiku"))
+
+        XCTAssertNil(sut.warning)
+        XCTAssertEqual(dismissalStore.actedSnapshot()?.noticeID, "approaching")
+    }
+
+    /// Any other model is not the advice the message gave, so it keeps standing.
+    func testPickingAnotherModelLeavesTheMessageUp() {
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching),
+                                             cta: DuckAiUsageCta(id: .switchToCheaper),
+                                             signature: "snapshot-1")
+        let sut = makeSUT(suggestion: .suggestion(DuckAiModelSuggestion(modelId: "haiku", modelShortName: "Haiku")))
+        sut.refresh()
+
+        XCTAssertFalse(sut.modelSwitchedToSuggestion("some-other-model"))
+
+        XCTAssertEqual(sut.warning?.message, .approaching)
+        XCTAssertNil(dismissalStore.actedSnapshot())
+    }
+
+    /// A message with no switch to offer has no suggestion to match, whatever the user picks.
+    func testPickingAModelIsIgnoredWhenTheMessageOffersNoSwitch() {
+        snapshotProvider.snapshot = snapshot(notice(id: .freeReached, reached: true),
+                                             cta: DuckAiUsageCta(id: .subscribe))
+        let sut = makeSUT()
+        sut.refresh()
+
+        XCTAssertFalse(sut.modelSwitchedToSuggestion("haiku"))
+
+        XCTAssertEqual(sut.warning?.message, .freeReached)
+        XCTAssertNil(dismissalStore.actedSnapshot())
+    }
+
     /// Only a message that offers the picker can be stood down by it.
     func testAChevronSwitchIsIgnoredWhenTheMessageOffersNoPicker() {
         snapshotProvider.snapshot = snapshot(notice(id: .freeReached, reached: true),

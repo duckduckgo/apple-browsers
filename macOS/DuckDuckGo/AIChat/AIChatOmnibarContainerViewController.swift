@@ -2260,6 +2260,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func modelSelected(_ sender: NSMenuItem) {
         guard let model = sender.representedObject as? AIChatModel else { return }
+        if !isPresentingModelPickerFromUsageCard {
+            // Before the switch, while the message's suggestion still points at what was picked.
+            omnibarController.usageWarningViewModel?.modelSwitchedToSuggestion(model.id)
+        }
         // `updateSelectedModel` calls back into `refreshForSelectedModel`, whichever route changed it.
         omnibarController.updateSelectedModel(model.id)
         if isPresentingModelPickerFromUsageCard {

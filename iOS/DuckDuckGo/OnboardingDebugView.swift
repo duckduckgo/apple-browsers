@@ -21,10 +21,12 @@ import SwiftUI
 import Core
 import Onboarding
 import Persistence
+import AIChat
+import WebExtensions
 
 struct OnboardingDebugView: View {
 
-    @StateObject private var viewModel = OnboardingDebugViewModel()
+    @StateObject private var viewModel: OnboardingDebugViewModel
     @State private var isShowingResetDaxDialogsAlert = false
     @State private var isShowingResetOnboardingAlert = false
     @State private var isShowingSubscriptionPromoCooldownAlert = false
@@ -33,7 +35,8 @@ struct OnboardingDebugView: View {
 
     private let newOnboardingIntroStartAction: () -> Void
 
-    init(onNewOnboardingIntroStartAction: @escaping @MainActor () -> Void) {
+    init(keyValueStore: ThrowingKeyValueStoring, adBlockingAvailability: AdBlockingAvailabilityProviding, onNewOnboardingIntroStartAction: @escaping @MainActor () -> Void) {
+        _viewModel = StateObject(wrappedValue: OnboardingDebugViewModel(keyValueStore: keyValueStore, adBlockingAvailability: adBlockingAvailability))
         newOnboardingIntroStartAction = onNewOnboardingIntroStartAction
     }
 
@@ -184,6 +187,7 @@ final class OnboardingDebugViewModel: ObservableObject {
     private let statisticsStore: StatisticsUserDefaults
     private let userDefaults: UserDefaults
     private var appSettings: OnboardingDebugAppSettings
+    private let personalizationManager: OnboardingPersonalizationManager
 
     /// Keys duplicated here (rather than exposed publicly) so production types don't grow
     /// a debug-only reset surface. Keep in sync with the originals:
@@ -194,12 +198,14 @@ final class OnboardingDebugViewModel: ObservableObject {
     private static let didApplyOnboardingChoiceSettingsKey = "com.duckduckgo.ios.onboarding.didApplyOnboardingChoiceSettings"
 
     init(
+        keyValueStore: ThrowingKeyValueStoring,
+        adBlockingAvailability: AdBlockingAvailabilityProviding,
         manager: OnboardingNewUserProviderDebugging = OnboardingManager(),
         settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
         statisticsStore: StatisticsUserDefaults = StatisticsUserDefaults(),
         userDefaults: UserDefaults = .app,
-        appSettings: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings
+        appSettings: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings,
     ) {
         self.manager = manager
         self.settings = settings
@@ -210,14 +216,29 @@ final class OnboardingDebugViewModel: ObservableObject {
         onboardingUserType = manager.onboardingUserTypeDebugValue
         forceRestorePromptEligible = appSettings.onboardingForceRestorePromptEligible
         forcedOnboardingFlowType = appSettings.onboardingFlowType
+
+        let serpSettings = SERPSettingsProvider(aiChatProvider: AIChatSettings())
+        serpSettings.keyValueStore = keyValueStore
+
+        personalizationManager = OnboardingPersonalizationManager(
+            appSettings: AppUserDefaults(),
+            serpSettings: serpSettings,
+            aiChatSettings: AIChatSettings(),
+            aiModelSettings: OnboardingAIModelAdapter(persistor: AIChatPreferencesPersistor()),
+            youTubeAdBlocking: OnboardingYouTubeAdBlockingAdapter(
+                keyValueStore: keyValueStore,
+                adBlockingAvailability: adBlockingAvailability
+            )
+        )
     }
 
     func resetAllOnboarding() {
-        tutorialSettings.hasSeenOnboarding = false
-        // Clear the persisted flow type so the next launch re-evaluates default vs Duck.ai.
-        tutorialSettings.onboardingFlowType = nil
-        // Clear the persisted download reason.
-        tutorialSettings.onboardingDownloadReason = nil
+        // Clear all the preferences the user selected during onboarding
+        personalizationManager.resetDefaultSettings()
+        // Clear all the persisted information collected during the onboarding used to branch off different onboarding path.
+        // - Clear the persisted flow type so the next launch re-evaluates default vs Duck.ai
+        // - Clear the persisted download reason.
+        tutorialSettings.reset()
         // Drop any resume-step checkpoint left over from a partial onboarding run, and
         // clear the onboarding pixel context (source/flow/variant) so it's re-recorded
         // when the next onboarding run begins. `KeyedStorage` is constructed directly
@@ -284,6 +305,26 @@ extension OnboardingUserType: Identifiable {
     }
 }
 
-#Preview {
-    OnboardingDebugView(onNewOnboardingIntroStartAction: { })
+// MARK: - Helpers
+
+private extension TutorialSettings {
+
+    func reset() {
+        hasSeenOnboarding = false
+        hasSkippedOnboarding = false
+        onboardingFlowType = nil
+        onboardingDownloadReason = nil
+    }
+}
+
+private extension OnboardingPersonalizationManaging {
+
+    // Reverts the default settings set in `OnboardingPersonalizationManager.applyDefaults(for:)`
+    func resetDefaultSettings() {
+        // Revert the disabled AI features, Search Assist, Duck.ai and AI generated images when user previously selected no AI.
+        setSearchAssist(true)
+        setAIGeneratedImagesHidden(false)
+        setDuckAIEnabled(true)
+    }
+
 }

@@ -281,8 +281,12 @@ extension DebugScreensViewModel {
 
                 weak var capturedController: OnboardingDebugViewController?
 
-                // swiftlint:disable:next empty_parentheses_with_trailing_closure
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView() {
+                let adBlockingAvailability = AdBlockingAvailability(
+                    featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                    isEnabledByUserProvider: { false }
+                )
+
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(keyValueStore: d.keyValueStore, adBlockingAvailability: adBlockingAvailability) {
                     guard let capturedController else { return }
 
                     let viewModel = OnboardingIntroFactory.makeViewModel(
@@ -293,10 +297,7 @@ extension DebugScreensViewModel {
                         onboardingManager: OnboardingManager(),
                         // Debug preview: a self-contained store/availability is fine here.
                         keyValueStore: UserDefaults.app,
-                        adBlockingAvailability: AdBlockingAvailability(
-                            featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                            isEnabledByUserProvider: { false }
-                        )
+                        adBlockingAvailability: adBlockingAvailability
                     )
                     let controller = OnboardingIntroFactory.makeController(
                         viewModel: viewModel,

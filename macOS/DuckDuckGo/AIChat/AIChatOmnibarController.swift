@@ -152,6 +152,10 @@ final class AIChatOmnibarController {
     /// The card's subscribe CTA. The container VC owns the dialog, and the window it has to open in.
     var onSubscriptionUpsellDialogRequested: ((SubscriptionFunnelOrigin) -> Void)?
 
+    /// Set by the container VC from the card it renders; the text VC listens so the prompt goes
+    /// inert alongside the buttons.
+    @Published var isInputBlockedByUsageLimit = false
+
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):

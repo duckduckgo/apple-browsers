@@ -202,6 +202,28 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertEqual(dismissalStore.actedSnapshot()?.noticeID, "approaching")
     }
 
+    /// A spent allowance takes the input with it: the card is the only thing left to act on.
+    func testAReachedMessageBlocksTheInput() {
+        for id in [DuckAiUsageNotice.ID.freeReached, .dailyReached, .weeklyReachedDegraded, .weeklyReached] {
+            snapshotProvider.snapshot = snapshot(notice(id: id, reached: true))
+            let sut = makeSUT()
+            sut.refresh()
+
+            XCTAssertEqual(sut.warning?.blocksInput, true, "\(id.rawValue) should block the input")
+        }
+    }
+
+    /// Approaching is a heads-up, not a stop: the user still has allowance to spend.
+    func testAnApproachingMessageLeavesTheInputAlone() {
+        for percent in [50, 75, 90] {
+            snapshotProvider.snapshot = snapshot(notice(id: .approaching, percentUsed: percent))
+            let sut = makeSUT()
+            sut.refresh()
+
+            XCTAssertEqual(sut.warning?.blocksInput, false, "approaching \(percent)% should not block the input")
+        }
+    }
+
     /// Picking the suggested model in the normal picker leaves the user exactly where the button
     /// would have, so the message has to go the same way.
     func testPickingTheSuggestedModelElsewhereStandsItsMessageDown() {
@@ -337,11 +359,12 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
 
     private func notice(id: DuckAiUsageNotice.ID,
                         window: DuckAiUsageWindow = .daily,
+                        percentUsed: Int? = nil,
                         resetsAt: Date? = nil,
                         reached: Bool = false) -> DuckAiUsageNotice {
         DuckAiUsageNotice(id: id,
                           window: window,
-                          percentUsed: reached ? 100 : 75,
+                          percentUsed: percentUsed ?? (reached ? 100 : 75),
                           resetsAt: resetsAt ?? now.addingTimeInterval(5 * 3600),
                           reached: reached,
                           dismissible: !reached)

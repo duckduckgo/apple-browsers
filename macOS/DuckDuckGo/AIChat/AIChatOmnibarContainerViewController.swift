@@ -323,7 +323,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     var isModelPickerButtonAvailableForFocus: Bool {
-        !modelPickerButton.isHidden
+        !modelPickerButton.isHidden && modelPickerButton.isEnabled
     }
 
     /// Returns the first visible and enabled tool button available for focus.
@@ -576,7 +576,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
     }
 
-    private func applySubmitButtonAppearance(enabled: Bool) {
+    private func applySubmitButtonAppearance(enabled requested: Bool) {
+        let enabled = requested && !isInputBlockedByUsageLimit
         submitButton.isEnabled = enabled
         // Tints. Both modes keep the icon constant across hover/press; only the fill animates,
         // so `mouseOverTintColor` / `mouseDownTintColor` stay nil.
@@ -712,9 +713,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Disable only when we'd be entering the legacy direct-file-picker path AND images are at
         // cap. With the tab picker enabled the button always opens the menu (which conditionally
         // omits the image item itself when full), so the outer button stays interactive.
-        imageUploadButton.isEnabled = omnibarController.isOmnibarTabPickerEnabled || !omnibarController.isActiveTabImageAttachmentsFull
+        imageUploadButton.isEnabled = !isInputBlockedByUsageLimit
+            && (omnibarController.isOmnibarTabPickerEnabled || !omnibarController.isActiveTabImageAttachmentsFull)
         modelPickerButton.isHidden = !shouldShowModelPicker
         toolsButton.label = omnibarController.activeToolMode != nil ? nil : UserText.aiChatToolsButtonLabel
+        for button in focusableToolButtons where button !== imageUploadButton {
+            button.isEnabled = !isInputBlockedByUsageLimit
+        }
+        modelPickerButton.isEnabled = !isInputBlockedByUsageLimit
 
         // The carousel row's height is recomputed centrally via `updateAttachmentsCarouselLayout()`.
         if !shouldShowAttachments {
@@ -1203,12 +1209,28 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Not gated on `shouldSuppressSuggestions`: image-gen mode and attachments still spend the
     /// allowance, so the message stays up where suggestions don't.
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
+        applyInputBlock(warning?.blocksInput == true)
         if let warning {
             usageWarningCardView.update(with: warning)
             setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
             return
         }
         applyHighUsageNotice()
+    }
+
+    /// Spent allowance: the whole input goes inert so the card is the only thing left to act on,
+    /// matching the web app. The mode toggle is not ours and stays live — otherwise the user is
+    /// stuck in a Duck.ai input they can neither use nor leave.
+    private func applyInputBlock(_ blocked: Bool) {
+        guard isInputBlockedByUsageLimit != blocked else { return }
+
+        isInputBlockedByUsageLimit = blocked
+        omnibarController.isInputBlockedByUsageLimit = blocked
+        // Each of these owns its own enablement rule, so re-run them rather than assigning here.
+        updateSubmitButtonState(for: omnibarController.currentText)
+        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
+        suggestionsView.isHidden = shouldSuppressSuggestions
+        updateSuggestionsHeight(shouldSuppressSuggestions ? 0 : lastKnownSuggestionsHeight)
     }
 
     /// The fallback when no allowance message applies: web shows the same one, and shows it here too.
@@ -1259,6 +1281,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private var isPresentingModelPickerFromUsageCard = false
 
+    /// Mirrors the controller's copy; kept here so the apply can early-out on no change.
+    private var isInputBlockedByUsageLimit = false
+
     /// Beside the usage warnings rather than part of them: it keys off the selected model, not the
     /// allowance. The warning wins the card when both apply.
     private lazy var highUsageNoticeSource: AIChatHighUsageNoticeSource? = {
@@ -1272,7 +1297,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isSuggestionsCollapsedByUnfocus: Bool = false
 
     private var shouldSuppressSuggestions: Bool {
-        omnibarController.isImageGenerationMode
+        isInputBlockedByUsageLimit
+            || omnibarController.isImageGenerationMode
             || !omnibarController.activeImageAttachments.isEmpty
             || !attachmentsCarouselView.attachments.isEmpty
             || isSuggestionsCollapsedByUnfocus
@@ -2032,9 +2058,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // The button stays enabled if image room remains, file room remains, OR the tab picker
         // is on (the menu always has the Attach Page Content option).
         if omnibarController.isOmnibarToolsEnabled {
-            imageUploadButton.isEnabled = omnibarController.isOmnibarTabPickerEnabled
-                || !isFull
-                || canPickAdditionalFiles
+            imageUploadButton.isEnabled = !isInputBlockedByUsageLimit
+                && (omnibarController.isOmnibarTabPickerEnabled || !isFull || canPickAdditionalFiles)
             // "Limit reached" tooltip only when the picker is the only path AND it's exhausted
             // for both kinds — otherwise the default tooltip stays so the user knows they can
             // still attach the other kind.

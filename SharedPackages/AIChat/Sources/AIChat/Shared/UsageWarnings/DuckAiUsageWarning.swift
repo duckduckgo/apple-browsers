@@ -155,6 +155,10 @@ public struct DuckAiUsageWarning: Equatable {
     /// The `>` beside the primary action, opening the native model picker.
     public let offersModelPicker: Bool
 
+    /// The allowance is spent, so the next prompt can't be: the input goes inert and this message
+    /// is the only thing left to act on, as it is on the web app.
+    public var blocksInput: Bool { severity == .reached }
+
     public init(window: DuckAiUsageWindow,
                 message: DuckAiUsageMessage,
                 severity: DuckAiUsageSeverity,

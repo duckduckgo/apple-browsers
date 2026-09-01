@@ -306,7 +306,8 @@ final class BrowserToolbarView: UIView {
 
     /// Horizontal compensation for the combined bottom chrome. Its host is pinned to the
     /// corner-adapted guide, so this keeps the glass at the same physical inset on every edge
-    /// unless the guide already exceeds that inset.
+    /// unless the guide already exceeds that inset. Each edge is compensated from its own guide:
+    /// in landscape the Dynamic Island only enlarges the guide on one side.
     @available(iOS 26.0, *)
     private var embeddedRestStateOuterInsets: UIEdgeInsets {
         guard let host = superview, host.bounds.width > 0 else {
@@ -316,10 +317,20 @@ final class BrowserToolbarView: UIView {
                 bottom: 0,
                 right: Self.floatingEmbeddedConcentricInset)
         }
-        let guide = host.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
-        let guideInset = max(0, guide.layoutFrame.minX)
-        let inner = Self.embeddedRestStateInnerInset(guideInset: guideInset)
-        return UIEdgeInsets(top: 0, left: inner, bottom: 0, right: inner)
+        let guideInsets = Self.horizontalGuideInsets(in: host)
+        return UIEdgeInsets(
+            top: 0,
+            left: Self.embeddedRestStateInnerInset(guideInset: guideInsets.left),
+            bottom: 0,
+            right: Self.embeddedRestStateInnerInset(guideInset: guideInsets.right))
+    }
+
+    /// Distance from each physical edge of `view` to its corner-adapted safe area guide.
+    @available(iOS 26.0, *)
+    static func horizontalGuideInsets(in view: UIView) -> (left: CGFloat, right: CGFloat) {
+        let guide = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+        return (max(0, guide.layoutFrame.minX),
+                max(0, view.bounds.maxX - guide.layoutFrame.maxX))
     }
 
     private var currentButtonRowHorizontalPadding: CGFloat {
@@ -481,8 +492,10 @@ final class BrowserToolbarView: UIView {
 
     private func applyHorizontalChromeMetrics() {
         let insets = currentBarOuterInsets
-        materialBackgroundLeadingConstraint.constant = insets.left
-        materialBackgroundTrailingConstraint.constant = -insets.right
+        // `insets` are physical (left/right); these constraints are directional, so mirror in RTL.
+        let isRightToLeft = effectiveUserInterfaceLayoutDirection == .rightToLeft
+        materialBackgroundLeadingConstraint.constant = isRightToLeft ? insets.right : insets.left
+        materialBackgroundTrailingConstraint.constant = isRightToLeft ? -insets.left : -insets.right
         if !hasExpandedContent {
             materialBackgroundTopConstraint.constant = insets.top
         }
@@ -836,12 +849,9 @@ final class BrowserToolbarView: UIView {
         let bottom: CGFloat
         if #available(iOS 26.0, *) {
             if usesCombinedBottomChromeGeometry {
-                let horizontalGuide = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
-                let leftGuideInset = max(0, horizontalGuide.layoutFrame.minX)
-                let rightGuideInset = max(0, bounds.maxX - horizontalGuide.layoutFrame.maxX)
-                let inner = Self.embeddedRestStateInnerInset(guideInset: leftGuideInset)
-                left = leftGuideInset + inner
-                right = rightGuideInset + inner
+                let guideInsets = Self.horizontalGuideInsets(in: view)
+                left = guideInsets.left + Self.embeddedRestStateInnerInset(guideInset: guideInsets.left)
+                right = guideInsets.right + Self.embeddedRestStateInnerInset(guideInset: guideInsets.right)
                 bottom = bounds.maxY - Self.floatingEmbeddedConcentricInset
             } else {
                 let horizontalGuide = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))

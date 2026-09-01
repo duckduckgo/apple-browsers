@@ -90,10 +90,13 @@ final class BrowserToolbarViewTests: XCTestCase {
             return view.subviews.lazy.compactMap { visualEffectView(in: $0) }.first
         }
 
-        let glass = visualEffectView(in: sut)
-        XCTAssertEqual(glass?.transform.a, 1, accuracy: 0.001)
-        XCTAssertEqual(glass?.transform.d, 1, accuracy: 0.001)
-        XCTAssertEqual(glass?.transform.ty, 0, accuracy: 0.001)
+        guard let glass = visualEffectView(in: sut) else {
+            XCTFail("Missing glass effect view")
+            return
+        }
+        XCTAssertEqual(glass.transform.a, 1, accuracy: 0.001)
+        XCTAssertEqual(glass.transform.d, 1, accuracy: 0.001)
+        XCTAssertEqual(glass.transform.ty, 0, accuracy: 0.001)
     }
 
     func testWhenStandaloneCollapseProgressIsAppliedThenIconsAreNotInsideGlassContentView() {
@@ -174,7 +177,12 @@ final class BrowserToolbarViewTests: XCTestCase {
 
     func testWhenStandaloneFloatingThenOuterInsetFollowsConcentricSafeArea() {
         let sut = makeSUT(embeddedOmnibar: false)
-        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        // The safe area layout guide only resolves inside a window; without one it stays empty
+        // and the trailing edge is measured against a degenerate guide.
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        let container = UIView(frame: window.bounds)
+        window.addSubview(container)
+        window.makeKeyAndVisible()
         container.addSubview(sut)
         container.layoutIfNeeded()
 
@@ -224,6 +232,26 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: concentric + 1), 0, accuracy: 0.01)
         XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: 59), 0, accuracy: 0.01)
         XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: -8), concentric, accuracy: 0.01)
+    }
+
+    func testWhenGuidesAreAsymmetricThenEachEdgeIsCompensatedFromItsOwnGuide() {
+        guard #available(iOS 26.0, *) else { return }
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        // Landscape with the Dynamic Island on the leading edge only.
+        let container = SafeAreaStubView(frame: CGRect(x: 0, y: 0, width: 844, height: 390))
+        container.stubbedSafeAreaInsets = UIEdgeInsets(top: 0, left: concentric + 39, bottom: 21, right: 0)
+        let sut = makeSUT(embeddedOmnibar: true)
+        container.addSubview(sut)
+        container.layoutIfNeeded()
+
+        let frame = sut.restingCapsuleFrame(in: container)
+        let guideInsets = BrowserToolbarView.horizontalGuideInsets(in: container)
+
+        // Each edge sits at its own guide, or at the concentric inset when the guide is smaller.
+        XCTAssertEqual(frame.minX, max(guideInsets.left, concentric), accuracy: 0.01)
+        XCTAssertEqual(container.bounds.width - frame.maxX, max(guideInsets.right, concentric), accuracy: 0.01)
+        // The wide leading guide must not pull the opposite edge inside the concentric inset.
+        XCTAssertGreaterThanOrEqual(container.bounds.width - frame.maxX, concentric - 0.01)
     }
 
     func testWhenBottomOmnibarDetachesForFocusThenOuterInsetsStayUnchanged() {
@@ -329,4 +357,16 @@ final class BrowserToolbarViewTests: XCTestCase {
             115,
             accuracy: 0.01)
     }
+}
+
+private final class SafeAreaStubView: UIView {
+
+    var stubbedSafeAreaInsets: UIEdgeInsets = .zero {
+        didSet { setNeedsLayout() }
+    }
+
+    override var safeAreaInsets: UIEdgeInsets {
+        stubbedSafeAreaInsets
+    }
+
 }

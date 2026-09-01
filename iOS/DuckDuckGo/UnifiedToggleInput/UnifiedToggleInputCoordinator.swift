@@ -263,7 +263,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
     private let isUpdatedCreateImageEnabled: Bool
-    private let createImageModelSwitcher: CreateImageModelSwitcher
+    private lazy var createImagePixelFiring: CreateImagePixelFiring = CreateImagePixelAdapter(
+        surface: { [weak self] in self?.pixelSurface ?? .addressBar }
+    )
+    private lazy var createImageModelSwitcher = CreateImageModelSwitcher(
+        isFeatureEnabled: isUpdatedCreateImageEnabled,
+        pixelFiring: createImagePixelFiring
+    )
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -326,7 +332,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.isUpdatedCreateImageEnabled = updatedCreateImageFeature.isAvailable
-        self.createImageModelSwitcher = CreateImageModelSwitcher(isFeatureEnabled: updatedCreateImageFeature.isAvailable)
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
@@ -915,7 +920,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         footerController = UTIFooterController(viewModel: viewModel,
                                               highUsageNotice: makeHighUsageNoticeSource(),
-                                              measurement: makeUsageWarningMeasurement())
+                                              measurement: makeUsageWarningMeasurement(),
+                                              createImagePixelFiring: createImagePixelFiring)
         footerController?.presenter = viewController
 
         // Also what brings a message back after the user has acted on the previous one.
@@ -1580,9 +1586,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelReporter.reportModelPickerShown()
     }
 
-    func selectTool(_ tool: AIChatRAGTool) {
+    func selectTool(_ tool: AIChatRAGTool, createImageEntryPoint: CreateImageEntryPoint? = nil) {
         if tool == .imageGeneration {
-            selectImageGeneration()
+            selectImageGeneration(entryPoint: createImageEntryPoint)
         } else {
             toolsController.select(tool, for: modelStore)
         }
@@ -1677,16 +1683,18 @@ extension UnifiedToggleInputCoordinator {
             toolsController: toolsController,
             modelStore: modelStore,
             canSwitchModel: canSwitchModelForImageGeneration,
+            entryPoint: .toolsMenu,
             applyModel: { modelSelector.updateSelectedModel($0) }
         )
         showModelSwitchNoticeIfNeeded(notice)
     }
 
-    private func selectImageGeneration() {
+    private func selectImageGeneration(entryPoint: CreateImageEntryPoint?) {
         let notice = createImageModelSwitcher.select(
             toolsController: toolsController,
             modelStore: modelStore,
             canSwitchModel: canSwitchModelForImageGeneration,
+            entryPoint: entryPoint,
             applyModel: { modelSelector.updateSelectedModel($0) }
         )
         showModelSwitchNoticeIfNeeded(notice)

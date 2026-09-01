@@ -28,6 +28,7 @@ final class UTIFooterControllerTests: XCTestCase {
     private var presenter: SpyUTIFooterPresenter!
     private var viewModel: DuckAiUsageWarningViewModel!
     private var measurementFiring: RecordingUsageWarningPixelFiring!
+    private var createImagePixelFiring: MockCreateImagePixelFiring!
     private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
     private var animationCount = 0
     private var sut: UTIFooterController!
@@ -39,12 +40,14 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider = StubUsageLimitsProvider()
         presenter = SpyUTIFooterPresenter()
         measurementFiring = RecordingUsageWarningPixelFiring()
+        createImagePixelFiring = MockCreateImagePixelFiring()
         selectedModel = (nil, nil)
         animationCount = 0
         viewModel = makeViewModel()
         sut = UTIFooterController(viewModel: viewModel,
                                   highUsageNotice: makeNoticeSource(),
                                   measurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
+                                  createImagePixelFiring: createImagePixelFiring,
                                   animator: { [unowned self] changes in
                                       animationCount += 1
                                       changes()
@@ -57,6 +60,7 @@ final class UTIFooterControllerTests: XCTestCase {
         viewModel = nil
         presenter = nil
         measurementFiring = nil
+        createImagePixelFiring = nil
         limitsProvider = nil
         super.tearDown()
     }
@@ -600,6 +604,68 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.dismissCurrent()
 
         XCTAssertEqual(measurementFiring.events, [.shown(approachingExposure(percentBucket: 75))])
+    }
+
+    // MARK: - Create Image pixels
+
+    func test_createImagePixels_whenTheUserClosesTheNotice_reportsTheDismissal() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.dismissCurrent()
+
+        XCTAssertEqual(createImagePixelFiring.noticeDismissedCount, 1)
+    }
+
+    func test_createImagePixels_whenTheNoticeIsClearedAutomatically_reportsNothing() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.clearModelSwitchNotice()
+
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
+    }
+
+    func test_createImagePixels_whenThePoseChangesWhileTheNoticeIsStored_reportsNothing() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.resetForPoseChange()
+
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
+    }
+
+    func test_createImagePixels_whenTheInputIsSuppressedWhileTheNoticeIsStored_reportsNothing() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.setSuppressed(true)
+
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
+    }
+
+    func test_createImagePixels_whenTheUserClosesAUsageWarning_reportsNothing() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+
+        sut.dismissCurrent()
+
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
+    }
+
+    func test_createImagePixels_whenTheNoticeAndThenTheWarningAreClosed_reportsOneDismissal() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.dismissCurrent()
+        sut.dismissCurrent()
+
+        XCTAssertEqual(createImagePixelFiring.noticeDismissedCount, 1)
+    }
+
+    func test_createImagePixels_whenThePrimaryActionRunsWhileTheNoticeIsVisible_reportsNothing() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.performPrimaryAction()
+
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
     }
 
     // MARK: - Helpers

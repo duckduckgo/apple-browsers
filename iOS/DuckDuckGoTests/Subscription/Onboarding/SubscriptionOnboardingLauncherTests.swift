@@ -23,6 +23,7 @@ import SwiftUI
 import Persistence
 import Subscription
 import SubscriptionTestingUtilities
+import DataBrokerProtection_iOS
 @testable import DuckDuckGo
 
 @MainActor
@@ -30,16 +31,22 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
 
     private var subscriptionManager: SubscriptionManagerMock!
     private var vpnController: MockVPNController!
+    private var profileStateManager: MockDBPProfileStateManager!
+    private var freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
 
     override func setUp() {
         super.setUp()
         subscriptionManager = SubscriptionManagerMock()
         vpnController = MockVPNController(isConfigured: false)
+        profileStateManager = MockDBPProfileStateManager(profileState: .noProfile)
+        freemiumDBPUserStateManager = MockFreemiumDBPUserStateManager(didActivate: false)
     }
 
     override func tearDown() {
         subscriptionManager = nil
         vpnController = nil
+        profileStateManager = nil
+        freemiumDBPUserStateManager = nil
         super.tearDown()
     }
 
@@ -59,6 +66,8 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             subscriptionManager: subscriptionManager,
             onFinish: {},
             vpnController: vpnController,
+            profileStateManager: profileStateManager,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -78,10 +87,73 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             subscriptionManager: subscriptionManager,
             onFinish: {},
             vpnController: MockVPNController(isConfigured: true),
+            profileStateManager: profileStateManager,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
         XCTAssertEqual(flow.sequence, [.orderConfirmation, .welcome, .vpnWidget, .vpnTips, .idtr, .duckAI, .progress])
+    }
+
+    /// An existing PIR profile marks `.pir` complete — mirrors the VPN backfill above. `.pir` isn't a
+    /// section, so this checks `completedItems`/completion percentage rather than `sequence`.
+    func testWhenAPIRProfileAlreadyExistsThenPIRIsMarkedComplete() async throws {
+        subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
+                                              .identityTheftRestoration, .identityTheftRestorationGlobal,
+                                              .paidAIChat]
+
+        let result = await SubscriptionOnboardingFlowViewModel.postCheckout(
+            persistor: makePersistor(),
+            isPIRAvailable: true,
+            subscriptionManager: subscriptionManager,
+            onFinish: {},
+            vpnController: vpnController,
+            profileStateManager: MockDBPProfileStateManager(profileState: .hasProfile),
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
+
+        XCTAssertTrue(flow.progress.completedItems.contains(.pir))
+    }
+
+    /// A freemium activation with no saved profile yet also counts — matches `SettingsViewModel.isPIRActivated`.
+    func testWhenFreemiumDidActivateButNoProfileExistsThenPIRIsStillMarkedComplete() async throws {
+        subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
+                                              .identityTheftRestoration, .identityTheftRestorationGlobal,
+                                              .paidAIChat]
+
+        let result = await SubscriptionOnboardingFlowViewModel.postCheckout(
+            persistor: makePersistor(),
+            isPIRAvailable: true,
+            subscriptionManager: subscriptionManager,
+            onFinish: {},
+            vpnController: vpnController,
+            profileStateManager: profileStateManager,
+            freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager(didActivate: true),
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
+
+        XCTAssertTrue(flow.progress.completedItems.contains(.pir))
+    }
+
+    /// No existing profile and no freemium activation: `.pir` stays unmarked, same as before this backfill.
+    func testWhenNoPIRProfileOrFreemiumActivationExistsThenPIRIsNotMarkedComplete() async throws {
+        subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
+                                              .identityTheftRestoration, .identityTheftRestorationGlobal,
+                                              .paidAIChat]
+
+        let result = await SubscriptionOnboardingFlowViewModel.postCheckout(
+            persistor: makePersistor(),
+            isPIRAvailable: true,
+            subscriptionManager: subscriptionManager,
+            onFinish: {},
+            vpnController: vpnController,
+            profileStateManager: profileStateManager,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
+
+        XCTAssertFalse(flow.progress.completedItems.contains(.pir))
     }
 
     /// The fetched entitlement, not a caller-supplied default, is what gates the built flow's sequence.
@@ -94,6 +166,8 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             subscriptionManager: subscriptionManager,
             onFinish: {},
             vpnController: vpnController,
+            profileStateManager: profileStateManager,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -111,6 +185,8 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             subscriptionManager: subscriptionManager,
             onFinish: {},
             vpnController: vpnController,
+            profileStateManager: profileStateManager,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             pirScreen: { EmptyView() })
 
         XCTAssertNil(flow)
@@ -176,4 +252,25 @@ private struct MockVPNController: SubscriptionOnboardingVPNControlling {
 
     func start() async {}
     func isVPNConfigured() async -> Bool { isConfigured }
+}
+
+private struct MockDBPProfileStateManager: DBPProfileStateManaging {
+    let profileState: DBPProfileState
+
+    func recordProfileSaved() {}
+    func recordProfileDeleted() {}
+    func reconcileProfileState(hasSavedProfile: Bool) {}
+}
+
+private struct MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
+    let didActivate: Bool
+
+    var firstProfileSavedTimestamp: Date? { nil }
+    var firstScanResult: FreemiumFirstScanResult? { nil }
+    var upgradeToSubscriptionTimestamp: Date? { nil }
+
+    func recordProfileSavedIfNeeded() async {}
+    func recordFirstScanResultIfNeeded(hasMatches: Bool) async {}
+    func recordSubscriptionUpgradeIfEligible() async {}
+    func resetAllState() {}
 }

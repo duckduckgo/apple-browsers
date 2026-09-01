@@ -19,6 +19,7 @@
 
 import Subscription
 import SwiftUI
+import DataBrokerProtection_iOS
 import os.log
 
 enum SubscriptionOnboardingEntryPoint {
@@ -59,17 +60,23 @@ extension SubscriptionOnboardingLauncher {
 extension SubscriptionOnboardingFlowViewModel {
 
     /// Walks the whole flow from the order confirmation.
-    ///  A VPN configuration already installed marks `.vpn` complete.
+    ///  A VPN configuration already installed marks `.vpn` complete;
+    ///  an existing PIR profile marks `.pir` complete.
     static func postCheckout<PIRScreen: View>(persistor: SubscriptionOnboardingProgressPersisting,
                                               isPIRAvailable: Bool,
                                               subscriptionManager: any SubscriptionManager,
                                               onFinish: @escaping () -> Void,
                                               vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
+                                              profileStateManager: DBPProfileStateManaging = DefaultDBPProfileStateManager(keyValueStore: UserDefaults.dbp),
+                                              freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp, isUserAuthenticated: { false }, isFreemiumEnabled: { false }),
                                               @ViewBuilder pirScreen: @escaping () -> PIRScreen) async
     -> SubscriptionOnboardingFlowViewModel? {
         var persistor = persistor
         if await vpnController.isVPNConfigured() {
             persistor.markComplete(.vpn)
+        }
+        if profileStateManager.profileState == .hasProfile || freemiumDBPUserStateManager.didActivate {
+            persistor.markComplete(.pir)
         }
         return await makeFlow(entryPoint: .postCheckout,
                               persistor: persistor,

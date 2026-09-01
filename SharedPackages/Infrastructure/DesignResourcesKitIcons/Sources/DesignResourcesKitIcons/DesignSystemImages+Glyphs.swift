@@ -211,6 +211,7 @@ public extension DesignSystemImages {
             public static var clock: DesignSystemImage { .init(resource: .clock16) }
             public static var close: DesignSystemImage { .init(resource: .close16) }
             public static var closeOutline: DesignSystemImage { .init(resource: .closeOutline16) }
+            public static var closeSmall: DesignSystemImage { .init(resource: .closeSmall16) }
             public static var closeSolidAlt: DesignSystemImage { .init(resource: .closeSolidAlt16) }
             public static var cookie: DesignSystemImage { .init(resource: .cookie16) }
             public static var cookieWhole: DesignSystemImage { .init(resource: .cookieWhole16) }

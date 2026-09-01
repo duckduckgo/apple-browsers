@@ -282,15 +282,19 @@ class FireExecutor: FireExecuting {
         let shouldBurnAIChats = shouldBurnAIHistory(request)
         
         // Pre-fetch domains once for tab scope when tabs or data burning is needed
-        let domains: [String]?
+        let domainResult: Result<[String], Error>?
         if case .tab(let viewModel) = request.scope, shouldBurnTabs || shouldBurnData {
-            domains = await Array(viewModel.visitedDomains())
+            domainResult = await viewModel.visitedDomains().map(Array.init)
         } else {
-            domains = nil
+            domainResult = nil
         }
+        let domains = domainResult.map { (try? $0.get()) ?? [] }
         
         // Start async tasks
-        async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(request: request, applicationState: applicationState, domains: domains) : ()
+        async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(
+            request: request,
+            applicationState: applicationState,
+            domainResult: domainResult) : ()
         
         async let aiTask: Void = shouldBurnAIChats ? burnAIHistory(request: request) : ()
 
@@ -393,9 +397,9 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnDataWithDelegateCallbacks(request: FireRequest,
                                                applicationState: DataStoreWarmup.ApplicationState,
-                                               domains: [String]?) async {
+                                               domainResult: Result<[String], Error>?) async {
         delegate?.willStartBurningData(fireRequest: request)
-        await burnData(scope: request.scope, applicationState: applicationState, domains: domains)
+        await burnData(scope: request.scope, applicationState: applicationState, domainResult: domainResult)
         delegate?.didFinishBurningData(fireRequest: request)
     }
     
@@ -481,22 +485,22 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnData(scope: FireRequest.Scope,
                           applicationState: DataStoreWarmup.ApplicationState,
-                          domains: [String]?) async {
+                          domainResult: Result<[String], Error>?) async {
         await dataStoreWarmupWorker.setApplicationState(applicationState)
-        await dataStoreWarmupWorker.execute(scope: scope, domains: domains, fireModeCapability: fireModeCapability)
+        await dataStoreWarmupWorker.execute(scope: scope, domainResult: domainResult, fireModeCapability: fireModeCapability)
         
         let measurement = pixelsReporter.beginMeasurement()
 
         await withTaskGroup(of: Void.self) { group in
             for worker in fireWorkers {
                 group.addTask {
-                    await worker.execute(scope: scope, domains: domains, fireModeCapability: self.fireModeCapability)
+                    await worker.execute(scope: scope, domainResult: domainResult, fireModeCapability: self.fireModeCapability)
                 }
             }
         }
         let duration = pixelsReporter.duration(of: measurement)
         pixelsReporter.fireDataClearingCompletionPixel(dataClearingCompletionPixel(for: scope,
-                                                                                  domains: domains,
+                                                                                  domains: domainResult.map { (try? $0.get()) ?? [] },
                                                                                   duration: duration))
     }
 

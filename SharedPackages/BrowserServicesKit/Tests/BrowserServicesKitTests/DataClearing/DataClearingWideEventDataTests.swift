@@ -361,6 +361,23 @@ final class DataClearingWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.clear_favicon_cache_status"] as? String, "SUCCESS")
     }
 
+    func testJSONParameters_clearPermissionsIncludesSchemaKeys() {
+        let eventData = DataClearingWideEventData(
+            trigger: .manualFire,
+            contextData: WideEventContextData(name: "test-context")
+        )
+        let start = Date()
+        eventData.clearPermissionsDuration = WideEvent.MeasuredInterval(start: start, end: start.addingTimeInterval(1))
+        eventData.clearPermissionsStatus = .failure
+        eventData.clearPermissionsError = WideEventErrorData(error: NSError(domain: "PermissionsError", code: 1))
+
+        let params = eventData.jsonParameters()
+
+        XCTAssertEqual(params["feature.data.ext.clear_permissions_latency_ms"] as? Int, 1000)
+        XCTAssertEqual(params["feature.data.ext.clear_permissions_status"] as? String, "FAILURE")
+        XCTAssertEqual(params["feature.data.ext.clear_permissions_error.domain"] as? String, "PermissionsError")
+    }
+
     func testJSONParameters_partiallyFailedFlow_withMixedStatuses() {
         // Given
         let eventData = DataClearingWideEventData(
@@ -836,7 +853,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
         #elseif os(macOS)
         XCTAssertEqual(DataClearingWideEventData.metadata.type, "macos-data-clearing")
         #endif
-        XCTAssertEqual(DataClearingWideEventData.metadata.version, "1.1.0")
+        XCTAssertEqual(DataClearingWideEventData.metadata.version, "1.1.1")
     }
 
     func testClearingTimeout_is15Minutes() {

@@ -41,6 +41,14 @@ final class SitePermissionKeyTests: XCTestCase {
         XCTAssertEqual(key.host, "example.com")
     }
 
+    func testWhenCommittedURLHasTerminalDNSDotThenItMatchesUndottedHost() throws {
+        let dottedKey = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://www.example.com.")!))
+        let undottedKey = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+
+        XCTAssertEqual(dottedKey.host, "example.com")
+        XCTAssertEqual(dottedKey, undottedKey)
+    }
+
     func testWhenCommittedURLContainsIDNThenHostUsesPunycode() throws {
         let key = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://bücher.example")!))
 

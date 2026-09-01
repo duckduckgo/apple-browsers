@@ -76,14 +76,14 @@ final class TabViewModelTests: XCTestCase {
 
     // MARK: - Tab History Tests
     
-    func testWhenTabHistoryCalled_ThenReturnsURLsFromHistoryManager() async {
+    func testWhenTabHistoryCalled_ThenReturnsURLsFromHistoryManager() async throws {
         let expectedURLs = [
             URL(string: "https://example.com")!,
             URL(string: "https://duckduckgo.com")!
         ]
         mockHistoryManager.tabHistoryResult = expectedURLs
         
-        let result = await sut.tabHistory()
+        let result = try await sut.tabHistory().get()
         
         XCTAssertEqual(mockHistoryManager.tabHistoryCalls, [tab.uid])
         XCTAssertEqual(result, expectedURLs)
@@ -91,7 +91,7 @@ final class TabViewModelTests: XCTestCase {
 
     // MARK: - Visited Domains Tests
 
-    func testWhenVisitedDomainsCalled_ThenExtractsUniqueHostsFromTabHistory() async {
+    func testWhenVisitedDomainsCalled_ThenExtractsUniqueHostsFromTabHistory() async throws {
         mockHistoryManager.tabHistoryResult = [
             URL(string: "https://example.com/page1")!,
             URL(string: "https://example.com/page2")!,
@@ -100,9 +100,23 @@ final class TabViewModelTests: XCTestCase {
             URL(string: "https://apple.com")!
         ]
 
-        let result = await sut.visitedDomains()
+        let result = try await sut.visitedDomains().get()
 
         XCTAssertEqual(result, Set(["example.com", "duckduckgo.com", "apple.com"]))
+    }
+
+    func testWhenTabHistoryFailsThenVisitedDomainsReturnsFailure() async {
+        let expectedError = NSError(domain: "TabViewModelTests", code: 1)
+        mockHistoryManager.tabHistoryError = expectedError
+
+        let result = await sut.visitedDomains()
+
+        guard case .failure(let error) = result else {
+            XCTFail("Expected tab history failure")
+            return
+        }
+        XCTAssertEqual((error as NSError).domain, expectedError.domain)
+        XCTAssertEqual((error as NSError).code, expectedError.code)
     }
 
     // MARK: - Current AI Chat ID Tests

@@ -21,22 +21,29 @@ protocol FireExecutorWorker {
     @MainActor func burnNormalModeData() async
     @MainActor func burnFireModeData() async
     @MainActor func burnTabData(tabViewModel: TabViewModel, domains: [String]) async
+    @MainActor func burnTabData(tabViewModel: TabViewModel, domainResult: Result<[String], Error>) async
 }
 
 extension FireExecutorWorker {
+
+    /// Workers that do not need to distinguish an unavailable history from an empty history keep the existing behavior.
+    @MainActor
+    func burnTabData(tabViewModel: TabViewModel, domainResult: Result<[String], Error>) async {
+        await burnTabData(tabViewModel: tabViewModel, domains: (try? domainResult.get()) ?? [])
+    }
 
     /// Dispatches to the appropriate burn method based on scope.
     /// For `.all`, both `burnNormalModeData` and `burnFireModeData` run concurrently
     /// since clearing all data means clearing data from both normal and fire browsing modes.
     @MainActor
-    func execute(scope: FireRequest.Scope, domains: [String]?, fireModeCapability: FireModeCapable) async {
+    func execute(scope: FireRequest.Scope, domainResult: Result<[String], Error>?, fireModeCapability: FireModeCapable) async {
         switch scope {
         case .tab(let viewModel):
-            guard let domains else {
+            guard let domainResult else {
                 Logger.general.error("Expected domains to be present when burning tab scoped data")
                 return
             }
-            await burnTabData(tabViewModel: viewModel, domains: domains)
+            await burnTabData(tabViewModel: viewModel, domainResult: domainResult)
         case .fireMode:
             guard fireModeCapability.isFireModeEnabled else { return }
             await burnFireModeData()

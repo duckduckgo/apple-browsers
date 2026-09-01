@@ -132,6 +132,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockAppSettings: AppSettingsMock!
     private var mockAIChatSyncCleaner: MockAIChatSyncCleaning!
     private var sitePermissionsStore: SitePermissionsStore!
+    private var wideEventMock: WideEventMock!
     
     private var normalTextZoomCoordinator: MockTextZoomCoordinator {
         mockTextZoomCoordinatorProvider.normalCoordinator
@@ -157,6 +158,7 @@ final class FireExecutorTests: XCTestCase {
         mockAppSettings.autoClearAIChatHistory = true
         mockAIChatSyncCleaner = MockAIChatSyncCleaning()
         sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())
+        wideEventMock = WideEventMock()
         clearSitePermissionsStorage()
     }
     
@@ -178,6 +180,7 @@ final class FireExecutorTests: XCTestCase {
         mockDelegate = nil
         mockAppSettings = nil
         mockAIChatSyncCleaner = nil
+        wideEventMock = nil
         clearSitePermissionsStorage()
         sitePermissionsStore = nil
         super.tearDown()
@@ -211,7 +214,7 @@ final class FireExecutorTests: XCTestCase {
             },
             appSettings: mockAppSettings,
             aiChatSyncCleaner: mockAIChatSyncCleaner,
-            wideEvent: WideEventMock(),
+            wideEvent: wideEventMock,
             clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
         )
         executor.delegate = mockDelegate
@@ -748,6 +751,46 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("mail.amazon.com")), .allow)
         XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
         XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("untouched.example")), .allow)
+    }
+
+    func testWhenTabHistoryFetchFailsThenPermissionsRemainAndWideEventReportsFailure() async throws {
+        storePermission(for: "preserved.example")
+        let expectedError = NSError(domain: "FireExecutorTests.TabHistory", code: 1)
+        mockHistoryManager.tabHistoryError = expectedError
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("preserved.example")), .allow)
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearPermissionsStatus, .failure)
+        XCTAssertEqual(eventData.clearPermissionsError?.domain, expectedError.domain)
+        XCTAssertEqual(eventData.clearPermissionsError?.code, expectedError.code)
+    }
+
+    func testWhenTabHistoryIsEmptyThenWideEventReportsPermissionClearingSuccess() async throws {
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearPermissionsStatus, .success)
+        XCTAssertNil(eventData.clearPermissionsError)
+    }
+
+    func testWhenBurningTabDataThenIPv6SitePermissionsAreCleared() async throws {
+        let ipv6URL = try XCTUnwrap(URL(string: "https://[::1]"))
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: ipv6URL))
+        sitePermissionsStore.setPersistentDecision(.allow, for: .camera, at: site)
+        mockHistoryManager.tabHistoryResult = [ipv6URL]
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: site))
     }
 
     // MARK: - Burn ongoing downloads

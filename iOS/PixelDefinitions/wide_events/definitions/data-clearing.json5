@@ -4,7 +4,7 @@
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "ios-data-clearing",
-            "version": "1.0"
+            "version": "1.1"
         },
         "feature": {
             "name": "data-clearing",
@@ -139,6 +139,16 @@
                         "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
                     },
                     "clear_privacy_stats_error": "dataClearingActionError",
+                    "clear_permissions_status": {
+                        "type": "string",
+                        "description": "Final status of the clear_permissions action.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "clear_permissions_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_permissions_error": "dataClearingActionError",
                     "clear_url_caches_status": {
                         "type": "string",
                         "description": "Final status of the clear_url_caches action.",

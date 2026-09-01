@@ -50,6 +50,10 @@ public struct SitePermissionKey: Hashable, Sendable {
             return nil
         }
 
+        if host.hasSuffix(".") {
+            host.removeLast()
+        }
+
         if host.hasPrefix("www.") {
             host.removeFirst("www.".count)
         }

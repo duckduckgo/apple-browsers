@@ -48,10 +48,25 @@ struct PermissionsFireWorker: FireExecutorWorker {
     }
 
     @MainActor
-    func burnTabData(tabViewModel _: TabViewModel, domains: [String]) async {
+    func burnTabData(tabViewModel: TabViewModel, domains: [String]) async {
+        await burnTabData(tabViewModel: tabViewModel, domainResult: .success(domains))
+    }
+
+    @MainActor
+    func burnTabData(tabViewModel _: TabViewModel, domainResult: Result<[String], Error>) async {
         dataClearingWideEventService?.start(.clearPermissions)
+        let domains: [String]
+        switch domainResult {
+        case .success(let fetchedDomains):
+            domains = fetchedDomains
+        case .failure(let error):
+            dataClearingWideEventService?.update(.clearPermissions, result: .failure(error))
+            return
+        }
+
         let sites = Set<SitePermissionKey>(domains.compactMap { domain in
-            guard let url = URL(string: "https://\(domain)"),
+            let urlHost = domain.contains(":") ? "[\(domain)]" : domain
+            guard let url = URL(string: "https://\(urlHost)"),
                   let site = SitePermissionKey(committedURL: url),
                   !fireproofing.isAllowed(fireproofDomain: site.host) else {
                 return nil

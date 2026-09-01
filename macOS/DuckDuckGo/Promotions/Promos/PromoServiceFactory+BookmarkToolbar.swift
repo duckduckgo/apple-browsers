@@ -22,7 +22,7 @@ extension PromoServiceFactory {
 
     static let bookmarkToolbarPromoID = "bookmark-toolbar"
 
-    /// Builds the Bookmark Toolbar Promo (migrated from the standalone "Show Bookmarks Bar?" popover).
+    /// Builds the Bookmark Toolbar Promo ("Show Bookmarks Bar?" popover).
     @MainActor
     static func bookmarkToolbar(dependencies: PromoDependencies) -> Promo {
         InternalPromo(

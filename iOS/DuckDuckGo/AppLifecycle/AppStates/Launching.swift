@@ -29,6 +29,7 @@ import PixelKit
 import BrowserServicesKit
 import Subscription
 import RemoteMessaging
+import ScreenTimeDataCleaner
 import WebExtensions
 import FeatureFlags_iOS
 
@@ -437,6 +438,16 @@ struct Launching: LaunchingHandling {
                 taskContext.finish()
             }
         })
+        if #available(iOS 26, *) {
+            launchTaskManager.register(task: BlockLaunchTask(name: "Report Screen Time Data") { taskContext in
+                Task { @MainActor in
+                    if await ScreenTimeDataCleaner().hasScreenTimeData() {
+                        PixelKit.fire(ScreenTimeDataPixel.recordsFound, frequency: .dailyAndCount)
+                    }
+                    taskContext.finish()
+                }
+            })
+        }
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
@@ -547,6 +558,17 @@ struct Launching: LaunchingHandling {
             backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger)
         )
     }
+
+}
+
+private enum ScreenTimeDataPixel: PixelKit.Event {
+
+    case recordsFound
+
+    var name: String { "screen-time_records-present" }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
 
 }
 

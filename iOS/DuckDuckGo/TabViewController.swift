@@ -4277,7 +4277,7 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func requestFindInPage() {
-        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+        if #available(iOS 16.0, *) {
             webView.isFindInteractionEnabled = true
             let findInteraction = webView.findInteraction
             // Ignore repeat invocations while find is open so in-progress text isn't replaced with a stored query.

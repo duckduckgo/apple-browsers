@@ -192,7 +192,7 @@ extension MainViewController {
     
     @objc func keyboardEscape() {
         guard tabSwitcherController == nil else { return }
-        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+        if #available(iOS 16.0, *) {
             dismissSystemFindNavigator(for: currentTab)
         } else {
             findInPageView?.done()

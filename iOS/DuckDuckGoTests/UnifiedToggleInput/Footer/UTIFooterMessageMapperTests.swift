@@ -153,8 +153,8 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     }
 
     /// Keyed off the selected model, not the allowance, so there is no percentage and no reset line.
-    func test_message_highUsageNoticeShowsNoIconAndNoResetLine() {
-        XCTAssertEqual(sut.message(for: notice).icon, UTIFooterMessage.Icon.none)
+    func test_message_highUsageNoticeShowsTheInfoIconAndNoResetLine() {
+        XCTAssertEqual(sut.message(for: notice).icon, .info)
         XCTAssertNil(sut.message(for: notice).subtitle)
     }
 

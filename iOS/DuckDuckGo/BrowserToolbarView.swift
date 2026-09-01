@@ -154,6 +154,7 @@ final class BrowserToolbarView: UIView {
             return view
         }
     }()
+    private var materialInterfaceStyle: UIUserInterfaceStyle?
 
     private let buttonStack: UIStackView = {
         let stack = UIStackView()
@@ -439,6 +440,7 @@ final class BrowserToolbarView: UIView {
         ])
         
         updateCornerStyle()
+        scheduleHostedOmnibarMaterialRefresh()
     }
 
     func prepareForOmnibarDetachment() {
@@ -470,11 +472,23 @@ final class BrowserToolbarView: UIView {
 
     func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle) {
         guard isFloatingStyleEnabled else { return }
+        materialInterfaceStyle = interfaceStyle
         UIView.performWithoutAnimation {
             materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
             materialBackgroundView.effect = nil
             materialBackgroundView.effect = materialEffect()
             materialBackgroundView.layoutIfNeeded()
+        }
+        scheduleHostedOmnibarMaterialRefresh()
+    }
+
+    private func scheduleHostedOmnibarMaterialRefresh() {
+        guard isFloatingStyleEnabled else { return }
+        let omnibarView = hostedOmnibarView as? DefaultOmniBarView
+        let interfaceStyle = materialInterfaceStyle
+        DispatchQueue.main.async { [weak self, weak omnibarView] in
+            guard let self, let omnibarView, hostedOmnibarView === omnibarView else { return }
+            omnibarView.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
         }
     }
 
@@ -874,6 +888,13 @@ final class BrowserToolbarView: UIView {
         guard hasExpandedContent else { return false }
         let expandedRect = interactiveRect.insetBy(dx: 0, dy: -expandedContentHeightConstraint.constant)
         return expandedRect.contains(point)
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            scheduleHostedOmnibarMaterialRefresh()
+        }
     }
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {

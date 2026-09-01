@@ -40,7 +40,7 @@ jobs:
       matrix:
         runner: [bitrise:macos26-m4]
         include:
-          - xcode-version: "26.4"
+          - xcode-version: "26.6"
             runner: bitrise:macos26-m4
             runner-name: bitrise-macos26-m4 # runner label without reserved characters, for use in the artifact name
 

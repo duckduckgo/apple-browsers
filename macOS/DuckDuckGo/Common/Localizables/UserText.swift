@@ -972,6 +972,10 @@ struct UserText {
     static let aiChatUsageWarningsDailyLimitReached = NotLocalizedString("aichat.usageWarnings.daily-limit-reached", value: "Daily limit reached", comment: "Headline on the Duck.ai usage card when the user's daily allowance is fully spent")
     static let aiChatUsageWarningsWeeklyLimitReached = NotLocalizedString("aichat.usageWarnings.weekly-limit-reached", value: "Weekly usage limit reached", comment: "Headline on the Duck.ai usage card when the user's weekly allowance is fully spent")
     static let aiChatUsageWarningsAdvancedModelsLimitReached = NotLocalizedString("aichat.usageWarnings.advanced-models-limit-reached", value: "Advanced AI models limit reached", comment: "Headline on the Duck.ai usage card when the allowance for advanced AI models specifically is spent, while free models remain available")
+    static func aiChatUsageWarningsHighUsageModel(_ modelShortName: String) -> String {
+        let message = NotLocalizedString("aichat.usageWarnings.high-usage-model", value: "%@ reaches usage limits 2-5x sooner than basic models.", comment: "Duck.ai usage card notice shown while a model that spends the allowance quickly is selected. Parameter is the model's short name, e.g. \"Opus 4.8\".")
+        return String(format: message, modelShortName)
+    }
     static func aiChatUsageWarningsResetsIn(_ interval: String) -> String {
         let message = NotLocalizedString("aichat.usageWarnings.resets-in", value: "Resets in %@", comment: "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".")
         return String(format: message, interval)

@@ -158,6 +158,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let innerBorderInset: CGFloat = 1
         /// Slack past the corner radius, so the card's top edge doesn't land where the arc ends.
         static let usageWarningOverlapMargin: CGFloat = 6
+        static let usageWarningSeamShadowOpacity: CGFloat = 0.5
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -1129,9 +1130,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // above, it would look like a slab dropped under the panel.
         view.addSubview(usageWarningCardView, positioned: .below, relativeTo: backgroundView)
 
-        usageWarningShadowView.shadowOpacity = 1
+        // Lighter than the outer edge: this one falls on a surface a few points below, not into the
+        // page behind the panel.
+        usageWarningShadowView.shadowOpacity = Constants.usageWarningSeamShadowOpacity
         usageWarningShadowView.shadowOffset = CGSize(width: 0, height: 0)
-        usageWarningShadowView.shadowSides = [.left, .right, .bottom]
+        // Bottom only: `shadowView` owns the outer edge for the whole silhouette, card included, so
+        // this draws nothing but the panel's edge falling onto the card.
+        usageWarningShadowView.shadowSides = [.bottom]
 
         let bottomConstraint = backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         backgroundViewBottomConstraint = bottomConstraint
@@ -1428,20 +1433,25 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let overlap = themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
         let band = usageWarningReservation
 
+        /// The whole silhouette, card band included, as one rounded rect. Two boxes cannot meet
+        /// cleanly here: `ShadowView` rounds a corner only where both its sides are listed, so the
+        /// panel's shadow curves inward at the bottom and anything abutting it square leaves a
+        /// wedge bare at the radius — while overlapping it paints the sides twice instead.
         var frame = viewFrame
-        /// Trimmed to the panel, not the whole silhouette: it needs a bottom edge to cast onto the card.
-        frame.origin.y += band
         /// `ShadowView` clamps its radius to half its shorter side, so trimming further would round
         /// the corners tighter than the background. Costs nothing: it draws no top edge anyway.
-        frame.size.height = max(shadowView.cornerRadius * 2, frame.height - overlap - band)
+        frame.size.height = max(shadowView.cornerRadius * 2, frame.height - overlap)
 
         shadowView.frame = frame
 
         guard isUsageWarningVisible else { return }
-        /// Overlap included: the panel covers it, so shadowing it keeps the corner radii aligned.
-        var cardFrame = viewFrame
-        cardFrame.size.height = AIChatUsageWarningCardView.Constants.contentHeight + usageWarningOverlap
-        usageWarningShadowView.frame = cardFrame
+        /// The seam, cast down from the panel's bottom edge onto the card — visible through it,
+        /// since the card is translucent. Held off the sides by the corner radius: the panel's edge
+        /// curves away there, so a straight cast would read as detached from it.
+        var seamFrame = viewFrame
+        seamFrame.origin.y += band
+        seamFrame.size.height = viewFrame.height - band
+        usageWarningShadowView.frame = seamFrame.insetBy(dx: shadowView.cornerRadius, dy: 0)
     }
 
     @objc private func submitButtonClicked() {

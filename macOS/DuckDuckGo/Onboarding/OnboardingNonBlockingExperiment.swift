@@ -29,9 +29,9 @@ struct OnboardingNonBlockingExperiment {
 
     enum Metric: String {
         case onboardingCompleted
-        /// Onboarding ended without completing: the tab was closed, navigated away from, or removed
-        /// in bulk. Closing the window or quitting is not observable, so those record nothing and
-        /// onboarding shows again on the next launch.
+        /// Onboarding ended without completing: the tab was closed, navigated away from, removed in
+        /// bulk, or its window was closed. Quitting is deliberately excluded — it records nothing,
+        /// so onboarding shows again on the next launch just as it does today.
         case onboardingSkipped
         case browsingBeforeCompletion
         case importRequested
@@ -76,6 +76,17 @@ struct OnboardingNonBlockingExperiment {
     var isNonBlocking: Bool {
         featureFlagger.isFeatureOn(.onboardingAsync) || cohort == .treatment
     }
+
+    /// Tags a pixel that isn't one of this experiment's own metrics — the quit survey's, for
+    /// instance — so its responses can be broken down by cohort. Unenrolled users send `none`
+    /// rather than nothing, so an absent parameter always means a client too old to send it, never
+    /// an unenrolled user.
+    var cohortParameters: [String: String] {
+        [Self.cohortParameterKey: cohort?.rawValue ?? Self.unenrolledCohortValue]
+    }
+
+    private static let cohortParameterKey = "onboardingNonBlockingCohort"
+    private static let unenrolledCohortValue = "none"
 
     func fireMetric(_ metric: Metric) {
         guard cohort != nil else { return }

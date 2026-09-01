@@ -292,20 +292,28 @@ final class QuitSurveyViewModel: ObservableObject {
 
     // MARK: - Pixels
 
+    /// Every survey pixel carries the non-blocking onboarding cohort, so responses can be read
+    /// against the arm the user was in. Additive: the parameter is present for everyone, `none`
+    /// included, and no existing parameter changes.
+    private var surveyPixelOptions: PixelKit.Options {
+        .parameters(OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).cohortParameters)
+    }
+
     private func fireSurveyShown() {
-        pixelFiring?.fire(QuitSurveyPixels.quitSurveyShown)
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyShown, options: surveyPixelOptions)
     }
 
     private func fireSurveyThumbsUp() {
-        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsUp)
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsUp, options: surveyPixelOptions)
     }
 
     private func fireSurveyThumbsDown() {
-        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsDown)
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsDown, options: surveyPixelOptions)
     }
 
     private func fireThumbsDownPixelSubmission(reasons: String, affectedDomains: String?) {
-        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsDownSubmission(reasons: reasons, affectedDomains: affectedDomains))
+        pixelFiring?.fire(QuitSurveyPixels.quitSurveyThumbsDownSubmission(reasons: reasons, affectedDomains: affectedDomains),
+                          options: surveyPixelOptions)
     }
 
     /// This methods calculates the parameters for the thumbs down submission pixel.

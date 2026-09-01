@@ -1601,7 +1601,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
         QuitSurveyReturnUserHandler(
             persistor: quitSurveyPersistor,
-            installDate: AppDelegate.firstLaunchDate
+            installDate: AppDelegate.firstLaunchDate,
+            nonBlockingExperiment: onboardingNonBlockingExperiment
         ).fireReturnUserPixelIfNeeded()
 
         fireDailyActiveUserPixels()

@@ -5,21 +5,21 @@
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "onboardingNonBlockingCohort"]
     },
     "m_mac_quit-survey-thumbs-up": {
         "description": "Fired when the user selects thumbs up (positive response) in the quit survey",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "onboardingNonBlockingCohort"]
     },
     "m_mac_quit-survey-thumbs-down": {
         "description": "Fired when the user selects thumbs down (negative response) in the quit survey",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "onboardingNonBlockingCohort"]
     },
     "m_mac_quit-survey-reasons-submission": {
         "description": "Fired when the user submits their reasons after selecting thumbs down. Format: 'reason-id=1' (selected), 'reason-id=0' (shown but not selected), 'reason-id=-1' (not shown)",
@@ -29,6 +29,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "onboardingNonBlockingCohort",
             {
                 "key": "reasons",
                 "description": "Comma-separated list of reason IDs with their selection state: 1=selected, 0=not selected, -1=not shown",
@@ -49,6 +50,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "onboardingNonBlockingCohort",
             {
                 "key": "reasons",
                 "description": "Comma-separated list of reason IDs with their selection state: 1=selected, 0=not selected, -1=not shown (same as submission)",
@@ -61,6 +63,6 @@
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": ["appVersion", "pixelSource", "channel", "onboardingNonBlockingCohort"]
     }
 }

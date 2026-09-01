@@ -2756,6 +2756,22 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Create Image model switch (updatedCreateImage)
 
+    func test_updatedCreateImage_whenSelectedModelDoesNotSupportAttachments_showsDisabledAttachmentButtonWithoutMenu() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+
+        XCTAssertFalse(coordinator.viewController.isImageButtonHidden)
+        XCTAssertFalse(coordinator.viewController.isImageButtonEnabled)
+        XCTAssertNil(coordinator.viewController.attachmentMenu)
+    }
+
+    func test_updatedCreateImageDisabled_whenSelectedModelDoesNotSupportAttachments_hidesAttachmentButton() {
+        let coordinator = makeCreateImageCoordinator(isEnabled: false)
+        seedModels(coordinator, selecting: "mistral")
+
+        XCTAssertTrue(coordinator.viewController.isImageButtonHidden)
+    }
+
     func test_selectingCreateImage_onAModelWithoutImageSupport_switchesToTheFallbackModel() {
         let coordinator = makeCreateImageCoordinator()
         seedModels(coordinator, selecting: "mistral")

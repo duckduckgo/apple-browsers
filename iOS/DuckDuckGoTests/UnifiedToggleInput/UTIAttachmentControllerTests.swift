@@ -175,6 +175,32 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertTrue(view.imageButtonHidden)
     }
 
+    func testUpdateAttachButtonPresentation_whenUnavailableButtonShouldRemainVisible_showsDisabledButtonWithoutMenu() {
+        config.model = makeModel(supportsImageUpload: false, supportedFileTypes: [])
+        config.limits = makeLimits()
+        config.keepsUnavailableAttachmentButtonVisible = true
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        XCTAssertFalse(view.imageButtonHidden)
+        XCTAssertFalse(view.imageButtonEnabled)
+        XCTAssertNil(view.attachmentMenu)
+    }
+
+    func testUpdateAttachButtonPresentation_whenModelIsUnknown_hidesUnavailableButton() {
+        config.model = nil
+        config.limits = makeLimits()
+        config.keepsUnavailableAttachmentButtonVisible = true
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        XCTAssertTrue(view.imageButtonHidden)
+        XCTAssertFalse(view.imageButtonEnabled)
+        XCTAssertNil(view.attachmentMenu)
+    }
+
     func testUpdateAttachButtonPresentation_disablesButtonWhileGenerating() {
         config.model = makeModel(supportsImageUpload: true)
         config.limits = makeLimits()
@@ -238,6 +264,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
                 supportsImageUpload: { config.model?.supportsImageUpload ?? false },
                 supportedFileTypes: { config.model?.supportedFileTypes ?? [] },
                 hasSelectedModel: { config.model != nil },
+                keepsUnavailableAttachmentButtonVisible: { config.keepsUnavailableAttachmentButtonVisible },
                 attachmentLimits: { config.limits },
                 currentTabUID: { "tab-1" },
                 isPageContextAttachable: { nil },
@@ -301,6 +328,7 @@ private final class FakeEnvironmentConfig {
     var usage: AIChatAttachmentUsage?
     var inputMode: TextEntryMode = .aiChat
     var isContextualChatState = false
+    var keepsUnavailableAttachmentButtonVisible = false
 }
 
 @MainActor

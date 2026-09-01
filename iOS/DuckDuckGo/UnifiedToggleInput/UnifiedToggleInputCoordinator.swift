@@ -472,6 +472,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 supportsImageUpload: { [weak self] in self?.selectedModelSupportsImageUpload ?? false },
                 supportedFileTypes: { [weak self] in self?.selectedModelSupportedFileTypes ?? [] },
                 hasSelectedModel: { [weak self] in self?.selectedModel != nil },
+                keepsUnavailableAttachmentButtonVisible: { [weak self] in self?.isUpdatedCreateImageEnabled ?? false },
                 attachmentLimits: { [weak self] in self?.modelStore.attachmentLimits },
                 currentTabUID: { [weak self] in self?.currentTabUID },
                 isPageContextAttachable: { [weak self] in self?.isPageContextAttachable?() },

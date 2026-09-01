@@ -116,6 +116,28 @@ private final class BottomEdgeStrokeView: NSView {
     }
 }
 
+struct AIChatCreateImagePresentationPolicy {
+    let isImageGenerationEnabled: Bool
+    let isUpdatedCreateImageEnabled: Bool
+    let selectedModelSupportsImageGeneration: Bool
+    let isOmnibarToolsEnabled: Bool
+    let hasModelPickerContent: Bool
+    let isImageGenerationMode: Bool
+
+    var isImageGenerationItemVisible: Bool {
+        isImageGenerationEnabled && (isUpdatedCreateImageEnabled || selectedModelSupportsImageGeneration)
+    }
+
+    var shouldShowModelPicker: Bool {
+        guard isOmnibarToolsEnabled && hasModelPickerContent else { return false }
+        return !isImageGenerationMode || isUpdatedCreateImageEnabled
+    }
+
+    var shouldMakeModelPickerReadOnly: Bool {
+        isUpdatedCreateImageEnabled && isImageGenerationMode
+    }
+}
+
 final class AIChatOmnibarContainerViewController: NSViewController {
 
     private enum Constants {
@@ -641,9 +663,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible || isCustomizeResponsesItemVisible)
     }
 
+    private var createImagePresentationPolicy: AIChatCreateImagePresentationPolicy {
+        AIChatCreateImagePresentationPolicy(
+            isImageGenerationEnabled: omnibarController.isImageGenerationEnabled,
+            isUpdatedCreateImageEnabled: omnibarController.isUpdatedCreateImageEnabled,
+            selectedModelSupportsImageGeneration: omnibarController.selectedModelSupportsImageGeneration,
+            isOmnibarToolsEnabled: omnibarController.isOmnibarToolsEnabled,
+            hasModelPickerContent: !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil,
+            isImageGenerationMode: omnibarController.isImageGenerationMode
+        )
+    }
+
     private var isImageGenerationItemVisible: Bool {
-        omnibarController.isImageGenerationEnabled
-            && (omnibarController.isUpdatedCreateImageEnabled || omnibarController.selectedModelSupportsImageGeneration)
+        createImagePresentationPolicy.isImageGenerationItemVisible
     }
 
     private var isWebSearchItemVisible: Bool {
@@ -704,13 +736,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private var shouldShowModelPicker: Bool {
-        let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
-        guard omnibarController.isOmnibarToolsEnabled && hasContent else { return false }
-        return !omnibarController.isImageGenerationMode || omnibarController.isUpdatedCreateImageEnabled
+        createImagePresentationPolicy.shouldShowModelPicker
     }
 
     private var shouldMakeModelPickerReadOnly: Bool {
-        omnibarController.isUpdatedCreateImageEnabled && omnibarController.isImageGenerationMode
+        createImagePresentationPolicy.shouldMakeModelPickerReadOnly
     }
 
     private func updateToolButtonsVisibility(isEnabled: Bool) {
@@ -2209,6 +2239,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Or a switch made outside the picker leaves the label naming the model we just left.
         omnibarController.onSelectedModelChanged = { [weak self] in
             self?.refreshForSelectedModel()
+        }
+
+        omnibarController.onCreateImageModelSwitchNotice = { [weak self] notice in
+            self?.showCreateImageModelSwitchNotice(notice)
         }
     }
 

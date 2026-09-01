@@ -157,6 +157,10 @@ final class AIChatOmnibarController {
     /// selected model, and the picker menu is not the only thing that can change it.
     var onSelectedModelChanged: (() -> Void)?
 
+    /// Create Image can be enabled before models finish loading. If resolving the models then
+    /// requires a switch, the container presents the same notice as an immediate switch.
+    var onCreateImageModelSwitchNotice: ((AIChatCreateImageModelSwitchNotice) -> Void)?
+
     /// The high-usage notice has no publisher of its own, so it re-resolves on the same beats the
     /// warning does — activation included, which is what `cleanup()` dropped it for.
     var onUsageWarningsRefreshed: (() -> Void)?
@@ -508,6 +512,10 @@ final class AIChatOmnibarController {
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningEffortIfNeeded()
                 self.deactivateWebSearchIfUnsupported()
+                if self.isImageGenerationMode,
+                   let notice = self.switchToImageGenerationModelIfNeeded() {
+                    self.onCreateImageModelSwitchNotice?(notice)
+                }
                 self.deactivateImageGenerationIfUnsupported()
                 // Tier and models land after the activation that resolved the warning, so the first
                 // banner after a tier change would otherwise show a stale tier and no CTA.

@@ -401,6 +401,10 @@
 		3170D0EA2F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3170D0E42F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift */; };
 		317307262CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317307252CD248DA00C492AB /* AutofillToolbarOnboardingPopover.swift */; };
 		317307272CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317307252CD248DA00C492AB /* AutofillToolbarOnboardingPopover.swift */; };
+		FE45A731ED483F8743B873D4 /* AutofillToolbarPinningPromoPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC00547A550F808CCBDEE7FF /* AutofillToolbarPinningPromoPresenting.swift */; };
+		F9413CF2214DD69680CC293E /* AutofillToolbarPinningPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C1BB14B301D4C3ED9BF09B /* AutofillToolbarPinningPromoDelegate.swift */; };
+		71E82659142ED64B1EB9C0B2 /* AutofillToolbarPinningPromoPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC00547A550F808CCBDEE7FF /* AutofillToolbarPinningPromoPresenting.swift */; };
+		CDCC672B44CC6EA9370CAAA1 /* AutofillToolbarPinningPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C1BB14B301D4C3ED9BF09B /* AutofillToolbarPinningPromoDelegate.swift */; };
 		317307292CD248EA00C492AB /* AutofillToolbarOnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317307282CD248EA00C492AB /* AutofillToolbarOnboardingViewController.swift */; };
 		3173072A2CD248EA00C492AB /* AutofillToolbarOnboardingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317307282CD248EA00C492AB /* AutofillToolbarOnboardingViewController.swift */; };
 		3173072C2CD2490700C492AB /* AutofillToolbarOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3173072B2CD2490300C492AB /* AutofillToolbarOnboardingView.swift */; };
@@ -4242,9 +4246,11 @@
 		CCB2EBDF2F62001600C65813 /* MockExternalPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB2EBDB2F62001600C65813 /* MockExternalPromoDelegate.swift */; };
 		CCB2EBE02F62001600C65813 /* MockPromoHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB2EBDD2F62001600C65813 /* MockPromoHistoryStore.swift */; };
 		CCB2EBE12F62001600C65813 /* MockPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB2EBDC2F62001600C65813 /* MockPromoDelegate.swift */; };
+		C2E804438AFADCBFB950AD65 /* MockAutofillToolbarPinningPromoPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873EA60D1D841E2CF438AD5D /* MockAutofillToolbarPinningPromoPresenter.swift */; };
 		CCB2EBE22F62001600C65813 /* MockExternalPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB2EBDB2F62001600C65813 /* MockExternalPromoDelegate.swift */; };
 		CCB2EBE32F62001600C65813 /* MockPromoHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB2EBDD2F62001600C65813 /* MockPromoHistoryStore.swift */; };
 		CCB2EBE42F62001600C65813 /* MockPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB2EBDC2F62001600C65813 /* MockPromoDelegate.swift */; };
+		C18205380F8DB6124EAEE7A7 /* MockAutofillToolbarPinningPromoPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873EA60D1D841E2CF438AD5D /* MockAutofillToolbarPinningPromoPresenter.swift */; };
 		CCB36B132E56383500DBFE3A /* UserScriptError+Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB36B122E56382E00DBFE3A /* UserScriptError+Pixel.swift */; };
 		CCB36B142E56383500DBFE3A /* UserScriptError+Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB36B122E56382E00DBFE3A /* UserScriptError+Pixel.swift */; };
 		CCBCF38A2F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBCF3892F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift */; };
@@ -4316,8 +4322,12 @@
 		CD41A0010000000000100006 /* AutoplayDiscoverabilityPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100004 /* AutoplayDiscoverabilityPromoDelegate.swift */; };
 		CD41A0010000000000100008 /* PromoServiceFactory+AutoplayDiscoverability.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100007 /* PromoServiceFactory+AutoplayDiscoverability.swift */; };
 		CD41A0010000000000100009 /* PromoServiceFactory+AutoplayDiscoverability.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100007 /* PromoServiceFactory+AutoplayDiscoverability.swift */; };
+		306A012C45646BD55D7390AC /* PromoServiceFactory+AutofillToolbarPinning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C16571F8E0D929F597E2DED /* PromoServiceFactory+AutofillToolbarPinning.swift */; };
+		184DE7055E0033904DD4DD21 /* PromoServiceFactory+AutofillToolbarPinning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C16571F8E0D929F597E2DED /* PromoServiceFactory+AutofillToolbarPinning.swift */; };
 		CD41A001000000000010000B /* AutoplayDiscoverabilityPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A001000000000010000A /* AutoplayDiscoverabilityPromoDelegateTests.swift */; };
+		3F2BB6FE74EBC0C4E2D2E3D0 /* AutofillToolbarPinningPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B6B4FE3B30C39AE8212F19 /* AutofillToolbarPinningPromoDelegateTests.swift */; };
 		CD41A001000000000010000C /* AutoplayDiscoverabilityPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A001000000000010000A /* AutoplayDiscoverabilityPromoDelegateTests.swift */; };
+		EA4E2D3161EACC0CF28D704E /* AutofillToolbarPinningPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B6B4FE3B30C39AE8212F19 /* AutofillToolbarPinningPromoDelegateTests.swift */; };
 		CD41A0010000000000100011 /* AutoplayPromoPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100010 /* AutoplayPromoPixel.swift */; };
 		CD41A0010000000000100012 /* AutoplayPromoPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100010 /* AutoplayPromoPixel.swift */; };
 		CD89DD612C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD89DD5D2C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift */; };
@@ -5256,6 +5266,8 @@
 		3170D0E42F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordsStatusBarMenu.swift; sourceTree = "<group>"; };
 		3170D0E52F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordsStatusBarPopover.swift; sourceTree = "<group>"; };
 		317307252CD248DA00C492AB /* AutofillToolbarOnboardingPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarOnboardingPopover.swift; sourceTree = "<group>"; };
+		DC00547A550F808CCBDEE7FF /* AutofillToolbarPinningPromoPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarPinningPromoPresenting.swift; sourceTree = "<group>"; };
+		15C1BB14B301D4C3ED9BF09B /* AutofillToolbarPinningPromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarPinningPromoDelegate.swift; sourceTree = "<group>"; };
 		317307282CD248EA00C492AB /* AutofillToolbarOnboardingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarOnboardingViewController.swift; sourceTree = "<group>"; };
 		3173072B2CD2490300C492AB /* AutofillToolbarOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarOnboardingView.swift; sourceTree = "<group>"; };
 		3173072E2CD2493700C492AB /* AutofillToolbarOnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarOnboardingViewModel.swift; sourceTree = "<group>"; };
@@ -7138,6 +7150,7 @@
 		CCB2EBD02F62000C00C65813 /* PromoTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoTestHelpers.swift; sourceTree = "<group>"; };
 		CCB2EBDB2F62001600C65813 /* MockExternalPromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockExternalPromoDelegate.swift; sourceTree = "<group>"; };
 		CCB2EBDC2F62001600C65813 /* MockPromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPromoDelegate.swift; sourceTree = "<group>"; };
+		873EA60D1D841E2CF438AD5D /* MockAutofillToolbarPinningPromoPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAutofillToolbarPinningPromoPresenter.swift; sourceTree = "<group>"; };
 		CCB2EBDD2F62001600C65813 /* MockPromoHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPromoHistoryStore.swift; sourceTree = "<group>"; };
 		CCB36B122E56382E00DBFE3A /* UserScriptError+Pixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserScriptError+Pixel.swift"; sourceTree = "<group>"; };
 		CCBCF3892F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromoDelegateTests.swift; sourceTree = "<group>"; };
@@ -7169,7 +7182,9 @@
 		CD34F0BF2C886482006826BE /* MaliciousSiteProtectionMocks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionMocks.swift; sourceTree = "<group>"; };
 		CD41A0010000000000100004 /* AutoplayDiscoverabilityPromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayDiscoverabilityPromoDelegate.swift; sourceTree = "<group>"; };
 		CD41A0010000000000100007 /* PromoServiceFactory+AutoplayDiscoverability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+AutoplayDiscoverability.swift"; sourceTree = "<group>"; };
+		2C16571F8E0D929F597E2DED /* PromoServiceFactory+AutofillToolbarPinning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+AutofillToolbarPinning.swift"; sourceTree = "<group>"; };
 		CD41A001000000000010000A /* AutoplayDiscoverabilityPromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayDiscoverabilityPromoDelegateTests.swift; sourceTree = "<group>"; };
+		27B6B4FE3B30C39AE8212F19 /* AutofillToolbarPinningPromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarPinningPromoDelegateTests.swift; sourceTree = "<group>"; };
 		CD41A0010000000000100010 /* AutoplayPromoPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayPromoPixel.swift; sourceTree = "<group>"; };
 		CD89DD5D2C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionTests.swift; sourceTree = "<group>"; };
 		CDE248A32C821FFE00F9399D /* phishingHashPrefixes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = phishingHashPrefixes.json; sourceTree = "<group>"; };
@@ -8258,6 +8273,8 @@
 				3173072B2CD2490300C492AB /* AutofillToolbarOnboardingView.swift */,
 				317307282CD248EA00C492AB /* AutofillToolbarOnboardingViewController.swift */,
 				317307252CD248DA00C492AB /* AutofillToolbarOnboardingPopover.swift */,
+				DC00547A550F808CCBDEE7FF /* AutofillToolbarPinningPromoPresenting.swift */,
+				15C1BB14B301D4C3ED9BF09B /* AutofillToolbarPinningPromoDelegate.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -13284,6 +13301,7 @@
 			isa = PBXGroup;
 			children = (
 				CD41A001000000000010000A /* AutoplayDiscoverabilityPromoDelegateTests.swift */,
+				27B6B4FE3B30C39AE8212F19 /* AutofillToolbarPinningPromoDelegateTests.swift */,
 				CCB2EBDE2F62001600C65813 /* Mocks */,
 				CCB2EBCC2F62000C00C65813 /* PromoHistoryStoreTests.swift */,
 				CCB2EBCD2F62000C00C65813 /* PromoRegistryTests.swift */,
@@ -13301,6 +13319,7 @@
 		CC199E9F2F4E182C0096471A /* Promos */ = {
 			isa = PBXGroup;
 			children = (
+				2C16571F8E0D929F597E2DED /* PromoServiceFactory+AutofillToolbarPinning.swift */,
 				CD41A0010000000000100007 /* PromoServiceFactory+AutoplayDiscoverability.swift */,
 				3646AC3F2F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift */,
 				BB046FF62F6D873B007F7107 /* PromoServiceFactory+FreemiumDBP.swift */,
@@ -13343,6 +13362,7 @@
 			children = (
 				CCB2EBDB2F62001600C65813 /* MockExternalPromoDelegate.swift */,
 				CCB2EBDC2F62001600C65813 /* MockPromoDelegate.swift */,
+				873EA60D1D841E2CF438AD5D /* MockAutofillToolbarPinningPromoPresenter.swift */,
 				CCB2EBDD2F62001600C65813 /* MockPromoHistoryStore.swift */,
 			);
 			path = Mocks;
@@ -16213,6 +16233,7 @@
 				CCE3F83B2F5A24760046F5E6 /* PromoServiceFactory+DefaultBrowserAndDock.swift in Sources */,
 				0DE0006FAC7029CB1E004100 /* PromoServiceFactory+CookiePopupProtectionOptIn.swift in Sources */,
 				CD41A0010000000000100009 /* PromoServiceFactory+AutoplayDiscoverability.swift in Sources */,
+				184DE7055E0033904DD4DD21 /* PromoServiceFactory+AutofillToolbarPinning.swift in Sources */,
 				CD41A0010000000000100006 /* AutoplayDiscoverabilityPromoDelegate.swift in Sources */,
 				3706FB96293F65D500E42796 /* RecentlyClosedWindow.swift in Sources */,
 				1D532BCA2EDA1DF800D219FA /* SystemPermissionManager.swift in Sources */,
@@ -16627,6 +16648,8 @@
 				31A83FB62BE28D7D00F74E67 /* UserText+DBP.swift in Sources */,
 				C18194602C7CDD0E00381092 /* PromotionViewModel.swift in Sources */,
 				317307262CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */,
+				FE45A731ED483F8743B873D4 /* AutofillToolbarPinningPromoPresenting.swift in Sources */,
+				F9413CF2214DD69680CC293E /* AutofillToolbarPinningPromoDelegate.swift in Sources */,
 				BBBD2A092E2FE548005E7664 /* PillCollectionView.swift in Sources */,
 				9F6434622BEC82B700D2D8A0 /* AttributionPixelHandler.swift in Sources */,
 				843AD3DC2CD389CC00163067 /* XMLNodeExtension.swift in Sources */,
@@ -17028,6 +17051,7 @@
 				A7B001162F6B000100000001 /* InfoViewTests.swift in Sources */,
 				CCB2EBD12F62000C00C65813 /* PromoRegistryTests.swift in Sources */,
 				CD41A001000000000010000B /* AutoplayDiscoverabilityPromoDelegateTests.swift in Sources */,
+				3F2BB6FE74EBC0C4E2D2E3D0 /* AutofillToolbarPinningPromoDelegateTests.swift in Sources */,
 				CCB2EBD22F62000C00C65813 /* PromoServiceTests.swift in Sources */,
 				CCB2EBD32F62000C00C65813 /* PromoServiceFactoryTests.swift in Sources */,
 				CCB2EBD42F62000C00C65813 /* PromoTestHelpers.swift in Sources */,
@@ -17457,6 +17481,7 @@
 				CCB2EBE22F62001600C65813 /* MockExternalPromoDelegate.swift in Sources */,
 				CCB2EBE32F62001600C65813 /* MockPromoHistoryStore.swift in Sources */,
 				CCB2EBE42F62001600C65813 /* MockPromoDelegate.swift in Sources */,
+				C18205380F8DB6124EAEE7A7 /* MockAutofillToolbarPinningPromoPresenter.swift in Sources */,
 				3135647F2D9EBB9900BF4B5D /* AIChatAddressBarPromptExtractorTests.swift in Sources */,
 				3706FE86293F661700E42796 /* FileDownloadManagerTests.swift in Sources */,
 				BDA7648E2BC4E4EF00D0400C /* DefaultVPNLocationFormatterTests.swift in Sources */,
@@ -18210,6 +18235,8 @@
 				4B379C2227BDBA29008A968E /* LocalAuthenticationService.swift in Sources */,
 				37CEFCA92A6737A2001EF741 /* CredentialsCleanupErrorHandling.swift in Sources */,
 				317307272CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */,
+				71E82659142ED64B1EB9C0B2 /* AutofillToolbarPinningPromoPresenting.swift in Sources */,
+				CDCC672B44CC6EA9370CAAA1 /* AutofillToolbarPinningPromoDelegate.swift in Sources */,
 				4BB99D0326FE191E001E4761 /* SafariBookmarksReader.swift in Sources */,
 				BBD7A1D12F97F0FF00D6AF54 /* AIChatReasoningEffort.swift in Sources */,
 				316913292BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift in Sources */,
@@ -19044,6 +19071,7 @@
 				CCE3F83C2F5A24760046F5E7 /* PromoServiceFactory+DefaultBrowserAndDock.swift in Sources */,
 				0DE0005FAC7029CB1E004100 /* PromoServiceFactory+CookiePopupProtectionOptIn.swift in Sources */,
 				CD41A0010000000000100008 /* PromoServiceFactory+AutoplayDiscoverability.swift in Sources */,
+				306A012C45646BD55D7390AC /* PromoServiceFactory+AutofillToolbarPinning.swift in Sources */,
 				CD41A0010000000000100005 /* AutoplayDiscoverabilityPromoDelegate.swift in Sources */,
 				7B99CF312EEAC1A5003FA486 /* UserNotificationAuthorizationService.swift in Sources */,
 				AAE99B8927088A19008B6BD9 /* FirePopover.swift in Sources */,
@@ -19430,6 +19458,7 @@
 				8434D9582F23713000B4796F /* WarnBeforeQuitManagerTests.swift in Sources */,
 				CCB2EBD62F62000C00C65813 /* PromoRegistryTests.swift in Sources */,
 				CD41A001000000000010000C /* AutoplayDiscoverabilityPromoDelegateTests.swift in Sources */,
+				EA4E2D3161EACC0CF28D704E /* AutofillToolbarPinningPromoDelegateTests.swift in Sources */,
 				CCB2EBD72F62000C00C65813 /* PromoServiceTests.swift in Sources */,
 				CCB2EBD82F62000C00C65813 /* PromoServiceFactoryTests.swift in Sources */,
 				CCB2EBD92F62000C00C65813 /* PromoTestHelpers.swift in Sources */,
@@ -19813,6 +19842,7 @@
 				CCB2EBDF2F62001600C65813 /* MockExternalPromoDelegate.swift in Sources */,
 				CCB2EBE02F62001600C65813 /* MockPromoHistoryStore.swift in Sources */,
 				CCB2EBE12F62001600C65813 /* MockPromoDelegate.swift in Sources */,
+				C2E804438AFADCBFB950AD65 /* MockAutofillToolbarPinningPromoPresenter.swift in Sources */,
 				9FE239C22FD8FB59007135F2 /* WindowsManagerFireWindowOpenTriggerTests.swift in Sources */,
 				311309792ECE77BC00FCD220 /* AddressBarSharedTextStateTests.swift in Sources */,
 				56BC8F022D312B320046059D /* ConfigurationManagerTests.swift in Sources */,

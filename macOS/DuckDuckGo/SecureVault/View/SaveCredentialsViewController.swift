@@ -200,7 +200,7 @@ final class SaveCredentialsViewController: NSViewController {
     override func viewWillDisappear() {
         passwordManagerStateCancellable = nil
         if shouldFirePinPromptNotification {
-            NotificationCenter.default.post(name: .passwordsPinningPrompt, object: nil)
+            NotificationCenter.default.post(name: .firstPasswordSaved, object: nil)
         }
     }
 

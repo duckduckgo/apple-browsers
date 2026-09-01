@@ -972,7 +972,7 @@ final class NavigationBarViewController: NSViewController {
 
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(showPasswordsPinningOption(_:)),
-                                               name: .passwordsPinningPrompt,
+                                               name: .firstPasswordSaved,
                                                object: nil)
 
         NotificationCenter.default.addObserver(self,

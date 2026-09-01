@@ -4266,6 +4266,8 @@
 		CCD89A3E2ECF5AC6008E738B /* NextStepsListUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD89A402ECF5AC6008E738B /* NextStepsListUITests.swift */; };
 		CCE3F8102F59B0700046F5E4 /* PromoTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE3F80F2F59B06A0046F5E4 /* PromoTypeTests.swift */; };
 		CCE3F8112F59B0700046F5E4 /* PromoTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE3F80F2F59B06A0046F5E4 /* PromoTypeTests.swift */; };
+		A3507663AC5B47558BC8E4A1 /* PromoTriggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41917945DCEE4527A89AB348 /* PromoTriggerTests.swift */; };
+		9C5E11254D5A4778A442EBE9 /* PromoTriggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41917945DCEE4527A89AB348 /* PromoTriggerTests.swift */; };
 		CCE3F8342F5A24760046F5E4 /* PromoServiceFactory+NextSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE3F8332F5A24760046F5E4 /* PromoServiceFactory+NextSteps.swift */; };
 		CCE3F8352F5A24760046F5E4 /* PromoServiceFactory+NextSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE3F8332F5A24760046F5E4 /* PromoServiceFactory+NextSteps.swift */; };
 		CCE3F8372F5A26D90046F5E4 /* NextStepsCardsPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE3F8362F5A26D90046F5E4 /* NextStepsCardsPromoDelegate.swift */; };
@@ -7148,6 +7150,7 @@
 		CCD89A3C2ECF5AC5008E738B /* DefaultBrowserAndDockPromptsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptsUITests.swift; sourceTree = "<group>"; };
 		CCD89A402ECF5AC6008E738B /* NextStepsListUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextStepsListUITests.swift; sourceTree = "<group>"; };
 		CCE3F80F2F59B06A0046F5E4 /* PromoTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoTypeTests.swift; sourceTree = "<group>"; };
+		41917945DCEE4527A89AB348 /* PromoTriggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoTriggerTests.swift; sourceTree = "<group>"; };
 		CCE3F8332F5A24760046F5E4 /* PromoServiceFactory+NextSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+NextSteps.swift"; sourceTree = "<group>"; };
 		CCE3F8362F5A26D90046F5E4 /* NextStepsCardsPromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextStepsCardsPromoDelegate.swift; sourceTree = "<group>"; };
 		CCE3F8392F5A27910046F5E4 /* NextStepsCardsPromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextStepsCardsPromoDelegateTests.swift; sourceTree = "<group>"; };
@@ -13290,6 +13293,7 @@
 				FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */,
 				CCE3F80F2F59B06A0046F5E4 /* PromoTypeTests.swift */,
 				6B4F96BDD7A9370213795740 /* SyncFaviconsPromoDelegateTests.swift */,
+				41917945DCEE4527A89AB348 /* PromoTriggerTests.swift */,
 			);
 			path = Promotions;
 			sourceTree = "<group>";
@@ -17328,6 +17332,7 @@
 				3706FE64293F661700E42796 /* DownloadListStoreTests.swift in Sources */,
 				9FFBEE6C2DDEAF820058B11A /* MockDefaultBrowserAndDockPromptTypeDecider.swift in Sources */,
 				CCE3F8102F59B0700046F5E4 /* PromoTypeTests.swift in Sources */,
+				A3507663AC5B47558BC8E4A1 /* PromoTriggerTests.swift in Sources */,
 				BB42A37B2F3A828C00598719 /* MemoryUsageIntervalReporterTests.swift in Sources */,
 				3706FE65293F661700E42796 /* ContentBlockingUpdatingTests.swift in Sources */,
 				9F872D9E2B9058D000138637 /* Bookmarks+TabTests.swift in Sources */,
@@ -19369,6 +19374,7 @@
 				9F15567E2DDC3FA200A35DBA /* MockDefaultBrowserAndDockPromptFeatureFlagger.swift in Sources */,
 				B6619EF62B10DFF700CD9186 /* InstructionsFormatParserTests.swift in Sources */,
 				CCE3F8112F59B0700046F5E4 /* PromoTypeTests.swift in Sources */,
+				9C5E11254D5A4778A442EBE9 /* PromoTriggerTests.swift in Sources */,
 				CC8E70D92F0EC731008C8070 /* NewTabPageNextStepsSingleCardProviderTests.swift in Sources */,
 				4B85B6A02ED3BF0E003EBF2A /* MockFileManager.swift in Sources */,
 				31A2FD172BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift in Sources */,

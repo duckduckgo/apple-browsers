@@ -30,6 +30,7 @@ enum PromoTrigger {
     case newTabPageAppeared
     case autoplayDiscoverability
     case missingBookmarkFaviconEncountered
+    case firstPasswordSaved
     case testTriggered
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
@@ -44,7 +45,9 @@ enum PromoTrigger {
             NotificationCenter.default.publisher(for: .autoplayPolicyDisplayed)
                 .map { _ in PromoTrigger.autoplayDiscoverability },
             NotificationCenter.default.publisher(for: .missingBookmarkFaviconEncountered)
-                .map { _ in PromoTrigger.missingBookmarkFaviconEncountered }
+                .map { _ in PromoTrigger.missingBookmarkFaviconEncountered },
+            NotificationCenter.default.publisher(for: .firstPasswordSaved)
+                .map { _ in PromoTrigger.firstPasswordSaved }
         ).eraseToAnyPublisher()
 
         if PromoServiceFactory.includeTestPromos{
@@ -63,4 +66,5 @@ extension Notification.Name {
     static let promoDebugTestTrigger = Notification.Name("com.duckduckgo.app.promoService.debugTestTrigger")
     static let autoplayPolicyDisplayed = Notification.Name("com.duckduckgo.app.autoplayPolicyDisplayed")
     static let missingBookmarkFaviconEncountered = Notification.Name("com.duckduckgo.app.missingBookmarkFaviconEncountered")
+    static let firstPasswordSaved = Notification.Name("com.duckduckgo.app.firstPasswordSaved")
 }

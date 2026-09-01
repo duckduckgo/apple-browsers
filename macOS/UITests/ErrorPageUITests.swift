@@ -28,7 +28,6 @@ class ErrorPageUITests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: ["debugURLScheme": true])
         app.enforceSingleWindow()
         webView = app.webViews.firstMatch
@@ -1180,7 +1179,7 @@ class ErrorPageUITests: UITestCase {
     // MARK: - Session restoration after error
 
     /// Session restore on; history from URLs (middle → forward → back), then **`debug://failure` + simulate connection error** (reliable
-    /// failure without tests-server gating). After relaunch: new tab, **simulate off** immediately before **select tab 0** so
+    /// failure without tests-server gating). After restart: new tab, **simulate off** immediately before **select tab 0** so
     /// reactivation loads demo HTML. Back/Forward menus follow the same shape as before.
     func testErrorPage_SessionRestoration_FailureScheme_NewTabSelectRecover() {
         app.disableWarnBeforeQuitting()
@@ -1188,7 +1187,7 @@ class ErrorPageUITests: UITestCase {
         let sessionHistoryMiddleURL = UITests.simpleServedPage(titled: "Session Restore Middle")
         let sessionHistoryForwardURL = UITests.simpleServedPage(titled: "Session Restore Forward")
 
-        // Turn on “restore previous session” so the next quit/relaunch restores tabs and history.
+        // Turn on “restore previous session” so the next restart restores tabs and history.
         // This preference is persisted across UI-test launches, so restore the default before finishing.
         app.openPreferencesWindow()
         app.preferencesSetRestorePreviousSession(to: .restoreLastSession)
@@ -1235,9 +1234,8 @@ class ErrorPageUITests: UITestCase {
             "Address bar should reference debug://failure, got: \(addressBeforeQuit)"
         )
 
-        // Quit and relaunch; session restore should reopen on the same failing debug://failure tab.
-        app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        // Session restore should reopen on the same failing debug://failure tab.
+        app.restart()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence))
 
         assertGenericErrorPageVisible()

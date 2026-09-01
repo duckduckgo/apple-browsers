@@ -422,6 +422,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true
     case appSwitcherSnapshotClearing
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217929175704444?focus=true
+    case tabPreviewPerformanceOptimization
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
@@ -508,7 +511,7 @@ public enum FeatureFlag: String {
 
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperimentV3
+    case searchTokenExperimentV4
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -786,7 +789,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatContextualFloatingInput:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .tabSwitcherTrackerCount:
@@ -799,8 +802,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .uiTestExperiment:
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
-        case .searchTokenExperimentV3:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV3), cohortType: SearchTokenExperimentCohort.self)
+        case .searchTokenExperimentV4:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV4), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment), cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment2:
@@ -849,6 +852,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.voiceShortcut))
         case .appSwitcherSnapshotClearing:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appSwitcherSnapshotClearing))
+        case .tabPreviewPerformanceOptimization:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabPreviewPerformanceOptimization))
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .bottomBarViewportFixedElementsWorkaround:

@@ -411,7 +411,8 @@ class MainViewController: UIViewController {
         SiteThemeColorManager(viewCoordinator: viewCoordinator,
                               currentTabViewController: { [weak self] in self?.currentTab }(),
                               appSettings: appSettings,
-                              themeManager: themeManager)
+                              themeManager: themeManager,
+                              isFloatingUIEnabled: isFloatingUIEnabled)
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
@@ -526,6 +527,12 @@ class MainViewController: UIViewController {
                                   windowProvider: { settings.refreshWindow },
                                   onFetchResult: { result in
             PixelKit.fire(SearchTokenPixel.fetch(result: result.rawValue), frequency: .dailyAndCount)
+        }, onTokenRefreshed: { [weak self] in
+            // Fired from the fetcher's background context; the refresh is MainActor + iOS 18.4-only.
+            Task { @MainActor in
+                guard #available(iOS 18.4, *) else { return }
+                self?.webExtensionManager?.performSearchTokenRefresh()
+            }
         })
     }()
 
@@ -4682,6 +4689,8 @@ extension MainViewController: BrowserChromeDelegate {
         updateFloatingDomainCapsuleVisibility(for: hidden ? 0 : 1)
     }
 
+    // Work around a Swift compiler crash when this is inlined from BrowserChromeManager to PullToRefreshViewAdapter.
+    @inline(never)
     func setRefreshControlEnabled(_ isEnabled: Bool) {
         currentTab?.setRefreshControlEnabled(isEnabled)
     }
@@ -4693,9 +4702,10 @@ extension MainViewController: BrowserChromeDelegate {
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
     }
 
-    /// No hide/show bars on scroll. On when bar hides behind web keyboard (else page jerks), and while the system
-    /// find-in-page navigator is visible so swipes can't reveal the chrome — the user must dismiss find first.
+    /// No hide/show bars on scroll. On when bar hides behind web keyboard (else page jerks), while the address bar
+    /// is moving, and while the system find-in-page navigator is visible so swipes can't reveal the chrome.
     var isChromeScrollInteractionDisabled: Bool {
+        if isAddressBarMoveInProgress { return true }
         if isBottomAddressBarHiddenForWebKeyboard { return true }
         if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage),
            currentTab?.webView.findInteraction?.isFindNavigatorVisible == true {
@@ -5543,6 +5553,7 @@ extension MainViewController: OmniBarDelegate {
                     } completion: {
                         self?.isAddressBarMoveInProgress = false
                         self?.omniBar.moveTransitionCompleted()
+                        self?.revealFloatingChromeImmediately()
                         self?.decorate()
                     }
 
@@ -7891,6 +7902,11 @@ extension MainViewController: OnboardingDelegate {
         // Enrol new users into the Search Token experiment. Must run here (post-onboarding) so we only
         // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).
         searchTokenExperiment.enrollIfEligible()
+        // The launch-time embedded-extension sync ran before enrollment (cohort was still nil), so
+        // resync now — otherwise a treatment user's first session never loads the search-token extension.
+        if #available(iOS 18.4, *) {
+            webExtensionLifecycleCoordinator?.sync()
+        }
 
         appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
 
@@ -8642,4 +8658,11 @@ extension MainViewController {
         guard let scope = currentDuckAIWideEventFlowScope else { return }
         duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
     }
+}
+
+// MARK: - SearchTokenProviding
+
+@available(iOS 18.4, *)
+extension MainViewController: SearchTokenProviding {
+    func currentToken() -> String? { searchTokenFetcher.retrieveToken() }
 }

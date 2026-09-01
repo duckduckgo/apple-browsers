@@ -34,18 +34,26 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
     }
 
     func testReachedHeadlinesMatchTheSpecifiedCopy() {
-        XCTAssertEqual(warning(.dailyLimitReached, window: .daily).localizedHeadline,
+        XCTAssertEqual(warning(.dailyReached, window: .daily).localizedHeadline,
                        "Daily limit reached")
-        XCTAssertEqual(warning(.weeklyLimitReached, window: .weekly).localizedHeadline,
+        XCTAssertEqual(warning(.weeklyReached, window: .weekly).localizedHeadline,
                        "Weekly usage limit reached")
-        XCTAssertEqual(warning(.advancedModelsLimitReached, window: .weekly).localizedHeadline,
+        XCTAssertEqual(warning(.weeklyReachedDegraded, window: .weekly).localizedHeadline,
                        "Advanced AI models limit reached")
     }
 
+    /// Web sends one id for a free user whichever window ran out, so the window picks the noun.
+    func testFreeReachedFollowsItsWindow() {
+        XCTAssertEqual(warning(.freeReached, window: .daily).localizedHeadline,
+                       "Daily limit reached")
+        XCTAssertEqual(warning(.freeReached, window: .weekly).localizedHeadline,
+                       "Weekly usage limit reached")
+    }
+
     func testResetCopyWrapsTheShortInterval() {
-        XCTAssertEqual(warning(.dailyLimitReached, window: .daily, resetsIn: .days(7)).localizedResetsIn,
+        XCTAssertEqual(warning(.dailyReached, window: .daily, resetsIn: .days(7)).localizedResetsIn,
                        "Resets in 7d")
-        XCTAssertEqual(warning(.dailyLimitReached, window: .daily, resetsIn: .hours(12)).localizedResetsIn,
+        XCTAssertEqual(warning(.dailyReached, window: .daily, resetsIn: .hours(12)).localizedResetsIn,
                        "Resets in 12h")
     }
 
@@ -70,27 +78,47 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
     func testFreeModelSwitchUsesItsOwnCopyRatherThanTheModelName() {
         let action = DuckAiUsageAction.switchToFreeModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
                                                                               modelShortName: "5.4 mini"))
-        XCTAssertEqual(warning(.advancedModelsLimitReached, window: .weekly, action: action).localizedActionTitle,
+        XCTAssertEqual(warning(.weeklyReachedDegraded, window: .weekly, action: action).localizedActionTitle,
                        "Switch to a Free Model")
     }
 
     func testUpsellCopyFollowsTrialEligibility() {
-        XCTAssertEqual(warning(.dailyLimitReached, window: .daily,
+        XCTAssertEqual(warning(.freeReached, window: .daily,
                                action: .tryForFree(isTrialEligible: true)).localizedActionTitle,
                        "Try for free")
-        XCTAssertEqual(warning(.dailyLimitReached, window: .daily,
+        XCTAssertEqual(warning(.freeReached, window: .daily,
                                action: .tryForFree(isTrialEligible: false)).localizedActionTitle,
                        "Subscribe")
     }
 
-    /// The resolver still produces this action so the decision stays visible in the log, but there
-    /// is no native route for it yet, so the card must render no button.
-    func testStartUsingWeeklyLimitOffersNoButton() {
-        XCTAssertNil(warning(.dailyLimitReached, window: .daily, action: .startUsingWeeklyLimit).localizedActionTitle)
+    func testStartUsingWeeklyLimitNamesTheHandOff() {
+        let entries = [DuckAiNativeStorageEntry(key: "duckai.fixedCostWindowBypassResetAtById", value: "{}")]
+
+        XCTAssertEqual(warning(.dailyReached, window: .daily,
+                               action: .startUsingWeeklyLimit(entries: entries)).localizedActionTitle,
+                       "Start using weekly limit")
     }
 
+    /// How a switch with nothing usable to switch to renders, as well as a notice web sent no cta for.
     func testNoActionOffersNoButton() {
-        XCTAssertNil(warning(.weeklyLimitReached, window: .weekly, action: nil).localizedActionTitle)
+        XCTAssertNil(warning(.weeklyReached, window: .weekly, action: nil).localizedActionTitle)
+    }
+
+    // MARK: - High-usage model notice
+
+    /// The web app's and Windows' sentence, with the model named. iOS words it differently for now.
+    func testHighUsageNoticeNamesTheModel() {
+        let notice = DuckAiHighUsageModelNotice(modelId: "claude-opus-4-8", modelShortName: "Opus 4.8")
+
+        XCTAssertEqual(UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName),
+                       "Opus 4.8 reaches usage limits 2-5x sooner than basic models.")
+    }
+
+    /// Only the model the web app calls high-usage, since the models payload carries no such field.
+    func testOnlyOpusCountsAsHighUsage() {
+        XCTAssertTrue(DuckAiHighUsageModels.includes("claude-opus-4-8"))
+        XCTAssertFalse(DuckAiHighUsageModels.includes("claude-sonnet-4-6"))
+        XCTAssertFalse(DuckAiHighUsageModels.includes(nil))
     }
 
     // MARK: - Helpers

@@ -51,7 +51,7 @@ jobs:
       matrix:
         runner: [macos-26-xlarge]
         include:
-          - xcode-version: 26.4
+          - xcode-version: 26.6
             runner: macos-26-xlarge
             os-version: 26
 

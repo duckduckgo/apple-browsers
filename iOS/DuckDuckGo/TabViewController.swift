@@ -751,7 +751,8 @@ class TabViewController: UIViewController {
             userScriptProvider: { [weak self] in self?.userScripts?.pageContextUserScript },
             faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) },
             attachabilityPolicyProvider: { [weak self] in self?.currentPageContextAttachabilityPolicy() },
-            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) }
+            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) },
+            isDocumentContextEnabled: { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatPdfPageContext) ?? false }
         )
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,

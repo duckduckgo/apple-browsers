@@ -847,8 +847,7 @@ final class AIChatOmnibarController {
         if let selectedModel, selectedModel.supportsTool(.imageGeneration) {
             return selectedModel
         }
-        let candidates = models.filter { $0.entityHasAccess && $0.supportsTool(.imageGeneration) }
-        return candidates.first(where: \.isSuggestedForImageCreation) ?? candidates.first
+        return AIChatModel.preferredImageGenerationModel(in: models)
     }
 
     private func switchToImageGenerationModelIfNeeded() -> AIChatCreateImageModelSwitchNotice? {

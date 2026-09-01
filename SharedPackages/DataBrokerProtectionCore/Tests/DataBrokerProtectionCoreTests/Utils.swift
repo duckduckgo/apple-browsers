@@ -21,5 +21,6 @@ import Foundation
 extension HTTPURLResponse {
     static let ok = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 200, httpVersion: nil, headerFields: [String: String]())!
     static let notModified = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 304, httpVersion: nil, headerFields: [String: String]())!
+    static let badRequest = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 400, httpVersion: nil, headerFields: [String: String]())!
     static let noAuth = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 401, httpVersion: nil, headerFields: [String: String]())!
 }

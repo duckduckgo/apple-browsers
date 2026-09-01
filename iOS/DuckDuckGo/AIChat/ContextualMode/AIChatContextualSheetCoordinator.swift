@@ -105,6 +105,7 @@ final class AIChatContextualSheetCoordinator {
     private var sessionEffectCancellable: AnyCancellable?
     private var currentPageURLCancellable: AnyCancellable?
     private var didFinishURLCancellable: AnyCancellable?
+    private var documentReadCancellable: AnyCancellable?
     private var currentPageURL: URL?
     private(set) var persistentUTIHost: AIChatContextualUTIHost?
     private var latestDidFinishURL: URL?
@@ -231,6 +232,17 @@ final class AIChatContextualSheetCoordinator {
                 Task { [weak self] in
                     self?.latestDidFinishURL = url
                     await self?.notifyPageChanged()
+                }
+            }
+        self.documentReadCancellable = pageContextHandler.documentReadInProgressPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] inProgress in
+                self?.sessionState.setDocumentReadInProgress(inProgress)
+                guard let chip = self?.persistentUTIHost?.chipViewModel else { return }
+                if inProgress {
+                    chip.beginLoading()
+                } else {
+                    chip.endLoading()
                 }
             }
     }

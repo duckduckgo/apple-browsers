@@ -171,6 +171,9 @@ final class AIChatContextualChatSessionState {
     private var isManualAttachInProgress = false
     private var isManualAttachFromFrontend = false
 
+    /// True while a document's bytes are read
+    private var isDocumentReadInProgress = false
+
     /// Flag to prevent duplicate navigation processing
     private var isProcessingNavigation = false
 
@@ -557,6 +560,12 @@ final class AIChatContextualChatSessionState {
         suppressesAutoAttachForSelectionEntry = false
     }
 
+    func setDocumentReadInProgress(_ inProgress: Bool) {
+        guard isDocumentReadInProgress != inProgress else { return }
+        isDocumentReadInProgress = inProgress
+        rebuildViewState()
+    }
+
     func beginLoadingSuggestions() {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
         suggestionsResolveTask?.cancel()
@@ -829,11 +838,13 @@ private extension AIChatContextualChatSessionState {
     /// Beyond one attachment a single-line suggestion can no longer say which part of the prompt it
     /// acts on.
     private var shouldHideSuggestions: Bool {
-        attachmentCount > 1
+        attachmentCount > 1 || isDocumentReadInProgress
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
-        // These are all page-scoped, so beside an attached selection they act on the wrong thing.
+        if isDocumentReadInProgress {
+            return []
+        }
         if !attachedSelections.isEmpty, frontendState == .noChat {
             return []
         }
@@ -921,7 +932,7 @@ private extension AIChatContextualChatSessionState {
             chipState: chipState,
             quickActions: quickActions,
             suggestions: shouldHideSuggestions ? [] : visibleSuggestions(reserving: quickActions.count),
-            suggestionsLoadState: suggestionsLoadState,
+            suggestionsLoadState: isDocumentReadInProgress ? .loaded : suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
             suggestionsPageType: suggestionsPageType,
             suggestionsScope: suggestionsScope

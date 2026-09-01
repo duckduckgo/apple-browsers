@@ -61,9 +61,12 @@ public final class AIChatContextChipView: UIView {
     public enum State {
         case placeholder
         case attached(title: String, favicon: UIImage?)
+        case loading
     }
 
     private var currentState: State = .placeholder
+
+    private var loadingView: AIChatSuggestionsLoadingView?
 
     /// Only live in the placeholder state. Left enabled in the attached state it would recognise taps on
     /// the remove button and cancel them, since it spans the whole chip.
@@ -212,7 +215,31 @@ private extension AIChatContextChipView {
     }
 
     func updateUI(for state: State) {
+        hideLoadingView()
+        faviconView.isHidden = false
+        titleLabel.isHidden = false
+
         switch state {
+        case .loading:
+            isHidden = false
+            faviconView.isHidden = true
+            titleLabel.isHidden = true
+            removeButton.isHidden = true
+            // The chip draws the pill (same size as the attached chip); the loading view lends only its
+            // dots. Hug them rather than the fixed attached width.
+            backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+            applyBorder(width: Constants.borderWidth)
+            fixedWidthConstraint.isActive = false
+            titleTrailingToRemoveButtonConstraint.isActive = false
+            titleTrailingToEdgeConstraint.isActive = false
+            showLoadingView()
+            isUserInteractionEnabled = false
+            placeholderTapRecognizer.isEnabled = false
+            isAccessibilityElement = true
+            accessibilityIdentifier = "AIChat.ContextChip.Loading"
+            accessibilityLabel = UserText.askAboutPage
+            accessibilityTraits = .none
+
         case .placeholder:
             // Reads as a button, since tapping it re-attaches the page the user removed. Keeping it in
             // the strip means removing and re-attaching never changes the input's height.
@@ -337,6 +364,26 @@ private extension AIChatContextChipView {
 
     func placeholderFavicon() -> UIImage? {
         return DesignSystemImages.Glyphs.Size24.globe.withRenderingMode(.alwaysTemplate)
+    }
+
+    func showLoadingView() {
+        guard loadingView == nil else { return }
+        let view = AIChatSuggestionsLoadingView()
+        view.backgroundColor = .clear
+        view.layer.borderWidth = 0
+        view.translatesAutoresizingMaskIntoConstraints = false
+        chipContentView.addSubview(view)
+        NSLayoutConstraint.activate([
+            view.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor),
+            view.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor)
+        ])
+        loadingView = view
+    }
+
+    func hideLoadingView() {
+        loadingView?.removeFromSuperview()
+        loadingView = nil
     }
 
     @objc func removeButtonTapped() {

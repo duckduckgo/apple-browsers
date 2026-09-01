@@ -77,6 +77,9 @@ protocol AIChatPageContextHandling: AnyObject {
     /// Publisher for context updates. Subscribe to receive results after triggering collection.
     var contextPublisher: AnyPublisher<AIChatPageContext?, Never> { get }
 
+    /// True while a document tab's bytes are being read; drives the attachment chip's loading state.
+    var documentReadInProgressPublisher: AnyPublisher<Bool, Never> { get }
+
     /// Triggers context collection from JS. Does not return the result directly.
     /// Callers should subscribe to `contextPublisher` for results.
     /// Note: First call also starts observing auto-updates from the page.
@@ -132,12 +135,17 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     private static let collectionTimeout: TimeInterval = 30
 
     private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
+    private let documentReadInProgressSubject = CurrentValueSubject<Bool, Never>(false)
     private var updatesCancellable: AnyCancellable?
 
     // MARK: - AIChatPageContextHandling
 
     var contextPublisher: AnyPublisher<AIChatPageContext?, Never> {
         contextSubject.eraseToAnyPublisher()
+    }
+
+    var documentReadInProgressPublisher: AnyPublisher<Bool, Never> {
+        documentReadInProgressSubject.eraseToAnyPublisher()
     }
 
     // MARK: - Initialization
@@ -298,7 +306,6 @@ private extension AIChatPageContextHandler {
         publishContextUpdate(context)
     }
 
-    /// Reads the document out of the web view and delivers it as page context.
     func collectDocumentContext(for url: URL, trigger: PageContextExtractionTrigger) {
         guard let webView = webViewProvider() else {
             Logger.aiChat.debug("[PageContext] Document collect skipped - no web view available")
@@ -309,8 +316,10 @@ private extension AIChatPageContextHandler {
 
         let title = documentTitle(for: url, webView: webView)
         let startedAt = Date()
+        documentReadInProgressSubject.send(true)
         Task { @MainActor [weak self] in
             guard let self else { return }
+            defer { self.documentReadInProgressSubject.send(false) }
             let result = await self.makeDocumentContext(webView, url, title)
             let latency = PageContextExtractionLatencyBucket(seconds: Date().timeIntervalSince(startedAt))
 

@@ -448,7 +448,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onUserChoiceRecorded: { [weak self] in self?.recordUserChoiceToStore() },
                 clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) },
-                onModelSelectionChanged: { [weak self] _ in self?.footerController?.userSwitchedModel() },
+                onModelSelectionChanged: { [weak self] previousModelId, modelId in
+                    self?.footerController?.userSwitchedModel(from: previousModelId, to: modelId)
+                },
                 onModelSelectionWillChange: { [weak self] in self?.footerController?.noteModelSelectionWillChange(to: $0) }
             ),
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,

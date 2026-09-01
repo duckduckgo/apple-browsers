@@ -154,12 +154,12 @@ final class UTIFooterControllerTests: XCTestCase {
 
     // MARK: - Model switch
 
-    /// The message asked for a switch; one made from the bar's picker settles it as the CTA would.
-    func test_userSwitchedModel_hidesTheFooter() {
+    /// Picking the model the message offered from the bar's picker settles it as the CTA would.
+    func test_userSwitchedModel_hidesTheFooterWhenTheModelIsTheOneOffered() {
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()
 
-        sut.userSwitchedModel()
+        sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
 
         XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
     }
@@ -167,7 +167,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_userSwitchedModel_keepsTheMessageHiddenUntilWebPublishesAgain() {
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()
-        sut.userSwitchedModel()
+        sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
 
         sut.refresh()
         XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
@@ -177,11 +177,22 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("80%") ?? false)
     }
 
+    /// A heavier or sideways switch has not dealt with the message.
+    func test_userSwitchedModel_leavesTheFooterUpWhenTheModelIsNotOneOffered() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+
+        sut.userSwitchedModel(from: "gpt-5.4", to: "claude-opus")
+
+        XCTAssertEqual(presenter.appliedMessages.count, 1)
+        XCTAssertNotNil(presenter.appliedMessages.last ?? nil)
+    }
+
     func test_userSwitchedModel_leavesAMessageThatAskedForNoSwitchUp() {
         limitsProvider.limits = weeklyReachedWithUpsell()
         sut.refresh()
 
-        sut.userSwitchedModel()
+        sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
 
         XCTAssertEqual(presenter.appliedMessages.count, 1)
         XCTAssertNotNil(presenter.appliedMessages.last ?? nil)
@@ -557,7 +568,18 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
 
-        sut.userSwitchedModel()
+        sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
+
+        XCTAssertEqual(measurementFiring.events.last, .modelSwitched(approachingExposure(percentBucket: 75)))
+    }
+
+    /// The pixel is about what the user did, not whether it settled the message.
+    func test_userSwitchedModel_reportsASwitchThatLeavesTheMessageUp() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.userSwitchedModel(from: "gpt-5.4", to: "claude-opus")
 
         XCTAssertEqual(measurementFiring.events.last, .modelSwitched(approachingExposure(percentBucket: 75)))
     }

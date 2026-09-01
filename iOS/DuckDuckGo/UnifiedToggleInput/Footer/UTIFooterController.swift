@@ -141,10 +141,11 @@ final class UTIFooterController {
         measurement.promptSubmitted()
     }
 
-    /// A switch the user made from the bar's picker; the card's own CTA reports and retires itself.
-    func userSwitchedModel() {
+    /// A switch from the bar's picker: always reported, but it only retires the message when it is the
+    /// step down the message asked for. The card's own CTA reports and retires itself.
+    func userSwitchedModel(from previousModelId: String?, to modelId: String) {
         measurement.modelSwitched()
-        viewModel.userSwitchedModel()
+        viewModel.userSwitchedModel(from: previousModelId, to: modelId)
         applyCurrentState()
     }
 

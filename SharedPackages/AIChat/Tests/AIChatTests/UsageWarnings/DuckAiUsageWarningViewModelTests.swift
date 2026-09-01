@@ -202,16 +202,31 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertEqual(dismissalStore.actedSnapshot()?.noticeID, "approaching")
     }
 
-    /// The bar's own picker applies the model itself, so a switch made there has to stand the message
-    /// down the same way the card's button does.
-    func testWhenTheUserSwitchesModelThenTheMessageIsStoodDown() {
+    /// Only a message that offers the picker can be stood down by it.
+    func testAChevronSwitchIsIgnoredWhenTheMessageOffersNoPicker() {
+        snapshotProvider.snapshot = snapshot(notice(id: .freeReached, reached: true),
+                                             cta: DuckAiUsageCta(id: .subscribe))
+        let sut = makeSUT()
+        sut.refresh()
+
+        sut.modelSwitchedFromMessage()
+
+        XCTAssertEqual(sut.warning?.message, .freeReached)
+        XCTAssertNil(dismissalStore.actedSnapshot())
+    }
+
+    // MARK: - Switching from the bar's own picker
+
+    /// Picking a model the message offered is the same as taking its button.
+    func testWhenTheUserPicksAModelTheMessageOfferedThenItIsStoodDown() {
         snapshotProvider.snapshot = snapshot(notice(id: .approaching),
-                                             cta: DuckAiUsageCta(id: .switchToCheaper),
+                                             cta: DuckAiUsageCta(id: .switchToCheaper,
+                                                                 target: .init(modelId: "haiku", modelIds: ["mini"])),
                                              signature: "snapshot-1")
         let sut = makeSUT(suggestion: .suggestion(DuckAiModelSuggestion(modelId: "haiku", modelShortName: "Haiku")))
         sut.refresh()
 
-        sut.userSwitchedModel()
+        sut.userSwitchedModel(from: "sonnet", to: "mini")
 
         XCTAssertNil(sut.warning)
         XCTAssertEqual(dismissalStore.actedSnapshot()?.noticeID, "approaching")
@@ -219,28 +234,61 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
 
     /// The picker re-resolves before reporting the switch, so by then a switch to the cheapest model
     /// has already left the message with no button. It still asked for the switch the user just made.
-    func testWhenTheUserSwitchesToTheCheapestModelThenTheMessageIsStillStoodDown() {
+    func testWhenTheUserPicksTheCheapestModelThenTheMessageIsStillStoodDown() {
         snapshotProvider.snapshot = snapshot(notice(id: .approaching),
-                                             cta: DuckAiUsageCta(id: .switchToCheaper),
+                                             cta: DuckAiUsageCta(id: .switchToCheaper,
+                                                                 target: .init(modelId: "haiku", modelIds: [])),
                                              signature: "snapshot-1")
         let sut = makeSUT(suggestion: .none(reason: .noTargetForSelectedModel))
         sut.refresh()
         XCTAssertNil(sut.warning?.action)
 
-        sut.userSwitchedModel()
+        sut.userSwitchedModel(from: "sonnet", to: "haiku")
 
         XCTAssertNil(sut.warning)
         XCTAssertEqual(dismissalStore.actedSnapshot()?.noticeID, "approaching")
     }
 
+    /// A sideways or heavier switch has not dealt with the message.
+    func testWhenTheUserPicksAModelTheMessageDidNotOfferThenItStaysUp() {
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching),
+                                             cta: DuckAiUsageCta(id: .switchToCheaper,
+                                                                 target: .init(modelId: "haiku", modelIds: [])),
+                                             signature: "snapshot-1")
+        let sut = makeSUT(suggestion: .suggestion(DuckAiModelSuggestion(modelId: "haiku", modelShortName: "Haiku")))
+        sut.refresh()
+
+        sut.userSwitchedModel(from: "sonnet", to: "opus")
+
+        XCTAssertEqual(sut.warning?.message, .approaching)
+        XCTAssertNil(dismissalStore.actedSnapshot())
+    }
+
+    /// Web keys its offer to the model the picker is on, so that table decides, not the top-level one.
+    func testWhenTheOfferIsKeyedToThePickerModelThenThatTableDecides() {
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching),
+                                             cta: DuckAiUsageCta(id: .switchToCheaper,
+                                                                 byModelId: ["sonnet": .init(modelId: "haiku", modelIds: [])]),
+                                             signature: "snapshot-1")
+        let sut = makeSUT(suggestion: .suggestion(DuckAiModelSuggestion(modelId: "haiku", modelShortName: "Haiku")))
+        sut.refresh()
+
+        sut.userSwitchedModel(from: "opus", to: "haiku")
+        XCTAssertEqual(sut.warning?.message, .approaching)
+
+        sut.userSwitchedModel(from: "sonnet", to: "haiku")
+        XCTAssertNil(sut.warning)
+    }
+
     /// Only a message that asked for a model switch is settled by one.
-    func testWhenTheUserSwitchesModelButTheMessageAskedForNoSwitchThenItStaysUp() {
+    func testWhenTheUserPicksAModelButTheMessageAskedForNoSwitchThenItStaysUp() {
         snapshotProvider.snapshot = snapshot(notice(id: .freeReached, reached: true),
-                                             cta: DuckAiUsageCta(id: .subscribe))
+                                             cta: DuckAiUsageCta(id: .subscribe,
+                                                                 target: .init(modelId: "haiku", modelIds: [])))
         let sut = makeSUT()
         sut.refresh()
 
-        sut.userSwitchedModel()
+        sut.userSwitchedModel(from: "sonnet", to: "haiku")
 
         XCTAssertEqual(sut.warning?.message, .freeReached)
         XCTAssertNil(dismissalStore.actedSnapshot())
@@ -322,19 +370,6 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         sut.refresh()
 
         XCTAssertFalse(sut.modelSwitchedToSuggestion("haiku"))
-
-        XCTAssertEqual(sut.warning?.message, .freeReached)
-        XCTAssertNil(dismissalStore.actedSnapshot())
-    }
-
-    /// Only a message that offers the picker can be stood down by it.
-    func testAChevronSwitchIsIgnoredWhenTheMessageOffersNoPicker() {
-        snapshotProvider.snapshot = snapshot(notice(id: .freeReached, reached: true),
-                                             cta: DuckAiUsageCta(id: .subscribe))
-        let sut = makeSUT()
-        sut.refresh()
-
-        sut.modelSwitchedFromMessage()
 
         XCTAssertEqual(sut.warning?.message, .freeReached)
         XCTAssertNil(dismissalStore.actedSnapshot())

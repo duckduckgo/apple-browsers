@@ -6283,6 +6283,9 @@ extension MainViewController: EscapeHatchActionRouter {
         // row also reaches after already reporting its own terminal.
         recordNewTabPageSessionAction { $0.tapReturnToLast() }
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .lastTabLoaded)
+        if tab.isAITab {
+            fireAIChatEntryPointPixel(source: .returnToChatCard, opensNewTab: false, hasPrompt: false)
+        }
 
         onSwitchToTab(tab)
     }
@@ -7118,6 +7121,9 @@ extension MainViewController: TabSwitcherDelegate {
             // Only a chosen tab is a terminal; dismissing with none selected creates a new tab,
             // which opens its own visit instead.
             newTabPageSessionInstrumentation.visitEnded(terminalAction: .selectOtherTab)
+            if tab.isAITab {
+                fireAIChatEntryPointPixel(source: .tabSwitcherExistingChat, opensNewTab: false, hasPrompt: false)
+            }
             tabManager.select(tab, dismissCurrent: false)
         }
 

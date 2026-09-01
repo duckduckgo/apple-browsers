@@ -36,9 +36,6 @@ enum DataClearingPixels {
 // MARK: - PixelKit.Event Protocol
 
 extension DataClearingPixels: PixelKit.Event {
-    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
-    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
-
     var name: String {
         switch self {
         case .retriggerIn20s:
@@ -74,9 +71,8 @@ extension DataClearingPixels: PixelKit.Event {
 ///
 /// Kept separate from `DataClearingPixels` for two reasons, both of which would otherwise change
 /// pixels this type does not own:
-/// - these four have always sent the `_ios_phone` / `_ios_tablet` marker and `DataClearingPixels`
-///   never has, so the two need different `platformSuffixPolicy` values. Merging them would start
-///   marking `m_fire_retrigger_in_20s` and `m_fire_user_action_before_completion` too.
+/// - these four use `.legacyBeforeFrequencySuffix` (marker before the frequency suffix);
+///   `DataClearingPixels` uses PixelKit's default `.standard` (marker after it).
 /// - `DataClearingPixels` reports `pixelSource`, which these four do not declare in
 ///   `forget_all.json5`.
 enum DataClearingCompletionPixels {

@@ -96,6 +96,9 @@ struct UnifiedSuggestionsView: View {
             // cell surfaces and separators cannot outlive the SwiftUI row labels.
             .modifier(DismissFade(animationModel: viewModel.animationModel,
                                   isEnabled: usesWholeListDismissFade))
+            // The floating-bottom host already consumes the system top safe area. Ignore its transient
+            // relayout pulse here so List does not turn it into an animated content-offset correction.
+            .ignoresSafeArea(.container, edges: isFloatingUIEnabled && isAddressBarAtBottom ? .top : [])
             .accessibilityHidden(viewModel.isFireTab && !isTypingList)
     }
 }

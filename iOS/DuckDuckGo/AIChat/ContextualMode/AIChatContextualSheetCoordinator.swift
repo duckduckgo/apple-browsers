@@ -71,6 +71,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user requests a new Duck.ai voice chat.
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator)
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -753,6 +756,10 @@ private extension AIChatContextualSheetCoordinator {
         host.onPromptDelivered = { [weak self] in
             self?.sessionState.markUTIContextDelivered()
         }
+        host.onDuckAIPromptSubmitted = { [weak self] origin in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: origin)
+        }
         host.onAttachmentsChanged = { [weak self] in
             self?.sessionState.refreshForAttachmentChange()
         }
@@ -917,7 +924,7 @@ private extension AIChatContextualSheetCoordinator {
                 }
 
                 if let cached = self.sessionState.latestContext?.contextData,
-                   cached.attached != false, !cached.content.isEmpty {
+                   cached.attached != false, cached.hasAttachedPage {
                     return cached
                 }
                 self.sessionState.beginManualAttach(fromFrontend: true)
@@ -1165,6 +1172,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
         selectionJourneyInstrumentation.promptSubmitted()
         sessionState.handlePromptSubmission(prompt)
+        delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: .contextualChat)
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,

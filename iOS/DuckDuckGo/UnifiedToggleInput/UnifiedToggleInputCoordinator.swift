@@ -165,6 +165,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var inputMode: TextEntryMode = .aiChat
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
+    private let featureDiscovery: FeatureDiscovery
     private let aiChatSettings: AIChatSettingsProvider
     private let sessionMonitor: UTISessionMonitor
     private(set) var currentTabUID: TabUID?
@@ -304,6 +305,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         stateStore: UnifiedInputStateStoring? = nil,
         syncService: DDGSyncing? = nil,
         switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
         aiChatSyncCleaner: AIChatSyncCleaning? = nil,
         recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
@@ -324,6 +326,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
         self.sessionMonitor = UTISessionMonitor(
             isEnabled: host == .omnibar,
@@ -433,7 +436,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onModelsUpdated: { [weak self] in self?.handleModelsUpdated() },
                 onUserChoiceRecorded: { [weak self] in self?.recordUserChoiceToStore() },
                 clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
-                onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
+                onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) },
+                onModelSelectionChanged: { [weak self] _ in self?.footerController?.recordModelSwitched() }
             ),
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
         )
@@ -884,7 +888,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func setUpUsageWarnings(subscriptionManager: any SubscriptionManager) {
         let viewModel = usageLimitsStore?.makeWarningViewModel(
-            tierProvider: { [weak self] in self?.subscriptionState.userTier ?? .free },
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
                 // The persisted id, not the live one: before a chat starts it is what a prompt would use.
@@ -901,8 +904,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewModel.onAction = { [weak self] action in
             self?.handleUsageWarningAction(action)
         }
-        footerController = UTIFooterController(viewModel: viewModel)
+        footerController = UTIFooterController(viewModel: viewModel,
+                                              highUsageNotice: makeHighUsageNoticeSource(),
+                                              measurement: makeUsageWarningMeasurement())
         footerController?.presenter = viewController
+
+        // Also what brings a message back after the user has acted on the previous one.
+        usageLimitsStore?.snapshotUpdates?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.footerController?.refresh() }
+            .store(in: &cancellables)
     }
 
     /// Stops the cheaper-model CTA suggesting something that can't handle the current draft.
@@ -916,16 +927,33 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
     }
 
+    /// The surface is read per fire: this one coordinator serves the address bar, the Duck.ai tab
+    /// and the contextual sheet.
+    private func makeUsageWarningMeasurement() -> DuckAiUsageWarningMeasurement {
+        DuckAiUsageWarningMeasurement(
+            pixelFiring: DuckAiUsageWarningPixelAdapter(surface: { [weak self] in self?.pixelSurface ?? .addressBar })
+        )
+    }
+
+    /// The persisted id, matching what the warning's own suggester reasons about.
+    private func makeHighUsageNoticeSource() -> UTIFooterHighUsageNoticeSource {
+        UTIFooterHighUsageNoticeSource(modelProvider: { [weak self] in
+            guard let self, let id = persistedModelId else { return (nil, nil) }
+            return (id, models.first { $0.id == id }?.shortName)
+        })
+    }
+
     private func handleUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
-            // Routed through the selector so a gated suggestion still lands on the upsell.
+            // Routed through the selector so a gated suggestion still lands on the upsell — the
+            // suggester only offers accessible models, so this always applies one.
             modelSelector.handleModelSelection(suggestion.modelId)
         case .tryForFree:
             subscriptionUpsellPresenter.presentPurchaseFlow(origin: usageWarningFunnelOrigin)
-        case .startUsingWeeklyLimit:
-            // The card offers no button for this until web sets the value it needs.
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] start-using-weekly-limit has no native action yet")
+        case .startUsingWeeklyLimit(let entries):
+            // Web reads the entry before its next /status and /chat, so there is nothing to reload.
+            usageLimitsStore?.write(entries)
         }
     }
 
@@ -1318,6 +1346,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let didSendBridgeMessage = userScript.canDispatchBridgeMessages
         userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
         recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
+        featureDiscovery.markDuckAIPromptSubmitted()
     }
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
@@ -1714,12 +1743,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             attachments: viewController.currentAttachments,
             reasoningMode: reasoningModeForSubmitPixel,
             modelId: modelStore.persistedModelId,
-            defaultOmnibarMode: aiChatSettings.defaultOmnibarMode
+            defaultOmnibarMode: aiChatSettings.defaultOmnibarMode,
+            isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall
         )
         pixelReporter.reportToolSubmittedIfNeeded(
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments
         )
+        footerController?.recordPromptSubmitted()
 
         let configuration = promptSubmissionConfiguration
         recordDuckAISubmissionStarted(
@@ -1741,6 +1772,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
         deliverAIChatPrompt(text: text, images: images, files: files, configuration: configuration, tools: tools, userScript: userScript)
+        // After delivery, so every pixel this submission fires (including the contextual
+        // ones fired during delivery) still reads the pre-submission first-prompt state.
+        featureDiscovery.markDuckAIPromptSubmitted()
     }
 
     private func deliverAIChatPrompt(text: String,
@@ -1759,6 +1793,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 images: images,
                 files: files
             )
+            delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: pixelReporter.currentPromptOrigin())
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
             clearAttachments()
             setText("")
@@ -1785,6 +1820,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         if let userScript {
             let didSendBridgeMessage = userScript.canDispatchBridgeMessages
             userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort)
+            delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: pixelReporter.currentPromptOrigin())
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
         } else {
             delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
@@ -1845,6 +1881,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController) {
         footerController?.dismissCurrent()
+    }
+
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility isVisible: Bool) {
+        footerController?.footerVisibilityChanged(isVisible: isVisible)
     }
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {

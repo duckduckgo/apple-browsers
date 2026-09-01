@@ -21,7 +21,7 @@ on:
         required: true
         type: string
       xcode-version:
-        description: "Xcode version to select (e.g. '26.4')"
+        description: "Xcode version to select (e.g. '26.6')"
         required: true
         type: string
       test:
@@ -203,7 +203,7 @@ jobs:
     - name: Start log stream in background
       working-directory: macOS
       run: |
-        log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
+        log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner" OR process == "tests-server" OR (process == "logger" AND eventMessage CONTAINS "[tests-server]")' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
 
     - name: Resolve package dependencies
@@ -341,24 +341,24 @@ jobs:
     # Upload test report as artifact for the test-report job
     # that publishes a combined report for all test cases
     - name: Upload test report
-      uses: actions/upload-artifact@v6
       if: always() && steps.run-ui-tests.outcome != 'skipped'
+      uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: "testreport-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
         retention-days: 1
 
     - name: Upload xcresult files (passed on retry)
-      uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: "xcresult-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 1
 
     - name: Upload app console log (passed on retry)
-      uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: "app-console-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
         path: "macOS/app-console.log"
@@ -373,7 +373,7 @@ jobs:
         echo "macos-ui:${{ inputs.user-mode }}:${{ inputs.test }}:${{ inputs.os-version }}" > failure-marker/marker.txt
     - name: Upload failure marker
       if: failure() || cancelled()
-      uses: actions/upload-artifact@v6
+      uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: failure-marker-macos-ui-${{ inputs.user-mode }}-${{ inputs.test }}-${{ inputs.os-version }}
         path: failure-marker/
@@ -401,8 +401,8 @@ jobs:
         echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
 
     - name: Upload logs when workflow failed
-      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
+      uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: "${{ env.ARCHIVE_NAME }}"
         path: "macOS/${{ env.ARCHIVE_NAME }}"

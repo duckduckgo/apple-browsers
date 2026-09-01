@@ -24,6 +24,8 @@ public enum DuckAiUsageWindow: String, CaseIterable {
     case weekly
 }
 
+/// Presentation only: which colour the usage ring draws in. Not a decision — web says which message
+/// to show, this just reads the percentage it sent.
 public enum DuckAiUsageSeverity: Int, Comparable {
     case info
     case warning
@@ -31,6 +33,16 @@ public enum DuckAiUsageSeverity: Int, Comparable {
     case reached
 
     public static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
+
+    static func from(percentUsed: Int, reached: Bool) -> Self {
+        guard !reached else { return .reached }
+
+        switch percentUsed {
+        case 90...: return .critical
+        case 75...: return .warning
+        default: return .info
+        }
+    }
 
     var loggingName: String {
         switch self {
@@ -70,28 +82,23 @@ public enum DuckAiUsageResetInterval: Equatable {
     private static let secondsPerDay: TimeInterval = 24 * 60 * 60
 }
 
-/// Which of the specified messages this is. Selects the headline; the action is resolved separately.
-public enum DuckAiUsageMessage: String {
-    case approaching
-    case dailyLimitReached
-    case weeklyLimitReached
-    /// The weekly allowance for advanced models, as opposed to overall weekly usage.
-    case advancedModelsLimitReached
-
-    var isReached: Bool { self != .approaching }
-}
+/// Named after web's notice ids so mapping copy stays a lookup rather than a derivation.
+public typealias DuckAiUsageMessage = DuckAiUsageNotice.ID
 
 public enum DuckAiUsageAction: Equatable {
     case switchToModel(DuckAiModelSuggestion)
     case switchToFreeModel(DuckAiModelSuggestion)
     /// `isTrialEligible` picks the copy; both route to the same upsell.
     case tryForFree(isTrialEligible: Bool)
-    case startUsingWeeklyLimit
+    /// Native writes these verbatim and sends no header — web builds that from the entry itself.
+    case startUsingWeeklyLimit(entries: [DuckAiNativeStorageEntry])
 
     /// The `>` modifies a model switch, so it never pairs with the upsell or the weekly hand-off.
     var offersModelPicker: Bool {
-        if case .switchToModel = self { return true }
-        return false
+        switch self {
+        case .switchToModel, .switchToFreeModel: return true
+        case .tryForFree, .startUsingWeeklyLimit: return false
+        }
     }
 
     var buttonTitle: String {
@@ -106,14 +113,33 @@ public enum DuckAiUsageAction: Equatable {
             return "Start using weekly limit"
         }
     }
+
+    /// True for anything that changes what the user is about to spend: the payload can't reflect it
+    /// until web republishes, so leaving the message up would read as the tap having done nothing.
+    var suppressesNoticeUntilSnapshotChanges: Bool {
+        switch self {
+        case .switchToModel, .switchToFreeModel, .startUsingWeeklyLimit: return true
+        case .tryForFree: return false
+        }
+    }
+
+    /// The web app's cta id this action came from, for the debug log.
+    var ctaID: DuckAiUsageCta.ID {
+        switch self {
+        case .switchToModel: return .switchToCheaper
+        case .switchToFreeModel: return .switchToFree
+        case .tryForFree: return .subscribe
+        case .startUsingWeeklyLimit: return .bypassWeekly
+        }
+    }
 }
 
 public struct DuckAiUsageWarning: Equatable {
 
     public let window: DuckAiUsageWindow
     public let message: DuckAiUsageMessage
+    /// As sent: capped at 99 web-side until the limit is reached.
     public let severity: DuckAiUsageSeverity
-    /// Capped at 99 until the window is blocked, then 100.
     public let percent: Int
     public let resetsIn: DuckAiUsageResetInterval
     public let isDismissible: Bool
@@ -142,49 +168,24 @@ public struct DuckAiUsageWarning: Equatable {
 
 extension DuckAiUsageWarning {
 
-    /// For the debug log only, so a decision reads straight across against the web banner. iOS and
-    /// macOS deliberately drop web's "Reduce usage with a more efficient model" subtitle.
+    /// The free-model message is shown *because* the advanced allowance is spent, so offering an
+    /// advanced model behind its `>` contradicts the sentence it hangs off.
+    public var modelPickerOffersFreeModelsOnly: Bool {
+        if case .switchToFreeModel = action { return true }
+        return false
+    }
+
+    /// Debug log only, so a decision reads straight across against the web banner.
     var messagePreview: (title: String, button: String?) {
         let headline: String
         switch message {
         case .approaching: headline = "\(percent)% of \(window.rawValue) limit"
-        case .dailyLimitReached: headline = "Daily limit reached"
-        case .weeklyLimitReached: headline = "Weekly usage limit reached"
-        case .advancedModelsLimitReached: headline = "Advanced AI models limit reached"
+        case .dailyReached: headline = "Daily limit reached"
+        // One id whichever window ran out, so the window picks the noun.
+        case .freeReached: headline = window == .daily ? "Daily limit reached" : "Weekly usage limit reached"
+        case .weeklyReached: headline = "Weekly usage limit reached"
+        case .weeklyReachedDegraded: headline = "Advanced AI models limit reached"
         }
         return ("\(headline) · Resets in \(resetsIn.shortDescription)", action?.buttonTitle)
-    }
-}
-
-extension DuckAiUsageWindow {
-
-    /// Compared against the raw percentage, so 49.6% is never shown as a "50%" message.
-    static let visibilityFloor: Double = 50
-
-    static let severityLadder: [(floor: Int, severity: DuckAiUsageSeverity)] = [
-        (90, .critical),
-        (75, .warning),
-        (50, .info)
-    ]
-
-    /// Deliberately *not* the severity ladder: a daily banner dismissed at 50% stays hidden through
-    /// 75%, where it is already `.warning`, and only comes back at 90%.
-    var redisplayLadder: [Int] {
-        switch self {
-        case .daily: return [50, 90, 100]
-        case .weekly: return [50, 75, 90, 100]
-        }
-    }
-
-    // Both ladders key off the displayed percentage, not the raw one, so the copy, the ring and
-    // dismissal can never disagree about which rung the user is on.
-
-    func severity(forDisplayedPercent percent: Int) -> DuckAiUsageSeverity? {
-        Self.severityLadder.first { percent >= $0.floor }?.severity
-    }
-
-    /// The bucket a dismissal is recorded against, so crossing the next one brings the message back.
-    func redisplayThreshold(forDisplayedPercent percent: Int) -> Int {
-        redisplayLadder.last { percent >= $0 } ?? 0
     }
 }

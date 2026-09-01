@@ -18,6 +18,8 @@
 //
 
 import AIChat
+import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import Combine
 import Core
 import UIKit
@@ -34,6 +36,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var mockPreferences: MockAIChatPreferences!
     private var mockToggleModeStorage: MockToggleModeStorage!
     private var mockSubmissionMetrics: MockSwitchBarSubmissionMetrics!
+    private var mockFeatureDiscovery: MockFeatureDiscovery!
     private var retainedBridgeReadyWebView: WKWebView?
     private var retainedBridgeReadyBroker: UserScriptMessageBroker?
     private var cancellables = Set<AnyCancellable>()
@@ -43,12 +46,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockPreferences = MockAIChatPreferences()
         mockToggleModeStorage = MockToggleModeStorage()
         mockSubmissionMetrics = MockSwitchBarSubmissionMetrics()
+        mockFeatureDiscovery = MockFeatureDiscovery()
         sut = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
             switchBarSubmissionMetrics: mockSubmissionMetrics,
+            featureDiscovery: mockFeatureDiscovery,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
         )
         mockDelegate = MockUnifiedToggleInputDelegate()
@@ -62,6 +67,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockPreferences = nil
         mockToggleModeStorage = nil
         mockSubmissionMetrics = nil
+        mockFeatureDiscovery = nil
         retainedBridgeReadyWebView = nil
         retainedBridgeReadyBroker = nil
         super.tearDown()
@@ -374,6 +380,26 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
                       "Empty model list ⇒ no access-checked selectedModel ⇒ block must remain")
     }
 
+    // MARK: - Bound-chat prompt submission reporting
+
+    func testWhenPromptGoesToBoundChatThenTheSubmissionIsReportedOnce() {
+        sut.duckAIEntrySourceProvider = { .addressBarIcon }
+        let userScript = makeBridgeReadyUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+
+        XCTAssertEqual(mockDelegate.duckAIPromptSubmissionOrigins, [.addressBarIcon])
+        XCTAssertNil(mockDelegate.submittedPrompt, "A bound chat takes the prompt directly, without navigation")
+    }
+
+    func testWhenNoChatIsBoundThenTheSubmissionIsNotReportedAsBoundChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "a new prompt", mode: .aiChat)
+
+        XCTAssertTrue(mockDelegate.duckAIPromptSubmissionOrigins.isEmpty)
+        XCTAssertEqual(mockDelegate.submittedPrompt, "a new prompt")
+    }
+
     // MARK: - Recovery Picker Session Pixels
 
     func test_recoveryPickerSession_fullFunnel_smokeTest() {
@@ -636,6 +662,32 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didChangeText: "hello")
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
         XCTAssertEqual(sut.textState, .empty)
+    }
+
+    // MARK: - VC Delegate: Submit — first-prompt flag
+
+    func test_submitAIChat_marksFirstDuckAIPromptSubmitted() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertTrue(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    /// Every pixel of the submission must read the pre-submission state, so the mark
+    /// may only land after the prompt has been delivered.
+    func test_submitAIChat_marksFirstPromptOnlyAfterDelivery() {
+        var markedAtDeliveryTime: Bool?
+        mockDelegate.onPromptSubmit = { [mockFeatureDiscovery] in
+            markedAtDeliveryTime = mockFeatureDiscovery?.wasSetWasUsedBeforeCalled(for: .duckAIPrompt)
+        }
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertEqual(markedAtDeliveryTime, false)
+        XCTAssertTrue(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    func test_submitSearch_doesNotMarkFirstDuckAIPrompt() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "ducks", mode: .search)
+        XCTAssertFalse(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
     }
 
     func test_submitProgrammatic_contextualNoBoundScript_passesAttachmentsBeforeClearing() {
@@ -2989,6 +3041,10 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     }
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() { didRequestAppMenuCount += 1 }
+    var duckAIPromptSubmissionOrigins: [AIChatEntryPointSource?] = []
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
+        duckAIPromptSubmissionOrigins.append(origin)
+    }
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {

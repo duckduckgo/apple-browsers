@@ -27,7 +27,6 @@ class SearchNonexistentDomainUITests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
 
         // Use existing extension method instead of duplicated helper

@@ -384,11 +384,11 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: UserText.shareMenuItem)
                 .submenu(sharingMenu)
-                .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
+                .withImage(DesignSystemImages.Glyphs.Size12.shareApple, visibleOnMacOS27: true)
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), keyEquivalent: "p")
-                .withImage(DesignSystemImages.Glyphs.Size12.print)
+                .withImage(DesignSystemImages.Glyphs.Size12.print, visibleOnMacOS27: true)
         }
     }
 
@@ -538,7 +538,7 @@ final class MainMenu: NSMenu {
                             .withAccessibilityIdentifier("MainMenu.favoriteThisPage")
                         NSMenuItem.separator()
                     })
-                    .withImage(DesignSystemImages.Glyphs.Size12.favorite)
+                    .withImage(DesignSystemImages.Glyphs.Size12.favorite, visibleOnMacOS27: true)
 
                 NSMenuItem.separator()
             })

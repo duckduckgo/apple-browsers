@@ -442,7 +442,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onModelsUpdated: { [weak self] in self?.handleModelsUpdated() },
                 onUserChoiceRecorded: { [weak self] in self?.recordUserChoiceToStore() },
                 clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
-                onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
+                onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) },
+                onModelSelectionChanged: { [weak self] _ in self?.footerController?.recordModelSwitched() }
             ),
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
             isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled
@@ -913,7 +914,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             self?.handleUsageWarningAction(action)
         }
         footerController = UTIFooterController(viewModel: viewModel,
-                                              highUsageNotice: makeHighUsageNoticeSource())
+                                              highUsageNotice: makeHighUsageNoticeSource(),
+                                              measurement: makeUsageWarningMeasurement())
         footerController?.presenter = viewController
 
         // Also what brings a message back after the user has acted on the previous one.
@@ -931,6 +933,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             needsImageUpload: attachments.contains(where: \.isImage),
             requiredMimeTypes: attachments.compactMap { $0.fileAttachment?.mimeType },
             requiredTools: toolsController.selectedTool.map { [$0] } ?? []
+        )
+    }
+
+    /// The surface is read per fire: this one coordinator serves the address bar, the Duck.ai tab
+    /// and the contextual sheet.
+    private func makeUsageWarningMeasurement() -> DuckAiUsageWarningMeasurement {
+        DuckAiUsageWarningMeasurement(
+            pixelFiring: DuckAiUsageWarningPixelAdapter(surface: { [weak self] in self?.pixelSurface ?? .addressBar })
         )
     }
 
@@ -1779,6 +1789,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments
         )
+        footerController?.recordPromptSubmitted()
 
         let configuration = promptSubmissionConfiguration
         recordDuckAISubmissionStarted(
@@ -1909,6 +1920,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController) {
         footerController?.dismissCurrent()
+    }
+
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility isVisible: Bool) {
+        footerController?.footerVisibilityChanged(isVisible: isVisible)
     }
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {

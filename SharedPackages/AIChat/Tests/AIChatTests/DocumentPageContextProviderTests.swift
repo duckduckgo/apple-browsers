@@ -16,9 +16,8 @@
 //  limitations under the License.
 //
 
-import AIChat
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
+@testable import AIChat
 
 final class MockMainResourceDataProvider: MainResourceDataProviding {
     var data: Data?

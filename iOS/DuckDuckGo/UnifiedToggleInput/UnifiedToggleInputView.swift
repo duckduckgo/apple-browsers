@@ -369,6 +369,8 @@ final class UnifiedToggleInputView: UIView {
     var onAIChatShortcutTapped: (() -> Void)?
     var onFooterPrimaryTapped: (() -> Void)?
     var onFooterDismissTapped: (() -> Void)?
+    /// The footer card entering or leaving the bottom slot, i.e. actually appearing on screen.
+    var onFooterVisibilityChanged: ((Bool) -> Void)?
 
     // MARK: - Attachment API
 
@@ -456,6 +458,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func applyBottomSlot(_ slot: BottomCardSlot) {
+        let wasShowingFooter = bottomCardSlot == .footer
         bottomCardSlot = slot
         cardBottomConstraint.isActive = slot == .none
         cardEditBottomConstraint.isActive = slot == .editDisclaimer
@@ -465,6 +468,9 @@ final class UnifiedToggleInputView: UIView {
         expandedShadowFooterBottomConstraint.isActive = slot == .footer
         footerCollapsedHeightConstraint.isActive = slot != .footer
         footerCard.alpha = slot == .footer ? 1 : 0
+        if wasShowingFooter != (slot == .footer) {
+            onFooterVisibilityChanged?(slot == .footer)
+        }
     }
 
     private static func makeEditReplaceDisclaimerCard() -> UIView {

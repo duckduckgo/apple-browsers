@@ -8,7 +8,8 @@ name: test_uti_duckai_warnings_limit_reached
 ---
 
 # The blocked-usage cards behind `utiDuckAIWarnings`. A reached limit reads as an alert rather than
-# a full ring, carries no ✕ (there is nothing to defer), and offers the subscription upsell.
+# a full ring and carries no ✕ (there is nothing to defer). The button is whatever the web app
+# published: a weekly block offers nothing, a free daily block offers the subscription upsell.
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
     clearState: true
@@ -52,14 +53,14 @@ name: test_uti_duckai_warnings_limit_reached
     id: "AIChat.Footer.Icon.UsageRing"
 - assertNotVisible:
     id: "AIChat.Footer.Button.Dismiss"
-# By identifier only: the CTA reads "Try for free" or "Subscribe" depending on trial eligibility.
-- assertVisible:
+- assertNotVisible:
     id: "AIChat.Footer.Button.Primary"
 
 # A daily block is its own message. Re-seeding in place keeps the second case off a fresh install.
 - runFlow:
     file: ../shared/dismiss_address_bar_editing.yaml
 
+# Two seeds share this label; the free one sorts first, and it is the one with the upsell.
 - runFlow:
     file: ../shared/seed_duckai_usage_warning.yaml
     env:
@@ -81,3 +82,6 @@ name: test_uti_duckai_warnings_limit_reached
     id: "AIChat.Footer.Icon.Alert"
 - assertNotVisible:
     id: "AIChat.Footer.Button.Dismiss"
+# By identifier only: the CTA reads "Try for free" or "Subscribe" depending on trial eligibility.
+- assertVisible:
+    id: "AIChat.Footer.Button.Primary"

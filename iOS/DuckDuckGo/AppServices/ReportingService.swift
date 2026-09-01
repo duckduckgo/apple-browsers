@@ -223,7 +223,7 @@ private extension ReportingService {
                 }
 
             case .failure(let error):
-                PixelKit.fire(Pixel.Event.widgetReportFailure.withError(error), frequency: .legacyDailyNoSuffix)
+                PixelKit.fire(Pixel.Event.widgetReportFailure.withError(error), frequency: .legacyDailyByError)
             }
         }
     }

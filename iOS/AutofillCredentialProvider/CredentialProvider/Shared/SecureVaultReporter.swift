@@ -35,11 +35,11 @@ final class SecureVaultReporter: SecureVaultReporting {
 
         switch error {
         case .initFailed(let error):
-            PixelKit.fire(Pixel.Event.secureVaultInitFailedError.withError(error), frequency: .legacyDailyNoSuffix, options: .parameters(pixelParams))
+            PixelKit.fire(Pixel.Event.secureVaultInitFailedError.withError(error), frequency: .legacyDailyByError, options: .parameters(pixelParams))
         case .failedToOpenDatabase(let error):
-            PixelKit.fire(Pixel.Event.secureVaultFailedToOpenDatabaseError.withError(error), frequency: .legacyDailyNoSuffix, options: .parameters(pixelParams))
+            PixelKit.fire(Pixel.Event.secureVaultFailedToOpenDatabaseError.withError(error), frequency: .legacyDailyByError, options: .parameters(pixelParams))
         default:
-            PixelKit.fire(Pixel.Event.secureVaultError.withError(error), frequency: .legacyDailyNoSuffix)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error), frequency: .legacyDailyByError)
         }
     }
 

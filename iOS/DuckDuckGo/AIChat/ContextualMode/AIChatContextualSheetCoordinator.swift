@@ -924,7 +924,7 @@ private extension AIChatContextualSheetCoordinator {
                 }
 
                 if let cached = self.sessionState.latestContext?.contextData,
-                   cached.attached != false, !cached.content.isEmpty {
+                   cached.attached != false, cached.hasAttachedPage {
                     return cached
                 }
                 self.sessionState.beginManualAttach(fromFrontend: true)

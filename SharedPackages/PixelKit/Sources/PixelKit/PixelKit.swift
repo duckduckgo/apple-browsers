@@ -64,6 +64,16 @@ public final class PixelKit {
         /// [Legacy] Used in Pixel.fire(...) as .daily but without the `_d` automatically added to the name
         case legacyDailyNoSuffix
 
+        /// [Legacy] As `.legacyDailyNoSuffix`, but throttled once per day *per distinct error* rather than
+        /// once per day per name. Reproduces legacy `DailyPixel.fire(pixel:error:)`, which appended the
+        /// event's error parameter values to its throttling key so that a second, different failure of the
+        /// same pixel still reported that day. Without an error attached this behaves exactly like
+        /// `.legacyDailyNoSuffix`.
+        ///
+        /// Only for error pixels migrated off `DailyPixel.fire(pixel:error:)`. New pixels should use
+        /// `.daily`, which keys on the name alone.
+        case legacyDailyByError
+
         /// [Legacy] Sent once per day. The last timestamp for this pixel is stored and compared to the current date. Pixels of this type will have `_d` appended to their name.
         case legacyDaily
 
@@ -105,6 +115,8 @@ public final class PixelKit {
                 "Legacy Daily and Count"
             case .legacyDailyNoSuffix:
                 "Legacy Daily No Suffix"
+            case .legacyDailyByError:
+                "Legacy Daily By Error"
             case .sample(let percentage):
                 "Sample (\(percentage)%)"
             case .debounce(let seconds):
@@ -125,6 +137,9 @@ public final class PixelKit {
             case .dailyAndStandard: return "dailyAndStandard"
             case .legacyInitial: return "legacyInitial"
             case .legacyDailyNoSuffix: return "legacyDailyNoSuffix"
+            // Shares `daily`'s map: it is a daily throttle, only with the error folded into the pixel-name
+            // half of the key rather than the frequency half.
+            case .legacyDailyByError: return "daily"
             case .legacyDaily: return "legacyDaily"
             case .legacyDailyAndCount: return "legacyDailyAndCount"
             case .sample(let percentage): return "sample(\(percentage))"
@@ -526,6 +541,8 @@ public final class PixelKit {
             handleLegacyDailyAndCount(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
         case .legacyDailyNoSuffix:
             handleLegacyDailyNoSuffix(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, onComplete)
+        case .legacyDailyByError:
+            handleLegacyDailyByError(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, error, onComplete)
         case .sample(let percentage):
             handleSample(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, retryOnFailure, percentage, onComplete)
         case .debounce(let seconds):
@@ -715,6 +732,51 @@ public final class PixelKit {
             printDebugInfo(pixelName: pixelName, frequency: .legacyDailyNoSuffix, parameters: newParams, skipped: true)
             onComplete(false, nil)
         }
+    }
+
+    private func handleLegacyDailyByError(_ pixelName: String,
+                                          _ platformSuffix: String,
+                                          _ headers: [String: String],
+                                          _ newParams: [String: String],
+                                          _ allowedQueryReservedCharacters: CharacterSet?,
+                                          _ retryOnFailure: Bool,
+                                          _ error: NSError?,
+                                          _ onComplete: @escaping CompletionBlock) {
+        reportErrorIf(pixel: pixelName, endsWith: "_u")
+        // Only the throttling key carries the error; the pixel is sent under its own name, as with
+        // `.legacyDailyNoSuffix`.
+        let throttleKey = pixelName + Self.dailyThrottleKeyErrorSuffix(for: error)
+        if !pixelHasBeenFiredDailyToday(throttleKey) {
+            do {
+                try updatePixelLastFireDate(pixelName: throttleKey, frequency: .daily)
+                fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyByError, retryOnFailure, onComplete)
+            } catch {
+                fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
+                printDebugInfo(pixelName: pixelName, frequency: .legacyDailyByError, parameters: newParams, skipped: true)
+                onComplete(false, nil)
+            }
+        } else {
+            printDebugInfo(pixelName: pixelName, frequency: .legacyDailyByError, parameters: newParams, skipped: true)
+            onComplete(false, nil)
+        }
+    }
+
+    /// The error half of a `.legacyDailyByError` throttling key, or `""` when there is no error.
+    ///
+    /// Byte-for-byte the format legacy `DailyPixel.fire(pixel:error:)` used - `":"` followed by the error
+    /// parameter *values*, ordered by their parameter names and joined with `";"`, truncated to 50
+    /// characters - so the keys `LegacyPixelStateMigration` copied out of the legacy daily store still
+    /// match. (PixelKit's error parameters add the two SQLite codes legacy didn't have, so a key for an
+    /// error carrying those differs from the legacy one; the cost is at most one extra fire on the day an
+    /// install migrates.)
+    private static func dailyThrottleKeyErrorSuffix(for error: NSError?) -> String {
+        guard let error else { return "" }
+
+        var errorParams: [String: String] = [:]
+        errorParams.appendErrorPixelParams(error: error)
+
+        let values = errorParams.keys.sorted().compactMap { errorParams[$0] }.joined(separator: ";")
+        return ":" + String(values.prefix(50))
     }
 
     /// Handles sampling frequency pixels - only N% of calls result in actual pixel firing

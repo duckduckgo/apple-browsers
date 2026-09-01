@@ -77,11 +77,11 @@ final class SecureVaultReporter: SecureVaultReporting {
                     Logger.general.error("SecureVault attempt to access keystore while device is locked: \(error.localizedDescription, privacy: .public)")
                     return
                 }
-                PixelKit.fire(Pixel.Event.secureVaultInitFailedError.withError(error), frequency: .legacyDailyNoSuffix, options: .parameters(pixelParams))
+                PixelKit.fire(Pixel.Event.secureVaultInitFailedError.withError(error), frequency: .legacyDailyByError, options: .parameters(pixelParams))
             case .failedToOpenDatabase(let error):
-                PixelKit.fire(Pixel.Event.secureVaultFailedToOpenDatabaseError.withError(error), frequency: .legacyDailyNoSuffix, options: .parameters(pixelParams))
+                PixelKit.fire(Pixel.Event.secureVaultFailedToOpenDatabaseError.withError(error), frequency: .legacyDailyByError, options: .parameters(pixelParams))
             default:
-                PixelKit.fire(Pixel.Event.secureVaultError.withError(error), frequency: .legacyDailyNoSuffix)
+                PixelKit.fire(Pixel.Event.secureVaultError.withError(error), frequency: .legacyDailyByError)
 
             }
         }

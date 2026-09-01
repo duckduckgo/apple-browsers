@@ -1410,6 +1410,98 @@ final class PixelKitTests: XCTestCase {
         XCTAssertEqual(firedNames, ["m_netp_daily_active_d_ios_phone"])
     }
 
+    // MARK: - Legacy daily by-error frequency
+
+    private struct LegacyDailyByErrorTestEvent: PixelKit.Event {
+        let namePrefix: PixelKitNamePrefix = .none
+        let name = "m_secure_vault_init_failed_error"
+        let parameters: [String: String]? = nil
+        let standardParameters: [PixelKitStandardParameter]? = nil
+        /// Stored rather than reflected, so the test controls exactly which error is attached.
+        let error: NSError?
+    }
+
+    private func makeLegacyDailyByErrorPixelKit(_ onFire: @escaping (String) -> Void) -> PixelKit {
+        PixelKit(dryRun: false,
+                 appVersion: "1.0.0",
+                 source: PixelKit.Source.iOS.rawValue,
+                 defaultHeaders: [:],
+                 pixelCalendar: nil,
+                 defaults: UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)")!) { name, _, _, _, _, _ in
+            onFire(name)
+        }
+    }
+
+    /// Legacy `DailyPixel.fire(pixel:error:)` folded the error into its once-per-day key, so a second,
+    /// different failure of the same pixel still reported that day.
+    func testLegacyDailyByErrorFiresOncePerDistinctError() {
+        var firedNames: [String] = []
+        let pixelKit = makeLegacyDailyByErrorPixelKit { firedNames.append($0) }
+
+        let first = NSError(domain: "TestDomain", code: 1)
+        let second = NSError(domain: "TestDomain", code: 2)
+        let thirdInAnotherDomain = NSError(domain: "OtherDomain", code: 1)
+
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: first), frequency: .legacyDailyByError)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: second), frequency: .legacyDailyByError)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: thirdInAnotherDomain), frequency: .legacyDailyByError)
+
+        XCTAssertEqual(firedNames.count, 3, "Each distinct error should report once, as it did under DailyPixel")
+        XCTAssertEqual(Set(firedNames), ["m_secure_vault_init_failed_error_ios_phone"],
+                       "Only the throttling key carries the error - the wire name must stay unsuffixed")
+    }
+
+    func testLegacyDailyByErrorThrottlesRepeatsOfTheSameError() {
+        var firedNames: [String] = []
+        let pixelKit = makeLegacyDailyByErrorPixelKit { firedNames.append($0) }
+
+        let error = NSError(domain: "TestDomain", code: 1)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: error), frequency: .legacyDailyByError)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: NSError(domain: "TestDomain", code: 1)),
+                      frequency: .legacyDailyByError)
+
+        XCTAssertEqual(firedNames.count, 1, "The same domain and code is the same throttling key, even across NSError instances")
+    }
+
+    /// Distinguishes this frequency from `.legacyDailyNoSuffix` only by the error, so with no error
+    /// attached it has to throttle on the name alone.
+    func testLegacyDailyByErrorWithoutAnErrorThrottlesOnTheNameAlone() {
+        var firedNames: [String] = []
+        let pixelKit = makeLegacyDailyByErrorPixelKit { firedNames.append($0) }
+
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: nil), frequency: .legacyDailyByError)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: nil), frequency: .legacyDailyByError)
+
+        XCTAssertEqual(firedNames, ["m_secure_vault_init_failed_error_ios_phone"])
+    }
+
+    /// The by-error keys share the `daily` map with the plain daily frequencies, which is where
+    /// `LegacyPixelStateMigration` copies the legacy daily store's keys - composite ones included.
+    func testLegacyDailyByErrorHonoursAMigratedLegacyThrottlingKey() {
+        let userDefaults = UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)")!
+        var firedNames: [String] = []
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                source: PixelKit.Source.iOS.rawValue,
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                defaults: userDefaults) { name, _, _, _, _, _ in
+            firedNames.append(name)
+        }
+
+        // What legacy `DailyPixel` wrote for `NSError(domain: "TestDomain", code: 1)`: the error
+        // parameter values (`d` then `e`) joined with `;`, appended to the name after a `:`.
+        let migratedKey = "com.duckduckgo.network-protection.pixel.m_secure_vault_init_failed_error:TestDomain;1"
+        userDefaults.set(["daily": Date()], forKey: migratedKey)
+
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: NSError(domain: "TestDomain", code: 1)),
+                      frequency: .legacyDailyByError)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: NSError(domain: "TestDomain", code: 2)),
+                      frequency: .legacyDailyByError)
+
+        XCTAssertEqual(firedNames.count, 1, "The migrated key should suppress its own error but not a different one")
+    }
+
     // MARK: - Static async entry point
 
     func testStaticFireAsyncThrowsWhenPixelKitNotConfigured() async {

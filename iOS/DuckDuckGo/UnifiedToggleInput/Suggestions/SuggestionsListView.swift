@@ -112,8 +112,8 @@ struct SuggestionsListView: View {
                         .modifier(DismissFade(animationModel: animationModel,
                                               isEnabled: !usesWholeListDismissFade))
                         .background {
-                            if showsAmbientMessageShadow {
-                                ListCellShadowOverflowView(raisesCellAbovePreviousRow: escapeHatch != nil)
+                            if showsAmbientMessageShadow || (hasMessages && !isAddressBarAtBottom) {
+                                ListCellShadowOverflowView(raisesCellAbovePreviousRow: showsAmbientMessageShadow && escapeHatch != nil)
                             }
                         }
                     }
@@ -377,8 +377,8 @@ private struct DisableListRowSelection: ViewModifier {
     }
 }
 
-/// The focused floating-bottom RMF uses the same wide ambient shadow as the resting NTP. Let that
-/// shadow render beyond its List row and scroll viewport without changing the RMF's handoff frame.
+/// Lets the focused RMF shadow render beyond its List row without changing its layout frame.
+/// The floating-bottom ambient shadow separately disables scroll-viewport clipping.
 private struct ListCellShadowOverflowView: UIViewRepresentable {
     let raisesCellAbovePreviousRow: Bool
 

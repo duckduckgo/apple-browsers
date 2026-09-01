@@ -27,6 +27,7 @@ final class UTIFooterControllerTests: XCTestCase {
     private var limitsProvider: StubUsageLimitsProvider!
     private var presenter: SpyUTIFooterPresenter!
     private var viewModel: DuckAiUsageWarningViewModel!
+    private var measurementFiring: RecordingUsageWarningPixelFiring!
     private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
     private var animationCount = 0
     private var sut: UTIFooterController!
@@ -37,11 +38,13 @@ final class UTIFooterControllerTests: XCTestCase {
         super.setUp()
         limitsProvider = StubUsageLimitsProvider()
         presenter = SpyUTIFooterPresenter()
+        measurementFiring = RecordingUsageWarningPixelFiring()
         selectedModel = (nil, nil)
         animationCount = 0
         viewModel = makeViewModel()
         sut = UTIFooterController(viewModel: viewModel,
                                   highUsageNotice: makeNoticeSource(),
+                                  measurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
                                   animator: { [unowned self] changes in
                                       animationCount += 1
                                       changes()
@@ -53,6 +56,7 @@ final class UTIFooterControllerTests: XCTestCase {
         sut = nil
         viewModel = nil
         presenter = nil
+        measurementFiring = nil
         limitsProvider = nil
         super.tearDown()
     }
@@ -363,7 +367,117 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
     }
 
+    // MARK: - Measurement
+
+    /// The card is resolved while the input is still collapsed and revealed inside the expand
+    /// animation, so resolving a message is not yet an appearance.
+    func test_refresh_reportsNoImpressionUntilTheCardIsOnScreen() {
+        limitsProvider.limits = weeklyUsage(75)
+
+        sut.refresh()
+
+        XCTAssertTrue(measurementFiring.events.isEmpty)
+    }
+
+    func test_footerVisibilityChanged_reportsAnImpressionForTheVisibleMessage() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+
+        sut.footerVisibilityChanged(isVisible: true)
+
+        XCTAssertEqual(measurementFiring.events, [.shown(approachingExposure(percentBucket: 75))])
+    }
+
+    func test_footerVisibilityChanged_reportsTheNoticesModelWhenTheNoticeIsVisible() {
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        limitsProvider.limits = .noData
+        sut.refresh()
+
+        sut.footerVisibilityChanged(isVisible: true)
+
+        XCTAssertEqual(measurementFiring.events,
+                       [.shown(DuckAiUsageWarningExposure(kind: .highUsageModelNotice, modelId: "claude-opus-4-8"))])
+    }
+
+    func test_dismissCurrent_reportsADismissal() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.dismissCurrent()
+
+        XCTAssertEqual(measurementFiring.events.last, .dismissed(approachingExposure(percentBucket: 75)))
+    }
+
+    /// Acting on the message retires it internally, which is not the user closing it.
+    func test_performPrimaryAction_reportsTheCTATapAndNoDismissal() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.performPrimaryAction()
+
+        XCTAssertEqual(measurementFiring.events,
+                       [.shown(approachingExposure(percentBucket: 75)),
+                        .switchModelTapped(approachingExposure(percentBucket: 75))])
+    }
+
+    func test_performPrimaryAction_reportsTheUpsellCTAWhenTheBlockedStateOffersTheSubscription() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.performPrimaryAction()
+
+        XCTAssertEqual(measurementFiring.events.last,
+                       .upsellTapped(DuckAiUsageWarningExposure(kind: .limitReached, window: .weekly)))
+    }
+
+    func test_recordPromptSubmitted_reportsAgainstTheWarningTheUserSaw() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.recordPromptSubmitted()
+
+        XCTAssertEqual(measurementFiring.events.last, .promptSubmitted(approachingExposure(percentBucket: 75)))
+    }
+
+    func test_recordModelSwitched_reportsAgainstTheWarningTheUserSaw() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.recordModelSwitched()
+
+        XCTAssertEqual(measurementFiring.events.last, .modelSwitched(approachingExposure(percentBucket: 75)))
+    }
+
+    func test_resetForPoseChange_endsTheExposureWithNoFollowThrough() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.resetForPoseChange()
+
+        XCTAssertEqual(measurementFiring.events.last, .abandoned(approachingExposure(percentBucket: 75)))
+    }
+
+    func test_setSuppressed_endsTheExposure() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.setSuppressed(true)
+
+        XCTAssertEqual(measurementFiring.events.last, .abandoned(approachingExposure(percentBucket: 75)))
+    }
+
     // MARK: - Helpers
+
+    private func approachingExposure(percentBucket: Int) -> DuckAiUsageWarningExposure {
+        DuckAiUsageWarningExposure(kind: .approaching, window: .weekly, percentBucket: percentBucket)
+    }
 
     private func makeNoticeSource() -> UTIFooterHighUsageNoticeSource {
         UTIFooterHighUsageNoticeSource(dismissalStore: InMemoryDuckAiHighUsageNoticeDismissalStore(),
@@ -391,6 +505,20 @@ final class UTIFooterControllerTests: XCTestCase {
             cta: DuckAiUsageCta(id: .switchToCheaper,
                                 target: .init(modelId: "gpt-5.4-mini", modelIds: ["gpt-5.4-mini"])),
             signature: "snapshot-\(percent)"
+        )
+    }
+
+    /// A blocked state whose only offer is the subscription upsell.
+    private func weeklyReachedWithUpsell() -> DuckAiUsageSnapshot {
+        DuckAiUsageSnapshot(
+            notice: DuckAiUsageNotice(id: .weeklyReached,
+                                      window: .weekly,
+                                      percentUsed: 100,
+                                      resetsAt: now.addingTimeInterval(172_800),
+                                      reached: true,
+                                      dismissible: false),
+            cta: DuckAiUsageCta(id: .subscribe),
+            signature: "snapshot-reached-upsell"
         )
     }
 
@@ -423,6 +551,14 @@ private final class StubUsageLimitsProvider: DuckAiUsageSnapshotProviding {
 private struct StubCheaperModelSuggester: DuckAiModelSuggesting {
     func resolve(_ cta: DuckAiUsageCta) -> DuckAiModelSuggestionOutcome {
         .suggestion(DuckAiModelSuggestion(modelId: "gpt-5.4-mini", modelShortName: "5.4 mini"))
+    }
+}
+
+private final class RecordingUsageWarningPixelFiring: DuckAiUsageWarningPixelFiring {
+    private(set) var events: [DuckAiUsageWarningMeasurementEvent] = []
+
+    func fire(_ event: DuckAiUsageWarningMeasurementEvent) {
+        events.append(event)
     }
 }
 

@@ -2523,6 +2523,7 @@
 		FC7EF0040000000000000002 /* UTIFooterMessageMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */; };
 		FC7EF0040000000000000003 /* UTIFooterControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */; };
 		FC7EF0040000000000000004 /* DuckAiUsageLimitsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000004 /* DuckAiUsageLimitsStoreTests.swift */; };
+		FC7EF0040000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift */; };
 		FC7EF0040000000000000101 /* UTIFooterCardViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */; };
 		FCFC00031F00000000010001 /* DDGError in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000010001 /* DDGError */; };
 		FCFC00031F00000000020001 /* DDGError in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000020001 /* DDGError */; };
@@ -5194,6 +5195,7 @@
 		FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterMessageMapperTests.swift; sourceTree = "<group>"; };
 		FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterControllerTests.swift; sourceTree = "<group>"; };
 		FC7EF0030000000000000004 /* DuckAiUsageLimitsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiUsageLimitsStoreTests.swift; sourceTree = "<group>"; };
+		FC7EF0030000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiUsageWarningPixelAdapterTests.swift; sourceTree = "<group>"; };
 		FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterCardViewTests.swift; sourceTree = "<group>"; };
 		FDEC1A2B30260001000000F2 /* IOSMonthlyFreeTrialDeciderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSMonthlyFreeTrialDeciderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -11151,6 +11153,7 @@
 				FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */,
 				FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */,
 				FC7EF0030000000000000004 /* DuckAiUsageLimitsStoreTests.swift */,
+				FC7EF0030000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift */,
 			);
 			path = Footer;
 			sourceTree = "<group>";
@@ -13734,6 +13737,7 @@
 				FC7EF0040000000000000101 /* UTIFooterCardViewTests.swift in Sources */,
 				FC7EF0040000000000000002 /* UTIFooterMessageMapperTests.swift in Sources */,
 				FC7EF0040000000000000003 /* UTIFooterControllerTests.swift in Sources */,
+				FC7EF0040000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift in Sources */,
 				FC7EF0040000000000000004 /* DuckAiUsageLimitsStoreTests.swift in Sources */,
 				AABB00010001000100010101 /* UnifiedToggleInputViewTests.swift in Sources */,
 				AABB00010001000100010201 /* UnifiedToggleInputToggleViewTests.swift in Sources */,

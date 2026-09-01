@@ -58,6 +58,8 @@ final class UTIModelSelector {
         let onUserChoiceRecorded: () -> Void
         let clearSubmitRecoveryBlock: () -> Void
         let onModelApplied: (String) -> Void
+        /// A model the user actually changed to, as opposed to a re-application of the current one.
+        let onModelSelectionChanged: (String) -> Void
     }
 
     private let modelStore: UTIModelStore
@@ -111,6 +113,7 @@ final class UTIModelSelector {
             updateSelectedModel(modelId)
             if isNewSelection {
                 pixelReporter.reportModelSelected(modelId: modelId)
+                callbacks.onModelSelectionChanged(modelId)
             }
             callbacks.onModelApplied(modelId)
         } else {
@@ -159,6 +162,7 @@ final class UTIModelSelector {
         updateSelectedModel(modelId)
         if isNewSelection {
             pixelReporter.reportModelSelected(modelId: modelId)
+            callbacks.onModelSelectionChanged(modelId)
         }
         callbacks.onModelApplied(modelId)
         return true

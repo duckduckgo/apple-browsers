@@ -192,7 +192,7 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Subscription callbacks keep pixel firing alive after the presenter owner releases it")
+    @Test("Subscription callbacks keep pixel firing alive after the presenter owner releases it", .timeLimit(.minutes(1)))
     func subscriptionCallbacksKeepPixelFiringAliveAfterPresenterOwnerReleasesIt() {
         let purchasePixels = NewTabPageOmnibarPixelFiringMock()
         let purchaseDialog = {

@@ -161,6 +161,94 @@ final class DuckAIGridItemTests: XCTestCase {
         XCTAssertEqual(item, .empty(title: UserText.aiChatTabSwitcherCardUntitledChat, chip: .chat))
     }
 
+    // MARK: - Block markup stripping
+
+    /// Regression: the card renders snippets with `.inlineOnlyPreservingWhitespace`, so any block
+    /// marker left in the snippet would show up literally. See `stripBlockMarkup`.
+    func testStripBlockMarkupRemovesHeadingHashesKeepingTheText() {
+        XCTAssertEqual(DuckAIGridItem.stripBlockMarkup("# Title\nBody"), "Title\nBody")
+        XCTAssertEqual(DuckAIGridItem.stripBlockMarkup("###### Deep\nBody"), "Deep\nBody")
+    }
+
+    func testStripBlockMarkupRemovesThematicBreaks() {
+        XCTAssertEqual(DuckAIGridItem.stripBlockMarkup("Intro\n\n---\n\nOutro"), "Intro\n\nOutro")
+        XCTAssertEqual(DuckAIGridItem.stripBlockMarkup("Intro\n\n***\n\nOutro"), "Intro\n\nOutro")
+        XCTAssertEqual(DuckAIGridItem.stripBlockMarkup("Intro\n\n___\n\nOutro"), "Intro\n\nOutro")
+    }
+
+    func testStripBlockMarkupRemovesBlockquoteMarkers() {
+        XCTAssertEqual(DuckAIGridItem.stripBlockMarkup("He said:\n> quoted"), "He said:\nquoted")
+    }
+
+    func testStripBlockMarkupKeepsListBulletsAndLineBreaks() {
+        let input = "Options:\n- alpha\n- beta\n\n1. first\n2. second"
+
+        XCTAssertEqual(DuckAIGridItem.stripBlockMarkup(input), input)
+    }
+
+    func testStripBlockMarkupKeepsInlineMarkupForTheViewToRender() {
+        let input = "Some **bold**, *italic* and `code`."
+
+        XCTAssertEqual(DuckAIGridItem.stripBlockMarkup(input), input)
+    }
+
+    func testStripBlockMarkupDoesNotTouchHashesMidLine() {
+        XCTAssertEqual(DuckAIGridItem.stripBlockMarkup("Issue #6379 is fixed"), "Issue #6379 is fixed")
+    }
+
+    func testStripBlockMarkupCollapsesBlankLineRunsLeftBehind() {
+        XCTAssertEqual(DuckAIGridItem.stripBlockMarkup("A\n\n---\n\n---\n\nB"), "A\n\nB")
+    }
+
+    func testStripBlockMarkupOnMarkupOnlyContentYieldsEmptySoCardFallsBackToLogo() {
+        let chat = makeChat(title: "Cute ducks", model: "gpt-4o-mini")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: "# \n\n---\n\n> ")
+
+        XCTAssertEqual(item, .empty(title: "Cute ducks", chip: .chat))
+    }
+
+    /// Verbatim shape of the real-world report: a heading/bullet-heavy answer that the previous
+    /// `.full` markdown parsing collapsed into one run with no separators between blocks.
+    func testWhenContentIsHeadingAndBulletHeavyThenSnippetKeepsLineStructure() {
+        let chat = makeChat(title: "Bike journey Egypt to South Africa", model: "gpt-4o-mini")
+        let content = """
+        # Packing List for Egypt to South Africa Bike Tour
+
+        ---
+
+        ## Bike & Mechanical Parts
+
+        - **Spare inner tubes** (4–6, various sizes)
+        - **Tire levers** (2–3)
+        """
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: content)
+
+        let expected = """
+        Packing List for Egypt to South Africa Bike Tour
+
+        Bike & Mechanical Parts
+
+        - **Spare inner tubes** (4–6, various sizes)
+        - **Tire levers** (2–3)
+        """
+        XCTAssertEqual(item, .text(title: "Bike journey Egypt to South Africa", snippet: expected))
+    }
+
+    /// The cap must apply to the stripped content, so the budget is not spent on markup.
+    func testWhenContentExceedsCapThenStrippingHappensBeforeTheCap() {
+        let chat = makeChat(title: "Cute ducks", model: "gpt-4o-mini")
+        let body = String(repeating: "a", count: DuckAIGridItem.snippetCharacterCap)
+        let content = "## Heading\n\n---\n\n" + body
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: content)
+
+        guard case .text(_, let snippet) = item else { return XCTFail("expected .text, got \(item)") }
+        XCTAssertEqual(snippet.count, DuckAIGridItem.snippetCharacterCap)
+        XCTAssertTrue(snippet.hasPrefix("Heading\n\n"), "markup should be stripped before capping")
+    }
+
     // MARK: - chipKind
 
     func testChipKindMapping() {

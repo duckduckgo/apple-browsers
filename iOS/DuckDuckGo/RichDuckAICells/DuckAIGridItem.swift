@@ -91,9 +91,30 @@ extension DuckAIGridItem {
     }
 
     /// Trims and caps `content`, returning `nil` when there's nothing meaningful to show.
+    /// Block markup is stripped before the cap
     private static func snippet(from content: String?) -> String? {
-        let trimmed = content?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !trimmed.isEmpty else { return nil }
-        return String(trimmed.prefix(snippetCharacterCap))
+        let stripped = stripBlockMarkup(content ?? "")
+        guard !stripped.isEmpty else { return nil }
+        return String(stripped.prefix(snippetCharacterCap))
+    }
+
+    /// Removes the block-level markdown that reads as noise in a few-line card — ATX heading
+    /// hashes, blockquote markers and thematic breaks — while leaving line structure and list
+    /// bullets intact. Inline markup (`**bold**`, `*italic*`) is left for the view to render.
+    static func stripBlockMarkup(_ content: String) -> String {
+        // ponytail: line-oriented regexes rather than a real markdown AST — enough for a
+        // few-line teaser. Walk `presentationIntent` if the card ever needs true block layout.
+        var result = content
+        // Thematic breaks (---, ***, ___) alone on a line.
+        result = result.replacingOccurrences(of: "(?m)^[ \t]*(-{3,}|\\*{3,}|_{3,})[ \t]*$",
+                                             with: "",
+                                             options: .regularExpression)
+        // Leading heading hashes and blockquote markers.
+        result = result.replacingOccurrences(of: "(?m)^[ \t]*(#{1,6}[ \t]+|>[ \t]*)",
+                                             with: "",
+                                             options: .regularExpression)
+        // Collapse the blank-line runs the strips leave behind.
+        result = result.replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

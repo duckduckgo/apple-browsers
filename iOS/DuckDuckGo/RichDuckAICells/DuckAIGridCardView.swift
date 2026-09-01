@@ -125,7 +125,8 @@ final class DuckAIGridCardView: UIView {
     /// Renders the snippet markdown (bold/italic) and tightens inter-line spacing.
     private func snippetAttributedText(_ snippet: String) -> NSAttributedString {
         let result: NSMutableAttributedString
-        if let markdown = try? AttributedString(markdown: snippet) {
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        if let markdown = try? AttributedString(markdown: snippet, options: options) {
             result = NSMutableAttributedString(attributedString: NSAttributedString(markdown))
         } else {
             result = NSMutableAttributedString(string: snippet)

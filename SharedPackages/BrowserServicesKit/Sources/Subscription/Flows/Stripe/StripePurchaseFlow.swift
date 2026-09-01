@@ -138,6 +138,8 @@ public final class DefaultStripePurchaseFlow: StripePurchaseFlow {
         Logger.subscriptionStripePurchaseFlow.log("Completing subscription purchase")
         subscriptionManager.clearSubscriptionCache()
         _ = try? await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
+        // Fetch the confirmed subscription before notifying, so listeners read its trial offer rather than the just-cleared cache.
+        _ = try? await subscriptionManager.getSubscription(forceRefresh: true)
         NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
     }
 }

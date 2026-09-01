@@ -1230,6 +1230,7 @@ enum AIChatPixel: PixelKit.Event {
         }
     }
 
+    // Native gated-row pixels omit the legacy platform prefix used by existing AI Chat pixels.
     var namePrefix: PixelKitNamePrefix {
         switch self {
         case .aiChatAddressBarGatedRowClick,

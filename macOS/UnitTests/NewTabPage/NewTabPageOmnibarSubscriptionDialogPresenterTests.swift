@@ -32,7 +32,7 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
 
     private func createPresenter(isEligibleForFreeTrial: Bool = false,
                                  pixelFiring: PixelFiring? = nil,
-                                 showDialog: @escaping (AIChatSubscriptionUpsellDialog) -> Void = { _ in }) -> (NewTabPageOmnibarSubscriptionDialogPresenter, MockSubscriptionTabsShowing, SubscriptionManagerMock) {
+                                 showDialog: @escaping @MainActor (AIChatSubscriptionUpsellDialog) -> Void = { _ in }) -> (NewTabPageOmnibarSubscriptionDialogPresenter, MockSubscriptionTabsShowing, SubscriptionManagerMock) {
         let mockTabShower = MockSubscriptionTabsShowing()
         let mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.resultURL = URL(string: "https://duckduckgo.com/pro")!
@@ -189,6 +189,26 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
             "origin": "funnel_newtab_macos__modelpicker"
         ])
         #expect(triggeredCall?.frequency == .dailyAndCount)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Subscription callbacks keep pixel firing alive after the presenter owner releases it")
+    func subscriptionCallbacksKeepPixelFiringAliveAfterPresenterOwnerReleasesIt() {
+        let purchasePixels = NewTabPageOmnibarPixelFiringMock()
+        let purchaseDialog = {
+            let (presenter, _, _) = createPresenter(pixelFiring: purchasePixels)
+            return presenter.makeUpsellDialog(userTier: .free, source: .model)
+        }()
+        purchaseDialog.onSubscribe?()
+        assertUpsellTriggered(purchasePixels.fireCalls, flowType: "purchase")
+
+        let upgradePixels = NewTabPageOmnibarPixelFiringMock()
+        let upgradeDialog = {
+            let (presenter, _, _) = createPresenter(pixelFiring: upgradePixels)
+            return presenter.makeUpgradeDialog(source: .model)
+        }()
+        upgradeDialog.onSubscribe?()
+        assertUpsellTriggered(upgradePixels.fireCalls, flowType: "upgrade")
     }
 
     @available(iOS 16, macOS 13, *)

@@ -31,12 +31,13 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
     private let coordinator: SubscriptionNavigationCoordinator
     private let subscriptionManager: any SubscriptionManager
     private let pixelFiring: PixelFiring?
-    private let showDialog: (AIChatSubscriptionUpsellDialog) -> Void
+    // Allows tests to exercise the show flow without presenting an AppKit dialog.
+    private let showDialog: @MainActor (AIChatSubscriptionUpsellDialog) -> Void
 
     init(coordinator: SubscriptionNavigationCoordinator,
          subscriptionManager: any SubscriptionManager,
          pixelFiring: PixelFiring? = PixelKit.shared,
-         showDialog: @escaping (AIChatSubscriptionUpsellDialog) -> Void = { $0.show() }) {
+         showDialog: @escaping @MainActor (AIChatSubscriptionUpsellDialog) -> Void = { @MainActor dialog in dialog.show() }) {
         self.coordinator = coordinator
         self.subscriptionManager = subscriptionManager
         self.pixelFiring = pixelFiring
@@ -61,9 +62,9 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
         var dialog: AIChatSubscriptionUpsellDialog = .upsell(
             isEligibleForFreeTrial: userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
         )
-        dialog.onSubscribe = { [weak self, coordinator] in
+        dialog.onSubscribe = { [self, coordinator] in
             coordinator.navigateToSubscriptionPurchase(origin: Self.origin(for: source).rawValue, featurePage: Self.featurePage)
-            self?.firePixel(flowType: "purchase", source: source)
+            firePixel(flowType: "purchase", source: source)
         }
         dialog.onHaveSubscription = { [coordinator] in
             coordinator.navigateToSubscriptionActivation()
@@ -74,9 +75,9 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
     /// Fires only for an existing Plus subscriber gated to Pro.
     func makeUpgradeDialog(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) -> AIChatSubscriptionUpsellDialog {
         var dialog: AIChatSubscriptionUpsellDialog = .proUpgrade()
-        dialog.onSubscribe = { [weak self, coordinator] in
+        dialog.onSubscribe = { [self, coordinator] in
             coordinator.navigateToSubscriptionPlans(origin: Self.origin(for: source).rawValue, featurePage: Self.featurePage)
-            self?.firePixel(flowType: "upgrade", source: source)
+            firePixel(flowType: "upgrade", source: source)
         }
         dialog.onHaveSubscription = { [coordinator] in
             coordinator.navigateToSubscriptionActivation()

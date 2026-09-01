@@ -35,7 +35,7 @@ final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
     private let storage: KeyedStorage<BookmarkToolbarPromoSettings>
 
     private var resultContinuation: CheckedContinuation<PromoResult, Never>?
-    private weak var presentedBookmarksBarViewController: BookmarksBarViewController?
+    private weak var presentedMainViewController: MainViewController?
     private var pendingPresentation: DispatchWorkItem?
 
     init(featureFlagger: FeatureFlagger,
@@ -76,16 +76,15 @@ final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
             return .retired
         }
 
-        let bookmarksBarViewController = mainViewController.bookmarksBarViewController
-        presentedBookmarksBarViewController = bookmarksBarViewController
+        presentedMainViewController = mainViewController
         mainViewController.updateBookmarksBarViewVisibility(visible: true)
 
         return await withCheckedContinuation { continuation in
             resultContinuation = continuation
 
             // This won't work until the bookmarks bar is actually visible, which it isn't until the next UI cycle.
-            let presentation = DispatchWorkItem { [weak bookmarksBarViewController, weak self] in
-                bookmarksBarViewController?.showBookmarksBarPrompt { result in
+            let presentation = DispatchWorkItem { [weak mainViewController, weak self] in
+                mainViewController?.bookmarksBarViewController.showBookmarksBarPrompt { result in
                     self?.resume(with: result)
                 }
             }
@@ -96,14 +95,22 @@ final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func hide() {
-        presentedBookmarksBarViewController?.retractBookmarksBarPromptIfNeeded()
+        presentedMainViewController?.bookmarksBarViewController.retractBookmarksBarPromptIfNeeded()
+
+        // If the user hasn't made a choice yet, this is the queue retracting the promo. Undo the
+        // visibility we forced on in show(), otherwise the bar is left on with no way back and a
+        // later show() mistakes it for the user already knowing about the bar.
+        if resultContinuation != nil {
+            presentedMainViewController?.updateBookmarksBarViewVisibility(visible: false)
+        }
+
         resume(with: .noChange)
     }
 
     private func resume(with result: PromoResult) {
         pendingPresentation?.cancel()
         pendingPresentation = nil
-        presentedBookmarksBarViewController = nil
+        presentedMainViewController = nil
 
         guard let continuation = resultContinuation else { return }
         resultContinuation = nil

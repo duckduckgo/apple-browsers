@@ -173,6 +173,9 @@ final class AIChatUsageWarningCardView: NSView {
     /// Hidden views still take part in Auto Layout, so footprints collapse explicitly.
     private var closeButtonWidthConstraint: NSLayoutConstraint?
     private var actionCloseSpacingConstraint: NSLayoutConstraint?
+    /// The card's own margin, dropped once the host lines the icon up with its omnibar instead.
+    private var iconLeadingConstraint: NSLayoutConstraint?
+    private var iconAlignmentConstraint: NSLayoutConstraint?
 
     // MARK: - Background style
 
@@ -241,6 +244,10 @@ final class AIChatUsageWarningCardView: NSView {
         addSubview(actionButton)
         addSubview(closeButton)
 
+        let iconLeading = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor,
+                                                                 constant: Constants.horizontalPadding)
+        iconLeadingConstraint = iconLeading
+
         let closeWidth = closeButton.widthAnchor.constraint(equalToConstant: Constants.closeButtonSize)
         closeButtonWidthConstraint = closeWidth
 
@@ -264,7 +271,7 @@ final class AIChatUsageWarningCardView: NSView {
             contentGuide.bottomAnchor.constraint(equalTo: bottomAnchor),
             contentGuide.heightAnchor.constraint(equalToConstant: Constants.contentHeight),
 
-            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            iconLeading,
             iconImageView.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
@@ -295,6 +302,19 @@ final class AIChatUsageWarningCardView: NSView {
         applyTheme()
     }
 
+    // MARK: - Alignment with the omnibar above
+
+    /// Puts the icon in the same column as one of the omnibar's own controls, so the card reads as
+    /// a continuation of it rather than a band with margins of its own.
+    func alignIcon(withCenterXOf view: NSView) {
+        iconAlignmentConstraint?.isActive = false
+        iconLeadingConstraint?.isActive = false
+
+        let constraint = iconImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        iconAlignmentConstraint = constraint
+        constraint.isActive = true
+    }
+
     @objc private func closeButtonClicked() {
         onDismiss?()
     }
@@ -312,9 +332,7 @@ final class AIChatUsageWarningCardView: NSView {
         actionButton.isHidden = true
         actionButton.collapse()
 
-        closeButton.isHidden = false
-        closeButtonWidthConstraint?.constant = Constants.closeButtonSize
-        actionCloseSpacingConstraint?.constant = Constants.actionCloseSpacing
+        applyCloseButton(isVisible: true)
     }
 
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
@@ -334,10 +352,15 @@ final class AIChatUsageWarningCardView: NSView {
             actionButton.collapse()
         }
 
-        closeButton.isHidden = !warning.isDismissible
-        closeButtonWidthConstraint?.constant = warning.isDismissible ? Constants.closeButtonSize : 0
-        // Otherwise the CTA sits a spacing off the trailing edge on a message with no close button.
-        actionCloseSpacingConstraint?.constant = warning.isDismissible ? Constants.actionCloseSpacing : 0
+        applyCloseButton(isVisible: warning.isDismissible)
+    }
+
+    /// Collapses the close button's footprint when there is none, which drops the CTA into the
+    /// place it would have held — the card's own trailing margin.
+    private func applyCloseButton(isVisible: Bool) {
+        closeButton.isHidden = !isVisible
+        closeButtonWidthConstraint?.constant = isVisible ? Constants.closeButtonSize : 0
+        actionCloseSpacingConstraint?.constant = isVisible ? Constants.actionCloseSpacing : 0
     }
 
     /// Bold headline, regular reset detail, one string so the two can never wrap apart.

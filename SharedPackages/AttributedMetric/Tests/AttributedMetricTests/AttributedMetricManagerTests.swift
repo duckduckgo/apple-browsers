@@ -1022,8 +1022,6 @@ final class AttributedMetricManagerTests: XCTestCase {
         XCTAssertEqual(capturedMonth, 2, "Converted trial user must advance to month=2+, not re-fire month=1")
     }
 
-    /// The ongoing-month (month=2+) pixel must fire once per month, not on every active day within the same month.
-    /// (month=2 and month=3 both bucket to param value 2, so this counts pixel fires, not the param.)
     func testProcessSubscriptionCheck_month2Plus_firesOncePerMonthNotPerDay() async {
         let firstMonthFire = XCTestExpectation(description: "month bucket fired for month 2")
         let noRefireSameMonth = XCTestExpectation(description: "not re-fired within same month")

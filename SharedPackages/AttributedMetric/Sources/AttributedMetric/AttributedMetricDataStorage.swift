@@ -46,7 +46,7 @@ public protocol AttributedMetricDataStoring {
     var subscriptionDate: Date? { get set }
     var subscriptionFreeTrialFired: Bool { get set }
     var subscriptionMonth1Fired: Bool { get set }
-    /// Highest month value already reported for the ongoing-month (month=2+) pixel, so it fires once per month rather than once per active day.
+    /// Highest month value already reported
     var subscriptionLastMonthFired: Int? { get set }
 
     // Sync

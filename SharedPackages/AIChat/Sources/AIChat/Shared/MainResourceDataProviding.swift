@@ -35,6 +35,8 @@ public extension MainResourceDataProviding {
 
 extension WKWebView: MainResourceDataProviding {
 
+    private static let documentReadResourceTimeout: TimeInterval = 30
+
     public func mainResourceData(timeout: TimeInterval) async -> Data? {
         guard let url, url.scheme == "http" || url.scheme == "https" else { return nil }
 
@@ -46,6 +48,7 @@ extension WKWebView: MainResourceDataProviding {
         // Preload the tab's cookies into the ephemeral session's private store so URLSession applies
         // their real domain/path/Secure/host-only rules and nothing leaks to the app-global jar.
         let sessionConfiguration = URLSessionConfiguration.ephemeral
+        sessionConfiguration.timeoutIntervalForResource = Self.documentReadResourceTimeout
         sessionConfiguration.httpCookieAcceptPolicy = .always
         for cookie in await tabCookies() {
             sessionConfiguration.httpCookieStorage?.setCookie(cookie)

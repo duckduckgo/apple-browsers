@@ -44,17 +44,22 @@ final class UTIFooterController {
     weak var presenter: UTIFooterPresenting?
 
     private let viewModel: DuckAiUsageWarningViewModel
+    private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let mapper: UTIFooterMessageMapper
     private let animator: Animator
 
     private var isSuppressed = false
+    /// The message the user acted on, held so the CTA can retire one that carries no close button.
+    private var actedOnMessage: UTIFooterMessage?
 
     private(set) var currentMessage: UTIFooterMessage?
 
     init(viewModel: DuckAiUsageWarningViewModel,
+         highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          animator: Animator? = nil) {
         self.viewModel = viewModel
+        self.highUsageNotice = highUsageNotice
         self.mapper = mapper
         self.animator = animator ?? Self.springAnimator
     }
@@ -62,6 +67,7 @@ final class UTIFooterController {
     /// Synchronous: a lookup in the already-loaded entries blob.
     func refresh() {
         viewModel.refresh()
+        highUsageNotice?.refresh()
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller refresh → warning=\(self.viewModel.warning == nil ? "none" : "present", privacy: .public) suppressed=\(self.isSuppressed, privacy: .public)")
         applyCurrentState()
     }
@@ -70,6 +76,7 @@ final class UTIFooterController {
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller reset for pose change")
         // Not a dismissal: the next refresh re-reads the snapshot and the message comes back.
         viewModel.clear()
+        highUsageNotice?.clear()
         currentMessage = nil
         // Keeps the view's copy in lockstep — otherwise a later refresh that resolves to no
         // warning no-ops (nil == nil) and the view resurrects the stale card on the next expand.
@@ -83,18 +90,33 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    /// Persisted by the view model, so the message stays down until the window resets or the user
-    /// crosses the next redisplay threshold.
+    /// The two dismissals are recorded separately, so each message spends only its own.
     func dismissCurrent() {
-        viewModel.dismiss()
+        if viewModel.warning != nil {
+            viewModel.dismiss()
+        } else {
+            highUsageNotice?.dismissCurrent()
+        }
         applyCurrentState()
     }
 
     func performPrimaryAction() {
-        guard currentMessage?.primaryAction != nil else { return }
+        guard let message = currentMessage, message.primaryAction != nil else { return }
+
+        let switchesModel = currentActionSwitchesModel
         viewModel.performAction()
-        // The CTA can change what there is left to offer — a model switch retires its own suggestion.
-        applyCurrentState()
+        // The upsell leaves the user just as blocked, so only a switch retires its message.
+        guard switchesModel else { return applyCurrentState() }
+
+        actedOnMessage = message
+        dismissCurrent()
+    }
+
+    private var currentActionSwitchesModel: Bool {
+        switch viewModel.warning?.action {
+        case .switchToModel, .switchToFreeModel: return true
+        default: return false
+        }
     }
 
     private func applyCurrentState() {
@@ -110,13 +132,24 @@ final class UTIFooterController {
         }
     }
 
+    /// One slot: an actionable warning outranks the informational notice.
     private func resolveMessage() -> UTIFooterMessage? {
         guard !isSuppressed else {
             Logger.duckAIUsageWarnings.debug("[UsageWarnings] nothing to show: suppressed (editing or Search mode)")
             return nil
         }
-        guard let warning = viewModel.warning else { return nil }
-        return mapper.message(for: warning)
+        if let warning = viewModel.warning {
+            return unlessActedOn(mapper.message(for: warning))
+        }
+        if let notice = highUsageNotice?.notice {
+            return unlessActedOn(mapper.message(for: notice))
+        }
+        return nil
+    }
+
+    /// Releases as soon as the resolver produces a different message, so the next rung still shows.
+    private func unlessActedOn(_ message: UTIFooterMessage) -> UTIFooterMessage? {
+        message == actedOnMessage ? nil : message
     }
 
     static let springAnimator: Animator = { changes in
@@ -130,5 +163,50 @@ final class UTIFooterController {
                        initialSpringVelocity: 0,
                        options: [.beginFromCurrentState, .allowUserInteraction],
                        animations: changes)
+    }
+}
+
+// MARK: - High-usage model notice
+
+/// Applies the shared resolver to the selected model, and remembers dismissals per model.
+@MainActor
+final class UTIFooterHighUsageNoticeSource {
+
+    private let resolver: DuckAIHighUsageModelNoticeResolver
+    private let dismissalStore: DuckAiHighUsageNoticeDismissalStoring
+    /// Re-read per refresh, so switching models mid-session is picked up.
+    private let modelProvider: () -> (id: String?, shortName: String?)
+
+    private(set) var notice: DuckAiHighUsageModelNotice?
+
+    init(dismissalStore: DuckAiHighUsageNoticeDismissalStoring = DuckAiHighUsageNoticeDismissalStore(),
+         modelProvider: @escaping () -> (id: String?, shortName: String?)) {
+        self.dismissalStore = dismissalStore
+        self.resolver = DuckAIHighUsageModelNoticeResolver(dismissalStore: dismissalStore)
+        self.modelProvider = modelProvider
+    }
+
+    func refresh() {
+        let model = modelProvider()
+        switch resolver.resolve(modelId: model.id, modelShortName: model.shortName) {
+        case .notice(let notice):
+            self.notice = notice
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] high-usage notice: model=\(notice.modelId, privacy: .public)")
+        case .none(let reason):
+            notice = nil
+            Logger.duckAIUsageWarnings.debug("[UsageWarnings] high-usage notice: none — reason=\(reason.rawValue, privacy: .public)")
+        }
+    }
+
+    func dismissCurrent() {
+        guard let notice else { return }
+        dismissalStore.setDismissed(modelId: notice.modelId)
+        self.notice = nil
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] high-usage notice dismissed: model=\(notice.modelId, privacy: .public)")
+    }
+
+    /// Teardown: drops the notice without recording a dismissal.
+    func clear() {
+        notice = nil
     }
 }

@@ -153,6 +153,16 @@ final class UTIPixelReporter {
         withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, ["surface": $0.surface.rawValue, "source": source]) }
     }
 
+    func reportImageValidationFailed(reason: String, source: String) {
+        withContext {
+            firing.fireDailyAndCount(.unifiedToggleInputImageValidationFailed, [
+                "reason": reason,
+                "surface": $0.surface.rawValue,
+                "source": source
+            ])
+        }
+    }
+
     func reportImageAttached(source: String) {
         withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, ["surface": $0.surface.rawValue, "source": source]) }
     }

@@ -1,0 +1,83 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_uti_duckai_warnings_limit_reached
+
+---
+
+# The blocked-usage cards behind `utiDuckAIWarnings`. A reached limit reads as an alert rather than
+# a full ring, carries no ✕ (there is nothing to defer), and offers the subscription upsell.
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        isInternalUser: "true"
+        # Keep quoted — LaunchOptionsHandler silently ignores unquoted YAML booleans.
+        ff.utiDuckAIWarnings: "true"
+        ff.aiChatNativeStorage: "true"
+        ff.browsingMenuSheetEnabledByDefault: "true"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+- runFlow:
+    file: ../shared/seed_duckai_usage_warning.yaml
+    env:
+        PRESET: "Weekly limit reached"
+
+- tapOn:
+    id: "searchEntry"
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- assertVisible:
+    id: "AIChat.Footer.Card"
+- assertVisible:
+    id: "AIChat.Footer.Label.Title"
+    text: "Weekly usage limit reached"
+- assertVisible:
+    id: "AIChat.Footer.Icon.Alert"
+- assertNotVisible:
+    id: "AIChat.Footer.Icon.UsageRing"
+- assertNotVisible:
+    id: "AIChat.Footer.Button.Dismiss"
+# By identifier only: the CTA reads "Try for free" or "Subscribe" depending on trial eligibility.
+- assertVisible:
+    id: "AIChat.Footer.Button.Primary"
+
+# A daily block is its own message. Re-seeding in place keeps the second case off a fresh install.
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
+
+- runFlow:
+    file: ../shared/seed_duckai_usage_warning.yaml
+    env:
+        PRESET: "Daily limit reached"
+
+- tapOn:
+    id: "searchEntry"
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- assertVisible:
+    id: "AIChat.Footer.Card"
+- assertVisible:
+    id: "AIChat.Footer.Label.Title"
+    text: "Daily limit reached"
+- assertVisible:
+    id: "AIChat.Footer.Icon.Alert"
+- assertNotVisible:
+    id: "AIChat.Footer.Button.Dismiss"

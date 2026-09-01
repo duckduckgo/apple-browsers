@@ -33,12 +33,18 @@ extension DuckAiUsageWarning {
             case .daily: return UserText.aiChatUsageWarningsDailyUsage(percent: percent)
             case .weekly: return UserText.aiChatUsageWarningsWeeklyUsage(percent: percent)
             }
-        case .dailyLimitReached:
+        case .dailyReached:
             return UserText.aiChatUsageWarningsDailyLimitReached
-        case .weeklyLimitReached:
+        case .weeklyReached:
             return UserText.aiChatUsageWarningsWeeklyLimitReached
-        case .advancedModelsLimitReached:
+        case .weeklyReachedDegraded:
             return UserText.aiChatUsageWarningsAdvancedModelsLimitReached
+        case .freeReached:
+            // One id whichever window ran out, so the window picks the noun.
+            switch window {
+            case .daily: return UserText.aiChatUsageWarningsDailyLimitReached
+            case .weekly: return UserText.aiChatUsageWarningsWeeklyLimitReached
+            }
         }
     }
 
@@ -46,8 +52,15 @@ extension DuckAiUsageWarning {
         UserText.aiChatUsageWarningsResetsIn(resetsIn.shortDescription)
     }
 
-    /// `nil` hides the button. `.startUsingWeeklyLimit` has no native route yet, and a button that
-    /// does nothing is worse than none.
+    /// Nothing to swap for an upsell or a hand-off to another window.
+    var actionSwapsModel: Bool {
+        switch action {
+        case .switchToModel, .switchToFreeModel: return true
+        case .tryForFree, .startUsingWeeklyLimit, .none: return false
+        }
+    }
+
+    /// `nil` hides the button, which is also how a switch with nothing to switch to renders.
     var localizedActionTitle: String? {
         guard let action else { return nil }
 
@@ -60,7 +73,7 @@ extension DuckAiUsageWarning {
         case .tryForFree(let isTrialEligible):
             return isTrialEligible ? UserText.aiChatUsageWarningsTryForFree : UserText.aiChatUsageWarningsSubscribe
         case .startUsingWeeklyLimit:
-            return nil
+            return UserText.aiChatUsageWarningsStartUsingWeeklyLimit
         }
     }
 }
@@ -117,6 +130,16 @@ final class AIChatUsageWarningCardView: NSView {
         imageView.imageScaling = .scaleProportionallyDown
         imageView.image = DesignSystemImages.Glyphs.Size16.alertRecolorable
         return imageView
+    }()
+
+    /// So a reopen on the same message doesn't replay the fill animation.
+    private var lastShownApproachingPercent: Int?
+
+    private let ringView: AIChatUsageWarningRingView = {
+        let view = AIChatUsageWarningRingView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isHidden = true
+        return view
     }()
 
     private let titleLabel: NSTextField = {
@@ -211,6 +234,7 @@ final class AIChatUsageWarningCardView: NSView {
         addSubview(tintView)
         addLayoutGuide(contentGuide)
         addSubview(iconImageView)
+        addSubview(ringView)
         addSubview(titleLabel)
         addSubview(actionButton)
         addSubview(closeButton)
@@ -243,6 +267,11 @@ final class AIChatUsageWarningCardView: NSView {
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
+            ringView.leadingAnchor.constraint(equalTo: iconImageView.leadingAnchor),
+            ringView.centerYAnchor.constraint(equalTo: iconImageView.centerYAnchor),
+            ringView.widthAnchor.constraint(equalToConstant: AIChatUsageWarningRingView.Constants.size),
+            ringView.heightAnchor.constraint(equalToConstant: AIChatUsageWarningRingView.Constants.size),
+
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
 
@@ -270,8 +299,25 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Content
 
+    /// Lays the row out for the high-usage model notice: no reset detail and no CTA, since it is
+    /// about which model is selected rather than about an allowance running out.
+    func update(with notice: DuckAiHighUsageModelNotice) {
+        let text = UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName)
+        applyInfoIcon()
+        titleLabel.attributedStringValue = Self.attributedNotice(text)
+        titleLabel.setAccessibilityLabel(text)
+
+        actionButton.isHidden = true
+        actionButton.collapse()
+
+        closeButton.isHidden = false
+        closeButtonWidthConstraint?.constant = Constants.closeButtonSize
+        actionCloseSpacingConstraint?.constant = Constants.actionCloseSpacing
+    }
+
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
     func update(with warning: DuckAiUsageWarning) {
+        applyIcon(for: warning)
         titleLabel.attributedStringValue = Self.attributedTitle(headline: warning.localizedHeadline,
                                                                 resetsIn: warning.localizedResetsIn)
         titleLabel.setAccessibilityLabel("\(warning.localizedHeadline). \(warning.localizedResetsIn)")
@@ -279,7 +325,9 @@ final class AIChatUsageWarningCardView: NSView {
         let actionTitle = warning.localizedActionTitle
         actionButton.isHidden = actionTitle == nil
         if let actionTitle {
-            actionButton.configure(title: actionTitle, offersModelPicker: warning.offersModelPicker)
+            actionButton.configure(title: actionTitle,
+                                   offersModelPicker: warning.offersModelPicker,
+                                   showsSwapIcon: warning.actionSwapsModel)
         } else {
             actionButton.collapse()
         }
@@ -291,6 +339,43 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     /// Bold headline, regular reset detail, one string so the two can never wrap apart.
+    /// The ring tracks the percentage while the limit is only approaching; a reached limit reads as an
+    /// alert, where a nearly-full ring would say less than the copy already does.
+    private func applyInfoIcon() {
+        ringView.isHidden = true
+        iconImageView.isHidden = false
+        lastShownApproachingPercent = nil
+        iconImageView.image = DesignSystemImages.Glyphs.Size16.info
+        NSAppearance.withAppearance(appearance) {
+            iconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
+        }
+    }
+
+    private func applyIcon(for warning: DuckAiUsageWarning) {
+        let isApproaching = warning.message == .approaching
+        ringView.isHidden = !isApproaching
+        iconImageView.isHidden = isApproaching
+        // The notice swaps in the info glyph, so the alert has to be put back.
+        iconImageView.image = DesignSystemImages.Glyphs.Size16.alertRecolorable
+        iconImageView.contentTintColor = nil
+
+        guard isApproaching else { return }
+        // Animated only between two messages, so the ring doesn't wind up from zero every time the
+        // panel reopens on the same one.
+        let animated = lastShownApproachingPercent != nil && lastShownApproachingPercent != warning.percent
+        lastShownApproachingPercent = warning.percent
+        ringView.setProgress(Double(warning.percent) / 100, severity: warning.severity, animated: animated)
+    }
+
+    /// Regular weight throughout: the notice is a sentence, where the warnings lead with a headline.
+    private static func attributedNotice(_ text: String) -> NSAttributedString {
+        NSAttributedString(
+            string: text,
+            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .regular),
+                         .foregroundColor: NSColor(designSystemColor: .textPrimary)]
+        )
+    }
+
     private static func attributedTitle(headline: String, resetsIn: String) -> NSAttributedString {
         let textColor = NSColor(designSystemColor: .textPrimary)
         let result = NSMutableAttributedString(
@@ -348,6 +433,8 @@ final class AIChatUsageWarningActionButton: NSView {
         static let cornerRadius: CGFloat = 14
         static let horizontalPadding: CGFloat = 12
         static let fontSize: CGFloat = 12
+        static let iconSize: CGFloat = 12
+        static let iconTitleSpacing: CGFloat = 6
         static let chevronSize: CGFloat = 16
         static let chevronRegionWidth: CGFloat = 26
         static let dividerWidth: CGFloat = 1
@@ -371,6 +458,14 @@ final class AIChatUsageWarningActionButton: NSView {
         return view
     }()
 
+    private let iconImageView: NSImageView = {
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.image = DesignSystemImages.Glyphs.Size12.swap
+        return imageView
+    }()
+
     private let chevronImageView: NSImageView = {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -386,6 +481,8 @@ final class AIChatUsageWarningActionButton: NSView {
     private var pickerRegionWidthConstraint: NSLayoutConstraint?
     private var leadingPaddingConstraint: NSLayoutConstraint?
     private var dividerLeadingConstraint: NSLayoutConstraint?
+    private var iconWidthConstraint: NSLayoutConstraint?
+    private var iconTitleSpacingConstraint: NSLayoutConstraint?
 
     var onAction: (() -> Void)?
     var onOpenModelPicker: (() -> Void)?
@@ -394,6 +491,7 @@ final class AIChatUsageWarningActionButton: NSView {
     var pickerAnchor: NSView { pickerHitButton }
 
     private var offersModelPicker = false
+    private var showsSwapIcon = false
     private var isCollapsed = false
 
     override init(frame frameRect: NSRect) {
@@ -426,6 +524,7 @@ final class AIChatUsageWarningActionButton: NSView {
         pickerHitButton.action = #selector(pickerClicked)
         pickerHitButton.setAccessibilityLabel(UserText.aiChatUsageWarningsModelPickerAccessibilityLabel)
 
+        addSubview(iconImageView)
         addSubview(titleLabel)
         addSubview(dividerView)
         addSubview(chevronImageView)
@@ -436,9 +535,15 @@ final class AIChatUsageWarningActionButton: NSView {
         dividerWidthConstraint = dividerWidth
         let pickerRegionWidth = pickerHitButton.widthAnchor.constraint(equalToConstant: Constants.chevronRegionWidth)
         pickerRegionWidthConstraint = pickerRegionWidth
-        let leadingPadding = titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor,
-                                                                constant: Constants.horizontalPadding)
+        // With no icon both its width and the spacing collapse, leaving the label where it was.
+        let leadingPadding = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor,
+                                                                    constant: Constants.horizontalPadding)
         leadingPaddingConstraint = leadingPadding
+        let iconWidth = iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize)
+        iconWidthConstraint = iconWidth
+        let iconTitleSpacing = titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor,
+                                                                  constant: Constants.iconTitleSpacing)
+        iconTitleSpacingConstraint = iconTitleSpacing
         let dividerLeading = dividerView.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor,
                                                                  constant: Constants.horizontalPadding)
         dividerLeadingConstraint = dividerLeading
@@ -447,6 +552,11 @@ final class AIChatUsageWarningActionButton: NSView {
             heightAnchor.constraint(equalToConstant: Constants.height),
 
             leadingPadding,
+            iconWidth,
+            iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+            iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            iconTitleSpacing,
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             dividerLeading,
@@ -475,13 +585,18 @@ final class AIChatUsageWarningActionButton: NSView {
         updateTrackingAreas()
     }
 
-    /// - Parameter offersModelPicker: when false the divider and `>` collapse, leaving a plain pill.
-    func configure(title: String, offersModelPicker: Bool) {
+    /// `offersModelPicker` false collapses the divider and `>`, leaving a plain pill.
+    func configure(title: String, offersModelPicker: Bool, showsSwapIcon: Bool) {
         titleLabel.stringValue = title
         self.offersModelPicker = offersModelPicker
+        self.showsSwapIcon = showsSwapIcon
         isCollapsed = false
         leadingPaddingConstraint?.constant = Constants.horizontalPadding
         dividerLeadingConstraint?.constant = Constants.horizontalPadding
+
+        iconImageView.isHidden = !showsSwapIcon
+        iconWidthConstraint?.constant = showsSwapIcon ? Constants.iconSize : 0
+        iconTitleSpacingConstraint?.constant = showsSwapIcon ? Constants.iconTitleSpacing : 0
 
         dividerView.isHidden = !offersModelPicker
         chevronImageView.isHidden = !offersModelPicker
@@ -496,7 +611,11 @@ final class AIChatUsageWarningActionButton: NSView {
     /// paddings have to go too, or the label's own chain still reserves them.
     func collapse() {
         isCollapsed = true
+        showsSwapIcon = false
         titleLabel.stringValue = ""
+        iconImageView.isHidden = true
+        iconWidthConstraint?.constant = 0
+        iconTitleSpacingConstraint?.constant = 0
         leadingPaddingConstraint?.constant = 0
         dividerLeadingConstraint?.constant = 0
         dividerWidthConstraint?.constant = 0
@@ -509,6 +628,9 @@ final class AIChatUsageWarningActionButton: NSView {
         guard !isCollapsed else { return NSSize(width: 0, height: Constants.height) }
 
         var width = Constants.horizontalPadding + titleLabel.intrinsicContentSize.width + Constants.horizontalPadding
+        if showsSwapIcon {
+            width += Constants.iconSize + Constants.iconTitleSpacing
+        }
         if offersModelPicker {
             width += Constants.dividerWidth + Constants.chevronRegionWidth
         }
@@ -540,6 +662,7 @@ final class AIChatUsageWarningActionButton: NSView {
             backgroundLayer.backgroundColor = fill.cgColor
             dividerView.backgroundColor = NSColor(designSystemColor: .lines)
             titleLabel.textColor = NSColor(designSystemColor: .textPrimary)
+            iconImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)
             chevronImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)
         }
         CATransaction.commit()

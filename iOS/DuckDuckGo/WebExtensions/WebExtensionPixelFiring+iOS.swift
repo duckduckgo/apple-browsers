@@ -30,6 +30,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .webExtensionEmbeddedInstalled
         case .darkReader: return .webExtensionDarkReaderInstalled
         case .adBlockingExtension: return .webExtensionAdBlockingInstalled
+        case .searchToken: return .webExtensionSearchTokenInstalled
         }
     }
 
@@ -38,6 +39,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .webExtensionEmbeddedUpgraded
         case .darkReader: return .webExtensionDarkReaderUpgraded
         case .adBlockingExtension: return .webExtensionAdBlockingUpgraded
+        case .searchToken: return .webExtensionSearchTokenUpgraded
         }
     }
 
@@ -46,6 +48,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .webExtensionEmbeddedInstallError
         case .darkReader: return .webExtensionDarkReaderInstallError
         case .adBlockingExtension: return .webExtensionAdBlockingInstallError
+        case .searchToken: return .webExtensionSearchTokenInstallError
         }
     }
 
@@ -54,6 +57,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .webExtensionEmbeddedNotLoaded
         case .darkReader: return .webExtensionDarkReaderNotLoaded
         case .adBlockingExtension: return .webExtensionAdBlockingNotLoaded
+        case .searchToken: return .webExtensionSearchTokenNotLoaded
         }
     }
 }

@@ -114,7 +114,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     func test_message_upsellCopyFollowsTrialEligibility() {
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: true))).primaryAction?.title,
-                       "Try for free")
+                       "Try for Free")
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: false))).primaryAction?.title,
                        "Subscribe")
@@ -125,7 +125,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
         XCTAssertEqual(sut.message(for: warning(.dailyReached, window: .daily,
                                                 action: .startUsingWeeklyLimit(entries: entries))).primaryAction?.title,
-                       "Start using weekly limit")
+                       "Start Using Weekly Limit")
     }
 
     /// One id whichever window ran out, so the window picks the noun.

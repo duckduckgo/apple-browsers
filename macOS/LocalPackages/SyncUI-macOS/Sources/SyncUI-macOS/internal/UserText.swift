@@ -131,6 +131,9 @@ enum UserText {
     static let preparingToSyncDialogSubTitleUpdated = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle-updated", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks, autofill data, and Duck.ai chats with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
     static let preparingToSyncTwoDeviceDialogTitle = NSLocalizedString("preferences.preparing-to-sync.two-device.dialog-title", bundle: Bundle.module, value: "End-to-end encrypted on all your devices.", comment: "Preparing to sync dialog title during two-device sync set up.")
     static let preparingToSyncDialogAction = NSLocalizedString("preferences.preparing-to-sync.dialog-action", bundle: Bundle.module, value: "Connecting…", comment: "Sync preparing to sync dialog action")
+    static let preparingToSyncDialogTitleV2 = NotLocalizedString("preferences.preparing-to-sync-v2.dialog-title", value: "Sync & Backup is end-to-end encrypted on all your devices.", comment: "Preparing to sync dialog title during two-device sync set up (V2)")
+    static let preparingToSyncCheckOtherDeviceTitleV2 = NotLocalizedString("preferences.preparing-to-sync-v2.check-other-device-title", value: "Check your other device...", comment: "Title shown while the joining device waits for the other device during sync set up (V2)")
+    static let preparingToSyncDialogActionV2 = NotLocalizedString("preferences.preparing-to-sync-v2.dialog-action", value: "Connecting...", comment: "Status text while preparing to sync (V2)")
 
     // Enter recovery code dialog
     static let enterRecoveryCodeDialogTitle = NSLocalizedString("preferences.enter-recovery-code.dialog-title", bundle: Bundle.module, value: "Enter Code", comment: "Sync enter recovery code dialog title")

@@ -495,10 +495,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg
 
-    /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
-    /// expanded Duck.ai input area.
-    case iPadDuckAIBarControls
-
     /// Enables the macOS native "Customize Responses" UI (omnibar + New Tab Page entry points).
     case customizeResponses
 

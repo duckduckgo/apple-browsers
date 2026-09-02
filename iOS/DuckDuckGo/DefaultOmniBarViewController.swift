@@ -512,8 +512,7 @@ extension DefaultOmniBarViewController {
 extension DefaultOmniBarViewController {
 
     private func setUpModelPickerIfNeeded() {
-        guard dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled,
-              dependencies.featureFlagger.isFeatureOn(.iPadDuckAIBarControls) else { return }
+        guard dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled else { return }
 
         let controller = IPadOmnibarModelPickerController()
         modelPickerController = controller

@@ -77,7 +77,7 @@ public protocol InternalFeedbackDeviceInfoProviding: AnyObject {
 ///
 public final class InternalFeedbackUserScript: NSObject, Subfeature {
 
-    public enum MessageName: String, CaseIterable {
+    public enum MessageName: String {
         case getDeviceInfo
     }
 

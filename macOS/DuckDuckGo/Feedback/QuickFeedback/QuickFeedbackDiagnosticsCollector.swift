@@ -18,19 +18,9 @@
 
 import BrowserServicesKit
 import Common
-import FoundationExtensions
 import Foundation
+import FoundationExtensions
 import IOKit
-
-var machineArchitecture: String {
-    #if arch(arm64)
-    "arm64"
-    #elseif arch(x86_64)
-    "x86_64"
-    #else
-    "unknown"
-    #endif
-}
 
 final class QuickFeedbackDiagnosticsCollector {
 
@@ -47,8 +37,7 @@ final class QuickFeedbackDiagnosticsCollector {
     }
 
     /// Supplementary device details for an internal feedback report, keyed for the message bridge.
-    ///OS version and architecture are provided separately as top level fields on `InternalFeedbackDeviceInfo`.
-    ///
+    /// OS version and architecture are provided separately as top-level fields on `InternalFeedbackDeviceInfo`.
     func collectDiagnostics() -> [String: String] {
         var fields = [
             "GPU": gpuDevices,
@@ -156,6 +145,16 @@ final class InternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProvid
     private let diagnosticsCollector: QuickFeedbackDiagnosticsCollector
     private let appVersion: AppVersion
 
+    private static var machineArchitecture: String {
+        #if arch(arm64)
+        "arm64"
+        #elseif arch(x86_64)
+        "x86_64"
+        #else
+        "unknown"
+        #endif
+    }
+
     init(diagnosticsCollector: QuickFeedbackDiagnosticsCollector, appVersion: AppVersion = AppVersion()) {
         self.diagnosticsCollector = diagnosticsCollector
         self.appVersion = appVersion
@@ -178,7 +177,7 @@ final class InternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProvid
             osVersion: appVersion.osVersionMajorMinorPatch,
             appBuild: appVersion.buildNumber,
             formFactor: "desktop",
-            architecture: machineArchitecture,
+            architecture: Self.machineArchitecture,
             locale: Self.bcp47Locale,
             channel: AppVersionModel(appVersion: appVersion).distributionLabel,
             diagnostics: diagnosticsCollector.collectDiagnostics()

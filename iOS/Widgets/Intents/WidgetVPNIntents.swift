@@ -27,11 +27,13 @@ import VPNWidgetSupport
 import PixelKit
 
 /// Configures `PixelKit.shared` for the Widgets extension process, exactly once no matter which
-/// App Intent runs first. An intent's `perform()` can be invoked without the widget bundle
-/// (`Widgets.swift`'s `@main`) ever being constructed, so every `perform()` in this file and in
-/// `ControlWidgetVPNIntents.swift` touches this instead of relying on the widget bundle's `init`.
+/// App Intent runs first (they can't rely on `Widgets.swift`'s `@main` having run).
+///
+/// These intents also compile into the main app target, so this only sets up when actually running
+/// as the extension - otherwise it would replace the app's own `PixelKit.shared`.
 enum WidgetsPixelKitSetup {
     static let didSetUp: Void = {
+        guard Bundle.main.bundlePath.hasSuffix(".appex") else { return }
         PixelKitExtensionSetup.setUp(session: "ios-widgets", defaults: UserDefaults.networkProtectionGroupDefaults)
     }()
 }

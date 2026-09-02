@@ -30,6 +30,7 @@ struct TabSwitcherChromeActions {
     /// Done / Cancel / X — exits multi-select when editing, otherwise dismisses.
     var onDoneTapped: (() -> Void)?
     var onEditMenuRequested: (() -> UIMenu?)?
+    var onEditMenuDismissed: (() -> Void)?
     /// Sets a specific grid/list style (used by the floating menu).
     var onSelectTabsStyle: ((TabSwitcherViewController.TabsStyle) -> Void)?
     /// Toggles grid/list (used by the legacy single toggle button).
@@ -78,6 +79,10 @@ protocol TabSwitcherChrome: AnyObject {
     /// Applies the appropriate content insets so collection content clears the bars.
     func applyCollectionContentInset(to collectionView: UICollectionView)
 
+    /// Distance from the content view's top to the bottom of the top bar.
+    /// Overlaying content (tab cards, Fire Tabs empty state) uses this so both pages match during a swipe.
+    var topBarBottomOffset: CGFloat { get }
+
     /// Points the system scroll-edge glass effect at the scroll view the user actually scrolls
     /// (the active page's collection view), so the effect tracks vertical tab scrolling rather
     /// than the horizontally-paging container.
@@ -85,6 +90,8 @@ protocol TabSwitcherChrome: AnyObject {
 }
 
 extension TabSwitcherChrome {
+    var topBarBottomOffset: CGFloat { 0 }
+
     func trackScrollEdge(of scrollView: UIScrollView) {}
 }
 

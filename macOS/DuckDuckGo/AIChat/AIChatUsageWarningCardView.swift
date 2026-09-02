@@ -95,8 +95,9 @@ final class AIChatUsageWarningCardView: NSView {
         static let titleActionSpacing: CGFloat = 12
         static let actionCloseSpacing: CGFloat = 4
         static let closeButtonSize: CGFloat = 24
-        /// "Label - Small", per the design system.
-        static let fontSize: CGFloat = 11
+        /// "Callout", per the design system: the headline takes its emphasis weight, the reset
+        /// detail its regular one.
+        static let fontSize: CGFloat = 12
         /// Bright enough over a dark page, low enough to still read as translucent.
         static let tintAlpha: CGFloat = 0.75
     }

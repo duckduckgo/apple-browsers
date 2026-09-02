@@ -22,7 +22,7 @@ public enum DebugEventKind: String {
     case actionPayload = "Action"
     case actionResponse = "Response"
     case actionRetry = "Retry"
-    case cloudflare = "Cloudflare"
+    case challenge = "Challenge"
     case wait = "Wait"
     case history = "History"
 }

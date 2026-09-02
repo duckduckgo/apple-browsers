@@ -610,11 +610,11 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                              stepType: StepType,
                              brokerProfileQueryData: BrokerProfileQueryData) {
         let broker = brokerProfileQueryData.dataBroker
-        let summary = kind == .cloudflare
-            ? "\(broker.name) > Cloudflare"
+        let summary = kind == .challenge
+            ? "\(broker.name) > Challenge"
             : actionSummary(stepType: stepType, actionType: actionType)
-        let progressText = kind == .cloudflare
-            ? "Cloudflare: \(broker.name)"
+        let progressText = kind == .challenge
+            ? "Challenge: \(broker.name)"
             : currentActionText(stepType: stepType, actionType: actionType, prefix: kind.rawValue)
         addDebugEvent(
             kind: kind,

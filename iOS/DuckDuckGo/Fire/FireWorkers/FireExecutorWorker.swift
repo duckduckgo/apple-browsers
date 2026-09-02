@@ -26,7 +26,6 @@ protocol FireExecutorWorker {
 
 extension FireExecutorWorker {
 
-    /// Workers that do not need to distinguish an unavailable history from an empty history keep the existing behavior.
     @MainActor
     func burnTabData(tabViewModel: TabViewModel, domainResult: Result<[String], Error>) async {
         await burnTabData(tabViewModel: tabViewModel, domains: (try? domainResult.get()) ?? [])

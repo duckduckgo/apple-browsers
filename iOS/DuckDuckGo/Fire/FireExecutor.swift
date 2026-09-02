@@ -284,7 +284,11 @@ class FireExecutor: FireExecuting {
         // Pre-fetch domains once for tab scope when tabs or data burning is needed
         let domainResult: Result<[String], Error>?
         if case .tab(let viewModel) = request.scope, shouldBurnTabs || shouldBurnData {
-            domainResult = await viewModel.visitedDomains().map(Array.init)
+            do {
+                domainResult = .success(Array(try await viewModel.visitedDomains()))
+            } catch {
+                domainResult = .failure(error)
+            }
         } else {
             domainResult = nil
         }

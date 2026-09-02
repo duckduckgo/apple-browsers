@@ -83,7 +83,7 @@ final class TabViewModelTests: XCTestCase {
         ]
         mockHistoryManager.tabHistoryResult = expectedURLs
         
-        let result = try await sut.tabHistory().get()
+        let result = try await sut.tabHistory()
         
         XCTAssertEqual(mockHistoryManager.tabHistoryCalls, [tab.uid])
         XCTAssertEqual(result, expectedURLs)
@@ -100,7 +100,7 @@ final class TabViewModelTests: XCTestCase {
             URL(string: "https://apple.com")!
         ]
 
-        let result = try await sut.visitedDomains().get()
+        let result = try await sut.visitedDomains()
 
         XCTAssertEqual(result, Set(["example.com", "duckduckgo.com", "apple.com"]))
     }
@@ -109,14 +109,13 @@ final class TabViewModelTests: XCTestCase {
         let expectedError = NSError(domain: "TabViewModelTests", code: 1)
         mockHistoryManager.tabHistoryError = expectedError
 
-        let result = await sut.visitedDomains()
-
-        guard case .failure(let error) = result else {
+        do {
+            _ = try await sut.visitedDomains()
             XCTFail("Expected tab history failure")
-            return
+        } catch {
+            XCTAssertEqual((error as NSError).domain, expectedError.domain)
+            XCTAssertEqual((error as NSError).code, expectedError.code)
         }
-        XCTAssertEqual((error as NSError).domain, expectedError.domain)
-        XCTAssertEqual((error as NSError).code, expectedError.code)
     }
 
     // MARK: - Current AI Chat ID Tests

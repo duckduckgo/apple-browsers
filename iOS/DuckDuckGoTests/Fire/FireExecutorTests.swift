@@ -721,6 +721,17 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(sitePermissionsStore.globalDefault(for: .microphone), .deny)
     }
 
+    func testWhenBurningFireModeTabDataThenSitePermissionsRemainUnchanged() async {
+        storePermission(for: "preserved.example")
+        mockHistoryManager.tabHistoryResult = [URL(string: "https://preserved.example")!]
+        let executor = makeFireExecutor()
+        let tabViewModel = TabViewModel(tab: Tab(uid: "fire-tab-uid", fireTab: true), historyManager: mockHistoryManager)
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("preserved.example")), .allow)
+    }
+
     func testWhenSitePermissionsFeatureIsOffThenBurnStillClearsSitePermissions() async {
         XCTAssertFalse(mockFeatureFlagger.enabledFeatureFlags.contains(.sitePermissions))
         storePermission(for: "cleared.example")

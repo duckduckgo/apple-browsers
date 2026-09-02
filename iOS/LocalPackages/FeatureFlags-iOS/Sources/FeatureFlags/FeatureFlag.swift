@@ -531,7 +531,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217671927314542
     case nativePromoCards
 
-    /// Per-site camera, microphone and location permissions.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217880888140745
     case sitePermissions
 }

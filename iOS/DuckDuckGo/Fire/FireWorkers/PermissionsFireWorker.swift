@@ -53,7 +53,9 @@ struct PermissionsFireWorker: FireExecutorWorker {
     }
 
     @MainActor
-    func burnTabData(tabViewModel _: TabViewModel, domainResult: Result<[String], Error>) async {
+    func burnTabData(tabViewModel: TabViewModel, domainResult: Result<[String], Error>) async {
+        guard !tabViewModel.tab.fireTab else { return }
+
         dataClearingWideEventService?.start(.clearPermissions)
         let domains: [String]
         switch domainResult {

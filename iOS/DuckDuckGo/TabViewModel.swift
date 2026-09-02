@@ -52,20 +52,18 @@ struct TabViewModel {
     
     // MARK: - Tab History
     
-    func tabHistory() async -> Result<[URL], Error> {
+    func tabHistory() async throws -> [URL] {
         do {
-            return .success(try await historyManager.tabHistory(tabID: tab.uid))
+            return try await historyManager.tabHistory(tabID: tab.uid)
         } catch {
             Logger.history.error("Failed to fetch tab history: \(error.localizedDescription)")
-            return .failure(error)
+            throw error
         }
     }
 
     /// Returns unique domains visited in this tab's session
-    func visitedDomains() async -> Result<Set<String>, Error> {
-        await tabHistory().map { urls in
-            Set(urls.compactMap { $0.host })
-        }
+    func visitedDomains() async throws -> Set<String> {
+        Set(try await tabHistory().compactMap(\.host))
     }
 
     // MARK: - AI Chat

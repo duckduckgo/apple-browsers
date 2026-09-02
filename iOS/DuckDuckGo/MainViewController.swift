@@ -312,6 +312,13 @@ class MainViewController: UIViewController {
         guard isFloatingUIEnabled else { return }
         let interfaceStyle = settledFloatingGlassInterfaceStyle
         viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        // The toolbar only refreshes an omnibar it hosts. With a top address bar the omnibar sits
+        // in the navigation bar container instead, so its glass keeps the style it was snapshotted
+        // with and lands opaque before flipping translucent a frame later.
+        if !viewCoordinator.isOmnibarInToolbar,
+           let barView = viewCoordinator.omniBar.barView as? DefaultOmniBarView {
+            barView.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        }
     }
 
     private var settledFloatingGlassInterfaceStyle: UIUserInterfaceStyle {

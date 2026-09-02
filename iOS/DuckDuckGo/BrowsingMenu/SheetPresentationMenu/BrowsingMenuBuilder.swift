@@ -112,6 +112,11 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         sections.append(BrowsingMenuModel.Section(items: privacyItems))
 
+        let feedbackItems: [BrowsingMenuModel.Entry] = [
+            .init(entryBuilder.makeSendInternalFeedbackEntry())
+        ].compactMap { $0 }
+        appendSection(feedbackItems, to: &sections)
+
         return BrowsingMenuModel(
             headerItems: headerItems,
             sections: sections
@@ -216,6 +221,11 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         if !otherItems.isEmpty {
             sections.append(BrowsingMenuModel.Section(items: otherItems))
         }
+
+        let feedbackItems: [BrowsingMenuModel.Entry] = [
+            .init(entryBuilder.makeSendInternalFeedbackEntry())
+        ].compactMap { $0 }
+        appendSection(feedbackItems, to: &sections)
 
         // Show enough items to reveal "Open Bookmarks" (7th item in both layouts):
         // Non-merged: 3 (Bookmark, Favorite, Share) + 3 (Find in Page, Zoom, Desktop Site) + 1 (Open Bookmarks)

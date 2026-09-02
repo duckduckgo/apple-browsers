@@ -85,6 +85,7 @@ public extension URL {
     static let atb = URL(string: "\(base)/atb.js\(devMode)")!
     static let exti = URL(string: "\(base)/exti/\(devMode)")!
     static let feedback = URL(string: "\(base)/feedback.js?type=app-feedback")!
+    static let internalFeedbackForm = URL(string: "https://internalapps.duckduckgo.com/internal-feedback/")!
 
     static let appStore = URL(string: "https://apps.apple.com/app/duckduckgo-privacy-browser/id663592361")!
 

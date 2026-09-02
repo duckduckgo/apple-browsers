@@ -19,6 +19,7 @@
 
 import AIChat
 import BrowserServicesKit
+import Common
 import Core
 import EventHub
 import os.log
@@ -28,6 +29,7 @@ import SERPSettings
 import SpecialErrorPages
 import Subscription
 import TrackerRadarKit
+import UIKit
 import UserScript
 import WebExtensions
 import WebKit
@@ -46,6 +48,7 @@ final class UserScripts: UserScriptsProvider {
     let serpSettingsUserScript: SERPSettingsUserScript
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let pageContextUserScript: PageContextUserScript
+    let internalFeedbackUserScript: InternalFeedbackUserScript?
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -143,6 +146,9 @@ final class UserScripts: UserScriptsProvider {
         }
 
         pageContextUserScript = PageContextUserScript()
+        internalFeedbackUserScript = featureFlagger.internalUserDecider.isInternalUser
+            ? InternalFeedbackUserScript(deviceInfoProvider: IOSInternalFeedbackDeviceInfoProvider())
+            : nil
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)
@@ -158,6 +164,9 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: selectionFrameScript)
+        if let internalFeedbackUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
+        }
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }
@@ -233,4 +242,28 @@ final class UserScripts: UserScriptsProvider {
         }
     }
 
+}
+
+private final class IOSInternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding {
+
+    private let appVersion: AppVersion
+
+    init(appVersion: AppVersion = .shared) {
+        self.appVersion = appVersion
+    }
+
+    @MainActor
+    func deviceInfo() -> InternalFeedbackDeviceInfo {
+        InternalFeedbackDeviceInfo(
+            platform: "ios",
+            appVersion: appVersion.versionNumber,
+            osName: UIDevice.current.systemName,
+            osVersion: appVersion.osVersionMajorMinorPatch,
+            appBuild: appVersion.buildNumber,
+            formFactor: UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "mobile",
+            locale: Locale.current.identifier.replacingOccurrences(of: "_", with: "-"),
+            deviceModel: UIDevice.current.model,
+            deviceManufacturer: "Apple"
+        )
+    }
 }

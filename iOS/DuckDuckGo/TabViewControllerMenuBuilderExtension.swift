@@ -1206,6 +1206,19 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             }
         })
     }
+
+    func makeSendInternalFeedbackEntry() -> BrowsingMenuEntry? {
+        guard featureFlagger.internalUserDecider.isInternalUser else { return nil }
+
+        return .regular(name: UserText.actionSendInternalFeedback,
+                        image: DesignSystemImages.Glyphs.Size24.feedback) { [weak self] in
+            guard let self else { return }
+            delegate?.tab(self,
+                          didRequestNewTabForUrl: .internalFeedbackForm,
+                          openedByPage: false,
+                          inheritingAttribution: nil)
+        }
+    }
 }
 
 extension URL {

@@ -97,4 +97,109 @@ final class URLParameterTests: XCTestCase {
         }
     }
 
+    func testURLParamStrippingPreservesEncodedQuerySemantics() throws {
+        let testCases = [
+            (
+                input: "https://example.com/?utm_source=value&",
+                expected: "https://example.com/?"
+            ),
+            (
+                input: "https://example.com/?&utm_source=value",
+                expected: "https://example.com/?"
+            ),
+            (
+                input: "https://example.com/?first=1&&utm_source=value&&last=2",
+                expected: "https://example.com/?first=1&&&last=2"
+            ),
+            (
+                input: "https://example.com/?value=a%26b%3Dc&utm_source=value",
+                expected: "https://example.com/?value=a%26b%3Dc"
+            ),
+            (
+                input: "https://example.com/?value=a=b=c&utm_source=value",
+                expected: "https://example.com/?value=a=b=c"
+            ),
+            (
+                input: "https://example.com/?utm_source=value#?value=a&other=b",
+                expected: "https://example.com/#?value=a&other=b"
+            )
+        ]
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+
+        for testCase in testCases {
+            let url = try XCTUnwrap(URL(string: testCase.input))
+            let result = linkCleaner.cleanTrackingParameters(initiator: nil, url: url)
+
+            XCTAssertEqual(result?.absoluteString, testCase.expected, testCase.input)
+            XCTAssertTrue(linkCleaner.urlParametersRemoved, testCase.input)
+        }
+    }
+
+    func testURLParamStrippingDoesNotMatchPercentEncodedParameterName() throws {
+        let url = try XCTUnwrap(URL(string: "https://example.com/?%75tm_source=value&safe=1"))
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+
+        let result = linkCleaner.cleanTrackingParameters(initiator: nil, url: url)
+
+        XCTAssertEqual(result, url)
+        XCTAssertFalse(linkCleaner.urlParametersRemoved)
+    }
+
+    func testURLParamStrippingSupportsLargeTrackingParameterValue() throws {
+        let largeValue = String(repeating: "a", count: 1_000_000)
+        let url = try XCTUnwrap(URL(string: "https://example.com/?safe=1&utm_source=\(largeValue)#fragment"))
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+
+        let result = linkCleaner.cleanTrackingParameters(initiator: nil, url: url)
+
+        XCTAssertEqual(result?.absoluteString, "https://example.com/?safe=1#fragment")
+        XCTAssertTrue(linkCleaner.urlParametersRemoved)
+    }
+
+    func testURLParamStrippingPreservesLargeURLWithoutTrackingParameters() throws {
+        let largeValue = String(repeating: "a", count: 1_000_000)
+        let url = try XCTUnwrap(URL(string: "https://example.com/?safe=\(largeValue)#fragment"))
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+
+        let result = linkCleaner.cleanTrackingParameters(initiator: nil, url: url)
+
+        XCTAssertEqual(result, url)
+        XCTAssertFalse(linkCleaner.urlParametersRemoved)
+    }
+
+    func testURLParamStrippingPreservesLargeParameterNameWithoutValue() throws {
+        let largeName = String(repeating: "a", count: 1_000_000)
+        let url = try XCTUnwrap(URL(string: "https://example.com/?\(largeName)&utm_source=value#fragment"))
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+
+        let result = linkCleaner.cleanTrackingParameters(initiator: nil, url: url)
+
+        XCTAssertEqual(result?.absoluteString, "https://example.com/?\(largeName)#fragment")
+        XCTAssertTrue(linkCleaner.urlParametersRemoved)
+    }
+
+    func testURLParamStrippingPreservesRelativeURLAndBaseURL() throws {
+        let baseURL = try XCTUnwrap(URL(string: "https://example.com/root/"))
+        let url = try XCTUnwrap(URL(string: "page?safe=1&utm_source=value#fragment", relativeTo: baseURL))
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+
+        let result = try XCTUnwrap(linkCleaner.cleanTrackingParameters(initiator: nil, url: url))
+
+        XCTAssertEqual(result.relativeString, "page?safe=1#fragment")
+        XCTAssertEqual(result.baseURL, baseURL)
+        XCTAssertTrue(linkCleaner.urlParametersRemoved)
+    }
+
+    func testURLParamStrippingRemovesOnlyParameterFromQueryOnlyRelativeURL() throws {
+        let baseURL = try XCTUnwrap(URL(string: "https://example.com/root/"))
+        let url = try XCTUnwrap(URL(string: "?utm_source=value", relativeTo: baseURL))
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+
+        let result = try XCTUnwrap(linkCleaner.cleanTrackingParameters(initiator: nil, url: url))
+
+        XCTAssertEqual(result.relativeString, "")
+        XCTAssertEqual(result.baseURL, baseURL)
+        XCTAssertTrue(linkCleaner.urlParametersRemoved)
+    }
+
 }

@@ -164,7 +164,9 @@ extension PromoServiceFactoryTests {
             subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
             featureFlagger: MockFeatureFlagger(),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
-            windowControllersManager: WindowControllersManagerMock()
+            windowControllersManager: WindowControllersManagerMock(),
+            syncService: nil,
+            syncBookmarksAdapter: nil
         )
     }
 }

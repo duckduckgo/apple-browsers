@@ -827,6 +827,9 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
     case featureEnabled
+
+    /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
+    case syncFaviconsPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

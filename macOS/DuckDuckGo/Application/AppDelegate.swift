@@ -34,6 +34,7 @@ import Configuration
 import ContentScopeScripts
 import CoreData
 import Crashes
+import CryptoKit
 import CrashReportingShared
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
@@ -87,6 +88,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let urlEventHandler = URLEventHandler()
 
     private let keyStore: EncryptionKeyStoring
+    /// Error code of the first failed launch-time Keychain read, when a retry later succeeded.
+    /// Carried by the launch pixel; nil when the first read succeeded.
+    private let keychainReadErrorStatus: OSStatus?
     let fileStore: FileStore
 
     private let crashReporting: any CrashReporting
@@ -512,11 +516,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
         }
 
-        do {
-            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
-            fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
-        } catch {
-            Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
+        if AppVersion.runType.requiresEnvironment {
+            let keyRead = Self.readEncryptionKeyRetryingKeychainAccess(keyStore: keyStore,
+                                                                      startupProfiler: startupProfiler)
+            keychainReadErrorStatus = keyRead.firstFailureStatus
+            fileStore = EncryptedFileStore(encryptionKey: keyRead.key)
+        } else {
+            keychainReadErrorStatus = nil
             fileStore = EncryptedFileStore()
         }
 
@@ -883,7 +889,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
 
         if featureFlagger.isFeatureOn(.aiChatNativeStorage),
-           let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+           let appSupportURL = Self.duckAiNativeStorageBaseURL() {
             let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
             do {
                 duckAiNativeStorageHandler = try DuckAiNativeStorageHandler(
@@ -1461,7 +1467,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 subscriptionPromoDelegate: subscriptionPromoDelegate,
                 featureFlagger: featureFlagger,
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-                windowControllersManager: windowControllersManager
+                windowControllersManager: windowControllersManager,
+                syncService: syncService,
+                syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1555,7 +1563,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // silently inert. Calling it twice is harmless — it re-checks already-settled state.
         eventHubIntegration.applicationDidBecomeActive()
 
-        PixelKit.fire(GeneralPixel.launch)
+        fireLaunchPixel()
         profilerToken.stop()
     }
 
@@ -2160,6 +2168,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
+    // MARK: - Duck.ai native storage
+
+    /// Production keeps `~/Library/Application Support`; other unsandboxed bundles get a per-bundle container so DMG variants don't share chats.
+    static func duckAiNativeStorageBaseURL(isSandboxed: Bool = NSApp.isSandboxed,
+                                           bundleID: String? = Bundle.main.bundleIdentifier) -> URL? {
+        guard !isSandboxed, bundleID != productionBundleID else {
+            return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        }
+        return URL.sandboxApplicationSupportURL
+    }
+
+    private static let productionBundleID = "com.duckduckgo.macos.browser"
+
     // MARK: - PixelKit
 
     static func configurePixelKit(isInternalUser: Bool) {
@@ -2531,6 +2552,65 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.promptBarMenuBarController?.hide()
                 }
             }
+    }
+
+    // MARK: - Keychain availability
+
+    /// Fires the launch pixel. When the launch-time Keychain read failed before a retry
+    /// succeeded, the pixel carries the first failure's error code — reported here rather
+    /// than from the retry loop, which runs before PixelKit is set up.
+    private func fireLaunchPixel() {
+        guard let keychainReadErrorStatus else {
+            PixelKit.fire(GeneralPixel.launch)
+            return
+        }
+
+        PixelKit.fire(GeneralPixel.launch,
+                      options: .parameters([PixelKit.Parameters.keychainErrorCode: "\(keychainReadErrorStatus)"]))
+    }
+
+    /// When launched as a login item the Keychain may not be unlocked yet.
+    /// Retry for up to 60 s to give loginwindow time to unlock it.
+    ///
+    /// Waiting here is also what keeps `Database()` from crashing further down: it reads
+    /// the same Keychain item through `registerValueTransformers`, so by the time it runs
+    /// the Keychain has had the full window to become available.
+    private static func readEncryptionKeyRetryingKeychainAccess(
+        keyStore: EncryptionKeyStoring,
+        startupProfiler: StartupProfiler
+    ) -> (key: SymmetricKey?, firstFailureStatus: OSStatus?) {
+        let retryInterval: TimeInterval = 6
+        let deadline = Date().addingTimeInterval(60)
+        var firstFailureStatus: OSStatus?
+
+        while true {
+            do {
+                return (try keyStore.readKey(), firstFailureStatus)
+            } catch {
+                let status = (error as? EncryptionKeyStoreError)?.status
+                if firstFailureStatus == nil {
+                    firstFailureStatus = status
+                }
+
+                // The user dismissed the Keychain prompt. Retrying would only present it
+                // again, and this is their decision rather than a failure, so quit quietly.
+                if status == errSecUserCanceled {
+                    exit(0)
+                }
+
+                // A read can block while a Keychain prompt is up, so bound the total wait
+                // rather than the number of attempts.
+                guard Date() < deadline else {
+                    // Carry on without a key, as this has always done. This is not a
+                    // supported degraded mode: `Database()` reads the same item moments
+                    // later and terminates there, reporting the failure.
+                    Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
+                    return (nil, firstFailureStatus)
+                }
+                startupProfiler.invalidate()
+                Thread.sleep(forTimeInterval: retryInterval)
+            }
+        }
     }
 }
 

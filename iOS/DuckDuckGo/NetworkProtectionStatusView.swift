@@ -591,7 +591,7 @@ private struct NetworkProtectionErrorView: View {
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorable)
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorableDark)
                 Text(title)
                     .daxBodyBold()
                     .foregroundColor(.primary)

@@ -409,8 +409,6 @@ private extension DataBrokerProtectionWebViewHandler {
     }
 
     func startCloudflareChallengeSolver() {
-        let isTrusted = CloudflareAccessibilityProbe.requestPermission()
-        Logger.action.log("Cloudflare challenge: Accessibility trust=\(isTrusted, privacy: .public)")
         cloudflareChallengeTask?.cancel()
         cloudflareChallengeTask = Task { [weak self] in
             await self?.solveCloudflareChallenge()
@@ -420,9 +418,6 @@ private extension DataBrokerProtectionWebViewHandler {
     func solveCloudflareChallenge() async {
         guard let webView else { return }
         let deadline = Date().addingTimeInterval(45)
-        var previousCandidate: CloudflareAccessibilityCandidate?
-        var probeCount = 0
-        var didTryAccessibilityPress = false
         var nextSnapshotAttempt = Date.distantPast
         var didClick = false
 
@@ -433,41 +428,7 @@ private extension DataBrokerProtectionWebViewHandler {
                 continue
             }
 
-            probeCount += 1
-            let shouldPerformPress = !didTryAccessibilityPress
-            guard let scope = accessibilityScope(for: webView) else {
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                continue
-            }
-            let probe = await Task.detached(priority: .userInitiated) {
-                CloudflareAccessibilityProbe.inspect(
-                    processIdentifier: getpid(),
-                    scope: scope,
-                    performPressWhenGeometryIsMissing: shouldPerformPress)
-            }.value
-            logAccessibilityProbe(probe)
-
-            if let candidate = probe.candidate {
-                if !candidate.hasGeometry {
-                    didTryAccessibilityPress = true
-                }
-                if candidate.performedPress {
-                    reportCloudflareChallengeEvent("Sent Accessibility press without coordinates")
-                    try? await Task.sleep(nanoseconds: 3_000_000_000)
-                } else if candidate.hasGeometry,
-                          let previousCandidate,
-                          previousCandidate.isSameControl(as: candidate),
-                          let point = checkboxPoint(for: candidate, in: webView),
-                          !didClick {
-                    _ = window?.makeFirstResponder(webView)
-                    let result = await CloudflareChallengeClick.checkbox(at: point, in: webView)
-                    reportCloudflareChallengeEvent("Sent Accessibility checkbox click; \(result)")
-                    didClick = true
-                }
-                previousCandidate = candidate
-            }
-
-            if !didClick, probeCount >= 8, Date() >= nextSnapshotAttempt {
+            if !didClick, Date() >= nextSnapshotAttempt {
                 nextSnapshotAttempt = Date().addingTimeInterval(2)
                 if let point = await stableSnapshotCheckboxPoint(in: webView) {
                     _ = window?.makeFirstResponder(webView)
@@ -487,45 +448,6 @@ private extension DataBrokerProtectionWebViewHandler {
             "Failed challenge; expected broker destination did not arrive before the 45-second deadline",
             isError: true)
         resumeActiveContinuation(with: .failure(DataBrokerProtectionError.unknown("Cloudflare challenge did not reach the broker destination")))
-    }
-
-    func logAccessibilityProbe(_ probe: CloudflareAccessibilityProbeResult) {
-        Logger.action.log(
-            "Cloudflare challenge: AX probe trusted=\(probe.trusted, privacy: .public) visited=\(probe.visitedCount, privacy: .public) interactive=\(probe.interactiveCount, privacy: .public)")
-        for diagnostic in probe.diagnostics {
-            Logger.action.log("Cloudflare challenge: AX \(diagnostic, privacy: .public)")
-        }
-        guard let candidate = probe.candidate else {
-            Logger.action.log("Cloudflare challenge: AX candidate=none")
-            return
-        }
-        Logger.action.log(
-            "Cloudflare challenge: AX candidate role=\(candidate.role, privacy: .public) geometry=\(candidate.hasGeometry, privacy: .public) press=\(candidate.performedPress, privacy: .public)")
-    }
-
-    func checkboxPoint(for candidate: CloudflareAccessibilityCandidate, in webView: WKWebView) -> NSPoint? {
-        guard let position = candidate.screenPosition, let size = candidate.size, let window = webView.window else { return nil }
-        let primaryScreenTop = NSScreen.screens.first?.frame.maxY ?? position.y + size.height
-        let screenPoint = NSPoint(x: position.x + min(12, size.width / 2), y: primaryScreenTop - position.y - size.height / 2)
-        let windowPoint = window.convertPoint(fromScreen: screenPoint)
-        let webViewPoint = webView.convert(windowPoint, from: nil)
-        guard webView.bounds.contains(webViewPoint) else {
-            Logger.action.log("Cloudflare challenge: AX coordinates are outside the WebView")
-            return nil
-        }
-        return webView.isFlipped
-            ? webViewPoint
-            : NSPoint(x: webViewPoint.x, y: webView.bounds.height - webViewPoint.y)
-    }
-
-    func accessibilityScope(for webView: WKWebView) -> CloudflareAccessibilityScope? {
-        guard let window = webView.window else { return nil }
-        let webViewWindowFrame = webView.convert(webView.bounds, to: nil)
-        let webViewScreenFrame = window.convertToScreen(webViewWindowFrame)
-        let primaryScreenTop = NSScreen.screens.first?.frame.maxY ?? webViewScreenFrame.maxY
-        return CloudflareAccessibilityScope(
-            webViewScreenFrame: webViewScreenFrame,
-            primaryScreenTop: primaryScreenTop)
     }
 
     func stableSnapshotCheckboxPoint(in webView: WKWebView) async -> NSPoint? {

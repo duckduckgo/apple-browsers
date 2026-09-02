@@ -344,6 +344,7 @@ final class AIChatUsageWarningCardView: NSView {
     func update(with notice: DuckAiHighUsageModelNotice) {
         let text = UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName)
         applyInfoIcon()
+        titleLabel.maximumNumberOfLines = 1
         titleLabel.attributedStringValue = Self.attributedNotice(text)
         titleLabel.setAccessibilityLabel(text)
 
@@ -356,6 +357,7 @@ final class AIChatUsageWarningCardView: NSView {
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
     func update(with warning: DuckAiUsageWarning) {
         applyIcon(for: warning)
+        titleLabel.maximumNumberOfLines = 1
         titleLabel.attributedStringValue = Self.attributedTitle(headline: warning.localizedHeadline,
                                                                 resetsIn: warning.localizedResetsIn)
         titleLabel.setAccessibilityLabel("\(warning.localizedHeadline). \(warning.localizedResetsIn)")
@@ -387,6 +389,23 @@ final class AIChatUsageWarningCardView: NSView {
         closeTrailingConstraint?.isActive = !isVisible
     }
 
+    func update(with notice: AIChatCreateImageModelSwitchNotice) {
+        let title = UserText.aiChatCreateImageModelSwitchTitle(notice.newModelShortName)
+        let subtitle = notice.previousModelHasExtraPrivacyProtections
+            ? UserText.aiChatCreateImageModelSwitchPrivacySubtitle(notice.previousModelShortName)
+            : UserText.aiChatCreateImageModelSwitchSubtitle(notice.previousModelShortName)
+
+        applyModelSwitchIcon()
+        titleLabel.maximumNumberOfLines = 2
+        titleLabel.attributedStringValue = Self.attributedModelSwitch(title: title, subtitle: subtitle)
+        titleLabel.setAccessibilityLabel("\(title). \(subtitle)")
+
+        actionButton.isHidden = true
+        actionButton.collapse()
+
+        applyCloseButton(isVisible: true)
+    }
+
     /// Bold headline, regular reset detail, one string so the two can never wrap apart.
     /// The ring tracks the percentage while the limit is only approaching; a reached limit reads as an
     /// alert, where a nearly-full ring would say less than the copy already does.
@@ -395,6 +414,16 @@ final class AIChatUsageWarningCardView: NSView {
         iconImageView.isHidden = false
         lastShownApproachingPercent = nil
         iconImageView.image = DesignSystemImages.Glyphs.Size16.info
+        NSAppearance.withAppearance(appearance) {
+            iconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
+        }
+    }
+
+    private func applyModelSwitchIcon() {
+        ringView.isHidden = true
+        iconImageView.isHidden = false
+        lastShownApproachingPercent = nil
+        iconImageView.image = DesignSystemImages.Glyphs.Size12.swap
         NSAppearance.withAppearance(appearance) {
             iconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
         }
@@ -426,6 +455,21 @@ final class AIChatUsageWarningCardView: NSView {
         result.append(NSAttributedString(string: " ", attributes: textAttributes(weight: .regular)))
         result.append(NSAttributedString(string: "·", attributes: textAttributes(weight: .bold)))
         result.append(NSAttributedString(string: " \(resetsIn)", attributes: textAttributes(weight: .regular)))
+        return result
+    }
+
+    private static func attributedModelSwitch(title: String, subtitle: String) -> NSAttributedString {
+        let textColor = NSColor(designSystemColor: .textPrimary)
+        let result = NSMutableAttributedString(
+            string: title,
+            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .semibold),
+                         .foregroundColor: textColor]
+        )
+        result.append(NSAttributedString(
+            string: "\n\(subtitle)",
+            attributes: [.font: NSFont.systemFont(ofSize: 11, weight: .regular),
+                         .foregroundColor: textColor]
+        ))
         return result
     }
 

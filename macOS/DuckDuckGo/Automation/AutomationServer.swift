@@ -82,6 +82,10 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
         currentWebView?.url
     }
 
+    var currentTitle: String? {
+        currentTab?.title
+    }
+
     var currentWebView: WKWebView? {
         currentTab?.webView
     }
@@ -140,10 +144,36 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
         return true
     }
 
+    func goBack() -> Bool {
+        guard let tab = currentTab, tab.canGoBack else { return false }
+        _ = tab.goBack()
+        return true
+    }
+
+    func goForward() -> Bool {
+        guard let tab = currentTab, tab.canGoForward else { return false }
+        _ = tab.goForward()
+        return true
+    }
+
     func getAllTabHandles() -> [String] {
         var handles: [String] = []
         forEachTab { handles.append($0.uuid) }
         return handles
+    }
+
+    func getAllTabs() -> [AutomationTabInfo] {
+        let activeHandle = currentTabHandle
+        var tabs: [AutomationTabInfo] = []
+        forEachTab { tab in
+            tabs.append(AutomationTabInfo(
+                handle: tab.uuid,
+                url: tab.content.urlForWebView?.absoluteString,
+                title: tab.title,
+                isActive: tab.uuid == activeHandle
+            ))
+        }
+        return tabs
     }
 
     func closeCurrentTab() {

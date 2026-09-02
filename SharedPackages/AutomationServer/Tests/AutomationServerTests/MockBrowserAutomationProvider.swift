@@ -30,9 +30,12 @@ final class MockBrowserAutomationProvider: BrowserAutomationProvider {
     var isLoading: Bool = false
     var isContentBlockerReady: Bool = true
     var currentURL: URL? = URL(string: "https://example.com")
+    var currentTitle: String? = "Example Domain"
     var currentWebView: WKWebView?
 
     var tabHandles: [String] = ["mock-tab-1"]
+    /// When nil, `getAllTabs()` is derived from `tabHandles`.
+    var tabs: [AutomationTabInfo]?
 
     // MARK: - Call Tracking
 
@@ -42,6 +45,9 @@ final class MockBrowserAutomationProvider: BrowserAutomationProvider {
     var newTabCalled = false
     var executeScriptCalled: (script: String, args: [String: Any])?
     var clearWebsiteDataCalled = false
+    var goBackCalled = false
+    var goForwardCalled = false
+    var scrollCalled: (deltaX: Double, deltaY: Double)?
 
     // MARK: - Configurable Responses
 
@@ -51,6 +57,9 @@ final class MockBrowserAutomationProvider: BrowserAutomationProvider {
     var executeScriptResult: Result<Any?, Error> = .success(nil)
     var clearWebsiteDataResult = true
     var screenshotResult: Data?
+    var goBackResult = true
+    var goForwardResult = true
+    var scrollResult = true
 
     // MARK: - BrowserAutomationProvider
 
@@ -61,6 +70,28 @@ final class MockBrowserAutomationProvider: BrowserAutomationProvider {
 
     func getAllTabHandles() -> [String] {
         return tabHandles
+    }
+
+    func getAllTabs() -> [AutomationTabInfo] {
+        if let tabs {
+            return tabs
+        }
+        return tabHandles.map { AutomationTabInfo(handle: $0, isActive: $0 == currentTabHandle) }
+    }
+
+    func goBack() -> Bool {
+        goBackCalled = true
+        return goBackResult
+    }
+
+    func goForward() -> Bool {
+        goForwardCalled = true
+        return goForwardResult
+    }
+
+    func scroll(deltaX: Double, deltaY: Double) async -> Bool {
+        scrollCalled = (deltaX, deltaY)
+        return scrollResult
     }
 
     func closeCurrentTab() {
@@ -100,5 +131,8 @@ final class MockBrowserAutomationProvider: BrowserAutomationProvider {
         newTabCalled = false
         executeScriptCalled = nil
         clearWebsiteDataCalled = false
+        goBackCalled = false
+        goForwardCalled = false
+        scrollCalled = nil
     }
 }

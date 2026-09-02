@@ -484,4 +484,236 @@ final class RouteHandlerTests: XCTestCase {
         }
         XCTAssertEqual(message, expectedMessage, file: file, line: line)
     }
+
+    // MARK: - /getTitle Tests
+
+    func testGetTitle_ReturnsCurrentTitle() async {
+        mockProvider.currentTitle = "DuckDuckGo"
+        let url = URLComponents(string: "/getTitle")!
+
+        let result = await server.handlePath(url, method: "GET")
+
+        if case .success(let message) = result {
+            XCTAssertEqual(message, "DuckDuckGo")
+        } else {
+            XCTFail("Expected success")
+        }
+    }
+
+    func testGetTitle_ReturnsEmptyStringWhenNoTitle() async {
+        mockProvider.currentTitle = nil
+        let url = URLComponents(string: "/getTitle")!
+
+        let result = await server.handlePath(url, method: "GET")
+
+        if case .success(let message) = result {
+            XCTAssertEqual(message, "")
+        } else {
+            XCTFail("Expected success")
+        }
+    }
+
+    func testGetTitle_RejectsPost() async {
+        let url = URLComponents(string: "/getTitle")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected failure")
+        }
+        XCTAssertEqual(error, .methodNotAllowed)
+    }
+
+    // MARK: - /goBack and /goForward Tests
+
+    func testGoBack_CallsProvider() async {
+        let url = URLComponents(string: "/goBack")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        XCTAssertTrue(mockProvider.goBackCalled)
+        if case .success(let message) = result {
+            XCTAssertEqual(message, "done")
+        } else {
+            XCTFail("Expected success")
+        }
+    }
+
+    func testGoBack_ReturnsErrorWhenProviderCannotGoBack() async {
+        mockProvider.goBackResult = false
+        let url = URLComponents(string: "/goBack")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected failure")
+        }
+        XCTAssertEqual(error, .navigationFailed)
+    }
+
+    func testGoBack_ReturnsErrorWhenNoWindow() async {
+        mockProvider.currentTabHandle = nil
+        let url = URLComponents(string: "/goBack")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        XCTAssertFalse(mockProvider.goBackCalled)
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected failure")
+        }
+        XCTAssertEqual(error, .noWindow)
+    }
+
+    func testGoBack_RejectsGet() async {
+        let url = URLComponents(string: "/goBack")!
+
+        let result = await server.handlePath(url, method: "GET")
+
+        XCTAssertFalse(mockProvider.goBackCalled)
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected failure")
+        }
+        XCTAssertEqual(error, .methodNotAllowed)
+    }
+
+    func testGoForward_CallsProvider() async {
+        let url = URLComponents(string: "/goForward")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        XCTAssertTrue(mockProvider.goForwardCalled)
+        if case .success(let message) = result {
+            XCTAssertEqual(message, "done")
+        } else {
+            XCTFail("Expected success")
+        }
+    }
+
+    func testGoForward_ReturnsErrorWhenProviderCannotGoForward() async {
+        mockProvider.goForwardResult = false
+        let url = URLComponents(string: "/goForward")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected failure")
+        }
+        XCTAssertEqual(error, .navigationFailed)
+    }
+
+    // MARK: - /scroll Tests
+
+    func testScroll_CallsProviderWithDeltas() async {
+        let url = URLComponents(string: "/scroll?x=12.5&y=-300")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        XCTAssertEqual(mockProvider.scrollCalled?.deltaX, 12.5)
+        XCTAssertEqual(mockProvider.scrollCalled?.deltaY, -300)
+        if case .success(let message) = result {
+            XCTAssertEqual(message, "done")
+        } else {
+            XCTFail("Expected success")
+        }
+    }
+
+    func testScroll_DefaultsMissingDeltasToZero() async {
+        let url = URLComponents(string: "/scroll?y=100")!
+
+        _ = await server.handlePath(url, method: "POST")
+
+        XCTAssertEqual(mockProvider.scrollCalled?.deltaX, 0)
+        XCTAssertEqual(mockProvider.scrollCalled?.deltaY, 100)
+    }
+
+    func testScroll_ReturnsErrorForNonNumericDelta() async {
+        let url = URLComponents(string: "/scroll?x=down&y=100")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        XCTAssertNil(mockProvider.scrollCalled)
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected failure")
+        }
+        XCTAssertEqual(error, .invalidParameter)
+    }
+
+    func testScroll_ReturnsErrorWhenProviderFails() async {
+        mockProvider.scrollResult = false
+        let url = URLComponents(string: "/scroll?y=100")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected failure")
+        }
+        XCTAssertEqual(error, .scrollFailed)
+    }
+
+    func testScroll_ReturnsErrorWhenNoWindow() async {
+        mockProvider.currentTabHandle = nil
+        let url = URLComponents(string: "/scroll?y=100")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        XCTAssertNil(mockProvider.scrollCalled)
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected failure")
+        }
+        XCTAssertEqual(error, .noWindow)
+    }
+
+    func testScroll_RejectsGet() async {
+        let url = URLComponents(string: "/scroll?y=100")!
+
+        let result = await server.handlePath(url, method: "GET")
+
+        XCTAssertNil(mockProvider.scrollCalled)
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected failure")
+        }
+        XCTAssertEqual(error, .methodNotAllowed)
+    }
+
+    // MARK: - /getTabs Tests
+
+    func testGetTabs_ReturnsTabMetadataAsJSON() async throws {
+        mockProvider.tabs = [
+            AutomationTabInfo(handle: "tab-1", url: "https://example.com", title: "Example", isActive: true),
+            AutomationTabInfo(handle: "tab-2", url: nil, title: nil, isActive: false)
+        ]
+        let url = URLComponents(string: "/getTabs")!
+
+        let result = await server.handlePath(url, method: "GET")
+
+        guard case .success(let message) = result else {
+            return XCTFail("Expected success")
+        }
+        let decoded = try JSONDecoder().decode([AutomationTabInfo].self, from: Data(message.utf8))
+        XCTAssertEqual(decoded, mockProvider.tabs)
+    }
+
+    func testGetTabs_ReturnsEmptyArrayWhenNoTabs() async {
+        mockProvider.tabs = []
+        let url = URLComponents(string: "/getTabs")!
+
+        let result = await server.handlePath(url, method: "GET")
+
+        if case .success(let message) = result {
+            XCTAssertEqual(message, "[]")
+        } else {
+            XCTFail("Expected success")
+        }
+    }
+
+    func testGetTabs_RejectsPost() async {
+        let url = URLComponents(string: "/getTabs")!
+
+        let result = await server.handlePath(url, method: "POST")
+
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected failure")
+        }
+        XCTAssertEqual(error, .methodNotAllowed)
+    }
 }

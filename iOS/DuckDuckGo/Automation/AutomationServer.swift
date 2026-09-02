@@ -49,6 +49,10 @@ final class IOSAutomationProvider: BrowserAutomationProvider {
         main.currentTab?.webView.url
     }
 
+    var currentTitle: String? {
+        main.currentTab?.webView.title ?? main.currentTab?.tabModel.link?.title
+    }
+
     var currentWebView: WKWebView? {
         main.currentTab?.webView
     }
@@ -64,6 +68,20 @@ final class IOSAutomationProvider: BrowserAutomationProvider {
     func getAllTabHandles() -> [String] {
         main.tabManager.currentTabsModel.tabs.compactMap { tab in
             main.tabManager.controller(for: tab)?.tabModel.uid
+        }
+    }
+
+    func getAllTabs() -> [AutomationTabInfo] {
+        let activeHandle = currentTabHandle
+        return main.tabManager.currentTabsModel.tabs.compactMap { tab in
+            guard let controller = main.tabManager.controller(for: tab) else { return nil }
+            let handle = controller.tabModel.uid
+            return AutomationTabInfo(
+                handle: handle,
+                url: (controller.webView.url ?? tab.link?.url)?.absoluteString,
+                title: controller.webView.title ?? tab.link?.title,
+                isActive: handle == activeHandle
+            )
         }
     }
 

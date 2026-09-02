@@ -373,9 +373,11 @@ public final class AutomationServerCore {
         return headers
     }
 
+    private static let navigationPaths: Set<String> = ["/navigate", "/execute", "/getUrl", "/getTitle", "/goBack", "/goForward", "/scroll"]
+
     public func handlePath(_ url: URLComponents, method: String) async -> ConnectionResult {
-        // Route to appropriate handler based on path prefix
-        if url.path.hasPrefix("/navigate") || url.path.hasPrefix("/execute") || url.path == "/getUrl" {
+        // Route to appropriate handler based on path
+        if Self.navigationPaths.contains(url.path) {
             return await handleNavigationPath(url, method: method)
         } else if url.path.contains("Window") {
             return handleWindowPath(url, method: method)
@@ -395,6 +397,18 @@ public final class AutomationServerCore {
         case "/getUrl":
             guard method == "GET" else { return .failure(.methodNotAllowed) }
             return .success(provider.currentURL?.absoluteString ?? "")
+        case "/getTitle":
+            guard method == "GET" else { return .failure(.methodNotAllowed) }
+            return .success(provider.currentTitle ?? "")
+        case "/goBack":
+            guard method == "POST" else { return .failure(.methodNotAllowed) }
+            return goBack()
+        case "/goForward":
+            guard method == "POST" else { return .failure(.methodNotAllowed) }
+            return goForward()
+        case "/scroll":
+            guard method == "POST" else { return .failure(.methodNotAllowed) }
+            return await scroll(url: url)
         default:
             return .failure(.unknownMethod)
         }
@@ -436,6 +450,9 @@ public final class AutomationServerCore {
         case "/clearWebsiteData":
             guard method == "POST" else { return .failure(.methodNotAllowed) }
             return await clearWebsiteData()
+        case "/getTabs":
+            guard method == "GET" else { return .failure(.methodNotAllowed) }
+            return getTabs()
         default:
             return .failure(.unknownMethod)
         }
@@ -503,6 +520,51 @@ public final class AutomationServerCore {
             }
         }
         return await executeScript(script, args: args)
+    }
+
+    public func goBack() -> ConnectionResult {
+        guard provider.currentTabHandle != nil else {
+            return .failure(.noWindow)
+        }
+        guard provider.goBack() else {
+            return .failure(.navigationFailed)
+        }
+        return .success("done")
+    }
+
+    public func goForward() -> ConnectionResult {
+        guard provider.currentTabHandle != nil else {
+            return .failure(.noWindow)
+        }
+        guard provider.goForward() else {
+            return .failure(.navigationFailed)
+        }
+        return .success("done")
+    }
+
+    /// Scrolls the current tab by the `x` and `y` query parameters (CSS pixels). Missing parameters default to 0.
+    public func scroll(url: URLComponents) async -> ConnectionResult {
+        guard provider.currentTabHandle != nil else {
+            return .failure(.noWindow)
+        }
+        guard let deltaX = parseDoubleParameter(url: url, param: "x"),
+              let deltaY = parseDoubleParameter(url: url, param: "y") else {
+            return .failure(.invalidParameter)
+        }
+        guard await provider.scroll(deltaX: deltaX, deltaY: deltaY) else {
+            return .failure(.scrollFailed)
+        }
+        return .success("done")
+    }
+
+    public func getTabs() -> ConnectionResult {
+        let tabs = provider.getAllTabs()
+        if let jsonData = try? JSONEncoder().encode(tabs),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            return .success(jsonString)
+        } else {
+            return .failure(.jsonEncodingFailed)
+        }
     }
 
     public func getWindowHandle(url: URLComponents) -> ConnectionResult {
@@ -656,5 +718,11 @@ public final class AutomationServerCore {
 
     public func getQueryStringParameter(url: URLComponents, param: String) -> String? {
         return url.queryItems?.first(where: { $0.name == param })?.value
+    }
+
+    /// Returns 0 when the parameter is absent, nil when it is present but not a number.
+    private func parseDoubleParameter(url: URLComponents, param: String) -> Double? {
+        guard let value = getQueryStringParameter(url: url, param: param) else { return 0 }
+        return Double(value)
     }
 }

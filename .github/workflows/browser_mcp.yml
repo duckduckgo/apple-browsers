@@ -1,0 +1,43 @@
+name: Apple - Browser Automation Packages
+
+# Builds and tests the two standalone SwiftPM packages behind browser automation:
+#   - SharedPackages/AutomationServer  (in-app HTTP server used by WebDriver, crossbench and MCP)
+#   - SharedPackages/BrowserMCP        (ddg-browser-mcp, the MCP client; not part of the Xcode workspace)
+
+on:
+  pull_request:
+    paths:
+      - 'SharedPackages/AutomationServer/**'
+      - 'SharedPackages/BrowserMCP/**'
+      - '.github/workflows/browser_mcp.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'SharedPackages/AutomationServer/**'
+      - 'SharedPackages/BrowserMCP/**'
+      - '.github/workflows/browser_mcp.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: macos-26
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+
+      - name: Test AutomationServer
+        run: swift test --package-path SharedPackages/AutomationServer
+
+      - name: Build ddg-browser-mcp
+        run: swift build -c release --package-path SharedPackages/BrowserMCP --product ddg-browser-mcp
+
+      - name: Test BrowserMCP
+        run: swift test --package-path SharedPackages/BrowserMCP

@@ -33,4 +33,7 @@ public enum AutomationServerError: Error {
     case requestTooLarge
     case invalidPort
     case websiteDataClearingFailed
+    case navigationFailed
+    case scrollFailed
+    case invalidParameter
 }

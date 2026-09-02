@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+import CoreData
 import Foundation
 
 struct PermissionDebugEntry: Equatable {
+    let storageIdentifier: String
     let domain: String
     let permissionType: String
     let allow: Bool
@@ -36,6 +38,8 @@ struct PermissionDebugEntry: Equatable {
 }
 
 struct RawPermissionRow: Equatable {
+    let storageIdentifier: String
+    let objectID: NSManagedObjectID
     let domain: String
     let permissionType: String
     let allow: Bool
@@ -44,5 +48,6 @@ struct RawPermissionRow: Equatable {
 
 protocol PermissionManagerDebugging: PermissionManagerProtocol {
     func allPermissionsDebugEntries() -> [PermissionDebugEntry]
-    func removeAllPermissions()
+    func removePermissionsDebugEntries(withIdentifiers identifiers: Set<String>) -> Int
+    func removeAllPermissions() -> Int
 }

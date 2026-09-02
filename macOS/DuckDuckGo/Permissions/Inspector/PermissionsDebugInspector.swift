@@ -68,38 +68,28 @@ final class PermissionsDebugInspector {
         switch requestURL.path {
         case "/api/list":
             let rows = debug.allPermissionsDebugEntries().map { entry in
-                Row(entry: entry, isFireproof: fireproofDomains.isFireproof(fireproofDomain: entry.domain))
+                let normalizedDomain = entry.domain.droppingWwwPrefix()
+                return Row(entry: entry, isFireproof: fireproofDomains.isFireproof(fireproofDomain: normalizedDomain))
             }
             guard let data = try? JSONEncoder().encode(rows) else { return .notFound }
             return .data(data, "application/json")
 
         case "/api/remove":
-            let keys = Self.parseKeys(queryValue("keys") ?? "")
-            for (domain, type) in keys {
-                debug.removePermission(forDomain: domain, permissionType: type)
-            }
-            return jsonCount(keys.count, key: "removed")
+            let identifiers = Self.parseIdentifiers(queryValue("keys") ?? "")
+            let removedCount = debug.removePermissionsDebugEntries(withIdentifiers: identifiers)
+            return jsonCount(removedCount, key: "removed")
 
         case "/api/removeAll":
-            let count = debug.allPermissionsDebugEntries().count
-            debug.removeAllPermissions()
-            return jsonCount(count, key: "removed")
+            return jsonCount(debug.removeAllPermissions(), key: "removed")
 
         default:
             return .notFound
         }
     }
 
-    /// Parses the `keys` param of `/api/remove`: comma-separated `<domain>|<type>` pairs. Neither a
-    /// domain nor a `PermissionType.rawValue` can contain `|` or `,`, so no escaping is needed.
-    private static func parseKeys(_ value: String) -> [(domain: String, type: PermissionType)] {
-        value.split(separator: ",").compactMap { key in
-            let parts = key.split(separator: "|", maxSplits: 1)
-            guard parts.count == 2, let type = PermissionType(rawValue: String(parts[1])) else { return nil }
-            let domain = String(parts[0])
-            guard !domain.isEmpty else { return nil }
-            return (domain, type)
-        }
+    /// Parses the `keys` param of `/api/remove`: comma-separated opaque storage identifiers.
+    private static func parseIdentifiers(_ value: String) -> Set<String> {
+        Set(value.split(separator: ",").map(String.init).filter { !$0.isEmpty })
     }
 
     private func jsonCount(_ count: Int, key: String) -> Response {
@@ -161,7 +151,7 @@ private struct Row: Encodable {
     let isFireproof: Bool
 
     init(entry: PermissionDebugEntry, isFireproof: Bool) {
-        key = entry.domain + "|" + entry.permissionType
+        key = entry.storageIdentifier
         domainEncrypted = entry.domain
         permissionType = entry.permissionType
         allow = entry.allow

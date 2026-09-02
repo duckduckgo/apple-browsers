@@ -126,7 +126,8 @@ extension PermissionManagerMock: PermissionManagerDebugging {
         savedPermissions.flatMap { domain, permissionsByType in
             permissionsByType.map { type, decision in
                 // Encodes the decision the way `PermissionManagedObject.decision` writes it.
-                PermissionDebugEntry(domain: domain,
+                PermissionDebugEntry(storageIdentifier: domain + "|" + type.rawValue,
+                                     domain: domain,
                                      permissionType: type.rawValue,
                                      allow: decision == .allow,
                                      isRemoved: decision == .ask,
@@ -135,9 +136,22 @@ extension PermissionManagerMock: PermissionManagerDebugging {
         }
     }
 
-    func removeAllPermissions() {
+    func removePermissionsDebugEntries(withIdentifiers identifiers: Set<String>) -> Int {
+        let entries = savedPermissions.flatMap { domain, permissionsByType in
+            permissionsByType.keys.map { (identifier: domain + "|" + $0.rawValue, domain: domain, type: $0) }
+        }.filter { identifiers.contains($0.identifier) }
+
+        for entry in entries {
+            removePermission(forDomain: entry.domain, permissionType: entry.type)
+        }
+        return entries.count
+    }
+
+    func removeAllPermissions() -> Int {
         removeAllPermissionsCalled = true
+        let count = savedPermissions.values.reduce(0) { $0 + $1.count }
         savedPermissions = [:]
+        return count
     }
 
 }

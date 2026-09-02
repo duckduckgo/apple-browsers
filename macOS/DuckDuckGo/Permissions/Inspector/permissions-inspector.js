@@ -134,7 +134,7 @@ function render() {
     rows.forEach(function(row) {
         var tr = document.createElement("tr");
         if (row.isOverridden) { tr.className = "overridden"; }
-        
+
         var cbCell = el("td");
         var box = document.createElement("input");
         box.type = "checkbox";
@@ -142,20 +142,20 @@ function render() {
         box.addEventListener("change", updateButtons);
         cbCell.appendChild(box);
         tr.appendChild(cbCell);
-        
+
         var domainCell = el("td", row.domainEncrypted);
         domainCell.className = "domain";
         tr.appendChild(domainCell);
-        
+
         var typeCell = el("td", row.permissionType);
         typeCell.className = "type";
         tr.appendChild(typeCell);
-        
+
         tr.appendChild(boolCell(row.allow));
         tr.appendChild(boolCell(row.isRemoved));
-        
+
         tr.appendChild(effectiveCell(row));
-        
+
         var fireproofCell = el("td");
         fireproofCell.className = "derived";
         if (row.isFireproof) {
@@ -164,7 +164,7 @@ function render() {
             fireproofCell.appendChild(badge);
         }
         tr.appendChild(fireproofCell);
-        
+
         body.appendChild(tr);
     });
     var selectAll = document.getElementById("selectAll");

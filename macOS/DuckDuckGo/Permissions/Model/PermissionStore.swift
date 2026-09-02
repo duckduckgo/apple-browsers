@@ -202,7 +202,9 @@ extension PermissionStore {
 
     func loadRawPermissions() throws -> [RawPermissionRow] {
         try loadPermissions().map { entity in
-            RawPermissionRow(domain: entity.domain,
+            RawPermissionRow(storageIdentifier: entity.domain + "|" + entity.type.rawValue,
+                             objectID: entity.permission.id,
+                             domain: entity.domain,
                              permissionType: entity.type.rawValue,
                              allow: entity.permission.decision == .allow,
                              isRemoved: entity.permission.decision == .ask)
@@ -226,7 +228,9 @@ extension LocalPermissionStore {
                 rows = try context.fetch(fetchRequest).compactMap { managedObject in
                     guard let domain = managedObject.domainEncrypted as? String,
                           let permissionType = managedObject.permissionType else { return nil }
-                    return RawPermissionRow(domain: domain,
+                    return RawPermissionRow(storageIdentifier: managedObject.objectID.uriRepresentation().absoluteString,
+                                            objectID: managedObject.objectID,
+                                            domain: domain,
                                             permissionType: permissionType,
                                             allow: managedObject.allow,
                                             isRemoved: managedObject.isRemoved)

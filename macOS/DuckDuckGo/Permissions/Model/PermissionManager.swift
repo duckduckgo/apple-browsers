@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import CoreData
 import FoundationExtensions
 import os.log
 
@@ -206,13 +207,14 @@ extension PermissionManager: PermissionManagerDebugging {
         }
 
         return rows.map { row in
-            let domain = row.domain.droppingWwwPrefix()
+            let normalizedDomain = row.domain.droppingWwwPrefix()
             // An unparseable type can't be looked up, so its effective decision is just the stored one.
             let effectiveDecision = PermissionType(rawValue: row.permissionType)
-                .map { permission(forDomain: domain, permissionType: $0) }
+                .map { permission(forDomain: normalizedDomain, permissionType: $0) }
                 ?? PersistedPermissionDecision(allow: row.allow, isRemoved: row.isRemoved)
 
-            return PermissionDebugEntry(domain: domain,
+            return PermissionDebugEntry(storageIdentifier: row.storageIdentifier,
+                                        domain: row.domain,
                                         permissionType: row.permissionType,
                                         allow: row.allow,
                                         isRemoved: row.isRemoved,
@@ -220,11 +222,56 @@ extension PermissionManager: PermissionManagerDebugging {
         }
     }
 
-    func removeAllPermissions() {
+    func removePermissionsDebugEntries(withIdentifiers identifiers: Set<String>) -> Int {
+        let rows: [RawPermissionRow]
+        do {
+            rows = try store.loadRawPermissions().filter { identifiers.contains($0.storageIdentifier) }
+        } catch {
+            Logger.general.error("PermissionStore: Failed to load permissions for deletion from the debug inspector")
+            return 0
+        }
+
+        removeRawPermissions(rows)
+        return rows.count
+    }
+
+    func removeAllPermissions() -> Int {
+        let count: Int
+        do {
+            count = try store.loadRawPermissions().count
+        } catch {
+            Logger.general.error("PermissionStore: Failed to load permissions for deletion from the debug inspector")
+            count = 0
+        }
+
+        let removedPermissions = permissions.flatMap { domain, permissionsByType in
+            permissionsByType.keys.map { (domain: domain, type: $0) }
+        }
+        permissions.removeAll()
+        for permission in removedPermissions {
+            permissionSubject.send((permission.domain, permission.type, .ask))
+        }
+        store.clear(except: [])
+        return count
+    }
+
+    private func removeRawPermissions(_ rows: [RawPermissionRow]) {
+        let objectIDs = Set(rows.map(\.objectID))
+        var decodedRows = [(domain: String, type: PermissionType, objectID: NSManagedObjectID)]()
+
         for (domain, permissionsByType) in permissions {
-            for type in permissionsByType.keys {
-                removePermission(forDomain: domain, permissionType: type)
+            for (type, permission) in permissionsByType where objectIDs.contains(permission.id) {
+                decodedRows.append((domain, type, permission.id))
             }
+        }
+
+        for row in decodedRows {
+            removePermission(forDomain: row.domain, permissionType: row.type)
+        }
+
+        let decodedObjectIDs = Set(decodedRows.map { $0.objectID })
+        for objectID in objectIDs.subtracting(decodedObjectIDs) {
+            store.remove(objectWithId: objectID)
         }
     }
 

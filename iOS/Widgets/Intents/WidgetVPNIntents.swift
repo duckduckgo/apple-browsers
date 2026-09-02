@@ -170,6 +170,7 @@ struct CancelSnoozeLiveActivityAppIntent: LiveActivityIntent {
     static var isDiscoverable: Bool = false
     static var openAppWhenRun: Bool = false
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         _ = WidgetsPixelKitSetup.didSetUp
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()

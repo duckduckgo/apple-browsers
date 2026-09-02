@@ -150,9 +150,9 @@ final class AppDependencyProvider: DependencyProvider {
         // version, after `setUp` so it writes to the same store PixelKit reads.
         LegacyPixelStateMigration(
             destination: pixelKitDefaults,
-            dailyStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.daily.pixel.storage"),
-            uniqueStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.unique.pixel.storage"),
-            debounceStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.pixel.storage"),
+            dailyStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.daily),
+            uniqueStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.unique),
+            debounceStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.debounce),
             completionFlagStore: pixelKitDefaults
         ).run()
 

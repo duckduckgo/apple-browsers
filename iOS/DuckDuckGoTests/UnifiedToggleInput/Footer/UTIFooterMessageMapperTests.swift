@@ -114,7 +114,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     func test_message_upsellCopyFollowsTrialEligibility() {
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: true))).primaryAction?.title,
-                       "Try for free")
+                       "Try for Free")
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: false))).primaryAction?.title,
                        "Subscribe")
@@ -125,7 +125,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
         XCTAssertEqual(sut.message(for: warning(.dailyReached, window: .daily,
                                                 action: .startUsingWeeklyLimit(entries: entries))).primaryAction?.title,
-                       "Start using weekly limit")
+                       "Start Using Weekly Limit")
     }
 
     /// One id whichever window ran out, so the window picks the noun.
@@ -166,8 +166,66 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertTrue(sut.message(for: notice).isDismissible)
     }
 
+    // MARK: - Create Image model switch
+
+    /// The title names the model now in use; the subtitle names the one it replaced. Getting these
+    /// the wrong way round produces copy that is grammatical and completely misleading.
+    func test_message_modelSwitchNamesTheNewModelInTheTitleAndThePreviousOneInTheSubtitle() {
+        let message = sut.message(for: createImageSwitchNotice(previousShortName: "Mistral", newShortName: "5.6 Luna"))
+
+        XCTAssertEqual(message.title, "Now using 5.6 Luna")
+        XCTAssertEqual(message.subtitle, "Mistral doesn't support image creation.")
+    }
+
+    func test_message_modelSwitchUsesTheSwitchIcon() {
+        XCTAssertEqual(sut.message(for: createImageSwitchNotice()).icon, .modelSwitch)
+    }
+
+    func test_message_modelSwitchOffersNoActionAndCanBeDismissed() {
+        let message = sut.message(for: createImageSwitchNotice())
+
+        XCTAssertNil(message.primaryAction)
+        XCTAssertTrue(message.isDismissible)
+    }
+
+    func test_message_modelSwitchAwayFromAPrivacyPreservingModelSaysSoInTheSubtitle() {
+        let message = sut.message(for: createImageSwitchNotice(previousShortName: "Gemma",
+                                              newShortName: "5.6 Luna",
+                                              previousProvider: .oss))
+
+        XCTAssertEqual(message.title, "Now using 5.6 Luna")
+        XCTAssertEqual(message.subtitle,
+                       "Gemma can't create images. Its extra privacy protections won't apply until you switch back.")
+    }
+
+    func test_message_modelSwitchAwayFromANonOSSModelKeepsTheStandardSubtitle() {
+        for provider in [AIChatModel.ModelProvider.openAI, .anthropic, .meta, .mistral, .unknown] {
+            let message = sut.message(for: createImageSwitchNotice(previousShortName: "Whatever", previousProvider: provider))
+
+            XCTAssertEqual(message.subtitle, "Whatever doesn't support image creation.",
+                           "unexpected subtitle for provider \(provider)")
+        }
+    }
+
     // MARK: - Helpers
 
+    private func createImageSwitchNotice(previousShortName: String = "Mistral",
+                                         newShortName: String = "5.6 Luna",
+                                         previousProvider: AIChatModel.ModelProvider = .mistral) -> CreateImageModelSwitchNotice {
+        CreateImageModelSwitchNotice(
+            previousModel: model(shortName: previousShortName, provider: previousProvider),
+            newModel: model(shortName: newShortName, provider: .openAI)
+        )
+    }
+
+    private func model(shortName: String, provider: AIChatModel.ModelProvider) -> AIChatModel {
+        AIChatModel(id: shortName.lowercased(),
+                    name: shortName,
+                    shortName: shortName,
+                    provider: provider,
+                    supportsImageUpload: false,
+                    entityHasAccess: true)
+    }
     private let notice = DuckAiHighUsageModelNotice(modelId: "claude-opus-4-8", modelShortName: "Opus 4.8")
 
     private func warning(_ message: DuckAiUsageMessage,

@@ -62,6 +62,16 @@ public struct LegacyPixelStateMigration {
     /// making it public would invite callers to write PixelKit's storage directly.
     private static let pixelKitKeyPrefix = "com.duckduckgo.network-protection.pixel."
 
+    /// The suite names legacy `DailyPixel`/`UniquePixel`/`Pixel` wrote their throttle state to in the
+    /// browser process. Every `UserDefaultsLegacyPixelStore` these two call sites construct
+    /// (`AppDependencyProvider`, `PixelKitExtensionSetup`) has to name the same three suites, so the
+    /// names live here rather than as call-site literals.
+    public enum LegacySuiteName {
+        public static let daily = "com.duckduckgo.daily.pixel.storage"
+        public static let unique = "com.duckduckgo.unique.pixel.storage"
+        public static let debounce = "com.duckduckgo.pixel.storage"
+    }
+
     private let destination: ThrowingKeyValueStoring
     private let sources: [(store: LegacyPixelLastFireDateSource?, mapKey: String)]
     private let completionFlagStore: ThrowingKeyValueStoring
@@ -97,7 +107,13 @@ public struct LegacyPixelStateMigration {
 
         var migrated = 0
         for source in sources {
-            guard let store = source.store else { continue }
+            guard let store = source.store else {
+                // Normal for a process that doesn't configure every source, e.g. the VPN tunnel has
+                // no `debounceStore`. Logged at debug so a genuinely missing source is still visible
+                // without adding noise to the default log level.
+                logger.debug("No legacy store configured for map key \(source.mapKey, privacy: .public); skipping")
+                continue
+            }
             let dates: [String: Date]
             do {
                 dates = try store.allLastFireDates()
@@ -131,8 +147,13 @@ public struct LegacyPixelStateMigration {
             // install, a different version on upgrade, or the `true` this key held before it became
             // version-keyed.
             let flag = try completionFlagStore.object(forKey: Self.completionFlagKey)
-            return (flag as? String) == migrationVersion
+            let alreadyRun = (flag as? String) == migrationVersion
+            if !alreadyRun {
+                logger.log("Legacy pixel state migration has not run for version \(migrationVersion, privacy: .public) (last recorded: \(String(describing: flag), privacy: .public)); running")
+            }
+            return alreadyRun
         } catch {
+            logger.error("Could not read the legacy pixel state migration completion flag: \(error.localizedDescription, privacy: .public); skipping this run")
             return true
         }
     }
@@ -152,11 +173,17 @@ public struct LegacyPixelStateMigration {
 
 /// A `UserDefaults` suite as a snapshot source. All three browser-side legacy stores are suites.
 public struct UserDefaultsLegacyPixelStore: LegacyPixelLastFireDateSource {
+    private static let logger = Logger(subsystem: "PixelMigration", category: "UserDefaultsLegacyPixelStore")
+
     private let defaults: UserDefaults
     private let suiteName: String
 
     public init?(suiteName: String) {
-        guard let defaults = UserDefaults(suiteName: suiteName) else { return nil }
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            Self.logger.fault("Could not open UserDefaults suite \(suiteName, privacy: .public); this legacy pixel store will be skipped")
+            assertionFailure("Could not open UserDefaults suite")
+            return nil
+        }
         self.defaults = defaults
         self.suiteName = suiteName
     }

@@ -262,6 +262,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var chatUpdatesCancellable: AnyCancellable?
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
+    private let isUpdatedCreateImageEnabled: Bool
+    private lazy var createImagePixelFiring: CreateImagePixelFiring = CreateImagePixelAdapter(
+        surface: { [weak self] in self?.pixelSurface ?? .addressBar }
+    )
+    private lazy var createImageModelSwitcher = CreateImageModelSwitcher(
+        isFeatureEnabled: isUpdatedCreateImageEnabled,
+        pixelFiring: createImagePixelFiring
+    )
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -317,11 +325,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentPasteEnabled: Bool = false,
         placesAttachmentsAboveInput: Bool = false,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
+        updatedCreateImageFeature: UpdatedCreateImageFeatureProviding = UpdatedCreateImageFeature(),
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
         subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
+        self.isUpdatedCreateImageEnabled = updatedCreateImageFeature.isAvailable
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
@@ -422,6 +432,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 setModelName: { [weak self] in self?.viewController.modelName = $0 },
                 setModelPickerMenu: { [weak self] in self?.viewController.modelPickerMenu = $0 },
                 setModelChipHidden: { [weak self] in self?.viewController.isModelChipHidden = $0 },
+                setModelChipMenuIndicatorHidden: { [weak self] in self?.viewController.isModelChipMenuIndicatorHidden = $0 },
                 setSelectedReasoningMode: { [weak self] in self?.viewController.selectedReasoningMode = $0 },
                 setReasoningButtonHidden: { [weak self] in self?.viewController.isReasoningButtonHidden = $0 },
                 setReasoningPickerMenu: { [weak self] in self?.viewController.reasoningPickerMenu = $0 }
@@ -436,9 +447,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onModelsUpdated: { [weak self] in self?.handleModelsUpdated() },
                 onUserChoiceRecorded: { [weak self] in self?.recordUserChoiceToStore() },
                 clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
-                onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
+                onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) },
+                onModelSelectionChanged: { [weak self] _ in self?.footerController?.recordModelSwitched() }
             ),
-            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
+            isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled
         )
         attachmentController = UTIAttachmentController(
             pixelReporter: pixelReporter,
@@ -465,6 +478,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 supportsImageUpload: { [weak self] in self?.selectedModelSupportsImageUpload ?? false },
                 supportedFileTypes: { [weak self] in self?.selectedModelSupportedFileTypes ?? [] },
                 hasSelectedModel: { [weak self] in self?.selectedModel != nil },
+                keepsUnavailableAttachmentButtonVisible: { [weak self] in self?.isUpdatedCreateImageEnabled ?? false },
                 attachmentLimits: { [weak self] in self?.modelStore.attachmentLimits },
                 currentTabUID: { [weak self] in self?.currentTabUID },
                 isPageContextAttachable: { [weak self] in self?.isPageContextAttachable?() },
@@ -674,6 +688,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         } else {
             toolsController.clearSelection()
         }
+        footerController?.clearModelSwitchNotice()
         refreshToolsPresentation()
     }
 
@@ -904,7 +919,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             self?.handleUsageWarningAction(action)
         }
         footerController = UTIFooterController(viewModel: viewModel,
-                                              highUsageNotice: makeHighUsageNoticeSource())
+                                              highUsageNotice: makeHighUsageNoticeSource(),
+                                              measurement: makeUsageWarningMeasurement(),
+                                              createImagePixelFiring: createImagePixelFiring)
         footerController?.presenter = viewController
 
         // Also what brings a message back after the user has acted on the previous one.
@@ -922,6 +939,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             needsImageUpload: attachments.contains(where: \.isImage),
             requiredMimeTypes: attachments.compactMap { $0.fileAttachment?.mimeType },
             requiredTools: toolsController.selectedTool.map { [$0] } ?? []
+        )
+    }
+
+    /// The surface is read per fire: this one coordinator serves the address bar, the Duck.ai tab
+    /// and the contextual sheet.
+    private func makeUsageWarningMeasurement() -> DuckAiUsageWarningMeasurement {
+        DuckAiUsageWarningMeasurement(
+            pixelFiring: DuckAiUsageWarningPixelAdapter(surface: { [weak self] in self?.pixelSurface ?? .addressBar })
         )
     }
 
@@ -1561,8 +1586,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelReporter.reportModelPickerShown()
     }
 
-    func selectTool(_ tool: AIChatRAGTool) {
-        toolsController.select(tool, for: modelStore)
+    func selectTool(_ tool: AIChatRAGTool, createImageEntryPoint: CreateImageEntryPoint? = nil) {
+        if tool == .imageGeneration {
+            selectImageGeneration(entryPoint: createImageEntryPoint)
+        } else {
+            toolsController.select(tool, for: modelStore)
+        }
         refreshToolsPresentation()
         recordUserChoiceToStore()
     }
@@ -1638,7 +1667,7 @@ extension UnifiedToggleInputCoordinator {
         case .webSearch:
             toolsController.toggleSelection(for: .webSearch, modelStore: modelStore)
         case .imageGeneration:
-            toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
+            toggleImageGenerationSelection()
         case .customizeResponses:
             return
         }
@@ -1646,6 +1675,34 @@ extension UnifiedToggleInputCoordinator {
         fireToolToggleTransitionPixel(previous: previousTool, current: currentTool)
         refreshToolsPresentation()
         recordUserChoiceToStore()
+    }
+
+    /// Selecting Create Image on a model that can't generate images moves the user to one that can, and says so in the footer.
+    private func toggleImageGenerationSelection() {
+        let notice = createImageModelSwitcher.toggle(
+            toolsController: toolsController,
+            modelStore: modelStore,
+            canSwitchModel: canSwitchModelForImageGeneration,
+            entryPoint: .toolsMenu,
+            applyModel: { modelSelector.updateSelectedModel($0) }
+        )
+        showModelSwitchNoticeIfNeeded(notice)
+    }
+
+    private func selectImageGeneration(entryPoint: CreateImageEntryPoint?) {
+        let notice = createImageModelSwitcher.select(
+            toolsController: toolsController,
+            modelStore: modelStore,
+            canSwitchModel: canSwitchModelForImageGeneration,
+            entryPoint: entryPoint,
+            applyModel: { modelSelector.updateSelectedModel($0) }
+        )
+        showModelSwitchNoticeIfNeeded(notice)
+    }
+
+    private func showModelSwitchNoticeIfNeeded(_ notice: CreateImageModelSwitchNotice?) {
+        guard let notice else { return }
+        footerController?.showModelSwitchNotice(notice)
     }
 
     private func fireToolToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {
@@ -1740,6 +1797,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments
         )
+        footerController?.recordPromptSubmitted()
 
         let configuration = promptSubmissionConfiguration
         recordDuckAISubmissionStarted(
@@ -1872,6 +1930,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         footerController?.dismissCurrent()
     }
 
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility isVisible: Bool) {
+        footerController?.footerVisibilityChanged(isVisible: isVisible)
+    }
+
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidChangeHeight()
     }
@@ -2001,6 +2063,7 @@ private extension UnifiedToggleInputCoordinator {
     private func markActiveChatPromptSubmitted() {
         let wasInRecoveryPickerSession = isModelPickerForcedVisible
         hasSubmittedPrompt = true
+        footerController?.clearModelSwitchNotice()
         isModelPickerForcedVisible = false
         persistModelPickerPinClearedAfterHideIfNeeded()
         modelSelector.updateModelChipVisibility()
@@ -2063,8 +2126,12 @@ private extension UnifiedToggleInputCoordinator {
         let presentation = toolsController.presentation(
             isActive: isActive,
             modelStore: modelStore,
-            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem
+            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem,
+            createImagePolicy: createImageMenuPolicy
         )
+        if toolsController.selectedTool != .imageGeneration {
+            footerController?.clearModelSwitchNotice()
+        }
         let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
             self?.toolsMenuFactory.makeMenu(menu) { identifier in
                 self?.handleToolsMenuSelection(identifier)
@@ -2086,6 +2153,15 @@ private extension UnifiedToggleInputCoordinator {
     func resetToolsSelection() {
         toolsController.clearSelection()
         refreshToolsPresentation()
+    }
+
+    var createImageMenuPolicy: CreateImageMenuPolicy {
+        guard isUpdatedCreateImageEnabled else { return .legacy }
+        return .updated(canSwitchModel: canSwitchModelForImageGeneration)
+    }
+
+    var canSwitchModelForImageGeneration: Bool {
+        !hasSubmittedPrompt && modelStore.imageGenerationFallbackModel != nil
     }
 
     var canShowCustomizeResponsesMenuItem: Bool {

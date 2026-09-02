@@ -635,7 +635,63 @@ final class TabManagerTests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
     }
 
-    func testWhenCurrentTabTerminatesWithoutReloadThenTerminationIsNotRecorded() throws {
+    func testWhenCurrentTabTerminatesInBackgroundThenItReloadsOnceAfterBecomingActive() throws {
+        let detector = MockTabTerminationErrorPageDetector(shouldShowErrorPage: false)
+        let tabsModel = TabsModel(desktop: false)
+        tabsModel.insert(
+            tab: Tab(link: Link(title: "example", url: URL(string: "https://example.com")!)),
+            placement: .atEnd,
+            selectNewTab: true)
+        let manager = try makeManager(
+            tabsModel,
+            tabTerminationErrorPageDetector: detector)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+
+        manager.invalidateCache(forController: controller, reloadCurrent: false)
+
+        XCTAssertTrue(detector.checkedTabIDs.isEmpty)
+
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+        XCTAssertEqual(detector.checkedTabIDs, [controller.tabModel.uid])
+    }
+
+    func testWhenCurrentTabTerminatesInBackgroundAndIsNoLongerCurrentThenItIsEvictedAfterBecomingActive() throws {
+        let tabs = (0..<2).map {
+            Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
+        }
+        let tabsModel = TabsModel(tabs: tabs, desktop: false)
+        let cacheDelegate = MockTabControllerCacheDelegate()
+        let manager = try makeManager(tabsModel)
+        manager.cacheDelegate = cacheDelegate
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+
+        manager.invalidateCache(forController: controller, reloadCurrent: false)
+        _ = manager.select(tabs[1])
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+        XCTAssertNil(manager.controller(for: tabs[0]))
+        XCTAssertEqual(cacheDelegate.evictionReasons, [.webContentProcessTermination])
+    }
+
+    func testWhenControllerPendingTerminationRecoveryIsRemovedThenItDoesNotReloadAfterBecomingActive() throws {
+        let detector = MockTabTerminationErrorPageDetector(shouldShowErrorPage: false)
+        let tab = Tab(link: Link(title: "example", url: URL(string: "https://example.com")!))
+        let tabsModel = TabsModel(tabs: [tab], desktop: false)
+        let manager = try makeManager(
+            tabsModel,
+            tabTerminationErrorPageDetector: detector)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+
+        manager.invalidateCache(forController: controller, reloadCurrent: false)
+        manager.remove(tab: tab)
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+        XCTAssertTrue(detector.checkedTabIDs.isEmpty)
+    }
+
+    func testWhenCurrentTabTerminatesInBackgroundThenTerminationThresholdIsCheckedAfterBecomingActive() throws {
         let detector = MockTabTerminationErrorPageDetector(shouldShowErrorPage: true)
         let tabsModel = TabsModel(desktop: false)
         tabsModel.insert(
@@ -653,6 +709,12 @@ final class TabManagerTests: XCTestCase {
         XCTAssertTrue(detector.checkedTabIDs.isEmpty)
         XCTAssertTrue(controller.error.isHidden)
         XCTAssertFalse(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
+
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+        XCTAssertEqual(detector.checkedTabIDs, [controller.tabModel.uid])
+        XCTAssertFalse(controller.error.isHidden)
+        XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
     }
 
     func makeManager(_ model: TabsModel,

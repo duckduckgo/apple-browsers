@@ -408,6 +408,40 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(deliveredPayload?.title, "Titled But Empty")
     }
 
+    func testWhenSignalsOnlyCollectionIsADocumentThenMimeTypeIsKeptAndBytesAreNotDelivered() {
+        var deliveredPayload: AIChatPageContextData?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(let payload, let targets) = effect, targets.contains(.frontendBridge) {
+                    deliveredPayload = payload
+                }
+            }
+            .store(in: &cancellables)
+
+        sessionState.markPendingSignalsOnlyCollection()
+        sessionState.updateContext(makeDocumentContext(data: "JVBERi0="))
+
+        XCTAssertEqual(deliveredPayload?.mimeType, AIChatPageContextData.pdfMIMEType)
+        XCTAssertNil(deliveredPayload?.data)
+        XCTAssertEqual(deliveredPayload?.attached, false)
+        XCTAssertEqual(deliveredPayload?.title, "spec.pdf")
+        XCTAssertNil(sessionState.latestContext, "Signals-only must not land in the attach path")
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+    }
+
+    func testWhenUpdateContextHasDocumentBytesThenChipAttaches() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeDocumentContext(data: "JVBERi0="))
+
+        XCTAssertEqual(sessionState.latestContext?.title, "spec.pdf")
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertTrue(attachedContext.contextData.hasAttachedPage)
+            XCTAssertEqual(attachedContext.contextData.data, "JVBERi0=")
+        } else {
+            XCTFail("Expected document bytes to auto-attach")
+        }
+    }
+
     func testUpdateContextDoesNotAutoAttachWhenUserDowngraded() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = true
@@ -2265,6 +2299,20 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
             truncated: false,
             fullContentLength: content.count,
             pageTypeSignals: pageTypeSignals
+        )
+        return AIChatPageContext(contextData: contextData, favicon: nil)
+    }
+
+    private func makeDocumentContext(title: String = "spec.pdf",
+                                     url: String = "https://example.com/spec.pdf",
+                                     data: String? = nil) -> AIChatPageContext {
+        let contextData = AIChatPageContextData.document(
+            title: title,
+            url: url,
+            mimeType: AIChatPageContextData.pdfMIMEType,
+            data: data,
+            attachable: true,
+            attached: false
         )
         return AIChatPageContext(contextData: contextData, favicon: nil)
     }

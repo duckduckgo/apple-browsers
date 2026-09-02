@@ -33,6 +33,7 @@ public struct SitePermissionsSheetView: View {
         static let copySpacing: CGFloat = 8
     }
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ObservedObject private var viewModel: SitePermissionsSheetViewModel
 
     public init(viewModel: SitePermissionsSheetViewModel) {
@@ -40,6 +41,23 @@ public struct SitePermissionsSheetView: View {
     }
 
     public var body: some View {
+        Group {
+            if #available(iOS 16.0, *) {
+                ViewThatFits(in: .vertical) {
+                    sheetContent
+                    ScrollView { sheetContent }
+                }
+            } else if dynamicTypeSize.isAccessibilitySize {
+                ScrollView { sheetContent }
+            } else {
+                sheetContent
+            }
+        }
+        .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
+        .accessibilityIdentifier("SitePermissions.Sheet")
+    }
+
+    private var sheetContent: some View {
         VStack(alignment: .leading, spacing: SheetMetrics.contentSpacing) {
             header
 
@@ -66,11 +84,10 @@ public struct SitePermissionsSheetView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
         .padding(.top, SheetMetrics.contentSpacing)
         .padding(.bottom, SheetMetrics.contentBottomPadding)
-        .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
-        .accessibilityIdentifier("SitePermissions.Sheet")
     }
 
     private var header: some View {

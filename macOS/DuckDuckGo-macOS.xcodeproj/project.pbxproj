@@ -4822,6 +4822,22 @@
 		FEE12B412E520E4D00AD9807 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FEE12B412E520E4D00AD9809 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FFF6627FC03B410786EF2635 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
+		7D3C1A092F0104B6005F0687 /* DebugControlHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A012F0104B6005F0687 /* DebugControlHTTP.swift */; };
+		7D3C1A0A2F0104B6005F0687 /* DebugControlHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A012F0104B6005F0687 /* DebugControlHTTP.swift */; };
+		7D3C1A0B2F0104B6005F0687 /* DebugControlServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A022F0104B6005F0687 /* DebugControlServer.swift */; };
+		7D3C1A0C2F0104B6005F0687 /* DebugControlServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A022F0104B6005F0687 /* DebugControlServer.swift */; };
+		7D3C1A0D2F0104B6005F0687 /* DebugControlServerHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A032F0104B6005F0687 /* DebugControlServerHost.swift */; };
+		7D3C1A0E2F0104B6005F0687 /* DebugControlServerHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A032F0104B6005F0687 /* DebugControlServerHost.swift */; };
+		7D3C1A0F2F0104B6005F0687 /* DebugControlEventLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A042F0104B6005F0687 /* DebugControlEventLog.swift */; };
+		7D3C1A102F0104B6005F0687 /* DebugControlEventLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A042F0104B6005F0687 /* DebugControlEventLog.swift */; };
+		7D3C1A112F0104B6005F0687 /* DebugControlPageObserverScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A052F0104B6005F0687 /* DebugControlPageObserverScript.swift */; };
+		7D3C1A122F0104B6005F0687 /* DebugControlPageObserverScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A052F0104B6005F0687 /* DebugControlPageObserverScript.swift */; };
+		7D3C1A132F0104B6005F0687 /* DebugControlRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A062F0104B6005F0687 /* DebugControlRecorder.swift */; };
+		7D3C1A142F0104B6005F0687 /* DebugControlRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A062F0104B6005F0687 /* DebugControlRecorder.swift */; };
+		7D3C1A152F0104B6005F0687 /* DebugControlRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A072F0104B6005F0687 /* DebugControlRouter.swift */; };
+		7D3C1A162F0104B6005F0687 /* DebugControlRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A072F0104B6005F0687 /* DebugControlRouter.swift */; };
+		7D3C1A172F0104B6005F0687 /* Tab+DebugControlServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A082F0104B6005F0687 /* Tab+DebugControlServer.swift */; };
+		7D3C1A182F0104B6005F0687 /* Tab+DebugControlServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D3C1A082F0104B6005F0687 /* Tab+DebugControlServer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -7374,6 +7390,14 @@
 		FD23FD2A28816606007F6985 /* AutoconsentMessageProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AutoconsentMessageProtocolTests.swift; path = UnitTests/Autoconsent/AutoconsentMessageProtocolTests.swift; sourceTree = SOURCE_ROOT; };
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 		FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoHistoryRecordTests.swift; sourceTree = "<group>"; };
+		7D3C1A012F0104B6005F0687 /* DebugControlHTTP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugControlHTTP.swift; sourceTree = "<group>"; };
+		7D3C1A022F0104B6005F0687 /* DebugControlServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugControlServer.swift; sourceTree = "<group>"; };
+		7D3C1A032F0104B6005F0687 /* DebugControlServerHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugControlServerHost.swift; sourceTree = "<group>"; };
+		7D3C1A042F0104B6005F0687 /* DebugControlEventLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugControlEventLog.swift; sourceTree = "<group>"; };
+		7D3C1A052F0104B6005F0687 /* DebugControlPageObserverScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugControlPageObserverScript.swift; sourceTree = "<group>"; };
+		7D3C1A062F0104B6005F0687 /* DebugControlRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugControlRecorder.swift; sourceTree = "<group>"; };
+		7D3C1A072F0104B6005F0687 /* DebugControlRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugControlRouter.swift; sourceTree = "<group>"; };
+		7D3C1A082F0104B6005F0687 /* Tab+DebugControlServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+DebugControlServer.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -11186,6 +11210,7 @@
 		AA585D80248FD31100E9A3E2 /* DuckDuckGo */ = {
 			isa = PBXGroup;
 			children = (
+				7D3C1A002F0104B6005F0687 /* DebugControlServer */,
 				7B11B3032EF304B6005F0687 /* Automation */,
 				31521ABE2CC0139C00248E6F /* AIChat */,
 				ED7478162E845958008628A1 /* AppHealth */,
@@ -13746,6 +13771,21 @@
 			path = PromptInput;
 			sourceTree = "<group>";
 		};
+		7D3C1A002F0104B6005F0687 /* DebugControlServer */ = {
+			isa = PBXGroup;
+			children = (
+				7D3C1A012F0104B6005F0687 /* DebugControlHTTP.swift */,
+				7D3C1A022F0104B6005F0687 /* DebugControlServer.swift */,
+				7D3C1A032F0104B6005F0687 /* DebugControlServerHost.swift */,
+				7D3C1A042F0104B6005F0687 /* DebugControlEventLog.swift */,
+				7D3C1A052F0104B6005F0687 /* DebugControlPageObserverScript.swift */,
+				7D3C1A062F0104B6005F0687 /* DebugControlRecorder.swift */,
+				7D3C1A072F0104B6005F0687 /* DebugControlRouter.swift */,
+				7D3C1A082F0104B6005F0687 /* Tab+DebugControlServer.swift */,
+			);
+			path = DebugControlServer;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -15490,6 +15530,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7D3C1A0A2F0104B6005F0687 /* DebugControlHTTP.swift in Sources */,
+				7D3C1A0C2F0104B6005F0687 /* DebugControlServer.swift in Sources */,
+				7D3C1A0E2F0104B6005F0687 /* DebugControlServerHost.swift in Sources */,
+				7D3C1A102F0104B6005F0687 /* DebugControlEventLog.swift in Sources */,
+				7D3C1A122F0104B6005F0687 /* DebugControlPageObserverScript.swift in Sources */,
+				7D3C1A142F0104B6005F0687 /* DebugControlRecorder.swift in Sources */,
+				7D3C1A162F0104B6005F0687 /* DebugControlRouter.swift in Sources */,
+				7D3C1A182F0104B6005F0687 /* Tab+DebugControlServer.swift in Sources */,
 				FB07BAD2000000000000020A /* PromptBarPixel.swift in Sources */,
 				FB07BAD20000000000000209 /* PromptBarContentFactory.swift in Sources */,
 				FB07BAD20000000000000208 /* PromptBarPixelHandler.swift in Sources */,
@@ -17895,6 +17943,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7D3C1A092F0104B6005F0687 /* DebugControlHTTP.swift in Sources */,
+				7D3C1A0B2F0104B6005F0687 /* DebugControlServer.swift in Sources */,
+				7D3C1A0D2F0104B6005F0687 /* DebugControlServerHost.swift in Sources */,
+				7D3C1A0F2F0104B6005F0687 /* DebugControlEventLog.swift in Sources */,
+				7D3C1A112F0104B6005F0687 /* DebugControlPageObserverScript.swift in Sources */,
+				7D3C1A132F0104B6005F0687 /* DebugControlRecorder.swift in Sources */,
+				7D3C1A152F0104B6005F0687 /* DebugControlRouter.swift in Sources */,
+				7D3C1A172F0104B6005F0687 /* Tab+DebugControlServer.swift in Sources */,
 				FB07BAD2000000000000030A /* PromptBarPixel.swift in Sources */,
 				FB07BAD20000000000000309 /* PromptBarContentFactory.swift in Sources */,
 				FB07BAD20000000000000308 /* PromptBarPixelHandler.swift in Sources */,

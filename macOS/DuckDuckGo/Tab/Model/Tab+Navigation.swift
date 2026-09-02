@@ -31,6 +31,9 @@ extension Tab: NavigationResponder {
                                  newWindowPolicyDecisionMakers: inout [NewWindowPolicyDecisionMaking]?,
                                  args: TabExtensionsBuilderArguments) {
         navigationDelegate.setResponders(
+            // Passive recorder for the DEBUG-only control server; nil in every other configuration
+            .strong(nullable: self.debugControlNavigationResponder),
+
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),
 

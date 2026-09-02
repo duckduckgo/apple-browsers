@@ -1554,6 +1554,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         startAutomationServerIfNeeded()
 
+#if DEBUG
+        startDebugControlServer()
+#endif
+
         // This is also called in applicationDidBecomeActive, but we're also calling it here, since
         // applicationDidBecomeActive returns early on `didFinishLaunching` when it's delivered during
         // startup (e.g. if a modal alert is shown first). EventHub cannot start any measurement period
@@ -1966,6 +1970,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         }
     }
+
+#if DEBUG
+    private func startDebugControlServer() {
+        Task { @MainActor in
+            DebugControlServerHost.startIfNeeded(windowControllersManager: windowControllersManager,
+                                                 contentBlocking: privacyFeatures.contentBlocking)
+        }
+    }
+#endif
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty,

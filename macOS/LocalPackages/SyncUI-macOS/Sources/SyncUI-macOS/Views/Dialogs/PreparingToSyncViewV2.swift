@@ -82,3 +82,15 @@ struct PreparingToSyncViewV2: View {
     }
 
 }
+
+#if DEBUG
+#Preview("Connecting") {
+    DesignSystemRebrand.isAppRebranded = { true }
+    return PreparingToSyncViewV2(state: .connecting)
+}
+
+#Preview("Waiting for Other Device") {
+    DesignSystemRebrand.isAppRebranded = { true }
+    return PreparingToSyncViewV2(state: .waitingForOtherDevice)
+}
+#endif

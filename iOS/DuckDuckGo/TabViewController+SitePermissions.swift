@@ -531,7 +531,7 @@ extension TabViewController {
             sheet.prefersEdgeAttachedInCompactHeight = true
             sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
         } else {
-            sheet.detents = [.medium()]
+            sheet.detents = [.large()]
         }
         sheet.prefersGrabberVisible = true
         if #unavailable(iOS 26) {

@@ -354,9 +354,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         // below is what this path reports instead.
         finalizeOnboarding()
 
-        if featureFlagger.isFeatureOn(.onboardingSkipHighlights) {
-            contextualOnboardingStateUpdater?.state = .onboardingCompleted
-        }
+        // Skipping means the user asked to be left alone, so the contextual highlights don't
+        // follow them out of a setup they declined.
+        contextualOnboardingStateUpdater?.state = .onboardingCompleted
 
         PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
         nonBlockingExperiment.fireMetric(.onboardingSkipped)
@@ -561,6 +561,13 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private func onboardingHasFinished() {
         finalizeOnboarding()
+
+        // Non-blocking onboarding leaves the highlights suppressed while it runs, so completing is
+        // what arms them. Only this path does: skipping, or leaving onboarding any other way,
+        // leaves them suppressed.
+        if nonBlockingExperiment.isNonBlocking {
+            contextualOnboardingStateUpdater?.state = .notStarted
+        }
 
         let userSawToggleOnboarding = wasToggleOnboardingStepShown()
 

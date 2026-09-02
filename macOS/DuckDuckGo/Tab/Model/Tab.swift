@@ -1010,7 +1010,13 @@ enum TabCloseReason {
             return
         }
 
-        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
+        // Arming the highlights means setting `.notStarted`: the first search or navigation moves
+        // them to `.ongoing` and they start appearing. Non-blocking onboarding lets the user browse
+        // while onboarding is still open, so arming here would show highlights for a setup they
+        // haven't finished. Leave them suppressed and let completion arm them instead — which also
+        // means skipping never reaches them.
+        let isNonBlocking = OnboardingNonBlockingExperiment(featureFlagger: Application.appDelegate.featureFlagger).isNonBlocking
+        Application.appDelegate.onboardingContextualDialogsManager.state = isNonBlocking ? .onboardingCompleted : .notStarted
         setContent(.onboarding)
     }
 

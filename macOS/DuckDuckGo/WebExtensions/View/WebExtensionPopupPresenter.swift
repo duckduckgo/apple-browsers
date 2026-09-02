@@ -18,6 +18,7 @@
 
 import AppKit
 import ConcurrencyExtensions
+import os.log
 import WebExtensions
 import WebKit
 
@@ -66,10 +67,18 @@ final class WebExtensionPopupPresenter {
         static let verticalOffset: CGFloat = 4
 
         /// Used until the popup page reports the size it wants.
-        static let fallbackSize = NSSize(width: 360, height: 480)
+        static let fallbackSize = NSSize(width: 380, height: 560)
 
-        /// Keeps a popup that reports an unusable size from covering the screen.
-        static let minimumSize = NSSize(width: 100, height: 100)
+        /// Keeps a popup that reports an unusable size from collapsing.
+        static let minimumSize = NSSize(width: 120, height: 80)
+
+        /// Keeps a popup that reports an extreme size from covering the screen.
+        static let maximumSize = NSSize(width: 800, height: 800)
+
+        /// Reads the size the popup page lays itself out at.
+        static let measurePageScript = """
+        [document.documentElement.scrollWidth, document.documentElement.scrollHeight]
+        """
     }
 
     private var panel: WebExtensionPopupPanel?
@@ -77,7 +86,7 @@ final class WebExtensionPopupPresenter {
     private weak var shownAction: WKWebExtension.Action?
     private weak var anchorButton: NSView?
     private weak var popupWebView: WKWebView?
-    private var sizeObservation: NSKeyValueObservation?
+    private var loadingObservation: NSKeyValueObservation?
     private var clickMonitor: Any?
 
     /// Whether the popup of the given extension is on screen.
@@ -90,7 +99,10 @@ final class WebExtensionPopupPresenter {
     func present(_ action: WKWebExtension.Action,
                  for context: WKWebExtensionContext,
                  from button: NSView) {
-        guard let popupWebView = action.popupWebView else { return }
+        guard let popupWebView = action.popupWebView else {
+            Logger.webExtensions.error("❌ Popup of \(context.uniqueIdentifier) has no web view")
+            return
+        }
         guard let parentWindow = button.window else {
             assertionFailure("Web extension toolbar button has no window")
             return
@@ -106,10 +118,13 @@ final class WebExtensionPopupPresenter {
         self.anchorButton = button
         self.popupWebView = popupWebView
 
-        let contentView = NSView(frame: NSRect(origin: .zero, size: preferredSize(for: action)))
+        let contentView = NSView(frame: NSRect(origin: .zero, size: Constants.fallbackSize))
         contentView.wantsLayer = true
         contentView.layer?.cornerRadius = Constants.cornerRadius
         contentView.layer?.masksToBounds = true
+        // The popup page paints its own background, but only once it loads. An opaque body
+        // keeps the panel visible until then, instead of a fully transparent rectangle.
+        contentView.layer?.backgroundColor = popupBackgroundColor.cgColor
 
         popupWebView.frame = contentView.bounds
         popupWebView.autoresizingMask = [.width, .height]
@@ -123,44 +138,63 @@ final class WebExtensionPopupPresenter {
         panel.orderFront(nil)
         panel.makeKey()
 
-        observePopupSize(of: action)
+        Logger.webExtensions.debug("""
+        🧩 Popup of \(context.uniqueIdentifier) shown at \(NSStringFromRect(panel.frame), privacy: .public), \
+        page \(popupWebView.url?.absoluteString ?? "nil", privacy: .public)
+        """)
+
+        observePopupSize(of: popupWebView)
         startWatchingForClicksOutside()
     }
 
-    /// Follows the size WebKit computes for the popup page.
-    ///
-    /// WebKit reports it through the `contentSize` of the popover it would have presented, and
-    /// keeps it up to date while the page reflows. We never show that popover, so its rounded
-    /// chrome never appears; we read it only as the source of the size.
-    private func observePopupSize(of action: WKWebExtension.Action) {
-        guard let popupPopover = action.popupPopover else { return }
+    private var popupBackgroundColor: NSColor {
+        NSApp.delegateTyped.themeManager.theme.colorsProvider.popoverBackgroundColor
+    }
 
-        sizeObservation = popupPopover.observe(\.contentSize, options: [.new]) { [weak self] _, _ in
+    // MARK: - Size
+
+    /// Resizes the panel to the size the popup page lays itself out at.
+    ///
+    /// WebKit does not tell us that size. The `contentSize` of the popover it would have
+    /// presented stays zero, and the popup web view keeps a zero frame until something sizes
+    /// it, so both are useless as a source. We therefore ask the page itself once it loads.
+    private func observePopupSize(of popupWebView: WKWebView) {
+        measurePageAndResize(popupWebView)
+
+        loadingObservation = popupWebView.observe(\.isLoading, options: [.new]) { [weak self] webView, _ in
             DispatchQueue.main.async {
-                self?.resizeToPopupContent()
+                guard webView.isLoading == false else { return }
+                self?.measurePageAndResize(webView)
             }
         }
     }
 
-    private func resizeToPopupContent() {
+    private func measurePageAndResize(_ popupWebView: WKWebView) {
+        popupWebView.evaluateJavaScript(Constants.measurePageScript) { [weak self] result, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                guard let values = result as? [Double], values.count == 2 else {
+                    Logger.webExtensions.debug("🧩 Popup page did not report a size: \(error?.localizedDescription ?? "no value", privacy: .public)")
+                    return
+                }
+                self.resize(toPageSize: NSSize(width: values[0], height: values[1]))
+            }
+        }
+    }
+
+    private func resize(toPageSize pageSize: NSSize) {
         guard let panel, panel.isVisible,
-              let shownAction,
               let button = anchorButton,
               let parentWindow = button.window else { return }
 
-        let size = preferredSize(for: shownAction)
+        let size = NSSize(
+            width: min(max(pageSize.width, Constants.minimumSize.width), Constants.maximumSize.width),
+            height: min(max(pageSize.height, Constants.minimumSize.height), Constants.maximumSize.height)
+        )
         guard size != panel.frame.size else { return }
 
+        Logger.webExtensions.debug("🧩 Popup page reports \(NSStringFromSize(pageSize), privacy: .public), panel set to \(NSStringFromSize(size), privacy: .public)")
         panel.setFrame(frame(forContentSize: size, below: button, in: parentWindow), display: true)
-    }
-
-    private func preferredSize(for action: WKWebExtension.Action) -> NSSize {
-        let reported = action.popupPopover?.contentSize ?? .zero
-        guard reported.width >= Constants.minimumSize.width,
-              reported.height >= Constants.minimumSize.height else {
-            return Constants.fallbackSize
-        }
-        return reported
     }
 
     /// Positions the popup under the button, kept inside the screen.
@@ -224,8 +258,8 @@ final class WebExtensionPopupPresenter {
             self.clickMonitor = nil
         }
 
-        sizeObservation?.invalidate()
-        sizeObservation = nil
+        loadingObservation?.invalidate()
+        loadingObservation = nil
 
         // The web view belongs to WebKit, so hand it back rather than leaving it in our panel.
         popupWebView?.removeFromSuperview()

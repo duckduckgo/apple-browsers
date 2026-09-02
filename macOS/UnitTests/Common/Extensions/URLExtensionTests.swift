@@ -957,8 +957,7 @@ extension URLExtensionTests {
     @available(iOS 16, macOS 13, *)
     @Test("Internal feedback form URL remains unchanged", .timeLimit(.minutes(1)))
     func internalFeedbackFormURLRemainsUnchanged() {
-        // This URL uses go.duckduckgo.com subdomain which is not configurable
-        #expect(URL.internalFeedbackForm.absoluteString == "https://go.duckduckgo.com/feedback")
+        #expect(URL.internalFeedbackForm.absoluteString == "https://internalapps.duckduckgo.com/internal-feedback/")
     }
 
     @available(iOS 16, macOS 13, *)

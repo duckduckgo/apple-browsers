@@ -26,9 +26,8 @@ final class FloatingDomainCapsuleController {
 
     static let handoffBandHalfWidth: CGFloat = 0.02
 
-    /// Gap between the pill and the adjacent edge of its expanded chrome at its resting position.
-    /// The collapsed bottom capsule sits `restBottomInsetReduction` closer to the device bottom so
-    /// the chrome morphs down into the pill rather than gaining space above it.
+    /// Gap between the pill and the adjacent screen edge at rest. Used by the bottom capsule, and
+    /// by the top capsule only as a fallback before the expanded frame is known (see `restCenterY`).
     static let restEdgePadding: CGFloat = 8
 
     /// Extra downward shift of the collapsed bottom capsule, in points, relative to `restEdgePadding`
@@ -53,10 +52,11 @@ final class FloatingDomainCapsuleController {
         let halfHeight = capsuleHeight / 2
         switch addressBarPosition {
         case .top:
+            // The pill keeps the expanded bar's top edge, so the chrome morphs up into it.
             guard !expandedFrame.isEmpty else {
                 return safeAreaInsets.top + restEdgePadding + halfHeight
             }
-            return expandedFrame.maxY - restEdgePadding - halfHeight
+            return expandedFrame.minY + halfHeight
         case .bottom:
             return boundsMaxY - restPaddingFromPhysicalBottom(safeAreaBottom: safeAreaInsets.bottom) - halfHeight
         }
@@ -78,7 +78,7 @@ final class FloatingDomainCapsuleController {
             guard !expandedFrame.isEmpty else {
                 return safeAreaInsets.top + Self.restEdgePadding + capsuleHeight
             }
-            return expandedFrame.maxY - Self.restEdgePadding
+            return expandedFrame.minY + capsuleHeight
         case .bottom:
             return Self.restPaddingFromPhysicalBottom(safeAreaBottom: safeAreaInsets.bottom) + capsuleHeight
         }

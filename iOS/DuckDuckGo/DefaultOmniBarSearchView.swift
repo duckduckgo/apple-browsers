@@ -68,12 +68,6 @@ final class DefaultOmniBarSearchView: UIView {
     private let mainStackView = UIStackView()
     private var mainStackLeadingConstraint: NSLayoutConstraint?
 
-    var contentVerticalOffset: CGFloat = 0 {
-        didSet {
-            mainStackView.transform = CGAffineTransform(translationX: 0, y: contentVerticalOffset)
-        }
-    }
-
     init() {
         super.init(frame: .zero)
 
@@ -157,8 +151,9 @@ final class DefaultOmniBarSearchView: UIView {
         NSLayoutConstraint.activate([
             leadingConstraint,
             mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            mainStackView.topAnchor.constraint(equalTo: topAnchor),
-            mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            mainStackView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            mainStackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
+            mainStackView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
 
             notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 4),
             notificationContainer.trailingAnchor.constraint(equalTo: textField.trailingAnchor),
@@ -170,8 +165,9 @@ final class DefaultOmniBarSearchView: UIView {
             leftIconContainerPlaceholder.topAnchor.constraint(equalTo: leftIconContainer.topAnchor),
             leftIconContainerPlaceholder.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
 
-            privacyInfoContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 10),
-            privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
+            // Shares a centre with the loupe it swaps in and out of the slot with.
+            privacyInfoContainer.centerXAnchor.constraint(equalTo: leftIconContainer.centerXAnchor),
+            privacyInfoContainer.centerYAnchor.constraint(equalTo: leftIconContainer.centerYAnchor),
             privacyInfoContainer.widthAnchor.constraint(equalToConstant: 28),
             privacyInfoContainer.heightAnchor.constraint(equalToConstant: 28),
 

@@ -241,6 +241,7 @@ class MainViewCoordinator {
             toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight, isFloating: isFloatingUIEnabled)
             omniBar.barView.makeGlass()
+            toolbar.refreshMaterialBackdrop()
             omniBar.barView.alpha = 1
             omniBar.barView.isUserInteractionEnabled = true
             navigationBarContainer.isHidden = true

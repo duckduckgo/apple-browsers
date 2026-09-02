@@ -143,7 +143,7 @@ class TabSwitcherViewController: UIViewController {
 
     var tabsStyle: TabsStyle = .list
     var interfaceMode: InterfaceMode = .regularSize
-    var canShowSelectionMenu = false
+    var shouldEnterMultiSelectAfterEditMenuDismissal = false
     var menuBuilder: TabSwitcherMenuBuilding = DefaultTabSwitcherMenuBuilder()
 
     let floatingUIManager: FloatingUIManaging
@@ -434,6 +434,10 @@ class TabSwitcherViewController: UIViewController {
 
         actions.onEditMenuRequested = { [weak self] in
             return self?.createEditMenu()
+        }
+
+        actions.onEditMenuDismissed = { [weak self] in
+            self?.editMenuDidDismiss()
         }
 
         actions.onSelectTabsStyle = { [weak self] style in

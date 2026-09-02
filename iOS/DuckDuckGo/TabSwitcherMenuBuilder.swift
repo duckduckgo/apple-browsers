@@ -30,6 +30,7 @@ struct TabSwitcherMultiSelectMenuState {
     let selectedContainsWebPages: Bool
     let allContainsWebPages: Bool
     var shouldShowSelectionToggleActions = true
+    var shouldShowCloseSelectedAction = true
 
     var canShowDeselectAll: Bool { shouldShowSelectionToggleActions && selectedCount > 0 && selectedCount == totalCount }
     var canShowSelectAll: Bool { shouldShowSelectionToggleActions && selectedCount < totalCount }
@@ -37,7 +38,7 @@ struct TabSwitcherMultiSelectMenuState {
     var canAddBookmarks: Bool { selectedContainsWebPages }
     var canCloseOther: Bool { selectedCount > 0 && selectedCount < totalCount }
     var canBookmarkAll: Bool { selectedCount == 0 && allContainsWebPages }
-    var canClose: Bool { selectedCount > 0 }
+    var canClose: Bool { shouldShowCloseSelectedAction && selectedCount > 0 }
 
     var canShowSelectionMenu: Bool {
         canShowDeselectAll || canShowSelectAll || canShare || canAddBookmarks ||
@@ -51,6 +52,7 @@ struct TabSwitcherLongPressMenuState {
     let pressedContainsWebPages: Bool
     let isEditing: Bool
     let title: String
+    var shouldShowDeleteTabAndData = false
 
     var canShare: Bool { pressedContainsWebPages }
     var canAddBookmarks: Bool { pressedContainsWebPages }
@@ -82,6 +84,7 @@ struct TabSwitcherLongPressMenuActions {
     var onSelect: () -> Void
     var onClose: () -> Void
     var onCloseOther: () -> Void
+    var onDeleteTabAndData: () -> Void = {}
 }
 
 struct TabSwitcherEditMenuActions {
@@ -142,12 +145,12 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
+                state.canAddBookmarks ? action(UserText.bookmarkSelectedTabs(withCount: state.selectedCount),
+                                               DesignSystemImages.Glyphs.Size16.bookmarkAll,
+                                               actions.onBookmarkSelected) : nil,
                 state.canShare ? action(UserText.shareLinks(withCount: state.selectedCount),
                                         DesignSystemImages.Glyphs.Size16.shareApple,
                                         actions.onShare) : nil,
-                state.canAddBookmarks ? action(UserText.bookmarkSelectedTabs(withCount: state.selectedCount),
-                                               DesignSystemImages.Glyphs.Size16.bookmarkAdd,
-                                               actions.onBookmarkSelected) : nil,
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
@@ -212,6 +215,12 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
                 state.canCloseOthers ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2),
                                                    imageForCloseTabs(2),
                                                    actions.onCloseOther) : nil,
+            ].compactMap { $0 }),
+
+            UIMenu(title: "", options: .displayInline, children: [
+                state.shouldShowDeleteTabAndData ? destructive(UserText.tabSwitcherDeleteTabAndData,
+                                                               DesignSystemImages.Glyphs.Size16.fireSolid,
+                                                               actions.onDeleteTabAndData) : nil,
             ].compactMap { $0 }),
         ].compactMap { $0 }
     }

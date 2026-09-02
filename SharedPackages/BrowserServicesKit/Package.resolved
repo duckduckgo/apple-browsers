@@ -1,13 +1,13 @@
 {
-  "originHash" : "eefda80801b926484d84e746987706f2d0f3c46ebadaae875e9fb39df3a4890f",
+  "originHash" : "abeabdb0bdaf558ac327c0390ce41ab32d5fac4d9eb29018cec11b006722a6a4",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "a48add09100329cf652aa342bc6b173cd8370d0d",
-        "version" : "16.14.0"
+        "revision" : "e27d61495b3e8793e507a483d885b758e75c0732",
+        "version" : "17.0.0"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-clocks.git",
       "state" : {
-        "revision" : "72d749bf341b78851203066ab421869b783ec42a",
-        "version" : "1.1.0"
+        "revision" : "82440fa0a8b1c381a6d1e8e0fc7bbba53ec63204",
+        "version" : "1.1.1"
       }
     },
     {
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "34e463e98ab8541c604af706c99bed7160f5ec70",
-        "version" : "1.8.1"
+        "revision" : "d9308ad679143c26a30dec52daefe82f54af2b82",
+        "version" : "1.13.1"
       }
     }
   ],

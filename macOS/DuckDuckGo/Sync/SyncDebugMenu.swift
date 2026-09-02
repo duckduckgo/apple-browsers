@@ -18,6 +18,7 @@
 
 import AppKit
 import DDGSync
+import Persistence
 import Bookmarks
 
 final class SyncDebugMenu: NSMenu {
@@ -142,7 +143,7 @@ final class SyncDebugMenu: NSMenu {
     }
 
     @objc func resetFaviconsFetcherOnboardingDialog(_ sender: NSMenuItem) {
-        UserDefaultsWrapper<Bool?>(key: .syncDidPresentFaviconsFetcherOnboarding).clear()
+        KeyedStorage<SyncFaviconsPromoSettings>(storage: UserDefaults.standard).didPresentLegacyDialog = nil
     }
 
 }

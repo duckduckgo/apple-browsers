@@ -105,6 +105,7 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
 
     // MARK: - Promo Queue Legacy Flags
 
+    case syncDidPresentFaviconsFetcherOnboarding = "sync.did-present-favicons-fetcher-onboarding"
     case bookmarksBarPromptShown = "bookmarks.bar.prompt.shown"
 }
 

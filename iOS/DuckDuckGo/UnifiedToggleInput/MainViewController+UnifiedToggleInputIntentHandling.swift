@@ -263,7 +263,7 @@ private extension MainViewController {
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
 
-        let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
+        let isLogoToLogo = !isPhoneLandscape && newTabPageViewController?.isShowingLogo == true
         // Search content hands off seamlessly too: the embedded RMF/favorites are laid out where the
         // NTP content is, so they slide in without the container fade that would otherwise flash.
         let isSearchContentToSearchContent = newTabPageViewController?.isShowingSearchContent == true

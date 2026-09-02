@@ -62,6 +62,7 @@ public enum AIChatEntryPointSource: String {
     case browsingMenuNTP = "browsing_menu_ntp"
     case browsingMenuWebpage = "browsing_menu_webpage"
     case tabSwitcher = "tab_switcher"
+    case tabSwitcherExistingChat = "tab_switcher_existing_chat"
     case tabsBarButton = "tabs_bar_button"
     case chatHistoryNewChat = "chat_history_new_chat"
     case chatHistoryOpenChat = "chat_history_open_chat"
@@ -78,6 +79,7 @@ public enum AIChatEntryPointSource: String {
     case widgetControlCenter = "widget_control_center"
     case siri
     case deepLinkOther = "deep_link_other"
+    case returnToChatCard = "return_to_chat_card"
 }
 
 extension AIChatEntryPointSource {

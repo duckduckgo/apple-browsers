@@ -215,12 +215,8 @@ struct SuggestionsListView: View {
         !(favoritesViewModel?.allFavorites.isEmpty ?? true)
     }
 
-    private var hasSearchContent: Bool {
-        hasMessages || hasFavorites
-    }
-
     private var isSearchContentVisible: Bool {
-        showsRestingContent && showsFavorites && hasSearchContent
+        showsRestingContent && showsFavorites && (hasMessages || hasFavorites)
     }
 
     private var scrollableChromeTopInset: CGFloat {
@@ -404,7 +400,7 @@ private final class ListCellShadowOverflowProbe: UIView {
 
     var raisesCellAbovePreviousRow = false
 
-    private weak var containingCell: UICollectionViewCell?
+    private weak var containingCell: UIView?
     private var originalCellClipsToBounds: Bool?
     private var originalCellZPosition: CGFloat?
     private var cellMaskObservation: NSKeyValueObservation?
@@ -420,10 +416,6 @@ private final class ListCellShadowOverflowProbe: UIView {
     }
 
     func updateContainingCellClipping() {
-        applyContainingCellClipping()
-    }
-
-    private func applyContainingCellClipping() {
         guard window != nil, let cell = firstContainingCell() else {
             restoreContainingCellClipping()
             return
@@ -460,10 +452,10 @@ private final class ListCellShadowOverflowProbe: UIView {
         originalCellZPosition = nil
     }
 
-    private func firstContainingCell() -> UICollectionViewCell? {
+    private func firstContainingCell() -> UIView? {
         var ancestor = superview
         while let current = ancestor {
-            if let cell = current as? UICollectionViewCell { return cell }
+            if current is UICollectionViewCell || current is UITableViewCell { return current }
             ancestor = current.superview
         }
         return nil

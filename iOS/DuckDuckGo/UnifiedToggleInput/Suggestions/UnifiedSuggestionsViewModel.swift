@@ -130,6 +130,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     var isShowingLogo: Bool { content == .logo }
 
     var isShowingFavorites: Bool {
+        guard !isFireTab else { return false }
         if case .favorites = content { return true }
         return false
     }

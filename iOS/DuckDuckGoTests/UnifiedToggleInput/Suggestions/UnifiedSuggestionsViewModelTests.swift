@@ -44,6 +44,17 @@ final class UnifiedSuggestionsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.content, .list(.search))
     }
 
+    func test_whenSearchFavoritesAreShownAndFireTabIsEnabled_thenFavoritesAreNotPresented() {
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
+                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
+
+        sut.setFireTab(true)
+
+        XCTAssertFalse(sut.isShowingFavorites)
+    }
+
     func test_duckAIEmptyWithSearchMessages_publishesLogoNotFavorites() {
         let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
             .init(mode: .aiChat, isTyping: false, hasFavorites: false, hasMessages: true, hasRecents: false, resultsPending: false))

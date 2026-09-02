@@ -898,7 +898,6 @@ private extension UnifiedInputContentContainerViewController {
 
         applyEscapeHatchPlacement()
         refreshSyncPromoIfActive()
-        updateSingleHostTopOffset()
         applyRequestedContentInset()
         view.layoutIfNeeded()
     }

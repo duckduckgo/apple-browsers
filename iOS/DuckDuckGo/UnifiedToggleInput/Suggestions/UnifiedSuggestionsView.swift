@@ -75,13 +75,13 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var usesWholeListDismissFade: Bool {
-        activeListKind == .recents
+        isShowingList
     }
 
     private var listLayer: some View {
         SuggestionsListView(viewModel: viewModel.listViewModel(for: activeListKind),
                             isAddressBarAtBottom: isAddressBarAtBottom,
-                            showsAmbientMessageShadow: isFloatingUIEnabled && isAddressBarAtBottom,
+                            showsAmbientMessageShadow: !isFloatingUIEnabled || isAddressBarAtBottom,
                             scrollContentInsetTop: viewModel.scrollContentInsetTop,
                             escapeHatch: escapeHatch,
                             syncPromo: activeListKind == .recents ? viewModel.syncPromo : nil,
@@ -92,8 +92,8 @@ struct UnifiedSuggestionsView: View {
                             showsSuggestionRows: isShowingList,
                             usesWholeListDismissFade: usesWholeListDismissFade,
                             animationModel: viewModel.animationModel)
-            // Match main's dismissal unit for Recent Chats: fade the complete List so its native
-            // cell surfaces and separators cannot outlive the SwiftUI row labels.
+            // Fade complete lists so native cell surfaces and separators cannot outlive their
+            // SwiftUI row content during dismissal.
             .modifier(DismissFade(animationModel: viewModel.animationModel,
                                   isEnabled: usesWholeListDismissFade))
             // The floating-bottom host already consumes the system top safe area. Ignore its transient

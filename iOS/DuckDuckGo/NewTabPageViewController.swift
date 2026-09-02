@@ -35,7 +35,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     var isShowingSearchContent: Bool {
-        !messagesModel.homeMessageViewModels.isEmpty
+        guard !newTabPageViewModel.fireTab else { return false }
+        return !messagesModel.homeMessageViewModels.isEmpty
             || (!favoritesModel.isEmpty && !newTabPageViewModel.isFavoritesHidden)
     }
 
@@ -43,6 +44,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     /// `isLogoHidden`/`isFavoritesHidden` flags the focus/dismiss handoff toggles. The dismiss path
     /// uses these to pick the right handoff while those flags are still mid-transition.
     var restingContentIsLogo: Bool {
+        guard !newTabPageViewModel.fireTab else { return false }
         guard messagesModel.homeMessageViewModels.isEmpty else { return false }
         guard favoritesModel.isEmpty else { return false }
         if newTabPageViewModel.escapeHatch != nil {
@@ -52,26 +54,22 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     var restingContentIsSearchContent: Bool {
-        !messagesModel.homeMessageViewModels.isEmpty || !favoritesModel.isEmpty
+        guard !newTabPageViewModel.fireTab else { return false }
+        return !messagesModel.homeMessageViewModels.isEmpty || !favoritesModel.isEmpty
     }
 
     var restingContentIsFavoritesOnly: Bool {
-        messagesModel.homeMessageViewModels.isEmpty && !favoritesModel.isEmpty
+        guard !newTabPageViewModel.fireTab else { return false }
+        return messagesModel.homeMessageViewModels.isEmpty && !favoritesModel.isEmpty
     }
 
     func setLogoHidden(_ hidden: Bool) {
         newTabPageViewModel.isLogoHidden = hidden
     }
 
-    func setFavoritesHidden(_ hidden: Bool, animationDuration: TimeInterval? = nil) {
+    func setFavoritesHidden(_ hidden: Bool) {
         guard newTabPageViewModel.isFavoritesHidden != hidden else { return }
-        if let animationDuration {
-            withAnimation(.easeInOut(duration: animationDuration)) {
-                newTabPageViewModel.isFavoritesHidden = hidden
-            }
-        } else {
-            newTabPageViewModel.isFavoritesHidden = hidden
-        }
+        newTabPageViewModel.isFavoritesHidden = hidden
     }
 
     private lazy var borderView = StyledTopBottomBorderView()

@@ -191,9 +191,11 @@ final class LegacyPixelStateMigrationTests: XCTestCase {
         let destinationB = Store()
 
         LegacyPixelStateMigration(destination: destinationA, dailyStore: Store(["m_a": date]), uniqueStore: nil,
-                                  debounceStore: nil, completionFlagStore: flags, completionFlagKey: "flag.a").run()
+                                  debounceStore: nil, completionFlagStore: flags, completionFlagKey: "flag.a",
+                                  migrationVersion: "1.0.0").run()
         LegacyPixelStateMigration(destination: destinationB, dailyStore: Store(["m_b": date]), uniqueStore: nil,
-                                  debounceStore: nil, completionFlagStore: flags, completionFlagKey: "flag.b").run()
+                                  debounceStore: nil, completionFlagStore: flags, completionFlagKey: "flag.b",
+                                  migrationVersion: "1.0.0").run()
 
         XCTAssertEqual(destinationA.values[key("m_a")] as? [String: Date], ["daily": date],
                        "The second migration's distinct flag key must not make the first look already-run")

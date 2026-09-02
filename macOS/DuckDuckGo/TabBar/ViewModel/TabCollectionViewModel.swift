@@ -619,16 +619,12 @@ final class TabCollectionViewModel: NSObject {
     // MARK: - Removal
 
     func removeAll(with content: Tab.TabContent) {
-        let matchingTabs = tabCollection.tabs.filter { $0.content == content }
-        for tab in matchingTabs {
-            if let index = indexInAllTabs(of: tab) {
-                remove(at: index)
-            }
-        }
+        removeAll(matching: { $0 == content })
     }
 
     func removeAll(matching condition: (Tab.TabContent) -> Bool) {
         let matchingTabs = tabCollection.tabs.filter { condition($0.content) }
+        notifyCloseInterceptors(of: matchingTabs)
         for tab in matchingTabs {
             if let index = indexInAllTabs(of: tab) {
                 remove(at: index)
@@ -636,17 +632,32 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    func remove(at index: TabIndex, published: Bool = true, forceChange: Bool = false) {
+    /// `reason` defaults to `.programmatic`: a caller has to say so explicitly for a removal to count
+    /// as the user closing this tab. Getting that wrong in the safe direction only costs a missed
+    /// side effect, whereas mistaking a move or a pin for a close visibly breaks both.
+    func remove(at index: TabIndex, published: Bool = true, forceChange: Bool = false, reason: TabCloseReason = .programmatic) {
         switch index {
         case .unpinned(let i):
-            return removeUnpinnedTab(at: i, published: published, forceChange: forceChange)
+            return removeUnpinnedTab(at: i, published: published, forceChange: forceChange, reason: reason)
         case .pinned(let i):
             return removePinnedTab(at: i, published: published)
         }
     }
 
-    private func removeUnpinnedTab(at index: Int, published: Bool = true, forceChange: Bool = false) {
+    private func removeUnpinnedTab(at index: Int, published: Bool = true, forceChange: Bool = false, reason: TabCloseReason = .programmatic) {
         guard changesEnabled || forceChange else { return }
+
+        if case .loaded(let tab) = tabCollection.tabs[safe: index], let interceptor = tab.closeInterceptor {
+            switch reason {
+            case .userInitiated:
+                if interceptor(.userInitiated) { return }
+            case .bulk:
+                // Side effects only — a bulk removal is not the interceptor's to cancel.
+                _ = interceptor(.bulk)
+            case .programmatic:
+                break
+            }
+        }
 
         let removedTab = tabCollection.tabs[safe: index]
         let parentTab = removedTab?.parentTab
@@ -759,8 +770,29 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
+    /// Bulk removals either clear the collection directly or loop `remove(at:)` with no close reason,
+    /// so neither reaches the interceptor check in `removeUnpinnedTab`. They notify here instead.
+    /// The return value is ignored — a bulk removal proceeds regardless, and the interceptor only
+    /// gets the chance to run its side effects.
+    private func notifyCloseInterceptors(keepingIndices keptIndices: Set<Int> = []) {
+        let removed = tabCollection.tabs.enumerated()
+            .filter { !keptIndices.contains($0.offset) }
+            .map(\.element)
+        notifyCloseInterceptors(of: removed)
+    }
+
+    private func notifyCloseInterceptors(of tabs: [AnyTab]) {
+        for case .loaded(let tab) in tabs {
+            if let interceptor = tab.closeInterceptor {
+                _ = interceptor(.bulk)
+            }
+        }
+    }
+
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
+
+        notifyCloseInterceptors(keepingIndices: exceptionIndex.map { [$0] } ?? [])
 
         if let exceptionTab = exceptionIndex.flatMap({ tabCollection.tabs[$0] }) {
             tabCollection.removeAll(andAppend: exceptionTab)
@@ -783,6 +815,8 @@ final class TabCollectionViewModel: NSObject {
     func removeAllTabs(andAppend tab: Tab, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
+        notifyCloseInterceptors()
+
         shouldReturnToPreviousActiveTab = true
         tabCollection.removeAll(andAppend: tab)
         handleNewTabPageSideEffects(for: tab)
@@ -793,6 +827,7 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(before index: Int) {
         guard changesEnabled else { return }
 
+        notifyCloseInterceptors(keepingIndices: Set(index..<tabCollection.tabs.count))
         tabCollection.removeTabs(before: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab {
@@ -809,6 +844,7 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(after index: Int) {
         guard changesEnabled else { return }
 
+        notifyCloseInterceptors(keepingIndices: Set(0...index))
         tabCollection.removeTabs(after: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab, !tabCollection.tabs.indices.contains(currentSelection.item) {
@@ -818,7 +854,7 @@ final class TabCollectionViewModel: NSObject {
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
-    func removeSelected(forceChange: Bool = false) -> Result<Void, Error> {
+    func removeSelected(forceChange: Bool = false, reason: TabCloseReason = .programmatic) -> Result<Void, Error> {
         guard changesEnabled || forceChange else { return .success(()) }
 
         guard let selectionIndex else {
@@ -826,7 +862,7 @@ final class TabCollectionViewModel: NSObject {
             return .failure(TabCollectionViewModelError.noTabSelected)
         }
 
-        remove(at: selectionIndex, forceChange: forceChange)
+        remove(at: selectionIndex, forceChange: forceChange, reason: reason)
         return .success(())
     }
 

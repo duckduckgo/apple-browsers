@@ -46,6 +46,9 @@ class OnboardingManagerTests: XCTestCase {
     var importProvider: CapturingDataImportProvider!
     private var onboardingSharedPixelHandler: MockOnboardingSharedPixelHandler!
     private var chromeExtensionInstaller: MockThirdPartyBrowserExtensionInstalling!
+    private var experimentFiredEvents: [PixelKit.Event]!
+    /// Held strongly here: the manager's reference to it is weak.
+    private var contextualOnboardingState: MockContextualOnboardingState!
 
     @MainActor override func setUp() {
         navigationDelegate = CapturingOnboardingNavigation()
@@ -70,6 +73,8 @@ class OnboardingManagerTests: XCTestCase {
         importProvider = CapturingDataImportProvider()
         onboardingSharedPixelHandler = MockOnboardingSharedPixelHandler()
         chromeExtensionInstaller = MockThirdPartyBrowserExtensionInstalling()
+        experimentFiredEvents = []
+        contextualOnboardingState = MockContextualOnboardingState()
         manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -84,7 +89,15 @@ class OnboardingManagerTests: XCTestCase {
     }
 
     override func tearDown() {
+        // The experiment kit's fire closure is global and outlives this class, so hand it back a
+        // sink that captures nothing — otherwise a later test firing an experiment pixel would
+        // reach into this instance after its properties are gone.
+        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(),
+                                        eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+                                        fire: { _, _, _ in })
+
         manager = nil
+        contextualOnboardingState = nil
         navigationDelegate = nil
         dockCustomization = nil
         defaultBrowserProvider = nil
@@ -96,6 +109,7 @@ class OnboardingManagerTests: XCTestCase {
         importProvider = nil
         onboardingSharedPixelHandler = nil
         chromeExtensionInstaller = nil
+        experimentFiredEvents = nil
     }
 
     func testReturnsExpectedOnboardingConfig_WhenNoFlagsAreOn_ExcludesAddressBarMode() {
@@ -778,6 +792,153 @@ class OnboardingManagerTests: XCTestCase {
         )
     }
 
+    // MARK: Non-blocking onboarding experiment
+
+    func testOnboardingStarted_TreatmentCohort_TakesNonBlockingBranch() {
+        // Given
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let managerWithTreatment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithTreatment.onboardingStarted()
+
+        // Then
+        XCTAssertFalse(navigationDelegate.updatePreventUserInteractionCalled)
+        XCTAssertNotNil(navigationDelegate.onboardingOnClose)
+    }
+
+    func testOnboardingStarted_ControlCohort_TakesLockingBranch() {
+        // Given
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.control)
+        let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithControl.onboardingStarted()
+
+        // Then
+        XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
+        XCTAssertTrue(navigationDelegate.preventUserInteraction ?? false)
+        XCTAssertNil(navigationDelegate.onboardingOnClose)
+    }
+
+    func testOnboardingStarted_UnassignedCohort_TakesLockingBranch() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        let managerWithoutEnrollment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithoutEnrollment.onboardingStarted()
+
+        // Then
+        XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
+        XCTAssertTrue(navigationDelegate.preventUserInteraction ?? false)
+        XCTAssertNil(navigationDelegate.onboardingOnClose)
+    }
+
+    @MainActor
+    func testGoToAddressBar_FiresOnboardingCompletedMetric_NotOnboardingSkipped() {
+        // Given
+        let cohort = FeatureFlag.OnboardingNonBlockingCohort.control
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
+        configureNonBlockingExperimentKit(cohort: cohort, featureFlagger: featureFlagger)
+        let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithControl.goToAddressBar()
+
+        // Then
+        XCTAssertTrue(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingCompleted" }))
+        XCTAssertFalse(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingSkipped" }))
+    }
+
+    @MainActor
+    func testSkipOnboarding_FiresOnboardingSkippedMetric_NotOnboardingCompleted() {
+        // Given
+        let cohort = FeatureFlag.OnboardingNonBlockingCohort.control
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
+        configureNonBlockingExperimentKit(cohort: cohort, featureFlagger: featureFlagger)
+        let managerWithControl = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithControl.skipOnboarding()
+
+        // Then
+        XCTAssertTrue(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingSkipped" }))
+        XCTAssertFalse(experimentFiredEvents.contains(where: { $0.parameters?["metric"] == "onboardingCompleted" }))
+    }
+
+    // MARK: - Contextual highlights
+
+    @MainActor
+    func testSkipOnboarding_SuppressesContextualHighlights() {
+        // Given — no cohort and no local flag, so this is the plain blocking flow.
+        let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: MockFeatureFlagger())
+        contextualOnboardingState.state = .notStarted
+
+        // When
+        managerUnderTest.skipOnboarding()
+
+        // Then
+        XCTAssertEqual(contextualOnboardingState.state, .onboardingCompleted)
+    }
+
+    @MainActor
+    func testNonBlockingOnboarding_ArmsContextualHighlightsOnlyOnCompletion() {
+        // Given
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+        // Suppressed while onboarding runs, which is what `Tab.startOnboarding()` leaves behind.
+        contextualOnboardingState.state = .onboardingCompleted
+
+        // When
+        managerUnderTest.goToAddressBar()
+
+        // Then
+        XCTAssertEqual(contextualOnboardingState.state, .notStarted)
+    }
+
+    @MainActor
+    func testNonBlockingOnboarding_LeavesHighlightsSuppressedWhenSkipped() {
+        // Given
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+        let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+        contextualOnboardingState.state = .onboardingCompleted
+
+        // When
+        managerUnderTest.skipOnboarding()
+
+        // Then
+        XCTAssertEqual(contextualOnboardingState.state, .onboardingCompleted)
+    }
+
+    @MainActor
+    func testBlockingOnboarding_DoesNotReArmHighlightsOnCompletion() {
+        // Given — the blocking flow arms the highlights at the start, so completion must leave the
+        // state where `Tab.startOnboarding()` put it rather than resetting it.
+        let managerUnderTest = makeNonBlockingExperimentManager(featureFlagger: MockFeatureFlagger())
+        contextualOnboardingState.state = .ongoing
+
+        // When
+        managerUnderTest.goToAddressBar()
+
+        // Then
+        XCTAssertEqual(contextualOnboardingState.state, .ongoing)
+    }
+
+    @MainActor
+    func testNoNonBlockingExperimentMetricFires_WhenNotEnrolled() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        configureNonBlockingExperimentKit(cohort: nil, featureFlagger: featureFlagger)
+        let managerWithoutEnrollment = makeNonBlockingExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithoutEnrollment.goToAddressBar()
+
+        // Then
+        XCTAssertTrue(experimentFiredEvents.isEmpty)
+    }
+
 }
 
 // MARK: - Chrome extension experiment test helpers
@@ -804,5 +965,46 @@ private extension OnboardingManagerTests {
 
     func makeFeatureFlagger(cohort: FeatureFlag.OnboardingChromeExtensionCohort?) -> MockFeatureFlagger {
         MockFeatureFlagger(resolveCohortStub: cohort)
+    }
+}
+
+// MARK: - Non-blocking onboarding experiment test helpers
+
+private extension OnboardingManagerTests {
+
+    func makeNonBlockingExperimentManager(featureFlagger: MockFeatureFlagger) -> OnboardingActionsManager {
+        OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            contextualOnboardingStateUpdater: contextualOnboardingState
+        )
+    }
+
+    func configureNonBlockingExperimentKit(cohort: FeatureFlag.OnboardingNonBlockingCohort?,
+                                           featureFlagger: MockFeatureFlagger) {
+        if let cohort {
+            let subfeatureID = MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue
+            featureFlagger.allActiveExperiments = [
+                subfeatureID: ExperimentData(
+                    parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
+                    cohortID: cohort.rawValue,
+                    enrollmentDate: Date()
+                )
+            ]
+        } else {
+            featureFlagger.allActiveExperiments = [:]
+        }
+        PixelKit.configureExperimentKit(
+            featureFlagger: featureFlagger,
+            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+            fire: { [weak self] event, _, _ in self?.experimentFiredEvents?.append(event) }
+        )
     }
 }

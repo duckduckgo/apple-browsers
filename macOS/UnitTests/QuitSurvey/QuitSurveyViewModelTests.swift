@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_macOS
 import History
 @_spi(Testing) import PixelKit
 import XCTest
@@ -553,5 +554,28 @@ final class QuitSurveyViewModelTests: XCTestCase {
         vm.submitFeedback()
 
         XCTAssertNil(persistor.hasSelectedThumbsUp)
+    }
+
+    // MARK: - Non-Blocking Onboarding Cohort
+
+    func testSurveyShownPixelCarriesTheNonBlockingOnboardingCohort() {
+        let pixelMock = PixelKitMock(expecting: [])
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: FeatureFlag.OnboardingNonBlockingCohort.treatment)
+
+        // Showing the survey is reported from `init`.
+        _ = makeViewModel(featureFlagger: featureFlagger, pixelFiring: pixelMock)
+
+        let fired = pixelMock.actualFireCalls.first { $0.pixel.name == QuitSurveyPixelName.quitSurveyShown.rawValue }
+        XCTAssertEqual(fired?.additionalParameters?["onboardingNonBlockingCohort"], "treatment")
+    }
+
+    func testThumbsDownPixelCarriesNoneWhenNotEnrolled() {
+        let pixelMock = PixelKitMock(expecting: [])
+        let vm = makeViewModel(pixelFiring: pixelMock)
+
+        vm.selectNegativeResponse()
+
+        let fired = pixelMock.actualFireCalls.first { $0.pixel.name == QuitSurveyPixelName.quitSurveyThumbsDown.rawValue }
+        XCTAssertEqual(fired?.additionalParameters?["onboardingNonBlockingCohort"], "none")
     }
 }

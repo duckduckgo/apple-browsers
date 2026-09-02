@@ -61,6 +61,9 @@ protocol OnboardingActionsManaging {
     /// Used for any setup necessary for during the onboarding
     func onboardingStarted()
 
+    /// Skips the onboarding flow entirely and starts browsing
+    func skipOnboarding()
+
     /// At the end of the onboarding the user will be taken to the DuckDuckGo search page
     func goToAddressBar()
 
@@ -109,6 +112,8 @@ protocol OnboardingNavigating: AnyObject {
     func focusOnAddressBar()
     func showImportDataView()
     func updatePreventUserInteraction(prevent: Bool)
+    func setOnboardingHandlers(onClose: @escaping @MainActor () -> Void,
+                               onSkipInPlace: @escaping @MainActor () -> Void)
 }
 
 final class OnboardingActionsManager: OnboardingActionsManaging {
@@ -123,9 +128,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
+    private let nonBlockingExperiment: OnboardingNonBlockingExperiment
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
+    private weak var contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater?
     private var cancellables = Set<AnyCancellable>()
+    private var hasSkipped = false
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
     static var isOnboardingFinished: Bool
@@ -163,12 +171,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
         let excludedSteps = buildExcludedSteps()
 
+        let showSkip: Bool? = featureFlagger.isFeatureOn(.onboardingSkipOption) ? true : nil
+
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
                                        exclude: excludedSteps,
                                        order: "v4",
                                        env: env,
                                        locale: preferredLocale,
-                                       platform: platform)
+                                       platform: platform,
+                                       showSkip: showSkip)
     }
 
     private func buildExcludedSteps() -> [String] {
@@ -206,7 +217,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         pinningManager: PinningManager,
         featureFlagger: FeatureFlagger,
         reinstallUserDetection: ReinstallingUserDetecting,
-        installDateProvider: @escaping () -> Date
+        installDateProvider: @escaping () -> Date,
+        contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil
     ) {
         let chromeExtensionInstaller = ChromeExtensionInstaller(
             buildType: StandardApplicationBuildType(),
@@ -231,7 +243,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                 },
                 installDateProvider: installDateProvider
              ),
-            chromeExtensionInstaller: chromeExtensionInstaller
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            contextualOnboardingStateUpdater: contextualOnboardingStateUpdater
         )
     }
 
@@ -246,7 +259,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
-        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
+        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling,
+        contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil
     ) {
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
@@ -258,12 +272,22 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
+        self.nonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
+        self.contextualOnboardingStateUpdater = contextualOnboardingStateUpdater
     }
 
     func onboardingStarted() {
-        navigation.updatePreventUserInteraction(prevent: true)
+        if nonBlockingExperiment.isNonBlocking {
+            navigation.setOnboardingHandlers(
+                onClose: { [weak self] in self?.skipOnboarding() },
+                onSkipInPlace: { [weak self] in self?.recordSkipInPlace() }
+            )
+        } else {
+            navigation.updatePreventUserInteraction(prevent: true)
+        }
+
         stepShown(step: .welcome)
         if isEligibleForChromeExtensionInstall {
             chromeExtensionExperiment.enroll()
@@ -291,14 +315,63 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         navigation.replaceTabWith(tab)
     }
 
+    @MainActor
+    func skipOnboarding() {
+        // A repeated message would otherwise fire the pixel again and, with the onboarding tab
+        // already released, replace whichever tab the user happens to be on. Guarded per instance
+        // rather than on `isOnboardingFinished`, which a developer replaying onboarding via launch
+        // options leaves set — that would make skipping do nothing for them.
+        guard !hasSkipped else { return }
+        hasSkipped = true
+
+        recordSkippedOnboarding()
+
+        let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
+        navigation.replaceTabWith(tab)
+
+        tab.navigationDidEndPublisher
+            .first()
+            .sink { [weak self] _ in
+                self?.navigation.focusOnAddressBar()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Onboarding went away on its own — the tab was navigated away from, swept up in a bulk close,
+    /// or carried off by its window closing. Records the same skip as closing the tab, but leaves
+    /// the tab alone so whatever the user was doing goes through.
+    @MainActor
+    private func recordSkipInPlace() {
+        guard !Self.isOnboardingFinished else { return }
+        recordSkippedOnboarding()
+    }
+
+    @MainActor
+    private func recordSkippedOnboarding() {
+        // Skipping is reachable from any step, so the completion side effects are deliberately left
+        // out: marking the Duck.ai toggle step as seen would suppress a popover the user never got,
+        // and the final-step pixels would report a step that never displayed. `onboardingSkipped`
+        // below is what this path reports instead.
+        finalizeOnboarding()
+
+        // Skipping means the user asked to be left alone, so the contextual highlights don't
+        // follow them out of a setup they declined.
+        contextualOnboardingStateUpdater?.state = .onboardingCompleted
+
+        PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
+        nonBlockingExperiment.fireMetric(.onboardingSkipped)
+    }
+
     func addToDock() {
         dockCustomization.addToDock()
         onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
+        nonBlockingExperiment.fireMetric(.addToDockRequested)
     }
 
     @MainActor
     func importData() async -> Bool {
         onboardingSharedPixelHandler.fire(.importData(.clicked(.engage)))
+        nonBlockingExperiment.fireMetric(.importRequested)
         return await withCheckedContinuation { continuation in
             dataImportProvider.showImportWindow(customTitle: UserText.importDataTitleOnboarding, completion: { [weak self] in
                 guard let self else {
@@ -478,9 +551,23 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
     }
 
-    private func onboardingHasFinished() {
+    /// The state that has to settle however onboarding ended, including when it was cut short.
+    /// Unlocking the UI belongs here: a window that skipped is otherwise left with no way out.
+    private func finalizeOnboarding() {
         Self.isOnboardingFinished = true
         navigation.updatePreventUserInteraction(prevent: false)
+        Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
+    }
+
+    private func onboardingHasFinished() {
+        finalizeOnboarding()
+
+        // Non-blocking onboarding leaves the highlights suppressed while it runs, so completing is
+        // what arms them. Only this path does: skipping, or leaving onboarding any other way,
+        // leaves them suppressed.
+        if nonBlockingExperiment.isNonBlocking {
+            contextualOnboardingStateUpdater?.state = .notStarted
+        }
 
         let userSawToggleOnboarding = wasToggleOnboardingStepShown()
 
@@ -489,8 +576,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         if userSawToggleOnboarding {
             aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
         }
-
-        Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
 
         fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
     }
@@ -517,6 +602,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
         fireSharedPixelForFinalStep(userSawToggleOnboarding)
         chromeExtensionExperiment.fireMetric(.onboardingCompleted)
+        nonBlockingExperiment.fireMetric(.onboardingCompleted)
 
         guard userSawToggleOnboarding else { return }
 

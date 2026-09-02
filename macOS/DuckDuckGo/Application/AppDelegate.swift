@@ -303,6 +303,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
+    private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
@@ -831,7 +832,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
-            pinningManager: pinningManager
+            pinningManager: pinningManager,
+            // Resolved through the delegate rather than captured: this runs during `init`, before
+            // `super.init()`, so `self` is not available yet. The closure only runs at quit time.
+            isTerminating: { Application.appDelegate.isTerminating }
         )
         tabsPreferences = TabsPreferences(
             persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
@@ -1059,7 +1063,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
-            )
+            ),
+            areHighlightsDisabled: { [featureFlagger] in featureFlagger.isFeatureOn(.onboardingSkipHighlights) }
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -1605,7 +1610,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
         QuitSurveyReturnUserHandler(
             persistor: quitSurveyPersistor,
-            installDate: AppDelegate.firstLaunchDate
+            installDate: AppDelegate.firstLaunchDate,
+            nonBlockingExperiment: onboardingNonBlockingExperiment
         ).fireReturnUserPixelIfNeeded()
 
         fireDailyActiveUserPixels()
@@ -1644,7 +1650,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily)
-        PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily)
+        let isDefaultBrowser = defaultBrowserPreferences.isDefault
+        PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: isDefaultBrowser), frequency: .daily)
+        // Guardrail metric: is DuckDuckGo still the default browser on days 5-7 after enrollment.
+        // fireMetric checks the conversion window and dedupes internally, so it's safe to call on
+        // every activation; it only fires (and only once) when we land inside that window.
+        if isDefaultBrowser {
+            onboardingNonBlockingExperiment.fireMetric(.setAsDefaultEnabled)
+        }
         PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)
     }
 
@@ -1808,11 +1821,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var terminationHandler: TerminationDeciderHandler?
 
+    /// `true` from the moment a quit is requested until it is either carried out or cancelled.
+    /// Termination closes every window as its final step, so anything that reads a window or tab
+    /// closing as a deliberate user action has to consult this first.
+    private(set) var isTerminating = false
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         // Already running — the in-flight handler will reply() when done
         if terminationHandler != nil {
             return .terminateLater
         }
+
+        isTerminating = true
 
         let handler = TerminationDeciderHandler(
             deciders: createTerminationDeciders(),
@@ -1825,6 +1845,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 // overwrite the saved state with empty data.
                 if !shouldTerminate {
                     self?.terminationHandler = nil
+                    self?.isTerminating = false
                 }
                 NSApp.reply(toApplicationShouldTerminate: shouldTerminate)
             }
@@ -1835,6 +1856,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if reply == .terminateCancel {
             // Synchronous cancellation — discard handler
             terminationHandler = nil
+            isTerminating = false
         }
         return reply
     }

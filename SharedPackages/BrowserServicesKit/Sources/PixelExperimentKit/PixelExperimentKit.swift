@@ -36,15 +36,18 @@ struct ExperimentEvent: PixelKit.Event {
 
 extension PixelKit {
 
-    struct Constants {
+    public struct Constants {
         static let enrollmentEventPrefix = "experiment_enroll"
         static let metricsEventPrefix = "experiment_metrics"
         static let metricKey = "metric"
         static let conversionWindowDaysKey = "conversionWindowDays"
         static let valueKey = "value"
         static let enrollmentDateKey = "enrollmentDate"
-        static let searchMetricValue = "search"
-        static let appUseMetricValue = "app_use"
+        /// Public so callers firing extra per-experiment conversion windows outside
+        /// `fireSearchExperimentPixels` / `fireAppRetentionExperimentPixels` report under the same
+        /// metric name as those do — a mismatch here silently splits one metric into two.
+        public static let searchMetricValue = "search"
+        public static let appUseMetricValue = "app_use"
         static let aiChatMetricValue = "duck_ai_prompt_sent"
         static let aiChatNewChatMetricValue = "duck_ai_new_chat"
     }

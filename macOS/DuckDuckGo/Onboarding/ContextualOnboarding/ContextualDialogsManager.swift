@@ -95,6 +95,10 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     private let trackerMessageProvider: TrackerMessageProviding
     private let subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling
     private var stateStorage: ContextualOnboardingStateStoring
+    /// Answers whether the highlights are switched off outright, independently of the state
+    /// machine below. Resolved per call rather than captured, so flipping the flag in the debug
+    /// menu takes effect without a relaunch.
+    private let areHighlightsDisabled: () -> Bool
 
     // The last dialog that was presented.
     var lastDialog: ContextualDialogType?
@@ -132,10 +136,12 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     init(trackerMessageProvider: TrackerMessageProviding,
          subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
-         stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
+         stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
+         areHighlightsDisabled: @escaping () -> Bool = { false }) {
         self.trackerMessageProvider = trackerMessageProvider
         self.subscriptionUpsellExperiment = subscriptionUpsellExperiment
         self.stateStorage = stateStorage
+        self.areHighlightsDisabled = areHighlightsDisabled
         self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
     }
 
@@ -204,6 +210,9 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     // Determines and returns which dialog should be shown for a given tab and privacy info.
     func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo? = nil) -> ContextualDialogType? {
+        // Switched off outright: nothing shows, whatever the state says. Deliberately does not
+        // touch the state, so turning the toggle back off resumes wherever the user had got to.
+        guard !areHighlightsDisabled() else { return nil }
         // If onboarding is complete, return nil.
         guard state != .onboardingCompleted else { return nil }
         // If onboarding hasn't started, mark it as ongoing.

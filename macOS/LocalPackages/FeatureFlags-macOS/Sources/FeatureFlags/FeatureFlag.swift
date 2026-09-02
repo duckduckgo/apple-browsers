@@ -42,6 +42,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
     case onboardingChromeExtension
 
+    /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
+    case onboardingNonBlocking
+
     /// Subscription upsell screen at the end of contextual onboarding
     /// https://app.asana.com/1/137249556945/task/1210565180535541
     case onboardingSubscriptionUpsell
@@ -498,6 +501,16 @@ public enum FeatureFlag: String, CaseIterable {
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
 
+    /// Local-only: shows a "Skip Setup" link on the onboarding GetStarted screen.
+    case onboardingSkipOption
+
+    /// Local-only: switches the contextual onboarding highlights off outright. Overrides the rest
+    /// of the highlight logic; with it off, that logic decides as usual.
+    case onboardingSkipHighlights
+
+    /// Local-only: makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
+    case onboardingAsync
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -515,6 +528,12 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the onboarding Chrome extension install experiment
     public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the non-blocking onboarding experiment
+    public enum OnboardingNonBlockingCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -563,6 +582,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
+        case .onboardingNonBlocking:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlocking), cohortType: OnboardingNonBlockingCohort.self)
         case .onboardingSubscriptionUpsell:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),
@@ -835,6 +856,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
+        case .onboardingSkipOption:
+            Config(source: .disabled)
+        case .onboardingSkipHighlights:
+            Config(source: .disabled)
+        case .onboardingAsync:
+            Config(source: .disabled)
         }
     }
 

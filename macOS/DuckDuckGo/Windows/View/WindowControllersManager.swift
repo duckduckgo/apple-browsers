@@ -110,12 +110,14 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger,
-         pinningManager: PinningManager) {
+         pinningManager: PinningManager,
+         isTerminating: @escaping @MainActor () -> Bool = { false }) {
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.internalUserDecider = internalUserDecider
         self.featureFlagger = featureFlagger
         self.pinningManager = pinningManager
+        self.isTerminating = isTerminating
     }
 
     /**
@@ -127,6 +129,23 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
     weak var tabsPreferences: TabsPreferences?
 
+    private weak var onboardingTab: Tab?
+    private var onboardingTabCancellable: AnyCancellable?
+
+    /// Records a skip that leaves the tab where it is. Cleared once used, so the same onboarding
+    /// session is only ever recorded once.
+    private var onboardingSkipInPlaceHandler: (@MainActor () -> Void)?
+
+    /// Tabs already wired up by `observeNavigationForBrowsingBeforeCompletion(in:)`, so a tab isn't
+    /// subscribed twice as a tab collection's `$tabs` republishes on unrelated changes.
+    private var browsingBeforeCompletionObservedTabs = Set<ObjectIdentifier>()
+
+    /// Every subscription `setUpBrowsingBeforeCompletionTracking()` creates: one per tracked tab,
+    /// one per window's tab list, and one for windows registered after onboarding started. Cleared
+    /// in `clearOnboardingTracking()`/`setOnboardingTab(_:)` only — never from inside a sink stored
+    /// here, so tearing down never races the very subscription that's delivering it.
+    private var browsingBeforeCompletionCancellables = Set<AnyCancellable>()
+
     /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
     /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
     /// `self` (the `WindowControllersManager` is its source of truth for tab membership).
@@ -137,6 +156,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     private let internalUserDecider: InternalUserDecider
     private let featureFlagger: FeatureFlagger
     private let pinningManager: PinningManager
+    private let isTerminating: @MainActor () -> Bool
 
     /// find Main Window Controller being currently interacted with even when ⌘-clicked in background
     func mainWindowController(for sourceWindow: NSWindow?) -> MainWindowController? {
@@ -166,6 +186,8 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     }
 
     func unregister(_ windowController: MainWindowController) {
+        recordOnboardingSkipIfWindowHostsOnboarding(windowController)
+
         pinnedTabsManagerProvider.cacheClosedWindowPinnedTabsIfNeeded(pinnedTabsManager: windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager)
 
         guard let idx = mainWindowControllers.firstIndex(of: windowController) else {
@@ -174,6 +196,17 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
         mainWindowControllers.remove(at: idx)
         didUnregisterWindowController.send(windowController)
+    }
+
+    /// Closing the window that hosts onboarding disposes of onboarding just as deliberately as
+    /// closing its tab, so it counts as a skip. Quitting is excluded: it closes every window as its
+    /// final step, and `isTerminating` is what tells the two apart.
+    @MainActor
+    private func recordOnboardingSkipIfWindowHostsOnboarding(_ windowController: MainWindowController) {
+        guard !isTerminating(), let onboardingTab else { return }
+        guard windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: onboardingTab) != nil else { return }
+
+        recordOnboardingSkipInPlace()
     }
 
     func updateIsInInitialState() {
@@ -648,18 +681,168 @@ extension WindowControllersManager: OnboardingNavigating {
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
     }
 
+    /// Whether a tab is already hosting async onboarding. The reference is weak, so this goes back to
+    /// `false` on its own once that tab is gone.
+    @MainActor
+    var hasOnboardingTab: Bool { onboardingTab != nil }
+
+    /// Records the tab hosting onboarding. Called at window setup, where the tab is unambiguous —
+    /// `selectedTab` is not reliable later, because async onboarding lets the user switch tabs
+    /// before the onboarding page finishes loading.
+    @MainActor
+    func setOnboardingTab(_ tab: Tab?) {
+        onboardingTabCancellable = nil
+        onboardingSkipInPlaceHandler = nil
+        onboardingTab?.closeInterceptor = nil
+        onboardingTab = tab
+        browsingBeforeCompletionObservedTabs.removeAll()
+        browsingBeforeCompletionCancellables.removeAll()
+    }
+
+    /// Wires the onboarding tab so that leaving onboarding is always recorded as a skip:
+    /// `onClose` runs when the user closes the tab outright and something has to take its place,
+    /// `onSkipInPlace` when onboarding goes away on its own — navigated away from, swept up in a
+    /// bulk close, or carried off by its window closing.
+    @MainActor
+    func setOnboardingHandlers(onClose: @escaping @MainActor () -> Void,
+                               onSkipInPlace: @escaping @MainActor () -> Void) {
+        guard let onboardingTab else { return }
+
+        onboardingSkipInPlaceHandler = onSkipInPlace
+
+        onboardingTab.closeInterceptor = { [weak self] reason in
+            switch reason {
+            case .userInitiated:
+                // `onClose` swaps the tab out itself, so cancel the plain removal.
+                onClose()
+                return true
+            case .bulk:
+                // Quitting sweeps every tab up in a bulk removal. Main records nothing when the
+                // user quits mid-onboarding, so neither does this — otherwise the treatment would
+                // lose the "onboarding shows again next launch" nudge that control keeps.
+                if self?.isTerminating() == true {
+                    self?.clearOnboardingTracking()
+                } else {
+                    self?.recordOnboardingSkipInPlace()
+                }
+                return false
+            case .programmatic:
+                // Not reachable — `removeUnpinnedTab` only consults the interceptor for
+                // `.userInitiated`, and bulk paths pass `.bulk` explicitly.
+                return false
+            }
+        }
+
+        // Before the content subscription below, which republishes the current value on subscribe
+        // and so can record a skip synchronously. Set up this way round, that skip tears down the
+        // browsing observers along with everything else instead of leaving them behind it.
+        setUpBrowsingBeforeCompletionTracking()
+
+        onboardingTabCancellable = onboardingTab.$content
+            .filter { if case .onboarding = $0 { false } else { true } }
+            .first()
+            .sink { [weak self] _ in self?.recordOnboardingSkipInPlace() }
+    }
+
+    /// Fires `.browsingBeforeCompletion` the first time the user completes a navigation to a real
+    /// URL in a tab other than the onboarding tab while onboarding is still unfinished — something
+    /// only the non-blocking treatment allows. Watches every tab in every window, including ones
+    /// opened after onboarding started, until it fires or the tracking below is torn down.
+    @MainActor
+    private func setUpBrowsingBeforeCompletionTracking() {
+        for windowController in mainWindowControllers {
+            observeTabsForBrowsingBeforeCompletion(in: windowController)
+        }
+
+        didRegisterWindowController
+            .sink { [weak self] windowController in
+                self?.observeTabsForBrowsingBeforeCompletion(in: windowController)
+            }
+            .store(in: &browsingBeforeCompletionCancellables)
+    }
+
+    /// Subscribes to a window's tab list so every tab it ever holds — present or future — gets
+    /// `observeNavigationForBrowsingBeforeCompletion(in:)` called on it. `$tabs` republishes the
+    /// current value on subscribe, so this alone covers tabs already open in the window.
+    @MainActor
+    private func observeTabsForBrowsingBeforeCompletion(in windowController: MainWindowController) {
+        windowController.mainViewController.tabCollectionViewModel.tabCollection.$tabs
+            .sink { [weak self] tabs in
+                guard let self else { return }
+                for case .loaded(let tab) in tabs {
+                    self.observeNavigationForBrowsingBeforeCompletion(in: tab)
+                }
+            }
+            .store(in: &browsingBeforeCompletionCancellables)
+    }
+
+    /// Fires the metric on this tab's first completed navigation to a real URL, provided it isn't
+    /// the onboarding tab and onboarding hasn't finished by then. Unloaded tabs have no web view and
+    /// so never navigate; they're simply excluded (`AnyTab.loaded` above never wraps one to observe).
+    @MainActor
+    private func observeNavigationForBrowsingBeforeCompletion(in tab: Tab) {
+        guard browsingBeforeCompletionObservedTabs.insert(ObjectIdentifier(tab)).inserted else { return }
+
+        tab.navigationDidEndPublisher
+            .filter { [weak self] navigatedTab in
+                guard let self, navigatedTab !== self.onboardingTab, case .url = navigatedTab.content else { return false }
+                return !OnboardingActionsManager.isOnboardingFinished
+            }
+            .first()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                OnboardingNonBlockingExperiment(featureFlagger: self.featureFlagger).fireMetric(.browsingBeforeCompletion)
+            }
+            .store(in: &browsingBeforeCompletionCancellables)
+    }
+
+    /// Records leaving onboarding without completing it, for the paths that leave the tab alone.
+    /// Clearing the handler first makes this idempotent: several of these paths can fire for the
+    /// same onboarding session, and only the first one is the outcome.
+    @MainActor
+    private func recordOnboardingSkipInPlace() {
+        guard let handler = onboardingSkipInPlaceHandler else { return }
+        clearOnboardingTracking()
+        handler()
+    }
+
+    /// Releases the onboarding tab without recording anything. Deliberately leaves
+    /// `onboardingTabCancellable` alone: the content subscription is `.first()` and retires itself,
+    /// and cancelling it from inside its own sink would release the cancellable while the content
+    /// subject is still delivering.
+    @MainActor
+    private func clearOnboardingTracking() {
+        onboardingSkipInPlaceHandler = nil
+        onboardingTab?.closeInterceptor = nil
+        onboardingTab = nil
+        browsingBeforeCompletionObservedTabs.removeAll()
+        browsingBeforeCompletionCancellables.removeAll()
+    }
+
+    /// Replaces the onboarding tab, falling back to the selected tab when none is tracked
+    /// (the non-async flow keeps the UI locked, so the two are the same tab there).
     @MainActor
     func replaceTabWith(_ tab: Tab) {
-        guard let tabToRemove = selectedTab else { return }
-        guard let mainWindowController else { return }
-        guard let index = mainWindowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return }
+        // Capture before clearing — `setOnboardingTab(nil)` drops the reference this needs.
+        guard let tabToRemove = onboardingTab ?? selectedTab else { return }
+        setOnboardingTab(nil)
+        replaceTab(tabToRemove, with: tab)
+    }
+
+    @MainActor
+    private func replaceTab(_ tabToRemove: Tab, with tab: Tab) {
+        // Resolve the window that actually holds the tab, not whichever one is key — otherwise the
+        // index lookup below searches the wrong collection and silently gives up.
+        guard let windowController = windowController(containing: tabToRemove) ?? mainWindowController else { return }
+        guard let index = windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tabToRemove) else { return }
         var tabToAppend = tab
-        if mainWindowController.mainViewController.isBurner {
-            let burnerMode = mainWindowController.mainViewController.tabCollectionViewModel.burnerMode
+        if windowController.mainViewController.isBurner {
+            let burnerMode = windowController.mainViewController.tabCollectionViewModel.burnerMode
             tabToAppend = Tab(content: tab.content, burnerMode: burnerMode)
         }
-        mainWindowController.mainViewController.tabCollectionViewModel.append(tab: tabToAppend)
-        mainWindowController.mainViewController.tabCollectionViewModel.remove(at: index)
+        // Append before remove: the tab count must never hit zero, or the window closes.
+        windowController.mainViewController.tabCollectionViewModel.append(tab: tabToAppend)
+        windowController.mainViewController.tabCollectionViewModel.remove(at: index)
     }
 
     @MainActor

@@ -422,9 +422,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
-    case duckAIVoiceShortcut
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true
     case appSwitcherSnapshotClearing
 
@@ -855,8 +852,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
         case .aiChatOmnibarDefaultPosition:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
-        case .duckAIVoiceShortcut:
-            Config(source: .remoteReleasable(AIChatSubfeature.voiceShortcut))
         case .appSwitcherSnapshotClearing:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appSwitcherSnapshotClearing))
         case .tabPreviewPerformanceOptimization:

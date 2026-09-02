@@ -92,7 +92,7 @@ extension MainViewController {
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
         coordinator.duckAIEntrySourceProvider = { [weak self] in self?.tabManager.currentTabsModel.currentTab?.duckAIEntrySource }
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
-        coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
+        coordinator.updateAIVoiceChatAvailability(true)
         coordinator.updateAIChatShortcutAvailability(aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton)
         coordinator.onAnimatedDismissToOmnibar = { [weak self] completion in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }

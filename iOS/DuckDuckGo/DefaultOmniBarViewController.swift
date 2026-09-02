@@ -129,7 +129,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         highlightDismissTap.delegate = self
         omniBarView.aiChatTextView.addGestureRecognizer(highlightDismissTap)
 
-        omniBarView.isAIVoiceChatEnabled = DuckAIVoiceShortcutFeature(featureFlagger: dependencies.featureFlagger).isAvailable
+        omniBarView.isAIVoiceChatEnabled = true
         setUpModelPickerIfNeeded()
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             guard let self else { return }

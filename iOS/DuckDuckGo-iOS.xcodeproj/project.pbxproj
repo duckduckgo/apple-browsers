@@ -972,7 +972,6 @@
 		971CC8903045ACFF00AEE252 /* UTIToolsControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971CC88F3045ACFF00AEE252 /* UTIToolsControllerTests.swift */; };
 		97604B5D2FF7AFA5005BED0A /* ContextualSuggestedPromptsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97604B5C2FF7AFA5005BED0A /* ContextualSuggestedPromptsProviding.swift */; };
 		976C98B93018AD9100385C4B /* AIChatFrontendReadinessGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976C98B83018AD8F00385C4B /* AIChatFrontendReadinessGate.swift */; };
-		9770D4A92F6AFD3F0029361F /* DuckAIVoiceShortcutFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9770D4A82F6AFD3F0029361F /* DuckAIVoiceShortcutFeature.swift */; };
 		9770D4AC2F7B000100293610 /* VoiceSessionStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9770D4AD2F7B000100293610 /* VoiceSessionStateManager.swift */; };
 		9770D4AE2F7B000200293610 /* VoiceSessionStateManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9770D4AF2F7B000200293610 /* VoiceSessionStateManagerTests.swift */; };
 		9770D4B02F7B000300293610 /* VoiceEntryPointPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9770D4B12F7B000300293610 /* VoiceEntryPointPixelTests.swift */; };
@@ -3569,7 +3568,6 @@
 		971CC88F3045ACFF00AEE252 /* UTIToolsControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIToolsControllerTests.swift; sourceTree = "<group>"; };
 		97604B5C2FF7AFA5005BED0A /* ContextualSuggestedPromptsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualSuggestedPromptsProviding.swift; sourceTree = "<group>"; };
 		976C98B83018AD8F00385C4B /* AIChatFrontendReadinessGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatFrontendReadinessGate.swift; sourceTree = "<group>"; };
-		9770D4A82F6AFD3F0029361F /* DuckAIVoiceShortcutFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIVoiceShortcutFeature.swift; sourceTree = "<group>"; };
 		9770D4AD2F7B000100293610 /* VoiceSessionStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSessionStateManager.swift; sourceTree = "<group>"; };
 		9770D4AF2F7B000200293610 /* VoiceSessionStateManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSessionStateManagerTests.swift; sourceTree = "<group>"; };
 		9770D4B12F7B000300293610 /* VoiceEntryPointPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEntryPointPixelTests.swift; sourceTree = "<group>"; };
@@ -5914,7 +5912,6 @@
 				3132927E2F9FE38000C3A276 /* FireModeNativeStorageController.swift */,
 				3132928008A0000000C3A276 /* DuckAiNativeStorageContainerMigration.swift */,
 				31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */,
-				9770D4A82F6AFD3F0029361F /* DuckAIVoiceShortcutFeature.swift */,
 				9770D4AD2F7B000100293610 /* VoiceSessionStateManager.swift */,
 				319082EF2DCCCAAC00721BD0 /* InputBox */,
 				31D2D2A32D40F98800549D12 /* WidgetSourceType.swift */,
@@ -13230,7 +13227,6 @@
 				31860A5B2C57ED2D005561F5 /* DuckPlayerStorage.swift in Sources */,
 				6FEC0B882C999961006B4F6E /* FavoritesListInteractingAdapter.swift in Sources */,
 				C1EA26642EB5725A006A863C /* AutofillExtensionSettingsViewModel.swift in Sources */,
-				9770D4A92F6AFD3F0029361F /* DuckAIVoiceShortcutFeature.swift in Sources */,
 				9770D4AC2F7B000100293610 /* VoiceSessionStateManager.swift in Sources */,
 				C1EA26652EB5725A006A863C /* AutofillExtensionSettingsView.swift in Sources */,
 				C1EA26662EB5725A006A863C /* AutofillExtensionSettingsActivationView.swift in Sources */,

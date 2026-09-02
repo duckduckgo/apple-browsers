@@ -71,7 +71,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         isCurrentPageAttachable: @escaping () -> Bool = { true },
         isFireTab: Bool,
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
-        voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
@@ -105,7 +104,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             isAutoAttachEnabled: isAutoAttachEnabled
         )
         coordinator.delegate = self
-        coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
+        coordinator.updateAIVoiceChatAvailability(true)
         coordinator.onPageContextAttachRequested = { [weak chipViewModel] in
             chipViewModel?.tapToAttach()
         }

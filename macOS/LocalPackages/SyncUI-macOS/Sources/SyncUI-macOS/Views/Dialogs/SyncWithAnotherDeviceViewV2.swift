@@ -172,6 +172,7 @@ struct SyncWithAnotherDeviceViewV2: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
     }
 
     private var instructions: some View {

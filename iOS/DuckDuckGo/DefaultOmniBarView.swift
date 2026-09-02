@@ -351,7 +351,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }()
 
     var onAIChatSendPressed: (() -> Void)?
-    var isAIVoiceChatEnabled: Bool = false
 
     let modelPickerButton: UIButton = {
         var config = UIButton.Configuration.plain()
@@ -2282,7 +2281,7 @@ extension DefaultOmniBarView {
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
-        } else if !hasText && attachments.isEmpty && isAIVoiceChatEnabled {
+        } else if !hasText && attachments.isEmpty {
             aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)

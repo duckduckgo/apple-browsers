@@ -182,6 +182,35 @@ final class MobileCustomizationTests {
 
     }
 
+    @Test("Validate defaults when unavailable state persisted")
+    func returnDefaultsWhenUnavailableStatePersisted() {
+
+        let keyValueStore = MockThrowingKeyValueStore()
+
+        // Persist a Duck.ai address bar button plus a toolbar value the toolbar never offers.
+        let customization = MobileCustomization(
+            keyValueStore: keyValueStore,
+            isPad: false,
+            postChangeNotification: { _ in },
+            isDuckAIEnabled: { true })
+
+        var state = customization.state
+        state.currentAddressBarButton = .duckAIVoice
+        state.currentToolbarButton = .none
+        customization.persist(state)
+
+        // A fresh instance reads the store; neither persisted value is an option any more.
+        let customizationLoaded = MobileCustomization(
+            keyValueStore: keyValueStore,
+            isPad: false,
+            postChangeNotification: { _ in },
+            isDuckAIEnabled: { false })
+
+        let loadedState = customizationLoaded.state
+        #expect(loadedState.currentToolbarButton == MobileCustomization.toolbarDefault)
+        #expect(loadedState.currentAddressBarButton == MobileCustomization.addressBarDefault)
+    }
+
     @available(iOS 16, *)
     @Test("Validate all requested options are available on both surfaces", .timeLimit(.minutes(1)))
     func requestedOptionsAvailableOnBothSurfaces() {
@@ -231,17 +260,19 @@ final class MobileCustomizationTests {
         #expect(customization.smallIconForButton(.vpn) == DesignSystemImages.Glyphs.Size16.vpnOn)
     }
 
-    // MARK: - Duck.ai Voice toolbar button
+    // MARK: - Duck.ai Voice button
 
     @available(iOS 16, *)
-    @Test("duckAIVoice in toolbar options by default", .timeLimit(.minutes(1)))
-    func duckAIVoiceInToolbarOptionsByDefault() {
+    @Test("duckAIVoice in both surface options when Duck.ai is enabled", .timeLimit(.minutes(1)))
+    func duckAIVoiceInBothSurfaceOptionsWhenDuckAIEnabled() {
         let keyValueStore = MockThrowingKeyValueStore()
         let customization = MobileCustomization(keyValueStore: keyValueStore,
                                                 isPad: false,
-                                                postChangeNotification: { _ in })
+                                                postChangeNotification: { _ in },
+                                                isDuckAIEnabled: { true })
 
         #expect(customization.toolbarButtonOptions.contains(.duckAIVoice))
+        #expect(customization.addressBarButtonOptions.contains(.duckAIVoice))
     }
 
     @available(iOS 16, *)

@@ -104,7 +104,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             isAutoAttachEnabled: isAutoAttachEnabled
         )
         coordinator.delegate = self
-        coordinator.updateAIVoiceChatAvailability(true)
         coordinator.onPageContextAttachRequested = { [weak chipViewModel] in
             chipViewModel?.tapToAttach()
         }

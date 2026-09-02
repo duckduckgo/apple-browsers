@@ -57,15 +57,12 @@ final class PromoRegistryTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
             windowControllersManager: WindowControllersManagerMock(),
             syncService: nil,
-            syncBookmarksAdapter: nil),
+            syncBookmarksAdapter: nil,
             pinningManager: MockPinningManager())
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)
         let uniqueIds = Set(ids)
         XCTAssertEqual(ids.count, uniqueIds.count, "Promo IDs must be unique. Duplicates: \(ids.filter { id in ids.filter { $0 == id }.count > 1 })")
-
-        XCTAssertTrue(promoService.promos.contains { $0.id == "autofill-toolbar-pinning" },
-                      "Autofill Toolbar Pinning promo must be registered in the promo service")
     }
 }

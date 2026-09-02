@@ -21,32 +21,18 @@ import Foundation
 
 @MainActor
 final class MockAutofillToolbarPinningPromoPresenter: AutofillToolbarPinningPromoPresenting {
-
     private(set) var presentCallCount = 0
-    private(set) var dismissCallCount = 0
-    private var completion: ((AutofillToolbarPinningPromoOutcome) -> Void)?
+    private(set) var retractCallCount = 0
+    var result: PromoResult?
 
-    func presentAutofillToolbarPinningPromo(completion: @escaping (AutofillToolbarPinningPromoOutcome) -> Void) {
+    func presentAutofillToolbarPinningPromo(completion: @escaping (PromoResult) -> Void) {
         presentCallCount += 1
-        self.completion = completion
+        if let result {
+            completion(result)
+        }
     }
 
-    func dismissAutofillToolbarPinningPromo() {
-        dismissCallCount += 1
-        completion = nil
-    }
-
-    /// Drives the outcome the delegate is awaiting, standing in for a CTA press or an outside click.
-    func complete(with outcome: AutofillToolbarPinningPromoOutcome) {
-        let completion = self.completion
-        self.completion = nil
-        completion?(outcome)
-    }
-
-    /// Stands in for `NavigationBarViewController` tearing down while the popover is up — the window
-    /// closing, or the view controller deallocating. Its `viewWillDisappear`/`deinit` backstops report
-    /// `.notPresented` so the promo queue is never left awaiting a result.
-    func simulateTeardown() {
-        complete(with: .notPresented)
+    func retractAutofillToolbarPinningPromo() {
+        retractCallCount += 1
     }
 }

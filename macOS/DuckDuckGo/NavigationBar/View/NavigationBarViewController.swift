@@ -153,7 +153,7 @@ final class NavigationBarViewController: NSViewController {
 
     private var allowsUserInteraction: Bool = true
     private var isAutoFillAutosaveMessageVisible: Bool = false
-    private var autofillPinningPromoCompletion: ((AutofillToolbarPinningPromoOutcome) -> Void)?
+    private var autofillPinningPromoCompletion: ((PromoResult) -> Void)?
 
     private var urlCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
@@ -404,9 +404,8 @@ final class NavigationBarViewController: NSViewController {
     }
 
     deinit {
-        // Second backstop for the pinning promo, behind `viewWillDisappear`. Anything still awaiting
-        // a result must be answered here, or the promo queue waits on it for the whole session.
-        autofillPinningPromoCompletion?(.notPresented)
+        autofillPinningPromoCompletion?(.ignored())
+        autofillPinningPromoCompletion = nil
 
 #if DEBUG
         addressBarViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
@@ -551,14 +550,8 @@ final class NavigationBarViewController: NSViewController {
         setupAsBurnerWindowIfNeeded(theme: theme)
     }
 
-    override func viewWillDisappear() {
-        super.viewWillDisappear()
-
-        // Last line of defence for the pinning promo: the popover normally reports its own close, but
-        // if the window tears down without that reaching us the promo queue would await a result that
-        // never arrives. It has no timeout, so that would block every other medium+ promo for the
-        // session. `.notPresented` leaves the promo eligible, since the user made no choice.
-        resolveAutofillPinningPromo(with: .notPresented)
+    func windowWillClose() {
+        resolveAutofillPinningPromo(with: .ignored())
     }
 
     override func viewWillLayout() {
@@ -2274,13 +2267,9 @@ extension NavigationBarViewController: NSPopoverDelegate {
 
     /// We check references here because these popovers might be on other windows.
     func popoverDidClose(_ notification: Notification) {
-        // Handled ahead of the window-visibility guard below: the pinning promo has no timeout
-        // backstop in the promo queue, so a close we fail to report leaves the queue awaiting a
-        // continuation forever and blocks every other medium+ promo for the rest of the session.
-        // Whether the closing window is still on screen has no bearing on that.
         if let popover = popovers.autofillOnboardingPopover, notification.object as AnyObject? === popover {
             popovers.autofillOnboardingPopoverClosed()
-            resolveAutofillPinningPromo(with: .dismissed)
+            resolveAutofillPinningPromo(with: .ignored())
             guard view.window?.isVisible == true else { return }
             updatePasswordManagementButton()
             return
@@ -2470,7 +2459,7 @@ extension Notification.Name {
 
 extension NavigationBarViewController: AutofillToolbarPinningPromoPresenting {
 
-    func presentAutofillToolbarPinningPromo(completion: @escaping (AutofillToolbarPinningPromoOutcome) -> Void) {
+    func presentAutofillToolbarPinningPromo(completion: @escaping (PromoResult) -> Void) {
         autofillPinningPromoCompletion = completion
 
         // The trigger is posted from the save popover's `viewWillDisappear`, so that popover is still
@@ -2478,44 +2467,37 @@ extension NavigationBarViewController: AutofillToolbarPinningPromoPresenting {
         // run loop lets it finish closing first.
         DispatchQueue.main.async { [weak self] in
             guard let self else {
-                // We went away before this hop ran. The promo queue is still awaiting an answer and
-                // has no timeout to fall back on, so report from the captured completion directly.
-                completion(.notPresented)
+                completion(.noChange)
                 return
             }
-            // `dismissAutofillToolbarPinningPromo()` may have landed while this hop was queued — the
-            // queue does exactly that when a conflicting promo becomes visible. It is no longer
-            // awaiting this show, so presenting now would orphan the popover.
-            guard self.autofillPinningPromoCompletion != nil else { return }
+            guard autofillPinningPromoCompletion != nil else { return }
 
-            let didPresent = self.popovers.showAutofillOnboardingPopover(from: self.passwordManagementButton,
+            let didPresent = popovers.showAutofillOnboardingPopover(from: passwordManagementButton,
                                                                          withDelegate: self) { [weak self] didAddShortcut in
                 guard let self else { return }
-
-                // Resolve before closing: this popover doesn't animate, and a non-animated NSPopover
-                // can deliver popoverDidClose synchronously from close(), which would otherwise resolve
-                // as .dismissed first and make this resolve a no-op. The pin itself is performed by
-                // the promo delegate, after the result is resolved.
-                self.resolveAutofillPinningPromo(with: .actioned(pin: didAddShortcut))
-                self.popovers.closeAutofillOnboardingPopover()
+                resolveAutofillPinningPromo(with: didAddShortcut ? .actioned : .ignored())
+                if didAddShortcut {
+                    pinningManager.pin(.autofill)
+                }
+                popovers.closeAutofillOnboardingPopover()
             }
 
             if !didPresent {
-                self.resolveAutofillPinningPromo(with: .notPresented)
+                resolveAutofillPinningPromo(with: .noChange)
             }
         }
     }
 
-    func dismissAutofillToolbarPinningPromo() {
+    func retractAutofillToolbarPinningPromo() {
         autofillPinningPromoCompletion = nil
         popovers.closeAutofillOnboardingPopover()
     }
 
     /// Both the CTA path and `popoverDidClose` funnel through here, and the completion is cleared on the
     /// way out, so whichever fires first wins and the second is inert.
-    private func resolveAutofillPinningPromo(with outcome: AutofillToolbarPinningPromoOutcome) {
+    private func resolveAutofillPinningPromo(with result: PromoResult) {
         let completion = autofillPinningPromoCompletion
         autofillPinningPromoCompletion = nil
-        completion?(outcome)
+        completion?(result)
     }
 }

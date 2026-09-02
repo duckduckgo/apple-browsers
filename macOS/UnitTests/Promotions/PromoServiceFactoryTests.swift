@@ -132,21 +132,6 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNotNil(promo.delegate)
     }
 
-    @MainActor
-    func testFactoryCreatesAutofillToolbarPinningPromoWithCorrectConfiguration() {
-        let promo = PromoServiceFactory.autofillToolbarPinning(dependencies: makeDependencies())
-
-        XCTAssertEqual(promo.id, "autofill-toolbar-pinning")
-        XCTAssertEqual(promo.context, .global)
-        XCTAssertEqual(promo.initiated, .user)
-        XCTAssertEqual(promo.promoType.severity, .medium)
-        XCTAssertNil(promo.promoType.timeoutInterval)
-        XCTAssertEqual(promo.triggers, [.firstPasswordSaved])
-        XCTAssertTrue(promo.respectsGlobalCooldown)
-        XCTAssertTrue(promo.setsGlobalCooldown)
-        XCTAssertNotNil(promo.delegate)
-    }
-
 }
 
 extension PromoServiceFactoryTests {

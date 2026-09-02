@@ -503,6 +503,7 @@ final class MainViewController: NSViewController {
     }
 
     func windowWillClose() {
+        navigationBarViewController.windowWillClose()
         closeFloatingAIChatsForCurrentWindow()
         viewEventsCancellables.removeAll()
         aiChatOmnibarContainerViewController.cleanup()

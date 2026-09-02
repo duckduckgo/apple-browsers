@@ -20,7 +20,9 @@ import Foundation
 
 extension PromoServiceFactory {
 
-    /// Builds the Autofill Toolbar Pinning Promo (migrated from the standalone "Add passwords shortcut?" popover).
+    static let autofillToolbarPinningPromoID = "autofill-toolbar-pinning"
+
+    /// Builds the Autofill Toolbar Pinning ("Add passwords shortcut?") Promo.
     @MainActor
     static func autofillToolbarPinning(dependencies: PromoDependencies) -> Promo {
         let windowControllersManager = dependencies.windowControllersManager
@@ -33,12 +35,11 @@ extension PromoServiceFactory {
                     .navigationBarViewController
             })
 
-        // Same treatment as the Default Browser popover: an in-app popover that stays up until the user acts.
-        return InternalPromo(id: "autofill-toolbar-pinning",
+        return InternalPromo(id: autofillToolbarPinningPromoID,
                              triggers: [.firstPasswordSaved],
                              initiated: .user,
                              promoType: PromoType(.semiModal),
-                             context: .global,
+                             context: .webPage,
                              delegate: delegate)
     }
 }

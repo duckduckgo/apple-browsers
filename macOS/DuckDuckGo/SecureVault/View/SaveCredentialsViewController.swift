@@ -149,7 +149,7 @@ final class SaveCredentialsViewController: NSViewController {
 
     private var saveButtonAction: (() -> Void)?
 
-    private var shouldFirePinPromptNotification = false
+    private var shouldPostFirstPasswordSavedNotification = false
 
     var passwordData: Data {
         let string = hiddenPasswordField.isHidden ? visiblePasswordField.stringValue : hiddenPasswordField.stringValue
@@ -197,7 +197,7 @@ final class SaveCredentialsViewController: NSViewController {
 
     override func viewWillDisappear() {
         passwordManagerStateCancellable = nil
-        if shouldFirePinPromptNotification {
+        if shouldPostFirstPasswordSavedNotification {
             NotificationCenter.default.post(name: .firstPasswordSaved, object: nil)
         }
     }
@@ -342,7 +342,7 @@ final class SaveCredentialsViewController: NSViewController {
                 Logger.sync.debug("Requesting sync if enabled")
 
                 if existingCredentials?.account.id == nil, let count = try? vault.accountsCount(), count == 1 {
-                    shouldFirePinPromptNotification = true
+                    shouldPostFirstPasswordSavedNotification = true
                 }
             }
         } catch {

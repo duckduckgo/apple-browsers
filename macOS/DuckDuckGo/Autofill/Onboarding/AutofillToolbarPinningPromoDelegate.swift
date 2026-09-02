@@ -21,27 +21,25 @@ import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 
+/// Presents the "Add passwords shortcut?" popover on behalf of the promo queue.
+///
+/// Implemented by `NavigationBarViewController` because presentation depends on state only it owns:
+/// it is the popover's `NSPopoverDelegate`, and anchoring un-hides the password button that is
+/// otherwise hidden whenever autofill is unpinned — which is always the case when this promo shows.
+@MainActor
+protocol AutofillToolbarPinningPromoPresenting: AnyObject {
+    func presentAutofillToolbarPinningPromo(completion: @escaping (PromoResult) -> Void)
+    func retractAutofillToolbarPinningPromo()
+}
+
 /// Offers to pin the passwords shortcut to the toolbar right after the user saves their first password
-/// (migrated from the standalone `showPasswordsPinningOption` notification observer that
-/// `NavigationBarViewController` used to own).
 final class AutofillToolbarPinningPromoDelegate: InternalPromoDelegate {
 
     private let featureFlagger: FeatureFlagger
     private let pinningManager: PinningManager
     private let presenterProvider: @MainActor () -> AutofillToolbarPinningPromoPresenting?
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
-
-    /// Guards `hasResolvedCurrentShow`, which is written on the main actor by `show`/`hide`/`resume`
-    /// but read on whatever thread delivers an eligibility notification to `isEligiblePublisher`.
-    private let lock = NSLock()
-    private var _hasResolvedCurrentShow = false
-
-    /// True once the current show has produced a result. While set, eligibility retractions are
-    /// swallowed: see `isEligiblePublisher`.
-    private var hasResolvedCurrentShow: Bool {
-        get { lock.withLock { _hasResolvedCurrentShow } }
-        set { lock.withLock { _hasResolvedCurrentShow = newValue } }
-    }
+    private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
 
     init(featureFlagger: FeatureFlagger,
          pinningManager: PinningManager,
@@ -51,29 +49,19 @@ final class AutofillToolbarPinningPromoDelegate: InternalPromoDelegate {
         self.presenterProvider = presenterProvider
     }
 
-    var isEligible: Bool {
-        featureFlagger.isFeatureOn(.promoQueueAutofillToolbarPinningPromo)
-            && !pinningManager.isPinned(.autofill)
-    }
+    var isEligible: Bool { computeEligibility() }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        Publishers.Merge(
-            featureFlagger.updatesPublisher.map { _ in () },
-            NotificationCenter.default.publisher(for: .PinnedViewsChanged).map { _ in () }
-        )
-        .compactMap { [weak self] _ -> Bool? in
-            guard let self else { return false }
-            // Once the user has acted, a retraction is meaningless — and actively harmful here.
-            // Accepting the CTA pins autofill, `LocalPinningManager` posts `.PinnedViewsChanged`
-            // synchronously, and the resulting `false` would reach `PromoService` ahead of the
-            // `.actioned` result the resumed continuation is still on its way to deliver. The queue
-            // records first-write-wins, so the promo's success would be filed as a no-op.
-            guard !hasResolvedCurrentShow else { return nil }
-            return isEligible
-        }
-        .prepend(isEligible)
-        .removeDuplicates()
-        .eraseToAnyPublisher()
+        isEligibleSubject.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    func refreshEligibility() {
+        isEligibleSubject.send(computeEligibility())
+    }
+
+    private func computeEligibility() -> Bool {
+        featureFlagger.isFeatureOn(.promoQueueAutofillToolbarPinningPromo)
+            && !pinningManager.isPinned(.autofill)
     }
 
     @MainActor
@@ -83,45 +71,25 @@ final class AutofillToolbarPinningPromoDelegate: InternalPromoDelegate {
         }
 
         return await withCheckedContinuation { continuation in
-            // The debug menu's `forceShow` skips the "no active session" guard that trigger
-            // evaluation applies, so `show()` can be re-entered while a continuation is live.
-            // Overwriting an unresumed continuation traps, so end the previous show first.
             resume(with: .noChange)
-            hasResolvedCurrentShow = false
             showContinuation = continuation
 
-            presenter.presentAutofillToolbarPinningPromo { [weak self] outcome in
-                guard let self else { return }
-                switch outcome {
-                case .actioned(let pin):
-                    // `resume` marks the show resolved before the pin lands, which is what stops
-                    // our own `.PinnedViewsChanged` from being read as a retraction.
-                    resume(with: .actioned)
-                    if pin {
-                        pinningManager.pin(.autofill)
-                    }
-                case .dismissed:
-                    resume(with: .ignored())
-                case .notPresented:
-                    resume(with: .noChange)
-                }
+            presenter.presentAutofillToolbarPinningPromo { [weak self] result in
+                self?.resume(with: result)
             }
         }
     }
 
     @MainActor
     func hide() {
-        presenterProvider()?.dismissAutofillToolbarPinningPromo()
+        presenterProvider()?.retractAutofillToolbarPinningPromo()
         resume(with: .noChange)
-        // The session is over, so a later show starts with retractions enabled again.
-        hasResolvedCurrentShow = false
     }
 }
 
 private extension AutofillToolbarPinningPromoDelegate {
 
     func resume(with result: PromoResult) {
-        hasResolvedCurrentShow = true
         showContinuation?.resume(returning: result)
         showContinuation = nil
     }

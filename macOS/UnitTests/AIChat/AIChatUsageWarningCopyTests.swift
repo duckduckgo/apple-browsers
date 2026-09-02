@@ -85,7 +85,7 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
     func testUpsellCopyFollowsTrialEligibility() {
         XCTAssertEqual(warning(.freeReached, window: .daily,
                                action: .tryForFree(isTrialEligible: true)).localizedActionTitle,
-                       "Try for Free")
+                       "Try Subscription for Free")
         XCTAssertEqual(warning(.freeReached, window: .daily,
                                action: .tryForFree(isTrialEligible: false)).localizedActionTitle,
                        "Subscribe")

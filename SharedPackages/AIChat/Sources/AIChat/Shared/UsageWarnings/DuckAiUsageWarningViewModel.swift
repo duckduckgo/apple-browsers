@@ -57,6 +57,10 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         self.dateProvider = dateProvider
     }
 
+    /// The notice the snapshot carries, whether or not it is being shown. Acting on a message
+    /// retires the message, not the limit behind it, and a caller may still have to respect it.
+    public var activeNoticeID: DuckAiUsageNotice.ID? { lastReadSnapshot.notice?.id }
+
     /// Synchronous: a lookup in the already-loaded entries blob.
     public func refresh() {
         // An isolated session must not surface the regular session's usage.

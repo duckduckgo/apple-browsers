@@ -2242,6 +2242,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 menu.addItem(.separator())
             case .sectionHeader(let title):
                 menu.addItem(.createMutedSectionHeader(title: title))
+            case .unavailableModel(let model, let isSelected):
+                // No action and no "…": there is no dialog behind this one, just no allowance left.
+                let row = modelRow(for: model, isSelected: isSelected, action: #selector(modelSelected(_:)))
+                row.isEnabled = false
+                menu.addItem(row)
             case .gatedModel(let model, let routesToUpsell):
                 let row = modelRow(for: model, isSelected: false, isGated: true,
                                    action: #selector(gatedModelSelected(_:)))

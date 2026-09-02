@@ -224,6 +224,23 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         }
     }
 
+    /// Acting on a message retires the message, not the limit: callers that gate on the limit itself
+    /// still have to see it after the card has gone.
+    func testTheNoticeOutlivesTheMessageTheUserActedOn() {
+        snapshotProvider.snapshot = snapshot(notice(id: .weeklyReachedDegraded, window: .weekly, reached: true),
+                                             cta: DuckAiUsageCta(id: .switchToFree),
+                                             signature: "snapshot-1")
+        let sut = makeSUT(suggestion: .suggestion(DuckAiModelSuggestion(modelId: "mistral-small",
+                                                                        modelShortName: "Mistral Small")))
+        sut.refresh()
+        XCTAssertEqual(sut.activeNoticeID, .weeklyReachedDegraded)
+
+        sut.performAction()
+
+        XCTAssertNil(sut.warning)
+        XCTAssertEqual(sut.activeNoticeID, .weeklyReachedDegraded)
+    }
+
     /// Picking the suggested model in the normal picker leaves the user exactly where the button
     /// would have, so the message has to go the same way.
     func testPickingTheSuggestedModelElsewhereStandsItsMessageDown() {

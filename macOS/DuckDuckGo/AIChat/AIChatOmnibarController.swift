@@ -149,6 +149,12 @@ final class AIChatOmnibarController {
     /// warning does — activation included, which is what `cleanup()` dropped it for.
     var onUsageWarningsRefreshed: (() -> Void)?
 
+    /// Advanced models have no allowance left until web republishes. Read off the snapshot, not the
+    /// message: switching to a free model retires the message while the limit it named still stands.
+    var isAdvancedModelUsageExhausted: Bool {
+        usageWarningViewModel?.activeNoticeID == .weeklyReachedDegraded
+    }
+
     /// The card's subscribe CTA. The container VC owns the dialog, and the window it has to open in.
     var onSubscriptionUpsellDialogRequested: ((SubscriptionFunnelOrigin) -> Void)?
 
@@ -1610,6 +1616,8 @@ enum AIChatModelPickerItem {
     /// `routesToUpsell` is false when the upsell is unavailable (kill switch, or a surface that
     /// doesn't support it) — the row still shows, but must not open the purchase dialog.
     case gatedModel(AIChatModel, routesToUpsell: Bool)
+    /// Out of allowance rather than out of subscription: the row shows, greyed, and selects nothing.
+    case unavailableModel(AIChatModel, isSelected: Bool)
 }
 
 /// A fully-resolved reasoning-effort row so the view controller only maps it to an `NSMenuItem`.
@@ -1633,14 +1641,19 @@ extension AIChatOmnibarController {
         // Recommended = backend-labelled models, shown first with the label as a subtitle.
         let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
 
+        let advancedExhausted = isAdvancedModelUsageExhausted
+        func item(for model: AIChatModel, subtitle: String? = nil) -> AIChatModelPickerItem {
+            let isSelected = model.id == selectedModelId
+            guard advancedExhausted, model.isAdvanced else {
+                return .model(model, subtitle: subtitle, isSelected: isSelected)
+            }
+            return .unavailableModel(model, isSelected: isSelected)
+        }
+
         var items: [AIChatModelPickerItem] = recommended.map { model in
-            .model(model,
-                   subtitle: AIChatPickerSectionCopy.subtitle(for: model.label),
-                   isSelected: model.id == selectedModelId)
+            item(for: model, subtitle: AIChatPickerSectionCopy.subtitle(for: model.label))
         }
-        items += rest.map { model in
-            .model(model, isSelected: model.id == selectedModelId)
-        }
+        items += rest.map { item(for: $0) }
 
         guard !gated.isEmpty, !freeModelsOnly else { return items }
         items.append(.separator)

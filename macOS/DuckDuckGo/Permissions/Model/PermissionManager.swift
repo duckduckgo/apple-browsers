@@ -194,3 +194,38 @@ final class PermissionManager: PermissionManagerProtocol {
     }
 
 }
+
+extension PermissionManager: PermissionManagerDebugging {
+    func allPermissionsDebugEntries() -> [PermissionDebugEntry] {
+        let rows: [RawPermissionRow]
+        do {
+            rows = try store.loadRawPermissions()
+        } catch {
+            Logger.general.error("PermissionStore: Failed to load permissions for the debug inspector")
+            return []
+        }
+
+        return rows.map { row in
+            let domain = row.domain.droppingWwwPrefix()
+            // An unparseable type can't be looked up, so its effective decision is just the stored one.
+            let effectiveDecision = PermissionType(rawValue: row.permissionType)
+                .map { permission(forDomain: domain, permissionType: $0) }
+                ?? PersistedPermissionDecision(allow: row.allow, isRemoved: row.isRemoved)
+
+            return PermissionDebugEntry(domain: domain,
+                                        permissionType: row.permissionType,
+                                        allow: row.allow,
+                                        isRemoved: row.isRemoved,
+                                        effectiveDecision: effectiveDecision)
+        }
+    }
+
+    func removeAllPermissions() {
+        for (domain, permissionsByType) in permissions {
+            for type in permissionsByType.keys {
+                removePermission(forDomain: domain, permissionType: type)
+            }
+        }
+    }
+
+}

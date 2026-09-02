@@ -25,6 +25,11 @@ import Persistence
 
 protocol PermissionStore: AnyObject {
     func loadPermissions() throws -> [PermissionEntity]
+
+    /// Raw stored columns, for the debug-only permissions inspector page. The default implementation
+    /// re-encodes them from the decoded entities, which is enough for test doubles; `LocalPermissionStore`
+    /// reads the real columns so the page can't misreport a row the app didn't write itself.
+    func loadRawPermissions() throws -> [RawPermissionRow]
     func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: (@MainActor (Error?) -> Void)?)
     func remove(objectWithId id: NSManagedObjectID, completionHandler: (@MainActor (Error?) -> Void)?)
     func add(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision) throws -> StoredPermission
@@ -33,6 +38,7 @@ protocol PermissionStore: AnyObject {
 }
 
 extension PermissionStore {
+
     func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?) {
         update(objectWithId: id, decision: decision, completionHandler: nil)
     }
@@ -188,6 +194,53 @@ final class LocalPermissionStore: PermissionStore {
             struct InvalidManagedObject: Error {}
             throw InvalidManagedObject()
         }
+    }
+
+}
+
+extension PermissionStore {
+
+    func loadRawPermissions() throws -> [RawPermissionRow] {
+        try loadPermissions().map { entity in
+            RawPermissionRow(domain: entity.domain,
+                             permissionType: entity.type.rawValue,
+                             allow: entity.permission.decision == .allow,
+                             isRemoved: entity.permission.decision == .ask)
+        }
+    }
+}
+
+extension LocalPermissionStore {
+
+    func loadRawPermissions() throws -> [RawPermissionRow] {
+        guard let context else { return [] }
+
+        var rows = [RawPermissionRow]()
+        var coreDataError: Error?
+
+        context.performAndWait {
+            let fetchRequest = NSFetchRequest<PermissionManagedObject>(entityName: PermissionManagedObject.className())
+            fetchRequest.returnsObjectsAsFaults = false
+
+            do {
+                rows = try context.fetch(fetchRequest).compactMap { managedObject in
+                    guard let domain = managedObject.domainEncrypted as? String,
+                          let permissionType = managedObject.permissionType else { return nil }
+                    return RawPermissionRow(domain: domain,
+                                            permissionType: permissionType,
+                                            allow: managedObject.allow,
+                                            isRemoved: managedObject.isRemoved)
+                }
+            } catch {
+                coreDataError = error
+            }
+        }
+
+        if let coreDataError {
+            throw coreDataError
+        }
+
+        return rows
     }
 
 }

@@ -47,6 +47,7 @@ final class NativeMessagingHostSession {
     private let outputPipe = Pipe()
     private let errorPipe = Pipe()
     private var readTask: Task<Void, Never>?
+    private var errorTask: Task<Void, Never>?
     private var didFinish = false
 
     init(hostName: String, executable: URL, callerOrigin: String) {
@@ -79,6 +80,7 @@ final class NativeMessagingHostSession {
 
         Logger.webExtensions.debug("🔗 Host \(self.hostName, privacy: .public) started, pid \(self.process.processIdentifier, privacy: .public)")
         startReadLoop()
+        startErrorLoop()
     }
 
     @MainActor
@@ -88,6 +90,8 @@ final class NativeMessagingHostSession {
 
         readTask?.cancel()
         readTask = nil
+        errorTask?.cancel()
+        errorTask = nil
 
         process.terminationHandler = nil
         if process.isRunning {
@@ -103,6 +107,8 @@ final class NativeMessagingHostSession {
 
         readTask?.cancel()
         readTask = nil
+        errorTask?.cancel()
+        errorTask = nil
 
         let handler = terminationHandler
         terminationHandler = nil
@@ -157,6 +163,23 @@ final class NativeMessagingHostSession {
                 await MainActor.run { [weak self] in
                     self?.finish(with: error)
                 }
+            }
+        }
+    }
+
+    /// Logs whatever the host writes to its standard error.
+    ///
+    /// A host that refuses the connection usually explains itself here, and that explanation
+    /// is the only clue the browser gets.
+    private func startErrorLoop() {
+        let handle = errorPipe.fileHandleForReading
+        let name = hostName
+
+        errorTask = Task.detached {
+            while !Task.isCancelled {
+                guard let chunk = try? handle.read(upToCount: 4096), !chunk.isEmpty else { return }
+                let text = String(data: chunk, encoding: .utf8) ?? "(\(chunk.count) bytes)"
+                Logger.webExtensions.error("❌ Host \(name, privacy: .public) stderr: \(text, privacy: .public)")
             }
         }
     }

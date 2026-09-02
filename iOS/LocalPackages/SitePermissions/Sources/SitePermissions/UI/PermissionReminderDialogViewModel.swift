@@ -67,7 +67,7 @@ public struct PermissionReminderDialogViewModel: Equatable, Sendable {
         actions = [
             ActionItem(action: .changePermissions,
                        title: UserText.PermissionRecovery.changePermissions,
-                       style: .secondary),
+                       style: .primary),
             ActionItem(action: .cancel,
                        title: UserText.PermissionRecovery.cancel,
                        style: .secondary)

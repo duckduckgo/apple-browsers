@@ -22,13 +22,13 @@ import XCTest
 
 final class PermissionReminderDialogViewModelTests: XCTestCase {
 
-    func testCameraSiteReminderUsesCameraCopyAndSecondaryActions() throws {
+    func testCameraSiteReminderUsesCameraCopyAndPrimarySettingsAction() throws {
         let viewModel = try XCTUnwrap(PermissionReminderDialogViewModel(sitePermissionTypes: [.camera]))
 
         XCTAssertEqual(viewModel.title, "DuckDuckGo needs to access your camera")
         XCTAssertEqual(viewModel.body, "Camera permissions are needed if you want to use camera features on this site.")
         XCTAssertEqual(viewModel.actions.map(\.action), [.changePermissions, .cancel])
-        XCTAssertEqual(viewModel.actions.map(\.style), [.secondary, .secondary])
+        XCTAssertEqual(viewModel.actions.map(\.style), [.primary, .secondary])
     }
 
     func testMicrophoneSiteReminderUsesMicrophoneCopy() throws {

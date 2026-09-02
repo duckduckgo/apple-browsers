@@ -107,6 +107,11 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
 
     case syncDidPresentFaviconsFetcherOnboarding = "sync.did-present-favicons-fetcher-onboarding"
     case bookmarksBarPromptShown = "bookmarks.bar.prompt.shown"
+
+    // MARK: - Broken Site Prompt
+
+    case brokenSitePromptLastToastShownDate = "brokenSitePrompt_lastToastShownDate"
+    case brokenSitePromptToastDismissStreakCounter = "brokenSitePrompt_toastDismissStreakCounter"
 }
 
 // MARK: - StorageKey Extensions

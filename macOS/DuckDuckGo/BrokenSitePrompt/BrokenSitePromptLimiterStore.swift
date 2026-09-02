@@ -16,15 +16,34 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrokenSitePrompt
+import Foundation
+import Persistence
+
+struct BrokenSitePromptSettings: StoringKeys {
+    /// `migrateLegacyKey` carries the shipped values across the rename. The legacy keys contain dots,
+    /// which `StorageKey` rejects because they break UserDefaults KVO observation.
+    let lastToastShownDate = StorageKey<Date>(UserDefaultsKeys.brokenSitePromptLastToastShownDate,
+                                              migrateLegacyKey: "brokenSitePrompt.last-broken-site-toast-shown-date")
+    let toastDismissStreakCounter = StorageKey<Int>(UserDefaultsKeys.brokenSitePromptToastDismissStreakCounter,
+                                                    migrateLegacyKey: "brokenSitePrompt.toast-dismiss-streak-counter")
+}
 
 final class BrokenSitePromptLimiterStore: BrokenSitePromptLimiterStoring {
 
-    @UserDefaultsWrapper(key: .lastBrokenSiteToastShownDate, defaultValue: .distantPast)
-    var lastToastShownDate: Date
+    private let storage: KeyedStorage<BrokenSitePromptSettings>
 
-    @UserDefaultsWrapper(key: .toastDismissStreakCounter, defaultValue: 0)
-    var toastDismissStreakCounter: Int
+    init(storage: KeyedStorage<BrokenSitePromptSettings>? = nil) {
+        self.storage = storage ?? KeyedStorage(storage: UserDefaults.standard)
+    }
 
+    var lastToastShownDate: Date {
+        get { storage.lastToastShownDate ?? .distantPast }
+        set { storage.lastToastShownDate = newValue }
+    }
+
+    var toastDismissStreakCounter: Int {
+        get { storage.toastDismissStreakCounter ?? 0 }
+        set { storage.toastDismissStreakCounter = newValue }
+    }
 }

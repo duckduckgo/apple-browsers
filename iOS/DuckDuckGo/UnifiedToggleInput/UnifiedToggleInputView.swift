@@ -443,6 +443,9 @@ final class UnifiedToggleInputView: UIView {
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] view showing footer '\(message.title, privacy: .public)' (wasVisible=\(wasVisible, privacy: .public))")
         footerCard.configure(with: message, animateIcon: wasVisible)
         applyBottomSlot(.footer)
+        // A wrapping title only reports its real height once the label has been laid out at the width
+        // this message's CTA leaves it, and the host measures the bar right after this returns.
+        footerCard.layoutIfNeeded()
         guard !wasVisible else { return }
         footerCard.contentView.alpha = 0
         UIView.animate(withDuration: Constants.footerContentFadeDuration,

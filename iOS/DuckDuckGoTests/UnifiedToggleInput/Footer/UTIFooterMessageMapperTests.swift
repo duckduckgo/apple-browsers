@@ -94,8 +94,8 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     // MARK: - Action titles
 
-    /// Named or not, stepping down a tier or across to a free model — all one word.
-    func test_message_everyModelSwitchReadsSwitch() {
+    /// Named or not, stepping down a tier or across to a free model — all read the same generic title.
+    func test_message_everyModelSwitchReadsSwitchModel() {
         let named = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
                                                                          modelShortName: "5.4 mini"))
         let unnamed = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
@@ -104,11 +104,11 @@ final class UTIFooterMessageMapperTests: XCTestCase {
                                                                             modelShortName: "5.4 mini"))
 
         XCTAssertEqual(sut.message(for: warning(.approaching, window: .daily, action: named)).primaryAction?.title,
-                       "Switch")
+                       "Switch Model")
         XCTAssertEqual(sut.message(for: warning(.approaching, window: .daily, action: unnamed)).primaryAction?.title,
-                       "Switch")
+                       "Switch Model")
         XCTAssertEqual(sut.message(for: warning(.weeklyReachedDegraded, window: .weekly, action: free)).primaryAction?.title,
-                       "Switch")
+                       "Switch Model")
     }
 
     func test_message_upsellCopyFollowsTrialEligibility() {

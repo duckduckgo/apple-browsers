@@ -273,6 +273,20 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsNativeUsageWarnings, false)
     }
 
+    /// The warning card is only designed for the iPhone input, so iPad keeps the FE banner.
+    func testWhenUsageWarningsFlagIsOnButDeviceIsIPadThenConfigDoesNotAdvertiseSupport() {
+        mockFeatureFlagger.enabledFeatureFlags = [.utiDuckAIWarnings]
+        MockDevicePlatform.isIphone = false
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: true)
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeChatInput, true)
+        XCTAssertEqual(configValues?.supportsNativeUsageWarnings, false)
+    }
+
     func testWhenUsageWarningsFlagIsOffThenConfigDoesNotAdvertiseSupport() {
         mockFeatureFlagger.enabledFeatureFlags = []
         MockDevicePlatform.isIphone = true

@@ -146,7 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var privacyDashboardWindow: NSWindow?
 
     @MainActor
-    private(set) lazy var cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate = {
+    private(set) lazy var cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate = { // swiftlint:disable:this weak_delegate
         CookiePopupsBlockedPromoDelegate(
             featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,

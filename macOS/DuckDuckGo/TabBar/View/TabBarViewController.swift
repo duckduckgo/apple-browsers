@@ -127,7 +127,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
-    private let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate?
+    private let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? // swiftlint:disable:this weak_delegate
 
     let themeManager: ThemeManaging
     private let tabDragAndDropManager: TabDragAndDropManager

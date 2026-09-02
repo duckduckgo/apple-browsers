@@ -73,12 +73,68 @@ public protocol InternalFeedbackDeviceInfoProviding: AnyObject {
     @MainActor func deviceInfo() -> InternalFeedbackDeviceInfo
 }
 
+public struct InternalFeedbackScreenshot: Encodable {
+
+    public let base64: String
+    public let mimeType: String
+
+    public init(base64: String, mimeType: String) {
+        self.base64 = base64
+        self.mimeType = mimeType
+    }
+}
+
+public struct InternalFeedbackAttachments: Encodable {
+
+    public let screenshot: InternalFeedbackScreenshot?
+
+    public init(screenshot: InternalFeedbackScreenshot? = nil) {
+        self.screenshot = screenshot
+    }
+}
+
+public protocol InternalFeedbackAttachmentsProviding: AnyObject {
+    @MainActor func attachments() -> InternalFeedbackAttachments
+}
+
+public final class InternalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding {
+
+    private var screenshotPNGData: Data?
+
+    public init() {}
+
+    @MainActor
+    public func setScreenshotPNGData(_ data: Data?) {
+        screenshotPNGData = data
+    }
+
+    @MainActor
+    public func clear() {
+        screenshotPNGData = nil
+    }
+
+    @MainActor
+    public func attachments() -> InternalFeedbackAttachments {
+        defer { screenshotPNGData = nil }
+        guard let screenshotPNGData, !screenshotPNGData.isEmpty else {
+            return InternalFeedbackAttachments()
+        }
+        return InternalFeedbackAttachments(
+            screenshot: InternalFeedbackScreenshot(
+                base64: screenshotPNGData.base64EncodedString(),
+                mimeType: "image/png"
+            )
+        )
+    }
+}
+
 /// Answers the Internal Feedback web app's requests over the ContentScopeScripts message bridge.
 ///
 public final class InternalFeedbackUserScript: NSObject, Subfeature {
 
     public enum MessageName: String {
         case getDeviceInfo
+        case getAttachments
     }
 
     public static let defaultHostname = "internalapps.duckduckgo.com"
@@ -88,10 +144,13 @@ public final class InternalFeedbackUserScript: NSObject, Subfeature {
     public weak var broker: UserScriptMessageBroker?
 
     private let deviceInfoProvider: InternalFeedbackDeviceInfoProviding
+    private let attachmentsProvider: InternalFeedbackAttachmentsProviding?
 
     public init(deviceInfoProvider: InternalFeedbackDeviceInfoProviding,
+                attachmentsProvider: InternalFeedbackAttachmentsProviding? = nil,
                 hostname: String = InternalFeedbackUserScript.defaultHostname) {
         self.deviceInfoProvider = deviceInfoProvider
+        self.attachmentsProvider = attachmentsProvider
         self.messageOriginPolicy = .only(rules: [.exact(hostname: hostname)])
         super.init()
     }
@@ -100,6 +159,8 @@ public final class InternalFeedbackUserScript: NSObject, Subfeature {
         switch MessageName(rawValue: methodName) {
         case .getDeviceInfo:
             return handleGetDeviceInfo
+        case .getAttachments:
+            return handleGetAttachments
         case .none:
             return nil
         }
@@ -108,5 +169,10 @@ public final class InternalFeedbackUserScript: NSObject, Subfeature {
     @MainActor
     private func handleGetDeviceInfo(params: Any, message: UserScriptMessage) async throws -> Encodable? {
         deviceInfoProvider.deviceInfo()
+    }
+
+    @MainActor
+    private func handleGetAttachments(params: Any, message: UserScriptMessage) async throws -> Encodable? {
+        attachmentsProvider?.attachments() ?? InternalFeedbackAttachments()
     }
 }

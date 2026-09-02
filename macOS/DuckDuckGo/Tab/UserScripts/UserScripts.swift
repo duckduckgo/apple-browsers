@@ -113,7 +113,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         if sourceProvider.featureFlagger.internalUserDecider.isInternalUser {
             internalFeedbackUserScript = InternalFeedbackUserScript(
-                deviceInfoProvider: NSApp.delegateTyped.internalFeedbackDeviceInfoProvider
+                deviceInfoProvider: NSApp.delegateTyped.internalFeedbackDeviceInfoProvider,
+                attachmentsProvider: NSApp.delegateTyped.internalFeedbackAttachmentsProvider
             )
         } else {
             internalFeedbackUserScript = nil

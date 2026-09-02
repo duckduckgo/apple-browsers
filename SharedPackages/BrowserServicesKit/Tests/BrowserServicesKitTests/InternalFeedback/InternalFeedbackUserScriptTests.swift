@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKitTestsUtils
+import Foundation
 import WebKit
 import XCTest
 @testable import BrowserServicesKit
@@ -33,10 +34,11 @@ final class InternalFeedbackUserScriptTests: XCTestCase {
         XCTAssertFalse(script.messageOriginPolicy.isAllowed("example.com"))
     }
 
-    func testHandlerIsAvailableOnlyForGetDeviceInfo() {
+    func testHandlersAreAvailableOnlyForSupportedMethods() {
         let script = InternalFeedbackUserScript(deviceInfoProvider: MockDeviceInfoProvider())
 
         XCTAssertNotNil(script.handler(forMethodNamed: "getDeviceInfo"))
+        XCTAssertNotNil(script.handler(forMethodNamed: "getAttachments"))
         XCTAssertNil(script.handler(forMethodNamed: "unknownMethod"))
     }
 
@@ -51,6 +53,35 @@ final class InternalFeedbackUserScriptTests: XCTestCase {
         XCTAssertEqual(result?.platform, "macos")
         XCTAssertEqual(result?.appVersion, "1.2.3")
         XCTAssertEqual(result?.diagnostics, ["Tabs": "4"])
+    }
+
+    func testGetAttachmentsReturnsEmptyPayloadWithoutPendingScreenshot() async throws {
+        let script = InternalFeedbackUserScript(deviceInfoProvider: MockDeviceInfoProvider())
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "getAttachments"))
+
+        let result = try await handler([:], WKScriptMessage.mock()) as? InternalFeedbackAttachments
+
+        XCTAssertNil(result?.screenshot)
+        let encoded = try JSONEncoder().encode(XCTUnwrap(result))
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertTrue(payload.isEmpty)
+    }
+
+    func testGetAttachmentsReturnsPendingScreenshotOnlyOnce() async throws {
+        let attachmentsProvider = InternalFeedbackAttachmentsProvider()
+        attachmentsProvider.setScreenshotPNGData(Data([0, 1]))
+        let script = InternalFeedbackUserScript(
+            deviceInfoProvider: MockDeviceInfoProvider(),
+            attachmentsProvider: attachmentsProvider
+        )
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "getAttachments"))
+
+        let firstResult = try await handler([:], WKScriptMessage.mock()) as? InternalFeedbackAttachments
+        let secondResult = try await handler([:], WKScriptMessage.mock()) as? InternalFeedbackAttachments
+
+        XCTAssertEqual(firstResult?.screenshot?.base64, "AAE=")
+        XCTAssertEqual(firstResult?.screenshot?.mimeType, "image/png")
+        XCTAssertNil(secondResult?.screenshot)
     }
 }
 

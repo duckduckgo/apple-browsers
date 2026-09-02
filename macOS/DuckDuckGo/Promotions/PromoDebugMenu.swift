@@ -36,8 +36,9 @@ import Utilities
 /// - When no promos: disabled "No promos registered"
 ///
 /// **Force-show behavior:**
-/// - Does not affect history, cooldowns, or other promos
-/// - Does not add to activeSessions
+/// - Bypasses `checkRules`/`isEligible`/cooldowns to get shown, then behaves like a real show,
+///   including timeouts, retractions, and conflicts with other promos.
+/// - Never writes to persisted history/cooldowns, regardless of how it resolves (click, timeout, retraction)
 final class PromoDebugMenu: NSMenu {
 
     private var cancellables = Set<AnyCancellable>()

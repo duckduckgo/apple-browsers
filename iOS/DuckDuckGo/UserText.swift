@@ -464,6 +464,11 @@ public struct UserText {
 
     public static let tabSwitcherBookmarkAllTabs = NSLocalizedString("tab.switcher.bookmarkAll", value: "Bookmark All Tabs", comment: "Bookmark all tabs menu item")
 
+    public static let tabSwitcherDeleteTabAndData = NotLocalizedString(
+        "tab.switcher.delete.tab.and.data",
+        value: "Delete Tab and Data",
+        comment: "Delete a tab and its site data menu item")
+
     public static func tabSwitcherSelectTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "tab.switcher.select-tabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
@@ -2246,6 +2251,7 @@ public struct UserText {
     public static let aiChatToolbarWebSearchToolSubtitle = NSLocalizedString("aichat.toolbar.tools.websearch.subtitle", value: "Source answers from the web", comment: "Subtitle for the web search tool in the unified input tools menu")
     public static let aiChatToolbarImageGenerationToolTitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.title", value: "Create Image", comment: "Title for the image generation tool in the unified input tools menu")
     public static let aiChatToolbarImageGenerationToolSubtitle = NSLocalizedString("aichat.toolbar.tools.imagegeneration.subtitle", value: "Turn text into images", comment: "Subtitle for the image generation tool in the unified input tools menu")
+    public static let aiChatToolbarImageGenerationToolUnavailableSubtitle = NotLocalizedString("aichat.toolbar.tools.imagegeneration.unavailable.subtitle", value: "Not available for selected model", comment: "Subtitle for the image generation tool in the unified input tools menu, shown when the chat is already under way on a model that cannot generate images")
     public static let aiChatToolbarReasoningButtonAccessibilityLabel = NotLocalizedString("aichat.toolbar.reasoning.button.accessibility.label", value: "Reasoning mode", comment: "Accessibility label for the reasoning mode button in the Duck.ai native input toolbar")
     public static let aiChatReasoningModeFastTitle = NSLocalizedString("aichat.reasoning.fast.title", value: "Fast", comment: "Title for the fast reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeFastSubtitle = NSLocalizedString("aichat.reasoning.fast.subtitle", value: "Answers quickly", comment: "Subtitle for the fast reasoning mode in the Duck.ai reasoning picker")
@@ -2346,10 +2352,16 @@ public struct UserText {
     public static let utiDuckAIWarningsSwitchModel = NotLocalizedString("aichat.usageWarnings.action.switchModel", value: "Switch Model", comment: "Button in the Duck.ai input footer warning offering a model that uses the allowance more slowly, used when the suggested model has no short name to show")
     public static let utiDuckAIWarningsSwitchToFreeModel = NotLocalizedString("aichat.usageWarnings.action.switchToFreeModel", value: "Switch to a Free Model", comment: "Button in the Duck.ai input footer warning offering a free-tier model, shown once the advanced-model allowance is used up")
     public static let utiDuckAIWarningsStartUsingWeeklyLimit = NotLocalizedString("aichat.usageWarnings.action.startUsingWeeklyLimit", value: "Start Using Weekly Limit", comment: "Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent")
-    public static let utiDuckAIWarningsSwitch = NotLocalizedString("aichat.usageWarnings.action.switch", value: "Switch", comment: "Button in the Duck.ai input footer warning that moves the user onto the suggested model")
+    public static let utiDuckAIWarningsSwitch = NotLocalizedString("aichat.usageWarnings.action.switch", value: "Switch Model", comment: "Button in the Duck.ai input footer warning that moves the user onto the suggested model")
     public static let utiDuckAIWarningsTryForFree = NotLocalizedString("aichat.usageWarnings.action.tryForFree", value: "Try for Free", comment: "Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow")
     public static let utiDuckAIWarningsSubscribe = NotLocalizedString("aichat.usageWarnings.action.subscribe", value: "Subscribe", comment: "Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow")
     public static let utiDuckAIWarningsDismissAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.dismiss.a11y", value: "Dismiss", comment: "Accessibility label for the button that dismisses the Duck.ai input footer warning")
+
+    // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
+
+    public static let utiCreateImageModelSwitchTitle = NotLocalizedString("aichat.createImage.modelSwitch.title", value: "Now using %@", comment: "Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna'")
+    public static let utiCreateImageModelSwitchSubtitle = NotLocalizedString("aichat.createImage.modelSwitch.subtitle", value: "%@ doesn't support image creation.", comment: "Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral'")
+    public static let utiCreateImageModelSwitchPrivacyPreservingSubtitle = NotLocalizedString("aichat.createImage.modelSwitch.privacyPreserving.subtitle", value: "%@ can't create images. Its extra privacy protections won't apply until you switch back.", comment: "Subtitle of the Duck.ai input footer card shown when the model that was switched away from is one of the models with extra privacy protections. %@ is that model's short name, such as 'Gemma'")
     public static let utiDuckAIWarningsHighUsageModel = NotLocalizedString("aichat.usageWarnings.highUsageModel", value: "%@ uses limits up to 2-5x faster than basic models.", comment: "Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8'")
     public static let aiChatHeaderNewVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newVoiceChat", value: "New Voice Chat", comment: "Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu")
     public static let aiChatHeaderNewImageTitle = NSLocalizedString("aichat.header.plusMenu.newImage", value: "New Image", comment: "Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode")

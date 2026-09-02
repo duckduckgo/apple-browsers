@@ -99,6 +99,7 @@ class TabSwitcherPageViewController: UIViewController {
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
     private var trackerInfoModel: InfoPanelView.Model?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
+    private var fireModeEmptyStateTopConstraint: NSLayoutConstraint?
     private let duckAIGridContentProvider: DuckAIGridContentProviding?
     private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
     private var voiceSessionChangesCancellable: AnyCancellable?
@@ -159,6 +160,9 @@ class TabSwitcherPageViewController: UIViewController {
         collectionView.allowsSelection = true
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
+        if isFloatingTabSwitcherEnabled {
+            collectionView.contentInsetAdjustmentBehavior = .never
+        }
 
         collectionView.register(TabViewGridCell.self, forCellWithReuseIdentifier: TabViewGridCell.reuseIdentifier)
         collectionView.register(TabViewListCell.self, forCellWithReuseIdentifier: TabViewListCell.reuseIdentifier)
@@ -226,10 +230,18 @@ class TabSwitcherPageViewController: UIViewController {
         view.addSubview(hostingController.view)
         hostingController.didMove(toParent: self)
 
-        let topConstraint = isFloatingTabSwitcherEnabled
-            ? hostingController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,
-                                                          constant: FireModeEmptyStateMetrics.floatingNavigationBarClearance)
-            : hostingController.view.topAnchor.constraint(equalTo: view.topAnchor)
+        let topConstraint: NSLayoutConstraint
+        if isFloatingTabSwitcherEnabled {
+            // Pin to the page top (same coordinate space as the collection view) so clearance
+            // matches the chrome inset: navbar bottom + 10pt. The empty state's own
+            // `mainTopPadding` then adds 24pt above the pictogram.
+            topConstraint = hostingController.view.topAnchor.constraint(
+                equalTo: view.topAnchor,
+                constant: FireModeEmptyStateMetrics.estimatedFloatingTopClearance)
+            fireModeEmptyStateTopConstraint = topConstraint
+        } else {
+            topConstraint = hostingController.view.topAnchor.constraint(equalTo: view.topAnchor)
+        }
 
         NSLayoutConstraint.activate([
             topConstraint,
@@ -241,8 +253,16 @@ class TabSwitcherPageViewController: UIViewController {
         fireModeEmptyStateHostingController = hostingController
     }
 
-    private enum FireModeEmptyStateMetrics {
-        static let floatingNavigationBarClearance: CGFloat = 60
+    enum FireModeEmptyStateMetrics {
+        /// Gap between the top navbar buttons and the empty-state container.
+        static let spacingBelowNavbar: CGFloat = 10
+        /// Fallback until the chrome reports a laid-out nav bar: estimated nav (50) + floating inset (8) + 10.
+        static let estimatedFloatingTopClearance: CGFloat = 68
+    }
+
+    func applyFloatingTopClearance(_ topBarBottomOffset: CGFloat) {
+        guard isFloatingTabSwitcherEnabled else { return }
+        fireModeEmptyStateTopConstraint?.constant = topBarBottomOffset + FireModeEmptyStateMetrics.spacingBelowNavbar
     }
 
     func updateEmptyStateVisibility() {

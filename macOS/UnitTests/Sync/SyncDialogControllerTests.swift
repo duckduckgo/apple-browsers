@@ -1316,6 +1316,33 @@ final class SyncDialogControllerTests: XCTestCase {
 
     // MARK: - Connection Controller Delegate Methods
 
+    func testPostPairingConfirmationDialog_whenV2EnabledAndJoining_returnsWaitForOtherDeviceDialog() {
+        let dialog = SyncDialogController.postPairingConfirmationDialog(
+            for: .receiver(.exchange, .qrCode),
+            isSimplifiedSyncSetupV2Enabled: true
+        )
+
+        XCTAssertEqual(dialog, .waitForOtherDevice)
+    }
+
+    func testPostPairingConfirmationDialog_whenV2EnabledAndHosting_returnsNil() {
+        let dialog = SyncDialogController.postPairingConfirmationDialog(
+            for: .sharer,
+            isSimplifiedSyncSetupV2Enabled: true
+        )
+
+        XCTAssertNil(dialog)
+    }
+
+    func testPostPairingConfirmationDialog_whenV2DisabledAndJoining_returnsNil() {
+        let dialog = SyncDialogController.postPairingConfirmationDialog(
+            for: .receiver(.exchange, .qrCode),
+            isSimplifiedSyncSetupV2Enabled: false
+        )
+
+        XCTAssertNil(dialog)
+    }
+
     func testControllerDidFinishTransmittingRecoveryKey_waitsForDevices() {
         syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
 

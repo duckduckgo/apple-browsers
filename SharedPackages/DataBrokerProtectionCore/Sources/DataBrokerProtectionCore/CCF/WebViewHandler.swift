@@ -61,6 +61,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var expectedBrokerURL: URL?
     private var isCloudflareChallengeResponse = false
     private var isAwaitingCloudflareDestination = false
+    private let actionLogContext: PIRActionLogContext?
+    private let cloudflareChallengeEventHandler: ((String) -> Void)?
 #elseif os(iOS)
     private var window: UIWindow?
 #endif
@@ -77,12 +79,18 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 shouldContinueActionHandler: @escaping () -> Bool,
                 applicationNameForUserAgentProvider: () -> String?,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
-                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil) throws {
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
+                actionLogContext: PIRActionLogContext? = nil,
+                cloudflareChallengeEventHandler: ((String) -> Void)? = nil) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         self.challengePixelDataBroker = challengePixelDataBroker
         self.challengePixelBrokerVersion = challengePixelBrokerVersion
         self.pixelHandler = pixelHandler
+#if os(macOS)
+        self.actionLogContext = actionLogContext
+        self.cloudflareChallengeEventHandler = cloudflareChallengeEventHandler
+#endif
         let configuration = WKWebViewConfiguration()
         try configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig,
                                                        prefs: prefs,
@@ -380,9 +388,9 @@ private extension DataBrokerProtectionWebViewHandler {
     func updateCloudflareChallengeState(isChallenge: Bool, responseURL: URL?, statusCode: Int) {
         isCloudflareChallengeResponse = isChallenge
         if isChallenge {
-            Logger.action.log("Cloudflare challenge: main response has cf-mitigated=challenge; HTTP \(statusCode, privacy: .public)")
             guard !isAwaitingCloudflareDestination else { return }
             isAwaitingCloudflareDestination = true
+            reportCloudflareChallengeEvent("Detected: main response has cf-mitigated=challenge; HTTP \(statusCode)")
             startCloudflareChallengeSolver()
             return
         }
@@ -396,7 +404,7 @@ private extension DataBrokerProtectionWebViewHandler {
         isAwaitingCloudflareDestination = false
         cloudflareChallengeTask?.cancel()
         cloudflareChallengeTask = nil
-        Logger.action.log("Cloudflare challenge: expected broker destination reached")
+        reportCloudflareChallengeEvent("Solved challenge; expected broker destination reached")
         logCloudflareClearanceCookie()
     }
 
@@ -444,7 +452,7 @@ private extension DataBrokerProtectionWebViewHandler {
                     didTryAccessibilityPress = true
                 }
                 if candidate.performedPress {
-                    Logger.action.log("Cloudflare challenge: AXPress succeeded without coordinates")
+                    reportCloudflareChallengeEvent("Sent Accessibility press without coordinates")
                     try? await Task.sleep(nanoseconds: 3_000_000_000)
                 } else if candidate.hasGeometry,
                           let previousCandidate,
@@ -453,7 +461,7 @@ private extension DataBrokerProtectionWebViewHandler {
                           !didClick {
                     _ = window?.makeFirstResponder(webView)
                     let result = await CloudflareChallengeClick.checkbox(at: point, in: webView)
-                    Logger.action.log("Cloudflare challenge: NSEvent click \(result, privacy: .public)")
+                    reportCloudflareChallengeEvent("Sent Accessibility checkbox click; \(result)")
                     didClick = true
                 }
                 previousCandidate = candidate
@@ -464,7 +472,7 @@ private extension DataBrokerProtectionWebViewHandler {
                 if let point = await stableSnapshotCheckboxPoint(in: webView) {
                     _ = window?.makeFirstResponder(webView)
                     let result = await CloudflareChallengeClick.checkbox(at: point, in: webView)
-                    Logger.action.log("Cloudflare challenge: snapshot NSEvent click \(result, privacy: .public)")
+                    reportCloudflareChallengeEvent("Sent snapshot checkbox click; \(result)")
                     didClick = true
                 }
             }
@@ -475,7 +483,9 @@ private extension DataBrokerProtectionWebViewHandler {
         guard isAwaitingCloudflareDestination, !Task.isCancelled else { return }
         isCloudflareChallengeResponse = false
         isAwaitingCloudflareDestination = false
-        Logger.action.error("Cloudflare challenge: expected broker destination did not arrive before the 45-second deadline")
+        reportCloudflareChallengeEvent(
+            "Failed challenge; expected broker destination did not arrive before the 45-second deadline",
+            isError: true)
         resumeActiveContinuation(with: .failure(DataBrokerProtectionError.unknown("Cloudflare challenge did not reach the broker destination")))
     }
 
@@ -574,10 +584,28 @@ private extension DataBrokerProtectionWebViewHandler {
 
     func logCloudflareClearanceCookie() {
         guard let webView else { return }
-        webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
+        webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { [weak self] cookies in
             let hasClearance = cookies.contains { $0.name.caseInsensitiveCompare("cf_clearance") == .orderedSame }
-            Logger.action.log("Cloudflare challenge: cf_clearance=\(hasClearance, privacy: .public) (supporting evidence)")
+            Task { @MainActor in
+                self?.reportCloudflareChallengeEvent("Supporting evidence: cf_clearance=\(hasClearance)")
+            }
         }
+    }
+
+    func reportCloudflareChallengeEvent(_ message: String, isError: Bool = false) {
+        let logMessage = "Cloudflare challenge: \(message)"
+        if let actionLogContext {
+            if isError {
+                Logger.action.error(actionLogContext, message: logMessage)
+            } else {
+                Logger.action.log(actionLogContext, message: logMessage)
+            }
+        } else if isError {
+            Logger.action.error("\(logMessage, privacy: .public)")
+        } else {
+            Logger.action.log("\(logMessage, privacy: .public)")
+        }
+        cloudflareChallengeEventHandler?(message)
     }
 
     func resetCloudflareChallengeState() {

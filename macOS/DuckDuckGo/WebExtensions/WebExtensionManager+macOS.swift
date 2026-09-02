@@ -62,6 +62,7 @@ enum WebExtensionManagerFactory {
                 autoconsentPreferences: autoconsentPreferences,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
             ),
+            nativeMessagingHandler: NativeMessagingHandler(),
             scriptletConfiguration: scriptletConfiguration
         )
 

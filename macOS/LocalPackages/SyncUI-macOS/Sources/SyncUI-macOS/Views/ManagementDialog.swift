@@ -33,6 +33,7 @@ public enum ManagementDialogKind: Equatable {
     case removeDeviceV2(_ device: SyncDevice)
     case syncWithAnotherDevice(codeForDisplayOrPasting: String, stringForQRCode: String)
     case prepareToSync(PreparingToSyncMode)
+    case waitForOtherDevice
     case saveRecoveryCode(_ code: String)
     case nowSyncing
     case syncWithServer
@@ -111,7 +112,17 @@ public struct ManagementDialog: View {
                     SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
                 }
             case .prepareToSync(let mode):
-                PreparingToSyncView(mode: mode)
+                if model.isSimplifiedSyncSetupV2Enabled {
+                    PreparingToSyncViewV2(state: .connecting)
+                } else {
+                    PreparingToSyncView(mode: mode)
+                }
+            case .waitForOtherDevice:
+                if model.isSimplifiedSyncSetupV2Enabled {
+                    PreparingToSyncViewV2(state: .waitingForOtherDevice)
+                } else {
+                    PreparingToSyncView(mode: .twoDevicePairing)
+                }
             case .saveRecoveryCode(let code):
                 SaveRecoveryPDFView(code: code)
             case .nowSyncing:

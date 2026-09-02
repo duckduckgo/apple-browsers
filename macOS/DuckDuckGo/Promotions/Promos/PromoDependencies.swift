@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import DDGSync
 import Foundation
 import Persistence
 import PrivacyConfig
@@ -36,4 +37,6 @@ struct PromoDependencies {
     let featureFlagger: FeatureFlagger
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let windowControllersManager: WindowControllersManagerProtocol
+    let syncService: DDGSyncing?
+    let syncBookmarksAdapter: SyncBookmarksAdapter?
 }

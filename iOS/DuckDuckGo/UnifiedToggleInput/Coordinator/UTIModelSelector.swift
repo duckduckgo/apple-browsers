@@ -36,6 +36,8 @@ final class UTIModelSelector {
         let setModelName: (String) -> Void
         let setModelPickerMenu: (UIMenu?) -> Void
         let setModelChipHidden: (Bool) -> Void
+        /// Hides the chip's chevron, turning it from a dropdown into a read-only label.
+        let setModelChipMenuIndicatorHidden: (Bool) -> Void
         let setSelectedReasoningMode: (AIChatReasoningMode?) -> Void
         let setReasoningButtonHidden: (Bool) -> Void
         let setReasoningPickerMenu: (UIMenu?) -> Void
@@ -58,6 +60,8 @@ final class UTIModelSelector {
         let onUserChoiceRecorded: () -> Void
         let clearSubmitRecoveryBlock: () -> Void
         let onModelApplied: (String) -> Void
+        /// A model the user actually changed to, as opposed to a re-application of the current one.
+        let onModelSelectionChanged: (String) -> Void
     }
 
     private let modelStore: UTIModelStore
@@ -70,6 +74,7 @@ final class UTIModelSelector {
     private let reasoningMenuFactory: UnifiedToggleInputReasoningMenuFactory
     private let reasoningAccessResolver: ReasoningModeAccessResolving
     private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling
+    private let isUpdatedCreateImageEnabled: Bool
 
     private var pendingGatedModelId: String?
     private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
@@ -81,6 +86,7 @@ final class UTIModelSelector {
          environment: Environment,
          callbacks: Callbacks,
          isUpdatedModelPickerEnabled: Bool,
+         isUpdatedCreateImageEnabled: Bool,
          reasoningAccessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver(),
          subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()) {
         self.modelStore = modelStore
@@ -93,6 +99,7 @@ final class UTIModelSelector {
         self.reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         self.reasoningAccessResolver = reasoningAccessResolver
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
+        self.isUpdatedCreateImageEnabled = isUpdatedCreateImageEnabled
     }
 
     // MARK: - Model selection
@@ -111,6 +118,7 @@ final class UTIModelSelector {
             updateSelectedModel(modelId)
             if isNewSelection {
                 pixelReporter.reportModelSelected(modelId: modelId)
+                callbacks.onModelSelectionChanged(modelId)
             }
             callbacks.onModelApplied(modelId)
         } else {
@@ -159,6 +167,7 @@ final class UTIModelSelector {
         updateSelectedModel(modelId)
         if isNewSelection {
             pixelReporter.reportModelSelected(modelId: modelId)
+            callbacks.onModelSelectionChanged(modelId)
         }
         callbacks.onModelApplied(modelId)
         return true
@@ -240,15 +249,26 @@ final class UTIModelSelector {
     func updateModelChipVisibility() {
         // Contextual chat only picks the model upstream after the first prompt reaches the web chat.
         // Before that first submit, the sheet-level UTI owns prompt composition and should expose the picker.
-        // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
         let hasSubmittedPrompt = environment.hasSubmittedPrompt()
-        let isImageGenActive = toolsController.selectedTool == .imageGeneration
         let isContextualPostSubmit = environment.host() == .contextualChat && hasSubmittedPrompt
         // `isModelPickerForcedVisible` only relaxes the generic `hasSubmittedPrompt` hide reason —
-        // contextual post-submit and image generation stay hidden regardless.
-        let shouldHideModelChip = isContextualPostSubmit || isImageGenActive || (hasSubmittedPrompt && !environment.isModelPickerForcedVisible())
+        // contextual post-submit and image generation stay hidden regardless (if updatedCreateImage FF is OFF)
+        let shouldHideModelChip = isContextualPostSubmit || hidesModelChipForImageGeneration || (hasSubmittedPrompt && !environment.isModelPickerForcedVisible())
         view.setModelChipHidden(shouldHideModelChip)
+        applyModelPickerAffordance()
         updateReasoningPicker()
+    }
+
+    private var isImageGenerationActive: Bool {
+        toolsController.selectedTool == .imageGeneration
+    }
+
+    private var hidesModelChipForImageGeneration: Bool {
+        isImageGenerationActive && !isUpdatedCreateImageEnabled
+    }
+
+    private var isModelChipReadOnly: Bool {
+        isUpdatedCreateImageEnabled && isImageGenerationActive
     }
 
     func updateModelChipLabel() {
@@ -257,11 +277,16 @@ final class UTIModelSelector {
         if let shortName {
             view.setModelName(shortName)
         }
-        view.setModelPickerMenu(makeModelPickerMenu(selectedId: selectedId))
+        applyModelPickerAffordance()
+    }
+
+    private func applyModelPickerAffordance() {
+        view.setModelChipMenuIndicatorHidden(isModelChipReadOnly)
+        view.setModelPickerMenu(makeModelPickerMenu(selectedId: modelStore.persistedModelId))
     }
 
     private func makeModelPickerMenu(selectedId: String?) -> UIMenu? {
-        guard !modelStore.models.isEmpty else { return nil }
+        guard !modelStore.models.isEmpty, !isModelChipReadOnly else { return nil }
 
         let onSelect: (String) -> Void = { [weak self] modelId in
             self?.handleModelSelection(modelId)

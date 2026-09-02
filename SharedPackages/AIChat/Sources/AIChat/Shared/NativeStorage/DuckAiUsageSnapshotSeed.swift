@@ -59,7 +59,7 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
     public var expectation: String {
         switch self {
         case .freeDailyReached:
-            return "\"Daily limit reached\" with Try for free / Subscribe (whichever the account qualifies for)"
+            return "\"Daily limit reached\" with Try for Free / Subscribe (whichever the account qualifies for)"
         case .approachingDaily50:
             return "\"50% of daily limit\", ring in green"
         case .approachingDaily75:
@@ -67,7 +67,7 @@ public enum DuckAiUsageSnapshotSeed: String, CaseIterable {
         case .approachingDaily90:
             return "\"90% of daily limit\", ring in red"
         case .dailyReachedWithBypass:
-            return "\"Daily limit reached\" with Start using weekly limit; the card clears once tapped"
+            return "\"Daily limit reached\" with Start Using Weekly Limit; the card clears once tapped"
         case .approachingWeekly:
             return "\"90% of weekly limit\" with Switch to {model} and the chevron"
         case .weeklyReachedDegraded:

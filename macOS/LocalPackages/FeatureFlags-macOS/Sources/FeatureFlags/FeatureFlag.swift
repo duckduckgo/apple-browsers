@@ -401,6 +401,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
     case promoQueue
 
+    /// Enables the Sync Favicons ("Download Missing Icons?") promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667610?focus=true
+    case promoQueueSyncFaviconsPromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -739,9 +743,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatOmnibarVoiceChatAccess:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarVoiceChatAccess), category: .duckAI)
         case .aiChatSidebarAttachMoreTabs:
-            Config(source: .remoteReleasable(AIChatSubfeature.sidebarAttachMoreTabs), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebarAttachMoreTabs), category: .duckAI)
         case .aiChatOmnibarAttachMoreTabs:
-            Config(source: .remoteReleasable(AIChatSubfeature.omnibarAttachMoreTabs), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarAttachMoreTabs), category: .duckAI)
         case .aiChatTabAttachmentLimit:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabAttachmentLimit), category: .duckAI)
         case .aiChatSidebarResizable:
@@ -757,7 +761,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNtpWebSearch:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpWebSearch), category: .duckAI)
         case .aiChatNtpAttachMoreTabs:
-            Config(source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
         case .aiChatNtpSuggestionsDeletion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatSidebarFloating:
@@ -772,6 +776,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .promoQueue:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
+        case .promoQueueSyncFaviconsPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncFaviconsPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:

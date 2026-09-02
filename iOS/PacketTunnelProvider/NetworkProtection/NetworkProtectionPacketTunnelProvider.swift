@@ -696,8 +696,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             _ = Self.setupPixelKit(vpnFileStoreDirectory: nil)
             PixelKit.fire(Pixel.Event.networkProtectionPixelStorageSetupFailure.withError(error))
 
-            // configureDailyPixelFileStore never ran, so DailyPixel/UniquePixel are still on their
-            // default UserDefaults suites - migrate those into the same fallback destination.
+            // configureLegacyPixelFileStores never ran, so migrate whatever a pre-migration install
+            // left in the legacy daily/unique UserDefaults suites into the same fallback destination.
             let destination: ThrowingKeyValueStoring = UserDefaults.networkProtectionGroupDefaults
             LegacyPixelStateMigration(
                 destination: destination,

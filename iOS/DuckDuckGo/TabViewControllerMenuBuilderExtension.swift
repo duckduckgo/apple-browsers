@@ -1213,10 +1213,14 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         return .regular(name: UserText.actionSendInternalFeedback,
                         image: DesignSystemImages.Glyphs.Size24.feedback) { [weak self] in
             guard let self else { return }
-            delegate?.tab(self,
-                          didRequestNewTabForUrl: .internalFeedbackForm,
-                          openedByPage: false,
-                          inheritingAttribution: nil)
+            preparePreview { [weak self] image in
+                guard let self else { return }
+                AppDependencyProvider.shared.internalFeedbackAttachmentsProvider.setScreenshotPNGData(image?.pngData())
+                delegate?.tab(self,
+                              didRequestNewTabForUrl: .internalFeedbackForm,
+                              openedByPage: false,
+                              inheritingAttribution: nil)
+            }
         }
     }
 }

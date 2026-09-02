@@ -73,6 +73,7 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding = AppDependencyProvider.shared.internalFeedbackAttachmentsProvider,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
@@ -147,7 +148,10 @@ final class UserScripts: UserScriptsProvider {
 
         pageContextUserScript = PageContextUserScript()
         internalFeedbackUserScript = featureFlagger.internalUserDecider.isInternalUser
-            ? InternalFeedbackUserScript(deviceInfoProvider: IOSInternalFeedbackDeviceInfoProvider())
+            ? InternalFeedbackUserScript(
+                deviceInfoProvider: IOSInternalFeedbackDeviceInfoProvider(),
+                attachmentsProvider: internalFeedbackAttachmentsProvider
+            )
             : nil
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()

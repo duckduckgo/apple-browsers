@@ -26,6 +26,7 @@ final class QuickFeedbackService: NSObject {
 
     private var windowController: QuickFeedbackWindowController?
     private var currentTab: Tab?
+    private let attachmentsProvider: InternalFeedbackAttachmentsProvider
     private var cancellables = Set<AnyCancellable>()
 
     private var contentOverlayPopover: ContentOverlayPopover?
@@ -33,7 +34,9 @@ final class QuickFeedbackService: NSObject {
     /// To sign the user out we need to remove both the form and Asana cookies
     private static let signOutCookieDomains = [URL.internalFeedbackFormHost, "asana.com"]
 
-    init(firePublisher: AnyPublisher<Fire.BurningData?, Never>) {
+    init(attachmentsProvider: InternalFeedbackAttachmentsProvider,
+         firePublisher: AnyPublisher<Fire.BurningData?, Never>) {
+        self.attachmentsProvider = attachmentsProvider
         super.init()
 
         firePublisher
@@ -46,6 +49,8 @@ final class QuickFeedbackService: NSObject {
     }
 
     func openFeedbackPopup(from window: NSWindow? = nil) {
+        attachmentsProvider.setScreenshotPNGData(captureScreenshot(from: window))
+
         if let existing = windowController, let tab = currentTab {
             existing.window?.makeKeyAndOrderFront(nil)
             tab.webView.load(URLRequest(url: .internalFeedbackForm))
@@ -84,6 +89,7 @@ final class QuickFeedbackService: NSObject {
     private func hidePopup() {
         contentOverlayPopover?.viewController.closeContentOverlayPopover()
         windowController?.window?.orderOut(nil)
+        attachmentsProvider.clear()
     }
 
     private func forceClosePopup() {
@@ -92,6 +98,7 @@ final class QuickFeedbackService: NSObject {
         windowController?.window?.orderOut(nil)
         windowController = nil
         currentTab = nil
+        attachmentsProvider.clear()
     }
 
     // MARK: - Autofill overlay
@@ -148,6 +155,20 @@ final class QuickFeedbackService: NSObject {
     @MainActor
     private func reloadFeedbackForm() {
         currentTab?.webView.load(URLRequest(url: .internalFeedbackForm))
+    }
+
+    private func captureScreenshot(from window: NSWindow?) -> Data? {
+        guard let targetWindow = window ?? NSApp.mainWindow else { return nil }
+
+        let windowID = CGWindowID(targetWindow.windowNumber)
+        guard let image = CGWindowListCreateImage(
+            .null,
+            .optionIncludingWindow,
+            windowID,
+            [.boundsIgnoreFraming, .nominalResolution]
+        ) else { return nil }
+
+        return NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
     }
 
 }

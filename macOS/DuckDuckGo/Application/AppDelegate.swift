@@ -167,7 +167,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor private(set) lazy var internalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding =
         InternalFeedbackDeviceInfoProvider(diagnosticsCollector: quickFeedbackDiagnosticsCollector)
 
+    @MainActor private(set) lazy var internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+
     @MainActor private(set) lazy var quickFeedbackService = QuickFeedbackService(
+        attachmentsProvider: internalFeedbackAttachmentsProvider,
         firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
     )
 

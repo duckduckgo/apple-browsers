@@ -96,4 +96,18 @@ public final class BrokenSitePromptLimiter {
         toastDismissStreakCounter = 0
     }
 
+    /// How long the prompt stays suppressed after each show, from the remote config's `coolDownDays`.
+    /// Exposed so a caller coordinating the prompt elsewhere records the same interval this limiter enforces,
+    /// rather than hardcoding a value that could drift from the config.
+    public var coolDownInterval: TimeInterval {
+        TimeInterval(getSettingsFromConfig().coolDownDays) * 24 * 60 * 60
+    }
+
+    /// Clears all limiter state so the prompt behaves as it would for a new user.
+    /// Debug/QA only — this state is otherwise write-once-per-show and has no user-facing reset.
+    public func reset() {
+        lastToastShownDate = .distantPast
+        toastDismissStreakCounter = 0
+    }
+
 }

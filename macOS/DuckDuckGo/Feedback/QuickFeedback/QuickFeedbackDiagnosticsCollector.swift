@@ -16,64 +16,56 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
 import FoundationExtensions
 import Foundation
 import IOKit
 
+var machineArchitecture: String {
+    #if arch(arm64)
+    "arm64"
+    #elseif arch(x86_64)
+    "x86_64"
+    #else
+    "unknown"
+    #endif
+}
+
 final class QuickFeedbackDiagnosticsCollector {
 
     private weak var tabAndWindowCountProvider: TabAndWindowCountProviding?
     private let memoryUsageMonitor: MemoryUsageMonitoring
-    private let appVersion: AppVersion
     private let launchDate: Date
 
     init(tabAndWindowCountProvider: TabAndWindowCountProviding?,
          memoryUsageMonitor: MemoryUsageMonitoring,
-         appVersion: AppVersion = AppVersion(),
          launchDate: Date) {
         self.tabAndWindowCountProvider = tabAndWindowCountProvider
         self.memoryUsageMonitor = memoryUsageMonitor
-        self.appVersion = appVersion
         self.launchDate = launchDate
     }
 
-    func collectDiagnostics() -> String {
-        var lines = [String]()
-
-        lines.append("--- Diagnostics (auto-collected) ---")
-
-        let appVersionModel = AppVersionModel(appVersion: appVersion)
-        lines.append("App Version: \(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))")
-
-        lines.append("macOS: \(appVersion.osVersionMajorMinorPatch)")
-
-        lines.append("Architecture: \(compiledArchitecture)")
-
-        lines.append("GPU: \(gpuDevices)")
-        lines.append("Memory: \(memorySummary)")
-        lines.append("Disk: \(freeDiskSpace)")
+    /// Supplementary device details for an internal feedback report, keyed for the message bridge.
+    ///OS version and architecture are provided separately as top level fields on `InternalFeedbackDeviceInfo`.
+    ///
+    func collectDiagnostics() -> [String: String] {
+        var fields = [
+            "GPU": gpuDevices,
+            "Memory": memorySummary,
+            "Disk": freeDiskSpace,
+            "Session": sessionLength,
+        ]
 
         if let provider = tabAndWindowCountProvider {
-            lines.append("Tabs: \(provider.tabCount) tabs / \(provider.windowCount) windows")
+            fields["Tabs"] = String(provider.tabCount)
+            fields["Windows"] = String(provider.windowCount)
         }
 
-        lines.append("Session: \(sessionLength)")
-
-        return lines.joined(separator: "\n")
+        return fields
     }
 
     // MARK: - Private
-
-    private var compiledArchitecture: String {
-        #if arch(arm64)
-        "arm64"
-        #elseif arch(x86_64)
-        "x86_64"
-        #else
-        "unknown"
-        #endif
-    }
 
     /// Queries IOKit for GPU/display device model names.
     private var gpuDevices: String {
@@ -153,4 +145,43 @@ final class QuickFeedbackDiagnosticsCollector {
 protocol TabAndWindowCountProviding: AnyObject {
     var tabCount: Int { get }
     var windowCount: Int { get }
+}
+
+/// Supplies macOS device details for the Internal Feedback web app, provided over the message bridge.
+/// `diagnostics` carries the supplementary values (GPU, memory, disk, tab counts, session length)
+/// that aren't already top level fields.
+///
+final class InternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding {
+
+    private let diagnosticsCollector: QuickFeedbackDiagnosticsCollector
+    private let appVersion: AppVersion
+
+    init(diagnosticsCollector: QuickFeedbackDiagnosticsCollector, appVersion: AppVersion = AppVersion()) {
+        self.diagnosticsCollector = diagnosticsCollector
+        self.appVersion = appVersion
+    }
+
+    /// Foundation reports "en_GB"; the schema asks for BCP-47. Keyword suffixes (e.g.
+    /// "en_GB@calendar=gregorian") are dropped rather than translated.
+    private static var bcp47Locale: String {
+        let identifier = Locale.current.identifier
+        let base = identifier.split(separator: "@").first.map(String.init) ?? identifier
+        return base.replacingOccurrences(of: "_", with: "-")
+    }
+
+    @MainActor
+    func deviceInfo() -> InternalFeedbackDeviceInfo {
+        InternalFeedbackDeviceInfo(
+            platform: "macos",
+            appVersion: appVersion.versionNumber,
+            osName: "macOS",
+            osVersion: appVersion.osVersionMajorMinorPatch,
+            appBuild: appVersion.buildNumber,
+            formFactor: "desktop",
+            architecture: machineArchitecture,
+            locale: Self.bcp47Locale,
+            channel: AppVersionModel(appVersion: appVersion).distributionLabel,
+            diagnostics: diagnosticsCollector.collectDiagnostics()
+        )
+    }
 }

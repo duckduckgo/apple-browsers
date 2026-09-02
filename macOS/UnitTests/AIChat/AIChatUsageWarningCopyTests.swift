@@ -121,6 +121,20 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
         XCTAssertFalse(DuckAiHighUsageModels.includes(nil))
     }
 
+    // MARK: - Create Image model switch notice
+
+    func testWhenCreateImageSwitchesModels_ThenCopyNamesBothModels() {
+        XCTAssertEqual(UserText.aiChatCreateImageModelSwitchTitle("GPT-5.4 mini"),
+                       "Now using GPT-5.4 mini")
+        XCTAssertEqual(UserText.aiChatCreateImageModelSwitchSubtitle("Mistral Small"),
+                       "Mistral Small doesn't support image creation.")
+    }
+
+    func testWhenCreateImageSwitchesFromOSSModel_ThenCopyExplainsPrivacyChange() {
+        XCTAssertEqual(UserText.aiChatCreateImageModelSwitchPrivacySubtitle("GPT-OSS"),
+                       "GPT-OSS can't create images. Its extra privacy protections won't apply until you switch back.")
+    }
+
     // MARK: - Helpers
 
     private func warning(_ message: DuckAiUsageMessage,

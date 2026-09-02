@@ -69,6 +69,12 @@ public struct AIChatModel {
         }
     }
 
+    /// Picks the preferred accessible model that supports Create Image across native surfaces.
+    public static func preferredImageGenerationModel(in models: [AIChatModel]) -> AIChatModel? {
+        let candidates = models.filter { $0.entityHasAccess && $0.supportsTool(.imageGeneration) }
+        return candidates.first(where: \.isSuggestedForImageCreation) ?? candidates.first
+    }
+
     /// Whether this is an advanced (paid-tier) model — i.e. not available on the free tier. Single source
     /// of truth for the basic/advanced split in the model picker and the "PLUS" marker in onboarding.
     public var isAdvanced: Bool {

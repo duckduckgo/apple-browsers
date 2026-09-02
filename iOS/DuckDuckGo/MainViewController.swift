@@ -415,20 +415,6 @@ class MainViewController: UIViewController {
                               isFloatingUIEnabled: isFloatingUIEnabled)
     }()
 
-    private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager(privacyConfigurationManager: privacyConfigurationManager,
-                                                  contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-                                                  experimentalAIChatManager: .init(featureFlagger: featureFlagger),
-                                                  featureFlagger: featureFlagger,
-                                                  featureDiscovery: featureDiscovery,
-                                                  aiChatSettings: aiChatSettings,
-                                                  productSurfaceTelemetry: productSurfaceTelemetry,
-                                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
-        manager.delegate = self
-        manager.isFireModeProvider = { [weak self] in self?.tabManager.currentBrowsingMode == .fire }
-        return manager
-    }()
-
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
     let themeManager: ThemeManaging
@@ -3697,7 +3683,7 @@ class MainViewController: UIViewController {
     }
 
     func dismissSystemFindNavigator(for tab: TabViewController?) {
-        guard #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) else { return }
+        guard #available(iOS 16.0, *) else { return }
         rememberFindInPageQuery(for: tab)
         tab?.webView.findInteraction?.dismissFindNavigator()
         restoreChromeIfHiddenByFindInPage()
@@ -3705,8 +3691,7 @@ class MainViewController: UIViewController {
 
     @available(iOS 16.0, *)
     private func hideChromeForConfirmedFindInPage() {
-        guard featureFlagger.isFeatureOn(.systemFindInPage),
-              currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
+        guard currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
               !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth,
               !isFindInPageChromeLockActive else { return }
 
@@ -4707,7 +4692,7 @@ extension MainViewController: BrowserChromeDelegate {
     var isChromeScrollInteractionDisabled: Bool {
         if isAddressBarMoveInProgress { return true }
         if isBottomAddressBarHiddenForWebKeyboard { return true }
-        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage),
+        if #available(iOS 16.0, *),
            currentTab?.webView.findInteraction?.isFindNavigatorVisible == true {
             return true
         }
@@ -6285,6 +6270,9 @@ extension MainViewController: EscapeHatchActionRouter {
         // row also reaches after already reporting its own terminal.
         recordNewTabPageSessionAction { $0.tapReturnToLast() }
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .lastTabLoaded)
+        if tab.isAITab {
+            fireAIChatEntryPointPixel(source: .returnToChatCard, opensNewTab: false, hasPrompt: false)
+        }
 
         onSwitchToTab(tab)
     }
@@ -6983,7 +6971,7 @@ extension MainViewController: TabDelegate {
     }
 
     func closeFindInPage(tab: TabViewController) {
-        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+        if #available(iOS 16.0, *) {
             dismissSystemFindNavigator(for: tab)
             return
         }
@@ -7120,6 +7108,9 @@ extension MainViewController: TabSwitcherDelegate {
             // Only a chosen tab is a terminal; dismissing with none selected creates a new tab,
             // which opens its own visit instead.
             newTabPageSessionInstrumentation.visitEnded(terminalAction: .selectOtherTab)
+            if tab.isAITab {
+                fireAIChatEntryPointPixel(source: .tabSwitcherExistingChat, opensNewTab: false, hasPrompt: false)
+            }
             tabManager.select(tab, dismissCurrent: false)
         }
 
@@ -7641,12 +7632,6 @@ extension MainViewController: TabManagerFireModeDelegate {
             await fireExecutor.burn(request: request, applicationState: .unknown)
         }
     }
-
-    func tabManagerDidChangeBrowsingMode(_ mode: BrowsingMode) {
-        Task {
-            await aiChatViewControllerManager.killSessionAndResetTimer()
-        }
-    }
 }
 
 extension MainViewController: FireExecutorDelegate {
@@ -7736,22 +7721,6 @@ extension MainViewController: FireExecutorDelegate {
         self.postClear = nil
     }
 
-    func willStartBurningAIHistory(fireRequest: FireRequest) {
-        // No operation
-    }
-    
-    func didFinishBurningAIHistory(fireRequest: FireRequest) {
-        switch fireRequest.scope {
-        case .all, .fireMode, .normalMode:
-            Task {
-                await aiChatViewControllerManager.killSessionAndResetTimer()
-            }
-        case .tab:
-            // No custom logic for tab scope
-            return
-        }
-    }
-    
     func didFinishBurning(fireRequest: FireRequest) {
         // Trigger sync if needed after data and aichats finish
         // because data could potentially delete a contextual chat that needs syncing
@@ -8084,45 +8053,6 @@ extension MainViewController: AutofillLoginListViewControllerDelegate {
 extension MainViewController: OmniBarFocuser {
     func beginSearch() {
         omniBar.beginEditing(animated: true)
-    }
-}
-
-// MARK: - AIChatViewControllerManagerDelegate
-extension MainViewController: AIChatViewControllerManagerDelegate {
-    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
-        if let tabSwitcher = tabSwitcherController {
-            loadUrlInNewTab(url, inheritedAttribution: nil)
-            tabSwitcher.dismiss(animated: true)
-        } else {
-            loadUrlInNewTab(url, inheritedAttribution: nil)
-        }
-    }
-
-    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {
-        self.loadQuery(query)
-    }
-
-    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {
-        segueToDownloads()
-    }
-
-    func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
-        if let controller = tabSwitcherController {
-            controller.dismiss(animated: true) {
-                self.segueToSettingsAIChat()
-            }
-        } else {
-            segueToSettingsAIChat()
-        }
-    }
-
-    func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager) {
-        segueToSettingsSync()
-    }
-
-    func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager) {
-        postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: nil)
-        reportDuckAIFrontendSubmissionAcknowledged()
     }
 }
 

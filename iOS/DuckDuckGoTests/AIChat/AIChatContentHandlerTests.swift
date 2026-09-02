@@ -755,12 +755,6 @@ final class AIChatContentHandlerTests: XCTestCase {
 
 // MARK: - Mocks
 
-final class MockAIChatRequestAuthHandler: AIChatRequestAuthorizationHandling {
-    func shouldAllowRequestWithNavigationAction(_ navigationAction: WKNavigationAction) -> Bool {
-        true
-    }
-}
-
 final class MockIPadDuckAIControlsFeatureProvider: IPadDuckAIControlsFeatureProviding {
     var isAvailable: Bool
 

@@ -583,7 +583,7 @@ final class AIChatContextualChatSessionState {
             return
         }
 
-        let context = context.flatMap { $0.contextData.content.isEmpty ? nil : $0 }
+        let context = context.flatMap { $0.contextData.hasAttachedPage ? $0 : nil }
 
         guard let context = context else {
             guard shouldProcessNilContextUpdate else {
@@ -799,7 +799,8 @@ private extension AIChatContextualChatSessionState {
         emit(.deliverPageContext(payload, targets: .frontendBridge))
     }
 
-    /// Strips page content, keeping metadata + page-type signals so the FE renders page-tailored suggestions without attaching content.
+    /// Strips page content / document bytes, keeping metadata + page-type signals so the FE can
+    /// show suggestions without attaching content.
     func signalsOnlyPayload(from context: AIChatPageContextData) -> AIChatPageContextData {
         AIChatPageContextData(
             title: context.title,
@@ -810,7 +811,9 @@ private extension AIChatContextualChatSessionState {
             fullContentLength: 0,
             attachable: true,
             pageTypeSignals: context.pageTypeSignals,
-            attached: false
+            attached: false,
+            mimeType: context.mimeType,
+            data: nil
         )
     }
 

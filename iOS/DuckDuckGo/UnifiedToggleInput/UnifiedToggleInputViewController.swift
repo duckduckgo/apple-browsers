@@ -47,6 +47,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapFooterPrimaryAction(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility isVisible: Bool)
 }
 
 // MARK: - View Controller
@@ -227,6 +228,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     var isModelChipHidden: Bool {
         get { inputBarView.isModelChipHidden }
         set { inputBarView.isModelChipHidden = newValue }
+    }
+
+    var isModelChipMenuIndicatorHidden: Bool {
+        get { inputBarView.isModelChipMenuIndicatorHidden }
+        set { inputBarView.isModelChipMenuIndicatorHidden = newValue }
     }
 
     var selectedTool: AIChatRAGTool? {
@@ -468,6 +474,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         barView.onFooterDismissTapped = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputVCDidDismissFooter(self)
+        }
+        barView.onFooterVisibilityChanged = { [weak self] isVisible in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVC(self, didChangeFooterVisibility: isVisible)
         }
         let containerView = UnifiedToggleInputContainerView(inputView: barView)
         containerView.cardPosition = barView.cardPosition

@@ -114,6 +114,15 @@ final class UTIModelStore {
         return models.first(where: { $0.id == persistedModelId })?.supportsTool(tool) ?? false
     }
 
+    /// The model to switch to when the user picks Create Image on a model that can't generate images.
+    /// `entityHasAccess` is part of the predicate on purpose: `persistedModelId` runs every id through
+    /// `resolve(modelId:)`, which drops an inaccessible model and falls back to `firstAccessibleModelId`
+    /// — so switching to one would leave the user on a third model while the footer card names this one.
+    var imageGenerationFallbackModel: AIChatModel? {
+        let candidates = models.filter { $0.entityHasAccess && $0.supportsTool(.imageGeneration) }
+        return candidates.first(where: \.isSuggestedForImageCreation) ?? candidates.first
+    }
+
     private var firstAccessibleModelId: String? {
         models.first(where: { $0.entityHasAccess })?.id
     }

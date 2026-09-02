@@ -3683,7 +3683,7 @@ class MainViewController: UIViewController {
     }
 
     func dismissSystemFindNavigator(for tab: TabViewController?) {
-        guard #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) else { return }
+        guard #available(iOS 16.0, *) else { return }
         rememberFindInPageQuery(for: tab)
         tab?.webView.findInteraction?.dismissFindNavigator()
         restoreChromeIfHiddenByFindInPage()
@@ -3691,8 +3691,7 @@ class MainViewController: UIViewController {
 
     @available(iOS 16.0, *)
     private func hideChromeForConfirmedFindInPage() {
-        guard featureFlagger.isFeatureOn(.systemFindInPage),
-              currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
+        guard currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
               !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth,
               !isFindInPageChromeLockActive else { return }
 
@@ -4693,7 +4692,7 @@ extension MainViewController: BrowserChromeDelegate {
     var isChromeScrollInteractionDisabled: Bool {
         if isAddressBarMoveInProgress { return true }
         if isBottomAddressBarHiddenForWebKeyboard { return true }
-        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage),
+        if #available(iOS 16.0, *),
            currentTab?.webView.findInteraction?.isFindNavigatorVisible == true {
             return true
         }
@@ -6969,7 +6968,7 @@ extension MainViewController: TabDelegate {
     }
 
     func closeFindInPage(tab: TabViewController) {
-        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+        if #available(iOS 16.0, *) {
             dismissSystemFindNavigator(for: tab)
             return
         }

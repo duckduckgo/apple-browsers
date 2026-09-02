@@ -170,7 +170,8 @@ final class DefaultOmniBarSearchView: UIView {
             leftIconContainerPlaceholder.topAnchor.constraint(equalTo: leftIconContainer.topAnchor),
             leftIconContainerPlaceholder.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
 
-            privacyInfoContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 10),
+            // Shares a centre with the loupe it swaps in and out of the slot with.
+            privacyInfoContainer.centerXAnchor.constraint(equalTo: leftIconContainerPlaceholder.centerXAnchor),
             privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
             privacyInfoContainer.widthAnchor.constraint(equalToConstant: 28),
             privacyInfoContainer.heightAnchor.constraint(equalToConstant: 28),

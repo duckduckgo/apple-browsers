@@ -742,8 +742,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         var view = UIVisualEffectView()
         UITraitCollection(userInterfaceStyle: configuration.interfaceStyle).performAsCurrent {
             if #available(iOS 26.0, *) {
-                let style: UIGlassEffect.Style = configuration.kind == .embedded ? .clear : .regular
-                let effect = UIGlassEffect(style: style)
+                // The embedded field carries the same material blur as the rest of the chrome.
+                let effect = UIGlassEffect(style: .regular)
                 if configuration.fireMode {
                     effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
                 }
@@ -1593,9 +1593,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         /// Height of the address field when it is hosted inside the floating bottom toolbar, matching
         /// the 48pt search pill in the chrome spec.
         static let floatingEmbeddedHeight: CGFloat = 48
-        /// Tight inner padding so the 44pt controls sit inside the 48pt embedded field (12 + 2 = 14
-        /// from the glass edge to the control, per spec).
-        static let floatingEmbeddedTextAreaPadding: CGFloat = 2
+        /// The embedded field fills its slot, so the glass matches the height in the chrome spec.
+        static let floatingEmbeddedTextAreaPadding: CGFloat = 0
         static let floatingTopInputHeight: CGFloat = 48
         static let floatingTopInputOuterPadding = (height - floatingTopInputHeight) / 2
         static let floatingTopContentVerticalOffset: CGFloat = -2

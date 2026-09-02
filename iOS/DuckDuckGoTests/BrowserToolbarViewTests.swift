@@ -337,6 +337,41 @@ final class BrowserToolbarViewTests: XCTestCase {
         }
     }
 
+    func testWhenEmbeddedFloatingThenToolbarIconsAlignWithTheAddressBarIcons() {
+        let sut = makeSUT(embeddedOmnibar: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        window.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: window.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: window.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: window.bottomAnchor)
+        ])
+        sut.setToolbarButtons([
+            makeToolbarButton(identifier: "back", width: 44),
+            makeToolbarButton(identifier: "forward", width: 44),
+            makeToolbarButton(identifier: "Browser.Toolbar.Button.Fire", width: 44),
+            makeToolbarButton(identifier: "tabs", width: 44),
+            makeToolbarButton(identifier: "menu", width: 44)
+        ])
+        window.layoutIfNeeded()
+
+        let centers = sut.arrangedToolbarButtonViews.map { window.convert($0.center, from: $0.superview).x }
+        guard let first = centers.min(), let last = centers.max() else {
+            XCTFail("Missing toolbar buttons")
+            return
+        }
+        // The address field is hosted inside the same glass capsule, so its icons are inset from
+        // the capsule's edges rather than the toolbar view's.
+        let capsule = sut.restingCapsuleFrame(in: window)
+
+        // Both rows carry 44pt controls, so aligned centres mean the same distance from the glass
+        // edge as the address field's icons: its 16pt text-area padding plus half a control.
+        let expectedInset = BrowserToolbarView.floatingEmbeddedAddressBarIconInset
+        XCTAssertEqual(first - capsule.minX, expectedInset, accuracy: 0.5)
+        XCTAssertEqual(capsule.maxX - last, expectedInset, accuracy: 0.5)
+    }
+
     func testWhenStandaloneFloatingThenButtonsAreEvenlySpacedAndFireButtonIsCentered() {
         let sut = makeSUT(embeddedOmnibar: false)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))

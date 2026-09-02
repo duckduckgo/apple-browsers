@@ -467,8 +467,9 @@ private struct ListScrollShadowOverflowModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 17, *), allowsOverflow {
-            content.scrollClipDisabled()
+        if #available(iOS 17, *) {
+            // Keep the List hierarchy stable while Search content appears or disappears during a mode switch.
+            content.scrollClipDisabled(allowsOverflow)
         } else {
             content
         }

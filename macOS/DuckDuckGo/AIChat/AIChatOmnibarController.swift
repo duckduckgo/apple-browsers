@@ -149,6 +149,12 @@ final class AIChatOmnibarController {
     /// warning does — activation included, which is what `cleanup()` dropped it for.
     var onUsageWarningsRefreshed: (() -> Void)?
 
+    /// Turns the card's lifecycle into pixels. Lives here rather than on the container VC because
+    /// submit and teardown — two of the events — are this type's to report.
+    private(set) lazy var usageWarningMeasurement = DuckAiUsageWarningMeasurement(
+        pixelFiring: DuckAiUsageWarningPixelAdapter(surface: surface.usageWarningPixelSurface)
+    )
+
     /// Advanced models have no allowance left until web republishes. Read off the snapshot, not the
     /// message: switching to a free model retires the message while the limit it named still stands.
     var isAdvancedModelUsageExhausted: Bool {
@@ -165,9 +171,11 @@ final class AIChatOmnibarController {
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
+            usageWarningMeasurement.ctaTapped(.switchModel)
             updateSelectedModel(suggestion.modelId)
         case .tryForFree:
             // Confirms first, the same as a gated pick in either picker, rather than navigating on tap.
+            usageWarningMeasurement.ctaTapped(.upsell)
             onSubscriptionUpsellDialogRequested?(surface.usageLimitFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
             // Web reads the entry on its next hydration, so there is nothing to reload here.
@@ -1145,6 +1153,8 @@ final class AIChatOmnibarController {
         activeToolMode = nil
         hasImageAttachments = false
         hasBeenActivated = false
+        // Whatever the user was going to do about the card, they have now done it.
+        usageWarningMeasurement.inputSessionEnded()
         usageWarningViewModel?.clear()
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
@@ -1324,6 +1334,8 @@ final class AIChatOmnibarController {
         }
 
         pixelHandler.fire(.promptSubmitted)
+        // After the URL branch: navigating away is not a prompt spent against the allowance.
+        usageWarningMeasurement.promptSubmitted()
 
         if isImageGenerationMode {
             pixelHandler.fire(.imageGenerationSubmitted)

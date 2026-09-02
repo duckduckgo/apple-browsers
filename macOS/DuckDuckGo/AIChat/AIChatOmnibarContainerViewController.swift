@@ -1173,6 +1173,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         usageWarningCardView.onDismiss = { [weak self] in
             guard let self else { return }
+            omnibarController.usageWarningMeasurement.warningDismissed()
             if omnibarController.usageWarningViewModel?.warning != nil {
                 omnibarController.usageWarningViewModel?.dismiss()
             } else {
@@ -1222,6 +1223,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         applyInputBlock(warning?.blocksInput == true)
         if let warning {
             usageWarningCardView.update(with: warning)
+            currentUsageWarningExposure = DuckAiUsageWarningExposure(warning: warning)
             setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
             return
         }
@@ -1246,9 +1248,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// The fallback when no allowance message applies: web shows the same one, and shows it here too.
     private func applyHighUsageNotice() {
         guard let notice = highUsageNoticeSource?.notice else {
+            currentUsageWarningExposure = nil
             return setUsageWarningVisible(false)
         }
         usageWarningCardView.update(with: notice)
+        currentUsageWarningExposure = DuckAiUsageWarningExposure(notice: notice)
         setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
     }
 
@@ -1261,6 +1265,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func setUsageWarningVisible(_ visible: Bool) {
         guard applyUsageWarningVisibility(visible) else { return }
+
+        // Reported off the reveal rather than the resolve: the message is resolved while the panel
+        // is still collapsed, and only shown when it expands.
+        if visible, let currentUsageWarningExposure {
+            omnibarController.usageWarningMeasurement.cardBecameVisible(currentUsageWarningExposure)
+        }
 
         onSuggestionsHeightChanged?(suggestionsHeight)
         onPassthroughHeightNeedsUpdate?()
@@ -1293,6 +1303,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Mirrors the controller's copy; kept here so the apply can early-out on no change.
     private var isInputBlockedByUsageLimit = false
+
+    /// What the card is currently about, held so the reveal can report it.
+    private var currentUsageWarningExposure: DuckAiUsageWarningExposure?
 
     /// Beside the usage warnings rather than part of them: it keys off the selected model, not the
     /// allowance. The warning wins the card when both apply.
@@ -2314,6 +2327,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if isPresentingModelPickerFromUsageCard {
             omnibarController.usageWarningViewModel?.modelSwitchedFromMessage()
         }
+        omnibarController.usageWarningMeasurement.modelSwitched()
         omnibarController.pixelHandler.fire(.modelSelected)
     }
 

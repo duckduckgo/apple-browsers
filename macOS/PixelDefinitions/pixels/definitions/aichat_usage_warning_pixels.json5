@@ -1,0 +1,637 @@
+// Duck.ai usage-warning card pixels - the card under the Duck.ai omnibar and Prompt Bar, gated by
+// the `aiChatUsageWarnings` feature flag. Named for name with iOS so the two platforms' series can
+// be read together; `surface` says which native input reported it.
+//
+// Which message the user saw is in the pixel name, so each of the three states is its own series:
+// `approaching` (50/75/90% of an allowance), `limit_reached` (the allowance is spent) and the
+// high-usage model notice. The window, the rung and the model id are parameters.
+//
+// Each state reports one impression per appearance, and one follow-through per exposure: what the
+// user did about the message before the input closed. An exposure outlives the card - dismissing or
+// acting on the message takes it off screen while the user carries on typing - so `_dismissed` and a
+// following `_prompt_submitted` can both fire for one appearance, while `_prompt_submitted`,
+// `_model_switched` and `_abandoned` are the mutually exclusive ways an exposure ends.
+//
+// Not defined on purpose: a dismissal of a reached limit, since that card carries no close button.
+{
+    "m_mac_aichat_usage_warning_approaching_shown": {
+        "description": "Fires when the approaching-limit card appears under the Duck.ai omnibar. One per appearance: re-opening the omnibar reports again, while a refresh that only fills in the card's CTA does not.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": [
+                    "50",
+                    "75",
+                    "90"
+                ]
+            }
+        ]
+    },
+    "m_mac_aichat_usage_warning_approaching_dismissed": {
+        "description": "Fires when the user closes the approaching-limit card with its close button. Not a terminal outcome: the input session carries on, and a prompt sent afterwards is still reported against this exposure.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": [
+                    "50",
+                    "75",
+                    "90"
+                ]
+            }
+        ]
+    },
+    "m_mac_aichat_usage_warning_approaching_prompt_submitted": {
+        "description": "Fires for the first prompt the user sends after seeing the approaching-limit card, in the same input session. Once per exposure.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": [
+                    "50",
+                    "75",
+                    "90"
+                ]
+            }
+        ]
+    },
+    "m_mac_aichat_usage_warning_approaching_model_switched": {
+        "description": "Fires when the user switches model themselves after seeing the approaching-limit card, rather than using its CTA. Once per exposure.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": [
+                    "50",
+                    "75",
+                    "90"
+                ]
+            }
+        ]
+    },
+    "m_mac_aichat_usage_warning_approaching_abandoned": {
+        "description": "Fires when the input closes with the approaching-limit card having been seen and nothing done about it - no prompt, no model switch, no CTA.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": [
+                    "50",
+                    "75",
+                    "90"
+                ]
+            }
+        ]
+    },
+    "m_mac_aichat_usage_warning_limit_reached_shown": {
+        "description": "Fires when the limit-reached card appears under the Duck.ai omnibar. One per appearance. All four reached states fold into this series.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            }
+        ]
+    },
+    "m_mac_aichat_usage_warning_limit_reached_prompt_submitted": {
+        "description": "Fires for the first prompt the user sends after seeing the limit-reached card, in the same input session. Once per exposure.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            }
+        ]
+    },
+    "m_mac_aichat_usage_warning_limit_reached_model_switched": {
+        "description": "Fires when the user switches model themselves after seeing the limit-reached card, rather than using its CTA. Once per exposure.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            }
+        ]
+    },
+    "m_mac_aichat_usage_warning_limit_reached_abandoned": {
+        "description": "Fires when the input closes with the limit-reached card having been seen and nothing done about it.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            }
+        ]
+    },
+    "m_mac_aichat_usage_warning_switch_model_tapped": {
+        "description": "Fires when the user taps the card's switch-model CTA, from whichever state offered it.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": [
+                    "50",
+                    "75",
+                    "90"
+                ]
+            },
+            {
+                "key": "model_id",
+                "description": "The model the high-usage notice was about.",
+                "type": "string"
+            }
+        ]
+    },
+    "m_mac_aichat_usage_warning_upsell_tapped": {
+        "description": "Fires when the user taps the card's subscribe CTA, which opens the upsell dialog rather than navigating.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": [
+                    "daily",
+                    "weekly"
+                ]
+            },
+            {
+                "key": "percent_bucket",
+                "description": "The rung of the approaching ladder the card was shown at.",
+                "type": "string",
+                "enum": [
+                    "50",
+                    "75",
+                    "90"
+                ]
+            },
+            {
+                "key": "model_id",
+                "description": "The model the high-usage notice was about.",
+                "type": "string"
+            }
+        ]
+    },
+    "m_mac_aichat_high_usage_model_notice_shown": {
+        "description": "Fires when the high-usage model notice appears under the Duck.ai omnibar. One per appearance.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "model_id",
+                "description": "The model the high-usage notice was about.",
+                "type": "string"
+            }
+        ]
+    },
+    "m_mac_aichat_high_usage_model_notice_dismissed": {
+        "description": "Fires when the user closes the high-usage model notice with its close button.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "model_id",
+                "description": "The model the high-usage notice was about.",
+                "type": "string"
+            }
+        ]
+    },
+    "m_mac_aichat_high_usage_model_notice_prompt_submitted": {
+        "description": "Fires for the first prompt the user sends after seeing the high-usage model notice, in the same input session. Once per exposure.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "model_id",
+                "description": "The model the high-usage notice was about.",
+                "type": "string"
+            }
+        ]
+    },
+    "m_mac_aichat_high_usage_model_notice_model_switched": {
+        "description": "Fires when the user switches model themselves after seeing the high-usage model notice. Once per exposure.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "model_id",
+                "description": "The model the high-usage notice was about.",
+                "type": "string"
+            }
+        ]
+    },
+    "m_mac_aichat_high_usage_model_notice_abandoned": {
+        "description": "Fires when the input closes with the high-usage model notice having been seen and nothing done about it.",
+        "owners": [
+            "Bunn"
+        ],
+        "triggers": [
+            "other"
+        ],
+        "suffixes": [
+            "first_daily_count"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": [
+                    "address_bar",
+                    "prompt_bar"
+                ]
+            },
+            {
+                "key": "model_id",
+                "description": "The model the high-usage notice was about.",
+                "type": "string"
+            }
+        ]
+    }
+}

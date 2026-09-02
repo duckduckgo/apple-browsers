@@ -67,12 +67,19 @@ public enum PixelKitExtensionSetup {
         // Each process has its own copy of these suites; `UserDefaults(suiteName:)` does not share
         // them across processes. Without this migration, an already-throttled pixel in this
         // process fires once more on the release that moves it to PixelKit.
+        //
+        // `completionFlagKey` is scoped to `session`: `defaults` can be a store another extension's
+        // `PixelKitExtensionSetup.setUp` call also falls back to (e.g. both Widgets and the VPN
+        // tunnel's failure path use `UserDefaults.networkProtectionGroupDefaults`), and an unscoped
+        // key would let whichever runs first mark it complete for both, silently skipping the other's
+        // migration.
         LegacyPixelStateMigration(
             destination: defaults,
             dailyStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.daily),
             uniqueStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.unique),
             debounceStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.debounce),
-            completionFlagStore: defaults
+            completionFlagStore: defaults,
+            completionFlagKey: "\(LegacyPixelStateMigration.completionFlagKey).\(session)"
         ).run()
     }
 }

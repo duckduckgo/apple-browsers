@@ -181,6 +181,26 @@ final class LegacyPixelStateMigrationTests: XCTestCase {
         XCTAssertEqual(destination.values[key("m_example_u")] as? [String: Date],
                        ["uniqueByName": date])
     }
+
+    func testDistinctCompletionFlagKeysDoNotShareARun() throws {
+        // Two processes that both fall back to the same UserDefaults suite (e.g. Widgets and the
+        // VPN tunnel's failure path) must not let whichever runs first for a version mark the flag
+        // complete for the other.
+        let flags = Store()
+        let destinationA = Store()
+        let destinationB = Store()
+
+        LegacyPixelStateMigration(destination: destinationA, dailyStore: Store(["m_a": date]), uniqueStore: nil,
+                                  debounceStore: nil, completionFlagStore: flags, completionFlagKey: "flag.a").run()
+        LegacyPixelStateMigration(destination: destinationB, dailyStore: Store(["m_b": date]), uniqueStore: nil,
+                                  debounceStore: nil, completionFlagStore: flags, completionFlagKey: "flag.b").run()
+
+        XCTAssertEqual(destinationA.values[key("m_a")] as? [String: Date], ["daily": date],
+                       "The second migration's distinct flag key must not make the first look already-run")
+        XCTAssertEqual(destinationB.values[key("m_b")] as? [String: Date], ["daily": date])
+        XCTAssertEqual(flags.values["flag.a"] as? String, "1.0.0")
+        XCTAssertEqual(flags.values["flag.b"] as? String, "1.0.0")
+    }
 }
 
 extension LegacyPixelStateMigrationTests.Store: LegacyPixelLastFireDateSource {

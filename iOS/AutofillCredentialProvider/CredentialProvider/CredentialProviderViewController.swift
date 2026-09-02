@@ -33,10 +33,8 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
         static let openPasswords = AppDeepLinkSchemes.openPasswords.url
     }
 
-    /// Configures `PixelKit.shared` for this process, exactly once no matter which entry point runs
-    /// first. `ASCredentialProviderViewController` has several entry points besides `viewDidLoad`
-    /// (`prepareCredentialList`, `provideCredentialWithoutUserInteraction`, and friends), so every
-    /// override below touches this instead of relying on `viewDidLoad` alone.
+    /// Configures `PixelKit.shared` once, from whichever entry point runs first - not just
+    /// `viewDidLoad`, which isn't guaranteed to run before the others.
     private static let pixelKitSetup: Void = {
         if let sharedDefaults = UserDefaults.autofillGroupDefaults {
             PixelKitExtensionSetup.setUp(session: "ios-credential-provider", defaults: sharedDefaults)

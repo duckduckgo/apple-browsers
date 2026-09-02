@@ -87,6 +87,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Provider for creating extension-specific message handlers.
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
+    /// Talks to native messaging hosts. `nil` where hosts are unavailable, such as on iOS.
+    public private(set) var nativeMessagingHandler: WebExtensionNativeMessagingHandling?
+
     /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
     private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
 
@@ -143,6 +146,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
+                nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
@@ -159,6 +163,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
+        self.nativeMessagingHandler = nativeMessagingHandler
         self.scriptletConfiguration = scriptletConfiguration
         self.unloadGuard = WebExtensionUnloadGuard()
 

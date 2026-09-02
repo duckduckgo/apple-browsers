@@ -119,16 +119,23 @@ extension WebExtensionManager {
                                        toApplicationWithIdentifier applicationIdentifier: String?,
                                        for extensionContext: WKWebExtensionContext) async throws -> Any? {
         let displayName = extensionContext.webExtension.displayName ?? "(unknown)"
+        if String(describing: message).contains("sleep") {
+            return nil
+        }
         Logger.webExtensions.debug("📬 Received native message from extension: \(displayName)")
 
-//        Logger.webExtensions.debug("🔎 Full message received: \(String(describing: message))")
+        Logger.webExtensions.debug("🔎 Full message received: \(String(describing: message))")
 
         let extensionMessage: WebExtensionMessage
         do {
             extensionMessage = try parseMessage(message, extensionContext: extensionContext)
         } catch {
-            Logger.webExtensions.error("❌ Message parsing failed: \(error.localizedDescription)")
-            return ["error": error.localizedDescription]
+            // A message we cannot parse belongs to a third-party extension, not to us. Such an
+            // extension expects its own native host, so pass the message on unchanged.
+            Logger.webExtensions.debug("📬 Message is not ours, so it goes to the native host: \(error.localizedDescription)")
+            return try await sendToNativeHost(message,
+                                              applicationIdentifier: applicationIdentifier,
+                                              for: extensionContext)
         }
 
         let result = await messageRouter.routeMessage(extensionMessage)
@@ -140,9 +147,24 @@ extension WebExtensionManager {
             Logger.webExtensions.error("❌ Message handling failed: \(error.localizedDescription)")
             return nil
         case .noHandler:
-            Logger.webExtensions.error("❌ No handler registered for feature: \(extensionMessage.featureName)")
+            Logger.webExtensions.debug("📬 No handler for \(extensionMessage.featureName), so it goes to the native host")
+            return try await sendToNativeHost(message,
+                                              applicationIdentifier: applicationIdentifier,
+                                              for: extensionContext)
+        }
+    }
+
+    private func sendToNativeHost(_ message: Any,
+                                  applicationIdentifier: String?,
+                                  for extensionContext: WKWebExtensionContext) async throws -> Any? {
+        guard let nativeMessagingHandler else {
+            Logger.webExtensions.error("❌ No native messaging handler, so the message is dropped")
             return nil
         }
+
+        return try await nativeMessagingHandler.sendMessage(message,
+                                                            applicationIdentifier: applicationIdentifier,
+                                                            for: extensionContext)
     }
 
     private func enrichResponse(_ response: Any?, with message: WebExtensionMessage) -> Any? {
@@ -167,8 +189,16 @@ extension WebExtensionManager {
                                        connectUsing port: WKWebExtension.MessagePort,
                                        for extensionContext: WKWebExtensionContext) async throws {
         let displayName = extensionContext.webExtension.displayName ?? "(unknown)"
-        Logger.webExtensions.debug("🔗 Connected to extension: \(displayName)")
+        let applicationIdentifier = port.applicationIdentifier ?? "(none)"
+        Logger.webExtensions.debug("🔗 \(displayName) opens a port to \(applicationIdentifier, privacy: .public)")
 
-        // Not supported
+        guard let nativeMessagingHandler else {
+            Logger.webExtensions.error("❌ No native messaging handler, so the port of \(displayName) stays silent")
+            return
+        }
+
+        try await nativeMessagingHandler.connect(port,
+                                                 applicationIdentifier: port.applicationIdentifier,
+                                                 for: extensionContext)
     }
 }

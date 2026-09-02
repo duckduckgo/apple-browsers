@@ -25,6 +25,7 @@ import os.log
 import Foundation
 import PrivacyConfig
 import SERPSettings
+import SitePermissions
 import SpecialErrorPages
 import Subscription
 import TrackerRadarKit
@@ -62,6 +63,7 @@ final class UserScripts: UserScriptsProvider {
 
     private(set) var selectionFrameScript: SelectionFrameUserScript
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
+    private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
 
@@ -70,12 +72,16 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         sitePermissionsEnabled: Bool? = nil,
+         mediaCaptureUserScript: MediaCaptureUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
         selectionFrameScript = SelectionFrameUserScript()
+        let isSitePermissionsEnabled = sitePermissionsEnabled ?? featureFlagger.isFeatureOn(.sitePermissions)
+        self.mediaCaptureUserScript = isSitePermissionsEnabled ? (mediaCaptureUserScript ?? MediaCaptureUserScript()) : nil
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
@@ -186,6 +192,7 @@ final class UserScripts: UserScriptsProvider {
         var scripts: [UserScript?] = [
             findInPageScript,
             fullScreenVideoScript,
+            mediaCaptureUserScript,
             autofillUserScript,
             loginFormDetectionScript,
             contentScopeUserScript,

@@ -764,6 +764,7 @@ class TabViewController: UIViewController {
     var sitePermissionsDependenciesProvider: @MainActor () -> SitePermissionsDependencies?
 
     private var sitePermissionsCoordinator: SitePermissionsCoordinator?
+    private var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript?
     private var sitePermissionsDialogHostingController: UIViewController?
     private var sitePermissionsRecoveryHostingController: UIViewController?
     private var sitePermissionsRecoveryMessageView: ActionMessageView?
@@ -771,14 +772,91 @@ class TabViewController: UIViewController {
     private var sitePermissionsRecoveryToken: UInt?
     private var nextSitePermissionsRecoveryToken: UInt = 0
     private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
-    private struct PendingSitePermissionRequest {
+    private struct SitePermissionSecurityOrigin: Equatable {
+        let protocolName: String
+        let host: String
+        let port: Int
+
+        init(_ origin: WKSecurityOrigin) {
+            protocolName = origin.protocol.lowercased()
+            host = Self.normalizedHost(origin.host)
+            port = Self.effectivePort(for: protocolName, explicitPort: origin.port)
+        }
+
+        init?(_ url: URL) {
+            guard let protocolName = url.scheme?.lowercased(),
+                  let host = url.host?.lowercased(),
+                  !host.isEmpty else {
+                return nil
+            }
+            self.protocolName = protocolName
+            self.host = Self.normalizedHost(host)
+            port = Self.effectivePort(for: protocolName, explicitPort: url.port ?? 0)
+        }
+
+        var isPotentiallyTrustworthy: Bool {
+            guard !host.isEmpty else { return false }
+            if protocolName == "https" {
+                return true
+            }
+            guard protocolName == "http" else { return false }
+
+            let ipv4Octets = host.split(separator: ".", omittingEmptySubsequences: false)
+            let isIPv4Loopback = ipv4Octets.count == 4
+                && ipv4Octets.allSatisfy { UInt8($0) != nil }
+                && UInt8(ipv4Octets[0]) == 127
+            return host == "localhost"
+                || host.hasSuffix(".localhost")
+                || host == "::1"
+                || isIPv4Loopback
+        }
+
+        private static func normalizedHost(_ host: String) -> String {
+            host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        }
+
+        private static func effectivePort(for protocolName: String, explicitPort: Int) -> Int {
+            guard explicitPort == 0 else { return explicitPort }
+            switch protocolName {
+            case "https":
+                return 443
+            case "http":
+                return 80
+            default:
+                return 0
+            }
+        }
+    }
+    private struct PendingMediaCaptureBridgeRequest {
         let context: SitePermissionRequestContext
         let frame: WKFrameInfo
-        let decisionHandler: (WKPermissionDecision) -> Void
+        let permissionTypes: Set<SitePermissionType>
+        let origin: SitePermissionSecurityOrigin
+        let webViewID: ObjectIdentifier
+        let continuation: CheckedContinuation<MediaCaptureBridgeDecision, Never>
     }
-    private var pendingSitePermissionRequests = [UInt64: PendingSitePermissionRequest]()
-    private var nextSitePermissionRequestToken: UInt64 = 0
+    private struct MediaCapturePreapproval {
+        let requestID: String
+        let permissionTypes: Set<SitePermissionType>
+        let origin: SitePermissionSecurityOrigin
+        // WebKit enforces Permissions Policy before WKUIDelegate. Public WKFrameInfo has no stable
+        // cross-callback identity, so bind the remaining same-origin capability to its frame class;
+        // same-origin subframes share the top-level principal.
+        let isMainFrame: Bool
+        let webViewID: ObjectIdentifier
+        let webContentProcessGeneration: UInt
+        let navigationGeneration: UInt
+        let createdAtUptime: TimeInterval
+    }
+    private var pendingMediaCaptureBridgeRequests = [String: PendingMediaCaptureBridgeRequest]()
+    private var handledMediaCaptureBridgeRequestIDs = Set<String>()
+    private var mediaCapturePreapprovals = [MediaCapturePreapproval]()
+    /// Bounds attacker-controlled outstanding reply continuations without limiting sequential calls on long-lived pages.
+    private let maximumOutstandingMediaCaptureBridgeRequests = 256
+    private let mediaCapturePreapprovalLifetime: TimeInterval = 5
     private var sitePermissionsCommittedMainFrameURL: URL?
+    private var sitePermissionsCommittedMediaPolicyBlocks = Set<SitePermissionType>()
+    private var sitePermissionsProvisionalMediaPolicyBlocks = Set<SitePermissionType>()
     private var isSitePermissionsMainFrameNavigationProvisional = false
     private var sitePermissionsProvisionalNavigation: WKNavigation?
     private var sitePermissionsNavigationGeneration: UInt = 0
@@ -787,6 +865,7 @@ class TabViewController: UIViewController {
 
     var sitePermissionsPromptHandlerOverride: SitePermissionsCoordinator.PromptHandler?
     var sitePermissionsSystemSettingsOpenerOverride: (() -> Void)?
+    var sitePermissionsUptimeProvider: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
@@ -1359,6 +1438,25 @@ class TabViewController: UIViewController {
 
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
     // of the Fire button, but the app still does so in the event that previously persisted cookies have not yet been consumed.
+    private func makeTabContentBlockingAssetsPublisher() -> AnyPublisher<ContentBlockingUpdating.NewContent, Never> {
+        guard !isLinkPreview else { return contentBlockingAssetsPublisher }
+
+        return contentBlockingAssetsPublisher
+            .map { [weak self] content in
+                guard let self else { return content }
+                let isEnabled = featureFlagger.isFeatureOn(.sitePermissions)
+                let userScript: MediaCaptureUserScript?
+                if isEnabled {
+                    userScript = sitePermissionsMediaCaptureUserScript ?? MediaCaptureUserScript()
+                    sitePermissionsMediaCaptureUserScript = userScript
+                } else {
+                    userScript = nil
+                }
+                return content.includingSitePermissionsMediaCapture(userScript, enabled: isEnabled)
+            }
+            .eraseToAnyPublisher()
+    }
+
     func attachWebView(configuration: WKWebViewConfiguration,
                        interactionStateData: Data? = nil,
                        andLoadRequest request: URLRequest?,
@@ -1367,8 +1465,12 @@ class TabViewController: UIViewController {
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         instrumentation.willPrepareWebView()
         let isReplacingWebView = webView != nil
+        if isReplacingWebView {
+            sitePermissionsMediaCaptureUserScript?.delegate = nil
+            sitePermissionsMediaCaptureUserScript = nil
+        }
 
-        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
+        let userContentController = UserContentController(assetsPublisher: makeTabContentBlockingAssetsPublisher(),
                                                           privacyConfigurationManager: privacyConfigurationManager)
         configuration.userContentController = userContentController
         userContentController.delegate = self
@@ -1381,6 +1483,8 @@ class TabViewController: UIViewController {
         }
         sitePermissionsWebContentProcessGeneration &+= 1
         sitePermissionsCommittedMainFrameURL = nil
+        sitePermissionsCommittedMediaPolicyBlocks.removeAll()
+        sitePermissionsProvisionalMediaPolicyBlocks.removeAll()
         isSitePermissionsMainFrameNavigationProvisional = false
         sitePermissionsProvisionalNavigation = nil
         if isReplacingWebView {
@@ -2444,6 +2548,7 @@ extension TabViewController: WKNavigationDelegate {
         pendingNativeLoadURL = nil
         if webView === self.webView, isCurrentSitePermissionsProvisionalNavigation(navigation) {
             sitePermissionsCommittedMainFrameURL = webView.url
+            sitePermissionsCommittedMediaPolicyBlocks = sitePermissionsProvisionalMediaPolicyBlocks
             isSitePermissionsMainFrameNavigationProvisional = false
             sitePermissionsProvisionalNavigation = nil
         }
@@ -2542,6 +2647,8 @@ extension TabViewController: WKNavigationDelegate {
 
     private func handleNavigationResponse(_ navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
         let httpResponse = navigationResponse.response as? HTTPURLResponse
+        captureSitePermissionsMediaPolicy(from: navigationResponse.response,
+                                          isForMainFrame: navigationResponse.isForMainFrame)
         let mimeType = MIMEType(from: navigationResponse.response.mimeType, fileExtension: navigationResponse.response.url?.pathExtension)
         // Capture main-frame MIME for the page-context attachability gate.
         if navigationResponse.isForMainFrame, let responseURL = navigationResponse.response.url {
@@ -2662,6 +2769,7 @@ extension TabViewController: WKNavigationDelegate {
             sitePermissionsNavigationGeneration &+= 1
             isSitePermissionsMainFrameNavigationProvisional = true
             sitePermissionsProvisionalNavigation = navigation
+            sitePermissionsProvisionalMediaPolicyBlocks.removeAll()
             resetSitePermissionRequests(for: .navigation)
         }
         navigationPixelResponder.didStart(navigation)
@@ -3184,6 +3292,7 @@ extension TabViewController: WKNavigationDelegate {
         if webView === self.webView, isCurrentSitePermissionsProvisionalNavigation(navigation) {
             isSitePermissionsMainFrameNavigationProvisional = false
             sitePermissionsProvisionalNavigation = nil
+            sitePermissionsProvisionalMediaPolicyBlocks.removeAll()
         }
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         pendingNativeLoadURL = nil
@@ -4277,6 +4386,7 @@ extension TabViewController: WKUIDelegate {
         }
 
         guard featureFlagger.isFeatureOn(.sitePermissions) else {
+            discardMediaCapturePreapprovals()
             decisionHandler(.prompt)
             return
         }
@@ -4284,43 +4394,14 @@ extension TabViewController: WKUIDelegate {
         guard webView === self.webView,
               !isLinkPreview,
               let permissionTypes = sitePermissionTypes(for: type),
-              let topLevelSite = currentSitePermissionKey(),
-              let dependencies = sitePermissionsDependenciesProvider(),
-              let coordinator = makeSitePermissionsCoordinatorIfNeeded(dependencies: dependencies) else {
+              consumeMediaCapturePreapproval(for: permissionTypes,
+                                             origin: origin,
+                                             frame: frame,
+                                             webView: webView) else {
             decisionHandler(.deny)
             return
         }
-
-        nextSitePermissionRequestToken &+= 1
-        let requestToken = nextSitePermissionRequestToken
-        let context = SitePermissionRequestContext(
-            tabID: tabModel.uid,
-            topLevelSite: topLevelSite,
-            requestingFrameID: UInt64(UInt(bitPattern: ObjectIdentifier(frame))),
-            webContentProcessGeneration: sitePermissionsWebContentProcessGeneration,
-            navigationGeneration: sitePermissionsNavigationGeneration
-        )
-        pendingSitePermissionRequests[requestToken] = PendingSitePermissionRequest(
-            context: context,
-            frame: frame,
-            decisionHandler: decisionHandler
-        )
-
-        let promptHandler = sitePermissionsPromptHandlerOverride ?? { [weak self] prompt, completion in
-            guard let self else {
-                completion(.denyOnce)
-                return
-            }
-            presentSitePermissionDialog(prompt, completion: completion)
-        }
-
-        coordinator.request(
-            SitePermissionRequest(context: context, permissionTypes: permissionTypes),
-            promptHandler: promptHandler,
-            completion: { [weak self] resolution in
-                self?.resolveSitePermissionRequest(requestToken, with: resolution)
-            }
-        )
+        decisionHandler(.grant)
     }
 
     private func sitePermissionTypes(for captureType: WKMediaCaptureType) -> Set<SitePermissionType>? {
@@ -4367,24 +4448,78 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func currentSitePermissionContext(tabID: String, requestingFrameID: UInt64) -> SitePermissionRequestContext? {
-        guard let pendingRequest = pendingSitePermissionRequests.values.first(where: {
-                  $0.context.tabID == tabID && $0.context.requestingFrameID == requestingFrameID
-              }) else {
+        let pendingRequest = pendingMediaCaptureBridgeRequests.values
+            .map { ($0.context, $0.frame) }
+            .first { $0.0.tabID == tabID && $0.0.requestingFrameID == requestingFrameID }
+        guard let pendingRequest else {
             return nil
         }
 
         // WKFrameInfo exposes identity but no public liveness API. Holding the exact frame object,
         // together with navigation and process generations, is the strongest public validation;
         // same-document iframe removal cannot be observed here.
-        let context = pendingRequest.context
+        let context = pendingRequest.0
         guard tabID == tabModel.uid,
-              context.requestingFrameID == UInt64(UInt(bitPattern: ObjectIdentifier(pendingRequest.frame))),
+              context.requestingFrameID == UInt64(UInt(bitPattern: ObjectIdentifier(pendingRequest.1))),
               context.webContentProcessGeneration == sitePermissionsWebContentProcessGeneration,
               context.navigationGeneration == sitePermissionsNavigationGeneration,
               context.topLevelSite == currentSitePermissionKey() else {
             return nil
         }
         return context
+    }
+
+    private func sitePermissionsPromptHandler() -> SitePermissionsCoordinator.PromptHandler {
+        sitePermissionsPromptHandlerOverride ?? { [weak self] prompt, completion in
+            guard let self else {
+                completion(.denyOnce)
+                return
+            }
+            presentSitePermissionDialog(prompt, completion: completion)
+        }
+    }
+
+    private func consumeMediaCapturePreapproval(for permissionTypes: Set<SitePermissionType>,
+                                                origin: WKSecurityOrigin,
+                                                frame: WKFrameInfo,
+                                                webView: WKWebView) -> Bool {
+        let webViewID = ObjectIdentifier(webView)
+        pruneExpiredMediaCapturePreapprovals()
+        let staleRequestIDs = mediaCapturePreapprovals.filter {
+            $0.webViewID != webViewID
+                || $0.webContentProcessGeneration != sitePermissionsWebContentProcessGeneration
+                || $0.navigationGeneration != sitePermissionsNavigationGeneration
+        }.map(\.requestID)
+        handledMediaCaptureBridgeRequestIDs.subtract(staleRequestIDs)
+        mediaCapturePreapprovals.removeAll { staleRequestIDs.contains($0.requestID) }
+
+        let trustedOrigin = SitePermissionSecurityOrigin(frame.securityOrigin)
+        guard trustedOrigin == SitePermissionSecurityOrigin(origin),
+              let index = mediaCapturePreapprovals.firstIndex(where: {
+                  $0.permissionTypes == permissionTypes
+                      && $0.origin == trustedOrigin
+                      && $0.isMainFrame == frame.isMainFrame
+                      && $0.webViewID == webViewID
+              }) else {
+            return false
+        }
+        let preapproval = mediaCapturePreapprovals.remove(at: index)
+        handledMediaCaptureBridgeRequestIDs.remove(preapproval.requestID)
+        return true
+    }
+
+    private func pruneExpiredMediaCapturePreapprovals() {
+        let now = sitePermissionsUptimeProvider()
+        let expiredRequestIDs = mediaCapturePreapprovals.filter {
+            now - $0.createdAtUptime >= mediaCapturePreapprovalLifetime
+        }.map(\.requestID)
+        handledMediaCaptureBridgeRequestIDs.subtract(expiredRequestIDs)
+        mediaCapturePreapprovals.removeAll { expiredRequestIDs.contains($0.requestID) }
+    }
+
+    private func discardMediaCapturePreapprovals() {
+        handledMediaCaptureBridgeRequestIDs.subtract(mediaCapturePreapprovals.map(\.requestID))
+        mediaCapturePreapprovals.removeAll()
     }
 
     private func currentSitePermissionKey() -> SitePermissionKey? {
@@ -4578,37 +4713,32 @@ extension TabViewController: WKUIDelegate {
         completion?()
     }
 
-    private func resolveSitePermissionRequest(_ requestToken: UInt64, with resolution: SitePermissionResolution) {
-        guard let pendingRequest = pendingSitePermissionRequests.removeValue(forKey: requestToken) else { return }
-
-        switch resolution {
-        case .grant:
-            pendingRequest.decisionHandler(.grant)
-        case .deny:
-            pendingRequest.decisionHandler(.deny)
-        }
-    }
-
     private func resetSitePermissionRequests(for pageChange: SitePermissionPageChange) {
         dismissSitePermissionDialog()
+        denyPendingMediaCaptureBridgeRequests()
+        handledMediaCaptureBridgeRequestIDs.removeAll()
+        mediaCapturePreapprovals.removeAll()
         sitePermissionsCoordinator?.pageDidChange(pageChange)
         dismissSitePermissionRecovery()
-        denyPendingSitePermissionRequests()
     }
 
-    private func denyPendingSitePermissionRequests() {
-        let decisionHandlers = pendingSitePermissionRequests.values.map(\.decisionHandler)
-        pendingSitePermissionRequests.removeAll()
-        decisionHandlers.forEach { $0(.deny) }
+    private func denyPendingMediaCaptureBridgeRequests() {
+        let continuations = pendingMediaCaptureBridgeRequests.values.map(\.continuation)
+        pendingMediaCaptureBridgeRequests.removeAll()
+        continuations.forEach { $0.resume(returning: .deny) }
     }
 
     func closeSitePermissions() {
         areSitePermissionsClosed = true
         dismissSitePermissionDialog()
+        denyPendingMediaCaptureBridgeRequests()
+        handledMediaCaptureBridgeRequestIDs.removeAll()
+        mediaCapturePreapprovals.removeAll()
         sitePermissionsCoordinator?.close()
         dismissSitePermissionRecovery()
         sitePermissionsCoordinator = nil
-        denyPendingSitePermissionRequests()
+        sitePermissionsMediaCaptureUserScript?.delegate = nil
+        sitePermissionsMediaCaptureUserScript = nil
     }
 
     func webViewDidClose(_ webView: WKWebView) {
@@ -4635,6 +4765,8 @@ extension TabViewController: WKUIDelegate {
         if webView === self.webView {
             sitePermissionsWebContentProcessGeneration &+= 1
             sitePermissionsCommittedMainFrameURL = nil
+            sitePermissionsCommittedMediaPolicyBlocks.removeAll()
+            sitePermissionsProvisionalMediaPolicyBlocks.removeAll()
             isSitePermissionsMainFrameNavigationProvisional = false
             sitePermissionsProvisionalNavigation = nil
             resetSitePermissionRequests(for: .webContentProcessReplacement)
@@ -4844,6 +4976,177 @@ extension TabViewController: DaxEasterEggDelegate {
     }
 }
 
+// MARK: - MediaCaptureUserScriptDelegate
+
+extension TabViewController: MediaCaptureUserScriptDelegate {
+
+    func configureSitePermissionsMediaCapture(with userScript: MediaCaptureUserScript?) {
+        guard let userScript else {
+            // Existing and back-forward-cached documents keep their injected shim after the flag
+            // turns off. Keep its weakly-held reply handler alive for the web process lifetime so
+            // every request receives a reply, while new documents receive no shim.
+            dismissSitePermissionDialog()
+            sitePermissionsCoordinator?.pageDidChange(.navigation)
+            dismissSitePermissionRecovery()
+            bypassPendingMediaCaptureBridgeRequests()
+            discardMediaCapturePreapprovals()
+            return
+        }
+        sitePermissionsMediaCaptureUserScript = userScript
+        userScript.delegate = self
+    }
+
+    private func bypassPendingMediaCaptureBridgeRequests() {
+        let pendingRequests = pendingMediaCaptureBridgeRequests
+        pendingMediaCaptureBridgeRequests.removeAll()
+        handledMediaCaptureBridgeRequestIDs.subtract(pendingRequests.keys)
+        pendingRequests.values.forEach { $0.continuation.resume(returning: .bypass) }
+    }
+
+    func mediaCaptureUserScript(_ userScript: MediaCaptureUserScript,
+                                requestPermissionFor permissionTypes: Set<SitePermissionType>,
+                                requestID: String,
+                                in frame: WKFrameInfo,
+                                webView: WKWebView) async -> MediaCaptureBridgeDecision {
+        guard featureFlagger.isFeatureOn(.sitePermissions) else {
+            discardMediaCapturePreapprovals()
+            return .bypass
+        }
+
+        let origin = SitePermissionSecurityOrigin(frame.securityOrigin)
+        if origin.host.isDuckAIHost {
+            return .bypass
+        }
+
+        pruneExpiredMediaCapturePreapprovals()
+        guard webView === self.webView,
+              !isLinkPreview,
+              isMediaCaptureAllowed(for: origin),
+              sitePermissionsCommittedMediaPolicyBlocks.isDisjoint(with: permissionTypes),
+              pendingMediaCaptureBridgeRequests[requestID] == nil,
+              !handledMediaCaptureBridgeRequestIDs.contains(requestID),
+              handledMediaCaptureBridgeRequestIDs.count < maximumOutstandingMediaCaptureBridgeRequests,
+              isSupportedMediaCapturePermissionTypes(permissionTypes),
+              let topLevelSite = currentSitePermissionKey(),
+              let dependencies = sitePermissionsDependenciesProvider(),
+              let coordinator = makeSitePermissionsCoordinatorIfNeeded(dependencies: dependencies) else {
+            return .deny
+        }
+        handledMediaCaptureBridgeRequestIDs.insert(requestID)
+
+        let context = SitePermissionRequestContext(
+            tabID: tabModel.uid,
+            topLevelSite: topLevelSite,
+            requestingFrameID: UInt64(UInt(bitPattern: ObjectIdentifier(frame))),
+            webContentProcessGeneration: sitePermissionsWebContentProcessGeneration,
+            navigationGeneration: sitePermissionsNavigationGeneration
+        )
+
+        return await withCheckedContinuation { continuation in
+            pendingMediaCaptureBridgeRequests[requestID] = PendingMediaCaptureBridgeRequest(
+                context: context,
+                frame: frame,
+                permissionTypes: permissionTypes,
+                origin: origin,
+                webViewID: ObjectIdentifier(webView),
+                continuation: continuation
+            )
+            coordinator.request(
+                SitePermissionRequest(context: context, permissionTypes: permissionTypes),
+                promptHandler: sitePermissionsPromptHandler(),
+                completion: { [weak self] resolution in
+                    self?.resolveMediaCaptureBridgeRequest(requestID, resolution: resolution)
+                }
+            )
+        }
+    }
+
+    private func resolveMediaCaptureBridgeRequest(_ requestID: String,
+                                                  resolution: SitePermissionResolution) {
+        guard let pendingRequest = pendingMediaCaptureBridgeRequests[requestID] else { return }
+        guard featureFlagger.isFeatureOn(.sitePermissions) else {
+            pendingMediaCaptureBridgeRequests[requestID] = nil
+            handledMediaCaptureBridgeRequestIDs.remove(requestID)
+            let decision: MediaCaptureBridgeDecision
+            if case .deny = resolution {
+                decision = .deny
+            } else {
+                decision = .bypass
+            }
+            pendingRequest.continuation.resume(returning: decision)
+            return
+        }
+
+        guard resolution == .grant,
+              currentSitePermissionContext(tabID: pendingRequest.context.tabID,
+                                           requestingFrameID: pendingRequest.context.requestingFrameID) == pendingRequest.context,
+              let webView,
+              ObjectIdentifier(webView) == pendingRequest.webViewID else {
+            pendingMediaCaptureBridgeRequests[requestID] = nil
+            handledMediaCaptureBridgeRequestIDs.remove(requestID)
+            pendingRequest.continuation.resume(returning: .deny)
+            return
+        }
+
+        pendingMediaCaptureBridgeRequests[requestID] = nil
+        mediaCapturePreapprovals.append(MediaCapturePreapproval(
+            requestID: requestID,
+            permissionTypes: pendingRequest.permissionTypes,
+            origin: pendingRequest.origin,
+            isMainFrame: pendingRequest.frame.isMainFrame,
+            webViewID: pendingRequest.webViewID,
+            webContentProcessGeneration: pendingRequest.context.webContentProcessGeneration,
+            navigationGeneration: pendingRequest.context.navigationGeneration,
+            createdAtUptime: sitePermissionsUptimeProvider()
+        ))
+        pendingRequest.continuation.resume(returning: .allow)
+    }
+
+    private func isSupportedMediaCapturePermissionTypes(_ permissionTypes: Set<SitePermissionType>) -> Bool {
+        permissionTypes == [.camera]
+            || permissionTypes == [.microphone]
+            || permissionTypes == [.camera, .microphone]
+    }
+
+    private func isMediaCaptureAllowed(for origin: SitePermissionSecurityOrigin) -> Bool {
+        // Keep media capture same-origin in this v1 bridge. Delegated cross-origin access requires
+        // broader security review; the authenticated page shim still enforces Permissions Policy.
+        guard origin.isPotentiallyTrustworthy,
+              let committedURL = sitePermissionsCommittedMainFrameURL,
+              let topLevelOrigin = SitePermissionSecurityOrigin(committedURL) else {
+            return false
+        }
+        return origin == topLevelOrigin
+    }
+
+    func captureSitePermissionsMediaPolicy(from response: URLResponse, isForMainFrame: Bool) {
+        guard isForMainFrame, isSitePermissionsMainFrameNavigationProvisional else { return }
+        let header = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Permissions-Policy")
+        sitePermissionsProvisionalMediaPolicyBlocks = Self.mediaTypesDisabledByPermissionsPolicy(header)
+    }
+
+    static func mediaTypesDisabledByPermissionsPolicy(_ header: String?) -> Set<SitePermissionType> {
+        guard let header else { return [] }
+        var blocked = Set<SitePermissionType>()
+        for directive in header.split(separator: ",", omittingEmptySubsequences: false) {
+            let components = directive.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            guard components.count == 2 else { continue }
+            let name = components[0].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let value = components[1].trimmingCharacters(in: .whitespacesAndNewlines)
+            guard value.first == "(", value.last == ")",
+                  value.dropFirst().dropLast().trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                continue
+            }
+            if name == "camera" {
+                blocked.insert(.camera)
+            } else if name == "microphone" {
+                blocked.insert(.microphone)
+            }
+        }
+        return blocked
+    }
+}
+
 extension TabViewController: UserContentControllerDelegate {
 
     var userScripts: UserScripts? {
@@ -4868,6 +5171,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingSubfeature.delegate = self
+        configureSitePermissionsMediaCapture(with: userScripts.mediaCaptureUserScript)
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
         userScripts.autoconsentUserScript.management = autoconsentManagement

@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Foundation
+import PageRefreshMonitor
 
 /// Events that can trigger a promo.
 ///
@@ -33,6 +34,7 @@ enum PromoTrigger {
     case bookmarkAdded
     case bookmarksImported
     case missingBookmarkFaviconEncountered
+    case pageRefreshPatternDetected
     case testTriggered
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
@@ -53,7 +55,9 @@ enum PromoTrigger {
             NotificationCenter.default.publisher(for: .missingBookmarkFaviconEncountered)
                 .map { _ in PromoTrigger.missingBookmarkFaviconEncountered },
             NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
-                .map { _ in PromoTrigger.appBecameActive }
+                .map { _ in PromoTrigger.appBecameActive },
+            NotificationCenter.default.publisher(for: .pageRefreshMonitorDidDetectRefreshPattern)
+                .map { _ in PromoTrigger.pageRefreshPatternDetected }
         ).eraseToAnyPublisher()
 
         if PromoServiceFactory.includeTestPromos{

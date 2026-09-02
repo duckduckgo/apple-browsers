@@ -93,28 +93,162 @@ public class LinkCleaner {
             return url
         }
 
-        guard var urlsComps = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            return url
-        }
-        guard let queryParams = urlsComps.percentEncodedQueryItems, queryParams.count > 0 else {
-            return url
-        }
-
         let trackingParams = TrackingLinkSettings(fromConfig: privacyConfig).trackingParameters
+        guard let cleanedURL = PercentEncodedQueryFilter(parameterNames: trackingParams).filter(url: url) else {
+            return url
+        }
 
-        let preservedParams: [URLQueryItem] = queryParams.filter { param in
-            if trackingParams.contains(where: { $0 == param.name }) {
-                urlParametersRemoved = true
-                return false
+        urlParametersRemoved = true
+        return cleanedURL
+    }
+}
+
+/// Filters a URL's encoded query without creating a `URLQueryItem` for every parameter.
+/// Delimiters are parsed in their percent-encoded form so surviving query items can be copied unchanged.
+private struct PercentEncodedQueryFilter {
+
+    private enum ASCII {
+        static let numberSign: UInt8 = 0x23
+        static let ampersand: UInt8 = 0x26
+        static let equalsSign: UInt8 = 0x3D
+        static let questionMark: UInt8 = 0x3F
+    }
+
+    private struct QueryInspection {
+        let preservedItemCount: Int
+        let preservedItemByteCount: Int
+    }
+
+    private let parameterNames: Set<String>
+    private let maximumParameterNameByteCount: Int
+
+    init(parameterNames: [String]) {
+        self.parameterNames = Set(parameterNames)
+        self.maximumParameterNameByteCount = parameterNames.map { $0.utf8.count }.max() ?? 0
+    }
+
+    func filter(url: URL) -> URL? {
+        let source = url.relativeString
+        let bytes = source.utf8
+
+        let fragmentStart = bytes.firstIndex(of: ASCII.numberSign) ?? bytes.endIndex
+        guard let questionMark = bytes[..<fragmentStart].firstIndex(of: ASCII.questionMark) else {
+            return nil
+        }
+
+        let queryStart = bytes.index(after: questionMark)
+        let queryRange = queryStart..<fragmentStart
+        guard !queryRange.isEmpty,
+              let inspection = inspectQuery(in: source, bytes: bytes, range: queryRange) else { return nil }
+
+        let cleanedURLString = rebuildURLString(
+            source,
+            bytes: bytes,
+            queryRange: queryRange,
+            inspection: inspection
+        )
+        if cleanedURLString.isEmpty {
+            return URLComponents().url(relativeTo: url.baseURL)
+        }
+        return URL(string: cleanedURLString, relativeTo: url.baseURL)
+    }
+
+    private func inspectQuery(
+        in source: String,
+        bytes: String.UTF8View,
+        range: Range<String.Index>
+    ) -> QueryInspection? {
+        var didRemoveParameters = false
+        var preservedItemCount = 0
+        var preservedItemByteCount = 0
+
+        forEachQueryItem(in: bytes, range: range) { itemRange in
+            if isTrackingParameter(in: source, bytes: bytes, itemRange: itemRange) {
+                didRemoveParameters = true
+            } else {
+                preservedItemCount += 1
+                preservedItemByteCount += bytes.distance(from: itemRange.lowerBound, to: itemRange.upperBound)
             }
-
-            return true
         }
 
-        if urlParametersRemoved {
-            urlsComps.percentEncodedQueryItems = preservedParams.count > 0 ? preservedParams : nil
-            return urlsComps.url
+        guard didRemoveParameters else { return nil }
+        return QueryInspection(
+            preservedItemCount: preservedItemCount,
+            preservedItemByteCount: preservedItemByteCount
+        )
+    }
+
+    private func rebuildURLString(
+        _ source: String,
+        bytes: String.UTF8View,
+        queryRange: Range<String.Index>,
+        inspection: QueryInspection
+    ) -> String {
+        let questionMark = bytes.index(before: queryRange.lowerBound)
+        let fragmentStart = queryRange.upperBound
+        let prefixByteCount = bytes.distance(from: bytes.startIndex, to: questionMark)
+        let fragmentByteCount = bytes.distance(from: fragmentStart, to: bytes.endIndex)
+        let separatorByteCount = max(inspection.preservedItemCount - 1, 0)
+        let queryByteCount = inspection.preservedItemCount > 0
+            ? 1 + inspection.preservedItemByteCount + separatorByteCount
+            : 0
+
+        var result = String()
+        result.reserveCapacity(prefixByteCount + queryByteCount + fragmentByteCount)
+        result.append(contentsOf: source[..<questionMark])
+
+        if inspection.preservedItemCount > 0 {
+            result.append("?")
+            var didAppendItem = false
+
+            forEachQueryItem(in: bytes, range: queryRange) { itemRange in
+                guard !isTrackingParameter(in: source, bytes: bytes, itemRange: itemRange) else {
+                    return
+                }
+
+                if didAppendItem {
+                    result.append("&")
+                }
+                result.append(contentsOf: source[itemRange])
+                didAppendItem = true
+            }
         }
-        return url
+
+        result.append(contentsOf: source[fragmentStart...])
+        return result
+    }
+
+    private func forEachQueryItem(
+        in bytes: String.UTF8View,
+        range: Range<String.Index>,
+        perform action: (Range<String.Index>) -> Void
+    ) {
+        var itemStart = range.lowerBound
+        var index = range.lowerBound
+
+        while index != range.upperBound {
+            if bytes[index] == ASCII.ampersand {
+                action(itemStart..<index)
+                itemStart = bytes.index(after: index)
+            }
+            index = bytes.index(after: index)
+        }
+
+        action(itemStart..<range.upperBound)
+    }
+
+    private func isTrackingParameter(
+        in source: String,
+        bytes: String.UTF8View,
+        itemRange: Range<String.Index>
+    ) -> Bool {
+        let nameEnd = bytes[itemRange].firstIndex(of: ASCII.equalsSign) ?? itemRange.upperBound
+        // A name longer than every configured name can't match, and rejecting it here keeps the
+        // temporary String bounded by configuration rather than by page-controlled input.
+        let nameBytes = bytes[itemRange.lowerBound..<nameEnd]
+        guard nameBytes.dropFirst(maximumParameterNameByteCount).isEmpty else {
+            return false
+        }
+        return parameterNames.contains(String(source[itemRange.lowerBound..<nameEnd]))
     }
 }

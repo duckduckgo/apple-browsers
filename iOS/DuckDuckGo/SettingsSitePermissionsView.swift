@@ -174,6 +174,7 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
     private static func presentUndoToastDefault(message: String, undo: @escaping () -> Void) {
         ActionMessageView.present(message: message,
                                   actionTitle: UserText.actionGenericUndo,
+                                  presentationLocation: .withoutBottomBar,
                                   onAction: undo)
     }
 }
@@ -194,12 +195,15 @@ struct SettingsSitePermissionsView: View {
                 ForEach(SettingsSitePermissionsViewModel.supportedPermissionTypes, id: \.self) { permissionType in
                     NavigationLink(destination: globalPicker(for: permissionType)) {
                         SettingsCellView(label: permissionType.settingsTitle,
+                                         image: Image(uiImage: permissionType.settingsIcon(for: .ask)),
                                          accessory: .rightDetail(viewModel.globalDefault(for: permissionType).settingsTitle))
                     }
                     .accessibilityValue(viewModel.globalDefault(for: permissionType).settingsTitle)
                     .accessibilityIdentifier("Settings.SitePermissions.Global.\(permissionType.rawValue)")
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
+            } header: {
+                sectionHeader(UserText.sitePermissions)
             } footer: {
                 Text(systemSettingsFooter)
                     .environment(\.openURL, OpenURLAction { url in
@@ -210,7 +214,7 @@ struct SettingsSitePermissionsView: View {
             }
 
             if !viewModel.storedSites.isEmpty {
-                Section(UserText.settingsSitePermissionsManageSites) {
+                Section {
                     ForEach(viewModel.storedSites, id: \.self) { site in
                         NavigationLink(destination: SettingsSitePermissionsSiteView(site: site, viewModel: viewModel)
                             .environmentObject(settingsViewModel)) {
@@ -225,7 +229,11 @@ struct SettingsSitePermissionsView: View {
                         .accessibilityIdentifier("Settings.SitePermissions.Site.\(site.host)")
                         .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                     }
+                } header: {
+                    sectionHeader(UserText.settingsSitePermissionsManageSites)
+                }
 
+                Section {
                     Button(UserText.settingsSitePermissionsRemoveAll) {
                         viewModel.removeAllSitePermissions()
                     }
@@ -239,6 +247,13 @@ struct SettingsSitePermissionsView: View {
         .onFirstAppear {
             viewModel.didOpen()
         }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .daxHeadline()
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .textCase(nil)
     }
 
     private func globalPicker(for permissionType: SitePermissionType) -> some View {

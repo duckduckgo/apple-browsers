@@ -40,36 +40,35 @@ public struct SitePermissionsSheetView: View {
     }
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: SheetMetrics.contentSpacing) {
-                header
+        VStack(alignment: .leading, spacing: SheetMetrics.contentSpacing) {
+            header
 
-                if !viewModel.rows.isEmpty {
-                    permissionRows
+            if !viewModel.rows.isEmpty {
+                permissionRows
+            }
+
+            switch viewModel.state {
+            case .permissionsOnly:
+                VStack(alignment: .leading, spacing: Constants.copySpacing) {
+                    reloadCaption
+                    actionCard(includesRemove: true, includesSystemSettings: false)
                 }
-
-                switch viewModel.state {
-                case .permissionsOnly:
-                    VStack(alignment: .leading, spacing: Constants.copySpacing) {
-                        reloadCaption
-                        actionCard(includesRemove: true, includesSystemSettings: false)
-                    }
-                case .permissionsAndReminder:
-                    VStack(alignment: .leading, spacing: Constants.copySpacing) {
-                        actionCard(includesRemove: true, includesSystemSettings: true)
-                        reminder
-                    }
-                case .reminderOnly:
-                    VStack(alignment: .leading, spacing: Constants.copySpacing) {
-                        actionCard(includesRemove: false, includesSystemSettings: true)
-                        reminder
-                    }
+            case .permissionsAndReminder:
+                VStack(alignment: .leading, spacing: Constants.copySpacing) {
+                    actionCard(includesRemove: true, includesSystemSettings: true)
+                    reminder
+                }
+            case .reminderOnly:
+                VStack(alignment: .leading, spacing: Constants.copySpacing) {
+                    actionCard(includesRemove: false, includesSystemSettings: true)
+                    reminder
                 }
             }
-            .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
-            .padding(.top, SheetMetrics.contentSpacing)
-            .padding(.bottom, SheetMetrics.contentBottomPadding)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
+        .padding(.top, SheetMetrics.contentSpacing)
+        .padding(.bottom, SheetMetrics.contentBottomPadding)
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
         .accessibilityIdentifier("SitePermissions.Sheet")
     }
@@ -87,10 +86,9 @@ public struct SitePermissionsSheetView: View {
             Spacer(minLength: 0)
 
             Button(action: viewModel.dismiss) {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.closeCircleSmall)
-                    .renderingMode(.template)
-                    .foregroundColor(Color(designSystemColor: .iconsTertiary))
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
             }
+            .buttonStyle(CloseButtonStyle())
             .accessibilityLabel(UserText.PermissionManagement.close)
             .accessibilityIdentifier("SitePermissions.Sheet.Close")
         }

@@ -79,7 +79,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         ])
     }
 
-    func testWebsiteMenuPlacesSitePermissionsBeforeBookmarkInBothLayouts() throws {
+    func testWebsiteMenuPlacesSitePermissionsInItsOwnSectionBeforeBookmarksInBothLayouts() throws {
         for mergesActionsAndBookmarks in [false, true] {
             let entryBuilder = MockBrowsingMenuEntryBuilder(
                 chatsEntry: nil,
@@ -90,11 +90,15 @@ final class BrowsingMenuBuilderTests: XCTestCase {
                 entryBuilder: entryBuilder,
                 mergesActionsAndBookmarks: mergesActionsAndBookmarks
             ))
+            let sitePermissionsSectionIndex = try XCTUnwrap(model.sections.firstIndex {
+                $0.items.contains { $0.name == MockBrowsingMenuEntryBuilder.sitePermissionsName }
+            })
+            let bookmarkSectionIndex = try XCTUnwrap(model.sections.firstIndex {
+                $0.items.contains { $0.name == MockBrowsingMenuEntryBuilder.bookmarkName }
+            })
 
-            XCTAssertEqual(Array(model.sections.flatMap(\.items).map(\.name).prefix(2)), [
-                MockBrowsingMenuEntryBuilder.sitePermissionsName,
-                MockBrowsingMenuEntryBuilder.bookmarkName
-            ])
+            XCTAssertEqual(model.sections[sitePermissionsSectionIndex].items.map(\.name), [MockBrowsingMenuEntryBuilder.sitePermissionsName])
+            XCTAssertEqual(bookmarkSectionIndex, sitePermissionsSectionIndex + 1)
         }
     }
 
@@ -314,18 +318,20 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         line: UInt = #line
     ) {
         let bookmarksInterface = MockMenuBookmarksInteractor()
-        let legacyNames = sut.buildBrowsingMenu(
+        let legacyEntries = sut.buildBrowsingMenu(
             with: bookmarksInterface,
             mobileCustomization: makeMobileCustomization(),
             clearTabsAndData: {}
-        ).compactMap(\.name)
-        let sheetNames = sut.buildSheetBrowsingMenu(
+        )
+        let legacyNames = legacyEntries.compactMap(\.name)
+        let sheetSections = sut.buildSheetBrowsingMenu(
             context: .website,
             with: bookmarksInterface,
             mobileCustomization: makeMobileCustomization(),
             browsingMenuSheetCapability: BrowsingMenuSheetDefaultCapability(),
             clearTabsAndData: {}
-        )?.sections.flatMap(\.items).map(\.name) ?? []
+        )?.sections ?? []
+        let sheetNames = sheetSections.flatMap(\.items).map(\.name)
 
         XCTAssertEqual(legacyNames.contains(UserText.sitePermissions), isPresent, file: file, line: line)
         XCTAssertEqual(sheetNames.contains(UserText.sitePermissions), isPresent, file: file, line: line)
@@ -340,6 +346,10 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         }
         XCTAssertLessThan(legacySitePermissionsIndex, legacyBookmarkIndex, file: file, line: line)
         XCTAssertLessThan(sheetSitePermissionsIndex, sheetBookmarkIndex, file: file, line: line)
+        XCTAssertTrue(legacyEntries[legacySitePermissionsIndex + 1].isSeparator, file: file, line: line)
+        XCTAssertEqual(sheetSections.first { section in
+            section.items.contains { $0.name == UserText.sitePermissions }
+        }?.items.map(\.name), [UserText.sitePermissions], file: file, line: line)
     }
 
     @MainActor

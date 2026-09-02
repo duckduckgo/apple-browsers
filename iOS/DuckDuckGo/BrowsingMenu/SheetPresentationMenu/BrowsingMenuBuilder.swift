@@ -141,11 +141,14 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             sections.append(BrowsingMenuModel.Section(items: [youTubeAdBlockEntry]))
         }
 
+        if let sitePermissionsEntry = BrowsingMenuModel.Entry(entryBuilder.makeSitePermissionsEntry()) {
+            sections.append(BrowsingMenuModel.Section(items: [sitePermissionsEntry]))
+        }
+
         if options.mergeActionsAndBookmarks {
             // MARK: Tab Actions
             if let bookmarkEntries = entryBuilder.makeBookmarkEntries(with: bookmarksInterface) {
                 let bookmarkGroupItems: [BrowsingMenuModel.Entry] = [
-                    .init(entryBuilder.makeSitePermissionsEntry()),
                     .init(bookmarkEntries.bookmark),
                     .init(bookmarkEntries.favorite, tag: .favorite),
                     .init(entryBuilder.makeShareEntry()),
@@ -159,7 +162,6 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             // MARK: Bookmark group
             if let bookmarkEntries = entryBuilder.makeBookmarkEntries(with: bookmarksInterface) {
                 let bookmarkGroupItems: [BrowsingMenuModel.Entry] = [
-                    .init(entryBuilder.makeSitePermissionsEntry()),
                     .init(bookmarkEntries.bookmark),
                     .init(bookmarkEntries.favorite, tag: .favorite),
                     .init(entryBuilder.makeShareEntry())

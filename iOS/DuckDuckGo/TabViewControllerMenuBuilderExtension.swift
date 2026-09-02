@@ -322,6 +322,7 @@ extension TabViewController {
 
         if let sitePermissionsEntry = buildSitePermissionsEntry() {
             entries.append(sitePermissionsEntry)
+            entries.append(.separator)
         }
 
         let bookmarkEntries = buildBookmarkEntries(for: link, with: bookmarksInterface)

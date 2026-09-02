@@ -709,6 +709,7 @@ struct HomePageConfigurationTests {
     func legacyFocusedModelRefreshesAfterContextualOnboarding() {
         let notificationCenter = NotificationCenter()
         let store = FilteredRemoteMessagingStore(noTriggerMessage: makeRemoteMessage(id: "message"))
+        store.shownMessageIDs.insert("message")
         var isStillOnboarding = true
         let configuration = HomePageConfiguration(
             remoteMessagingStore: store,

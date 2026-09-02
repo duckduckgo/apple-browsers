@@ -65,9 +65,22 @@ final class NativeMessagingHostSession {
 
     @MainActor
     func start() throws {
+        // Capture the name, because the port may release this session before the handler runs.
+        let name = hostName
+
         process.terminationHandler = { [weak self] process in
+            let status = process.terminationStatus
             Task { @MainActor [weak self] in
-                Logger.webExtensions.debug("🔗 Host \(self?.hostName ?? "?", privacy: .public) ended, status \(process.terminationStatus, privacy: .public)")
+                if status == 0 {
+                    Logger.webExtensions.debug("🔗 Host \(name, privacy: .public) ended normally")
+                } else {
+                    // A host that quits at once usually has nothing to talk to. Bitwarden's
+                    // proxy, for one, needs its desktop app to run and to offer an IPC socket.
+                    Logger.webExtensions.error("""
+                    ❌ Host \(name, privacy: .public) ended with status \(status, privacy: .public). \
+                    Check that its companion app runs, and that the app allows browser integration.
+                    """)
+                }
                 self?.finish(with: SessionError.hostEnded)
             }
         }

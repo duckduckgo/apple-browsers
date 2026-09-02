@@ -555,7 +555,7 @@ extension DefaultOmniBarViewController {
             self?.toolPickerController?.resetSelection(isUserInitiated: true)
         }
         omniBarView.onCreateImageModelSwitchNoticeDismissed = { [weak self] in
-            self?.toolPickerController?.clearModelSwitchNotice()
+            self?.toolPickerController?.dismissModelSwitchNotice()
         }
 
         // The attach button shares the same store so its limits and accepted types track the selected
@@ -580,7 +580,7 @@ extension DefaultOmniBarViewController {
             // types apply).
             self.modelPickerController?.handleModelsUpdated()
             self.reasoningPickerController?.handleModelsUpdated()
-            self.toolPickerController?.handleModelChanged()
+            self.toolPickerController?.handleModelsUpdated()
             self.attachmentController?.handleModelChanged()
             self.refreshModelPicker()
             self.refreshReasoningPicker()

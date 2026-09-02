@@ -1487,9 +1487,19 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func overflowTarget(at point: CGPoint, with event: UIEvent?) -> UIView? {
         guard isSearchAreaExpanded else { return nil }
-        // The strip and attach button sit above the text view (which is brought to front for typing),
-        // so route taps to them before falling back to the text view.
-        let candidates: [UIView] = [aiChatSendButton, modelPickerButton, reasoningPickerButton, toolPickerButton, selectedToolChipView, attachButton, attachmentsStripView, aiChatTextView]
+        // Expanded controls sit above the text view, and the footer extends below the view's bounds,
+        // so route taps to them before falling back to the normal hierarchy.
+        let candidates: [UIView] = [
+            aiChatSendButton,
+            modelPickerButton,
+            reasoningPickerButton,
+            toolPickerButton,
+            selectedToolChipView,
+            attachButton,
+            attachmentsStripView,
+            aiChatTextView,
+            createImageModelSwitchCard
+        ]
         return candidates.first { candidate in
             guard !candidate.isHidden else { return false }
             let localPoint = candidate.convert(point, from: self)

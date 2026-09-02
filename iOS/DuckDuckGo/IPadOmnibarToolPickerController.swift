@@ -30,12 +30,20 @@ final class IPadOmnibarToolPickerController {
     private let toolsController = UTIToolsController()
     private let menuFactory = UTIToolsMenuFactory()
     private let isUpdatedCreateImageEnabled: Bool
+    private let createImagePixelFiring: CreateImagePixelFiring
+    private lazy var createImageModelSwitcher = CreateImageModelSwitcher(
+        isFeatureEnabled: isUpdatedCreateImageEnabled,
+        pixelFiring: createImagePixelFiring)
+    private var modelSwitchNotice: CreateImageModelSwitchNotice?
     var onToolsUpdated: (() -> Void)?
     var onModelSwitchNoticeUpdated: ((CreateImageModelSwitchNotice?) -> Void)?
 
-    init(store: UTIModelStore, isUpdatedCreateImageEnabled: Bool = false) {
+    init(store: UTIModelStore,
+         isUpdatedCreateImageEnabled: Bool = false,
+         createImagePixelFiring: CreateImagePixelFiring = CreateImagePixelAdapter(surface: { .addressBar })) {
         self.store = store
         self.isUpdatedCreateImageEnabled = isUpdatedCreateImageEnabled
+        self.createImagePixelFiring = createImagePixelFiring
     }
 
     var isToolPickerAvailable: Bool {
@@ -87,19 +95,26 @@ final class IPadOmnibarToolPickerController {
             toolsController.toggleSelection(for: tool, modelStore: store)
             notice = nil
         }
-        onModelSwitchNoticeUpdated?(notice)
+        updateModelSwitchNotice(notice)
         fireToggleTransitionPixel(previous: previousTool, current: toolsController.selectedTool)
         onToolsUpdated?()
     }
 
     func handleModelChanged() {
-        onModelSwitchNoticeUpdated?(nil)
+        updateModelSwitchNotice(nil)
+        handleModelsUpdated()
+    }
+
+    func handleModelsUpdated() {
         toolsController.clearSelectionIfUnsupported(for: store)
+        if toolsController.selectedTool != .imageGeneration {
+            updateModelSwitchNotice(nil)
+        }
         onToolsUpdated?()
     }
 
     func resetSelection(isUserInitiated: Bool = false) {
-        onModelSwitchNoticeUpdated?(nil)
+        updateModelSwitchNotice(nil)
         guard let previousTool = toolsController.selectedTool else { return }
         toolsController.clearSelection()
         if isUserInitiated {
@@ -108,8 +123,14 @@ final class IPadOmnibarToolPickerController {
         onToolsUpdated?()
     }
 
+    func dismissModelSwitchNotice() {
+        guard modelSwitchNotice != nil else { return }
+        createImagePixelFiring.modelSwitchNoticeDismissed()
+        clearModelSwitchNotice()
+    }
+
     func clearModelSwitchNotice() {
-        onModelSwitchNoticeUpdated?(nil)
+        updateModelSwitchNotice(nil)
     }
 
     // MARK: - Private
@@ -125,26 +146,26 @@ final class IPadOmnibarToolPickerController {
 
     private var createImageMenuPolicy: CreateImageMenuPolicy {
         guard isUpdatedCreateImageEnabled else { return .legacy }
-        return .updated(canSwitchModel: store.imageGenerationFallbackModel != nil)
+        return .updated(canSwitchModel: canSwitchModelForImageGeneration)
+    }
+
+    private var canSwitchModelForImageGeneration: Bool {
+        store.imageGenerationFallbackModel != nil
     }
 
     private func toggleImageGenerationSelection() -> CreateImageModelSwitchNotice? {
-        guard toolsController.selectedTool != .imageGeneration else {
-            toolsController.clearSelection()
-            return nil
-        }
+        createImageModelSwitcher.toggle(
+            toolsController: toolsController,
+            modelStore: store,
+            canSwitchModel: canSwitchModelForImageGeneration,
+            entryPoint: .toolsMenu,
+            applyModel: { store.updateSelectedModel($0, isNewChatContext: true) })
+    }
 
-        var notice: CreateImageModelSwitchNotice?
-        if isUpdatedCreateImageEnabled,
-           !store.selectedModelSupports(tool: .imageGeneration),
-           let previousModel = store.selectedModel,
-           let fallbackModel = store.imageGenerationFallbackModel {
-            store.updateSelectedModel(fallbackModel.id, isNewChatContext: true)
-            notice = CreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
-        }
-
-        toolsController.select(.imageGeneration, for: store)
-        return notice
+    private func updateModelSwitchNotice(_ notice: CreateImageModelSwitchNotice?) {
+        guard notice != modelSwitchNotice else { return }
+        modelSwitchNotice = notice
+        onModelSwitchNoticeUpdated?(notice)
     }
 
     private func fireToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {

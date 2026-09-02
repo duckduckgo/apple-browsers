@@ -114,7 +114,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     func test_message_upsellCopyFollowsTrialEligibility() {
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: true))).primaryAction?.title,
-                       "Try for Free")
+                       "Try Subscription for Free")
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: false))).primaryAction?.title,
                        "Subscribe")

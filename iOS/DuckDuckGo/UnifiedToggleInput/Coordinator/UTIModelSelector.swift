@@ -62,6 +62,8 @@ final class UTIModelSelector {
         let onModelApplied: (String) -> Void
         /// A model the user actually changed to, as opposed to a re-application of the current one.
         let onModelSelectionChanged: (String) -> Void
+        /// The same switch, announced before it is applied, for listeners whose state it changes.
+        let onModelSelectionWillChange: (String) -> Void
     }
 
     private let modelStore: UTIModelStore
@@ -115,6 +117,9 @@ final class UTIModelSelector {
             // Supported model picked in the native picker — the recovery card's reason to block
             // submit is gone, so drop the block (no-op when it wasn't set).
             callbacks.clearSubmitRecoveryBlock()
+            if isNewSelection {
+                callbacks.onModelSelectionWillChange(modelId)
+            }
             updateSelectedModel(modelId)
             if isNewSelection {
                 pixelReporter.reportModelSelected(modelId: modelId)

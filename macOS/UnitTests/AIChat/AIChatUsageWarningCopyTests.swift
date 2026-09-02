@@ -85,7 +85,7 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
     func testUpsellCopyFollowsTrialEligibility() {
         XCTAssertEqual(warning(.freeReached, window: .daily,
                                action: .tryForFree(isTrialEligible: true)).localizedActionTitle,
-                       "Try for free")
+                       "Try for Free")
         XCTAssertEqual(warning(.freeReached, window: .daily,
                                action: .tryForFree(isTrialEligible: false)).localizedActionTitle,
                        "Subscribe")
@@ -96,7 +96,7 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
 
         XCTAssertEqual(warning(.dailyReached, window: .daily,
                                action: .startUsingWeeklyLimit(entries: entries)).localizedActionTitle,
-                       "Start using weekly limit")
+                       "Start Using Weekly Limit")
     }
 
     /// How a switch with nothing usable to switch to renders, as well as a notice web sent no cta for.

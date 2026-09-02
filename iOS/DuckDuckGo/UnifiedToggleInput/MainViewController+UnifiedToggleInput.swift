@@ -1533,7 +1533,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     func aiChatTabChatHeaderDidTapNewImage() {
         PixelKit.fire(Pixel.Event.aiChatNewImageTapped, frequency: .dailyAndCount)
         unifiedToggleInputCoordinator?.startNewChat()
-        unifiedToggleInputCoordinator?.selectTool(.imageGeneration)
+        unifiedToggleInputCoordinator?.selectTool(.imageGeneration, createImageEntryPoint: .chatHeaderNewImage)
         unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
         currentTab?.submitStartChatAction()
     }

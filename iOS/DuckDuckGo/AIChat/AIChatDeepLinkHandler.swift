@@ -71,12 +71,6 @@ struct AIChatDeepLinkHandler {
             firePixel(url)
         }
 
-        if !voiceMode {
-            guard !isAIChatAlreadyPresented(on: mainViewController) else {
-                return
-            }
-        }
-
         // Widget, Control Center and lock-screen entries carry their own source, so they land on
         // `m_aichat_entry_point` as themselves rather than collapsing into `deep_link_other`.
         let source = AIChatEntryPointSource.forDeepLink(url)
@@ -87,15 +81,6 @@ struct AIChatDeepLinkHandler {
                 mainViewController.openAIChat(fromDeepLink: true, source: source)
             }
         }
-    }
-
-    /// Checks if the AIChatViewController is already presented
-    private func isAIChatAlreadyPresented(on mainViewController: AIChatDeepLinkPresenting) -> Bool {
-        if let presentedVC = mainViewController.presentedViewController as? RoundedPageSheetContainerViewController,
-           presentedVC.contentViewController is AIChatViewController {
-            return true
-        }
-        return false
     }
 
     private func fireAIVoiceChatPixel(_ url: URL) {

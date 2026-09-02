@@ -105,8 +105,8 @@ final class BrowserToolbarView: UIView {
     /// buttons sit where the production `UIToolbar` placed them. Tuned to match production's
     /// end-button centres; the floating style keeps the tighter `horizontalEdgePadding`.
     private static let legacyButtonRowHorizontalPadding: CGFloat = 20
-    /// Mirrors `DefaultOmniBarView`'s text-area padding.
-    private static let embeddedAddressBarTextAreaPadding: CGFloat = 16
+    /// Mirrors `DefaultOmniBarView`'s embedded side padding.
+    private static let embeddedAddressBarTextAreaPadding = floatingEmbeddedVerticalContentPadding
 
     /// Distance from the glass edge to the centre of the outermost icon in either row of the
     /// combined bottom chrome.

@@ -594,6 +594,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
             // At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
             do {
                 let subscriptionMonth = Int(monthsActive.rounded(.up))
+                guard subscriptionMonth > (dataStorage.subscriptionLastMonthFired ?? 1) else { return }
                 let bucket = try bucketModifier.bucket(value: subscriptionMonth, pixelName: .userSubscribed)
                 pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
                                                                     installDate: originOrInstall.installDate,
@@ -601,6 +602,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                     bucketVersion: bucket.version),
                                frequency: .legacyDailyNoSuffix,
                                includeAppVersionParameter: false)
+                dataStorage.subscriptionLastMonthFired = subscriptionMonth
             } catch {
                 Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
             }

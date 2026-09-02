@@ -419,16 +419,48 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
         barView.layoutIfNeeded()
 
         let shield = try XCTUnwrap(barView.privacyInfoContainer)
         let slot = try XCTUnwrap(barView.leftIconContainerView)
 
+        func assertCentred(_ context: String, file: StaticString = #filePath, line: UInt = #line) {
+            let shieldCentre = barView.convert(shield.center, from: shield.superview)
+            let slotCentre = barView.convert(slot.center, from: slot.superview)
+            XCTAssertEqual(shieldCentre.x, slotCentre.x, accuracy: 0.5, context, file: file, line: line)
+            XCTAssertEqual(shieldCentre.y, slotCentre.y, accuracy: 0.5, context, file: file, line: line)
+        }
+
         // The shield and the loupe swap in and out of the same slot, so a shared centre keeps the
-        // icon from shifting sideways when the state changes.
-        XCTAssertEqual(barView.convert(shield.center, from: shield.superview).x,
-                       barView.convert(slot.center, from: slot.superview).x,
-                       accuracy: 0.5)
+        // icon from shifting when the state changes.
+        assertCentred("at rest")
+
+        barView.textField.becomeFirstResponder()
+        barView.layoutIfNeeded()
+        assertCentred("while focused")
+    }
+
+    func testWhenEmbeddedFieldIsTallerThanItsControlsThenTheRowStaysCentred() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+
+        let field = try XCTUnwrap(barView.searchContainer)
+        let fieldMidY = barView.convert(field.bounds, from: field).midY
+
+        // The 44pt controls are shorter than the 48pt field, so the slack has to split evenly
+        // rather than settling the row against one edge.
+        for item in [barView.leftIconContainerView, barView.refreshButton, barView.textField] {
+            let view = try XCTUnwrap(item)
+            XCTAssertEqual(barView.convert(view.bounds, from: view).midY, fieldMidY, accuracy: 0.5)
+        }
     }
 
     func testWhenFieldIsEmbeddedAtBottomThenItFillsTheFullSlotHeight() throws {

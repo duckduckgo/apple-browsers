@@ -157,8 +157,9 @@ final class DefaultOmniBarSearchView: UIView {
         NSLayoutConstraint.activate([
             leadingConstraint,
             mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            mainStackView.topAnchor.constraint(equalTo: topAnchor),
-            mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            mainStackView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            mainStackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
+            mainStackView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
 
             notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 4),
             notificationContainer.trailingAnchor.constraint(equalTo: textField.trailingAnchor),
@@ -171,8 +172,8 @@ final class DefaultOmniBarSearchView: UIView {
             leftIconContainerPlaceholder.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
 
             // Shares a centre with the loupe it swaps in and out of the slot with.
-            privacyInfoContainer.centerXAnchor.constraint(equalTo: leftIconContainerPlaceholder.centerXAnchor),
-            privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
+            privacyInfoContainer.centerXAnchor.constraint(equalTo: leftIconContainer.centerXAnchor),
+            privacyInfoContainer.centerYAnchor.constraint(equalTo: leftIconContainer.centerYAnchor),
             privacyInfoContainer.widthAnchor.constraint(equalToConstant: 28),
             privacyInfoContainer.heightAnchor.constraint(equalToConstant: 28),
 

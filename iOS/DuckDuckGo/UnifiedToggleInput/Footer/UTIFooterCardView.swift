@@ -284,7 +284,6 @@ final class UTIFooterActionButton: UIView {
     private enum Constants {
         static let height: CGFloat = 34
         static let titleHorizontalPadding: CGFloat = 14
-        static let strokeWidth: CGFloat = 0.5
     }
 
     var onPrimaryTap: (() -> Void)?
@@ -311,8 +310,7 @@ final class UTIFooterActionButton: UIView {
     }
 
     func applyColors() {
-        backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
-        layer.borderColor = UIColor(designSystemColor: .lines).cgColor
+        backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         primaryButton.configuration?.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
     }
 
@@ -326,7 +324,6 @@ final class UTIFooterActionButton: UIView {
     private func setupUI() {
         clipsToBounds = true
         layer.cornerCurve = .continuous
-        layer.borderWidth = Constants.strokeWidth
 
         primaryButton.translatesAutoresizingMaskIntoConstraints = false
         primaryButton.accessibilityIdentifier = "AIChat.Footer.Button.Primary"

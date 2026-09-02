@@ -34,6 +34,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         static let bottomFloatingInset: CGFloat = 8
         static let fallbackToolbarHorizontalPadding: CGFloat = 20
         static let fallbackAIButtonSpacing: CGFloat = 12
+        static let menuButtonSize: CGFloat = 36
+        static let fallbackMenuButtonSize: CGFloat = 44
     }
 
     private let navigationBar = UINavigationBar()
@@ -77,7 +79,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         let item: UIBarButtonItem
         if #available(iOS 26.0, *) {
             item = UIBarButtonItem(title: nil,
-                                   image: UIImage(systemName: "checkmark"),
+                                   image: DesignSystemImages.Glyphs.Size24.check,
                                    primaryAction: action,
                                    menu: nil)
             item.style = .prominent
@@ -97,15 +99,6 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         return label
     }()
 
-    private lazy var selectionTitleItem: UIBarButtonItem = {
-        let item = UIBarButtonItem(customView: selectionTitleLabel)
-        if #available(iOS 26.0, *) {
-            item.sharesBackground = false
-            item.hidesSharedBackground = true
-        }
-        return item
-    }()
-
     private lazy var selectAllItem = UIBarButtonItem(
         title: UserText.selectAllTabs,
         image: nil,
@@ -118,11 +111,34 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         primaryAction: UIAction { [weak self] _ in self?.actions.onDeselectAllTapped?() },
         menu: nil)
 
-    private lazy var editMenuItem = UIBarButtonItem(
-        title: nil,
-        image: menuImage,
-        primaryAction: nil,
-        menu: UIMenu(children: []))
+    private lazy var editMenuButton: FloatingTabSwitcherMenuButton = {
+        let button = FloatingTabSwitcherMenuButton()
+        button.configuration = .plain()
+        button.configuration?.image = menuImage
+        button.showsMenuAsPrimaryAction = true
+        button.accessibilityLabel = UserText.actionGenericEdit
+        button.translatesAutoresizingMaskIntoConstraints = false
+        let buttonSize: CGFloat
+        if #available(iOS 26.0, *) {
+            buttonSize = Metrics.menuButtonSize
+        } else {
+            buttonSize = Metrics.fallbackMenuButtonSize
+        }
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: buttonSize),
+            button.heightAnchor.constraint(equalToConstant: buttonSize),
+        ])
+        button.onMenuDismissed = { [weak self] in
+            self?.actions.onEditMenuDismissed?()
+        }
+        return button
+    }()
+
+    private lazy var editMenuItem: UIBarButtonItem = {
+        let item = UIBarButtonItem(customView: editMenuButton)
+        item.title = UserText.actionGenericEdit
+        return item
+    }()
 
     private lazy var multiSelectMenuItem = UIBarButtonItem(
         title: nil,
@@ -162,6 +178,9 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
         navigationBar.translatesAutoresizingMaskIntoConstraints = false
         toolbar.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.insetsLayoutMarginsFromSafeArea = false
+        toolbar.preservesSuperviewLayoutMargins = false
+        toolbar.layoutMargins = .zero
 
         navigationBar.setItems([navigationItem], animated: false)
 
@@ -175,9 +194,9 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         duckChatItem.accessibilityIdentifier = "TabSwitcher.Button.DuckChat"
         duckChatItem.accessibilityLabel = UserText.duckAiFeatureName
         tabsStyleItem.accessibilityLabel = UserText.tabSwitcherGridViewMenuTitle
+        editMenuItem.accessibilityLabel = UserText.actionGenericEdit
 
         attachTopScrollViewInteraction()
-        attachBottomScrollViewInteraction()
     }
 
     var scrollViewTopInteraction: UIInteraction?
@@ -204,8 +223,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     }
 
     func attachBottomScrollViewInteraction() {
-        guard #available(iOS 26, *) else { return }
-        scrollViewBottomInteraction = attachScrollViewInteractionToView(toolbar, onEdge: .bottom, removingExistingInteraction: scrollViewBottomInteraction)
+        // Intentionally empty: the toolbar is inset to match the webview capsule.
+        // A scroll-edge interaction would apply a second, larger device-concentric inset.
     }
 
     func trackScrollEdge(of scrollView: UIScrollView) {
@@ -213,7 +232,6 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         scrollEdgeScrollView = scrollView
         guard #available(iOS 26, *) else { return }
         (scrollViewTopInteraction as? UIScrollEdgeElementContainerInteraction)?.scrollView = scrollView
-        (scrollViewBottomInteraction as? UIScrollEdgeElementContainerInteraction)?.scrollView = scrollView
     }
 
     func setCenterView(_ view: UIView?) {
@@ -285,6 +303,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         let tint = UIColor(singleUseColor: .toolbarButton)
         navigationBar.tintColor = tint
         toolbar.tintColor = tint
+        editMenuButton.configuration?.baseForegroundColor = tint
         if #available(iOS 26.0, *) {
             doneItem.tintColor = UIColor(designSystemColor: .accentPrimary)
         } else {
@@ -303,11 +322,12 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         tabsStyleItem.image = tabsStyle.image
         tabsStyleItem.primaryAction = nil
         tabsStyleItem.menu = makeTabsStyleMenu(current: tabsStyle)
-        editMenuItem.menu = actions.onEditMenuRequested?()
+        editMenuButton.menu = actions.onEditMenuRequested?()
         multiSelectMenuItem.menu = actions.onMultiSelectMenuRequested?()
         multiSelectMenuItem.isEnabled = canShowSelectionMenu
         editMenuItem.isEnabled = params.totalCount > 1 || params.containsWebPages
-        configureBackgroundSharing(isLarge: params.interfaceMode.isLarge)
+        editMenuButton.isEnabled = editMenuItem.isEnabled
+        configureBackgroundSharing(isLarge: params.interfaceMode.isLarge, isEditing: isEditing)
 
         let isDoneEnabled = params.canDismissOnEmpty || params.totalCount > 0
         doneItem.isEnabled = isDoneEnabled
@@ -330,14 +350,14 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             navigationItem.rightBarButtonItems = items
             setToolbarItems([])
         } else if isEditing {
-            navigationItem.titleView = nil
             navigationItem.title = nil
-            navigationItem.leftBarButtonItems = [selectionTitleItem]
+            navigationItem.titleView = selectionTitleLabel
+            navigationItem.leftBarButtonItems = [multiSelectMenuItem]
             navigationItem.rightBarButtonItems = [params.selectedCount == params.totalCount ? deselectAllItem : selectAllItem]
 
             closeTabsItem.title = UserText.tabSwitcherCloseTabsButtonTitle(withCount: params.selectedCount)
             closeTabsItem.isEnabled = params.selectedCount > 0
-            setToolbarItems([doneItem, .flexibleSpace(), closeTabsItem, multiSelectMenuItem])
+            setToolbarItems([closeTabsItem, fireItem, .flexibleSpace(), doneItem])
         } else {
             navigationItem.title = nil
             navigationItem.titleView = centerTitleView()
@@ -357,11 +377,42 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         toolbar.isHidden = params.interfaceMode.isLarge
     }
 
+    /// Distance from the host's top to the bottom of the floating navigation bar.
+    /// Both pages use this so tab cards keep the same top spacing during a paging swipe.
+    var topBarBottomOffset: CGFloat {
+        if navigationBar.frame.maxY > 0 {
+            return navigationBar.frame.maxY
+        }
+        return Metrics.topFloatingInset + Metrics.estimatedNavBarHeight
+    }
+
     func applyCollectionContentInset(to collectionView: UICollectionView) {
-        let navHeight = navigationBar.frame.height > 0 ? navigationBar.frame.height : Metrics.estimatedNavBarHeight
+        collectionView.contentInsetAdjustmentBehavior = .never
+
+        let topInset = topBarBottomOffset
         let toolbarHeight = toolbar.frame.height > 0 ? toolbar.frame.height : Metrics.estimatedToolbarHeight
-        collectionView.contentInset.top = navHeight + Metrics.topFloatingInset
-        collectionView.contentInset.bottom = interfaceMode.isLarge ? 0 : toolbarHeight + Metrics.bottomFloatingInset
+        let bottomClearance: CGFloat
+        if interfaceMode.isLarge {
+            bottomClearance = 0
+        } else if let hostView, toolbar.frame.height > 0 {
+            let toolbarFrameInHost = toolbar.convert(toolbar.bounds, to: hostView)
+            bottomClearance = hostView.bounds.maxY - toolbarFrameInHost.minY + Metrics.bottomFloatingInset
+        } else {
+            bottomClearance = toolbarHeight + Metrics.bottomFloatingInset
+        }
+
+        let previousTopInset = collectionView.contentInset.top
+        let wasScrolledToTop = abs(collectionView.contentOffset.y + previousTopInset) < 1
+
+        collectionView.contentInset.top = topInset
+        collectionView.contentInset.bottom = bottomClearance
+        collectionView.verticalScrollIndicatorInsets = collectionView.contentInset
+
+        if wasScrolledToTop {
+            collectionView.contentOffset.y = -topInset
+        } else {
+            collectionView.contentOffset.y += previousTopInset - topInset
+        }
     }
 
     func layout(addressBarPosition: AddressBarPosition,
@@ -404,11 +455,23 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             contentView.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: hostView.bottomAnchor),
-
-            toolbar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
-            toolbar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
-            toolbar.bottomAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.bottomAnchor),
         ]
+
+        if #available(iOS 26.0, *) {
+            let horizontalGuide = hostView.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+            let verticalGuide = hostView.layoutGuide(for: .safeArea(cornerAdaptation: .vertical))
+            constraints.append(contentsOf: [
+                toolbar.leadingAnchor.constraint(equalTo: horizontalGuide.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: horizontalGuide.trailingAnchor),
+                toolbar.bottomAnchor.constraint(equalTo: verticalGuide.bottomAnchor),
+            ])
+        } else {
+            constraints.append(contentsOf: [
+                toolbar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
+                toolbar.bottomAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.bottomAnchor),
+            ])
+        }
         if #unavailable(iOS 26.0) {
             constraints.append(contentsOf: [
                 fallbackTopBackgroundView.topAnchor.constraint(equalTo: hostView.topAnchor),
@@ -459,13 +522,16 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         return UIMenu(children: [grid, list])
     }
 
-    private func configureBackgroundSharing(isLarge: Bool) {
+    private func configureBackgroundSharing(isLarge: Bool, isEditing: Bool) {
         guard #available(iOS 26.0, *) else { return }
-        let shouldShareBackground = !isLarge
+        let shouldShareBackground = !isLarge && !isEditing
         editMenuItem.sharesBackground = shouldShareBackground
+        editMenuItem.hidesSharedBackground = false
         tabsStyleItem.sharesBackground = shouldShareBackground
         fireItem.sharesBackground = shouldShareBackground
         doneItem.sharesBackground = shouldShareBackground
+        closeTabsItem.sharesBackground = false
+        multiSelectMenuItem.sharesBackground = false
         plusItem.sharesBackground = true
         duckChatItem.sharesBackground = true
     }
@@ -490,6 +556,28 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         toolbarAppearance.shadowColor = .clear
         toolbar.standardAppearance = toolbarAppearance
         toolbar.compactAppearance = toolbarAppearance
+    }
+}
+
+private final class FloatingTabSwitcherMenuButton: UIButton {
+
+    var onMenuDismissed: (() -> Void)?
+
+    override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                         willEndFor configuration: UIContextMenuConfiguration,
+                                         animator: UIContextMenuInteractionAnimating?) {
+        super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
+
+        guard let animator else {
+            DispatchQueue.main.async { [weak self] in
+                self?.onMenuDismissed?()
+            }
+            return
+        }
+
+        animator.addCompletion { [weak self] in
+            self?.onMenuDismissed?()
+        }
     }
 }
 

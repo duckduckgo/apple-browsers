@@ -94,7 +94,9 @@ final class AIChatUsageWarningCardView: NSView {
         static let titleActionSpacing: CGFloat = 12
         static let actionCloseSpacing: CGFloat = 4
         static let closeButtonSize: CGFloat = 24
-        static let fontSize: CGFloat = 13
+        /// "Callout", per the design system: the headline takes its emphasis weight, the reset
+        /// detail its regular one.
+        static let fontSize: CGFloat = 12
         /// Bright enough over a dark page, low enough to still read as translucent.
         static let tintAlpha: CGFloat = 0.75
     }
@@ -158,10 +160,11 @@ final class AIChatUsageWarningCardView: NSView {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isBordered = false
         button.title = ""
-        button.image = DesignSystemImages.Glyphs.Size16.close
+        button.image = DesignSystemImages.Glyphs.Size16.closeSmall
         button.imagePosition = .imageOnly
         button.setAccessibilityLabel(UserText.aiChatUsageWarningsDismissAccessibilityLabel)
         button.toolTip = UserText.aiChatUsageWarningsDismissAccessibilityLabel
+        button.hoverFillCornerRadius = Constants.closeButtonSize / 2
         return button
     }()
 
@@ -171,6 +174,11 @@ final class AIChatUsageWarningCardView: NSView {
     /// Hidden views still take part in Auto Layout, so footprints collapse explicitly.
     private var closeButtonWidthConstraint: NSLayoutConstraint?
     private var actionCloseSpacingConstraint: NSLayoutConstraint?
+    /// The card's own margin, dropped once the host lines the icon up with its omnibar instead.
+    private var iconLeadingConstraint: NSLayoutConstraint?
+    private var iconAlignmentConstraint: NSLayoutConstraint?
+    private var closeTrailingConstraint: NSLayoutConstraint?
+    private var closeAlignmentConstraint: NSLayoutConstraint?
 
     // MARK: - Background style
 
@@ -239,6 +247,14 @@ final class AIChatUsageWarningCardView: NSView {
         addSubview(actionButton)
         addSubview(closeButton)
 
+        let iconLeading = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor,
+                                                                 constant: Constants.horizontalPadding)
+        iconLeadingConstraint = iconLeading
+
+        let closeTrailing = closeButton.trailingAnchor.constraint(equalTo: trailingAnchor,
+                                                                  constant: -Constants.horizontalPadding)
+        closeTrailingConstraint = closeTrailing
+
         let closeWidth = closeButton.widthAnchor.constraint(equalToConstant: Constants.closeButtonSize)
         closeButtonWidthConstraint = closeWidth
 
@@ -262,7 +278,7 @@ final class AIChatUsageWarningCardView: NSView {
             contentGuide.bottomAnchor.constraint(equalTo: bottomAnchor),
             contentGuide.heightAnchor.constraint(equalToConstant: Constants.contentHeight),
 
-            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            iconLeading,
             iconImageView.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
@@ -283,7 +299,7 @@ final class AIChatUsageWarningCardView: NSView {
             closeWidth,
             closeButton.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
             closeButton.heightAnchor.constraint(equalToConstant: Constants.closeButtonSize),
-            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding)
+            closeTrailing
         ])
 
         // The headline is what gives when space runs short; the CTA is fixed copy that must not.
@@ -291,6 +307,30 @@ final class AIChatUsageWarningCardView: NSView {
         actionButton.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         applyTheme()
+    }
+
+    // MARK: - Alignment with the omnibar above
+
+    /// Puts the icon in the same column as one of the omnibar's own controls, so the card reads as
+    /// a continuation of it rather than a band with margins of its own.
+    func alignIcon(withCenterXOf view: NSView) {
+        iconAlignmentConstraint?.isActive = false
+        iconLeadingConstraint?.isActive = false
+
+        let constraint = iconImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        iconAlignmentConstraint = constraint
+        constraint.isActive = true
+    }
+
+    /// Puts the close button in the voice button's column. Mutually exclusive with the card's own
+    /// trailing margin, which is what places the CTA on a message that carries no close button.
+    func alignCloseButton(withCenterXOf view: NSView) {
+        closeAlignmentConstraint?.isActive = false
+
+        let constraint = closeButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        closeAlignmentConstraint = constraint
+        closeTrailingConstraint?.isActive = closeButton.isHidden
+        constraint.isActive = !closeButton.isHidden
     }
 
     @objc private func closeButtonClicked() {
@@ -310,9 +350,7 @@ final class AIChatUsageWarningCardView: NSView {
         actionButton.isHidden = true
         actionButton.collapse()
 
-        closeButton.isHidden = false
-        closeButtonWidthConstraint?.constant = Constants.closeButtonSize
-        actionCloseSpacingConstraint?.constant = Constants.actionCloseSpacing
+        applyCloseButton(isVisible: true)
     }
 
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
@@ -332,10 +370,21 @@ final class AIChatUsageWarningCardView: NSView {
             actionButton.collapse()
         }
 
-        closeButton.isHidden = !warning.isDismissible
-        closeButtonWidthConstraint?.constant = warning.isDismissible ? Constants.closeButtonSize : 0
-        // Otherwise the CTA sits a spacing off the trailing edge on a message with no close button.
-        actionCloseSpacingConstraint?.constant = warning.isDismissible ? Constants.actionCloseSpacing : 0
+        applyCloseButton(isVisible: warning.isDismissible)
+    }
+
+    /// Collapses the close button's footprint when there is none, which drops the CTA into the
+    /// place it would have held — the card's own trailing margin.
+    private func applyCloseButton(isVisible: Bool) {
+        closeButton.isHidden = !isVisible
+        closeButtonWidthConstraint?.constant = isVisible ? Constants.closeButtonSize : 0
+        actionCloseSpacingConstraint?.constant = isVisible ? Constants.actionCloseSpacing : 0
+        // Only once the host has given it a column to sit in; otherwise the card's own margin is
+        // the only rule there is.
+        guard let closeAlignmentConstraint else { return }
+
+        closeAlignmentConstraint.isActive = isVisible
+        closeTrailingConstraint?.isActive = !isVisible
     }
 
     /// Bold headline, regular reset detail, one string so the two can never wrap apart.
@@ -369,26 +418,22 @@ final class AIChatUsageWarningCardView: NSView {
 
     /// Regular weight throughout: the notice is a sentence, where the warnings lead with a headline.
     private static func attributedNotice(_ text: String) -> NSAttributedString {
-        NSAttributedString(
-            string: text,
-            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .regular),
-                         .foregroundColor: NSColor(designSystemColor: .textPrimary)]
-        )
+        NSAttributedString(string: text, attributes: textAttributes(weight: .regular))
     }
 
     private static func attributedTitle(headline: String, resetsIn: String) -> NSAttributedString {
-        let textColor = NSColor(designSystemColor: .textPrimary)
-        let result = NSMutableAttributedString(
-            string: headline,
-            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .semibold),
-                         .foregroundColor: textColor]
-        )
-        result.append(NSAttributedString(
-            string: " · \(resetsIn)",
-            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .regular),
-                         .foregroundColor: textColor]
-        ))
+        let result = NSMutableAttributedString(string: headline, attributes: textAttributes(weight: .semibold))
+        result.append(NSAttributedString(string: " ", attributes: textAttributes(weight: .regular)))
+        result.append(NSAttributedString(string: "·", attributes: textAttributes(weight: .bold)))
+        result.append(NSAttributedString(string: " \(resetsIn)", attributes: textAttributes(weight: .regular)))
         return result
+    }
+
+    /// No forced line height: it is a single line, and squeezing the line box to the font's own size
+    /// leaves the glyphs sitting off-centre in the band.
+    private static func textAttributes(weight: NSFont.Weight) -> [NSAttributedString.Key: Any] {
+        [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: weight),
+         .foregroundColor: NSColor(designSystemColor: .textPrimary)]
     }
 
     // MARK: - Appearance
@@ -430,9 +475,11 @@ final class AIChatUsageWarningActionButton: NSView {
 
     private enum Constants {
         static let height: CGFloat = 28
-        static let cornerRadius: CGFloat = 14
+        static let cornerRadius: CGFloat = 8
         static let horizontalPadding: CGFloat = 12
-        static let fontSize: CGFloat = 12
+        /// "Label - Small", matching the message beside it.
+        static let fontSize: CGFloat = 11
+        static let kerning: CGFloat = 0.06
         static let iconSize: CGFloat = 12
         static let iconTitleSpacing: CGFloat = 6
         static let chevronSize: CGFloat = 16
@@ -443,10 +490,12 @@ final class AIChatUsageWarningActionButton: NSView {
 
     private let backgroundLayer = CALayer()
 
+    /// Held as plain text: the label renders it attributed, so the styling has one owner.
+    private var title = ""
+
     private let titleLabel: NSTextField = {
         let label = NSTextField(labelWithString: "")
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: Constants.fontSize, weight: .medium)
         label.lineBreakMode = .byTruncatingTail
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
@@ -585,9 +634,19 @@ final class AIChatUsageWarningActionButton: NSView {
         updateTrackingAreas()
     }
 
+    private func applyTitleStyling() {
+        titleLabel.attributedStringValue = NSAttributedString(
+            string: title,
+            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .regular),
+                         .foregroundColor: NSColor(designSystemColor: .textPrimary),
+                         .kern: Constants.kerning]
+        )
+    }
+
     /// `offersModelPicker` false collapses the divider and `>`, leaving a plain pill.
     func configure(title: String, offersModelPicker: Bool, showsSwapIcon: Bool) {
-        titleLabel.stringValue = title
+        self.title = title
+        applyTitleStyling()
         self.offersModelPicker = offersModelPicker
         self.showsSwapIcon = showsSwapIcon
         isCollapsed = false
@@ -612,7 +671,8 @@ final class AIChatUsageWarningActionButton: NSView {
     func collapse() {
         isCollapsed = true
         showsSwapIcon = false
-        titleLabel.stringValue = ""
+        title = ""
+        applyTitleStyling()
         iconImageView.isHidden = true
         iconWidthConstraint?.constant = 0
         iconTitleSpacingConstraint?.constant = 0
@@ -661,7 +721,7 @@ final class AIChatUsageWarningActionButton: NSView {
         effectiveAppearance.performAsCurrentDrawingAppearance {
             backgroundLayer.backgroundColor = fill.cgColor
             dividerView.backgroundColor = NSColor(designSystemColor: .lines)
-            titleLabel.textColor = NSColor(designSystemColor: .textPrimary)
+            applyTitleStyling()
             iconImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)
             chevronImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)
         }

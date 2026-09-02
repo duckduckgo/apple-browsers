@@ -298,18 +298,13 @@ final class UTIFooterCardViewTests: XCTestCase {
         textStack(in: card)?.arrangedSubviews.first as? UILabel
     }
 
+    /// The second arranged subview of the card's text stack.
     private func subtitleLabel(in card: UTIFooterCardView) -> UILabel? {
         textStack(in: card)?.arrangedSubviews.last as? UILabel
     }
 
     private func textStack(in card: UTIFooterCardView) -> UIStackView? {
         card.subviews.flatMap(\.subviews).compactMap { $0 as? UIStackView }.first
-    }
-
-    /// The second arranged subview of the card's text stack.
-    private func subtitleLabel(in card: UTIFooterCardView) -> UILabel? {
-        card.subviews.flatMap(\.subviews)
-            .compactMap { $0 as? UIStackView }.first?.arrangedSubviews.last as? UILabel
     }
 
     private func makeMessage(title: String = "90% of weekly limit",

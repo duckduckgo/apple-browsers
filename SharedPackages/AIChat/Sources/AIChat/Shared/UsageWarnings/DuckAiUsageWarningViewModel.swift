@@ -57,6 +57,10 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         self.dateProvider = dateProvider
     }
 
+    /// The notice the snapshot carries, whether or not it is being shown. Acting on a message
+    /// retires the message, not the limit behind it, and a caller may still have to respect it.
+    public var activeNoticeID: DuckAiUsageNotice.ID? { lastReadSnapshot.notice?.id }
+
     /// Synchronous: a lookup in the already-loaded entries blob.
     public func refresh() {
         // An isolated session must not surface the regular session's usage.
@@ -100,13 +104,28 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
     /// The `>` opens a picker that applies the model itself, so the message is stood down from there
     /// too — otherwise the chevron leaves it up while the button beside it hides it.
     public func modelSwitchedFromMessage() {
-        guard warning?.offersModelPicker == true,
-              let notice = lastReadSnapshot.notice,
-              let signature = lastReadSnapshot.signature else { return }
+        guard warning?.offersModelPicker == true else { return }
+        recordActedOnCurrentSnapshot()
+    }
+
+    /// A switch made in the normal model picker, which is the CTA by another route. Call it *before*
+    /// applying the switch: the suggestion retargets to the new model as soon as it lands. Only the
+    /// model the message offers counts — any other pick hasn't taken its advice.
+    @discardableResult
+    public func modelSwitchedToSuggestion(_ modelId: String) -> Bool {
+        guard warning?.action?.suggestedModelId == modelId else { return false }
+        return recordActedOnCurrentSnapshot()
+    }
+
+    @discardableResult
+    private func recordActedOnCurrentSnapshot() -> Bool {
+        guard let notice = lastReadSnapshot.notice,
+              let signature = lastReadSnapshot.signature else { return false }
 
         dismissalStore.setActedSnapshot(DuckAiUsageWarningActedSnapshot(noticeID: notice.id.rawValue,
                                                                        signature: signature))
         resolveAndPublish()
+        return true
     }
 
     public func openModelPicker() {

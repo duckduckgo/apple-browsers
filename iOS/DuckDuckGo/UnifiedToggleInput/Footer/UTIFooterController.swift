@@ -146,6 +146,13 @@ final class UTIFooterController {
         measurement.modelSwitched()
     }
 
+    /// Picking the model the card suggests is its CTA by another route, so it retires the card too.
+    /// Runs before the switch lands, while the suggestion still points at what the user picked.
+    func noteModelSelectionWillChange(to modelId: String) {
+        guard viewModel.modelSwitchedToSuggestion(modelId) else { return }
+        actedOnMessage = currentMessage
+    }
+
     func performPrimaryAction() {
         guard let message = currentMessage, message.primaryAction != nil else { return }
 

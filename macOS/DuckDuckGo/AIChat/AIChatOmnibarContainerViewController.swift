@@ -214,6 +214,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Mirrors the card's constraint so the reservation and the layout can't disagree.
     private var isUsageWarningVisible = false
+    private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
     /// Only the exposed band counts; the rest is behind the panel and costs nothing.
     private var usageWarningReservation: CGFloat {
@@ -324,7 +325,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     var isModelPickerButtonAvailableForFocus: Bool {
-        !modelPickerButton.isHidden && modelPickerButton.isEnabled
+        !modelPickerButton.isHidden && modelPickerButton.isEnabled && !modelPickerButton.isReadOnly
     }
 
     /// Returns the first visible and enabled tool button available for focus.
@@ -530,6 +531,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
+                if !self.omnibarController.isImageGenerationMode {
+                    self.clearCreateImageModelSwitchNotice()
+                }
                 self.updateToolButtonsVisibility(isEnabled: self.omnibarController.isOmnibarToolsEnabled)
                 self.updateImageUploadVisibility(supportsImageUpload: self.omnibarController.selectedModelSupportsImageUpload)
                 // Re-evaluate the submit button so voice mode is suppressed/restored when
@@ -639,8 +643,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible || isCustomizeResponsesItemVisible)
     }
 
+    private var createImagePresentationPolicy: AIChatCreateImagePresentationPolicy {
+        AIChatCreateImagePresentationPolicy(
+            isImageGenerationEnabled: omnibarController.isImageGenerationEnabled,
+            isUpdatedCreateImageEnabled: omnibarController.isUpdatedCreateImageEnabled,
+            selectedModelSupportsImageGeneration: omnibarController.selectedModelSupportsImageGeneration,
+            isOmnibarToolsEnabled: omnibarController.isOmnibarToolsEnabled,
+            hasModelPickerContent: !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil,
+            isImageGenerationMode: omnibarController.isImageGenerationMode
+        )
+    }
+
     private var isImageGenerationItemVisible: Bool {
-        omnibarController.isImageGenerationEnabled && omnibarController.selectedModelSupportsImageGeneration
+        createImagePresentationPolicy.isImageGenerationItemVisible
     }
 
     private var isWebSearchItemVisible: Bool {
@@ -701,9 +716,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private var shouldShowModelPicker: Bool {
-        guard !omnibarController.isImageGenerationMode else { return false }
-        let hasContent = !omnibarController.models.isEmpty || omnibarController.cachedModelShortName != nil
-        return omnibarController.isOmnibarToolsEnabled && hasContent
+        createImagePresentationPolicy.shouldShowModelPicker
+    }
+
+    private var shouldMakeModelPickerReadOnly: Bool {
+        createImagePresentationPolicy.shouldMakeModelPickerReadOnly
     }
 
     private func updateToolButtonsVisibility(isEnabled: Bool) {
@@ -717,6 +734,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.isEnabled = !isInputBlockedByUsageLimit
             && (omnibarController.isOmnibarTabPickerEnabled || !omnibarController.isActiveTabImageAttachmentsFull)
         modelPickerButton.isHidden = !shouldShowModelPicker
+        modelPickerButton.isReadOnly = shouldMakeModelPickerReadOnly
+        modelPickerButton.toolTip = shouldMakeModelPickerReadOnly ? nil : UserText.aiChatModelPickerButtonTooltip
+        modelPickerButton.setAccessibilityLabel(
+            shouldMakeModelPickerReadOnly ? persistedModelShortName : UserText.aiChatModelPickerButtonTooltip
+        )
         toolsButton.label = omnibarController.activeToolMode != nil ? nil : UserText.aiChatToolsButtonLabel
         for button in focusableToolButtons where button !== imageUploadButton {
             button.isEnabled = !isInputBlockedByUsageLimit
@@ -1173,6 +1195,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         usageWarningCardView.onDismiss = { [weak self] in
             guard let self else { return }
+            // Ahead of the pixel: this card is not a usage message, so closing it must not report
+            // a dismissal against whichever usage exposure happens to be open.
+            if createImageModelSwitchNotice != nil {
+                clearCreateImageModelSwitchNotice()
+                return
+            }
+
             omnibarController.usageWarningMeasurement.warningDismissed()
             if omnibarController.usageWarningViewModel?.warning != nil {
                 omnibarController.usageWarningViewModel?.dismiss()
@@ -1221,6 +1250,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// allowance, so the message stays up where suggestions don't.
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
         applyInputBlock(warning?.blocksInput == true)
+        if let createImageModelSwitchNotice {
+            usageWarningCardView.update(with: createImageModelSwitchNotice)
+            // Not a usage message, so nothing here is an impression — and leaving the last one set
+            // would report it again for a card the user is no longer looking at.
+            currentUsageWarningExposure = nil
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
         if let warning {
             usageWarningCardView.update(with: warning)
             currentUsageWarningExposure = DuckAiUsageWarningExposure(warning: warning)
@@ -1261,6 +1298,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func refreshUsageCard() {
         highUsageNoticeSource?.refresh()
         applyUsageWarning(omnibarController.usageWarningViewModel?.warning)
+    }
+
+    private func showCreateImageModelSwitchNotice(_ notice: AIChatCreateImageModelSwitchNotice) {
+        createImageModelSwitchNotice = notice
+        refreshUsageCard()
+    }
+
+    private func clearCreateImageModelSwitchNotice() {
+        guard createImageModelSwitchNotice != nil else { return }
+        createImageModelSwitchNotice = nil
+        refreshUsageCard()
     }
 
     private func setUsageWarningVisible(_ visible: Bool) {
@@ -1397,6 +1445,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // The pick-time rejection error is transient panel UI, so drop it on teardown rather than
         // letting it resurface when the panel is reopened.
         lastAttachmentError = nil
+        createImageModelSwitchNotice = nil
 
         // Restore model picker to persisted value
         modelPickerButton.modelName = persistedModelShortName
@@ -1500,6 +1549,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     @objc private func imageGenActiveButtonClicked() {
         omnibarController.pixelHandler.fire(.imageGenerationDeactivated)
         omnibarController.toggleImageGenerationMode()
+        clearCreateImageModelSwitchNotice()
     }
 
     @objc private func webSearchActiveButtonClicked() {
@@ -1588,7 +1638,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if !omnibarController.isImageGenerationMode {
             omnibarController.pixelHandler.fire(.imageGenerationActivated)
         }
-        omnibarController.toggleImageGenerationMode()
+        if let notice = omnibarController.toggleImageGenerationMode() {
+            showCreateImageModelSwitchNotice(notice)
+        } else if !omnibarController.isImageGenerationMode {
+            clearCreateImageModelSwitchNotice()
+        }
     }
 
     @objc private func toolsMenuWebSearchClicked() {
@@ -2233,6 +2287,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.onSelectedModelChanged = { [weak self] in
             self?.refreshForSelectedModel()
         }
+
+        omnibarController.onCreateImageModelSwitchNotice = { [weak self] notice in
+            self?.showCreateImageModelSwitchNotice(notice)
+        }
     }
 
     /// Everything keyed off the selected model — the tools button would otherwise pop an empty menu
@@ -2326,6 +2384,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // Before the switch, while the message's suggestion still points at what was picked.
             omnibarController.usageWarningViewModel?.modelSwitchedToSuggestion(model.id)
         }
+        clearCreateImageModelSwitchNotice()
         // `updateSelectedModel` calls back into `refreshForSelectedModel`, whichever route changed it.
         omnibarController.updateSelectedModel(model.id)
         if isPresentingModelPickerFromUsageCard {

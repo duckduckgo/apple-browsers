@@ -141,16 +141,12 @@ final class UTIFooterController {
         measurement.promptSubmitted()
     }
 
-    /// A switch the user made themselves; the card's own switch CTA reports its own tap.
-    func recordModelSwitched() {
+    /// A switch from the bar's picker: always reported, but it only retires the message when it is the
+    /// step down the message asked for. The card's own CTA reports and retires itself.
+    func userSwitchedModel(from previousModelId: String?, to modelId: String) {
         measurement.modelSwitched()
-    }
-
-    /// Picking the model the card suggests is its CTA by another route, so it retires the card too.
-    /// Runs before the switch lands, while the suggestion still points at what the user picked.
-    func noteModelSelectionWillChange(to modelId: String) {
-        guard viewModel.modelSwitchedToSuggestion(modelId) else { return }
-        actedOnMessage = currentMessage
+        viewModel.userSwitchedModel(from: previousModelId, to: modelId)
+        applyCurrentState()
     }
 
     func performPrimaryAction() {
@@ -242,9 +238,11 @@ final class UTIFooterController {
         return nil
     }
 
-    /// Releases as soon as the resolver produces a different message, so the next rung still shows.
+    /// Releases as soon as the resolver produces a different message, so the next rung still shows,
+    /// and once the acted-on record is gone, so clearing it is not undone by this copy.
     private func unlessActedOn(_ message: UTIFooterMessage) -> UTIFooterMessage? {
-        message == actedOnMessage ? nil : message
+        guard viewModel.hasActedOnCurrentNotice, message == actedOnMessage else { return message }
+        return nil
     }
 
     static let springAnimator: Animator = { changes in

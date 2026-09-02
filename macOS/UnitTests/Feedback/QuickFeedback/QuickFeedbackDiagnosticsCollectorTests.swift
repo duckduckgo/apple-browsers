@@ -23,11 +23,12 @@ final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
 
     private func makeCollector(
         tabAndWindowCountProvider: TabAndWindowCountProviding? = nil,
+        memoryUsageMonitor: MemoryUsageMonitoring = StubMemoryUsageMonitor(),
         launchDate: Date = Date()
     ) -> QuickFeedbackDiagnosticsCollector {
         QuickFeedbackDiagnosticsCollector(
             tabAndWindowCountProvider: tabAndWindowCountProvider,
-            memoryUsageMonitor: StubMemoryUsageMonitor(),
+            memoryUsageMonitor: memoryUsageMonitor,
             launchDate: launchDate
         )
     }
@@ -42,11 +43,16 @@ final class QuickFeedbackDiagnosticsCollectorTests: XCTestCase {
         XCTAssertNotNil(fields["Session"], "Diagnostics should include the session length")
     }
 
-    func testWhenCollectingDiagnosticsThenMemoryReportsBrowserAndTotal() {
-        let memory = makeCollector().collectDiagnostics()["Memory"]
+    func testWhenCollectingDiagnosticsThenMemoryReportsBrowserWebContentAndTotal() {
+        let monitor = StubMemoryUsageMonitor(
+            webContentBytes: 250 * 1_048_576,
+            webContentProcessCount: 3
+        )
+        let memory = makeCollector(memoryUsageMonitor: monitor).collectDiagnostics()["Memory"]
 
         XCTAssertNotNil(memory)
-        XCTAssertTrue(memory?.contains("browser") == true, "Memory should report the browser's own usage")
+        XCTAssertTrue(memory?.contains("400 MB browser") == true, "Memory should report the browser's own usage")
+        XCTAssertTrue(memory?.contains("250 MB web content (3 processes)") == true, "Memory should report Web Content usage")
         XCTAssertTrue(memory?.contains("GB total") == true, "Memory should report the total available")
     }
 
@@ -120,12 +126,20 @@ private final class MockTabAndWindowCountProvider: TabAndWindowCountProviding {
 }
 
 private struct StubMemoryUsageMonitor: MemoryUsageMonitoring {
+    let webContentBytes: UInt64?
+    let webContentProcessCount: Int?
+
+    init(webContentBytes: UInt64? = nil, webContentProcessCount: Int? = nil) {
+        self.webContentBytes = webContentBytes
+        self.webContentProcessCount = webContentProcessCount
+    }
+
     func getCurrentMemoryUsage() -> MemoryUsageMonitor.MemoryReport {
         MemoryUsageMonitor.MemoryReport(
             residentBytes: 500 * 1_048_576,
             physFootprintBytes: 400 * 1_048_576,
-            webContentBytes: nil,
-            webContentProcessCount: nil
+            webContentBytes: webContentBytes,
+            webContentProcessCount: webContentProcessCount
         )
     }
 }

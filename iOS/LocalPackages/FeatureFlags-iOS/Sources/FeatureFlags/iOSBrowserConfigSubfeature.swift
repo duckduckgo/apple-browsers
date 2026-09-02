@@ -85,6 +85,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true
     case appSwitcherSnapshotClearing
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217929175704444?focus=true
+    case tabPreviewPerformanceOptimization
+
     case screenTimeCleaning
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
@@ -92,6 +95,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217806576104027?focus=true
     case suppressShowBarsGestureRecogniserDelay
+
+    /// https://app.asana.com/1/137249556945/project/414709148257752/task/1217605270508341
+    case elementFullscreen
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
@@ -128,7 +134,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperimentV3
+    case searchTokenExperimentV4
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -136,9 +142,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Caches the blank-snapshot overlay off the suspend path to avoid the background scene-update watchdog.
     case blankSnapshotCaching
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
-    case systemFindInPage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
     case iPadTabsBarInWindowControlsRow

@@ -97,5 +97,7 @@ struct AIChatEntryPointSourceTests {
         #expect(AIChatEntryPointSource.deepLinkOther.rawValue == "deep_link_other")
         #expect(AIChatEntryPointSource.serp.rawValue == "serp")
         #expect(AIChatEntryPointSource.directURL.rawValue == "direct_url")
+        #expect(AIChatEntryPointSource.returnToChatCard.rawValue == "return_to_chat_card")
+        #expect(AIChatEntryPointSource.tabSwitcherExistingChat.rawValue == "tab_switcher_existing_chat")
     }
 }

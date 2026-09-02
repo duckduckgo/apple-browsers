@@ -158,6 +158,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let innerBorderInset: CGFloat = 1
         /// Slack past the corner radius, so the card's top edge doesn't land where the arc ends.
         static let usageWarningOverlapMargin: CGFloat = 6
+        static let usageWarningSeamShadowOpacity: CGFloat = 0.5
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -323,7 +324,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     var isModelPickerButtonAvailableForFocus: Bool {
-        !modelPickerButton.isHidden
+        !modelPickerButton.isHidden && modelPickerButton.isEnabled
     }
 
     /// Returns the first visible and enabled tool button available for focus.
@@ -576,7 +577,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
     }
 
-    private func applySubmitButtonAppearance(enabled: Bool) {
+    private func applySubmitButtonAppearance(enabled requested: Bool) {
+        let enabled = requested && !isInputBlockedByUsageLimit
         submitButton.isEnabled = enabled
         // Tints. Both modes keep the icon constant across hover/press; only the fill animates,
         // so `mouseOverTintColor` / `mouseDownTintColor` stay nil.
@@ -712,9 +714,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Disable only when we'd be entering the legacy direct-file-picker path AND images are at
         // cap. With the tab picker enabled the button always opens the menu (which conditionally
         // omits the image item itself when full), so the outer button stays interactive.
-        imageUploadButton.isEnabled = omnibarController.isOmnibarTabPickerEnabled || !omnibarController.isActiveTabImageAttachmentsFull
+        imageUploadButton.isEnabled = !isInputBlockedByUsageLimit
+            && (omnibarController.isOmnibarTabPickerEnabled || !omnibarController.isActiveTabImageAttachmentsFull)
         modelPickerButton.isHidden = !shouldShowModelPicker
         toolsButton.label = omnibarController.activeToolMode != nil ? nil : UserText.aiChatToolsButtonLabel
+        for button in focusableToolButtons where button !== imageUploadButton {
+            button.isEnabled = !isInputBlockedByUsageLimit
+        }
+        modelPickerButton.isEnabled = !isInputBlockedByUsageLimit
 
         // The carousel row's height is recomputed centrally via `updateAttachmentsCarouselLayout()`.
         if !shouldShowAttachments {
@@ -1123,9 +1130,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // above, it would look like a slab dropped under the panel.
         view.addSubview(usageWarningCardView, positioned: .below, relativeTo: backgroundView)
 
-        usageWarningShadowView.shadowOpacity = 1
+        // Lighter than the outer edge: this one falls on a surface a few points below, not into the
+        // page behind the panel.
+        usageWarningShadowView.shadowOpacity = Constants.usageWarningSeamShadowOpacity
         usageWarningShadowView.shadowOffset = CGSize(width: 0, height: 0)
-        usageWarningShadowView.shadowSides = [.left, .right, .bottom]
+        // Bottom only: `shadowView` owns the outer edge for the whole silhouette, card included, so
+        // this draws nothing but the panel's edge falling onto the card.
+        usageWarningShadowView.shadowSides = [.bottom]
 
         let bottomConstraint = backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         backgroundViewBottomConstraint = bottomConstraint
@@ -1142,6 +1153,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             topConstraint
         ])
 
+        // Shares an ancestor with the omnibar's controls, so the card can sit in the same column
+        // as them rather than keep margins of its own.
+        usageWarningCardView.alignIcon(withCenterXOf: imageUploadButton)
+        usageWarningCardView.alignCloseButton(withCenterXOf: submitButton)
+
         panelBottomEdgeStrokeView.translatesAutoresizingMaskIntoConstraints = false
         panelBottomEdgeStrokeView.isHidden = true
         view.addSubview(panelBottomEdgeStrokeView, positioned: .above, relativeTo: backgroundView)
@@ -1156,7 +1172,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.omnibarController.usageWarningViewModel?.performAction()
         }
         usageWarningCardView.onDismiss = { [weak self] in
-            self?.omnibarController.usageWarningViewModel?.dismiss()
+            guard let self else { return }
+            if omnibarController.usageWarningViewModel?.warning != nil {
+                omnibarController.usageWarningViewModel?.dismiss()
+            } else {
+                highUsageNoticeSource?.dismissCurrent()
+            }
+            refreshUsageCard()
         }
         usageWarningCardView.onOpenModelPicker = { [weak self] in
             self?.omnibarController.usageWarningViewModel?.openModelPicker()
@@ -1164,10 +1186,23 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
             guard let self else { return }
-            presentModelPicker(anchoredTo: usageWarningCardView.modelPickerAnchor)
+            let offersFreeModelsOnly = omnibarController.usageWarningViewModel?.warning?
+                .modelPickerOffersFreeModelsOnly ?? false
+            presentModelPicker(anchoredTo: usageWarningCardView.modelPickerAnchor,
+                               freeModelsOnly: offersFreeModelsOnly,
+                               raisedFromUsageCard: true)
+        }
+
+        omnibarController.onSubscriptionUpsellDialogRequested = { [weak self] origin in
+            // Free tier only, so `.plus` always resolves to the purchase flow rather than an upgrade.
+            self?.presentSubscriptionUpsellDialog(requiredTier: .plus, origin: origin)
         }
 
         subscribeToUsageWarnings()
+        omnibarController.onUsageWarningsRefreshed = { [weak self] in
+            self?.refreshUsageCard()
+        }
+        highUsageNoticeSource?.refresh()
     }
 
     private func subscribeToUsageWarnings() {
@@ -1184,10 +1219,44 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Not gated on `shouldSuppressSuggestions`: image-gen mode and attachments still spend the
     /// allowance, so the message stays up where suggestions don't.
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
+        applyInputBlock(warning?.blocksInput == true)
         if let warning {
             usageWarningCardView.update(with: warning)
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
         }
-        setUsageWarningVisible(warning != nil && !isSuggestionsCollapsedByUnfocus)
+        applyHighUsageNotice()
+    }
+
+    /// Spent allowance: the whole input goes inert so the card is the only thing left to act on,
+    /// matching the web app. The mode toggle is not ours and stays live — otherwise the user is
+    /// stuck in a Duck.ai input they can neither use nor leave.
+    private func applyInputBlock(_ blocked: Bool) {
+        guard isInputBlockedByUsageLimit != blocked else { return }
+
+        isInputBlockedByUsageLimit = blocked
+        omnibarController.isInputBlockedByUsageLimit = blocked
+        // Each of these owns its own enablement rule, so re-run them rather than assigning here.
+        updateSubmitButtonState(for: omnibarController.currentText)
+        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
+        suggestionsView.isHidden = shouldSuppressSuggestions
+        updateSuggestionsHeight(shouldSuppressSuggestions ? 0 : lastKnownSuggestionsHeight)
+    }
+
+    /// The fallback when no allowance message applies: web shows the same one, and shows it here too.
+    private func applyHighUsageNotice() {
+        guard let notice = highUsageNoticeSource?.notice else {
+            return setUsageWarningVisible(false)
+        }
+        usageWarningCardView.update(with: notice)
+        setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+    }
+
+    /// Re-resolves the notice and re-applies whichever message wins. The warning half is published,
+    /// so it only needs re-reading when the selected model changes.
+    private func refreshUsageCard() {
+        highUsageNoticeSource?.refresh()
+        applyUsageWarning(omnibarController.usageWarningViewModel?.warning)
     }
 
     private func setUsageWarningVisible(_ visible: Bool) {
@@ -1211,11 +1280,25 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         backgroundViewBottomConstraint?.constant = visible
             ? -AIChatUsageWarningCardView.Constants.contentHeight
             : 0
-        // `castsShadowOverCard` just flipped, so repaint the chrome and mount the shadow.
+        // Only while the panel's own shadow is up: `cleanup()` takes it down and then hides the card,
+        // so without this guard teardown puts it straight back on the window.
         applyTheme(theme: themeManager.theme)
-        addShadowToWindow()
+        if shadowView.superview != nil {
+            addShadowToWindow()
+        }
         return true
     }
+
+    private var isPresentingModelPickerFromUsageCard = false
+
+    /// Mirrors the controller's copy; kept here so the apply can early-out on no change.
+    private var isInputBlockedByUsageLimit = false
+
+    /// Beside the usage warnings rather than part of them: it keys off the selected model, not the
+    /// allowance. The warning wins the card when both apply.
+    private lazy var highUsageNoticeSource: AIChatHighUsageNoticeSource? = {
+        omnibarController.makeHighUsageNoticeSource()
+    }()
 
     /// The last known suggestions height before image gen mode suppressed it.
     private var lastKnownSuggestionsHeight: CGFloat = 0
@@ -1224,7 +1307,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isSuggestionsCollapsedByUnfocus: Bool = false
 
     private var shouldSuppressSuggestions: Bool {
-        omnibarController.isImageGenerationMode
+        isInputBlockedByUsageLimit
+            || omnibarController.isImageGenerationMode
             || !omnibarController.activeImageAttachments.isEmpty
             || !attachmentsCarouselView.attachments.isEmpty
             || isSuggestionsCollapsedByUnfocus
@@ -1310,6 +1394,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         suggestionsHeight = 0
         suggestionsHeightConstraint?.constant = 0
         // The reservation has to come off too, or the next open sizes the panel as if it were up.
+        highUsageNoticeSource?.clear()
         applyUsageWarningVisibility(false)
         usageWarningShadowView.removeFromSuperview()
     }
@@ -1353,20 +1438,25 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let overlap = themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
         let band = usageWarningReservation
 
+        /// The whole silhouette, card band included, as one rounded rect. Two boxes cannot meet
+        /// cleanly here: `ShadowView` rounds a corner only where both its sides are listed, so the
+        /// panel's shadow curves inward at the bottom and anything abutting it square leaves a
+        /// wedge bare at the radius — while overlapping it paints the sides twice instead.
         var frame = viewFrame
-        /// Trimmed to the panel, not the whole silhouette: it needs a bottom edge to cast onto the card.
-        frame.origin.y += band
         /// `ShadowView` clamps its radius to half its shorter side, so trimming further would round
         /// the corners tighter than the background. Costs nothing: it draws no top edge anyway.
-        frame.size.height = max(shadowView.cornerRadius * 2, frame.height - overlap - band)
+        frame.size.height = max(shadowView.cornerRadius * 2, frame.height - overlap)
 
         shadowView.frame = frame
 
         guard isUsageWarningVisible else { return }
-        /// Overlap included: the panel covers it, so shadowing it keeps the corner radii aligned.
-        var cardFrame = viewFrame
-        cardFrame.size.height = AIChatUsageWarningCardView.Constants.contentHeight + usageWarningOverlap
-        usageWarningShadowView.frame = cardFrame
+        /// The seam, cast down from the panel's bottom edge onto the card — visible through it,
+        /// since the card is translucent. Held off the sides by the corner radius: the panel's edge
+        /// curves away there, so a straight cast would read as detached from it.
+        var seamFrame = viewFrame
+        seamFrame.origin.y += band
+        seamFrame.size.height = viewFrame.height - band
+        usageWarningShadowView.frame = seamFrame.insetBy(dx: shadowView.cornerRadius, dy: 0)
     }
 
     @objc private func submitButtonClicked() {
@@ -1410,7 +1500,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 title: UserText.aiChatImageGenButtonLabel,
                 subtitle: UserText.aiChatImageGenToolSubtitle
             )
-            createImageItem.image = DesignSystemImages.Glyphs.Size16.images
+            createImageItem.withImage(DesignSystemImages.Glyphs.Size16.images, visibleOnMacOS27: true)
             createImageItem.target = self
             createImageItem.action = #selector(toolsMenuCreateImageClicked)
             if omnibarController.isImageGenerationMode {
@@ -1425,7 +1515,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 title: UserText.aiChatWebSearchButtonLabel,
                 subtitle: UserText.aiChatWebSearchToolSubtitle
             )
-            webSearchItem.image = DesignSystemImages.Glyphs.Size16.globe
+            webSearchItem.withImage(DesignSystemImages.Glyphs.Size16.globe, visibleOnMacOS27: true)
             webSearchItem.target = self
             webSearchItem.action = #selector(toolsMenuWebSearchClicked)
             if omnibarController.isWebSearchMode {
@@ -1690,7 +1780,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 keyEquivalent: ""
             )
             imageItem.target = self
-            imageItem.image = DesignSystemImages.Glyphs.Size16.folder
+            imageItem.withImage(DesignSystemImages.Glyphs.Size16.folder, visibleOnMacOS27: true)
             menu.addItem(imageItem)
         }
 
@@ -1702,7 +1792,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             keyEquivalent: ""
         )
         attachTabsItem.target = self
-        attachTabsItem.image = DesignSystemImages.Glyphs.Size16.tabContent
+        attachTabsItem.withImage(DesignSystemImages.Glyphs.Size16.tabContent, visibleOnMacOS27: true)
         attachTabsItem.isEnabled = !candidates.isEmpty
         menu.addItem(attachTabsItem)
 
@@ -1741,7 +1831,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // An attached tab stays clickable so the same row detaches it; the cap only blocks adding.
             item.isEnabled = isAttached || !atCap
             item.state = isAttached ? .on : .off
-            item.image = menuFavicon(for: candidate)
+            item.withImage(menuFavicon(for: candidate), visibleOnMacOS27: true)
             menu.addItem(item)
         }
     }
@@ -1983,9 +2073,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // The button stays enabled if image room remains, file room remains, OR the tab picker
         // is on (the menu always has the Attach Page Content option).
         if omnibarController.isOmnibarToolsEnabled {
-            imageUploadButton.isEnabled = omnibarController.isOmnibarTabPickerEnabled
-                || !isFull
-                || canPickAdditionalFiles
+            imageUploadButton.isEnabled = !isInputBlockedByUsageLimit
+                && (omnibarController.isOmnibarTabPickerEnabled || !isFull || canPickAdditionalFiles)
             // "Limit reached" tooltip only when the picker is the only path AND it's exhausted
             // for both kinds — otherwise the default tooltip stays so the user knows they can
             // still attach the other kind.
@@ -2074,17 +2163,27 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     /// Anchored, so a menu raised from the card's `>` lands under the control the user clicked.
-    private func presentModelPicker(anchoredTo anchor: NSView) {
+    private func presentModelPicker(anchoredTo anchor: NSView,
+                                    freeModelsOnly: Bool = false,
+                                    raisedFromUsageCard: Bool = false) {
+        // `popUp` tracks modally, so this still reads true inside `modelSelected`.
+        isPresentingModelPickerFromUsageCard = raisedFromUsageCard
+        defer { isPresentingModelPickerFromUsageCard = false }
+
         // Resolved once and passed on: `modelPickerItems` records a free-trial badge impression, so
         // asking for it twice per open would burn through the badge's view cap at double speed.
-        let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId)
+        let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId,
+                                                       freeModelsOnly: freeModelsOnly)
         // Only a picker that actually shows a gated row is a subscription-funnel impression.
         if items.contains(where: { if case .gatedModel = $0 { return true } else { return false } }) {
             omnibarController.pixelHandler.fire(.modelPickerShown)
         }
         let menu = buildModelPickerMenu(items: items)
-        // Align menu's trailing edge with the anchor's trailing edge, with a small gap below
-        let point = NSPoint(x: anchor.bounds.width - menu.size.width, y: -5)
+        // The y comes off the anchor's geometry because `NSButton` is flipped and `NSView` is not:
+        // a hardcoded -5 opens below the toolbar's picker but over the card.
+        let gap: CGFloat = 5
+        let belowAnchor = anchor.isFlipped ? anchor.bounds.maxY + gap : anchor.bounds.minY - gap
+        let point = NSPoint(x: anchor.bounds.width - menu.size.width, y: belowAnchor)
 
         // Only a `FocusRingControlling` anchor has a ring modal tracking would leave lit.
         if let focusRingAnchor = anchor as? (NSView & FocusRingControlling) {
@@ -2110,18 +2209,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelsCancellable = omnibarController.$models
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                modelPickerButton.isHidden = !shouldShowModelPicker
-                // Refresh button label once models arrive
-                modelPickerButton.modelName = persistedModelShortName
-                // Refresh image upload visibility with updated supportsImageUpload
-                updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
-                // Refresh tool button visibility so the Web Search chip reflects the loaded
-                // model's `supportedTools` (belt-and-braces — the controller also clears
-                // `activeToolMode` when the persisted model doesn't support web search).
-                updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
-                updateReasoningPickerVisibility()
+                self?.refreshForSelectedModel()
             }
+
+        // Or a switch made outside the picker leaves the label naming the model we just left.
+        omnibarController.onSelectedModelChanged = { [weak self] in
+            self?.refreshForSelectedModel()
+        }
+    }
+
+    /// Everything keyed off the selected model — the tools button would otherwise pop an empty menu
+    /// for a model that supports none of them.
+    private func refreshForSelectedModel() {
+        refreshUsageCard()
+        modelPickerButton.isHidden = !shouldShowModelPicker
+        modelPickerButton.modelName = persistedModelShortName
+        updateImageUploadVisibility(supportsImageUpload: omnibarController.selectedModelSupportsImageUpload)
+        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
+        updateReasoningPickerVisibility()
     }
 
     private func buildModelPickerMenu(items: [AIChatModelPickerItem]) -> NSMenu {
@@ -2138,6 +2243,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 menu.addItem(.separator())
             case .sectionHeader(let title):
                 menu.addItem(.createMutedSectionHeader(title: title))
+            case .unavailableModel(let model, let isSelected):
+                // No action and no "…": there is no dialog behind this one, just no allowance left.
+                let row = modelRow(for: model, isSelected: isSelected, action: #selector(modelSelected(_:)))
+                row.isEnabled = false
+                menu.addItem(row)
             case .gatedModel(let model, let routesToUpsell):
                 let row = modelRow(for: model, isSelected: false, isGated: true,
                                    action: #selector(gatedModelSelected(_:)))
@@ -2158,7 +2268,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let name = title.regular.isEmpty ? title.bold : "\(title.bold) \(title.regular)"
         let item = NSMenuItem(title: model.name, action: action, keyEquivalent: "")
         item.target = self
-        item.image = model.menuIcon
+        item.withImage(model.menuIcon, visibleOnMacOS27: true)
         item.state = isSelected ? .on : .off
         item.attributedTitle = Self.menuRowTitle(title: isGated ? name + "…" : name, subtitle: subtitle)
         item.representedObject = model
@@ -2195,14 +2305,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func modelSelected(_ sender: NSMenuItem) {
         guard let model = sender.representedObject as? AIChatModel else { return }
+        if !isPresentingModelPickerFromUsageCard {
+            // Before the switch, while the message's suggestion still points at what was picked.
+            omnibarController.usageWarningViewModel?.modelSwitchedToSuggestion(model.id)
+        }
+        // `updateSelectedModel` calls back into `refreshForSelectedModel`, whichever route changed it.
         omnibarController.updateSelectedModel(model.id)
-        modelPickerButton.modelName = model.shortName
-        updateImageUploadVisibility(supportsImageUpload: model.supportsImageUpload)
-        // Refresh tool button visibility so the tools button disappears / reappears when the
-        // new model changes what the menu would show (e.g. only Web Search is flag-enabled and
-        // the newly selected model doesn't support it — the button would otherwise pop an empty menu).
-        updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
-        updateReasoningPickerVisibility()
+        if isPresentingModelPickerFromUsageCard {
+            omnibarController.usageWarningViewModel?.modelSwitchedFromMessage()
+        }
         omnibarController.pixelHandler.fire(.modelSelected)
     }
 
@@ -2242,7 +2353,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func reasoningEffortRow(for item: AIChatReasoningPickerItem) -> NSMenuItem {
         let menuItem = NSMenuItem(title: item.effort.title, action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
         menuItem.target = self
-        menuItem.image = item.effort.icon
+        menuItem.withImage(item.effort.icon, visibleOnMacOS27: true)
         menuItem.state = item.isSelected ? .on : .off
         menuItem.attributedTitle = Self.menuRowTitle(title: item.effort.title,
                                                      subtitle: item.effort.subtitle)

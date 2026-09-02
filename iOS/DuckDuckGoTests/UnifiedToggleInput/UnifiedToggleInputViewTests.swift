@@ -29,6 +29,90 @@ import UniformTypeIdentifiers
 
 final class UnifiedToggleInputViewTests: XCTestCase {
 
+    func testWhenExpandedInputSwitchesToSearchThenCardKeepsOutline() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.setInputMode(.aiChat, animated: false)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let outlinedCard = try XCTUnwrap(sut.subviews.first { $0.layer.borderWidth > 0 })
+
+        sut.setInputMode(.search, animated: false)
+
+        XCTAssertEqual(outlinedCard.layer.borderWidth, 0.5)
+    }
+
+    func testWhenExpandedSearchOnlyInputIsShownThenCardHasNoOutline() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
+
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
+    func testWhenExpandedInputHidesToggleThenModeSyncDoesNotShowOutline() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        sut.setInputMode(.aiChat, animated: false)
+
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
+    func testWhenTopInputRevealsToggleThenModeSwitchKeepsOutline() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.setInputMode(.aiChat, animated: false)
+        sut.prepareForOmnibarEditingShow()
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+
+        sut.applyOmnibarEditingShowPose()
+        let outlinedCard = try XCTUnwrap(sut.subviews.first { $0.layer.borderWidth > 0 })
+        sut.setInputMode(.search, animated: false)
+
+        XCTAssertEqual(outlinedCard.layer.borderWidth, 0.5)
+    }
+
+    func testWhenTopInputHidesToggleThenOutlineIsRemoved() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.prepareForOmnibarEditingShow()
+        sut.applyOmnibarEditingShowPose()
+        let outlinedCard = try XCTUnwrap(sut.subviews.first { $0.layer.borderWidth > 0 })
+
+        sut.applyToggleHideChanges()
+
+        XCTAssertEqual(outlinedCard.layer.borderWidth, 0)
+    }
+
+    func testWhenFocusedInSplitOmnibarSessionThenCardMatchesRestingAddressBarInset() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.usesOmnibarMargins = true
+        sut.prepareForOmnibarEditingShow()
+        sut.applyOmnibarEditingShowPose()
+        prepareForFitting(sut, width: 402, height: 192)
+        applyFittingHeight(to: sut, width: 402)
+
+        let inset = try XCTUnwrap(activeCardHorizontalInset(in: sut))
+
+        XCTAssertEqual(inset, 16)
+    }
+
+    func testWhenToggleIsEnabledOnExpandedSearchInputThenOutlineAppears() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        sut.updateToggleEnabled(true, showsToolbar: false)
+
+        XCTAssertTrue(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
     func test_searchModeTextSubmitStaysEnabledWhenInvalidDuckAIAttachmentIsHidden() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
@@ -678,6 +762,16 @@ final class UnifiedToggleInputViewTests: XCTestCase {
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1)
+    }
+
+    private func activeCardHorizontalInset(in view: UnifiedToggleInputView) -> CGFloat? {
+        view.constraints.first { constraint in
+            constraint.isActive
+                && constraint.firstAttribute == .leading
+                && constraint.secondAttribute == .leading
+                && constraint.secondItem === view
+                && (constraint.firstItem as? UIView)?.isUserInteractionEnabled == false
+        }?.constant
     }
 
     private func prepareForFitting(_ view: UIView, width: CGFloat = 320, height: CGFloat = 68) {

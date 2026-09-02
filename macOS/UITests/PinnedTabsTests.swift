@@ -26,7 +26,6 @@ class PinnedTabsTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: featureFlags)
 
         app.openNewWindow()
@@ -55,7 +54,6 @@ class PinnedTabsTests: UITestCase {
             "Should have 2 pinned tabs after pinning current page"
         )
 
-        app.typeKey("q", modifierFlags: .command)
         assertPinnedTabsRestoredState()
     }
 
@@ -282,7 +280,7 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func assertPinnedTabsRestoredState(file: StaticString = #file, line: UInt = #line) {
-        app = XCUIApplication.setUp(featureFlags: featureFlags)
+        app.restart()
         XCTAssertTrue(
             app.windows.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "App window didn't become available in a reasonable timeframe (line \(#line))",
@@ -302,7 +300,7 @@ class PinnedTabsTests: UITestCase {
         app.typeKey("[", modifierFlags: [.command, .shift])
         app.typeKey("[", modifierFlags: [.command, .shift])
         XCTAssertTrue(
-            app.staticTexts["Sample text for Page #2"].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.staticTexts["Sample text for Page #2"].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Page #2 should exist (line \(#line))",
             file: file,
             line: line
@@ -310,7 +308,7 @@ class PinnedTabsTests: UITestCase {
         /// Goes to Page #1 to check the state
         app.typeKey("]", modifierFlags: [.command, .shift])
         XCTAssertTrue(
-            app.staticTexts["Sample text for Page #3"].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.staticTexts["Sample text for Page #3"].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Page #3 should exist (line \(#line))",
             file: file,
             line: line
@@ -354,7 +352,7 @@ class PinnedTabsTests: UITestCase {
 
     private func waitForSite(pageTitle: String, file: StaticString = #file, line: UInt = #line) {
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.navigation),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Web view for '\(pageTitle)' should exist (line \(#line))",
             file: file,
             line: line

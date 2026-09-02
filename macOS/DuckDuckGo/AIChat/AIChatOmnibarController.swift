@@ -141,18 +141,37 @@ final class AIChatOmnibarController {
     /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
 
+    /// The panel's label, image-upload button, tool chips and reasoning picker all key off the
+    /// selected model, and the picker menu is not the only thing that can change it.
+    var onSelectedModelChanged: (() -> Void)?
+
+    /// The high-usage notice has no publisher of its own, so it re-resolves on the same beats the
+    /// warning does — activation included, which is what `cleanup()` dropped it for.
+    var onUsageWarningsRefreshed: (() -> Void)?
+
+    /// Advanced models have no allowance left until web republishes. Read off the snapshot, not the
+    /// message: switching to a free model retires the message while the limit it named still stands.
+    var isAdvancedModelUsageExhausted: Bool {
+        usageWarningViewModel?.activeNoticeID == .weeklyReachedDegraded
+    }
+
+    /// The card's subscribe CTA. The container VC owns the dialog, and the window it has to open in.
+    var onSubscriptionUpsellDialogRequested: ((SubscriptionFunnelOrigin) -> Void)?
+
+    /// Set by the container VC from the card it renders; the text VC listens so the prompt goes
+    /// inert alongside the buttons.
+    @Published var isInputBlockedByUsageLimit = false
+
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
             updateSelectedModel(suggestion.modelId)
         case .tryForFree:
-            // Free tier only, so `.plus` always resolves to the purchase flow rather than an upgrade.
-            subscriptionUpsellPresenter.routeGatedSelection(requiredTier: .plus,
-                                                            userTier: userTier,
-                                                            origin: surface.usageLimitFunnelOrigin)
-        case .startUsingWeeklyLimit:
-            // The card offers no button for this until web sets the value it needs.
-            Logger.aiChat.debug("Duck.ai usage warning: start-using-weekly-limit tapped, no native action yet")
+            // Confirms first, the same as a gated pick in either picker, rather than navigating on tap.
+            onSubscriptionUpsellDialogRequested?(surface.usageLimitFunnelOrigin)
+        case .startUsingWeeklyLimit(let entries):
+            // Web reads the entry on its next hydration, so there is nothing to reload here.
+            usageLimitsStore?.write(entries)
         }
     }
 
@@ -334,21 +353,35 @@ final class AIChatOmnibarController {
         setUpUsageWarnings()
     }
 
+    /// The persisted id, matching what the warning's own suggester reasons about.
+    func makeHighUsageNoticeSource() -> AIChatHighUsageNoticeSource? {
+        usageLimitsStore?.makeHighUsageNoticeSource(modelProvider: { [weak self] in
+            guard let self else { return (nil, nil) }
+            let modelId = persistedModelId
+            return (modelId, models.first { $0.id == modelId }?.shortName ?? cachedModelShortName)
+        })
+    }
+
     private func setUpUsageWarnings() {
         usageWarningViewModel = usageLimitsStore?.makeWarningViewModel(
-            tierProvider: { [weak self] in self?.userTier ?? .free },
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
                 currentModelIdProvider: { [weak self] in self?.currentModelId },
                 requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
             ),
-            isTrialEligible: { [weak self] in self?.subscriptionManager.isUserEligibleForFreeTrial() ?? false },
+            isTrialEligible: { [weak self] in self?.shouldOfferFreeTrial ?? false },
             isFireMode: { [weak self] in self?.isBurner ?? false }
         )
         usageWarningViewModel?.onAction = { [weak self] action in
             self?.performUsageWarningAction(action)
         }
         // `onOpenModelPicker` is set by the container VC, which owns the anchor the menu pops from.
+
+        // Also what brings a message back after the user has acted on the previous one.
+        usageLimitsStore?.snapshotUpdates?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshUsageWarnings() }
+            .store(in: &cancellables)
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;
@@ -438,7 +471,12 @@ final class AIChatOmnibarController {
     }
 
     private func refreshUsageWarnings() {
+        // `cleanup()` clears the message on the switch back to search; without this a snapshot
+        // published after that would re-resolve it under a search omnibar.
+        guard hasBeenActivated else { return }
+
         usageWarningViewModel?.refresh()
+        onUsageWarningsRefreshed?()
     }
 
     private func fetchModels() {
@@ -841,6 +879,7 @@ final class AIChatOmnibarController {
         clearStaleReasoningEffortIfNeeded()
         deactivateWebSearchIfUnsupported()
         deactivateImageGenerationIfUnsupported()
+        onSelectedModelChanged?()
     }
 
     /// Clears Web Search mode if the currently selected model doesn't support the WebSearch tool.
@@ -1577,6 +1616,8 @@ enum AIChatModelPickerItem {
     /// `routesToUpsell` is false when the upsell is unavailable (kill switch, or a surface that
     /// doesn't support it) — the row still shows, but must not open the purchase dialog.
     case gatedModel(AIChatModel, routesToUpsell: Bool)
+    /// Out of allowance rather than out of subscription: the row shows, greyed, and selects nothing.
+    case unavailableModel(AIChatModel, isSelected: Bool)
 }
 
 /// A fully-resolved reasoning-effort row so the view controller only maps it to an `NSMenuItem`.
@@ -1593,21 +1634,28 @@ struct AIChatReasoningPickerItem {
 
 extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
-    func modelPickerItems(selectedModelId: String?) -> [AIChatModelPickerItem] {
-        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
+    /// `freeModelsOnly` is the free-model CTA's chevron: advanced models are what it has run out of.
+    func modelPickerItems(selectedModelId: String?, freeModelsOnly: Bool = false) -> [AIChatModelPickerItem] {
+        let source = freeModelsOnly ? models.filter { !$0.isAdvanced } : models
+        let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: source)
         // Recommended = backend-labelled models, shown first with the label as a subtitle.
         let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
 
-        var items: [AIChatModelPickerItem] = recommended.map { model in
-            .model(model,
-                   subtitle: AIChatPickerSectionCopy.subtitle(for: model.label),
-                   isSelected: model.id == selectedModelId)
-        }
-        items += rest.map { model in
-            .model(model, isSelected: model.id == selectedModelId)
+        let advancedExhausted = isAdvancedModelUsageExhausted
+        func item(for model: AIChatModel, subtitle: String? = nil) -> AIChatModelPickerItem {
+            let isSelected = model.id == selectedModelId
+            guard advancedExhausted, model.isAdvanced else {
+                return .model(model, subtitle: subtitle, isSelected: isSelected)
+            }
+            return .unavailableModel(model, isSelected: isSelected)
         }
 
-        guard !gated.isEmpty else { return items }
+        var items: [AIChatModelPickerItem] = recommended.map { model in
+            item(for: model, subtitle: AIChatPickerSectionCopy.subtitle(for: model.label))
+        }
+        items += rest.map { item(for: $0) }
+
+        guard !gated.isEmpty, !freeModelsOnly else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {

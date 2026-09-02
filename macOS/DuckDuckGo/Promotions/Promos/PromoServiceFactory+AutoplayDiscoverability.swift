@@ -23,7 +23,7 @@ extension PromoServiceFactory {
     /// Builds an Autoplay Discoverability Promo.
     @MainActor
     static func autoplayDiscoverability(dependencies: PromoDependencies) -> Promo {
-        let promoType = PromoType(.featureTip, customTimeoutInterval: AutoplayDiscoverabilityPromoDelegate.displayDuration, customTimeoutResult: .ignored())
+        let promoType = PromoType(.featureTip, customTimeoutResult: .ignored())
         let identifier = "autoplay-discoverability"
         let delegate = AutoplayDiscoverabilityPromoDelegate(featureFlagger: dependencies.featureFlagger,
                                                             windowControllersManager: dependencies.windowControllersManager,

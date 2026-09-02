@@ -392,7 +392,9 @@ final class FaviconManager: FaviconManagement {
         if [.https, .http].contains(documentUrl.navigationalScheme) {
             result.append(FaviconUserScript.FaviconLink(href: root.appending("favicon.ico"), rel: "favicon.ico"))
         }
-        if documentUrl.navigationalScheme == .http, let upgradedRoot = root.toHttps() {
+        if documentUrl.navigationalScheme == .http,
+           let upgradedRoot = root.toHttps(),
+           upgradedRoot.navigationalScheme == .https {
             result.append(FaviconUserScript.FaviconLink(href: upgradedRoot.appending("favicon.ico"), rel: "favicon.ico"))
         }
         return result

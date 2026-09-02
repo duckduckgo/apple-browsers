@@ -33,12 +33,18 @@ extension DuckAiUsageWarning {
             case .daily: return UserText.aiChatUsageWarningsDailyUsage(percent: percent)
             case .weekly: return UserText.aiChatUsageWarningsWeeklyUsage(percent: percent)
             }
-        case .dailyLimitReached:
+        case .dailyReached:
             return UserText.aiChatUsageWarningsDailyLimitReached
-        case .weeklyLimitReached:
+        case .weeklyReached:
             return UserText.aiChatUsageWarningsWeeklyLimitReached
-        case .advancedModelsLimitReached:
+        case .weeklyReachedDegraded:
             return UserText.aiChatUsageWarningsAdvancedModelsLimitReached
+        case .freeReached:
+            // One id whichever window ran out, so the window picks the noun.
+            switch window {
+            case .daily: return UserText.aiChatUsageWarningsDailyLimitReached
+            case .weekly: return UserText.aiChatUsageWarningsWeeklyLimitReached
+            }
         }
     }
 
@@ -46,8 +52,15 @@ extension DuckAiUsageWarning {
         UserText.aiChatUsageWarningsResetsIn(resetsIn.shortDescription)
     }
 
-    /// `nil` hides the button. `.startUsingWeeklyLimit` has no native route yet, and a button that
-    /// does nothing is worse than none.
+    /// Nothing to swap for an upsell or a hand-off to another window.
+    var actionSwapsModel: Bool {
+        switch action {
+        case .switchToModel, .switchToFreeModel: return true
+        case .tryForFree, .startUsingWeeklyLimit, .none: return false
+        }
+    }
+
+    /// `nil` hides the button, which is also how a switch with nothing to switch to renders.
     var localizedActionTitle: String? {
         guard let action else { return nil }
 
@@ -60,7 +73,7 @@ extension DuckAiUsageWarning {
         case .tryForFree(let isTrialEligible):
             return isTrialEligible ? UserText.aiChatUsageWarningsTryForFree : UserText.aiChatUsageWarningsSubscribe
         case .startUsingWeeklyLimit:
-            return nil
+            return UserText.aiChatUsageWarningsStartUsingWeeklyLimit
         }
     }
 }
@@ -81,7 +94,9 @@ final class AIChatUsageWarningCardView: NSView {
         static let titleActionSpacing: CGFloat = 12
         static let actionCloseSpacing: CGFloat = 4
         static let closeButtonSize: CGFloat = 24
-        static let fontSize: CGFloat = 13
+        /// "Callout", per the design system: the headline takes its emphasis weight, the reset
+        /// detail its regular one.
+        static let fontSize: CGFloat = 12
         /// Bright enough over a dark page, low enough to still read as translucent.
         static let tintAlpha: CGFloat = 0.75
     }
@@ -119,6 +134,16 @@ final class AIChatUsageWarningCardView: NSView {
         return imageView
     }()
 
+    /// So a reopen on the same message doesn't replay the fill animation.
+    private var lastShownApproachingPercent: Int?
+
+    private let ringView: AIChatUsageWarningRingView = {
+        let view = AIChatUsageWarningRingView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isHidden = true
+        return view
+    }()
+
     private let titleLabel: NSTextField = {
         let label = NSTextField(labelWithString: "")
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -135,10 +160,11 @@ final class AIChatUsageWarningCardView: NSView {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isBordered = false
         button.title = ""
-        button.image = DesignSystemImages.Glyphs.Size16.close
+        button.image = DesignSystemImages.Glyphs.Size16.closeSmall
         button.imagePosition = .imageOnly
         button.setAccessibilityLabel(UserText.aiChatUsageWarningsDismissAccessibilityLabel)
         button.toolTip = UserText.aiChatUsageWarningsDismissAccessibilityLabel
+        button.hoverFillCornerRadius = Constants.closeButtonSize / 2
         return button
     }()
 
@@ -148,6 +174,11 @@ final class AIChatUsageWarningCardView: NSView {
     /// Hidden views still take part in Auto Layout, so footprints collapse explicitly.
     private var closeButtonWidthConstraint: NSLayoutConstraint?
     private var actionCloseSpacingConstraint: NSLayoutConstraint?
+    /// The card's own margin, dropped once the host lines the icon up with its omnibar instead.
+    private var iconLeadingConstraint: NSLayoutConstraint?
+    private var iconAlignmentConstraint: NSLayoutConstraint?
+    private var closeTrailingConstraint: NSLayoutConstraint?
+    private var closeAlignmentConstraint: NSLayoutConstraint?
 
     // MARK: - Background style
 
@@ -211,9 +242,18 @@ final class AIChatUsageWarningCardView: NSView {
         addSubview(tintView)
         addLayoutGuide(contentGuide)
         addSubview(iconImageView)
+        addSubview(ringView)
         addSubview(titleLabel)
         addSubview(actionButton)
         addSubview(closeButton)
+
+        let iconLeading = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor,
+                                                                 constant: Constants.horizontalPadding)
+        iconLeadingConstraint = iconLeading
+
+        let closeTrailing = closeButton.trailingAnchor.constraint(equalTo: trailingAnchor,
+                                                                  constant: -Constants.horizontalPadding)
+        closeTrailingConstraint = closeTrailing
 
         let closeWidth = closeButton.widthAnchor.constraint(equalToConstant: Constants.closeButtonSize)
         closeButtonWidthConstraint = closeWidth
@@ -238,10 +278,15 @@ final class AIChatUsageWarningCardView: NSView {
             contentGuide.bottomAnchor.constraint(equalTo: bottomAnchor),
             contentGuide.heightAnchor.constraint(equalToConstant: Constants.contentHeight),
 
-            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            iconLeading,
             iconImageView.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
+            ringView.leadingAnchor.constraint(equalTo: iconImageView.leadingAnchor),
+            ringView.centerYAnchor.constraint(equalTo: iconImageView.centerYAnchor),
+            ringView.widthAnchor.constraint(equalToConstant: AIChatUsageWarningRingView.Constants.size),
+            ringView.heightAnchor.constraint(equalToConstant: AIChatUsageWarningRingView.Constants.size),
 
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
@@ -254,7 +299,7 @@ final class AIChatUsageWarningCardView: NSView {
             closeWidth,
             closeButton.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
             closeButton.heightAnchor.constraint(equalToConstant: Constants.closeButtonSize),
-            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding)
+            closeTrailing
         ])
 
         // The headline is what gives when space runs short; the CTA is fixed copy that must not.
@@ -264,14 +309,53 @@ final class AIChatUsageWarningCardView: NSView {
         applyTheme()
     }
 
+    // MARK: - Alignment with the omnibar above
+
+    /// Puts the icon in the same column as one of the omnibar's own controls, so the card reads as
+    /// a continuation of it rather than a band with margins of its own.
+    func alignIcon(withCenterXOf view: NSView) {
+        iconAlignmentConstraint?.isActive = false
+        iconLeadingConstraint?.isActive = false
+
+        let constraint = iconImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        iconAlignmentConstraint = constraint
+        constraint.isActive = true
+    }
+
+    /// Puts the close button in the voice button's column. Mutually exclusive with the card's own
+    /// trailing margin, which is what places the CTA on a message that carries no close button.
+    func alignCloseButton(withCenterXOf view: NSView) {
+        closeAlignmentConstraint?.isActive = false
+
+        let constraint = closeButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        closeAlignmentConstraint = constraint
+        closeTrailingConstraint?.isActive = closeButton.isHidden
+        constraint.isActive = !closeButton.isHidden
+    }
+
     @objc private func closeButtonClicked() {
         onDismiss?()
     }
 
     // MARK: - Content
 
+    /// Lays the row out for the high-usage model notice: no reset detail and no CTA, since it is
+    /// about which model is selected rather than about an allowance running out.
+    func update(with notice: DuckAiHighUsageModelNotice) {
+        let text = UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName)
+        applyInfoIcon()
+        titleLabel.attributedStringValue = Self.attributedNotice(text)
+        titleLabel.setAccessibilityLabel(text)
+
+        actionButton.isHidden = true
+        actionButton.collapse()
+
+        applyCloseButton(isVisible: true)
+    }
+
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
     func update(with warning: DuckAiUsageWarning) {
+        applyIcon(for: warning)
         titleLabel.attributedStringValue = Self.attributedTitle(headline: warning.localizedHeadline,
                                                                 resetsIn: warning.localizedResetsIn)
         titleLabel.setAccessibilityLabel("\(warning.localizedHeadline). \(warning.localizedResetsIn)")
@@ -279,31 +363,77 @@ final class AIChatUsageWarningCardView: NSView {
         let actionTitle = warning.localizedActionTitle
         actionButton.isHidden = actionTitle == nil
         if let actionTitle {
-            actionButton.configure(title: actionTitle, offersModelPicker: warning.offersModelPicker)
+            actionButton.configure(title: actionTitle,
+                                   offersModelPicker: warning.offersModelPicker,
+                                   showsSwapIcon: warning.actionSwapsModel)
         } else {
             actionButton.collapse()
         }
 
-        closeButton.isHidden = !warning.isDismissible
-        closeButtonWidthConstraint?.constant = warning.isDismissible ? Constants.closeButtonSize : 0
-        // Otherwise the CTA sits a spacing off the trailing edge on a message with no close button.
-        actionCloseSpacingConstraint?.constant = warning.isDismissible ? Constants.actionCloseSpacing : 0
+        applyCloseButton(isVisible: warning.isDismissible)
+    }
+
+    /// Collapses the close button's footprint when there is none, which drops the CTA into the
+    /// place it would have held — the card's own trailing margin.
+    private func applyCloseButton(isVisible: Bool) {
+        closeButton.isHidden = !isVisible
+        closeButtonWidthConstraint?.constant = isVisible ? Constants.closeButtonSize : 0
+        actionCloseSpacingConstraint?.constant = isVisible ? Constants.actionCloseSpacing : 0
+        // Only once the host has given it a column to sit in; otherwise the card's own margin is
+        // the only rule there is.
+        guard let closeAlignmentConstraint else { return }
+
+        closeAlignmentConstraint.isActive = isVisible
+        closeTrailingConstraint?.isActive = !isVisible
     }
 
     /// Bold headline, regular reset detail, one string so the two can never wrap apart.
+    /// The ring tracks the percentage while the limit is only approaching; a reached limit reads as an
+    /// alert, where a nearly-full ring would say less than the copy already does.
+    private func applyInfoIcon() {
+        ringView.isHidden = true
+        iconImageView.isHidden = false
+        lastShownApproachingPercent = nil
+        iconImageView.image = DesignSystemImages.Glyphs.Size16.info
+        NSAppearance.withAppearance(appearance) {
+            iconImageView.contentTintColor = NSColor(designSystemColor: .iconsPrimary)
+        }
+    }
+
+    private func applyIcon(for warning: DuckAiUsageWarning) {
+        let isApproaching = warning.message == .approaching
+        ringView.isHidden = !isApproaching
+        iconImageView.isHidden = isApproaching
+        // The notice swaps in the info glyph, so the alert has to be put back.
+        iconImageView.image = DesignSystemImages.Glyphs.Size16.alertRecolorable
+        iconImageView.contentTintColor = nil
+
+        guard isApproaching else { return }
+        // Animated only between two messages, so the ring doesn't wind up from zero every time the
+        // panel reopens on the same one.
+        let animated = lastShownApproachingPercent != nil && lastShownApproachingPercent != warning.percent
+        lastShownApproachingPercent = warning.percent
+        ringView.setProgress(Double(warning.percent) / 100, severity: warning.severity, animated: animated)
+    }
+
+    /// Regular weight throughout: the notice is a sentence, where the warnings lead with a headline.
+    private static func attributedNotice(_ text: String) -> NSAttributedString {
+        NSAttributedString(string: text, attributes: textAttributes(weight: .regular))
+    }
+
     private static func attributedTitle(headline: String, resetsIn: String) -> NSAttributedString {
-        let textColor = NSColor(designSystemColor: .textPrimary)
-        let result = NSMutableAttributedString(
-            string: headline,
-            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .semibold),
-                         .foregroundColor: textColor]
-        )
-        result.append(NSAttributedString(
-            string: " · \(resetsIn)",
-            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .regular),
-                         .foregroundColor: textColor]
-        ))
+        let result = NSMutableAttributedString(string: headline, attributes: textAttributes(weight: .semibold))
+        result.append(NSAttributedString(string: " ", attributes: textAttributes(weight: .regular)))
+        result.append(NSAttributedString(string: "·", attributes: textAttributes(weight: .bold)))
+        result.append(NSAttributedString(string: " \(resetsIn)", attributes: textAttributes(weight: .regular)))
         return result
+    }
+
+    /// No forced line height: it is a single line, and squeezing the line box to the font's own size
+    /// leaves the glyphs sitting off-centre in the band.
+    private static func textAttributes(weight: NSFont.Weight) -> [NSAttributedString.Key: Any] {
+        [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: weight),
+         .foregroundColor: NSColor(designSystemColor: .textPrimary)]
     }
 
     // MARK: - Appearance
@@ -345,9 +475,13 @@ final class AIChatUsageWarningActionButton: NSView {
 
     private enum Constants {
         static let height: CGFloat = 28
-        static let cornerRadius: CGFloat = 14
+        static let cornerRadius: CGFloat = 8
         static let horizontalPadding: CGFloat = 12
-        static let fontSize: CGFloat = 12
+        /// "Label - Small", matching the message beside it.
+        static let fontSize: CGFloat = 11
+        static let kerning: CGFloat = 0.06
+        static let iconSize: CGFloat = 12
+        static let iconTitleSpacing: CGFloat = 6
         static let chevronSize: CGFloat = 16
         static let chevronRegionWidth: CGFloat = 26
         static let dividerWidth: CGFloat = 1
@@ -356,10 +490,12 @@ final class AIChatUsageWarningActionButton: NSView {
 
     private let backgroundLayer = CALayer()
 
+    /// Held as plain text: the label renders it attributed, so the styling has one owner.
+    private var title = ""
+
     private let titleLabel: NSTextField = {
         let label = NSTextField(labelWithString: "")
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: Constants.fontSize, weight: .medium)
         label.lineBreakMode = .byTruncatingTail
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
@@ -369,6 +505,14 @@ final class AIChatUsageWarningActionButton: NSView {
         let view = ColorView(frame: .zero)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
+    }()
+
+    private let iconImageView: NSImageView = {
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.image = DesignSystemImages.Glyphs.Size12.swap
+        return imageView
     }()
 
     private let chevronImageView: NSImageView = {
@@ -386,6 +530,8 @@ final class AIChatUsageWarningActionButton: NSView {
     private var pickerRegionWidthConstraint: NSLayoutConstraint?
     private var leadingPaddingConstraint: NSLayoutConstraint?
     private var dividerLeadingConstraint: NSLayoutConstraint?
+    private var iconWidthConstraint: NSLayoutConstraint?
+    private var iconTitleSpacingConstraint: NSLayoutConstraint?
 
     var onAction: (() -> Void)?
     var onOpenModelPicker: (() -> Void)?
@@ -394,6 +540,7 @@ final class AIChatUsageWarningActionButton: NSView {
     var pickerAnchor: NSView { pickerHitButton }
 
     private var offersModelPicker = false
+    private var showsSwapIcon = false
     private var isCollapsed = false
 
     override init(frame frameRect: NSRect) {
@@ -426,6 +573,7 @@ final class AIChatUsageWarningActionButton: NSView {
         pickerHitButton.action = #selector(pickerClicked)
         pickerHitButton.setAccessibilityLabel(UserText.aiChatUsageWarningsModelPickerAccessibilityLabel)
 
+        addSubview(iconImageView)
         addSubview(titleLabel)
         addSubview(dividerView)
         addSubview(chevronImageView)
@@ -436,9 +584,15 @@ final class AIChatUsageWarningActionButton: NSView {
         dividerWidthConstraint = dividerWidth
         let pickerRegionWidth = pickerHitButton.widthAnchor.constraint(equalToConstant: Constants.chevronRegionWidth)
         pickerRegionWidthConstraint = pickerRegionWidth
-        let leadingPadding = titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor,
-                                                                constant: Constants.horizontalPadding)
+        // With no icon both its width and the spacing collapse, leaving the label where it was.
+        let leadingPadding = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor,
+                                                                    constant: Constants.horizontalPadding)
         leadingPaddingConstraint = leadingPadding
+        let iconWidth = iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize)
+        iconWidthConstraint = iconWidth
+        let iconTitleSpacing = titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor,
+                                                                  constant: Constants.iconTitleSpacing)
+        iconTitleSpacingConstraint = iconTitleSpacing
         let dividerLeading = dividerView.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor,
                                                                  constant: Constants.horizontalPadding)
         dividerLeadingConstraint = dividerLeading
@@ -447,6 +601,11 @@ final class AIChatUsageWarningActionButton: NSView {
             heightAnchor.constraint(equalToConstant: Constants.height),
 
             leadingPadding,
+            iconWidth,
+            iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+            iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            iconTitleSpacing,
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             dividerLeading,
@@ -475,13 +634,28 @@ final class AIChatUsageWarningActionButton: NSView {
         updateTrackingAreas()
     }
 
-    /// - Parameter offersModelPicker: when false the divider and `>` collapse, leaving a plain pill.
-    func configure(title: String, offersModelPicker: Bool) {
-        titleLabel.stringValue = title
+    private func applyTitleStyling() {
+        titleLabel.attributedStringValue = NSAttributedString(
+            string: title,
+            attributes: [.font: NSFont.systemFont(ofSize: Constants.fontSize, weight: .regular),
+                         .foregroundColor: NSColor(designSystemColor: .textPrimary),
+                         .kern: Constants.kerning]
+        )
+    }
+
+    /// `offersModelPicker` false collapses the divider and `>`, leaving a plain pill.
+    func configure(title: String, offersModelPicker: Bool, showsSwapIcon: Bool) {
+        self.title = title
+        applyTitleStyling()
         self.offersModelPicker = offersModelPicker
+        self.showsSwapIcon = showsSwapIcon
         isCollapsed = false
         leadingPaddingConstraint?.constant = Constants.horizontalPadding
         dividerLeadingConstraint?.constant = Constants.horizontalPadding
+
+        iconImageView.isHidden = !showsSwapIcon
+        iconWidthConstraint?.constant = showsSwapIcon ? Constants.iconSize : 0
+        iconTitleSpacingConstraint?.constant = showsSwapIcon ? Constants.iconTitleSpacing : 0
 
         dividerView.isHidden = !offersModelPicker
         chevronImageView.isHidden = !offersModelPicker
@@ -496,7 +670,12 @@ final class AIChatUsageWarningActionButton: NSView {
     /// paddings have to go too, or the label's own chain still reserves them.
     func collapse() {
         isCollapsed = true
-        titleLabel.stringValue = ""
+        showsSwapIcon = false
+        title = ""
+        applyTitleStyling()
+        iconImageView.isHidden = true
+        iconWidthConstraint?.constant = 0
+        iconTitleSpacingConstraint?.constant = 0
         leadingPaddingConstraint?.constant = 0
         dividerLeadingConstraint?.constant = 0
         dividerWidthConstraint?.constant = 0
@@ -509,6 +688,9 @@ final class AIChatUsageWarningActionButton: NSView {
         guard !isCollapsed else { return NSSize(width: 0, height: Constants.height) }
 
         var width = Constants.horizontalPadding + titleLabel.intrinsicContentSize.width + Constants.horizontalPadding
+        if showsSwapIcon {
+            width += Constants.iconSize + Constants.iconTitleSpacing
+        }
         if offersModelPicker {
             width += Constants.dividerWidth + Constants.chevronRegionWidth
         }
@@ -539,7 +721,8 @@ final class AIChatUsageWarningActionButton: NSView {
         effectiveAppearance.performAsCurrentDrawingAppearance {
             backgroundLayer.backgroundColor = fill.cgColor
             dividerView.backgroundColor = NSColor(designSystemColor: .lines)
-            titleLabel.textColor = NSColor(designSystemColor: .textPrimary)
+            applyTitleStyling()
+            iconImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)
             chevronImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)
         }
         CATransaction.commit()

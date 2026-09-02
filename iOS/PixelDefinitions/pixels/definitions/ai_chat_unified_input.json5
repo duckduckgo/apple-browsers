@@ -151,6 +151,28 @@
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
+    "m_aichat_unified_input_image_validation_failed": {
+        "description": "Fires when a pasted image is rejected by the Unified Toggle Input attachment policy (image capacity reached, or extra images dropped from a multi-image paste).",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "reason",
+                "description": "Reason for the image validation failure.",
+                "type": "string",
+                "enum": ["count_exceeded", "paste_truncated"]
+            },
+            {
+                "key": "source",
+                "description": "Source of the rejected image.",
+                "type": "string",
+                "enum": ["camera", "photo_library", "paste"]
+            }
+        ]
+    },
     "m_aichat_unified_input_file_attached": {
         "description": "Fires when the user attaches a file (file picker or paste) in the Unified Toggle Input (post-validation).",
         "owners": ["pikorddg", "aataraxiaa"],
@@ -529,6 +551,51 @@
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_unified_input_create_image_model_switched": {
+        "description": "Fires when picking Create Image automatically moves the user onto an image-capable model, because the selected model cannot generate images.",
+        "owners": ["pikorddg", "Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "from_model_id",
+                "description": "The model the user was moved off, which cannot generate images.",
+                "type": "string"
+            },
+            {
+                "key": "to_model_id",
+                "description": "The image-capable model the user was moved onto.",
+                "type": "string"
+            },
+            {
+                "key": "from_model_privacy_preserving",
+                "description": "Whether the model the user was moved off is one of the models with extra privacy protections.",
+                "type": "boolean"
+            },
+            {
+                "key": "entry_point",
+                "description": "Where the user turned Create Image on.",
+                "type": "string",
+                "enum": ["tools_menu", "chat_header_new_image"]
+            }
+        ]
+    },
+    "aichat_unified_input_create_image_model_switch_notice_dismissed": {
+        "description": "Fires when the user closes the footer notice that explains an automatic Create Image model switch.",
+        "owners": ["pikorddg", "Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_unified_input_create_image_unavailable": {
+        "description": "Fires when Create Image is asked for on a model that cannot generate images and the model list offers nothing to move to.",
+        "owners": ["pikorddg", "Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": ["appVersion"]
     }
 }

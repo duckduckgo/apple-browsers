@@ -178,6 +178,9 @@
 /* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
 "action.title.searchWithDuckDuckGo" = "Search";
 
+/* Open the internal feedback form action */
+"action.title.sendInternalFeedback" = "Send Internal Feedback";
+
 /* Settings action */
 "action.title.settings" = "Settings";
 

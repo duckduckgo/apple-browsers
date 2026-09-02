@@ -80,6 +80,41 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(height, buttonsOnlyHeight, accuracy: 0.01)
     }
 
+    func testWhenStandaloneCollapseProgressIsAppliedThenGlassScaleStaysIdentity() {
+        let sut = makeSUT(embeddedOmnibar: false)
+
+        sut.setStandaloneCollapseProgress(1, reduceMotion: false)
+
+        func visualEffectView(in view: UIView) -> UIVisualEffectView? {
+            if let view = view as? UIVisualEffectView { return view }
+            return view.subviews.lazy.compactMap { visualEffectView(in: $0) }.first
+        }
+
+        let glass = visualEffectView(in: sut)
+        XCTAssertEqual(glass?.transform.a, 1, accuracy: 0.001)
+        XCTAssertEqual(glass?.transform.d, 1, accuracy: 0.001)
+        XCTAssertEqual(glass?.transform.ty, 0, accuracy: 0.001)
+    }
+
+    func testWhenStandaloneCollapseProgressIsAppliedThenIconsAreNotInsideGlassContentView() {
+        let sut = makeSUT(embeddedOmnibar: false)
+        let fire = makeToolbarButton(identifier: "Browser.Toolbar.Button.Fire", width: 44)
+        sut.setToolbarButtons([fire])
+        sut.layoutIfNeeded()
+
+        var ancestor: UIView? = fire.superview
+        var isInsideGlassContentView = false
+        while let view = ancestor {
+            if view.superview is UIVisualEffectView {
+                isInsideGlassContentView = true
+                break
+            }
+            ancestor = view.superview
+        }
+
+        XCTAssertFalse(isInsideGlassContentView)
+    }
+
     func testWhenNotFloatingThenProgressIsANoOp() {
         let sut = makeSUT(floating: false)
         let legacyFullHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: false)

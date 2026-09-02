@@ -1437,6 +1437,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     func moveTransitionCompleted() {
         backgroundColor = isFloatingUIEnabled ? .clear : defaultBackgroundColor
         updateFireModeAppearance()
+        restoreFloatingFieldAppearance()
     }
 
     private func addOmniBarLongPressInteractionIfNeeded() {

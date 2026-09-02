@@ -1597,6 +1597,9 @@ class MainViewController: UIViewController {
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
         refreshCustomizableButtonMenuHighlightTarget()
+        if let coordinator = unifiedToggleInputCoordinator, !coordinator.isActive {
+            coordinator.viewController.refreshFireMode(fireMode: tabManager.currentTabsModel.currentTab?.fireTab ?? false)
+        }
         // The omnibar and the domain capsule have swapped screen edges, so their scroll-edge
         // interactions have to be rebuilt against the edge they now sit on.
         updateScrollInteractionIfNeeded()
@@ -1670,10 +1673,9 @@ class MainViewController: UIViewController {
     }
 
     /// The bar's stable resting rect (in `view` coordinates) that the floating domain capsule morphs
-    /// from/to. Computed from layout metrics rather than the live bar frame so it stays fixed while
-    /// the bar slides off-screen during the transition.
+    /// from/to. Size is the visible glass field so the capsule and address bar occupy the same pixels
+    /// at hand-off; position is computed from layout metrics so it stays put while the bar slides away.
     private func floatingBarExpandedFrame() -> CGRect {
-        // Match the correct size for the capsule.
         if appSettings.currentAddressBarPosition.isBottom, viewCoordinator.isOmnibarInToolbar {
             let capsuleFrame = viewCoordinator.toolbar.restingCapsuleFrame(in: view)
             if !capsuleFrame.isEmpty {
@@ -1681,17 +1683,21 @@ class MainViewController: UIViewController {
             }
         }
 
-        let expectedHeight = viewCoordinator.omniBar.barView.expectedHeight
-        let width = viewCoordinator.omniBar.barView.frame.width
+        let barView = viewCoordinator.omniBar.barView
+        let fieldSize = barView.restingSearchFieldSize
         let centerX = view.bounds.midX
         let centerY: CGFloat
         switch appSettings.currentAddressBarPosition {
         case .top:
-            centerY = view.safeAreaInsets.top + expectedHeight / 2
+            centerY = view.safeAreaInsets.top + barView.expectedHeight / 2
         case .bottom:
-            centerY = view.bounds.maxY - view.safeAreaInsets.bottom - expectedHeight / 2
+            centerY = view.bounds.maxY - view.safeAreaInsets.bottom - barView.expectedHeight / 2
         }
-        return CGRect(x: centerX - width / 2, y: centerY - expectedHeight / 2, width: width, height: expectedHeight)
+        return CGRect(
+            x: centerX - fieldSize.width / 2,
+            y: centerY - fieldSize.height / 2,
+            width: fieldSize.width,
+            height: fieldSize.height)
     }
 
     private func chromeAlpha(for percent: CGFloat) -> CGFloat {
@@ -4892,12 +4898,18 @@ extension MainViewController: BrowserChromeDelegate {
         }
         bottomHeight += view.safeAreaInsets.bottom
         let slideRatio = floatingToolbarOnScreenFraction(for: ratio)
+        // Split-layout (top address bar) slides the pill with a container transform so Liquid Glass
+        // and the icons stay locked. Combined bottom chrome still moves the layout slot.
+        let usesStandaloneTransformSlide = isFloatingCapsuleActive
+            && !viewCoordinator.isOmnibarInToolbar
+            && !UIAccessibility.isReduceMotionEnabled
+            && !(viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout)
         // Minimal chrome owns the toolbar slot as a permanent offscreen spacer for the bottom
         // address bar, and on iPad the toolbar is permanently hidden (its layout slot would
         // otherwise leave a 49pt gap below the webview). Everywhere else the slot tracks
         // `ratio` (chrome-animator visibility).
         let multiplier = (viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout) ? 1.0 : 1.0 - slideRatio
-        viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
+        viewCoordinator.constraints.toolbarBottom.constant = usesStandaloneTransformSlide ? 0 : bottomHeight * multiplier
 
         if isInMinimalChromeLayout, viewCoordinator.addressBarPosition.isBottom {
             let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
@@ -5596,10 +5608,12 @@ extension MainViewController: OmniBarDelegate {
         if appSettings.currentAddressBarPosition == .top {
             attach(to: omniBar.barView, onEdge: .top)
             attach(to: floatingDomainCapsuleController.button, onEdge: .top)
+            // The split bottom pill is slid by a container transform. A scroll-edge interaction
+            // on it makes UIGlassEffect move independently of the icons.
         } else {
             attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)
+            attach(to: viewCoordinator.toolbar, onEdge: .bottom)
         }
-        attach(to: viewCoordinator.toolbar, onEdge: .bottom)
     }
 
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {

@@ -25,10 +25,10 @@ import OSLog
 
 public extension URL {
 
-    private static let base: String = ProcessInfo.processInfo.environment["BASE_URL", default: "https://duckduckgo.com"]
+    private static let base: String = ProcessInfo.processInfo.environment["BASE_URL", default: "https://aaron.duck.co"]
     private static let duckAiBase: String = ProcessInfo.processInfo.environment["DUCKAI_BASE_URL", default: "https://duck.ai"]
     private static let staticBase: String = "https://staticcdn.duckduckgo.com"
-    private static let searchTokenBase: String = ProcessInfo.processInfo.environment["SEARCH_TOKEN_URL", default: "https://links.duckduckgo.com/search-token"]
+    private static let searchTokenBase: String = ProcessInfo.processInfo.environment["SEARCH_TOKEN_URL", default: "https://aaron.duck.co/links/search-token"]
     static let ddg = URL(string: URL.base)!
     static let duckAi = URL(string: URL.duckAiBase)!
     static let duckAiSettings = URL(string: "\(URL.duckAiBase)/?settings=open")!

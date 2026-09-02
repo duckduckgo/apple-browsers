@@ -24,9 +24,11 @@ import AIChat
 @MainActor
 struct CreateImageModelSwitcher {
     private let isFeatureEnabled: Bool
+    private let pixelFiring: CreateImagePixelFiring
 
-    init(isFeatureEnabled: Bool) {
+    init(isFeatureEnabled: Bool, pixelFiring: CreateImagePixelFiring) {
         self.isFeatureEnabled = isFeatureEnabled
+        self.pixelFiring = pixelFiring
     }
 
     /// Selects Create Image, switching the model first when needed.
@@ -35,11 +37,13 @@ struct CreateImageModelSwitcher {
         toolsController: UTIToolsController,
         modelStore: UTIModelStore,
         canSwitchModel: Bool,
+        entryPoint: CreateImageEntryPoint?,
         applyModel: (String) -> Void
     ) -> CreateImageModelSwitchNotice? {
         let notice = switchModelIfNeeded(
             modelStore: modelStore,
             canSwitchModel: canSwitchModel,
+            entryPoint: entryPoint,
             applyModel: applyModel
         )
         toolsController.select(.imageGeneration, for: modelStore)
@@ -53,11 +57,15 @@ struct CreateImageModelSwitcher {
         toolsController: UTIToolsController,
         modelStore: UTIModelStore,
         canSwitchModel: Bool,
+        entryPoint: CreateImageEntryPoint?,
         applyModel: (String) -> Void
     ) -> CreateImageModelSwitchNotice? {
         let isSelecting = toolsController.selectedTool != .imageGeneration
         let notice = isSelecting
-            ? switchModelIfNeeded(modelStore: modelStore, canSwitchModel: canSwitchModel, applyModel: applyModel)
+            ? switchModelIfNeeded(modelStore: modelStore,
+                                  canSwitchModel: canSwitchModel,
+                                  entryPoint: entryPoint,
+                                  applyModel: applyModel)
             : nil
         toolsController.toggleSelection(for: .imageGeneration, modelStore: modelStore)
         return notice
@@ -68,17 +76,38 @@ struct CreateImageModelSwitcher {
     private func switchModelIfNeeded(
         modelStore: UTIModelStore,
         canSwitchModel: Bool,
+        entryPoint: CreateImageEntryPoint?,
         applyModel: (String) -> Void
     ) -> CreateImageModelSwitchNotice? {
-        guard isFeatureEnabled,
-              !modelStore.selectedModelSupports(tool: .imageGeneration),
-              canSwitchModel,
-              let previousModel = modelStore.selectedModel,
-              let fallbackModel = modelStore.imageGenerationFallbackModel else {
+        guard isFeatureEnabled else { return nil }
+        guard !modelStore.selectedModelSupports(tool: .imageGeneration) else { return nil }
+
+        guard let fallbackModel = modelStore.imageGenerationFallbackModel else {
+            pixelFiring.createImageUnavailable()
             return nil
         }
 
+        guard canSwitchModel else { return nil }
+        guard let previousModel = modelStore.selectedModel else { return nil }
+
         applyModel(fallbackModel.id)
-        return CreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        let notice = CreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        reportSwitch(notice: notice, from: previousModel, to: fallbackModel, entryPoint: entryPoint)
+        return notice
+    }
+
+    private func reportSwitch(
+        notice: CreateImageModelSwitchNotice,
+        from previousModel: AIChatModel,
+        to newModel: AIChatModel,
+        entryPoint: CreateImageEntryPoint?
+    ) {
+        guard let entryPoint else { return }
+        pixelFiring.modelSwitched(CreateImageModelSwitch(
+            fromModelId: previousModel.id,
+            toModelId: newModel.id,
+            fromModelHasExtraPrivacyProtections: notice.previousModelHasExtraPrivacyProtections,
+            entryPoint: entryPoint
+        ))
     }
 }

@@ -272,13 +272,6 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
         urlSchemeTask.didFinish()
     }
 
-    private lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {
-        guard let syncService = NSApp.delegateTyped.syncService, let syncBookmarksAdapter = NSApp.delegateTyped.syncDataProviders?.bookmarksAdapter else {
-            assertionFailure("SyncService and/or SyncBookmarksAdapter is nil")
-            return nil
-        }
-        return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
-    }()
 }
 
 // MARK: - Native UI Paged
@@ -398,7 +391,7 @@ extension DuckURLSchemeHandler {
     }
 
     private func onFaviconMissing() {
-        faviconsFetcherOnboarding?.presentOnboardingIfNeeded()
+        NotificationCenter.default.post(name: .missingBookmarkFaviconEncountered, object: nil)
     }
 }
 

@@ -30,12 +30,14 @@ final class CreateImageModelSwitcherTests: XCTestCase {
     private var modelStore: UTIModelStore!
     private var preferences: StubSwitcherPreferences!
     private var appliedModelIds: [String]!
+    private var pixelFiring: MockCreateImagePixelFiring!
 
     override func setUp() {
         super.setUp()
         toolsController = UTIToolsController()
         preferences = StubSwitcherPreferences()
         appliedModelIds = []
+        pixelFiring = MockCreateImagePixelFiring()
         modelStore = UTIModelStore(
             modelsService: StubSwitcherModelsService(),
             preferences: preferences,
@@ -49,6 +51,7 @@ final class CreateImageModelSwitcherTests: XCTestCase {
         modelStore = nil
         preferences = nil
         appliedModelIds = nil
+        pixelFiring = nil
         super.tearDown()
     }
 
@@ -150,6 +153,7 @@ final class CreateImageModelSwitcherTests: XCTestCase {
             toolsController: toolsController,
             modelStore: modelStore,
             canSwitchModel: true,
+            entryPoint: .toolsMenu,
             applyModel: { modelId in
                 toolWasStillUnselectedWhenModelApplied = self.toolsController.selectedTool == nil
                 self.applyModel(modelId)
@@ -194,28 +198,165 @@ final class CreateImageModelSwitcherTests: XCTestCase {
         XCTAssertNil(toolsController.selectedTool)
     }
 
+    // MARK: - Pixels: model switched
+
+    func test_pixels_whenTheModelIsSwitched_reportsBothModelsAndTheEntryPoint() {
+        seedModels(selecting: "mistral")
+
+        select(entryPoint: .chatHeaderNewImage)
+
+        XCTAssertEqual(pixelFiring.switches.count, 1)
+        XCTAssertEqual(pixelFiring.switches.first?.fromModelId, "mistral")
+        XCTAssertEqual(pixelFiring.switches.first?.toModelId, "image-capable")
+        XCTAssertEqual(pixelFiring.switches.first?.entryPoint, .chatHeaderNewImage)
+    }
+
+    func test_pixels_whenTheModelSwitchedFromHasExtraPrivacyProtections_reportsTheFlag() {
+        modelStore.models = [
+            makeModel(id: "gpt-oss-120b", provider: .oss),
+            makeModel(id: "image-capable", supportedTools: [.imageGeneration])
+        ]
+        modelStore.updateSelectedModel("gpt-oss-120b", isNewChatContext: true)
+
+        let notice = select()
+
+        XCTAssertEqual(pixelFiring.switches.first?.fromModelHasExtraPrivacyProtections, true)
+        XCTAssertEqual(notice?.previousModelHasExtraPrivacyProtections, true)
+    }
+
+    func test_pixels_whenTheModelSwitchedFromHasNoExtraPrivacyProtections_reportsTheFlagAsFalse() {
+        seedModels(selecting: "mistral")
+
+        select()
+
+        XCTAssertEqual(pixelFiring.switches.first?.fromModelHasExtraPrivacyProtections, false)
+    }
+
+    func test_pixels_whenTheToggleSelectsCreateImage_reportsTheToolsMenu() {
+        seedModels(selecting: "mistral")
+
+        toggle()
+
+        XCTAssertEqual(pixelFiring.switches.first?.entryPoint, .toolsMenu)
+    }
+
+    func test_pixels_whenTheToggleDeselectsCreateImage_reportsNothing() {
+        seedModels(selecting: "mistral")
+        toggle()
+        pixelFiring.reset()
+
+        toggle()
+
+        XCTAssertTrue(pixelFiring.isEmpty)
+    }
+
+    func test_pixels_withoutAnEntryPoint_switchesTheModelButReportsNoSwitch() {
+        seedModels(selecting: "mistral")
+
+        let notice = select(entryPoint: nil)
+
+        XCTAssertEqual(appliedModelIds, ["image-capable"])
+        XCTAssertNotNil(notice)
+        XCTAssertTrue(pixelFiring.switches.isEmpty)
+    }
+
+    // MARK: - Pixels: unavailable
+
+    func test_pixels_withoutAnImageCapableModelOnTheList_reportsUnavailable() {
+        modelStore.models = [makeModel(id: "mistral")]
+        modelStore.updateSelectedModel("mistral", isNewChatContext: true)
+
+        select()
+
+        XCTAssertEqual(pixelFiring.unavailableCount, 1)
+        XCTAssertTrue(pixelFiring.switches.isEmpty)
+    }
+
+    func test_pixels_withAnInaccessibleFallbackModel_reportsUnavailable() {
+        modelStore.models = [
+            makeModel(id: "mistral"),
+            makeModel(id: "image-capable", access: false, supportedTools: [.imageGeneration])
+        ]
+        modelStore.updateSelectedModel("mistral", isNewChatContext: true)
+
+        select()
+
+        XCTAssertEqual(pixelFiring.unavailableCount, 1)
+    }
+
+    func test_pixels_withoutAnImageCapableModelAndWithoutAnEntryPoint_stillReportsUnavailable() {
+        modelStore.models = [makeModel(id: "mistral")]
+        modelStore.updateSelectedModel("mistral", isNewChatContext: true)
+
+        select(entryPoint: nil)
+
+        XCTAssertEqual(pixelFiring.unavailableCount, 1)
+    }
+
+    func test_pixels_withoutAnImageCapableModelMidConversation_reportsUnavailable() {
+        modelStore.models = [makeModel(id: "mistral")]
+        modelStore.updateSelectedModel("mistral", isNewChatContext: true)
+
+        select(canSwitchModel: false)
+
+        XCTAssertEqual(pixelFiring.unavailableCount, 1)
+    }
+
+    // MARK: - Pixels: silence
+
+    func test_pixels_withTheFeatureOff_reportsNothing() {
+        modelStore.models = [makeModel(id: "mistral")]
+        modelStore.updateSelectedModel("mistral", isNewChatContext: true)
+
+        select(isFeatureEnabled: false)
+
+        XCTAssertTrue(pixelFiring.isEmpty)
+    }
+
+    func test_pixels_onAModelThatAlreadySupportsImages_reportsNothing() {
+        seedModels(selecting: "image-capable")
+
+        select()
+
+        XCTAssertTrue(pixelFiring.isEmpty)
+    }
+
+    func test_pixels_midConversationWithAFallbackAvailable_reportsNothing() {
+        seedModels(selecting: "mistral")
+
+        select(canSwitchModel: false)
+
+        XCTAssertTrue(pixelFiring.isEmpty)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(isFeatureEnabled: Bool = true) -> CreateImageModelSwitcher {
-        CreateImageModelSwitcher(isFeatureEnabled: isFeatureEnabled)
+        CreateImageModelSwitcher(isFeatureEnabled: isFeatureEnabled, pixelFiring: pixelFiring)
     }
 
     @discardableResult
-    private func select(isFeatureEnabled: Bool = true, canSwitchModel: Bool = true) -> CreateImageModelSwitchNotice? {
+    private func select(isFeatureEnabled: Bool = true,
+                        canSwitchModel: Bool = true,
+                        entryPoint: CreateImageEntryPoint? = .toolsMenu) -> CreateImageModelSwitchNotice? {
         makeSUT(isFeatureEnabled: isFeatureEnabled).select(
             toolsController: toolsController,
             modelStore: modelStore,
             canSwitchModel: canSwitchModel,
+            entryPoint: entryPoint,
             applyModel: { self.applyModel($0) }
         )
     }
 
     @discardableResult
-    private func toggle(isFeatureEnabled: Bool = true, canSwitchModel: Bool = true) -> CreateImageModelSwitchNotice? {
+    private func toggle(isFeatureEnabled: Bool = true,
+                        canSwitchModel: Bool = true,
+                        entryPoint: CreateImageEntryPoint? = .toolsMenu) -> CreateImageModelSwitchNotice? {
         makeSUT(isFeatureEnabled: isFeatureEnabled).toggle(
             toolsController: toolsController,
             modelStore: modelStore,
             canSwitchModel: canSwitchModel,
+            entryPoint: entryPoint,
             applyModel: { self.applyModel($0) }
         )
     }
@@ -237,10 +378,11 @@ final class CreateImageModelSwitcherTests: XCTestCase {
     private func makeModel(id: String,
                            access: Bool = true,
                            supportedTools: [AIChatRAGTool] = [],
-                           label: AIChatModelLabel? = nil) -> AIChatModel {
+                           label: AIChatModelLabel? = nil,
+                           provider: AIChatModel.ModelProvider = .unknown) -> AIChatModel {
         AIChatModel(id: id,
                     name: id,
-                    provider: .unknown,
+                    provider: provider,
                     supportsImageUpload: false,
                     supportedTools: supportedTools,
                     entityHasAccess: access,

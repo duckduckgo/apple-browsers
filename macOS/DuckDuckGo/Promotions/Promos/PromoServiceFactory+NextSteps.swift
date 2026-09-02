@@ -26,6 +26,7 @@ extension PromoServiceFactory {
         initiated: .app,
         promoType: PromoType(.nextSteps),
         context: .newTabPage,
+        coexistingPromoIDs: [PromoServiceFactory.syncFaviconsPromoID],
         delegate: nil
     )
 }

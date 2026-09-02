@@ -312,6 +312,13 @@ class MainViewController: UIViewController {
         guard isFloatingUIEnabled else { return }
         let interfaceStyle = settledFloatingGlassInterfaceStyle
         viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        // The toolbar only refreshes an omnibar it hosts. With a top address bar the omnibar sits
+        // in the navigation bar container instead, so its glass keeps the style it was snapshotted
+        // with and lands opaque before flipping translucent a frame later.
+        if !viewCoordinator.isOmnibarInToolbar,
+           let barView = viewCoordinator.omniBar.barView as? DefaultOmniBarView {
+            barView.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        }
     }
 
     private var settledFloatingGlassInterfaceStyle: UIUserInterfaceStyle {
@@ -1597,6 +1604,9 @@ class MainViewController: UIViewController {
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
         refreshCustomizableButtonMenuHighlightTarget()
+        if let coordinator = unifiedToggleInputCoordinator, !coordinator.isActive {
+            coordinator.viewController.refreshFireMode(fireMode: tabManager.currentTabsModel.currentTab?.fireTab ?? false)
+        }
         // The omnibar and the domain capsule have swapped screen edges, so their scroll-edge
         // interactions have to be rebuilt against the edge they now sit on.
         updateScrollInteractionIfNeeded()
@@ -1670,10 +1680,9 @@ class MainViewController: UIViewController {
     }
 
     /// The bar's stable resting rect (in `view` coordinates) that the floating domain capsule morphs
-    /// from/to. Computed from layout metrics rather than the live bar frame so it stays fixed while
-    /// the bar slides off-screen during the transition.
+    /// from/to. Size is the visible glass field so the capsule and address bar occupy the same pixels
+    /// at hand-off; position is computed from layout metrics so it stays put while the bar slides away.
     private func floatingBarExpandedFrame() -> CGRect {
-        // Match the correct size for the capsule.
         if appSettings.currentAddressBarPosition.isBottom, viewCoordinator.isOmnibarInToolbar {
             let capsuleFrame = viewCoordinator.toolbar.restingCapsuleFrame(in: view)
             if !capsuleFrame.isEmpty {
@@ -1681,17 +1690,21 @@ class MainViewController: UIViewController {
             }
         }
 
-        let expectedHeight = viewCoordinator.omniBar.barView.expectedHeight
-        let width = viewCoordinator.omniBar.barView.frame.width
+        let barView = viewCoordinator.omniBar.barView
+        let fieldSize = barView.restingSearchFieldSize
         let centerX = view.bounds.midX
         let centerY: CGFloat
         switch appSettings.currentAddressBarPosition {
         case .top:
-            centerY = view.safeAreaInsets.top + expectedHeight / 2
+            centerY = view.safeAreaInsets.top + barView.expectedHeight / 2
         case .bottom:
-            centerY = view.bounds.maxY - view.safeAreaInsets.bottom - expectedHeight / 2
+            centerY = view.bounds.maxY - view.safeAreaInsets.bottom - barView.expectedHeight / 2
         }
-        return CGRect(x: centerX - width / 2, y: centerY - expectedHeight / 2, width: width, height: expectedHeight)
+        return CGRect(
+            x: centerX - fieldSize.width / 2,
+            y: centerY - fieldSize.height / 2,
+            width: fieldSize.width,
+            height: fieldSize.height)
     }
 
     private func chromeAlpha(for percent: CGFloat) -> CGFloat {
@@ -3683,7 +3696,7 @@ class MainViewController: UIViewController {
     }
 
     func dismissSystemFindNavigator(for tab: TabViewController?) {
-        guard #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) else { return }
+        guard #available(iOS 16.0, *) else { return }
         rememberFindInPageQuery(for: tab)
         tab?.webView.findInteraction?.dismissFindNavigator()
         restoreChromeIfHiddenByFindInPage()
@@ -3691,8 +3704,7 @@ class MainViewController: UIViewController {
 
     @available(iOS 16.0, *)
     private func hideChromeForConfirmedFindInPage() {
-        guard featureFlagger.isFeatureOn(.systemFindInPage),
-              currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
+        guard currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
               !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth,
               !isFindInPageChromeLockActive else { return }
 
@@ -4485,6 +4497,10 @@ extension MainViewController: BrowserChromeDelegate {
         static let morphExpandCurve = ChromeMorphAnimator.Curve.spring(dampingRatio: 0.82, naturalFrequency: 8.84)
 
         static let minMorphDurationScale: CGFloat = 0.55
+
+        /// The top address bar collapses into the pill a little slower than the bottom one, so the
+        /// transformation reads as deliberate rather than a snap.
+        static let topMorphCollapseDurationMultiplier = 1.25
     }
 
     var tabBarContainer: UIView {
@@ -4548,9 +4564,13 @@ extension MainViewController: BrowserChromeDelegate {
         if useMorphScrub {
             let isExpanding = percent > fromPercent
             let durationScale = max(ChromeAnimationConstants.minMorphDurationScale, abs(percent - fromPercent))
+            let isTopAddressBar = appSettings.currentAddressBarPosition == .top
+            let collapseDuration = isTopAddressBar
+                ? ChromeAnimationConstants.morphCollapseDuration * ChromeAnimationConstants.topMorphCollapseDurationMultiplier
+                : ChromeAnimationConstants.morphCollapseDuration
             let baseDuration = isExpanding
                 ? ChromeAnimationConstants.morphExpandDuration
-                : ChromeAnimationConstants.morphCollapseDuration
+                : collapseDuration
 
             chromeMorphAnimator.animate(
                 from: fromPercent,
@@ -4693,7 +4713,7 @@ extension MainViewController: BrowserChromeDelegate {
     var isChromeScrollInteractionDisabled: Bool {
         if isAddressBarMoveInProgress { return true }
         if isBottomAddressBarHiddenForWebKeyboard { return true }
-        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage),
+        if #available(iOS 16.0, *),
            currentTab?.webView.findInteraction?.isFindNavigatorVisible == true {
             return true
         }
@@ -4893,12 +4913,18 @@ extension MainViewController: BrowserChromeDelegate {
         }
         bottomHeight += view.safeAreaInsets.bottom
         let slideRatio = floatingToolbarOnScreenFraction(for: ratio)
+        // Split-layout (top address bar) slides the pill with a container transform so Liquid Glass
+        // and the icons stay locked. Combined bottom chrome still moves the layout slot.
+        let usesStandaloneTransformSlide = isFloatingCapsuleActive
+            && !viewCoordinator.isOmnibarInToolbar
+            && !UIAccessibility.isReduceMotionEnabled
+            && !(viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout)
         // Minimal chrome owns the toolbar slot as a permanent offscreen spacer for the bottom
         // address bar, and on iPad the toolbar is permanently hidden (its layout slot would
         // otherwise leave a 49pt gap below the webview). Everywhere else the slot tracks
         // `ratio` (chrome-animator visibility).
         let multiplier = (viewCoordinator.toolbar.isHidden || isInMinimalChromeLayout) ? 1.0 : 1.0 - slideRatio
-        viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
+        viewCoordinator.constraints.toolbarBottom.constant = usesStandaloneTransformSlide ? 0 : bottomHeight * multiplier
 
         if isInMinimalChromeLayout, viewCoordinator.addressBarPosition.isBottom {
             let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
@@ -5597,10 +5623,13 @@ extension MainViewController: OmniBarDelegate {
         if appSettings.currentAddressBarPosition == .top {
             attach(to: omniBar.barView, onEdge: .top)
             attach(to: floatingDomainCapsuleController.button, onEdge: .top)
+            // The split bottom pill is slid by a container transform. A scroll-edge interaction
+            // on it makes UIGlassEffect move independently of the icons.
         } else {
             attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)
+            // The toolbar is already pinned to the concentric layout guides. A scroll-edge
+            // interaction would apply a second, larger device-concentric inset.
         }
-        attach(to: viewCoordinator.toolbar, onEdge: .bottom)
     }
 
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
@@ -6271,6 +6300,9 @@ extension MainViewController: EscapeHatchActionRouter {
         // row also reaches after already reporting its own terminal.
         recordNewTabPageSessionAction { $0.tapReturnToLast() }
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .lastTabLoaded)
+        if tab.isAITab {
+            fireAIChatEntryPointPixel(source: .returnToChatCard, opensNewTab: false, hasPrompt: false)
+        }
 
         onSwitchToTab(tab)
     }
@@ -6969,7 +7001,7 @@ extension MainViewController: TabDelegate {
     }
 
     func closeFindInPage(tab: TabViewController) {
-        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+        if #available(iOS 16.0, *) {
             dismissSystemFindNavigator(for: tab)
             return
         }
@@ -7106,6 +7138,9 @@ extension MainViewController: TabSwitcherDelegate {
             // Only a chosen tab is a terminal; dismissing with none selected creates a new tab,
             // which opens its own visit instead.
             newTabPageSessionInstrumentation.visitEnded(terminalAction: .selectOtherTab)
+            if tab.isAITab {
+                fireAIChatEntryPointPixel(source: .tabSwitcherExistingChat, opensNewTab: false, hasPrompt: false)
+            }
             tabManager.select(tab, dismissCurrent: false)
         }
 

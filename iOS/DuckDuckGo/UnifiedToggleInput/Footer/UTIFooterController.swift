@@ -47,6 +47,7 @@ final class UTIFooterController {
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let mapper: UTIFooterMessageMapper
     private let measurement: DuckAiUsageWarningMeasurement
+    private let createImagePixelFiring: CreateImagePixelFiring
     private let animator: Animator
 
     private var isSuppressed = false
@@ -63,11 +64,13 @@ final class UTIFooterController {
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
+         createImagePixelFiring: CreateImagePixelFiring,
          animator: Animator? = nil) {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
         self.mapper = mapper
         self.measurement = measurement
+        self.createImagePixelFiring = createImagePixelFiring
         self.animator = animator ?? Self.springAnimator
     }
 
@@ -119,6 +122,7 @@ final class UTIFooterController {
     func dismissCurrent() {
         if modelSwitchNotice != nil {
             modelSwitchNotice = nil
+            createImagePixelFiring.modelSwitchNoticeDismissed()
             applyCurrentState()
             return
         }
@@ -140,6 +144,13 @@ final class UTIFooterController {
     /// A switch the user made themselves; the card's own switch CTA reports its own tap.
     func recordModelSwitched() {
         measurement.modelSwitched()
+    }
+
+    /// Picking the model the card suggests is its CTA by another route, so it retires the card too.
+    /// Runs before the switch lands, while the suggestion still points at what the user picked.
+    func noteModelSelectionWillChange(to modelId: String) {
+        guard viewModel.modelSwitchedToSuggestion(modelId) else { return }
+        actedOnMessage = currentMessage
     }
 
     func performPrimaryAction() {

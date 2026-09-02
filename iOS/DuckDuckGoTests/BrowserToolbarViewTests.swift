@@ -154,16 +154,17 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(height, BrowserToolbarView.floatingButtonsHeight, accuracy: 0.01)
     }
 
-    func testWhenFloatingThenCombinedChromeHeightMatchesTheTwelvePointSpacingSpec() {
-        // 12 top + 48 field + 12 gap + 44 buttons + 12 bottom — bottom address bar only.
+    func testWhenFloatingThenCombinedChromeHeightMatchesTheSpacingSpec() {
+        // 16 top + 48 field + 12 gap + 44 buttons + 16 bottom — bottom address bar only. The outer
+        // padding matches the field's side inset so the glass keeps one gap on every edge.
         XCTAssertEqual(BrowserToolbarView.floatingEmbeddedButtonsHeight, 44)
         XCTAssertEqual(
             BrowserToolbarView.totalHeight(withOmnibarHeight: 48, isFloating: true),
-            128,
+            136,
             accuracy: 0.01)
         XCTAssertEqual(
             BrowserToolbarView.singleRowHeight(withOmnibarHeight: 48),
-            72,
+            80,
             accuracy: 0.01)
     }
 

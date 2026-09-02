@@ -68,12 +68,6 @@ final class DefaultOmniBarSearchView: UIView {
     private let mainStackView = UIStackView()
     private var mainStackLeadingConstraint: NSLayoutConstraint?
 
-    var contentVerticalOffset: CGFloat = 0 {
-        didSet {
-            mainStackView.transform = CGAffineTransform(translationX: 0, y: contentVerticalOffset)
-        }
-    }
-
     init() {
         super.init(frame: .zero)
 

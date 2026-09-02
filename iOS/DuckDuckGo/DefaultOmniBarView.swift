@@ -1417,20 +1417,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         textAreaTopPaddingConstraint?.constant = topPadding
         textAreaBottomPaddingConstraint?.constant = -bottomPadding
-        searchAreaView.contentVerticalOffset = isTopFloatingField ? Metrics.floatingTopContentVerticalOffset : 0
-        updateHorizontalSpacing()
         updateFireModeAppearance()
-    }
-
-    /// The embedded field matches the combined chrome's vertical content padding on its sides, so
-    /// it sits the same distance from every edge of the glass.
-    private func updateHorizontalSpacing() {
-        guard layoutMode != .expandedPhone else { return }
-        let padding = isBottomFloatingField
-            ? Metrics.floatingEmbeddedHorizontalPadding
-            : Metrics.textAreaHorizontalPadding
-        stackViewLeadingConstraint?.constant = padding
-        stackViewTrailingConstraint?.constant = -padding
     }
 
     func refreshLongPressMenuAvailability() {
@@ -1609,7 +1596,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         static let floatingEmbeddedTextAreaPadding: CGFloat = 0
         static let floatingTopInputHeight: CGFloat = 48
         static let floatingTopInputOuterPadding = (height - floatingTopInputHeight) / 2
-        static let floatingTopContentVerticalOffset: CGFloat = -2
         static var cornerRadius: CGFloat { OmniBarMetrics.cornerRadius }
 
         /// Sits 2pt outside `cornerRadius` so the active outline stays concentric with the field.
@@ -1617,10 +1603,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         static let activeBorderWidth: CGFloat = 2
 
         static let textAreaHorizontalPadding: CGFloat = 16
-
-        /// Side inset of the embedded field, matching `BrowserToolbarView`'s vertical content
-        /// padding so the glass keeps the same gap on every edge.
-        static let floatingEmbeddedHorizontalPadding: CGFloat = 12
         
         static let buttonToSearchContainerSpace: CGFloat = 4
 

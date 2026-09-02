@@ -622,7 +622,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertEqual(searchContainerFrame.midY, barView.bounds.midY, accuracy: 0.01)
         XCTAssertEqual(searchView.bounds.height, 44, accuracy: 0.01)
         XCTAssertEqual((searchContainerFrame.height - searchView.bounds.height) / 2, 2, accuracy: 0.01)
-        XCTAssertEqual(loupeFrame.midY, searchView.bounds.midY - 2, accuracy: 0.01)
+        XCTAssertEqual(loupeFrame.midY, searchView.bounds.midY, accuracy: 0.01)
     }
 
     func testWhenTopFloatingLandscapeChromeThenInputHeightStaysUnchanged() {

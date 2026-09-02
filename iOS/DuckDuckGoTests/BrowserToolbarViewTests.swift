@@ -154,16 +154,17 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(height, BrowserToolbarView.floatingButtonsHeight, accuracy: 0.01)
     }
 
-    func testWhenFloatingThenCombinedChromeHeightMatchesTheTwelvePointSpacingSpec() {
-        // 12 top + 48 field + 12 gap + 44 buttons + 12 bottom — bottom address bar only.
+    func testWhenFloatingThenCombinedChromeHeightMatchesTheSpacingSpec() {
+        // 16 top + 48 field + 12 gap + 44 buttons + 16 bottom — bottom address bar only. The outer
+        // padding matches the field's side inset so the glass keeps one gap on every edge.
         XCTAssertEqual(BrowserToolbarView.floatingEmbeddedButtonsHeight, 44)
         XCTAssertEqual(
             BrowserToolbarView.totalHeight(withOmnibarHeight: 48, isFloating: true),
-            128,
+            136,
             accuracy: 0.01)
         XCTAssertEqual(
             BrowserToolbarView.singleRowHeight(withOmnibarHeight: 48),
-            72,
+            80,
             accuracy: 0.01)
     }
 
@@ -335,6 +336,41 @@ final class BrowserToolbarViewTests: XCTestCase {
             XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .bottom), 16)
             XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 16)
         }
+    }
+
+    func testWhenEmbeddedFloatingThenToolbarIconsAlignWithTheAddressBarIcons() {
+        let sut = makeSUT(embeddedOmnibar: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        window.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: window.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: window.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: window.bottomAnchor)
+        ])
+        sut.setToolbarButtons([
+            makeToolbarButton(identifier: "back", width: 44),
+            makeToolbarButton(identifier: "forward", width: 44),
+            makeToolbarButton(identifier: "Browser.Toolbar.Button.Fire", width: 44),
+            makeToolbarButton(identifier: "tabs", width: 44),
+            makeToolbarButton(identifier: "menu", width: 44)
+        ])
+        window.layoutIfNeeded()
+
+        let centers = sut.arrangedToolbarButtonViews.map { window.convert($0.center, from: $0.superview).x }
+        guard let first = centers.min(), let last = centers.max() else {
+            XCTFail("Missing toolbar buttons")
+            return
+        }
+        // The address field is hosted inside the same glass capsule, so its icons are inset from
+        // the capsule's edges rather than the toolbar view's.
+        let capsule = sut.restingCapsuleFrame(in: window)
+
+        // Both rows carry 44pt controls, so aligned centres mean the same distance from the glass
+        // edge as the address field's icons: its 16pt text-area padding plus half a control.
+        let expectedInset = BrowserToolbarView.floatingEmbeddedAddressBarIconInset
+        XCTAssertEqual(first - capsule.minX, expectedInset, accuracy: 0.5)
+        XCTAssertEqual(capsule.maxX - last, expectedInset, accuracy: 0.5)
     }
 
     func testWhenStandaloneFloatingThenButtonsAreEvenlySpacedAndFireButtonIsCentered() {

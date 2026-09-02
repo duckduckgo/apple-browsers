@@ -105,10 +105,18 @@ final class BrowserToolbarView: UIView {
     /// buttons sit where the production `UIToolbar` placed them. Tuned to match production's
     /// end-button centres; the floating style keeps the tighter `horizontalEdgePadding`.
     private static let legacyButtonRowHorizontalPadding: CGFloat = 20
-    /// Inset for the combined (bottom) floating button row so the outer buttons' centres line up
-    /// with the embedded omnibar's leading/trailing icons. Separate from `horizontalEdgePadding`
-    /// so tuning it doesn't shift the omnibar field.
-    static let floatingEmbeddedButtonRowHorizontalPadding: CGFloat = 16
+    /// Mirrors `DefaultOmniBarView`'s text-area padding.
+    private static let embeddedAddressBarTextAreaPadding: CGFloat = 16
+
+    /// Distance from the glass edge to the centre of the outermost icon in either row of the
+    /// combined bottom chrome.
+    static let floatingEmbeddedAddressBarIconInset =
+        embeddedAddressBarTextAreaPadding + BrowserChromeButton.toolbarButtonSize / 2
+
+    /// Inset for the combined (bottom) floating button row, so its outer buttons' centres land on
+    /// `floatingEmbeddedAddressBarIconInset` alongside the embedded omnibar's icons.
+    static let floatingEmbeddedButtonRowHorizontalPadding =
+        floatingEmbeddedAddressBarIconInset - horizontalEdgePadding - BrowserChromeButton.toolbarButtonSize / 2
     /// Inner side inset of the standalone (top address bar) floating toolbar.
     static let floatingStandaloneButtonRowHorizontalPadding: CGFloat = 16
     // This is only used in floating UI
@@ -156,7 +164,7 @@ final class BrowserToolbarView: UIView {
 
     /// Inner padding of the combined bottom floating chrome (address field + buttons). The standalone
     /// floating toolbar used in top-address-bar mode keeps the original 2pt padding.
-    private static let floatingEmbeddedVerticalContentPadding: CGFloat = 12
+    private static let floatingEmbeddedVerticalContentPadding: CGFloat = 16
     private static let floatingEmbeddedOmnibarToButtonsSpacing: CGFloat = 12
     private static let defaultVerticalContentPadding: CGFloat = 2
     private static let defaultOmnibarToButtonsSpacing: CGFloat = 2

@@ -312,6 +312,13 @@ class MainViewController: UIViewController {
         guard isFloatingUIEnabled else { return }
         let interfaceStyle = settledFloatingGlassInterfaceStyle
         viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        // The toolbar only refreshes an omnibar it hosts. With a top address bar the omnibar sits
+        // in the navigation bar container instead, so its glass keeps the style it was snapshotted
+        // with and lands opaque before flipping translucent a frame later.
+        if !viewCoordinator.isOmnibarInToolbar,
+           let barView = viewCoordinator.omniBar.barView as? DefaultOmniBarView {
+            barView.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        }
     }
 
     private var settledFloatingGlassInterfaceStyle: UIUserInterfaceStyle {
@@ -4490,6 +4497,10 @@ extension MainViewController: BrowserChromeDelegate {
         static let morphExpandCurve = ChromeMorphAnimator.Curve.spring(dampingRatio: 0.82, naturalFrequency: 8.84)
 
         static let minMorphDurationScale: CGFloat = 0.55
+
+        /// The top address bar collapses into the pill a little slower than the bottom one, so the
+        /// transformation reads as deliberate rather than a snap.
+        static let topMorphCollapseDurationMultiplier = 1.25
     }
 
     var tabBarContainer: UIView {
@@ -4553,9 +4564,13 @@ extension MainViewController: BrowserChromeDelegate {
         if useMorphScrub {
             let isExpanding = percent > fromPercent
             let durationScale = max(ChromeAnimationConstants.minMorphDurationScale, abs(percent - fromPercent))
+            let isTopAddressBar = appSettings.currentAddressBarPosition == .top
+            let collapseDuration = isTopAddressBar
+                ? ChromeAnimationConstants.morphCollapseDuration * ChromeAnimationConstants.topMorphCollapseDurationMultiplier
+                : ChromeAnimationConstants.morphCollapseDuration
             let baseDuration = isExpanding
                 ? ChromeAnimationConstants.morphExpandDuration
-                : ChromeAnimationConstants.morphCollapseDuration
+                : collapseDuration
 
             chromeMorphAnimator.animate(
                 from: fromPercent,

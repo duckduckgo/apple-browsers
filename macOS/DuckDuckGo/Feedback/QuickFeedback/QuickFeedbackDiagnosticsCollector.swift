@@ -107,7 +107,12 @@ final class QuickFeedbackDiagnosticsCollector {
     private var memorySummary: String {
         let report = memoryUsageMonitor.getCurrentMemoryUsage()
         let physicalGB = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824.0
-        return "\(report.footprintMemoryString) browser, \(String(format: "%.0f", physicalGB)) GB total"
+        let webContentProcessCount = report.webContentProcessCount.map { " (\($0) processes)" } ?? ""
+        return [
+            "\(report.footprintMemoryString) browser",
+            "\(report.webContentMemoryString) web content\(webContentProcessCount)",
+            "\(String(format: "%.0f", physicalGB)) GB total",
+        ].joined(separator: ", ")
     }
 
     private var freeDiskSpace: String {
@@ -168,6 +173,15 @@ final class InternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProvid
         return base.replacingOccurrences(of: "_", with: "-")
     }
 
+    private static var hardwareModel: String? {
+        var size = 0
+        guard sysctlbyname("hw.model", nil, &size, nil, 0) == 0, size > 0 else { return nil }
+
+        var buffer = [CChar](repeating: 0, count: size)
+        guard sysctlbyname("hw.model", &buffer, &size, nil, 0) == 0 else { return nil }
+        return String(cString: buffer)
+    }
+
     @MainActor
     func deviceInfo() -> InternalFeedbackDeviceInfo {
         InternalFeedbackDeviceInfo(
@@ -180,6 +194,8 @@ final class InternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProvid
             architecture: Self.machineArchitecture,
             locale: Self.bcp47Locale,
             channel: AppVersionModel(appVersion: appVersion).distributionLabel,
+            deviceModel: Self.hardwareModel,
+            deviceManufacturer: "Apple",
             diagnostics: diagnosticsCollector.collectDiagnostics()
         )
     }

@@ -60,6 +60,15 @@ public struct AIChatModel {
         !supportedFileTypes.isEmpty
     }
 
+    public var isSuggestedForImageCreation: Bool {
+        switch label {
+        case .everydayUse:
+            return true
+        case .usesLimitsFaster, .unknown, .none:
+            return false
+        }
+    }
+
     /// Whether this is an advanced (paid-tier) model — i.e. not available on the free tier. Single source
     /// of truth for the basic/advanced split in the model picker and the "PLUS" marker in onboarding.
     public var isAdvanced: Bool {

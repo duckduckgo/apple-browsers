@@ -30,6 +30,20 @@ struct UTIFooterMessageMapper {
         self.resetDescriber = resetDescriber
     }
 
+    func message(for notice: CreateImageModelSwitchNotice) -> UTIFooterMessage {
+        let subtitleFormat = notice.previousModelHasExtraPrivacyProtections
+            ? UserText.utiCreateImageModelSwitchPrivacyPreservingSubtitle
+            : UserText.utiCreateImageModelSwitchSubtitle
+
+        return UTIFooterMessage(
+            icon: .modelSwitch,
+            title: String(format: UserText.utiCreateImageModelSwitchTitle, notice.newModelShortName),
+            subtitle: String(format: subtitleFormat, notice.previousModelShortName),
+            primaryAction: nil,
+            isDismissible: true
+        )
+    }
+
     func message(for warning: DuckAiUsageWarning) -> UTIFooterMessage {
         UTIFooterMessage(
             icon: Self.icon(for: warning),

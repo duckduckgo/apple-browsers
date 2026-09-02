@@ -306,12 +306,6 @@ final class UTIFooterCardViewTests: XCTestCase {
         card.subviews.flatMap(\.subviews).compactMap { $0 as? UIStackView }.first
     }
 
-    /// The second arranged subview of the card's text stack.
-    private func subtitleLabel(in card: UTIFooterCardView) -> UILabel? {
-        card.subviews.flatMap(\.subviews)
-            .compactMap { $0 as? UIStackView }.first?.arrangedSubviews.last as? UILabel
-    }
-
     private func makeMessage(title: String = "90% of weekly limit",
                              subtitle: String? = "Resets in 2 days",
                              isDismissible: Bool = true) -> UTIFooterMessage {

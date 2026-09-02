@@ -87,8 +87,7 @@ final class AIChatUsageWarningCardView: NSView {
 
     enum Constants {
         /// The band that shows below the panel, and all the height a host has to reserve.
-        /// 10 + the action button's 28 + 10.
-        static let contentHeight: CGFloat = 48
+        static let contentHeight: CGFloat = 44
         static let horizontalPadding: CGFloat = 14
         static let iconSize: CGFloat = 16
         static let iconTitleSpacing: CGFloat = 8
@@ -165,6 +164,7 @@ final class AIChatUsageWarningCardView: NSView {
         button.imagePosition = .imageOnly
         button.setAccessibilityLabel(UserText.aiChatUsageWarningsDismissAccessibilityLabel)
         button.toolTip = UserText.aiChatUsageWarningsDismissAccessibilityLabel
+        button.hoverFillCornerRadius = Constants.closeButtonSize / 2
         return button
     }()
 
@@ -177,6 +177,8 @@ final class AIChatUsageWarningCardView: NSView {
     /// The card's own margin, dropped once the host lines the icon up with its omnibar instead.
     private var iconLeadingConstraint: NSLayoutConstraint?
     private var iconAlignmentConstraint: NSLayoutConstraint?
+    private var closeTrailingConstraint: NSLayoutConstraint?
+    private var closeAlignmentConstraint: NSLayoutConstraint?
 
     // MARK: - Background style
 
@@ -249,6 +251,10 @@ final class AIChatUsageWarningCardView: NSView {
                                                                  constant: Constants.horizontalPadding)
         iconLeadingConstraint = iconLeading
 
+        let closeTrailing = closeButton.trailingAnchor.constraint(equalTo: trailingAnchor,
+                                                                  constant: -Constants.horizontalPadding)
+        closeTrailingConstraint = closeTrailing
+
         let closeWidth = closeButton.widthAnchor.constraint(equalToConstant: Constants.closeButtonSize)
         closeButtonWidthConstraint = closeWidth
 
@@ -293,7 +299,7 @@ final class AIChatUsageWarningCardView: NSView {
             closeWidth,
             closeButton.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
             closeButton.heightAnchor.constraint(equalToConstant: Constants.closeButtonSize),
-            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding)
+            closeTrailing
         ])
 
         // The headline is what gives when space runs short; the CTA is fixed copy that must not.
@@ -314,6 +320,17 @@ final class AIChatUsageWarningCardView: NSView {
         let constraint = iconImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         iconAlignmentConstraint = constraint
         constraint.isActive = true
+    }
+
+    /// Puts the close button in the voice button's column. Mutually exclusive with the card's own
+    /// trailing margin, which is what places the CTA on a message that carries no close button.
+    func alignCloseButton(withCenterXOf view: NSView) {
+        closeAlignmentConstraint?.isActive = false
+
+        let constraint = closeButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        closeAlignmentConstraint = constraint
+        closeTrailingConstraint?.isActive = closeButton.isHidden
+        constraint.isActive = !closeButton.isHidden
     }
 
     @objc private func closeButtonClicked() {
@@ -362,6 +379,12 @@ final class AIChatUsageWarningCardView: NSView {
         closeButton.isHidden = !isVisible
         closeButtonWidthConstraint?.constant = isVisible ? Constants.closeButtonSize : 0
         actionCloseSpacingConstraint?.constant = isVisible ? Constants.actionCloseSpacing : 0
+        // Only once the host has given it a column to sit in; otherwise the card's own margin is
+        // the only rule there is.
+        guard let closeAlignmentConstraint else { return }
+
+        closeAlignmentConstraint.isActive = isVisible
+        closeTrailingConstraint?.isActive = !isVisible
     }
 
     /// Bold headline, regular reset detail, one string so the two can never wrap apart.

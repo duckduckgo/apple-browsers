@@ -1156,6 +1156,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Shares an ancestor with the omnibar's controls, so the card can sit in the same column
         // as them rather than keep margins of its own.
         usageWarningCardView.alignIcon(withCenterXOf: imageUploadButton)
+        usageWarningCardView.alignCloseButton(withCenterXOf: submitButton)
 
         panelBottomEdgeStrokeView.translatesAutoresizingMaskIntoConstraints = false
         panelBottomEdgeStrokeView.isHidden = true

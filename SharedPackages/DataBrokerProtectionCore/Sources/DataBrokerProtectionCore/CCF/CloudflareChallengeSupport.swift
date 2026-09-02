@@ -61,31 +61,12 @@ final class CloudflareSnapshotRequest {
 @MainActor
 enum CloudflareChallengeClick {
     static func checkbox(at point: NSPoint, in webView: WKWebView) async -> String {
-        let jitteredPoint = NSPoint(
-            x: point.x + CGFloat.random(in: -2...2),
-            y: point.y + CGFloat.random(in: -1.5...1.5))
-        let startPoint = NSPoint(
-            x: CGFloat.random(in: 24...max(48, webView.bounds.width * 0.35)),
-            y: CGFloat.random(in: 24...max(48, webView.bounds.height * 0.25)))
-        let points = pointerPath(from: startPoint, to: jitteredPoint, steps: Int.random(in: 22...36))
-
-        var deliveredMoveCount = 0
-        var previousWindowPoint: NSPoint?
-        for (index, point) in points.enumerated() {
-            let windowPoint = windowPoint(fromCSS: point, in: webView)
-            if deliverMove(at: windowPoint, in: webView, previous: previousWindowPoint) {
-                deliveredMoveCount += 1
-            }
-            previousWindowPoint = windowPoint
-            let nanoseconds = index < 3 || index > points.count - 4 ? 14_000_000 : UInt64.random(in: 5_000_000...11_000_000)
-            try? await Task.sleep(nanoseconds: nanoseconds)
-        }
-
-        try? await Task.sleep(nanoseconds: UInt64.random(in: 280_000_000...520_000_000))
-        let windowPoint = windowPoint(fromCSS: jitteredPoint, in: webView)
+        let windowPoint = windowPoint(fromCSS: point, in: webView)
+        let didDeliverMove = deliverMove(at: windowPoint, in: webView)
+        try? await Task.sleep(nanoseconds: 100_000_000)
         let clickResult = deliverClick(at: windowPoint, in: webView)
         try? await Task.sleep(nanoseconds: 100_000_000)
-        return "css=\(Int(jitteredPoint.x)),\(Int(jitteredPoint.y)) moves=\(deliveredMoveCount)/\(points.count) \(clickResult)"
+        return "css=\(Int(point.x)),\(Int(point.y)) move=\(didDeliverMove) \(clickResult)"
     }
 
     private static func contentView(in view: NSView) -> NSView? {
@@ -121,37 +102,8 @@ enum CloudflareChallengeClick {
             pressure: type == .leftMouseDown ? 1 : 0)
     }
 
-    private static func pointerPath(from start: NSPoint, to end: NSPoint, steps: Int) -> [NSPoint] {
-        let deltaX = end.x - start.x
-        let deltaY = end.y - start.y
-        let firstControl = NSPoint(
-            x: start.x + deltaX * 0.28 + CGFloat.random(in: -70...70),
-            y: start.y + deltaY * 0.18 + CGFloat.random(in: -50...50))
-        let secondControl = NSPoint(
-            x: start.x + deltaX * 0.72 + CGFloat.random(in: -70...70),
-            y: start.y + deltaY * 0.82 + CGFloat.random(in: -50...50))
-        return (0...steps).map { index in
-            let rawProgress = CGFloat(index) / CGFloat(steps)
-            let progress = rawProgress * rawProgress * (3 - 2 * rawProgress)
-            let inverseProgress = 1 - progress
-            return NSPoint(
-                x: inverseProgress * inverseProgress * inverseProgress * start.x
-                    + 3 * inverseProgress * inverseProgress * progress * firstControl.x
-                    + 3 * inverseProgress * progress * progress * secondControl.x
-                    + progress * progress * progress * end.x,
-                y: inverseProgress * inverseProgress * inverseProgress * start.y
-                    + 3 * inverseProgress * inverseProgress * progress * firstControl.y
-                    + 3 * inverseProgress * progress * progress * secondControl.y
-                    + progress * progress * progress * end.y)
-        }
-    }
-
-    private static func deliverMove(at point: NSPoint, in webView: WKWebView, previous: NSPoint?) -> Bool {
+    private static func deliverMove(at point: NSPoint, in webView: WKWebView) -> Bool {
         guard let event = mouseEvent(.mouseMoved, at: point, in: webView) else { return false }
-        if let previous, let cgEvent = event.cgEvent {
-            cgEvent.setIntegerValueField(.mouseEventDeltaX, value: Int64(point.x - previous.x))
-            cgEvent.setIntegerValueField(.mouseEventDeltaY, value: Int64(-(point.y - previous.y)))
-        }
         let contentView = contentView(in: webView) ?? webView
         contentView.mouseMoved(with: event)
         webView.window?.sendEvent(event)

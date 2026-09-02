@@ -120,6 +120,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         webView?.navigationDelegate = self
 
 #if os(macOS)
+        webView?.appearance = NSAppearance(named: .aqua)
         if showWebView {
             urlObservation = webView?.observe(\.url, options: [.initial, .new]) { [weak self] _, change in
                 let url = change.newValue ?? nil
@@ -198,8 +199,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         didReportChallengeClearance = false
         resetCloudflareChallengeState()
         expectedBrokerURL = url
-#endif
+        webView?.load(url, additionalHTTPHeaders: ["Accept-Language": "en-US,en;q=0.9"])
+#else
         webView?.load(url)
+#endif
         Logger.action.log("Loading URL: \(url.shortDescription)")
         try await waitForWebViewLoad()
     }
@@ -451,40 +454,44 @@ private extension DataBrokerProtectionWebViewHandler {
     }
 
     func stableSnapshotCheckboxPoint(in webView: WKWebView) async -> NSPoint? {
-        guard let firstImage = await challengeSnapshot(of: webView), isCloudflareChallengeResponse else {
-            Logger.action.log("Cloudflare challenge: first snapshot failed")
+        let snapshotRect = webView.bounds
+        guard let firstImage = await challengeSnapshot(of: webView, rect: snapshotRect),
+              let firstLabel = await CloudflareWidgetVision.findChallengeLabel(in: firstImage),
+              isCloudflareChallengeResponse else {
+            Logger.action.log("Cloudflare challenge: first snapshot did not contain the verification label")
             return nil
         }
-        let cssSize = webView.bounds.size
-        let firstBox = CloudflareWidgetVision.find(in: firstImage, cssSize: cssSize)
-        let firstHasChallengeText = CloudflareWidgetVision.containsChallengeText(in: firstImage)
+        guard isCloudflareChallengeResponse, !Task.isCancelled else { return nil }
 
         try? await Task.sleep(nanoseconds: 400_000_000)
-        guard let secondImage = await challengeSnapshot(of: webView), isCloudflareChallengeResponse else {
+        guard let secondImage = await challengeSnapshot(of: webView, rect: snapshotRect), isCloudflareChallengeResponse else {
             Logger.action.log("Cloudflare challenge: second snapshot failed")
             return nil
         }
-        let secondBox = CloudflareWidgetVision.find(in: secondImage, cssSize: cssSize)
-        let secondHasChallengeText = CloudflareWidgetVision.containsChallengeText(in: secondImage)
-
-        guard firstHasChallengeText || secondHasChallengeText else {
-            Logger.action.log("Cloudflare challenge: snapshot rejected because challenge text was absent")
+        guard let secondLabel = await CloudflareWidgetVision.findChallengeLabel(in: secondImage) else {
+            Logger.action.log("Cloudflare challenge: second snapshot did not contain the verification label")
             return nil
         }
-        guard let firstBox, let secondBox, firstBox.isStable(comparedTo: secondBox) else {
-            Logger.action.log("Cloudflare challenge: snapshot rejected because the widget box was not stable")
+        guard isCloudflareChallengeResponse, !Task.isCancelled else { return nil }
+        guard firstLabel.isStable(comparedTo: secondLabel, in: snapshotRect.size) else {
+            Logger.action.log("Cloudflare challenge: snapshot rejected because the verification label was not stable")
             return nil
         }
-        Logger.action.log("Cloudflare challenge: stable snapshot widget found")
-        return secondBox.checkboxPoint
+        Logger.action.log("Cloudflare challenge: stable verification label found")
+        let pointInSnapshot = secondLabel.checkboxPoint(in: snapshotRect.size)
+        return NSPoint(x: snapshotRect.minX + pointInSnapshot.x, y: snapshotRect.minY + pointInSnapshot.y)
     }
 
-    func challengeSnapshot(of webView: WKWebView) async -> NSImage? {
+    func challengeSnapshot(of webView: WKWebView, rect: CGRect) async -> CGImage? {
         await withCheckedContinuation { continuation in
             let request = CloudflareSnapshotRequest(continuation: continuation)
-            webView.takeSnapshot(with: nil) { image, _ in
+            let configuration = WKSnapshotConfiguration()
+            configuration.rect = rect
+            let backingScale = max(webView.window?.backingScaleFactor ?? 1, 1)
+            configuration.snapshotWidth = NSNumber(value: Double(rect.width / backingScale))
+            webView.takeSnapshot(with: configuration) { image, _ in
                 Task { @MainActor in
-                    request.finish(with: image)
+                    request.finish(with: image?.cgImage(forProposedRect: nil, context: nil, hints: nil))
                 }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {

@@ -45,13 +45,13 @@ final class CloudflareOffscreenPanel: NSPanel {
 
 @MainActor
 final class CloudflareSnapshotRequest {
-    private var continuation: CheckedContinuation<NSImage?, Never>?
+    private var continuation: CheckedContinuation<CGImage?, Never>?
 
-    init(continuation: CheckedContinuation<NSImage?, Never>) {
+    init(continuation: CheckedContinuation<CGImage?, Never>) {
         self.continuation = continuation
     }
 
-    func finish(with image: NSImage?) {
+    func finish(with image: CGImage?) {
         guard let continuation else { return }
         self.continuation = nil
         continuation.resume(returning: image)
@@ -228,121 +228,61 @@ private enum CloudflarePressedMouseButtons {
     }
 }
 
-struct CloudflareWidgetBox: Equatable, Sendable {
-    let x: CGFloat
-    let y: CGFloat
-    let width: CGFloat
-    let height: CGFloat
+struct CloudflareChallengeLabel: Equatable, Sendable {
+    let boundingBox: CGRect
 
-    var checkboxPoint: NSPoint {
-        NSPoint(x: x + 28, y: y + height / 2)
+    func checkboxPoint(in imageSize: NSSize) -> NSPoint {
+        let labelFrame = frame(in: imageSize)
+        return NSPoint(x: labelFrame.minX - 20, y: labelFrame.midY)
     }
 
-    func isStable(comparedTo other: CloudflareWidgetBox) -> Bool {
-        abs(x - other.x) < 8
-            && abs(y - other.y) < 8
-            && abs(width - other.width) < 8
-            && abs(height - other.height) < 8
+    func isStable(comparedTo other: CloudflareChallengeLabel, in imageSize: NSSize) -> Bool {
+        let frame = frame(in: imageSize)
+        let otherFrame = other.frame(in: imageSize)
+        return abs(frame.minX - otherFrame.minX) < 8
+            && abs(frame.minY - otherFrame.minY) < 8
+            && abs(frame.width - otherFrame.width) < 8
+            && abs(frame.height - otherFrame.height) < 8
+    }
+
+    private func frame(in imageSize: NSSize) -> CGRect {
+        CGRect(
+            x: boundingBox.minX * imageSize.width,
+            y: (1 - boundingBox.maxY) * imageSize.height,
+            width: boundingBox.width * imageSize.width,
+            height: boundingBox.height * imageSize.height)
     }
 }
 
 enum CloudflareWidgetVision {
-    nonisolated static func find(in image: NSImage, cssSize: NSSize) -> CloudflareWidgetBox? {
-        guard let tiff = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiff),
-              let bytes = bitmap.bitmapData else { return nil }
-        let pixelWidth = bitmap.pixelsWide
-        let pixelHeight = bitmap.pixelsHigh
-        guard pixelWidth > 10, pixelHeight > 10, cssSize.width > 0 else { return nil }
-        let samplesPerPixel = max(1, bitmap.samplesPerPixel)
-        let bytesPerRow = bitmap.bytesPerRow
-        let scale = CGFloat(pixelWidth) / cssSize.width
-        let minimumWidth = Int(260 * scale)
-        let maximumWidth = Int(340 * scale)
-        let minimumHeight = Int(52 * scale)
-        let maximumHeight = Int(90 * scale)
-        let step = max(1, Int(round(scale)))
-
-        var bands: [(y: Int, startX: Int, endX: Int)] = []
-        for y in stride(from: 0, to: pixelHeight, by: step) {
-            var runStart: Int?
-            var bestRun: (start: Int, end: Int)?
-            var x = 0
-            while x < pixelWidth {
-                if isPaleGray(bytes: bytes, offset: y * bytesPerRow + x * samplesPerPixel, samplesPerPixel: samplesPerPixel) {
-                    if runStart == nil { runStart = x }
-                } else if let start = runStart {
-                    let width = x - start
-                    let currentBestWidth = bestRun.map { $0.end - $0.start } ?? 0
-                    if width >= minimumWidth, width <= maximumWidth, width > currentBestWidth {
-                        bestRun = (start, x)
-                    }
-                    runStart = nil
-                }
-                x += step
-            }
-            if let runStart {
-                let width = pixelWidth - runStart
-                let currentBestWidth = bestRun.map { $0.end - $0.start } ?? 0
-                if width >= minimumWidth, width <= maximumWidth, width > currentBestWidth {
-                    bestRun = (runStart, pixelWidth)
-                }
-            }
-            if let bestRun {
-                bands.append((y, bestRun.start, bestRun.end))
-            }
+    nonisolated static func findChallengeLabel(in image: CGImage) async -> CloudflareChallengeLabel? {
+        let task = Task.detached(priority: .utility) {
+            recognizeChallengeLabel(in: image)
         }
-
-        var bestPair: (top: Int, bottom: Int, startX: Int, endX: Int)?
-        for firstIndex in bands.indices {
-            let first = bands[firstIndex]
-            for secondIndex in bands.index(after: firstIndex)..<bands.endIndex {
-                let second = bands[secondIndex]
-                let height = second.y - first.y
-                guard height >= minimumHeight, height <= maximumHeight else { continue }
-                let overlap = min(first.endX, second.endX) - max(first.startX, second.startX)
-                guard overlap >= minimumWidth - Int(20 * scale) else { continue }
-                let candidate = (first.y, second.y, max(first.startX, second.startX), min(first.endX, second.endX))
-                if let currentBestPair = bestPair {
-                    let candidateDifference = abs(height - Int(65 * scale))
-                    let bestDifference = abs((currentBestPair.bottom - currentBestPair.top) - Int(65 * scale))
-                    if candidateDifference < bestDifference {
-                        bestPair = candidate
-                    }
-                } else {
-                    bestPair = candidate
-                }
-            }
+        return await withTaskCancellationHandler {
+            await task.value
+        } onCancel: {
+            task.cancel()
         }
-        guard let bestPair else { return nil }
-        return CloudflareWidgetBox(
-            x: CGFloat(bestPair.startX) / scale,
-            y: CGFloat(bestPair.top) / scale,
-            width: CGFloat(bestPair.endX - bestPair.startX) / scale,
-            height: CGFloat(bestPair.bottom - bestPair.top) / scale)
     }
 
-    nonisolated static func containsChallengeText(in image: NSImage) -> Bool {
-        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return false }
+    private nonisolated static func recognizeChallengeLabel(in image: CGImage) -> CloudflareChallengeLabel? {
+        guard !Task.isCancelled else { return nil }
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .fast
         request.usesLanguageCorrection = false
-        let handler = VNImageRequestHandler(cgImage: cgImage)
-        guard (try? handler.perform([request])) != nil else { return false }
-        let text = (request.results ?? [])
-            .compactMap { $0.topCandidates(1).first?.string }
-            .joined(separator: " ")
-            .lowercased()
-        return text.contains("verify you are human")
-            || text.contains("cloudflare")
-            || text.contains("security verification")
-    }
-
-    private nonisolated static func isPaleGray(bytes: UnsafeMutablePointer<UInt8>, offset: Int, samplesPerPixel: Int) -> Bool {
-        let red = Double(bytes[offset]) / 255
-        let green = Double(bytes[offset + min(1, samplesPerPixel - 1)]) / 255
-        let blue = Double(bytes[offset + min(2, samplesPerPixel - 1)]) / 255
-        return abs(red - green) < 0.08 && abs(green - blue) < 0.08 && red > 0.62 && red < 0.92
+        let handler = VNImageRequestHandler(cgImage: image)
+        guard (try? handler.perform([request])) != nil else { return nil }
+        for observation in request.results ?? [] {
+            guard let candidate = observation.topCandidates(1).first else { continue }
+            let text = candidate.string
+                .split(whereSeparator: \.isWhitespace)
+                .joined(separator: " ")
+            if text.caseInsensitiveCompare("Verify you are human") == .orderedSame {
+                return CloudflareChallengeLabel(boundingBox: observation.boundingBox)
+            }
+        }
+        return nil
     }
 
 }

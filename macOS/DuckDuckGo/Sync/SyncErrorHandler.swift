@@ -305,16 +305,16 @@ private struct UnifiedDeviceListPixel: PixelKit.Event {
     let parameters: [String: String]?
     let standardParameters: [PixelKitStandardParameter]? = [.pixelSource]
     let error: NSError? = nil
+    let namePrefix: PixelKitNamePrefix = .none
 }
 
 final class UnifiedDeviceListPixelHandler: EventMapping<UnifiedDeviceListEvent> {
 
-    init() {
+    init(pixelFiring: PixelFiring? = PixelKit.shared) {
         super.init { event, _, _, onComplete in
-            PixelKit.fire(
+            pixelFiring?.fire(
                 UnifiedDeviceListPixel(name: event.name, parameters: event.parameters),
-                frequency: event.frequency.pixelKitFrequency,
-                options: .unenforcedPrefix)
+                frequency: event.frequency.pixelKitFrequency)
             onComplete(nil)
         }
     }

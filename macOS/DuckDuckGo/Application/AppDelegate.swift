@@ -1057,7 +1057,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
-            )
+            ),
+            areHighlightsDisabled: { [featureFlagger] in featureFlagger.isFeatureOn(.onboardingSkipHighlights) }
         )
 
         let onboardingManager = onboardingContextualDialogsManager

@@ -500,7 +500,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// Local-only: shows a "Skip Setup" link on the onboarding GetStarted screen.
     case onboardingSkipOption
 
-    /// Local-only: skips contextual onboarding highlights when onboarding is skipped.
+    /// Local-only: switches the contextual onboarding highlights off outright. Overrides the rest
+    /// of the highlight logic; with it off, that logic decides as usual.
     case onboardingSkipHighlights
 
     /// Local-only: makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).

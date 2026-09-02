@@ -40,6 +40,29 @@ class ContextualDialogsManagerTests {
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
     }
 
+    // MARK: - Highlights Switched Off
+
+    @available(iOS 16, macOS 13, *)
+    @Test("No dialog is offered while the highlights are switched off", .timeLimit(.minutes(1)))
+    func testWhenHighlightsAreDisabledThenNoDialogIsOffered() async {
+        var disabled = true
+        let managerWithToggle = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                                        subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                                        stateStorage: stateStorage,
+                                                        areHighlightsDisabled: { disabled })
+        managerWithToggle.state = .ongoing
+        let tab = await Tab(content: .newtab)
+
+        #expect(managerWithToggle.dialogTypeForTab(tab, privacyInfo: nil) == nil)
+
+        // Turning it back off resumes from wherever the user had got to, because the guard never
+        // touched the state.
+        disabled = false
+
+        #expect(managerWithToggle.dialogTypeForTab(tab, privacyInfo: nil) != nil)
+        #expect(managerWithToggle.state == .ongoing)
+    }
+
     // MARK: - Subscription Upsell Flow
 
     @available(iOS 16, macOS 13, *)

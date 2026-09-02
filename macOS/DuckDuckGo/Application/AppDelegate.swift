@@ -889,7 +889,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
 
         if featureFlagger.isFeatureOn(.aiChatNativeStorage),
-           let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+           let appSupportURL = Self.duckAiNativeStorageBaseURL() {
             let nativeStorageContainerURL = appSupportURL.appendingPathComponent(DuckAiNativeStorageHandler.defaultDirectoryName)
             do {
                 duckAiNativeStorageHandler = try DuckAiNativeStorageHandler(
@@ -1467,7 +1467,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 subscriptionPromoDelegate: subscriptionPromoDelegate,
                 featureFlagger: featureFlagger,
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-                windowControllersManager: windowControllersManager
+                windowControllersManager: windowControllersManager,
+                syncService: syncService,
+                syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -2165,6 +2167,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isProduction: !StandardApplicationBuildType().isDebugBuild
         )
     }
+
+    // MARK: - Duck.ai native storage
+
+    /// Production keeps `~/Library/Application Support`; other unsandboxed bundles get a per-bundle container so DMG variants don't share chats.
+    static func duckAiNativeStorageBaseURL(isSandboxed: Bool = NSApp.isSandboxed,
+                                           bundleID: String? = Bundle.main.bundleIdentifier) -> URL? {
+        guard !isSandboxed, bundleID != productionBundleID else {
+            return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        }
+        return URL.sandboxApplicationSupportURL
+    }
+
+    private static let productionBundleID = "com.duckduckgo.macos.browser"
 
     // MARK: - PixelKit
 

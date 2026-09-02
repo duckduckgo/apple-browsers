@@ -316,6 +316,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217271232291839
     case updatedModelPicker
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217899627532631
+    case updatedCreateImage
+
     /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
     /// default; ship a privacy-config entry to roll back. See
     /// `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab`.
@@ -784,6 +787,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .updatedModelPicker:
             Config(source: .remoteReleasable(AIChatSubfeature.updatedModelPicker))
+        case .updatedCreateImage:
+            Config(source: .remoteReleasable(AIChatSubfeature.updatedCreateImage))
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .aiChatContextualUnifiedToggleInput:

@@ -205,7 +205,6 @@
 		31C138B227A4097800FFD4B2 /* DownloadTestsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C138B127A4097800FFD4B2 /* DownloadTestsHelper.swift */; };
 		31C3149F2D2EEB44009A412A /* AIChatUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C3149C2D2EEB44009A412A /* AIChatUserScript.swift */; };
 		31C314A02D2EEB44009A412A /* AIChatUserScriptHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C3149D2D2EEB44009A412A /* AIChatUserScriptHandling.swift */; };
-		31C314A22D2EF614009A412A /* AIChatViewControllerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C314A12D2EF60A009A412A /* AIChatViewControllerManager.swift */; };
 		31C70B5528045E3500FB6AD1 /* SecureVaultReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C70B5428045E3500FB6AD1 /* SecureVaultReporter.swift */; };
 		31C70B5B2804C61000FB6AD1 /* SaveAutofillLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C70B5A2804C61000FB6AD1 /* SaveAutofillLoginManager.swift */; };
 		31C71A782E6F4F5B004D503F /* RemoteMessagingTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 31C71A772E6F4F5B004D503F /* RemoteMessagingTestsUtils */; };
@@ -399,7 +398,6 @@
 		5608B5132F2125CC00ABC3F4 /* UITestOverridesDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5608B5122F2125CC00ABC3F4 /* UITestOverridesDebugView.swift */; };
 		560E84852EE0FA53008F6B74 /* TierBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560E84842EE0FA53008F6B74 /* TierBadgeView.swift */; };
 		560E990F2BEE2CB800507CE0 /* SyncErrorMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560E990E2BEE2CB800507CE0 /* SyncErrorMessage.swift */; };
-		562BE5652E1C270A0064F305 /* AIChatViewControllerManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DC47192E1C087B00ADE613 /* AIChatViewControllerManagerTests.swift */; };
 		563A3CFE2D37B8FA001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 563A3CFD2D37B8FA001966FD /* ConfigurationManagerIntegrationTests.swift */; };
 		563A3D012D37BF83001966FD /* ConfigurationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 563A3D002D37BF83001966FD /* ConfigurationManagerTests.swift */; };
 		563A3D032D37C363001966FD /* AppConfigurationURLProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 563A3D022D37C363001966FD /* AppConfigurationURLProviderTests.swift */; };
@@ -969,6 +967,9 @@
 		94F1268288BB496AF25D24A6 /* SubscriptionOnboardingHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7916A1677761825AA258550 /* SubscriptionOnboardingHeaderView.swift */; };
 		95C3B5788F2B2DA78E266C2A /* CalendarEventPreviewHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFDD2F8A58E59142D8FDD931 /* CalendarEventPreviewHelperTests.swift */; };
 		95FE01864F9DB7809837524A /* vpn-v4.json in Resources */ = {isa = PBXBuildFile; fileRef = 476A68112A66CB1C5BBDC94E /* vpn-v4.json */; };
+		971CC88E3045ACAA00AEE252 /* CreateImageModelSwitcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971CC88D3045ACAA00AEE252 /* CreateImageModelSwitcherTests.swift */; };
+		97C1A9E23045ACAA00AEE302 /* CreateImagePixelAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C1A9E13045ACAA00AEE301 /* CreateImagePixelAdapterTests.swift */; };
+		971CC8903045ACFF00AEE252 /* UTIToolsControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971CC88F3045ACFF00AEE252 /* UTIToolsControllerTests.swift */; };
 		97604B5D2FF7AFA5005BED0A /* ContextualSuggestedPromptsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97604B5C2FF7AFA5005BED0A /* ContextualSuggestedPromptsProviding.swift */; };
 		976C98B93018AD9100385C4B /* AIChatFrontendReadinessGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976C98B83018AD8F00385C4B /* AIChatFrontendReadinessGate.swift */; };
 		9770D4A92F6AFD3F0029361F /* DuckAIVoiceShortcutFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9770D4A82F6AFD3F0029361F /* DuckAIVoiceShortcutFeature.swift */; };
@@ -2876,7 +2877,6 @@
 		31C138B127A4097800FFD4B2 /* DownloadTestsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadTestsHelper.swift; sourceTree = "<group>"; };
 		31C3149C2D2EEB44009A412A /* AIChatUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScript.swift; sourceTree = "<group>"; };
 		31C3149D2D2EEB44009A412A /* AIChatUserScriptHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandling.swift; sourceTree = "<group>"; };
-		31C314A12D2EF60A009A412A /* AIChatViewControllerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatViewControllerManager.swift; sourceTree = "<group>"; };
 		31C70B5428045E3500FB6AD1 /* SecureVaultReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVaultReporter.swift; sourceTree = "<group>"; };
 		31C70B5A2804C61000FB6AD1 /* SaveAutofillLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveAutofillLoginManager.swift; sourceTree = "<group>"; };
 		31CB4250273AF50700FA0F3F /* SpeechRecognizerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizerProtocol.swift; sourceTree = "<group>"; };
@@ -3059,7 +3059,6 @@
 		56D5B3992DD3831800407440 /* ScriptSourceProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptSourceProviderTests.swift; sourceTree = "<group>"; };
 		56D60AA42EE33EA600652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionUserScriptFeatureFlagAdapter.swift; sourceTree = "<group>"; };
 		56D8556B2BEA91C4009F9698 /* SyncAlertsPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncAlertsPresenting.swift; sourceTree = "<group>"; };
-		56DC47192E1C087B00ADE613 /* AIChatViewControllerManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatViewControllerManagerTests.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4B6 /* AIChatHistoryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryViewController.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4B8 /* AIChatHistoryEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryEmptyStateView.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4BA /* AIChatHistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryViewModel.swift; sourceTree = "<group>"; };
@@ -3564,6 +3563,9 @@
 		8E7EE5FF3B14EBB6C0AAB71A /* IPadOmnibarReasoningPickerControllerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IPadOmnibarReasoningPickerControllerTests.swift; sourceTree = "<group>"; };
 		93434FDB10CB6359CBB62C37 /* SubscriptionOnboardingPrefetcher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingPrefetcher.swift; sourceTree = "<group>"; };
 		970C8DE9831CD77A979A1354 /* OnboardingView+SkipOnboardingContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "OnboardingView+SkipOnboardingContent.swift"; sourceTree = "<group>"; };
+		971CC88D3045ACAA00AEE252 /* CreateImageModelSwitcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateImageModelSwitcherTests.swift; sourceTree = "<group>"; };
+		97C1A9E13045ACAA00AEE301 /* CreateImagePixelAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateImagePixelAdapterTests.swift; sourceTree = "<group>"; };
+		971CC88F3045ACFF00AEE252 /* UTIToolsControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIToolsControllerTests.swift; sourceTree = "<group>"; };
 		97604B5C2FF7AFA5005BED0A /* ContextualSuggestedPromptsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualSuggestedPromptsProviding.swift; sourceTree = "<group>"; };
 		976C98B83018AD8F00385C4B /* AIChatFrontendReadinessGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatFrontendReadinessGate.swift; sourceTree = "<group>"; };
 		9770D4A82F6AFD3F0029361F /* DuckAIVoiceShortcutFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIVoiceShortcutFeature.swift; sourceTree = "<group>"; };
@@ -5931,7 +5933,6 @@
 				5AB12C3D4E5F60718293A4D2 /* AIChatHistoryNoResultsCell.swift */,
 				5AB12C3D4E5F60718293A4E2 /* ChatExportWriter.swift */,
 				5AB12C3D4E5F60718293A4E4 /* ChatHistoryDownloader.swift */,
-				31C314A12D2EF60A009A412A /* AIChatViewControllerManager.swift */,
 				C150EB1F2F0D814C00A98C97 /* AIChatFeatureFlagProvider.swift */,
 				316AA4592CF8E31F00A2ED28 /* AIChatSettings.swift */,
 				C12B671D2EC0ABEB003B80DD /* AIChatContentHandler.swift */,
@@ -6705,14 +6706,6 @@
 				16B67D705D3CBCF2B6C7FBA4 /* LaunchTimeMetricsService.swift */,
 			);
 			path = LaunchTimeMetrics;
-			sourceTree = "<group>";
-		};
-		562BE5642E1C26F80064F305 /* AiChat */ = {
-			isa = PBXGroup;
-			children = (
-				56DC47192E1C087B00ADE613 /* AIChatViewControllerManagerTests.swift */,
-			);
-			path = AiChat;
 			sourceTree = "<group>";
 		};
 		563A3CFC2D37B8E3001966FD /* Configuration */ = {
@@ -7844,7 +7837,6 @@
 			isa = PBXGroup;
 			children = (
 				9F60CBAC2E989551004D2367 /* RemoteMessaging */,
-				562BE5642E1C26F80064F305 /* AiChat */,
 				563A3CFC2D37B8E3001966FD /* Configuration */,
 				1E1D8B5F29950FB300C96994 /* Autoconsent */,
 				9F387DF12EA8AA8B006861F8 /* ModalPromptCoordination */,
@@ -9185,6 +9177,9 @@
 				D9978912B1022C989EF9C224 /* IPadOmnibarAttachmentControllerTests.swift */,
 				CB27DAF630063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift */,
 				CB27DAF830063B9A00EEEADB /* AITabChromeDecisionTests.swift */,
+				971CC88D3045ACAA00AEE252 /* CreateImageModelSwitcherTests.swift */,
+				97C1A9E13045ACAA00AEE301 /* CreateImagePixelAdapterTests.swift */,
+				971CC88F3045ACFF00AEE252 /* UTIToolsControllerTests.swift */,
 				CB27DAFC30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift */,
 				CB781CCE30112EC9008DCD60 /* UTISessionMonitorTests.swift */,
 				CB781CD3301135BE008DCD60 /* UTITextModelTests.swift */,
@@ -12972,7 +12967,6 @@
 				97EFB1592EFAB15900CF06E1 /* OnboardingSearchExperienceSettingsResolver.swift in Sources */,
 				1DEAADFF2BA7832F00E25A97 /* EmailProtectionView.swift in Sources */,
 				F1AF3A412F44AE2600D2BAD3 /* AppIconManaging.swift in Sources */,
-				31C314A22D2EF614009A412A /* AIChatViewControllerManager.swift in Sources */,
 				D6FEB8B12B7498A300C3615F /* HeadlessWebView.swift in Sources */,
 				9FDEC7BC2C91204900C7A692 /* AppIconPickerViewModel.swift in Sources */,
 				9F9A92342C86B42B001D036D /* AppIconPicker.swift in Sources */,
@@ -13423,6 +13417,8 @@
 				80DD30382F281161006E1A78 /* ScopedFireConfirmationViewModelTests.swift in Sources */,
 				9F387DE02EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */,
 				CBB4A84B2FD2FB7600A65956 /* SuggestionsListViewModelTests.swift in Sources */,
+				971CC88E3045ACAA00AEE252 /* CreateImageModelSwitcherTests.swift in Sources */,
+				97C1A9E23045ACAA00AEE302 /* CreateImagePixelAdapterTests.swift in Sources */,
 				652CEDE62D89B71300235B4C /* FaviconsHelperTests.swift in Sources */,
 				9F2D99E42EA9F9EE003950CC /* DefaultBrowserModalPromptProviderTests.swift in Sources */,
 				31C138AC27A403CB00FFD4B2 /* DownloadManagerTests.swift in Sources */,
@@ -13841,6 +13837,7 @@
 				9F3038F02F99C25E0007310C /* CustomProductPageDeepLinkHandlerTests.swift in Sources */,
 				569437242BDD405400C0881B /* SyncBookmarksAdapterTests.swift in Sources */,
 				BB64A3602F6AEBA4006897A2 /* SubscriptionPromoCoordinatorTests.swift in Sources */,
+				971CC8903045ACFF00AEE252 /* UTIToolsControllerTests.swift in Sources */,
 				1D116C11AE6EDE0456EE23B3 /* SubscriptionPromoExistingUserCoordinatorTests.swift in Sources */,
 				1E3C99D92D9D6C6E009447E2 /* SubscriptionFeatureFlagMappingTests.swift in Sources */,
 				C13EEA202D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift in Sources */,
@@ -14068,7 +14065,6 @@
 				98E564292DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */,
 				9F387DEE2EA895DD006861F8 /* MockModalPromptPresenter.swift in Sources */,
 				9F434CB02EE933D5009027AE /* MockWhatsNewMessageRepository.swift in Sources */,
-				562BE5652E1C270A0064F305 /* AIChatViewControllerManagerTests.swift in Sources */,
 				80CDFA1E2EF0AEB600375E73 /* MockTabManager.swift in Sources */,
 				98E5642B2DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift in Sources */,
 				98E5642C2DE8B32D00E6E75F /* MockDDGSyncing.swift in Sources */,

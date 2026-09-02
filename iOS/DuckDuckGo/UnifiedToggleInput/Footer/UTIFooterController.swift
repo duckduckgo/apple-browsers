@@ -47,6 +47,7 @@ final class UTIFooterController {
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let mapper: UTIFooterMessageMapper
     private let measurement: DuckAiUsageWarningMeasurement
+    private let createImagePixelFiring: CreateImagePixelFiring
     private let animator: Animator
 
     private var isSuppressed = false
@@ -55,17 +56,21 @@ final class UTIFooterController {
     /// What the current message is about, for the pixels. Kept in step with `currentMessage`.
     private var currentExposure: DuckAiUsageWarningExposure?
 
+    private var modelSwitchNotice: CreateImageModelSwitchNotice?
+
     private(set) var currentMessage: UTIFooterMessage?
 
     init(viewModel: DuckAiUsageWarningViewModel,
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
+         createImagePixelFiring: CreateImagePixelFiring,
          animator: Animator? = nil) {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
         self.mapper = mapper
         self.measurement = measurement
+        self.createImagePixelFiring = createImagePixelFiring
         self.animator = animator ?? Self.springAnimator
     }
 
@@ -101,8 +106,26 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    /// The user closing the card.
+    func showModelSwitchNotice(_ notice: CreateImageModelSwitchNotice) {
+        modelSwitchNotice = notice
+        applyCurrentState()
+    }
+
+    func clearModelSwitchNotice() {
+        guard modelSwitchNotice != nil else { return }
+        modelSwitchNotice = nil
+        applyCurrentState()
+    }
+
+    /// The user closing the card. A model switch is not a usage warning. It spends neither the
+    /// warning's dismissal record nor its pixel.
     func dismissCurrent() {
+        if modelSwitchNotice != nil {
+            modelSwitchNotice = nil
+            createImagePixelFiring.modelSwitchNoticeDismissed()
+            applyCurrentState()
+            return
+        }
         measurement.warningDismissed()
         retireCurrent()
     }
@@ -176,7 +199,7 @@ final class UTIFooterController {
         currentMessage = message
         // Set before the presenter runs: applying can reveal the card synchronously, and the
         // impression that reports needs the exposure it belongs to.
-        currentExposure = card?.exposure
+        currentExposure = card.flatMap(\.exposure)
         animator { [weak self] in
             self?.presenter?.applyFooterMessage(message)
         }
@@ -184,14 +207,22 @@ final class UTIFooterController {
 
     private struct ResolvedCard {
         let message: UTIFooterMessage
-        let exposure: DuckAiUsageWarningExposure
+        /// `nil` for a card that is not a usage warning, so it reports no usage-warning pixel.
+        let exposure: DuckAiUsageWarningExposure?
     }
 
-    /// One slot: an actionable warning outranks the informational notice.
+    /// One slot: the model switch outranks an actionable warning, which outranks the informational
+    /// notice.
     private func resolveCard() -> ResolvedCard? {
         guard !isSuppressed else {
             Logger.duckAIUsageWarnings.debug("[UsageWarnings] nothing to show: suppressed (editing or Search mode)")
             return nil
+        }
+        // The model switch is something the app just did to the user's selection, so it outranks a
+        // usage warning, which stays available once the notice is gone. It carries no CTA, so the
+        // acted-on check never applies to it.
+        if let modelSwitchNotice {
+            return ResolvedCard(message: mapper.message(for: modelSwitchNotice), exposure: nil)
         }
         if let warning = viewModel.warning {
             guard let message = unlessActedOn(mapper.message(for: warning)) else { return nil }

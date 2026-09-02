@@ -38,7 +38,7 @@ appId: com.duckduckgo.mobile.ios
     element:
         text: "${PRESET}"
     direction: DOWN
-    centerElement: false
+    centerElement: true
 - tapOn: "${PRESET}"
 
 - tapOn: "Debug"

@@ -102,9 +102,8 @@ final class UTIFooterCardView: UIView {
         iconSlotWidthConstraint?.constant = hasIcon ? Constants.iconSize : 0
         iconTextGapConstraint?.constant = hasIcon ? Constants.iconTextGap : 0
 
-        // A title above a reset line is a headline that truncates; a standalone one is body copy.
+        // A title above a reset line is a headline; a standalone one is body copy.
         let isStandaloneCopy = message.subtitle == nil
-        titleLabel.numberOfLines = isStandaloneCopy ? 2 : 1
         titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
         titleLabel.text = message.title
 
@@ -170,13 +169,17 @@ private extension UTIFooterCardView {
         }
 
         for label in [titleLabel, subtitleLabel] {
-            label.numberOfLines = 1
-            label.lineBreakMode = .byTruncatingTail
             label.adjustsFontForContentSizeCategory = true
             label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         }
+        // The title carries the message, so it wraps; the reset line under it is short enough
+        // to stay on one line.
+        titleLabel.numberOfLines = 0
+        titleLabel.lineBreakMode = .byWordWrapping
         titleLabel.font = .daxFootnoteSemibold()
         titleLabel.accessibilityIdentifier = "AIChat.Footer.Label.Title"
+        subtitleLabel.numberOfLines = 1
+        subtitleLabel.lineBreakMode = .byTruncatingTail
         subtitleLabel.font = .daxCaption1()
         subtitleLabel.accessibilityIdentifier = "AIChat.Footer.Label.Subtitle"
 

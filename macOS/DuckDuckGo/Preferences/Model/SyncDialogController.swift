@@ -132,6 +132,7 @@ final class SyncDialogController {
         self.keyValueStore = keyValueStore
         self.managementDialogModel = managementDialogModel
         self.managementDialogModel.isAppRebranded = DesignSystemRebrand.isAppRebranded()
+        self.managementDialogModel.isSimplifiedSyncSetupV2Enabled = self.featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
 
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
 
@@ -174,6 +175,7 @@ final class SyncDialogController {
             .sink { [weak self] in
                 guard let self else { return }
                 self.managementDialogModel.isAIChatSyncEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
+                self.managementDialogModel.isSimplifiedSyncSetupV2Enabled = self.featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
                 self.updateSingleDeviceSyncPromoVisibility()
             }
             .store(in: &cancellables)

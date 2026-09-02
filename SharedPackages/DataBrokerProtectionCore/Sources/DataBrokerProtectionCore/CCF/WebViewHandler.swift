@@ -57,12 +57,12 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var toolbar: NSToolbar?
     private var didDetectChallenge = false
     private var didReportChallengeClearance = false
-    private var cloudflareChallengeTask: Task<Void, Never>?
+    private var challengeTask: Task<Void, Never>?
     private var expectedBrokerURL: URL?
-    private var isCloudflareChallengeResponse = false
-    private var isAwaitingCloudflareDestination = false
+    private var isChallengeResponse = false
+    private var isAwaitingChallengeDestination = false
     private let actionLogContext: PIRActionLogContext?
-    private let cloudflareChallengeEventHandler: ((String) -> Void)?
+    private let challengeEventHandler: ((String) -> Void)?
 #elseif os(iOS)
     private var window: UIWindow?
 #endif
@@ -81,7 +81,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 contentBlocking: DBPWebViewContentBlocking? = nil,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
                 actionLogContext: PIRActionLogContext? = nil,
-                cloudflareChallengeEventHandler: ((String) -> Void)? = nil) throws {
+                challengeEventHandler: ((String) -> Void)? = nil) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         self.challengePixelDataBroker = challengePixelDataBroker
@@ -89,7 +89,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         self.pixelHandler = pixelHandler
 #if os(macOS)
         self.actionLogContext = actionLogContext
-        self.cloudflareChallengeEventHandler = cloudflareChallengeEventHandler
+        self.challengeEventHandler = challengeEventHandler
 #endif
         let configuration = WKWebViewConfiguration()
         try configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig,
@@ -146,7 +146,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
             window?.makeKeyAndOrderFront(nil)
         } else if let webView {
-            let panel = CloudflareOffscreenPanel(
+            let panel = ChallengeOffscreenPanel(
                 contentRect: NSRect(origin: .zero, size: webView.frame.size),
                 styleMask: [.nonactivatingPanel, .borderless],
                 backing: .buffered,
@@ -161,7 +161,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             panel.ignoresMouseEvents = false
             panel.contentView = webView
 
-            panel.setFrameOrigin(CloudflareOffscreenPanel.nextOrigin(for: webView.frame.size))
+            panel.setFrameOrigin(ChallengeOffscreenPanel.nextOrigin(for: webView.frame.size))
             panel.orderFrontRegardless()
             window = panel
         }
@@ -197,7 +197,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 #if os(macOS)
         didDetectChallenge = false
         didReportChallengeClearance = false
-        resetCloudflareChallengeState()
+        resetChallengeState()
         expectedBrokerURL = url
         webView?.load(url, additionalHTTPHeaders: ["Accept-Language": "en-US,en;q=0.9"])
 #else
@@ -228,10 +228,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         webView?.navigationDelegate = nil
         webView = nil
 #if os(macOS)
-        cloudflareChallengeTask?.cancel()
-        cloudflareChallengeTask = nil
-        isCloudflareChallengeResponse = false
-        isAwaitingCloudflareDestination = false
+        challengeTask?.cancel()
+        challengeTask = nil
+        isChallengeResponse = false
+        isAwaitingChallengeDestination = false
         urlObservation?.invalidate()
         urlObservation = nil
         window?.orderOut(nil)
@@ -251,7 +251,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         } onCancel: {
             Task { @MainActor in
 #if os(macOS)
-                self.resetCloudflareChallengeState()
+                self.resetChallengeState()
 #endif
                 self.resumeActiveContinuation(with: .failure(DataBrokerProtectionError.cancelled))
             }
@@ -354,7 +354,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { _ in
             Task {
 #if os(macOS)
-                guard !self.isCloudflareChallengeResponse else { return }
+                guard !self.isChallengeResponse else { return }
 #endif
                 try await self.webView?.evaluateJavaScript("1+1") as Void?
             }
@@ -388,45 +388,45 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
 #if os(macOS)
 private extension DataBrokerProtectionWebViewHandler {
-    func updateCloudflareChallengeState(isChallenge: Bool, responseURL: URL?, statusCode: Int) {
-        isCloudflareChallengeResponse = isChallenge
+    func updateChallengeState(isChallenge: Bool, responseURL: URL?, statusCode: Int) {
+        isChallengeResponse = isChallenge
         if isChallenge {
-            guard !isAwaitingCloudflareDestination else { return }
-            isAwaitingCloudflareDestination = true
-            reportCloudflareChallengeEvent("Detected: main response has cf-mitigated=challenge; HTTP \(statusCode)")
-            startCloudflareChallengeSolver()
+            guard !isAwaitingChallengeDestination else { return }
+            isAwaitingChallengeDestination = true
+            reportChallengeEvent("Detected: main response has cf-mitigated=challenge; HTTP \(statusCode)")
+            startChallengeSolver()
             return
         }
 
-        guard isAwaitingCloudflareDestination else { return }
+        guard isAwaitingChallengeDestination else { return }
         guard isExpectedBrokerDestination(responseURL) else {
-            Logger.action.log("Cloudflare challenge: non-challenge response did not reach the expected broker host")
+            Logger.action.log("Challenge: non-challenge response did not reach the expected broker host")
             return
         }
 
-        isAwaitingCloudflareDestination = false
-        cloudflareChallengeTask?.cancel()
-        cloudflareChallengeTask = nil
-        reportCloudflareChallengeEvent("Solved challenge; expected broker destination reached")
-        logCloudflareClearanceCookie()
+        isAwaitingChallengeDestination = false
+        challengeTask?.cancel()
+        challengeTask = nil
+        reportChallengeEvent("Solved challenge; expected broker destination reached")
+        logChallengeClearanceCookie()
     }
 
-    func startCloudflareChallengeSolver() {
-        cloudflareChallengeTask?.cancel()
-        cloudflareChallengeTask = Task { [weak self] in
-            await self?.solveCloudflareChallenge()
+    func startChallengeSolver() {
+        challengeTask?.cancel()
+        challengeTask = Task { [weak self] in
+            await self?.solveChallenge()
         }
     }
 
-    func solveCloudflareChallenge() async {
+    func solveChallenge() async {
         guard let webView else { return }
         let deadline = Date().addingTimeInterval(45)
         var nextSnapshotAttempt = Date.distantPast
         var didClick = false
 
         try? await Task.sleep(nanoseconds: 2_200_000_000)
-        while isAwaitingCloudflareDestination, Date() < deadline, !Task.isCancelled {
-            guard isCloudflareChallengeResponse else {
+        while isAwaitingChallengeDestination, Date() < deadline, !Task.isCancelled {
+            guard isChallengeResponse else {
                 try? await Task.sleep(nanoseconds: 250_000_000)
                 continue
             }
@@ -435,8 +435,8 @@ private extension DataBrokerProtectionWebViewHandler {
                 nextSnapshotAttempt = Date().addingTimeInterval(2)
                 if let point = await stableSnapshotCheckboxPoint(in: webView) {
                     _ = window?.makeFirstResponder(webView)
-                    let result = await CloudflareChallengeClick.checkbox(at: point, in: webView)
-                    reportCloudflareChallengeEvent("Sent snapshot checkbox click; \(result)")
+                    let result = await ChallengeClick.checkbox(at: point, in: webView)
+                    reportChallengeEvent("Sent snapshot checkbox click; \(result)")
                     didClick = true
                 }
             }
@@ -444,47 +444,47 @@ private extension DataBrokerProtectionWebViewHandler {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
         }
 
-        guard isAwaitingCloudflareDestination, !Task.isCancelled else { return }
-        isCloudflareChallengeResponse = false
-        isAwaitingCloudflareDestination = false
-        reportCloudflareChallengeEvent(
+        guard isAwaitingChallengeDestination, !Task.isCancelled else { return }
+        isChallengeResponse = false
+        isAwaitingChallengeDestination = false
+        reportChallengeEvent(
             "Failed challenge; expected broker destination did not arrive before the 45-second deadline",
             isError: true)
-        resumeActiveContinuation(with: .failure(DataBrokerProtectionError.unknown("Cloudflare challenge did not reach the broker destination")))
+        resumeActiveContinuation(with: .failure(DataBrokerProtectionError.unknown("Challenge did not reach the broker destination")))
     }
 
     func stableSnapshotCheckboxPoint(in webView: WKWebView) async -> NSPoint? {
         let snapshotRect = webView.bounds
         guard let firstImage = await challengeSnapshot(of: webView, rect: snapshotRect),
-              let firstLabel = await CloudflareWidgetVision.findChallengeLabel(in: firstImage),
-              isCloudflareChallengeResponse else {
-            Logger.action.log("Cloudflare challenge: first snapshot did not contain the verification label")
+              let firstLabel = await ChallengeVision.findChallengeLabel(in: firstImage),
+              isChallengeResponse else {
+            Logger.action.log("Challenge: first snapshot did not contain the verification label")
             return nil
         }
-        guard isCloudflareChallengeResponse, !Task.isCancelled else { return nil }
+        guard isChallengeResponse, !Task.isCancelled else { return nil }
 
         try? await Task.sleep(nanoseconds: 400_000_000)
-        guard let secondImage = await challengeSnapshot(of: webView, rect: snapshotRect), isCloudflareChallengeResponse else {
-            Logger.action.log("Cloudflare challenge: second snapshot failed")
+        guard let secondImage = await challengeSnapshot(of: webView, rect: snapshotRect), isChallengeResponse else {
+            Logger.action.log("Challenge: second snapshot failed")
             return nil
         }
-        guard let secondLabel = await CloudflareWidgetVision.findChallengeLabel(in: secondImage) else {
-            Logger.action.log("Cloudflare challenge: second snapshot did not contain the verification label")
+        guard let secondLabel = await ChallengeVision.findChallengeLabel(in: secondImage) else {
+            Logger.action.log("Challenge: second snapshot did not contain the verification label")
             return nil
         }
-        guard isCloudflareChallengeResponse, !Task.isCancelled else { return nil }
+        guard isChallengeResponse, !Task.isCancelled else { return nil }
         guard firstLabel.isStable(comparedTo: secondLabel, in: snapshotRect.size) else {
-            Logger.action.log("Cloudflare challenge: snapshot rejected because the verification label was not stable")
+            Logger.action.log("Challenge: snapshot rejected because the verification label was not stable")
             return nil
         }
-        Logger.action.log("Cloudflare challenge: stable verification label found")
+        Logger.action.log("Challenge: stable verification label found")
         let pointInSnapshot = secondLabel.checkboxPoint(in: snapshotRect.size)
         return NSPoint(x: snapshotRect.minX + pointInSnapshot.x, y: snapshotRect.minY + pointInSnapshot.y)
     }
 
     func challengeSnapshot(of webView: WKWebView, rect: CGRect) async -> CGImage? {
         await withCheckedContinuation { continuation in
-            let request = CloudflareSnapshotRequest(continuation: continuation)
+            let request = ChallengeSnapshotRequest(continuation: continuation)
             let configuration = WKSnapshotConfiguration()
             configuration.rect = rect
             let backingScale = max(webView.window?.backingScaleFactor ?? 1, 1)
@@ -511,18 +511,18 @@ private extension DataBrokerProtectionWebViewHandler {
         return host.lowercased().hasPrefix("www.") ? String(host.dropFirst(4)).lowercased() : host.lowercased()
     }
 
-    func logCloudflareClearanceCookie() {
+    func logChallengeClearanceCookie() {
         guard let webView else { return }
         webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { [weak self] cookies in
             let hasClearance = cookies.contains { $0.name.caseInsensitiveCompare("cf_clearance") == .orderedSame }
             Task { @MainActor in
-                self?.reportCloudflareChallengeEvent("Supporting evidence: cf_clearance=\(hasClearance)")
+                self?.reportChallengeEvent("Supporting evidence: cf_clearance=\(hasClearance)")
             }
         }
     }
 
-    func reportCloudflareChallengeEvent(_ message: String, isError: Bool = false) {
-        let logMessage = "Cloudflare challenge: \(message)"
+    func reportChallengeEvent(_ message: String, isError: Bool = false) {
+        let logMessage = "Challenge: \(message)"
         if let actionLogContext {
             if isError {
                 Logger.action.error(actionLogContext, message: logMessage)
@@ -534,14 +534,14 @@ private extension DataBrokerProtectionWebViewHandler {
         } else {
             Logger.action.log("\(logMessage, privacy: .public)")
         }
-        cloudflareChallengeEventHandler?(message)
+        challengeEventHandler?(message)
     }
 
-    func resetCloudflareChallengeState() {
-        cloudflareChallengeTask?.cancel()
-        cloudflareChallengeTask = nil
-        isCloudflareChallengeResponse = false
-        isAwaitingCloudflareDestination = false
+    func resetChallengeState() {
+        challengeTask?.cancel()
+        challengeTask = nil
+        isChallengeResponse = false
+        isAwaitingChallengeDestination = false
     }
 
     @objc func copyURLFromAddressBar() {
@@ -641,8 +641,8 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         Logger.action.log("WebViewHandler didFinish")
 #if os(macOS)
         updateAddressBar(with: webView.url)
-        guard !isAwaitingCloudflareDestination else {
-            Logger.action.log("Cloudflare challenge: holding the broker load continuation")
+        guard !isAwaitingChallengeDestination else {
+            Logger.action.log("Challenge: holding the broker load continuation")
             return
         }
 #endif
@@ -653,7 +653,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFail: \(error.localizedDescription, privacy: .public)")
 #if os(macOS)
-        resetCloudflareChallengeState()
+        resetChallengeState()
 #endif
         resumeActiveContinuation(with: .failure(error))
     }
@@ -661,7 +661,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFailProvisionalNavigation: \(error.localizedDescription, privacy: .public)")
 #if os(macOS)
-        resetCloudflareChallengeState()
+        resetChallengeState()
 #endif
         resumeActiveContinuation(with: .failure(error))
     }
@@ -690,7 +690,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         if navigationResponse.isForMainFrame {
             let mitigatedHeader = response.value(forHTTPHeaderField: "cf-mitigated")
             let isChallenge = mitigatedHeader?.caseInsensitiveCompare("challenge") == .orderedSame
-            updateCloudflareChallengeState(isChallenge: isChallenge, responseURL: response.url, statusCode: statusCode)
+            updateChallengeState(isChallenge: isChallenge, responseURL: response.url, statusCode: statusCode)
         }
 #endif
 
@@ -708,7 +708,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         Logger.action.error("WebViewHandler web content process terminated")
 #if os(macOS)
-        resetCloudflareChallengeState()
+        resetChallengeState()
 #endif
         resumeActiveContinuation(with: .failure(DataBrokerProtectionError.webContentProcessTerminated))
     }

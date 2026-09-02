@@ -1,5 +1,5 @@
 //
-//  CloudflareChallengeSupport.swift
+//  ChallengeSupport.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -25,7 +25,7 @@ import Vision
 import WebKit
 
 @MainActor
-final class CloudflareOffscreenPanel: NSPanel {
+final class ChallengeOffscreenPanel: NSPanel {
     private static var nextSlot = 0
 
     static func nextOrigin(for size: NSSize) -> NSPoint {
@@ -44,7 +44,7 @@ final class CloudflareOffscreenPanel: NSPanel {
 }
 
 @MainActor
-final class CloudflareSnapshotRequest {
+final class ChallengeSnapshotRequest {
     private var continuation: CheckedContinuation<CGImage?, Never>?
 
     init(continuation: CheckedContinuation<CGImage?, Never>) {
@@ -59,7 +59,7 @@ final class CloudflareSnapshotRequest {
 }
 
 @MainActor
-enum CloudflareChallengeClick {
+enum ChallengeClick {
     static func checkbox(at point: NSPoint, in webView: WKWebView) async -> String {
         let windowPoint = windowPoint(fromCSS: point, in: webView)
         let didDeliverMove = deliverMove(at: windowPoint, in: webView)
@@ -118,7 +118,7 @@ enum CloudflareChallengeClick {
         let contentView = contentView(in: webView) ?? webView
         let viewPoint = webView.convert(point, from: nil)
         let hitView = webView.hitTest(viewPoint) ?? contentView
-        CloudflarePressedMouseButtons.with(1) {
+        ChallengePressedMouseButtons.with(1) {
             webView.window?.sendEvent(downEvent)
             hitView.mouseDown(with: downEvent)
             if hitView !== contentView {
@@ -126,7 +126,7 @@ enum CloudflareChallengeClick {
             }
         }
         RunLoop.current.run(until: Date().addingTimeInterval(0.08))
-        CloudflarePressedMouseButtons.with(0) {
+        ChallengePressedMouseButtons.with(0) {
             webView.window?.sendEvent(upEvent)
             hitView.mouseUp(with: upEvent)
             if hitView !== contentView {
@@ -137,7 +137,7 @@ enum CloudflareChallengeClick {
     }
 }
 
-private enum CloudflarePressedMouseButtons {
+private enum ChallengePressedMouseButtons {
     private static var lock = os_unfair_lock_s()
     private static var depth = 0
     private static var value: UInt = 0
@@ -180,7 +180,7 @@ private enum CloudflarePressedMouseButtons {
     }
 }
 
-struct CloudflareChallengeLabel: Equatable, Sendable {
+struct ChallengeLabel: Equatable, Sendable {
     let boundingBox: CGRect
 
     func checkboxPoint(in imageSize: NSSize) -> NSPoint {
@@ -188,7 +188,7 @@ struct CloudflareChallengeLabel: Equatable, Sendable {
         return NSPoint(x: labelFrame.minX - 20, y: labelFrame.midY)
     }
 
-    func isStable(comparedTo other: CloudflareChallengeLabel, in imageSize: NSSize) -> Bool {
+    func isStable(comparedTo other: ChallengeLabel, in imageSize: NSSize) -> Bool {
         let frame = frame(in: imageSize)
         let otherFrame = other.frame(in: imageSize)
         return abs(frame.minX - otherFrame.minX) < 8
@@ -206,8 +206,8 @@ struct CloudflareChallengeLabel: Equatable, Sendable {
     }
 }
 
-enum CloudflareWidgetVision {
-    nonisolated static func findChallengeLabel(in image: CGImage) async -> CloudflareChallengeLabel? {
+enum ChallengeVision {
+    nonisolated static func findChallengeLabel(in image: CGImage) async -> ChallengeLabel? {
         let task = Task.detached(priority: .utility) {
             recognizeChallengeLabel(in: image)
         }
@@ -218,7 +218,7 @@ enum CloudflareWidgetVision {
         }
     }
 
-    private nonisolated static func recognizeChallengeLabel(in image: CGImage) -> CloudflareChallengeLabel? {
+    private nonisolated static func recognizeChallengeLabel(in image: CGImage) -> ChallengeLabel? {
         guard !Task.isCancelled else { return nil }
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .fast
@@ -231,7 +231,7 @@ enum CloudflareWidgetVision {
                 .split(whereSeparator: \.isWhitespace)
                 .joined(separator: " ")
             if text.caseInsensitiveCompare("Verify you are human") == .orderedSame {
-                return CloudflareChallengeLabel(boundingBox: observation.boundingBox)
+                return ChallengeLabel(boundingBox: observation.boundingBox)
             }
         }
         return nil

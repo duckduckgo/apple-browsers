@@ -405,14 +405,14 @@ public extension SubJobWebRunning {
                                                                                contentBlocking: contentBlocking,
                                                                                pixelHandler: pixelHandler,
                                                                                actionLogContext: loggerContext(),
-                                                                               cloudflareChallengeEventHandler: { message in
+                                                                               challengeEventHandler: { message in
                                                                                    let details = """
                                                                                    Broker: \(broker.name) \(broker.version)
                                                                                    URL: \(broker.url)
                                                                                    \(message)
                                                                                    """
                                                                                    debugEventReporter?.recordDebugEvent(
-                                                                                       kind: .cloudflare,
+                                                                                       kind: .challenge,
                                                                                        actionType: nil,
                                                                                        details: details)
                                                                                })

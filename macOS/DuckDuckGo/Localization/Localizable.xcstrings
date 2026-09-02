@@ -10581,6 +10581,186 @@
         }
       }
     },
+    "aichat.usageWarnings.advanced-models-limit-reached" : {
+      "comment" : "Headline on the Duck.ai usage card when the allowance for advanced AI models specifically is spent, while free models remain available",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Advanced AI models limit reached"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.daily-limit-reached" : {
+      "comment" : "Headline on the Duck.ai usage card when the user's daily allowance is fully spent",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Daily limit reached"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.daily-usage" : {
+      "comment" : "Headline on the Duck.ai usage card as the user approaches their daily limit. Parameter is the percentage of the daily allowance already used.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%d%% of daily limit"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.dismiss.accessibility" : {
+      "comment" : "Accessibility label for the close button on the Duck.ai usage card",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dismiss"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.high-usage-model" : {
+      "comment" : "Duck.ai usage card notice shown while a model that spends the allowance quickly is selected. Parameter is the model's short name, e.g. \"Opus 4.8\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ reaches usage limits 2-5x sooner than basic models."
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.model-picker.accessibility" : {
+      "comment" : "Accessibility label for the chevron on the Duck.ai usage card, which opens the model picker",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose a model"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.resets-in" : {
+      "comment" : "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Resets in %@"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.start-using-weekly-limit" : {
+      "comment" : "Button on the Duck.ai usage card letting a paid user keep chatting on their weekly allowance after the daily one is spent",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Start Using Weekly Limit"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.subscribe" : {
+      "comment" : "Button on the Duck.ai usage card taking a user who has already used their free trial to the subscription flow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscribe"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.switch-model" : {
+      "comment" : "Button on the Duck.ai usage card offering a model that uses the allowance more slowly, used when the suggested model has no short name to show",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Switch Model"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.switch-to-free-model" : {
+      "comment" : "Button on the Duck.ai usage card offering a free-tier model, shown once the advanced-model allowance is spent",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Switch to a Free Model"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.switch-to-model" : {
+      "comment" : "Button on the Duck.ai usage card offering a model that uses the allowance more slowly. Parameter is the model's short name, e.g. \"5.4 mini\".",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Switch to %@"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.try-for-free" : {
+      "comment" : "Button on the Duck.ai usage card taking a user who is still eligible for a free trial to the subscription flow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Subscription for Free"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.weekly-limit-reached" : {
+      "comment" : "Headline on the Duck.ai usage card when the user's weekly allowance is fully spent",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Weekly usage limit reached"
+          }
+        }
+      }
+    },
+    "aichat.usageWarnings.weekly-usage" : {
+      "comment" : "Headline on the Duck.ai usage card as the user approaches their weekly limit. Parameter is the percentage of the weekly allowance already used.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%d%% of weekly limit"
+          }
+        }
+      }
+    },
     "aichat.view.hide-sidebar" : {
       "comment" : "View menu item to close the Duck.ai sidebar",
       "extractionState" : "extracted_with_value",

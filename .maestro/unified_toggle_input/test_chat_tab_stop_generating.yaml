@@ -6,6 +6,7 @@ appId: com.duckduckgo.mobile.ios
 # (follow-up task to be created).
 tags:
     - iphone
+    - unified_toggle_input
 name: test_chat_tab_stop_generating
 
 ---

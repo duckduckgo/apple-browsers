@@ -6,6 +6,7 @@ appId: com.duckduckgo.mobile.ios
 # flakiness is fixed (follow-up task to be created).
 tags:
     - iphone
+    - unified_toggle_input
 name: test_unified_input_send_prompt
 
 ---

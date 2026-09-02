@@ -4490,6 +4490,10 @@ extension MainViewController: BrowserChromeDelegate {
         static let morphExpandCurve = ChromeMorphAnimator.Curve.spring(dampingRatio: 0.82, naturalFrequency: 8.84)
 
         static let minMorphDurationScale: CGFloat = 0.55
+
+        /// The top address bar collapses into the pill a little slower than the bottom one, so the
+        /// transformation reads as deliberate rather than a snap.
+        static let topMorphCollapseDurationMultiplier = 1.25
     }
 
     var tabBarContainer: UIView {
@@ -4553,9 +4557,13 @@ extension MainViewController: BrowserChromeDelegate {
         if useMorphScrub {
             let isExpanding = percent > fromPercent
             let durationScale = max(ChromeAnimationConstants.minMorphDurationScale, abs(percent - fromPercent))
+            let isTopAddressBar = appSettings.currentAddressBarPosition == .top
+            let collapseDuration = isTopAddressBar
+                ? ChromeAnimationConstants.morphCollapseDuration * ChromeAnimationConstants.topMorphCollapseDurationMultiplier
+                : ChromeAnimationConstants.morphCollapseDuration
             let baseDuration = isExpanding
                 ? ChromeAnimationConstants.morphExpandDuration
-                : ChromeAnimationConstants.morphCollapseDuration
+                : collapseDuration
 
             chromeMorphAnimator.animate(
                 from: fromPercent,

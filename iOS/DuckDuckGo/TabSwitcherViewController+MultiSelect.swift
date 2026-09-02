@@ -253,7 +253,9 @@ extension TabSwitcherViewController {
         let otherIndexPaths = Set<IndexPath>(tabsModel.tabs.indices.map {
             IndexPath(row: $0, section: 0)
         }).subtracting(indexPaths)
-        
+
+        guard !otherIndexPaths.isEmpty else { return }
+
         self.closeTabs(withIndexPaths: [IndexPath](otherIndexPaths),
                        confirmTitle: UserText.alertTitleCloseOtherTabs(withCount: otherIndexPaths.count),
                        confirmMessage: UserText.alertMessageCloseOtherTabs(withCount: otherIndexPaths.count))
@@ -291,7 +293,7 @@ extension TabSwitcherViewController {
 
         chrome.update(state: state,
                       tabsStyle: tabsStyle,
-                      canShowSelectionMenu: canShowSelectionMenu,
+                      canShowSelectionMenu: multiSelectMenuState.canShowSelectionMenu,
                       isEditing: isEditing)
         applyCollectionContentInsets()
         chrome.trackScrollEdge(of: collectionView)
@@ -307,18 +309,23 @@ extension TabSwitcherViewController {
         }
     }
     
-    func createMultiSelectionMenu() -> UIMenu {
-        let selectedIndexPaths = selectedTabs
-        let selectedTabObjects = selectedIndexPaths.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
-        let shouldShowSelectionToggleActions = !floatingUIManager.isFloatingTabSwitcherEnabled
-        let state = TabSwitcherMultiSelectMenuState(
+    /// Describes the selection menu for the current selection, so that both the menu contents and
+    /// the enabled state of the control presenting it are derived from the same, up to date, state.
+    var multiSelectMenuState: TabSwitcherMultiSelectMenuState {
+        let selectedTabObjects = selectedTabs.compactMap { tabsModel.get(tabAt: $0.row) }
+        let isFloatingTabSwitcherEnabled = floatingUIManager.isFloatingTabSwitcherEnabled
+        return TabSwitcherMultiSelectMenuState(
             selectedCount: selectedTabObjects.count,
             totalCount: tabsModel.count,
             selectedContainsWebPages: selectedTabObjects.contains(where: { $0.link != nil }),
             allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
-            shouldShowSelectionToggleActions: shouldShowSelectionToggleActions
+            shouldShowSelectionToggleActions: !isFloatingTabSwitcherEnabled,
+            shouldShowCloseSelectedAction: !isFloatingTabSwitcherEnabled || interfaceMode.isLarge
         )
-        canShowSelectionMenu = state.canShowSelectionMenu
+    }
+
+    func createMultiSelectionMenu() -> UIMenu {
+        let state = multiSelectMenuState
         return menuBuilder.multiSelectionMenu(state: state, actions: TabSwitcherMultiSelectMenuActions(
             onDeselectAll: { [weak self] in self?.deselectAllTabs() },
             onSelectAll: { [weak self] in self?.selectAllTabs() },
@@ -352,14 +359,19 @@ extension TabSwitcherViewController {
             totalCount: tabsModel.count,
             pressedContainsWebPages: containsWebPages,
             isEditing: isEditing,
-            title: title
+            title: title,
+            shouldShowDeleteTabAndData: floatingUIManager.isFloatingTabSwitcherEnabled && tabs.count == 1 && containsWebPages
         )
         return menuBuilder.longPressMenu(state: state, actions: TabSwitcherLongPressMenuActions(
             onShare: { [weak self] in self?.longPressMenuShareLinks(tabs: tabs) },
             onBookmark: { [weak self] in self?.longPressMenuBookmarkTabs(indexPaths: indexPaths) },
             onSelect: { [weak self] in self?.longPressMenuSelectTabs(indexPaths: indexPaths) },
             onClose: { [weak self] in self?.longPressMenuCloseTabs(indexPaths: indexPaths) },
-            onCloseOther: { [weak self] in self?.longPressMenuCloseOtherTabs(retainingIndexPaths: indexPaths) }
+            onCloseOther: { [weak self] in self?.longPressMenuCloseOtherTabs(retainingIndexPaths: indexPaths) },
+            onDeleteTabAndData: { [weak self] in
+                guard let tab = tabs.first, let indexPath = indexPaths.first else { return }
+                self?.longPressMenuDeleteTabAndData(tab: tab, at: indexPath)
+            }
         ))
     }
 
@@ -383,6 +395,18 @@ extension TabSwitcherViewController {
     func editMenuEnterSelectMode() {
         Pixel.fire(pixel: .tabSwitcherEditMenuSelectTabs)
         DailyPixel.fire(pixel: .tabSwitcherEditMenuSelectTabsDaily)
+
+        guard floatingUIManager.isFloatingTabSwitcherEnabled else {
+            transitionToMultiSelect()
+            return
+        }
+
+        shouldEnterMultiSelectAfterEditMenuDismissal = true
+    }
+
+    func editMenuDidDismiss() {
+        guard shouldEnterMultiSelectAfterEditMenuDismissal, !isEditing else { return }
+        shouldEnterMultiSelectAfterEditMenuDismissal = false
         transitionToMultiSelect()
     }
 
@@ -494,6 +518,24 @@ extension TabSwitcherViewController {
         closeOtherTabs(retainingIndexPaths: indexPaths,
                        pixel: .tabSwitcherLongPressCloseOtherTabs,
                        dailyPixel: .tabSwitcherLongPressCloseOtherTabsDaily)
+    }
+
+    func longPressMenuDeleteTabAndData(tab: Tab, at indexPath: IndexPath) {
+        guard tabsModel.tabs.contains(where: { $0 === tab }) else { return }
+
+        guard let sourceView = collectionView.cellForItem(at: indexPath) ?? view else { return }
+        let presenter = FireConfirmationPresenter()
+        presenter.presentFireConfirmation(
+            on: self,
+            attachPopoverTo: sourceView,
+            tabViewModel: tabManager.viewModel(for: tab),
+            pixelSource: .tabSwitcher,
+            fireContext: .singleTab,
+            browsingMode: tab.mode,
+            onConfirm: { [weak self] fireRequest in
+                self?.forgetAll(fireRequest)
+            },
+            onCancel: {})
     }
 
 }

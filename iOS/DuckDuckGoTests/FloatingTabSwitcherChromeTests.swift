@@ -81,8 +81,9 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         }
     }
 
-    func testWhenEditingThenTopBarHasLeadingTitleAndSelectAll() {
+    func testWhenEditingThenTopBarHasMenuSelectionCountAndSelectAll() {
         let chrome = makeInstalledChrome()
+        chrome.actions.onMultiSelectMenuRequested = { UIMenu(children: []) }
         chrome.setTitle("2 Selected")
 
         chrome.update(state: .editingRegularSize(selectedCount: 2, totalCount: 4),
@@ -90,10 +91,10 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: true,
                       isEditing: true)
 
-        XCTAssertEqual((chrome.navigationItem.leftBarButtonItems?.first?.customView as? UILabel)?.text, "2 Selected")
+        XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.first?.menu)
         XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.count, 1)
         XCTAssertNil(chrome.navigationItem.title)
-        XCTAssertNil(chrome.navigationItem.titleView)
+        XCTAssertEqual((chrome.navigationItem.titleView as? UILabel)?.text, "2 Selected")
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.title, UserText.selectAllTabs)
     }
 
@@ -105,7 +106,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: true,
                       isEditing: true)
 
-        guard let titleLabel = chrome.navigationItem.leftBarButtonItems?.first?.customView as? UILabel else {
+        guard let titleLabel = chrome.navigationItem.titleView as? UILabel else {
             XCTFail("Missing selection title label")
             return
         }
@@ -117,7 +118,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(titleLabel.frame.width, titleLabel.intrinsicContentSize.width)
     }
 
-    func testWhenEditingThenBottomBarHasDoneCloseTabsAndMenu() {
+    func testWhenEditingThenBottomBarHasCloseTabsFireAndDone() {
         let chrome = makeInstalledChrome()
         chrome.actions.onMultiSelectMenuRequested = { UIMenu(children: []) }
 
@@ -127,16 +128,25 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       isEditing: true)
 
         let items = chrome.toolbar.items ?? []
-        let doneIndex = items.firstIndex { $0.accessibilityLabel == UserText.navigationTitleDone }
         let closeTabsIndex = items.firstIndex { $0.title == UserText.tabSwitcherCloseTabsButtonTitle(withCount: 2) }
-        let menuIndex = items.firstIndex { $0.menu != nil }
+        let fireIndex = items.firstIndex { $0.accessibilityIdentifier == "Browser.Toolbar.Button.Fire" }
+        let doneIndex = items.firstIndex { $0.accessibilityLabel == UserText.navigationTitleDone }
 
-        guard let doneIndex, let closeTabsIndex, let menuIndex else {
+        guard let closeTabsIndex, let fireIndex, let doneIndex else {
             XCTFail("Missing selection toolbar items")
             return
         }
-        XCTAssertLessThan(doneIndex, closeTabsIndex)
-        XCTAssertLessThan(closeTabsIndex, menuIndex)
+        XCTAssertLessThan(closeTabsIndex, fireIndex)
+        XCTAssertLessThan(fireIndex, doneIndex)
+        XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.first?.menu)
+
+        if #available(iOS 26.0, *) {
+            // On iOS 26 Done is a title-less glyph; earlier versions still use the system Done item.
+            XCTAssertNil(items[doneIndex].title)
+            XCTAssertNotNil(items[doneIndex].image)
+            XCTAssertEqual(items.count, 4)
+            XCTAssertEqual([items[closeTabsIndex], items[fireIndex], items[doneIndex]].map(\.sharesBackground), [false, false, false])
+        }
     }
 
     func testWhenAllSelectedWhileEditingThenShowsDeselectAll() {
@@ -160,7 +170,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       isEditing: false)
 
         XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.count, 2)
-        XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.first?.menu)
+        XCTAssertNotNil((chrome.navigationItem.leftBarButtonItems?.first?.customView as? UIButton)?.menu)
         XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.last?.menu)
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.accessibilityLabel, UserText.navigationTitleDone)
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.count, 3)

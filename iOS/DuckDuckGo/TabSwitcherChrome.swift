@@ -30,6 +30,7 @@ struct TabSwitcherChromeActions {
     /// Done / Cancel / X — exits multi-select when editing, otherwise dismisses.
     var onDoneTapped: (() -> Void)?
     var onEditMenuRequested: (() -> UIMenu?)?
+    var onEditMenuDismissed: (() -> Void)?
     /// Sets a specific grid/list style (used by the floating menu).
     var onSelectTabsStyle: ((TabSwitcherViewController.TabsStyle) -> Void)?
     /// Toggles grid/list (used by the legacy single toggle button).

@@ -3,14 +3,14 @@
         "description": "Own device row resolved from unified device info while unified reads are enabled",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "sync_unified_devices_own_row_resolved_legacy": {
         "description": "Own device row fell back to legacy encrypted fields while unified reads are enabled",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -25,7 +25,7 @@
         "description": "Own device row fell back to a placeholder while unified reads are enabled",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -40,7 +40,7 @@
         "description": "Account-info key could not be obtained for unified device-list reads",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -62,7 +62,7 @@
         "description": "At least one other device row in a credential category had unified device info that could not be decrypted",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -77,7 +77,7 @@
         "description": "At least one other device row in a credential category resolved to a placeholder",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -92,7 +92,7 @@
         "description": "This device failed to obtain an account-info key already registered on the account",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -107,13 +107,14 @@
         "description": "This device successfully registered a newly minted account-info key",
         "owners": ["amddg44"],
         "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "sync_unified_devices_account_info_key_create_failed": {
         "description": "This device failed to mint or register a new account-info key",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -128,13 +129,14 @@
         "description": "This device successfully added a missing credential wrapper to an existing account-info key",
         "owners": ["amddg44"],
         "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "sync_unified_devices_account_info_key_wrap_failed": {
         "description": "This device failed to add a missing credential wrapper to an existing account-info key",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -149,19 +151,21 @@
         "description": "This device successfully used an account-info key already registered on the account",
         "owners": ["amddg44"],
         "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "sync_unified_devices_own_row_device_info_first_write_success": {
         "description": "This device successfully performed a signup or migration write of its own unified device info",
         "owners": ["amddg44"],
         "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "sync_unified_devices_own_row_device_info_first_write_failed": {
         "description": "This device failed a signup or migration write of its own unified device info",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -176,13 +180,14 @@
         "description": "This device successfully updated its own unified device info during rename",
         "owners": ["amddg44"],
         "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "sync_unified_devices_own_row_device_info_update_failed": {
         "description": "This device failed to update its own unified device info during rename",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -197,13 +202,14 @@
         "description": "This device successfully repaired its own missing or unreadable unified device info",
         "owners": ["amddg44"],
         "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "sync_unified_devices_own_row_device_info_repair_failed": {
         "description": "This device failed to repair its own missing or unreadable unified device info",
         "owners": ["amddg44"],
         "triggers": ["other"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {

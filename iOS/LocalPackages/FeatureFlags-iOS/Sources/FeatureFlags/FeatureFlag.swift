@@ -523,9 +523,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
     case onboardingFlowByDownloadReasonExperiment
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
-    case systemFindInPage
-
     /// Experiment for removing monthly free trials — second run, enrolling only free-trial eligible users.
     /// https://app.asana.com/1/137249556945/task/1217334233390728
     case monthlyFreeTrialExperiment2
@@ -911,8 +908,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
         case .simplifiedSyncSetupV2:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
-        case .systemFindInPage:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.systemFindInPage))
         case .iPadTabsBarInWindowControlsRow:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:

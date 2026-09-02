@@ -30,6 +30,7 @@ concurrency:
 jobs:
   build-end-to-end-tests:
     name: Build End to End Tests
+    needs: setup-matrix
     runs-on: macos-26
     timeout-minutes: 30
 
@@ -153,7 +154,6 @@ jobs:
 
   setup-matrix:
     name: Resolve test matrix
-    needs: build-end-to-end-tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -189,6 +189,7 @@ jobs:
           {"test-tag":"securityTest","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
           {"test-tag":"adClick","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
           {"test-tag":"duckplayer_native","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
+          {"test-tag":"unified_toggle_input","exclude-tags":"ipad","device-model":"iPhone-16","device-name":"iPhone","device":"iphone"},
           {"test-tag":"device_info","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
           {"test-tag":"device_info","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
           {"test-tag":"duckplayer_classic","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},

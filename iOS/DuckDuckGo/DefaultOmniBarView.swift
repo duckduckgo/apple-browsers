@@ -1501,7 +1501,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             createImageModelSwitchCard
         ]
         return candidates.first { candidate in
-            guard !candidate.isHidden else { return false }
+            guard !candidate.isHidden, candidate.alpha > 0 else { return false }
             let localPoint = candidate.convert(point, from: self)
             return candidate.point(inside: localPoint, with: event)
         }
@@ -1937,7 +1937,8 @@ extension DefaultOmniBarView {
                        delay: 0,
                        options: [.curveEaseInOut, .beginFromCurrentState]) {
             self.createImageModelSwitchCard.alpha = 0
-        } completion: { _ in
+        } completion: { finished in
+            guard finished else { return }
             completion()
         }
     }

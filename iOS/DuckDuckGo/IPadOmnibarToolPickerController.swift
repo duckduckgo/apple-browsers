@@ -69,6 +69,10 @@ final class IPadOmnibarToolPickerController {
         toolsController.selectedToolsForSubmission()
     }
 
+    var currentModelSwitchNotice: CreateImageModelSwitchNotice? {
+        modelSwitchNotice
+    }
+
     func makeMenu() -> UIMenu? {
         guard let toolsMenu = presentation.toolsMenu else { return nil }
         return menuFactory.makeMenu(toolsMenu) { [weak self] identifier in

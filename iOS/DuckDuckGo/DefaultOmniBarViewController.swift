@@ -547,9 +547,7 @@ extension DefaultOmniBarViewController {
             if notice != nil {
                 self.attachmentController?.handleModelChanged()
             }
-            let message = notice.map { UTIFooterMessageMapper().message(for: $0) }
-            self.omniBarView.setCreateImageModelSwitchFooterMessage(message, animated: true)
-            self.omniDelegate?.onOmniBarExpandedContentSizeChanged()
+            self.applyModelSwitchNotice(notice, animated: true)
         }
         omniBarView.onSelectedToolClearTapped = { [weak self] in
             self?.toolPickerController?.resetSelection(isUserInitiated: true)
@@ -605,6 +603,15 @@ extension DefaultOmniBarViewController {
         refreshReasoningPicker()
         refreshToolPicker()
         refreshAttachButton()
+        if let notice = toolPickerController?.currentModelSwitchNotice {
+            applyModelSwitchNotice(notice, animated: true)
+        }
+    }
+
+    private func applyModelSwitchNotice(_ notice: CreateImageModelSwitchNotice?, animated: Bool) {
+        let message = notice.map { UTIFooterMessageMapper().message(for: $0) }
+        omniBarView.setCreateImageModelSwitchFooterMessage(message, animated: animated)
+        omniDelegate?.onOmniBarExpandedContentSizeChanged()
     }
 
     private func refreshModelPicker() {

@@ -1264,13 +1264,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func setUsageWarningVisible(_ visible: Bool) {
-        guard applyUsageWarningVisibility(visible) else { return }
+        let didChangeVisibility = applyUsageWarningVisibility(visible)
 
         // Reported off the reveal rather than the resolve: the message is resolved while the panel
-        // is still collapsed, and only shown when it expands.
+        // is still collapsed, and only shown when it expands. Not gated on the visibility changing,
+        // because the message in the slot can be replaced without the card ever coming down — the
+        // measurement ignores a repeat of the one already showing.
         if visible, let currentUsageWarningExposure {
             omnibarController.usageWarningMeasurement.cardBecameVisible(currentUsageWarningExposure)
         }
+
+        guard didChangeVisibility else { return }
 
         onSuggestionsHeightChanged?(suggestionsHeight)
         onPassthroughHeightNeedsUpdate?()

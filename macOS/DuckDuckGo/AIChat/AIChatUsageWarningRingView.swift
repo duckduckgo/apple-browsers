@@ -20,8 +20,8 @@ import AIChat
 import AppKit
 import DesignResourcesKit
 
-/// How much of the allowance is spent, on the approaching message. AppKit twin of iOS's
-/// `UTIFooterUsageRingView`: same size, line width, timing and colour table.
+/// How much of the allowance is spent, on the approaching message. Shares iOS's
+/// `UTIFooterUsageRingView` size and timing; the colours are macOS's own.
 final class AIChatUsageWarningRingView: NSView {
 
     enum Constants {
@@ -29,7 +29,8 @@ final class AIChatUsageWarningRingView: NSView {
     }
 
     private enum Metrics {
-        static let lineWidth: CGFloat = 2
+        /// 1.25 in a 16pt ring, per the design export.
+        static let lineWidth: CGFloat = 1.25
         static let progressChangeDuration: TimeInterval = 0.25
     }
 
@@ -117,12 +118,11 @@ final class AIChatUsageWarningRingView: NSView {
         }
     }
 
-    /// The status triad, so the ring reads the same as the Duck.ai web app's: green, then orange, then
-    /// red. iOS still steps grey → yellow → red; its palette has no orange to move to.
+    /// Neutral, then yellow from 75%, then red from 90%.
     private static func progressColor(for severity: DuckAiUsageSeverity) -> DesignSystemColor {
         switch severity {
-        case .info: return .statusGreen
-        case .warning: return .statusYellowPrimary
+        case .info: return .iconsPrimary
+        case .warning: return .statusYellowSecondary
         case .critical, .reached: return .statusRed
         }
     }

@@ -90,10 +90,13 @@ final class BrowserToolbarViewTests: XCTestCase {
             return view.subviews.lazy.compactMap { visualEffectView(in: $0) }.first
         }
 
-        let glass = visualEffectView(in: sut)
-        XCTAssertEqual(glass?.transform.a, 1, accuracy: 0.001)
-        XCTAssertEqual(glass?.transform.d, 1, accuracy: 0.001)
-        XCTAssertEqual(glass?.transform.ty, 0, accuracy: 0.001)
+        guard let glass = visualEffectView(in: sut) else {
+            XCTFail("Missing glass effect view")
+            return
+        }
+        XCTAssertEqual(glass.transform.a, 1, accuracy: 0.001)
+        XCTAssertEqual(glass.transform.d, 1, accuracy: 0.001)
+        XCTAssertEqual(glass.transform.ty, 0, accuracy: 0.001)
     }
 
     func testWhenStandaloneCollapseProgressIsAppliedThenIconsAreNotInsideGlassContentView() {
@@ -172,29 +175,142 @@ final class BrowserToolbarViewTests: XCTestCase {
             accuracy: 0.01)
     }
 
-    func testWhenStandaloneFloatingThenOuterInsetIsTwentyFourPoints() {
+    func testWhenStandaloneFloatingThenOuterInsetFollowsConcentricSafeArea() {
         let sut = makeSUT(embeddedOmnibar: false)
-        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        // The safe area layout guide only resolves inside a window; without one it stays empty
+        // and the trailing edge is measured against a degenerate guide.
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        let container = UIView(frame: window.bounds)
+        window.addSubview(container)
+        window.makeKeyAndVisible()
         container.addSubview(sut)
+        container.layoutIfNeeded()
 
         let frame = sut.restingCapsuleFrame(in: container)
 
-        XCTAssertEqual(BrowserToolbarView.floatingStandaloneHorizontalInset, 24)
         XCTAssertEqual(BrowserToolbarView.floatingStandaloneButtonRowHorizontalPadding, 16)
-        XCTAssertEqual(frame.minX, 24, accuracy: 0.01)
-        XCTAssertEqual(container.bounds.width - frame.maxX, 24, accuracy: 0.01)
+        if #available(iOS 26.0, *) {
+            let guide = container.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+            let expected = guide.layoutFrame.minX + BrowserToolbarView.floatingConcentricGlassInset
+            XCTAssertEqual(frame.minX, expected, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, expected, accuracy: 0.01)
+        } else {
+            XCTAssertEqual(BrowserToolbarView.floatingStandaloneHorizontalInset, 24)
+            XCTAssertEqual(frame.minX, 24, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, 24, accuracy: 0.01)
+        }
     }
 
-    func testWhenEmbeddedFloatingThenOuterInsetStaysSixteenPoints() {
+    func testWhenEmbeddedFloatingThenOuterInsetIsEqualOnEveryEdge() {
         let sut = makeSUT(embeddedOmnibar: true)
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
         container.addSubview(sut)
+        container.layoutIfNeeded()
 
         let frame = sut.restingCapsuleFrame(in: container)
 
-        XCTAssertEqual(BrowserToolbarView.floatingEmbeddedHorizontalInset, 16)
-        XCTAssertEqual(frame.minX, 16, accuracy: 0.01)
-        XCTAssertEqual(container.bounds.width - frame.maxX, 16, accuracy: 0.01)
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+        } else {
+            XCTAssertEqual(BrowserToolbarView.floatingEmbeddedHorizontalInset, 16)
+            XCTAssertEqual(frame.minX, 16, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, 16, accuracy: 0.01)
+        }
+    }
+
+    func testWhenHorizontalGuideInsetIsSmallerThanConcentricInsetThenInnerInsetFillsTheGap() {
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: 0), concentric, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: 16), concentric - 16, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: concentric), 0, accuracy: 0.01)
+    }
+
+    func testWhenHorizontalGuideInsetExceedsConcentricInsetThenInnerInsetIsClampedToZero() {
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: concentric + 1), 0, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: 59), 0, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: -8), concentric, accuracy: 0.01)
+    }
+
+    func testWhenGuidesAreAsymmetricThenEachEdgeIsCompensatedFromItsOwnGuide() {
+        guard #available(iOS 26.0, *) else { return }
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        // Landscape with the Dynamic Island on the leading edge only.
+        let container = SafeAreaStubView(frame: CGRect(x: 0, y: 0, width: 844, height: 390))
+        container.stubbedSafeAreaInsets = UIEdgeInsets(top: 0, left: concentric + 39, bottom: 21, right: 0)
+        let sut = makeSUT(embeddedOmnibar: true)
+        container.addSubview(sut)
+        container.layoutIfNeeded()
+
+        let frame = sut.restingCapsuleFrame(in: container)
+        let guideInsets = BrowserToolbarView.horizontalGuideInsets(in: container)
+
+        // Each edge sits at its own guide, or at the concentric inset when the guide is smaller.
+        XCTAssertEqual(frame.minX, max(guideInsets.left, concentric), accuracy: 0.01)
+        XCTAssertEqual(container.bounds.width - frame.maxX, max(guideInsets.right, concentric), accuracy: 0.01)
+        // The wide leading guide must not pull the opposite edge inside the concentric inset.
+        XCTAssertGreaterThanOrEqual(container.bounds.width - frame.maxX, concentric - 0.01)
+    }
+
+    func testWhenGuideGapExceedsConcentricInsetThenGlassShiftsDown() {
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        // Home indicator: the guide stops short of the bottom, so the glass moves down to it.
+        XCTAssertEqual(
+            BrowserToolbarView.embeddedRestStateBottomOffset(guideBottomGap: 34),
+            34 - concentric,
+            accuracy: 0.01)
+    }
+
+    func testWhenGuideReachesPhysicalBottomThenGlassShiftsUpToKeepTheInset() {
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        // No home indicator: the guide already sits at the bottom, so the glass must move up to
+        // leave the same inset that restingCapsuleFrame reports, rather than sitting flush.
+        XCTAssertEqual(
+            BrowserToolbarView.embeddedRestStateBottomOffset(guideBottomGap: 0),
+            -concentric,
+            accuracy: 0.01)
+        XCTAssertEqual(
+            BrowserToolbarView.embeddedRestStateBottomOffset(guideBottomGap: concentric),
+            0,
+            accuracy: 0.01)
+    }
+
+    func testWhenSafeAreaGuideIsUnresolvedThenCapsuleStaysWithinBounds() {
+        guard #available(iOS 26.0, *) else { return }
+        // No window, so the corner-adapted guide never resolves and its layout frame is empty.
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+
+        for embedded in [true, false] {
+            let sut = makeSUT(embeddedOmnibar: embedded)
+            container.addSubview(sut)
+            container.layoutIfNeeded()
+
+            let frame = sut.restingCapsuleFrame(in: container)
+
+            XCTAssertGreaterThanOrEqual(frame.width, 0, "embedded: \(embedded)")
+            XCTAssertGreaterThanOrEqual(frame.minX, 0, "embedded: \(embedded)")
+            XCTAssertLessThanOrEqual(frame.maxX, container.bounds.maxX, "embedded: \(embedded)")
+            sut.removeFromSuperview()
+        }
+    }
+
+    func testWhenBottomOmnibarDetachesForFocusThenOuterInsetsStayUnchanged() {
+        let sut = makeSUT(embeddedOmnibar: true)
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        container.addSubview(sut)
+        sut.prepareForOmnibarDetachment()
+        sut.applyOmnibarDetachmentPose()
+        container.layoutIfNeeded()
+
+        let frame = sut.restingCapsuleFrame(in: container)
+
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+        }
     }
 
     func testWhenStandaloneFloatingThenBottomMarginIsTwentyOnePoints() {
@@ -202,6 +318,23 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         XCTAssertEqual(BrowserToolbarView.floatingStandaloneBottomMargin, 21)
         XCTAssertEqual(sut.floatingBottomMargin, 21, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .top), 24)
+        XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .top), 21)
+    }
+
+    func testWhenEmbeddedFloatingThenBottomMarginMatchesPlatformGeometry() {
+        let sut = makeSUT(embeddedOmnibar: true)
+
+        XCTAssertEqual(BrowserToolbarView.floatingEmbeddedBottomMargin, 16)
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(sut.floatingBottomMargin, 20, accuracy: 0.01)
+            XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .bottom), 20)
+            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 20)
+        } else {
+            XCTAssertEqual(sut.floatingBottomMargin, 16, accuracy: 0.01)
+            XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .bottom), 16)
+            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .bottom), 16)
+        }
     }
 
     func testWhenStandaloneFloatingThenButtonsAreEvenlySpacedAndFireButtonIsCentered() {
@@ -266,4 +399,16 @@ final class BrowserToolbarViewTests: XCTestCase {
             115,
             accuracy: 0.01)
     }
+}
+
+private final class SafeAreaStubView: UIView {
+
+    var stubbedSafeAreaInsets: UIEdgeInsets = .zero {
+        didSet { setNeedsLayout() }
+    }
+
+    override var safeAreaInsets: UIEdgeInsets {
+        stubbedSafeAreaInsets
+    }
+
 }

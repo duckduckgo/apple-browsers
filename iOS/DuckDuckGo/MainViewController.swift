@@ -5612,7 +5612,8 @@ extension MainViewController: OmniBarDelegate {
             // on it makes UIGlassEffect move independently of the icons.
         } else {
             attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)
-            attach(to: viewCoordinator.toolbar, onEdge: .bottom)
+            // The toolbar is already pinned to the concentric layout guides. A scroll-edge
+            // interaction would apply a second, larger device-concentric inset.
         }
     }
 

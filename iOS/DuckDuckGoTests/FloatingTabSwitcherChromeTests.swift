@@ -232,6 +232,34 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         chrome.applyCollectionContentInset(to: collectionView)
 
         XCTAssertEqual(collectionView.contentInset.top, 58)
+        XCTAssertEqual(collectionView.contentInsetAdjustmentBehavior, .never)
+        XCTAssertEqual(collectionView.contentOffset.y, -58)
+        XCTAssertEqual(chrome.topBarBottomOffset, 58)
+    }
+
+    func testWhenCollectionContentInsetIsAppliedToBothPagesThenTopInsetsMatch() {
+        let chrome = FloatingTabSwitcherChrome()
+        let normalPage = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+        let firePage = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+
+        chrome.applyCollectionContentInset(to: normalPage)
+        chrome.applyCollectionContentInset(to: firePage)
+
+        XCTAssertEqual(normalPage.contentInset.top, firePage.contentInset.top)
+        XCTAssertEqual(normalPage.contentOffset.y, firePage.contentOffset.y)
+        XCTAssertEqual(normalPage.contentInsetAdjustmentBehavior, .never)
+        XCTAssertEqual(firePage.contentInsetAdjustmentBehavior, .never)
+    }
+
+    func testWhenEmptyStateClearanceIsAppliedThenItSitsBelowNavbarAndAbovePictogram() {
+        XCTAssertEqual(TabSwitcherPageViewController.FireModeEmptyStateMetrics.spacingBelowNavbar, 10)
+        XCTAssertEqual(TabSwitcherPageViewController.FireModeEmptyStateMetrics.estimatedFloatingTopClearance, 68)
+        XCTAssertEqual(FireModeEmptyStateView.Constants.mainTopPadding, 24)
+
+        let chrome = FloatingTabSwitcherChrome()
+        XCTAssertEqual(
+            chrome.topBarBottomOffset + TabSwitcherPageViewController.FireModeEmptyStateMetrics.spacingBelowNavbar,
+            TabSwitcherPageViewController.FireModeEmptyStateMetrics.estimatedFloatingTopClearance)
     }
 
     func testWhenLargeSizeHasSingleEmptyTabThenEditMenuIsDisabled() {
@@ -333,6 +361,31 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
             $0.firstItem is UINavigationBar && $0.firstAttribute == .top
         }
         XCTAssertTrue((topConstraint?.secondItem as? UILayoutGuide) === host.layoutMarginsGuide)
+    }
+
+    func testWhenLayoutIsAppliedThenToolbarUsesDeviceConcentricInsets() {
+        let chrome = FloatingTabSwitcherChrome()
+        let host = UIView()
+        let content = UIScrollView()
+        chrome.install(in: host, contentView: content)
+
+        chrome.layout(addressBarPosition: .top, interfaceMode: .regularSize)
+
+        let leading = host.constraints.first { $0.firstItem === chrome.toolbar && $0.firstAttribute == .leading }
+        let trailing = host.constraints.first { $0.firstItem === chrome.toolbar && $0.firstAttribute == .trailing }
+        let bottom = host.constraints.first { $0.firstItem === chrome.toolbar && $0.firstAttribute == .bottom }
+
+        if #available(iOS 26.0, *) {
+            let horizontalGuide = host.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+            let verticalGuide = host.layoutGuide(for: .safeArea(cornerAdaptation: .vertical))
+            XCTAssertTrue((leading?.secondItem as? UILayoutGuide) === horizontalGuide)
+            XCTAssertTrue((trailing?.secondItem as? UILayoutGuide) === horizontalGuide)
+            XCTAssertTrue((bottom?.secondItem as? UILayoutGuide) === verticalGuide)
+        } else {
+            XCTAssertTrue((leading?.secondItem as? UILayoutGuide) === host.safeAreaLayoutGuide)
+            XCTAssertTrue((trailing?.secondItem as? UILayoutGuide) === host.safeAreaLayoutGuide)
+            XCTAssertTrue((bottom?.secondItem as? UILayoutGuide) === host.safeAreaLayoutGuide)
+        }
     }
 
     func testWhenLayoutIsAppliedThenFallbackTopBackgroundCoversContentBeforeIOS26() {

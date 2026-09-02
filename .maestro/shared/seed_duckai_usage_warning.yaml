@@ -20,18 +20,20 @@ appId: com.duckduckgo.mobile.ios
     centerElement: false
 - tapOn: "All debug options"
 
-# The debug screen is pushed asynchronously. Without this wait the scroll below can start while
-# Settings is still up, walk it to the bottom looking for a row it does not have, and fail with
-# `No visible element found: "AI Chat"`. Deliberately not anchored on a row: the first row sits
-# under the search bar, and asserting it failed on the second seed in a flow that seeds twice.
-- waitForAnimationToEnd:
-    timeout: 5000
-
-- scrollUntilVisible:
-    element:
-        text: "AI Chat"
-    direction: DOWN
-    centerElement: false
+# Filter rather than scroll. "AI Chat" is the first row of the Screens section but still sits below
+# the fold, and `scrollUntilVisible` only scrolls down: a fling that carries past the row cannot
+# recover, so it walks the remaining ~50 rows and fails with `No visible element found: "AI Chat"`.
+# That flaked on whichever warning flow drew it, and neither an animation wait nor a row assertion
+# helped, because the transition was never the problem. Filtering needs no scrolling at all.
+#
+# `tapOn` waits for its element, and "Filter" exists only on the debug screen, so this also covers
+# the screen transition that the previous animation wait was there for.
+#
+# "ai ch" rather than the full title: it matches exactly one of the 51 screen titles, it matches no
+# feature-flag rawValue (those are camelCase, so the space rules them out), and it keeps the text
+# we type from colliding with the row we tap next.
+- tapOn: "Filter"
+- inputText: "ai ch"
 - tapOn: "AI Chat"
 
 - scrollUntilVisible:

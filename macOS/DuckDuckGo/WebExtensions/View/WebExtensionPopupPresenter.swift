@@ -79,9 +79,6 @@ final class WebExtensionPopupPresenter {
         static let measurePageScript = """
         [document.documentElement.scrollWidth, document.documentElement.scrollHeight]
         """
-
-        /// Time the background content gets to start before we log a warning.
-        static let backgroundStartWarningDelay: TimeInterval = 5
     }
 
     private var panel: WebExtensionPopupPanel?
@@ -91,8 +88,6 @@ final class WebExtensionPopupPresenter {
     private weak var popupWebView: WKWebView?
     private var loadingObservation: NSKeyValueObservation?
     private var clickMonitor: Any?
-    private var backgroundLoadTask: Task<Void, Never>?
-    private var backgroundContentReady = false
 
     /// Whether the popup of the given extension is on screen.
     func isShown(for context: WKWebExtensionContext) -> Bool {
@@ -148,56 +143,21 @@ final class WebExtensionPopupPresenter {
         panel.orderFront(nil)
         panel.makeKey()
 
+        // Read-only state. Never drive the extension from here: a call such as
+        // `loadBackgroundContent()` makes WebKit hold the popup back until the background
+        // content is ready, and an extension whose worker never starts then shows no popup.
         Logger.webExtensions.debug("""
         🧩 Popup of \(context.uniqueIdentifier) shown at \(NSStringFromRect(panel.frame), privacy: .public), \
-        page \(popupWebView.url?.absoluteString ?? "nil", privacy: .public)
+        page \(popupWebView.url?.absoluteString ?? "nil", privacy: .public), \
+        hasBackgroundContent=\(context.webExtension.hasBackgroundContent, privacy: .public)
         """)
 
         observePopupSize(of: popupWebView)
-        reportBackgroundContentState(for: context)
         startWatchingForClicksOutside()
     }
 
     private var popupBackgroundColor: NSColor {
         NSApp.delegateTyped.themeManager.theme.colorsProvider.popoverBackgroundColor
-    }
-
-    /// Logs whether the extension's background content starts.
-    ///
-    /// A popup that waits for its background content shows only its own spinner. Bitwarden
-    /// behaves this way. Its service worker needs `chrome.offscreen`, which WebKit does not
-    /// implement, so the worker never becomes ready. Without this log the popup looks broken
-    /// for no visible reason.
-    private func reportBackgroundContentState(for context: WKWebExtensionContext) {
-        guard context.webExtension.hasBackgroundContent else { return }
-
-        let identifier = context.uniqueIdentifier
-        backgroundContentReady = false
-        backgroundLoadTask?.cancel()
-
-        backgroundLoadTask = Task { @MainActor [weak self] in
-            let started = Date()
-
-            Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(Constants.backgroundStartWarningDelay))
-                guard let self, self.backgroundContentReady == false else { return }
-                Logger.webExtensions.error("""
-                ❌ Background content of \(identifier, privacy: .public) did not start within \
-                \(Int(Constants.backgroundStartWarningDelay), privacy: .public)s. \
-                The popup stays blank while it waits.
-                """)
-            }
-
-            do {
-                try await context.loadBackgroundContent()
-                self?.backgroundContentReady = true
-                let seconds = String(format: "%.2f", Date().timeIntervalSince(started))
-                Logger.webExtensions.debug("🧩 Background content of \(identifier, privacy: .public) ready in \(seconds, privacy: .public)s")
-            } catch {
-                self?.backgroundContentReady = true
-                Logger.webExtensions.error("❌ Background content of \(identifier, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-            }
-        }
     }
 
     // MARK: - Size
@@ -309,9 +269,6 @@ final class WebExtensionPopupPresenter {
 
         loadingObservation?.invalidate()
         loadingObservation = nil
-
-        backgroundLoadTask?.cancel()
-        backgroundLoadTask = nil
 
         // The web view belongs to WebKit, so hand it back rather than leaving it in our panel.
         popupWebView?.removeFromSuperview()

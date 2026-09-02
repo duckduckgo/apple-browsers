@@ -62,10 +62,8 @@ public struct LegacyPixelStateMigration {
     /// making it public would invite callers to write PixelKit's storage directly.
     private static let pixelKitKeyPrefix = "com.duckduckgo.network-protection.pixel."
 
-    /// The suite names legacy `DailyPixel`/`UniquePixel`/`Pixel` wrote their throttle state to in the
-    /// browser process. Every `UserDefaultsLegacyPixelStore` these two call sites construct
-    /// (`AppDependencyProvider`, `PixelKitExtensionSetup`) has to name the same three suites, so the
-    /// names live here rather than as call-site literals.
+    /// Suite names legacy `DailyPixel`/`UniquePixel`/`Pixel` wrote their throttle state to. Shared by
+    /// `AppDependencyProvider` and `PixelKitExtensionSetup` instead of repeating the literals.
     public enum LegacySuiteName {
         public static let daily = "com.duckduckgo.daily.pixel.storage"
         public static let unique = "com.duckduckgo.unique.pixel.storage"
@@ -108,9 +106,7 @@ public struct LegacyPixelStateMigration {
         var migrated = 0
         for source in sources {
             guard let store = source.store else {
-                // Normal for a process that doesn't configure every source, e.g. the VPN tunnel has
-                // no `debounceStore`. Logged at debug so a genuinely missing source is still visible
-                // without adding noise to the default log level.
+                // e.g. the VPN tunnel has no debounceStore - normal, so debug not error.
                 logger.debug("No legacy store configured for map key \(source.mapKey, privacy: .public); skipping")
                 continue
             }

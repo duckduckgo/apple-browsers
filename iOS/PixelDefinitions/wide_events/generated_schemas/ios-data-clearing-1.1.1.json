@@ -1559,9 +1559,7 @@
             "type": "object",
             "required": ["name"],
             "additionalProperties": false,
-            "properties": {
-                "name": { "type": "string", "description": "Context name for the event", "enum": ["funnel_default_ios"] }
-            }
+            "properties": { "name": { "type": "string", "description": "Context name for the event", "enum": ["funnel_default_ios"] } }
         }
     }
 }

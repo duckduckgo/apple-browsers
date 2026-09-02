@@ -391,6 +391,8 @@ public extension SubJobWebRunning {
             self.webViewHandler = handler
         } else {
             let applicationNameProvider: () -> String? = featureFlagger.isWebViewUserAgentOn ? applicationNameForUserAgentProvider : { nil }
+            let broker = context.dataBroker
+            let debugEventReporter = stageCalculator as? DebugEventReporting
             self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig,
                                                                                prefs: prefs,
                                                                                delegate: self,
@@ -401,7 +403,19 @@ public extension SubJobWebRunning {
                                                                                shouldContinueActionHandler: shouldRunNextStep,
                                                                                applicationNameForUserAgentProvider: applicationNameProvider,
                                                                                contentBlocking: contentBlocking,
-                                                                               pixelHandler: pixelHandler)
+                                                                               pixelHandler: pixelHandler,
+                                                                               actionLogContext: loggerContext(),
+                                                                               cloudflareChallengeEventHandler: { message in
+                                                                                   let details = """
+                                                                                   Broker: \(broker.name) \(broker.version)
+                                                                                   URL: \(broker.url)
+                                                                                   \(message)
+                                                                                   """
+                                                                                   debugEventReporter?.recordDebugEvent(
+                                                                                       kind: .cloudflare,
+                                                                                       actionType: nil,
+                                                                                       details: details)
+                                                                               })
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)

@@ -326,17 +326,12 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                         do {
                             addScanStartedEvent(for: query)
                             let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
-                                let profileQuery = self?.profileQueryText(for: query.profileQuery) ?? "-"
-                                let summary = self?.actionSummary(stepType: .scan,
-                                                                  actionType: actionType) ?? "-"
-                                let progressText = self?.currentActionText(stepType: .scan,
-                                                                           actionType: actionType,
-                                                                           prefix: kind.rawValue) ?? "-"
-                                self?.addDebugEvent(kind: kind,
-                                                    summary: summary,
-                                                    profileQueryLabel: profileQuery,
-                                                    details: details,
-                                                    progressText: progressText)
+                                self?.addRunnerDebugEvent(
+                                    kind: kind,
+                                    actionType: actionType,
+                                    details: details,
+                                    stepType: .scan,
+                                    brokerProfileQueryData: query)
                             }
                             let runner = BrokerProfileScanSubJobWebRunner(
                                 privacyConfig: self.privacyConfigManager,
@@ -427,16 +422,12 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         Task {
             do {
                 let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
-                    let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
-                    let summary = self?.actionSummary(stepType: .optOut, actionType: actionType) ?? "-"
-                    let progressText = self?.currentActionText(stepType: .optOut,
-                                                               actionType: actionType,
-                                                               prefix: kind.rawValue) ?? "-"
-                    self?.addDebugEvent(kind: kind,
-                                        summary: summary,
-                                        profileQueryLabel: profileQuery,
-                                        details: details,
-                                        progressText: progressText)
+                    self?.addRunnerDebugEvent(
+                        kind: kind,
+                        actionType: actionType,
+                        details: details,
+                        stepType: .optOut,
+                        brokerProfileQueryData: brokerProfileQueryData)
                 }
                 let runner = BrokerProfileOptOutSubJobWebRunner(
                     privacyConfig: self.privacyConfigManager,
@@ -611,6 +602,26 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             self.debugEvents.append(event)
         }
         updateProgress(progressText)
+    }
+
+    func addRunnerDebugEvent(kind: DebugEventKind,
+                             actionType: ActionType?,
+                             details: String,
+                             stepType: StepType,
+                             brokerProfileQueryData: BrokerProfileQueryData) {
+        let broker = brokerProfileQueryData.dataBroker
+        let summary = kind == .cloudflare
+            ? "\(broker.name) > Cloudflare"
+            : actionSummary(stepType: stepType, actionType: actionType)
+        let progressText = kind == .cloudflare
+            ? "Cloudflare: \(broker.name)"
+            : currentActionText(stepType: stepType, actionType: actionType, prefix: kind.rawValue)
+        addDebugEvent(
+            kind: kind,
+            summary: summary,
+            profileQueryLabel: profileQueryText(for: brokerProfileQueryData.profileQuery),
+            details: details,
+            progressText: progressText)
     }
 
     func addHistoryDebugEvent(summary: String, details: String) {

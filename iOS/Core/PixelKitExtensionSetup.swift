@@ -69,9 +69,9 @@ public enum PixelKitExtensionSetup {
         // process fires once more on the release that moves it to PixelKit.
         LegacyPixelStateMigration(
             destination: defaults,
-            dailyStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.daily.pixel.storage"),
-            uniqueStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.unique.pixel.storage"),
-            debounceStore: UserDefaultsLegacyPixelStore(suiteName: "com.duckduckgo.pixel.storage"),
+            dailyStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.daily),
+            uniqueStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.unique),
+            debounceStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.debounce),
             completionFlagStore: defaults
         ).run()
     }

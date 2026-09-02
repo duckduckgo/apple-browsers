@@ -40,6 +40,9 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
     private static let pixelKitSetup: Void = {
         if let sharedDefaults = UserDefaults.autofillGroupDefaults {
             PixelKitExtensionSetup.setUp(session: "ios-credential-provider", defaults: sharedDefaults)
+        } else {
+            Logger.autofill.fault("Missing User Defaults, not configuring PixelKit")
+            assertionFailure("Missing User Defaults, not configuring PixelKit")
         }
     }()
 

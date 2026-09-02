@@ -215,6 +215,36 @@ final class DuckAiUsageWarningViewModelTests: XCTestCase {
         XCTAssertNil(dismissalStore.actedSnapshot())
     }
 
+    /// Platforms that keep their own copy of the acted-on message key it to this, so clearing the
+    /// record releases them too.
+    func testWhenASwitchWasTakenOnTheCurrentNoticeThenItSaysSoUntilTheRecordIsCleared() {
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching),
+                                             cta: DuckAiUsageCta(id: .switchToCheaper),
+                                             signature: "snapshot-1")
+        let sut = makeSUT(suggestion: .suggestion(DuckAiModelSuggestion(modelId: "haiku", modelShortName: "Haiku")))
+        sut.refresh()
+        XCTAssertFalse(sut.hasActedOnCurrentNotice)
+
+        sut.performAction()
+        XCTAssertTrue(sut.hasActedOnCurrentNotice)
+
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching), signature: "snapshot-2")
+        sut.refresh()
+        XCTAssertTrue(sut.hasActedOnCurrentNotice)
+
+        dismissalStore.setActedSnapshot(nil)
+        XCTAssertFalse(sut.hasActedOnCurrentNotice)
+    }
+
+    func testWhenTheActedRecordIsForAnotherNoticeThenItDoesNotCount() {
+        dismissalStore.setActedSnapshot(DuckAiUsageWarningActedSnapshot(noticeID: "dailyReached", signature: "snapshot-1"))
+        snapshotProvider.snapshot = snapshot(notice(id: .approaching), signature: "snapshot-1")
+        let sut = makeSUT()
+        sut.refresh()
+
+        XCTAssertFalse(sut.hasActedOnCurrentNotice)
+    }
+
     // MARK: - Switching from the bar's own picker
 
     /// Picking a model the message offered is the same as taking its button.

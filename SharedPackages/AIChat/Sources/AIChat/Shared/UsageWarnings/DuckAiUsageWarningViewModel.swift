@@ -145,6 +145,13 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         onOpenModelPicker?()
     }
 
+    /// Whether a switch was taken on the notice in the current snapshot, whatever web has published
+    /// since: the record outlives the signature match that hides the message.
+    public var hasActedOnCurrentNotice: Bool {
+        guard let notice = lastReadSnapshot.notice, let acted = dismissalStore.actedSnapshot() else { return false }
+        return acted.noticeID == notice.id.rawValue
+    }
+
     /// Teardown: drops the message without recording a dismissal.
     public func clear() {
         warning = nil

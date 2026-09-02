@@ -245,9 +245,11 @@ final class UTIFooterController {
         return nil
     }
 
-    /// Releases as soon as the resolver produces a different message, so the next rung still shows.
+    /// Releases as soon as the resolver produces a different message, so the next rung still shows,
+    /// and once the acted-on record is gone, so clearing it is not undone by this copy.
     private func unlessActedOn(_ message: UTIFooterMessage) -> UTIFooterMessage? {
-        message == actedOnMessage ? nil : message
+        guard viewModel.hasActedOnCurrentNotice, message == actedOnMessage else { return message }
+        return nil
     }
 
     static let springAnimator: Animator = { changes in

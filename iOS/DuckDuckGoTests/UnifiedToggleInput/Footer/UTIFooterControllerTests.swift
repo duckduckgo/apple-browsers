@@ -25,6 +25,7 @@ import XCTest
 final class UTIFooterControllerTests: XCTestCase {
 
     private var limitsProvider: StubUsageLimitsProvider!
+    private var dismissalStore: InMemoryDuckAiUsageWarningDismissalStore!
     private var presenter: SpyUTIFooterPresenter!
     private var viewModel: DuckAiUsageWarningViewModel!
     private var measurementFiring: RecordingUsageWarningPixelFiring!
@@ -38,6 +39,7 @@ final class UTIFooterControllerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         limitsProvider = StubUsageLimitsProvider()
+        dismissalStore = InMemoryDuckAiUsageWarningDismissalStore()
         presenter = SpyUTIFooterPresenter()
         measurementFiring = RecordingUsageWarningPixelFiring()
         createImagePixelFiring = MockCreateImagePixelFiring()
@@ -61,6 +63,7 @@ final class UTIFooterControllerTests: XCTestCase {
         presenter = nil
         measurementFiring = nil
         createImagePixelFiring = nil
+        dismissalStore = nil
         limitsProvider = nil
         super.tearDown()
     }
@@ -323,6 +326,32 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
 
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("90%") ?? false)
+    }
+
+    /// Web republishing the same message under a new payload right after the switch must not read as
+    /// the button having done nothing.
+    func test_performPrimaryAction_keepsAnIdenticalRepublishedMessageHidden() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.performPrimaryAction()
+
+        limitsProvider.limits = weeklyUsage(50, signature: "snapshot-50-republished")
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    /// The debug menu clears the persisted record; the controller's own copy must not outlive it.
+    func test_performPrimaryAction_showsTheMessageAgainOnceTheActedRecordIsCleared() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.performPrimaryAction()
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+
+        dismissalStore.setActedSnapshot(nil)
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("50%") ?? false)
     }
 
     /// The upsell is not a switch: the user is still blocked, so the message stays up.
@@ -756,14 +785,14 @@ final class UTIFooterControllerTests: XCTestCase {
     private func makeViewModel() -> DuckAiUsageWarningViewModel {
         DuckAiUsageWarningViewModel(
             snapshotProvider: limitsProvider,
-            dismissalStore: InMemoryDuckAiUsageWarningDismissalStore(),
+            dismissalStore: dismissalStore,
             modelSuggester: StubCheaperModelSuggester(),
             dateProvider: { [unowned self] in now }
         )
     }
 
     /// An approaching notice with a cheaper-model CTA — what the footer shows most of the time.
-    private func weeklyUsage(_ percent: Int) -> DuckAiUsageSnapshot {
+    private func weeklyUsage(_ percent: Int, signature: String? = nil) -> DuckAiUsageSnapshot {
         DuckAiUsageSnapshot(
             notice: DuckAiUsageNotice(id: .approaching,
                                       window: .weekly,
@@ -773,7 +802,7 @@ final class UTIFooterControllerTests: XCTestCase {
                                       dismissible: true),
             cta: DuckAiUsageCta(id: .switchToCheaper,
                                 target: .init(modelId: "gpt-5.4-mini", modelIds: ["gpt-5.4-mini"])),
-            signature: "snapshot-\(percent)"
+            signature: signature ?? "snapshot-\(percent)"
         )
     }
 

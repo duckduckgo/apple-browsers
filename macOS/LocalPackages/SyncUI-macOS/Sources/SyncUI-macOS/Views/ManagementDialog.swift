@@ -27,7 +27,9 @@ public enum ManagementDialogKind: Equatable {
     case deleteAccount(_ devices: [SyncDevice])
     case turnOffSync
     case deviceDetails(_ device: SyncDevice)
+    case deviceDetailsV2(_ device: SyncDevice)
     case removeDevice(_ device: SyncDevice)
+    case removeDeviceV2(_ device: SyncDevice)
     case syncWithAnotherDevice(codeForDisplayOrPasting: String, stringForQRCode: String)
     case prepareToSync(PreparingToSyncMode)
     case saveRecoveryCode(_ code: String)
@@ -91,8 +93,12 @@ public struct ManagementDialog: View {
                 TurnOffSyncView()
             case .deviceDetails(let device):
                 DeviceDetailsView(device: device)
+            case .deviceDetailsV2(let device):
+                DeviceDetailsViewV2(device: device)
             case .removeDevice(let device):
                 RemoveDeviceView(device: device)
+            case .removeDeviceV2(let device):
+                RemoveDeviceViewV2(device: device)
             case .deleteAccount(let devices):
                 DeleteAccountView(devices: devices)
             case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):

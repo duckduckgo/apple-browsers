@@ -74,11 +74,14 @@ final class NativeMessagingHostSession {
                 if status == 0 {
                     Logger.webExtensions.debug("🔗 Host \(name, privacy: .public) ended normally")
                 } else {
-                    // A host that quits at once usually has nothing to talk to. Bitwarden's
-                    // proxy, for one, needs its desktop app to run and to offer an IPC socket.
+                    // Two causes look the same here. The host may have nothing to talk to,
+                    // as Bitwarden's proxy does without its desktop app. Or it refused us,
+                    // as 1Password's does for a browser it does not know. The refusal comes
+                    // as a message, so the preceding "sent N bytes, type …" line tells which.
                     Logger.webExtensions.error("""
                     ❌ Host \(name, privacy: .public) ended with status \(status, privacy: .public). \
-                    Check that its companion app runs, and that the app allows browser integration.
+                    Either its companion app is absent, or the host refused us. \
+                    Any message it sent above names the reason.
                     """)
                 }
                 self?.finish(with: SessionError.hostEnded)
@@ -164,6 +167,8 @@ final class NativeMessagingHostSession {
                     guard let payload = try Self.readExactly(length, from: handle) else { break }
                     let message = try NativeMessagingFraming.decodePayload(payload)
 
+                    Logger.webExtensions.debug("🔗 Host \(name, privacy: .public) sent \(length, privacy: .public) bytes\(Self.kindSummary(of: message), privacy: .public)")
+
                     await MainActor.run { [weak self] in
                         self?.messageHandler?(message)
                     }
@@ -195,6 +200,33 @@ final class NativeMessagingHostSession {
                 Logger.webExtensions.error("❌ Host \(name, privacy: .public) stderr: \(text, privacy: .public)")
             }
         }
+    }
+
+    /// Describes a host message by its `type` fields only.
+    ///
+    /// A host refusal arrives as an ordinary message, not on standard error. 1Password, for
+    /// one, answers `BrowserVerificationFailed` and then quits, and without this the log shows
+    /// only the exit status. The payload can carry vault data, so this reads the `type` keys
+    /// of the top two levels and nothing else.
+    private static func kindSummary(of message: Any) -> String {
+        var kinds: [String] = []
+        var node: Any? = message
+
+        // Hosts nest a tagged enum under `content`, so follow that chain and read the tags.
+        for _ in 0..<4 {
+            guard let dictionary = node as? [String: Any] else {
+                if let tag = node as? String { kinds.append(tag) }
+                break
+            }
+            if let type = dictionary["type"] as? String {
+                kinds.append(type)
+            }
+            guard let content = dictionary["content"] else { break }
+            node = content
+        }
+
+        guard !kinds.isEmpty else { return "" }
+        return ", type " + kinds.joined(separator: "/").prefix(120)
     }
 
     /// Reads exactly `count` bytes, or returns `nil` once the host closes its output.

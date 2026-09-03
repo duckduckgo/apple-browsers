@@ -101,11 +101,17 @@ final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
     func hide() {
         presentedMainViewController?.bookmarksBarViewController.retractBookmarksBarPromptIfNeeded()
 
-        // If the user hasn't made a choice yet, this is the queue retracting the promo. Undo the
-        // visibility we forced on in show(), otherwise the bar is left on with no way back and a
-        // later show() mistakes it for the user already knowing about the bar.
+        // A pending continuation means the queue retracts the promo before the user makes a choice.
+        // We need to undo the visibility that show() forced on.
+        //
+        // Do not hide the bar in the same runloop turn as the animated close of the popover. The bar
+        // holds the positioning view of the popover. If you remove that view during the close, AppKit
+        // keeps the popover and its content view controller in memory. The user-dismiss path hides
+        // the bar one turn later, through receive(on: DispatchQueue.main); we do the same here.
         if resultContinuation != nil, let mainViewController = presentedMainViewController {
-            mainViewController.updateBookmarksBarViewVisibility(visible: mainViewController.shouldShowBookmarksBar)
+            DispatchQueue.main.async {
+                mainViewController.updateBookmarksBarViewVisibility(visible: mainViewController.shouldShowBookmarksBar)
+            }
         }
 
         resume(with: .noChange)

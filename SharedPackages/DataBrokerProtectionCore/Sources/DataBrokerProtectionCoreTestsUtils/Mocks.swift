@@ -688,7 +688,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var brokers = [DataBroker]()
     public var scanJobData = [ScanJobData]()
     public var optOutJobData = [OptOutJobData]()
-    public var updatedProfileQueries = [ProfileQuery]()
     public var lastPreferredRunDateOnScan: Date?
     public var lastPreferredRunDateOnOptOut: Date?
     public var lastSavedBrokerResource: BrokerResource?
@@ -723,7 +722,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         brokers.removeAll()
         scanJobData.removeAll()
         optOutJobData.removeAll()
-        updatedProfileQueries.removeAll()
         lastPreferredRunDateOnScan = nil
         lastPreferredRunDateOnOptOut = nil
         lastSavedBrokerResource = nil
@@ -955,7 +953,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func update(_ profileQuery: ProfileQuery, brokerIDs: [Int64], profileId: Int64) throws -> Int64 {
         wasUpdateProfileQueryCalled = true
-        updatedProfileQueries.append(profileQuery)
         return 1
     }
 

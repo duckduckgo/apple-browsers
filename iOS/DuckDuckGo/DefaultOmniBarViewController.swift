@@ -558,7 +558,10 @@ extension DefaultOmniBarViewController {
 
         // The attach button shares the same store so its limits and accepted types track the selected
         // model. The strip view owns the pending attachments; the controller reads and mutates it.
-        let attachmentControllerInstance = IPadOmnibarAttachmentController(store: controller.modelStore)
+        let attachmentControllerInstance = IPadOmnibarAttachmentController(
+            store: controller.modelStore,
+            keepsUnavailableAttachmentButtonVisible: isUpdatedCreateImageEnabled
+        )
         attachmentController = attachmentControllerInstance
         attachmentControllerInstance.attachmentsStripView = omniBarView.attachmentsStripView
         attachmentControllerInstance.presenterProvider = { [weak self] in
@@ -675,8 +678,8 @@ extension DefaultOmniBarViewController {
     }
 
     private func refreshAttachButton() {
-        // A nil menu hides the button — i.e. when the selected model accepts no attachments.
         omniBarView.aiChatAttachmentMenu = attachmentController?.makeMenu()
+        omniBarView.isAIChatAttachmentButtonVisible = attachmentController?.isAttachButtonVisible ?? false
     }
 
     private func fireIPadUnifiedPromptSubmittedPixels(hasText: Bool, isFirstPromptNewInstall: Bool) {

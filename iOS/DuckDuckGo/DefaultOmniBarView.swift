@@ -615,8 +615,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         didSet { refreshAttachButtonVisibility() }
     }
 
-    /// The menu offering photo / camera / file pickers. Setting it enables the button's primary
-    /// action; setting it nil hides the button — i.e. when the selected model accepts no attachments.
+    /// Whether the attach button should occupy its toolbar slot. Kept separate from the menu so an
+    /// unavailable button can remain visible but disabled.
+    var isAIChatAttachmentButtonVisible: Bool = false {
+        didSet { refreshAttachButtonVisibility() }
+    }
+
+    /// The menu offering photo / camera / file pickers. A nil menu disables the visible button.
     var aiChatAttachmentMenu: UIMenu? {
         get { attachButton.menu }
         set {
@@ -627,7 +632,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private var canShowAttachButton: Bool {
-        isAttachButtonEnabled && attachButton.menu != nil
+        isAttachButtonEnabled && isAIChatAttachmentButtonVisible
     }
 
     /// The strip of pending attachments shown above the toolbar row when attachments are present.
@@ -2272,6 +2277,7 @@ extension DefaultOmniBarView {
     }
 
     private func refreshAttachButtonVisibility() {
+        attachButton.isEnabled = isAttachButtonEnabled && attachButton.menu != nil
         // Attach availability drives where the tool picker anchors, so re-evaluate it on every call
         // (including the early-return paths below).
         updateToolPickerLeadingConstraint()

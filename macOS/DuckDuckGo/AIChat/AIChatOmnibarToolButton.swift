@@ -512,7 +512,8 @@ final class AIChatOmnibarToolButton: NSView {
             return
         }
         lastHoverEventTimestamp = event.timestamp
-        isHovered = hovering && isEnabled
+        let canShowHover = NSEvent.pressedMouseButtons == 0 || isMouseDown
+        isHovered = hovering && isEnabled && canShowHover
         if !hovering {
             isMouseDown = false
         }
@@ -524,8 +525,8 @@ final class AIChatOmnibarToolButton: NSView {
     }
 
     override func mouseMoved(with event: NSEvent) {
-        updateHoverState(true, from: event)
         isMouseDown = false
+        updateHoverState(true, from: event)
         NSCursor.arrow.set()
     }
 
@@ -556,7 +557,7 @@ final class AIChatOmnibarToolButton: NSView {
                 return
             }
         }
-        isMouseDown = false
+        resetTransientFillState()
     }
 
     override func keyDown(with event: NSEvent) {

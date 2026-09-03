@@ -372,7 +372,8 @@ final class AIChatModelPickerButton: NSView {
             return
         }
         lastHoverEventTimestamp = event.timestamp
-        isHovered = hovering && isEnabled && !isReadOnly
+        let canShowHover = NSEvent.pressedMouseButtons == 0 || isMouseDown
+        isHovered = hovering && isEnabled && !isReadOnly && canShowHover
         if !hovering {
             isMouseDown = false
         }
@@ -384,8 +385,8 @@ final class AIChatModelPickerButton: NSView {
     }
 
     override func mouseMoved(with event: NSEvent) {
-        updateHoverState(true, from: event)
         isMouseDown = false
+        updateHoverState(true, from: event)
         NSCursor.arrow.set()
     }
 
@@ -416,7 +417,7 @@ final class AIChatModelPickerButton: NSView {
                 return
             }
         }
-        isMouseDown = false
+        resetTransientFillState()
     }
 
     override func keyDown(with event: NSEvent) {

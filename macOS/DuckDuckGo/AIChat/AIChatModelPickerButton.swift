@@ -324,6 +324,7 @@ final class AIChatModelPickerButton: NSView {
     // MARK: - Hover Tracking
 
     private var trackingArea: NSTrackingArea?
+    private var lastHoverEventTimestamp: TimeInterval = 0
 
     private func setupHoverTracking() {
         updateTrackingAreas()
@@ -338,7 +339,7 @@ final class AIChatModelPickerButton: NSView {
 
         let newTrackingArea = NSTrackingArea(
             rect: bounds,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow],
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
             owner: self,
             userInfo: nil
         )
@@ -347,19 +348,6 @@ final class AIChatModelPickerButton: NSView {
 
         // A new tracking area reports nothing about a pointer already outside it.
         refreshHoverState()
-    }
-
-    override func mouseEntered(with event: NSEvent) {
-        isHovered = isEnabled && !isReadOnly
-        NSCursor.arrow.set()
-    }
-
-    override func mouseMoved(with event: NSEvent) {
-        NSCursor.arrow.set()
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        isHovered = false
     }
 
     /// For the cases where the tracking area can't be trusted — see `sendMenuOpeningAction`.
@@ -374,6 +362,35 @@ final class AIChatModelPickerButton: NSView {
     func resetTransientFillState() {
         isMouseDown = false
         refreshHoverState()
+    }
+
+    /// AppKit can deliver an older enter event after a newer exit event. Trusting that enter
+    /// unconditionally would leave the hover fill visible until the pointer crosses the view again.
+    private func updateHoverState(_ hovering: Bool, from event: NSEvent) {
+        guard event.timestamp >= lastHoverEventTimestamp else {
+            refreshHoverState()
+            return
+        }
+        lastHoverEventTimestamp = event.timestamp
+        isHovered = hovering && isEnabled && !isReadOnly
+        if !hovering {
+            isMouseDown = false
+        }
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        updateHoverState(true, from: event)
+        NSCursor.arrow.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        updateHoverState(true, from: event)
+        isMouseDown = false
+        NSCursor.arrow.set()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        updateHoverState(false, from: event)
     }
 
     override func mouseDown(with event: NSEvent) {

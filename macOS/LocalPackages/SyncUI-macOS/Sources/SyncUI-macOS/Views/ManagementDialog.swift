@@ -96,7 +96,11 @@ public struct ManagementDialog: View {
             case .deleteAccount(let devices):
                 DeleteAccountView(devices: devices)
             case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):
-                SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
+                if model.isSimplifiedSyncSetupV2Enabled {
+                    SyncWithAnotherDeviceViewV2(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
+                } else {
+                    SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
+                }
             case .prepareToSync(let mode):
                 PreparingToSyncView(mode: mode)
             case .saveRecoveryCode(let code):

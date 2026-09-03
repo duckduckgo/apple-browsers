@@ -19,27 +19,80 @@
 #if os(macOS)
 import AppKit
 import Foundation
-import ObjectiveC.runtime
-import os
 import Vision
 import WebKit
 
 @MainActor
 final class ChallengeOffscreenPanel: NSPanel {
-    private static var nextSlot = 0
+    private var isObservingSystemChanges = false
 
-    static func nextOrigin(for size: NSSize) -> NSPoint {
-        let slot = nextSlot
-        nextSlot += 1
+    func presentOffscreen() {
+        moveOffscreen()
+        startObservingSystemChanges()
+        orderFrontRegardless()
+    }
+
+    func dismissOffscreen() {
+        stopObservingSystemChanges()
+        orderOut(nil)
+        contentView = nil
+        close()
+    }
+
+    func moveOffscreen() {
+        let size = frame.size
         let leftScreenEdge = NSScreen.screens.map(\.frame.minX).min() ?? 0
         let horizontalGap: CGFloat = 100
-        return NSPoint(
-            x: leftScreenEdge - size.width - horizontalGap - CGFloat(slot) * (size.width + horizontalGap),
-            y: 120)
+        setFrameOrigin(NSPoint(
+            x: leftScreenEdge - size.width - horizontalGap,
+            y: 120))
     }
 
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
         frameRect
+    }
+
+    private func startObservingSystemChanges() {
+        guard !isObservingSystemChanges else { return }
+        isObservingSystemChanges = true
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(screenParametersDidChange),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(workspaceWillSleep),
+            name: NSWorkspace.willSleepNotification,
+            object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(workspaceDidWake),
+            name: NSWorkspace.didWakeNotification,
+            object: nil)
+    }
+
+    private func stopObservingSystemChanges() {
+        guard isObservingSystemChanges else { return }
+        isObservingSystemChanges = false
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil)
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+    }
+
+    @objc private func screenParametersDidChange() {
+        moveOffscreen()
+    }
+
+    @objc private func workspaceWillSleep() {
+        orderOut(nil)
+    }
+
+    @objc private func workspaceDidWake() {
+        moveOffscreen()
+        orderFrontRegardless()
     }
 }
 
@@ -118,65 +171,18 @@ enum ChallengeClick {
         let contentView = contentView(in: webView) ?? webView
         let viewPoint = webView.convert(point, from: nil)
         let hitView = webView.hitTest(viewPoint) ?? contentView
-        ChallengePressedMouseButtons.with(1) {
-            webView.window?.sendEvent(downEvent)
-            hitView.mouseDown(with: downEvent)
-            if hitView !== contentView {
-                contentView.mouseDown(with: downEvent)
-            }
+        webView.window?.sendEvent(downEvent)
+        hitView.mouseDown(with: downEvent)
+        if hitView !== contentView {
+            contentView.mouseDown(with: downEvent)
         }
         RunLoop.current.run(until: Date().addingTimeInterval(0.08))
-        ChallengePressedMouseButtons.with(0) {
-            webView.window?.sendEvent(upEvent)
-            hitView.mouseUp(with: upEvent)
-            if hitView !== contentView {
-                contentView.mouseUp(with: upEvent)
-            }
+        webView.window?.sendEvent(upEvent)
+        hitView.mouseUp(with: upEvent)
+        if hitView !== contentView {
+            contentView.mouseUp(with: upEvent)
         }
         return "hit=\(type(of: hitView)) content=\(type(of: contentView)) window=\(webView.window != nil)"
-    }
-}
-
-private enum ChallengePressedMouseButtons {
-    private static var lock = os_unfair_lock_s()
-    private static var depth = 0
-    private static var value: UInt = 0
-    private static var originalImplementation: IMP?
-
-    static func with(_ buttons: UInt, body: () -> Void) {
-        install()
-        os_unfair_lock_lock(&lock)
-        depth += 1
-        value = buttons
-        os_unfair_lock_unlock(&lock)
-        defer {
-            os_unfair_lock_lock(&lock)
-            depth -= 1
-            os_unfair_lock_unlock(&lock)
-        }
-        body()
-    }
-
-    private static func install() {
-        os_unfair_lock_lock(&lock)
-        defer { os_unfair_lock_unlock(&lock) }
-        guard originalImplementation == nil else { return }
-        let selector = #selector(getter: NSEvent.pressedMouseButtons)
-        guard let method = class_getClassMethod(NSEvent.self, selector) else { return }
-        originalImplementation = method_getImplementation(method)
-        let block: @convention(block) (AnyObject) -> UInt = { _ in
-            os_unfair_lock_lock(&lock)
-            let currentDepth = depth
-            let currentValue = value
-            let originalImplementation = originalImplementation
-            os_unfair_lock_unlock(&lock)
-            if currentDepth > 0 { return currentValue }
-            typealias OriginalFunction = @convention(c) (AnyObject, Selector) -> UInt
-            return originalImplementation.map {
-                unsafeBitCast($0, to: OriginalFunction.self)(NSEvent.self, selector)
-            } ?? 0
-        }
-        method_setImplementation(method, imp_implementationWithBlock(block))
     }
 }
 
@@ -227,12 +233,11 @@ enum ChallengeVision {
         guard (try? handler.perform([request])) != nil else { return nil }
         for observation in request.results ?? [] {
             guard let candidate = observation.topCandidates(1).first else { continue }
-            let text = candidate.string
-                .split(whereSeparator: \.isWhitespace)
-                .joined(separator: " ")
-            if text.caseInsensitiveCompare("Verify you are human") == .orderedSame {
-                return ChallengeLabel(boundingBox: observation.boundingBox)
-            }
+            guard let labelRange = candidate.string.range(
+                of: "Verify you are human",
+                options: [.caseInsensitive]) else { continue }
+            guard let labelObservation = try? candidate.boundingBox(for: labelRange) else { continue }
+            return ChallengeLabel(boundingBox: labelObservation.boundingBox)
         }
         return nil
     }

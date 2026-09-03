@@ -287,6 +287,12 @@ struct DataBrokerRunCustomJSONView: View {
                     }
                     .toggleStyle(.checkbox)
                     .help(Text(verbatim: "Applies the scan and opt-out job timeouts shown below."))
+
+                    Toggle(isOn: $viewModel.hidesWebView) {
+                        Text(verbatim: "Hide WebView")
+                    }
+                    .toggleStyle(.checkbox)
+                    .help(Text(verbatim: "Uses the production hidden WebView path."))
                 }
 
                 if jsonText.isEmpty {

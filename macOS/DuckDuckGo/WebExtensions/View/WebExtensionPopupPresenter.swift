@@ -73,9 +73,30 @@ final class WebExtensionPopupPresenter {
         static let maximumSize = NSSize(width: 800, height: 800)
 
         /// Reads the size the popup page lays itself out at.
+        ///
+        /// An explicit `body` width wins over `scrollWidth`. A page whose `html` fills the
+        /// viewport never reports a `scrollWidth` smaller than the panel, so a popup that wants
+        /// to be narrower than `fallbackSize` could otherwise only ever grow. Bitwarden sets
+        /// `body.style.width` from script, which gives us the width it actually wants.
         static let measurePageScript = """
-        [document.documentElement.scrollWidth, document.documentElement.scrollHeight]
+        (function() {
+            var body = document.body;
+            var width = body && body.style.width
+                ? body.getBoundingClientRect().width
+                : Math.max(document.documentElement.scrollWidth, body ? body.scrollWidth : 0);
+            var height = Math.max(document.documentElement.scrollHeight, body ? body.scrollHeight : 0);
+            return [width, height];
+        })()
         """
+
+        /// Delays after the load event, in seconds, at which the page is measured again.
+        ///
+        /// Not every popup knows its size when it finishes loading. Bitwarden's is an Angular
+        /// app that sets `body.style.width` hundreds of milliseconds into its bootstrap, well
+        /// after the load event, so the one measurement at load time reads a stale size.
+        /// Measuring a few more times at growing intervals catches the final size without
+        /// driving the extension.
+        static let settleDelays: [TimeInterval] = [0.1, 0.2, 0.4, 0.8, 1.6]
     }
 
     private var panel: WebExtensionPopupPanel?
@@ -85,6 +106,8 @@ final class WebExtensionPopupPresenter {
     private weak var popupWebView: WKWebView?
     private var loadingObservation: NSKeyValueObservation?
     private var clickMonitor: Any?
+    private var settleWorkItems: [DispatchWorkItem] = []
+    private var lastSettleSize: NSSize?
 
     /// Whether the popup of the given extension is on screen.
     func isShown(for context: WKWebExtensionContext) -> Bool {
@@ -162,11 +185,12 @@ final class WebExtensionPopupPresenter {
             DispatchQueue.main.async {
                 guard webView.isLoading == false else { return }
                 self?.measurePageAndResize(webView)
+                self?.startSettling(webView)
             }
         }
     }
 
-    private func measurePageAndResize(_ popupWebView: WKWebView) {
+    private func measurePageAndResize(_ popupWebView: WKWebView, settleStep: Int? = nil) {
         popupWebView.evaluateJavaScript(Constants.measurePageScript) { [weak self] result, error in
             DispatchQueue.main.async {
                 guard let self else { return }
@@ -174,9 +198,53 @@ final class WebExtensionPopupPresenter {
                     Logger.webExtensions.debug("🧩 Popup page did not report a size: \(error?.localizedDescription ?? "no value", privacy: .public)")
                     return
                 }
-                self.resize(toPageSize: NSSize(width: values[0], height: values[1]))
+                let pageSize = NSSize(width: values[0], height: values[1])
+                self.resize(toPageSize: pageSize)
+
+                if let settleStep {
+                    self.handleSettleMeasurement(pageSize, step: settleStep)
+                }
             }
         }
+    }
+
+    /// Measures the page again at growing delays until two measurements in a row agree.
+    ///
+    /// Read-only, like the measurement itself: the page is asked what size it is, the extension
+    /// is never asked to do anything.
+    private func startSettling(_ popupWebView: WKWebView) {
+        cancelSettling()
+
+        for (step, delay) in Constants.settleDelays.enumerated() {
+            let workItem = DispatchWorkItem { [weak self, weak popupWebView] in
+                guard let self, let popupWebView else { return }
+                self.measurePageAndResize(popupWebView, settleStep: step)
+            }
+            settleWorkItems.append(workItem)
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+        }
+    }
+
+    private func handleSettleMeasurement(_ pageSize: NSSize, step: Int) {
+        let previousSize = lastSettleSize
+        lastSettleSize = pageSize
+
+        if previousSize == pageSize {
+            Logger.webExtensions.debug("🧩 Popup size settled at \(NSStringFromSize(pageSize), privacy: .public), stopped measuring (agreed)")
+            cancelSettling()
+            return
+        }
+
+        if step == Constants.settleDelays.count - 1 {
+            Logger.webExtensions.debug("🧩 Popup size still moving at \(NSStringFromSize(pageSize), privacy: .public), stopped measuring (exhausted)")
+            cancelSettling()
+        }
+    }
+
+    private func cancelSettling() {
+        settleWorkItems.forEach { $0.cancel() }
+        settleWorkItems = []
+        lastSettleSize = nil
     }
 
     private func resize(toPageSize pageSize: NSSize) {
@@ -257,6 +325,8 @@ final class WebExtensionPopupPresenter {
 
         loadingObservation?.invalidate()
         loadingObservation = nil
+
+        cancelSettling()
 
         // The web view belongs to WebKit, so hand it back rather than leaving it in our panel.
         popupWebView?.removeFromSuperview()

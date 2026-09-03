@@ -8544,13 +8544,6 @@
 			path = RemoteMessaging;
 			sourceTree = "<group>";
 		};
-		372042E02DF9C04400CE099A /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
 		373A1AA6283ECC8000586521 /* HTML */ = {
 			isa = PBXGroup;
 			children = (
@@ -11214,7 +11207,6 @@
 			children = (
 				A5534EA92B26FA8ADC30543F /* QuickFeedback */,
 				BB53CF3C2E26CED5007F0B42 /* New */,
-				372042E02DF9C04400CE099A /* Resources */,
 				AA3D531827A2F24C00074EC1 /* View */,
 				AA3D531927A2F47100074EC1 /* Model */,
 			);

@@ -170,7 +170,6 @@ final class QuickFeedbackService: NSObject {
 
         return NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
     }
-
 }
 
 // MARK: - TabDelegate

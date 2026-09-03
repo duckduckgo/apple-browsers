@@ -78,15 +78,16 @@ final class CounterParameter: Parameter {
     func queryValue() -> String? { BucketCounter.bucketCount(value, buckets: buckets) }
 }
 
+/// Carries a value forwarded from an event payload, as compact JSON.
+///
+/// The value is **not** percent-encoded here: it leaves as compact JSON (`overlay` → `"overlay"`,
+/// `{"a": true}` → `{"a":true}`) and the pixel transport applies the single encoding the wire needs.
+/// This parameter used to encode as well, which double-encoded every value — `%` is absent from
+/// `CharacterSet.urlQueryParameterAllowed`, so both transports re-escaped the escapes and `"overlay"`
+/// arrived as `%2522overlay%2522`, which one decode does not recover. Encoding is the transport's job
+/// on both platforms: `URL.appendingParameters` → `URLQueryItem(percentEncodingName:)` on macOS,
+/// `APIRequestV2`'s `URLComponents.queryItems` on iOS.
 final class DataParameter: Parameter {
-    /// RFC 3986 "unreserved" characters (alphanumerics plus `-._~`) are left unescaped; everything
-    /// else — including `"`, `{`, `}`, `:`, and space — is percent-encoded. This matches the
-    /// compact-JSON-then-percent-encode format the ported `EventHubDataParameterTests` expect once
-    /// `DataParameter` is wired into `EventHub` (e.g. `"logged-in"` → `%22logged-in%22`,
-    /// `{"a": true}` → `%7B%22a%22%3Atrue%7D`). `CharacterSet.alphanumerics` alone is not enough: it
-    /// excludes `-`, which would wrongly turn `logged-in` into `logged%2Din`.
-    private static let unreservedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
-
     private let dataKey: String?
     private var lastValue: String?
 
@@ -107,9 +108,8 @@ final class DataParameter: Parameter {
             Logger.eventHub.error("data parameter for key \(dataKey, privacy: .public) is not JSON-serialisable, value dropped")
             return clear()
         }
-        let encodedValue = compact.addingPercentEncoding(withAllowedCharacters: Self.unreservedCharacters)
-        guard lastValue != encodedValue else { return false }
-        lastValue = encodedValue
+        guard lastValue != compact else { return false }
+        lastValue = compact
         return true
     }
 

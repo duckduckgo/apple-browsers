@@ -116,23 +116,17 @@ final class SpecFixture {
     /// Every pixel fired, written as the specifications write them — `name?param=value`, sorted so a
     /// case can state its complete expected set and an over-fire fails as loudly as a missing pixel.
     ///
-    /// Data values are percent-decoded back to the compact JSON the cases quote (`reason="overlay"`
-    /// rather than `reason=%22overlay%22`); the encoding itself is pinned separately, by
-    /// `EventHubDataParameterTests`. The time-derived `attributionPeriod` is excluded, as the suites
-    /// specify.
-    var fired: [String] { describe(decodingValues: true) }
-
-    /// As `fired`, but with parameter values left exactly as they leave EventHub — still
-    /// percent-encoded. For the cases that pin the wire form rather than the value (T-DAT-3, T-DAT-5),
-    /// which `fired` cannot express because it decodes.
-    var firedEncoded: [String] { describe(decodingValues: false) }
-
-    private func describe(decodingValues: Bool) -> [String] {
+    /// Values appear exactly as EventHub emits them, which for a data parameter is the compact JSON the
+    /// cases quote (`reason="overlay"`). Deliberately no percent-decoding: EventHub no longer encodes —
+    /// the transport applies the wire's single encoding — and decoding here would corrupt a payload
+    /// value that legitimately contains a `%`. The time-derived `attributionPeriod` is excluded, as the
+    /// suites specify.
+    var fired: [String] {
         fixture.fired.map { pixel in
             let parameters = pixel.parameters
                 .filter { $0.key != "attributionPeriod" }
                 .sorted { $0.key < $1.key }
-                .map { "\($0.key)=\(decodingValues ? ($0.value.removingPercentEncoding ?? $0.value) : $0.value)" }
+                .map { "\($0.key)=\($0.value)" }
                 .joined(separator: "&")
             return parameters.isEmpty ? pixel.name : "\(pixel.name)?\(parameters)"
         }

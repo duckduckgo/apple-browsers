@@ -100,7 +100,8 @@ struct EventHubNativeIngressTests {
         let f = EventHubFixture.active(Self.immediateDataConfig)
         f.manager.handleNativeEvent("login", data: LoginPayload(loginState: "logged-in"))
         #expect(f.fired.count == 1)
-        #expect(f.fired.first?.parameters["loginState"] == "%22logged-in%22")
+        // Compact JSON, unencoded: the transport applies the wire's single encoding, not EventHub.
+        #expect(f.fired.first?.parameters["loginState"] == #""logged-in""#)
     }
 
     @Test("handleNativeEvent reaches every handler")
@@ -151,7 +152,7 @@ struct EventHubNativeIngressTests {
         f.manager.handleNativeEvent("yt", data: LoginPayload(loginState: "b"))
         f.advance(by: 60)
         #expect(f.fired.count == 1)
-        #expect(f.fired.first?.parameters["loginState"] == "%22b%22")
+        #expect(f.fired.first?.parameters["loginState"] == #""b""#)
     }
 
     @Test("handleNativeEvent does nothing when the feature is disabled")

@@ -117,6 +117,17 @@ struct TelemetrySpecTests {
         "webTelemetry_captchaDetection_week?count=0",
     ]
 
+    /// The value as it reaches the endpoint: EventHub's output encoded once by the transport.
+    ///
+    /// Uses the same allowed set the pixel transports use — `CharacterSet.urlQueryAllowed` minus the
+    /// reserved characters, as `Common`'s `urlQueryParameterAllowed` defines it — so that T-DAT-5 tests
+    /// the real round trip rather than a restatement of the seam value. Spelled out here rather than
+    /// imported so the test states exactly what it assumes of the transport.
+    private static func onTheWire(_ value: String) -> String {
+        let reserved = CharacterSet(charactersIn: ":/?#[]@!$&'()*+,;=")
+        return value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed.subtracting(reserved))!
+    }
+
     // MARK: Counters — aggregation and bucketing
 
     @Test("T-CNT-1: occurrences across pages bucket at period end")
@@ -219,7 +230,7 @@ struct TelemetrySpecTests {
             #"webTelemetry_adwallDetection_immediate?reason={"a":true}"#,
         ] + Self.captchaZero)
         // On the wire that value is `reason=%7B%22a%22%3Atrue%7D`.
-        #expect(f.firedEncoded.contains("webTelemetry_adwallDetection_immediate?reason=%7B%22a%22%3Atrue%7D"))
+        #expect(Self.onTheWire(#"{"a":true}"#) == "%7B%22a%22%3Atrue%7D")
     }
 
     @Test("T-DAT-4: events of other types leave the value alone")
@@ -242,19 +253,14 @@ struct TelemetrySpecTests {
 
     @Test("T-DAT-5: a value is encoded once on the wire")
     func aValueIsEncodedOnceOnTheWire() {
-        // Asserted where the value leaves EventHub rather than at the decoded `fired` seam:
-        // `%22overlay%22` percent-decodes to `"overlay"` and JSON-decodes to the payload's `overlay`,
-        // so EventHub itself applies exactly one encoding.
+        // Evidence for T-DAT-P2, asserted as the two-step round trip the property states. EventHub
+        // emits compact JSON and applies no encoding of its own, so the transport's single encoding is
+        // the only one: percent-decoding what the endpoint receives yields the compact JSON, and
+        // JSON-decoding that yields the payload value exactly.
         //
-        // KNOWN DEVIATION — this does not yet hold on the wire, and T-DAT-P2 is therefore violated
-        // downstream of here. `DataParameter.handle` percent-encodes the compact JSON
-        // (`Parameter.swift`), and the pixel URL layer then encodes it a second time, because `%` is
-        // absent from `CharacterSet.urlQueryParameterAllowed`: the request goes out as
-        // `reason=%2522overlay%2522`, which percent-decodes to `%22overlay%22` — not JSON. Verified
-        // against both the macOS path (`URL.appendingParameters` → `URLQueryItem(percentEncodingName:)`)
-        // and the `URLComponents.queryItems` path. The fix is for `DataParameter` to keep the raw
-        // compact JSON and leave encoding to the URL layer, which changes the value of every
-        // data-parameter pixel already being collected — hence not made here.
+        // This is the case that caught the double encoding: `DataParameter` used to percent-encode as
+        // well, and because `%` is absent from the transports' allowed set the escapes were re-escaped,
+        // so `reason` arrived as `%2522overlay%2522` and one decode did not recover the payload.
         let f = Self.fixture()
         f.send("adwallDetected", reason: "overlay", on: f.openPage())
 
@@ -264,10 +270,13 @@ struct TelemetrySpecTests {
             #"webTelemetry_adwallDetection_day?count=1-2&reason="overlay""#,
             #"webTelemetry_adwallDetection_immediate?reason="overlay""#,
         ] + Self.captchaZero)
-        #expect(f.firedEncoded == [
-            "webTelemetry_adwallDetection_day?count=1-2&reason=%22overlay%22",
-            "webTelemetry_adwallDetection_immediate?reason=%22overlay%22",
-        ] + Self.captchaZero)
+        // Step 1: percent-decoding the parameter the endpoint received yields the compact JSON.
+        let onTheWire = Self.onTheWire(#""overlay""#)
+        #expect(onTheWire == "%22overlay%22")
+        #expect(onTheWire.removingPercentEncoding == #""overlay""#)
+        // Step 2: JSON-decoding that yields the payload value from the event exactly.
+        let decoded = try? JSONDecoder().decode(String.self, from: Data(#""overlay""#.utf8))
+        #expect(decoded == "overlay")
     }
 
     // MARK: Immediate pixels

@@ -2385,12 +2385,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             omnibarController.usageWarningViewModel?.modelSwitchedToSuggestion(model.id)
         }
         clearCreateImageModelSwitchNotice()
+        // Before the switch, like the card's own CTA does: applying it refreshes the card, and a
+        // message replaced there would take the credit while the one acted on is called abandoned.
+        omnibarController.usageWarningMeasurement.modelSwitched()
         // `updateSelectedModel` calls back into `refreshForSelectedModel`, whichever route changed it.
         omnibarController.updateSelectedModel(model.id)
         if isPresentingModelPickerFromUsageCard {
             omnibarController.usageWarningViewModel?.modelSwitchedFromMessage()
         }
-        omnibarController.usageWarningMeasurement.modelSwitched()
         omnibarController.pixelHandler.fire(.modelSelected)
     }
 

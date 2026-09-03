@@ -21,22 +21,22 @@ import AVFoundation
 import CoreLocation
 import UIKit
 
+/// A common authorization state for camera, microphone, and location permissions.
 public enum SystemPermissionAuthorizationState: Equatable, Sendable {
     case notDetermined
     case authorized
     case denied
     case restricted
+    /// The service is disabled or the system returned an unsupported authorization state.
     case unavailable
 }
 
+/// Provides a unified interface to system authorization for camera, microphone, and location.
+/// It coalesces concurrent location authorization requests and forwards location updates.
 @MainActor
 public final class SystemPermissionClient: NSObject {
 
     public typealias LocationUpdate = Result<CLLocation, Error>
-
-    public var settingsURL: URL? {
-        URL(string: UIApplication.openSettingsURLString)
-    }
 
     public var locationUpdateHandler: ((LocationUpdate) -> Void)?
 
@@ -46,8 +46,6 @@ public final class SystemPermissionClient: NSObject {
     private let avRequestAccess: (AVMediaType, @escaping @Sendable (Bool) -> Void) -> Void
     private let notificationCenter: NotificationCenter
 
-    private var cameraState: SystemPermissionAuthorizationState = .notDetermined
-    private var microphoneState: SystemPermissionAuthorizationState = .notDetermined
     private var locationState: SystemPermissionAuthorizationState = .notDetermined
     private var locationAuthorizationContinuations = [CheckedContinuation<SystemPermissionAuthorizationState, Never>]()
 
@@ -90,9 +88,9 @@ public final class SystemPermissionClient: NSObject {
     public func authorizationState(for permissionType: SitePermissionType) -> SystemPermissionAuthorizationState {
         switch permissionType {
         case .camera:
-            cameraState
+            Self.state(from: avAuthorizationStatus(.video))
         case .microphone:
-            microphoneState
+            Self.state(from: avAuthorizationStatus(.audio))
         case .location:
             locationState
         }
@@ -101,17 +99,15 @@ public final class SystemPermissionClient: NSObject {
     public func requestAuthorization(for permissionType: SitePermissionType) async -> SystemPermissionAuthorizationState {
         switch permissionType {
         case .camera:
-            return await requestAVAuthorization(for: .video, permissionType: .camera)
+            return await requestAVAuthorization(for: .video)
         case .microphone:
-            return await requestAVAuthorization(for: .audio, permissionType: .microphone)
+            return await requestAVAuthorization(for: .audio)
         case .location:
             return await requestLocationAuthorization()
         }
     }
 
     public func refreshAuthorizationStates() {
-        refreshAVAuthorizationState(for: .camera, mediaType: .video)
-        refreshAVAuthorizationState(for: .microphone, mediaType: .audio)
         refreshLocationAuthorizationState()
     }
 
@@ -121,18 +117,6 @@ public final class SystemPermissionClient: NSObject {
 
     public func stopUpdatingLocation() {
         locationManager.stopUpdatingLocation()
-    }
-
-    private func refreshAVAuthorizationState(for permissionType: SitePermissionType, mediaType: AVMediaType) {
-        let state = Self.state(from: avAuthorizationStatus(mediaType))
-        switch permissionType {
-        case .camera:
-            cameraState = state
-        case .microphone:
-            microphoneState = state
-        case .location:
-            assertionFailure("Location does not use AV authorization")
-        }
     }
 
     private func refreshLocationAuthorizationState() {
@@ -148,9 +132,8 @@ public final class SystemPermissionClient: NSObject {
         continuations.forEach { $0.resume(returning: locationState) }
     }
 
-    private func requestAVAuthorization(for mediaType: AVMediaType,
-                                        permissionType: SitePermissionType) async -> SystemPermissionAuthorizationState {
-        let currentState = authorizationState(for: permissionType)
+    private func requestAVAuthorization(for mediaType: AVMediaType) async -> SystemPermissionAuthorizationState {
+        let currentState = Self.state(from: avAuthorizationStatus(mediaType))
         guard currentState == .notDetermined else { return currentState }
 
         return await withCheckedContinuation { continuation in
@@ -160,8 +143,7 @@ public final class SystemPermissionClient: NSObject {
                         continuation.resume(returning: .unavailable)
                         return
                     }
-                    self.refreshAVAuthorizationState(for: permissionType, mediaType: mediaType)
-                    continuation.resume(returning: self.authorizationState(for: permissionType))
+                    continuation.resume(returning: Self.state(from: self.avAuthorizationStatus(mediaType)))
                 }
             }
         }
@@ -181,6 +163,10 @@ public final class SystemPermissionClient: NSObject {
 
     @objc private func applicationDidBecomeActive() {
         refreshAuthorizationStates()
+        // Core Location ignores authorization requests made while the app is inactive, so retry when it returns.
+        if locationState == .notDetermined, !locationAuthorizationContinuations.isEmpty {
+            locationManager.requestWhenInUseAuthorization()
+        }
     }
 
     private static func state(from status: AVAuthorizationStatus) -> SystemPermissionAuthorizationState {

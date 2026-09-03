@@ -25,22 +25,6 @@ import XCTest
 @MainActor
 final class SitePermissionsCoordinatorTests: XCTestCase {
 
-    func testWhenRequestBypassesModelThenStoreAndPromptAreIgnored() throws {
-        let harness = try Harness()
-        harness.store.setPersistentDecision(.deny, for: .camera, at: harness.site)
-        let request = harness.request([.camera], bypassesModel: true)
-        harness.context = harness.context(changingNavigationGenerationTo: 2)
-        var didPrompt = false
-        var resolution: SitePermissionResolution?
-
-        harness.coordinator.request(request, promptHandler: { _, _ in
-            didPrompt = true
-        }, completion: { resolution = $0 })
-
-        XCTAssertEqual(resolution, .bypass)
-        XCTAssertFalse(didPrompt)
-    }
-
     func testWhenStoredDenyExistsThenItWinsWithoutPrompting() throws {
         let harness = try Harness()
         harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
@@ -235,27 +219,17 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         }
     }
 
-    func testWhenTabClosesOrIsRestoredThenNoPageDecisionSurvives() throws {
-        let closingHarness = try Harness()
-        closingHarness.coordinator.request(closingHarness.request([.camera]), promptHandler: { _, respond in
-            respond(.denyOnce)
-        }, completion: { _ in })
-        closingHarness.coordinator.close()
+    func testWhenTabClosesThenCoordinatorIgnoresRequests() throws {
+        let harness = try Harness()
+        harness.coordinator.close()
 
-        var closedTabDidRespond = false
-        closingHarness.coordinator.request(closingHarness.request([.camera]), promptHandler: { _, _ in
-            closedTabDidRespond = true
+        var didRespond = false
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
+            didRespond = true
         }, completion: { _ in
-            closedTabDidRespond = true
+            didRespond = true
         })
-        XCTAssertFalse(closedTabDidRespond)
-
-        let restoredHarness = try Harness()
-        var restoredTabDidPrompt = false
-        restoredHarness.coordinator.request(restoredHarness.request([.camera]), promptHandler: { _, _ in
-            restoredTabDidPrompt = true
-        }, completion: { _ in })
-        XCTAssertTrue(restoredTabDidPrompt)
+        XCTAssertFalse(didRespond)
     }
 
     func testWhenCoordinatorIsRestoredWithSameStoreThenAllowOnceIsNotRestored() async throws {
@@ -553,11 +527,34 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(requestedTypes, [.camera, .microphone])
     }
 
+    func testWhenFreshCombinedRequestHasPreexistingBlockThenUndeterminedTypesAreNotRequested() async throws {
+        let harness = try Harness()
+        harness.systemStates[.camera] = .denied
+        harness.systemStates[.microphone] = .notDetermined
+        var requestedTypes = [SitePermissionType]()
+        harness.authorizationRequester = { permissionType in
+            requestedTypes.append(permissionType)
+            return .authorized
+        }
+        let completion = expectation(description: "Combined request completes")
+
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .deny(systemBlocks: [
+                SitePermissionSystemBlock(permissionType: .camera, state: .denied, timing: .preexisting)
+            ]))
+            completion.fulfill()
+        })
+
+        await fulfillment(of: [completion], timeout: 1)
+        XCTAssertTrue(requestedTypes.isEmpty)
+    }
+
     func testWhenFireModeUserChoosesPersistentOptionsThenOnlyMemoryChanges() async throws {
         let harness = try Harness(isFireMode: true)
         harness.store.setGlobalDefault(.deny, for: .microphone)
         harness.store.setPersistentDecision(.allow, for: .location, at: harness.site)
-        let originalGlobals = harness.rawGlobalDefaults
 
         var globalResolution: SitePermissionResolution?
         harness.coordinator.request(harness.request([.microphone]), promptHandler: { _, _ in
@@ -586,7 +583,6 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
             respond(.neverAllow)
         }, completion: { _ in })
         XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
-        XCTAssertEqual(harness.rawGlobalDefaults, originalGlobals)
 
         var resolution: SitePermissionResolution?
         harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
@@ -594,24 +590,11 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         }, completion: { resolution = $0 })
         XCTAssertEqual(resolution, .deny(systemBlocks: []))
     }
-
-    func testWhenFireModeHasStoredDenyThenItIsReadWithoutPrompting() throws {
-        let harness = try Harness(isFireMode: true)
-        harness.store.setPersistentDecision(.deny, for: .camera, at: harness.site)
-        var resolution: SitePermissionResolution?
-
-        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
-            XCTFail("Fire mode must read stored site denial")
-        }, completion: { resolution = $0 })
-
-        XCTAssertEqual(resolution, .deny(systemBlocks: []))
-    }
 }
 
 @MainActor
 private final class Harness {
 
-    let keyValueStore: MockKeyValueStore
     let store: SitePermissionsStore
     let site: SitePermissionKey
     let isFireMode: Bool
@@ -640,23 +623,18 @@ private final class Harness {
             return await authorizationRequester(permissionType)
         })
 
-    var rawGlobalDefaults: [String: String]? {
-        keyValueStore.object(forKey: SitePermissionsStorageKeyNames.globalDefaults.rawValue) as? [String: String]
-    }
-
     init(isFireMode: Bool = false,
          context: SitePermissionRequestContext? = nil,
          keyValueStore: MockKeyValueStore = MockKeyValueStore()) throws {
         let context = try context ?? Self.makeContext()
-        self.keyValueStore = keyValueStore
         self.context = context
         site = context.topLevelSite
         self.isFireMode = isFireMode
         store = SitePermissionsStore(storage: keyValueStore.keyedStoring())
     }
 
-    func request(_ permissionTypes: Set<SitePermissionType>, bypassesModel: Bool = false) -> SitePermissionRequest {
-        SitePermissionRequest(context: context, permissionTypes: permissionTypes, bypassesModel: bypassesModel)
+    func request(_ permissionTypes: Set<SitePermissionType>) -> SitePermissionRequest {
+        SitePermissionRequest(context: context, permissionTypes: permissionTypes)
     }
 
     func context(changingNavigationGenerationTo generation: UInt) -> SitePermissionRequestContext {

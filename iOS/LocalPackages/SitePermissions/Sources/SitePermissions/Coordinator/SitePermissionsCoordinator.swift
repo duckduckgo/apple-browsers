@@ -19,12 +19,18 @@
 
 import Foundation
 
+/// Identifies the page and frame that originated a site permission request.
+/// The coordinator uses this context to discard stale requests after navigation or process replacement.
 public struct SitePermissionRequestContext: Equatable, Sendable {
 
     public let tabID: String
+    /// The committed top-level site whose permission decision applies to the request.
     public let topLevelSite: SitePermissionKey
+    /// Identifies the web frame that initiated the permission request.
     public let requestingFrameID: UInt64
+    /// A counter that changes whenever WebKit replaces the tab's web content process.
     public let webContentProcessGeneration: UInt
+    /// A counter that changes whenever the tab starts a new main-frame navigation.
     public let navigationGeneration: UInt
 
     public init(tabID: String,
@@ -44,14 +50,11 @@ public struct SitePermissionRequest: Sendable {
 
     public let context: SitePermissionRequestContext
     public let permissionTypes: Set<SitePermissionType>
-    public let bypassesModel: Bool
 
     public init(context: SitePermissionRequestContext,
-                permissionTypes: Set<SitePermissionType>,
-                bypassesModel: Bool = false) {
+                permissionTypes: Set<SitePermissionType>) {
         self.context = context
         self.permissionTypes = permissionTypes
-        self.bypassesModel = bypassesModel
     }
 }
 
@@ -61,17 +64,26 @@ public struct SitePermissionPrompt: Equatable, Sendable {
     public let permissionTypes: Set<SitePermissionType>
 }
 
+/// The user's response to an on-site permission prompt.
 public enum SitePermissionPromptDecision: Equatable, Sendable {
+    /// Allows access until capture ends without storing a persistent site decision.
     case allowOnce
+    /// Grants access and stores an Allow decision for the site outside Fire mode.
     case allowWhileUsingSite
+    /// Denies access for the current page without storing a persistent site decision.
     case denyOnce
+    /// Denies access and stores a Deny decision for the site outside Fire mode.
     case neverAllow
 }
 
+/// Describes a system authorization state that prevented a site permission request from being granted.
 public struct SitePermissionSystemBlock: Equatable, Sendable {
 
+    /// Indicates when the blocking state was observed relative to a system authorization request.
     public enum Timing: Equatable, Sendable {
+        /// The blocking state existed before the coordinator could request authorization.
         case preexisting
+        /// The blocking state was observed after the coordinator requested authorization.
         case afterRequest
     }
 
@@ -80,12 +92,14 @@ public struct SitePermissionSystemBlock: Equatable, Sendable {
     public let timing: Timing
 }
 
+/// The result of evaluating site-level decisions and system authorization for a permission request.
 public enum SitePermissionResolution: Equatable, Sendable {
-    case bypass
     case grant
+    /// Denies access. An empty array means that a site-level decision blocked the request.
     case deny(systemBlocks: [SitePermissionSystemBlock])
 }
 
+/// Describes a page lifecycle change that can invalidate page-scoped permission state.
 public enum SitePermissionPageChange: Equatable, Sendable {
     case sameDocumentNavigation
     case reload
@@ -93,9 +107,12 @@ public enum SitePermissionPageChange: Equatable, Sendable {
     case webContentProcessReplacement
 }
 
+/// Coordinates a tab's site permission requests for camera, microphone, and location.
+/// It combines stored and page-scoped decisions with system authorization, serializes prompts, and discards stale requests.
 @MainActor
 public final class SitePermissionsCoordinator {
 
+    /// Returns the current context for a tab and requesting frame so the coordinator can reject stale requests.
     public typealias CurrentContextProvider = (_ tabID: String, _ requestingFrameID: UInt64) -> SitePermissionRequestContext?
     public typealias PromptHandler = (SitePermissionPrompt, @escaping (SitePermissionPromptDecision) -> Void) -> Void
     public typealias Completion = (SitePermissionResolution) -> Void
@@ -111,16 +128,13 @@ public final class SitePermissionsCoordinator {
 
     private final class PendingRequest {
         let request: SitePermissionRequest
-        let lifecycleGeneration: UInt
         let promptHandler: PromptHandler
         let completion: Completion
 
         init(request: SitePermissionRequest,
-             lifecycleGeneration: UInt,
              promptHandler: @escaping PromptHandler,
              completion: @escaping Completion) {
             self.request = request
-            self.lifecycleGeneration = lifecycleGeneration
             self.promptHandler = promptHandler
             self.completion = completion
         }
@@ -136,7 +150,6 @@ public final class SitePermissionsCoordinator {
     private var deniedForPage = Set<SitePermissionType>()
     private var queuedRequests = [PendingRequest]()
     private var activeRequest: PendingRequest?
-    private var lifecycleGeneration: UInt = 0
     private var isClosed = false
 
     public convenience init(store: SitePermissionsStore,
@@ -166,13 +179,7 @@ public final class SitePermissionsCoordinator {
                         promptHandler: @escaping PromptHandler,
                         completion: @escaping Completion) {
         guard !isClosed, !request.permissionTypes.isEmpty else { return }
-
-        if request.bypassesModel {
-            completion(.bypass)
-            return
-        }
-
-        guard isValid(request.context, lifecycleGeneration: lifecycleGeneration) else { return }
+        guard isValid(request.context) else { return }
 
         switch disposition(for: request) {
         case .deny:
@@ -185,34 +192,27 @@ public final class SitePermissionsCoordinator {
     }
 
     private func disposition(for request: SitePermissionRequest) -> RequestDisposition {
-        var hasDeniedPermission = false
-        var hasUnresolvedPermission = false
+        var disposition = RequestDisposition.allow
         for permissionType in ordered(request.permissionTypes) {
             switch store.decision(for: permissionType, at: request.context.topLevelSite) {
             case .deny:
-                hasDeniedPermission = true
+                return .deny
             case .allow:
                 continue
             case .ask, .none:
                 if deniedForPage.contains(permissionType) {
-                    hasDeniedPermission = true
-                } else if allowOnce.contains(permissionType) {
-                    continue
-                } else if store.globalDefault(for: permissionType) == .deny {
-                    hasDeniedPermission = true
-                } else {
-                    hasUnresolvedPermission = true
+                    return .deny
                 }
+                if allowOnce.contains(permissionType) {
+                    continue
+                }
+                if store.globalDefault(for: permissionType) == .deny {
+                    return .deny
+                }
+                disposition = .prompt
             }
         }
-
-        if hasDeniedPermission {
-            return .deny
-        } else if hasUnresolvedPermission {
-            return .prompt
-        } else {
-            return .allow
-        }
+        return disposition
     }
 
     public func captureDidEnd(_ permissionTypes: Set<SitePermissionType>) {
@@ -242,7 +242,6 @@ public final class SitePermissionsCoordinator {
                          promptHandler: @escaping PromptHandler,
                          completion: @escaping Completion) {
         queuedRequests.append(PendingRequest(request: request,
-                                             lifecycleGeneration: lifecycleGeneration,
                                              promptHandler: promptHandler,
                                              completion: completion))
         processNextRequestIfNeeded()
@@ -307,22 +306,29 @@ public final class SitePermissionsCoordinator {
         Task { @MainActor [weak self, weak pendingRequest] in
             guard let self, let pendingRequest else { return }
 
+            guard isActiveAndValid(pendingRequest) else {
+                drop(pendingRequest)
+                return
+            }
+
+            let permissionStates = ordered(pendingRequest.request.permissionTypes).map { permissionType in
+                (permissionType: permissionType, state: self.authorizationState(permissionType))
+            }
             var blocks = [SitePermissionSystemBlock]()
-            for permissionType in ordered(pendingRequest.request.permissionTypes) {
+            for (permissionType, state) in permissionStates where state != .authorized && state != .notDetermined {
+                blocks.append(SitePermissionSystemBlock(permissionType: permissionType,
+                                                        state: state,
+                                                        timing: .preexisting))
+            }
+            if !blocks.isEmpty {
+                finish(pendingRequest, with: .deny(systemBlocks: blocks))
+                return
+            }
+
+            for (permissionType, state) in permissionStates where state == .notDetermined {
                 guard isActiveAndValid(pendingRequest) else {
                     drop(pendingRequest)
                     return
-                }
-
-                let state = authorizationState(permissionType)
-                if state == .authorized {
-                    continue
-                }
-                if state != .notDetermined {
-                    blocks.append(SitePermissionSystemBlock(permissionType: permissionType,
-                                                            state: state,
-                                                            timing: .preexisting))
-                    continue
                 }
 
                 let requestedState = await requestAuthorization(permissionType)
@@ -368,7 +374,6 @@ public final class SitePermissionsCoordinator {
     }
 
     private func resetPageState() {
-        lifecycleGeneration &+= 1
         allowOnce.removeAll()
         deniedForPage.removeAll()
         queuedRequests.removeAll()
@@ -380,11 +385,11 @@ public final class SitePermissionsCoordinator {
     }
 
     private func isValid(_ pendingRequest: PendingRequest) -> Bool {
-        isValid(pendingRequest.request.context, lifecycleGeneration: pendingRequest.lifecycleGeneration)
+        isValid(pendingRequest.request.context)
     }
 
-    private func isValid(_ context: SitePermissionRequestContext, lifecycleGeneration: UInt) -> Bool {
-        !isClosed && self.lifecycleGeneration == lifecycleGeneration && currentContext(context.tabID, context.requestingFrameID) == context
+    private func isValid(_ context: SitePermissionRequestContext) -> Bool {
+        !isClosed && currentContext(context.tabID, context.requestingFrameID) == context
     }
 
     private func ordered(_ permissionTypes: Set<SitePermissionType>) -> [SitePermissionType] {

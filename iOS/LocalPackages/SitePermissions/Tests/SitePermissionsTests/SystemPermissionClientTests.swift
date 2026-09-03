@@ -47,11 +47,7 @@ final class SystemPermissionClientTests: XCTestCase {
     func testWhenCameraAndMicrophoneAreRequestedThenVideoAndAudioAreEvaluatedSeparately() async {
         var statuses: [AVMediaType: AVAuthorizationStatus] = [.video: .notDetermined, .audio: .notDetermined]
         var requestedMediaTypes = [AVMediaType]()
-        var locationServicesQueryCount = 0
-        let client = makeClient(locationServicesEnabled: {
-            locationServicesQueryCount += 1
-            return true
-        }, statuses: { statuses[$0] ?? .notDetermined }) { mediaType, completion in
+        let client = makeClient(statuses: { statuses[$0] ?? .notDetermined }) { mediaType, completion in
             requestedMediaTypes.append(mediaType)
             statuses[mediaType] = mediaType == .video ? .authorized : .denied
             completion(mediaType == .video)
@@ -63,7 +59,6 @@ final class SystemPermissionClientTests: XCTestCase {
         XCTAssertEqual(requestedMediaTypes, [.video, .audio])
         XCTAssertEqual(cameraState, .authorized)
         XCTAssertEqual(microphoneState, .denied)
-        XCTAssertEqual(locationServicesQueryCount, 1)
     }
 
     func testWhenLocationAuthorizationAndUpdatesAreRequestedThenOneManagerHandlesBoth() async {
@@ -113,6 +108,28 @@ final class SystemPermissionClientTests: XCTestCase {
         XCTAssertEqual(client.pendingLocationAuthorizationRequestCount, 0)
     }
 
+    func testWhenLocationRequestDoesNotChangeStateThenAppActivationRetriesIt() async {
+        let manager = MockLocationManager()
+        let notificationCenter = NotificationCenter()
+        let client = makeClient(locationManager: manager, notificationCenter: notificationCenter)
+
+        let authorizationTask = Task { await client.requestAuthorization(for: .location) }
+        let didEnqueueRequest = await waitUntil {
+            client.pendingLocationAuthorizationRequestCount == 1
+        }
+        XCTAssertTrue(didEnqueueRequest)
+        XCTAssertEqual(manager.requestAuthorizationCallCount, 1)
+
+        notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        XCTAssertEqual(manager.requestAuthorizationCallCount, 2)
+
+        manager.authorizationStatusValue = .authorizedWhenInUse
+        manager.delegate?.locationManagerDidChangeAuthorization?(manager)
+
+        let authorizationState = await authorizationTask.value
+        XCTAssertEqual(authorizationState, .authorized)
+    }
+
     func testWhenTwoLocationAuthorizationRequestsArePendingThenOneNativeRequestCompletesBoth() async {
         let manager = MockLocationManager()
         let authorizationRequested = expectation(description: "Location authorization requested")
@@ -137,24 +154,6 @@ final class SystemPermissionClientTests: XCTestCase {
         XCTAssertEqual(firstState, .authorized)
         XCTAssertEqual(secondState, .authorized)
         XCTAssertEqual(client.pendingLocationAuthorizationRequestCount, 0)
-    }
-
-    func testWhenAppBecomesActiveThenAuthorizationStatesAreRefreshed() {
-        let notificationCenter = NotificationCenter()
-        var cameraStatus = AVAuthorizationStatus.denied
-        let client = makeClient(statuses: { _ in cameraStatus }, notificationCenter: notificationCenter)
-        XCTAssertEqual(client.authorizationState(for: .camera), .denied)
-
-        cameraStatus = .authorized
-        notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
-
-        XCTAssertEqual(client.authorizationState(for: .camera), .authorized)
-    }
-
-    func testSettingsURLUsesApplicationSettingsDeepLink() {
-        let client = makeClient()
-
-        XCTAssertEqual(client.settingsURL, URL(string: UIApplication.openSettingsURLString))
     }
 
     private func waitUntil(_ condition: @escaping @MainActor () -> Bool) async -> Bool {

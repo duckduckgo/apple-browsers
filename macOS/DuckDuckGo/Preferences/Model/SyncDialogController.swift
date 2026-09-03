@@ -747,6 +747,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {
         let peerName = pairingV2DisplayName(for: peerName)
         let message = UserText.syncPairingV2ConfirmationMessage(peerName, isThirdPartyPeer: peerKind == .thirdParty)
+        if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
+            presentDialog(for: .prepareToSync(.twoDevicePairing))
+        }
         let isConfirmed = await showPairingV2Confirmation(message: message)
         if !isConfirmed {
             sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.syncConfirmationDenied)

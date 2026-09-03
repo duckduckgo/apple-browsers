@@ -49,49 +49,42 @@ public struct SyncPairingConfirmationViewV2: View {
     }
 
     public var body: some View {
-        VStack(spacing: 0) {
-            Image(nsImage: DesignSystemImages.Color.Size32.duckDuckGo)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 48, height: 48)
-                .accessibilityHidden(true)
-                .padding(.top, 20)
+        SyncDialogV2(spacing: 10.0) {
+            VStack(spacing: 20) {
+                Image(nsImage: DesignSystemImages.Color.Size32.duckDuckGo)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 48, height: 48)
+                    .accessibilityHidden(true)
 
-            Text(title)
-                .font(.title2.weight(.semibold))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.top, 20)
+                Text(title)
+                    .font(.title2.weight(.semibold))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
 
-            Text(message)
-                .font(.body)
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 20)
-
-            HStack(spacing: 8) {
-                Spacer()
-
-                Button(cancelButtonTitle) {
-                    onCancel()
-                    dismiss()
-                }
-                .buttonStyle(DismissActionButtonStyle())
-                .keyboardShortcut(.cancelAction)
-
-                Button(confirmButtonTitle) {
-                    onConfirm()
-                    dismiss()
-                }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
-                .keyboardShortcut(.defaultAction)
+                Text(message)
+                    .font(.body)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.top, 20)
+        } buttons: {
+            Spacer()
+
+            Button(cancelButtonTitle) {
+                onCancel()
+                dismiss()
+            }
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+            .keyboardShortcut(.cancelAction)
+
+            Button(confirmButtonTitle) {
+                onConfirm()
+                dismiss()
+            }
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
+            .keyboardShortcut(.defaultAction)
         }
-        .padding(20)
-        .frame(width: 420)
-        .background(Color(designSystemColor: .surfaceSecondary))
-        .fixedSize()
     }
 }
 

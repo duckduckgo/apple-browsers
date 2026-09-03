@@ -17,4 +17,56 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
+
+/// Call sites for the Duck.ai session wide event, which measures one visit to a full Duck.ai tab.
+extension MainViewController {
+
+    /// Reports the tab that is (about to be) on screen. Unchanged snapshots are ignored downstream.
+    func reportDuckAISessionVisibleTab(_ tab: Tab?) {
+        duckAISessionInstrumentation.visibleTabDidChange(tab.map(duckAISessionSnapshot))
+    }
+
+    func reportDuckAISessionCurrentTab() {
+        reportDuckAISessionVisibleTab(tabManager.currentTabsModel.currentTab)
+    }
+
+    /// Records the action about to leave Duck.ai, if the visible tab is a Duck.ai tab.
+    func recordDuckAISessionPendingExit(_ trigger: DuckAISessionWideEventData.ExitTrigger) {
+        guard let tab = tabManager.currentTabsModel.currentTab, tab.isAITab else { return }
+        duckAISessionInstrumentation.recordPendingExit(tabUID: tab.uid, trigger: trigger)
+    }
+
+    /// Any close of the visible Duck.ai tab is the close exit, whichever surface closed it.
+    func recordDuckAISessionCloseIfNeeded(closingTabs: [Tab]) {
+        guard let current = tabManager.currentTabsModel.currentTab,
+              closingTabs.contains(where: { $0.uid == current.uid }) else { return }
+        recordDuckAISessionPendingExit(.backOrClose)
+    }
+
+    func recordDuckAISessionPromptSubmitted(for handler: AIChatContentHandling) {
+        guard let tab = currentTab, tab.aiChatContentHandler === handler else { return }
+        duckAISessionInstrumentation.promptSubmitted(tabUID: tab.tabModel.uid)
+    }
+
+    func recordDuckAISessionPromptSubmittedOnCurrentTab() {
+        guard let tab = tabManager.currentTabsModel.currentTab, tab.isAITab else { return }
+        duckAISessionInstrumentation.promptSubmitted(tabUID: tab.uid)
+    }
+
+    func recordDuckAISessionNewChatCreated(for handler: AIChatContentHandling) {
+        guard let tab = currentTab, tab.aiChatContentHandler === handler else { return }
+        duckAISessionInstrumentation.newChatCreated(tabUID: tab.tabModel.uid)
+    }
+
+    func recordDuckAISessionNewChatCreatedOnCurrentTab() {
+        guard let tab = tabManager.currentTabsModel.currentTab, tab.isAITab else { return }
+        duckAISessionInstrumentation.newChatCreated(tabUID: tab.uid)
+    }
+
+    private func duckAISessionSnapshot(_ tab: Tab) -> DuckAISessionTabSnapshot {
+        let url = tab.link?.url
+        return DuckAISessionTabSnapshot(uid: tab.uid, isDuckAI: tab.isAITab, url: url, chatID: url?.duckAIChatID)
+    }
+}

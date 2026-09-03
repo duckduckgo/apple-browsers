@@ -767,12 +767,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         var view = UIVisualEffectView()
         UITraitCollection(userInterfaceStyle: configuration.interfaceStyle).performAsCurrent {
             if #available(iOS 26.0, *) {
-                // The embedded field carries the same material blur as the rest of the chrome.
-                let effect = UIGlassEffect(style: .regular)
-                if configuration.fireMode {
-                    effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
+                if configuration.kind == .embedded {
+                    // The embedded field already sits on the chrome's glass, so it takes a flat fill
+                    // rather than a second layer of glass with its own highlights.
+                    view = UIVisualEffectView(effect: nil)
+                    view.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
+                } else {
+                    let effect = UIGlassEffect(style: .regular)
+                    if configuration.fireMode {
+                        effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
+                    }
+                    view = UIVisualEffectView(effect: effect)
                 }
-                view = UIVisualEffectView(effect: effect)
                 view.cornerConfiguration = .capsule()
             }
         }

@@ -199,6 +199,8 @@ enum Preferences {
                     AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
                     DuckPlayerView(model: model.duckPlayerPreferences)
+                case .websitePermissions:
+                    PreferencesWebsitePermissionsView()
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()
@@ -407,4 +409,5 @@ enum Preferences {
             }
         }
     }
+
 }

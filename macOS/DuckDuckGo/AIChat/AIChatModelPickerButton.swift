@@ -398,6 +398,7 @@ final class AIChatModelPickerButton: NSView {
         guard isEnabled, !isReadOnly else { return }
         wantsFocusRing = false
         isMouseDown = true
+        trackMouseInteraction()
     }
 
     override func mouseDragged(with event: NSEvent) {
@@ -414,6 +415,23 @@ final class AIChatModelPickerButton: NSView {
                 sendMenuOpeningAction {
                     NSApp.sendAction(action, to: target, from: self)
                 }
+                return
+            }
+        }
+        resetTransientFillState()
+    }
+
+    private func trackMouseInteraction() {
+        while let event = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            switch event.type {
+            case .leftMouseDragged:
+                mouseDragged(with: event)
+            case .leftMouseUp:
+                mouseUp(with: event)
+                return
+            default:
+                assertionFailure("Unexpected mouse tracking event")
+                resetTransientFillState()
                 return
             }
         }

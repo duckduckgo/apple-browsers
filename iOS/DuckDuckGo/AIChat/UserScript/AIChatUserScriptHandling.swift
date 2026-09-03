@@ -420,7 +420,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
-            supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
+            supportsMultipleContexts: supportsContextualMode,
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
             supportsPromoCards: featureFlagger.isFeatureOn(.nativePromoCards) && supportsNativeChatInput,

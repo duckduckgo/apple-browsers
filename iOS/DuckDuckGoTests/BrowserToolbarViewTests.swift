@@ -231,9 +231,12 @@ final class BrowserToolbarViewTests: XCTestCase {
         let frame = sut.restingCapsuleFrame(in: container)
 
         if #available(iOS 26.0, *) {
-            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            // Every edge follows the system's concentric guide (plus the tuck), so the inset is
+            // device-specific but equal all round.
+            let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: BrowserToolbarView.horizontalGuideInsets(in: container))
+            XCTAssertEqual(frame.minX, physical, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, physical, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, physical, accuracy: 0.01)
         } else {
             XCTAssertEqual(BrowserToolbarView.floatingEmbeddedHorizontalInset, 16)
             XCTAssertEqual(frame.minX, 16, accuracy: 0.01)
@@ -267,12 +270,29 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         let frame = sut.restingCapsuleFrame(in: container)
         let guideInsets = BrowserToolbarView.horizontalGuideInsets(in: container)
+        let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: guideInsets)
 
-        // Each edge sits at its own guide, or at the concentric inset when the guide is smaller.
-        XCTAssertEqual(frame.minX, max(guideInsets.left, concentric), accuracy: 0.01)
-        XCTAssertEqual(container.bounds.width - frame.maxX, max(guideInsets.right, concentric), accuracy: 0.01)
-        // The wide leading guide must not pull the opposite edge inside the concentric inset.
-        XCTAssertGreaterThanOrEqual(container.bounds.width - frame.maxX, concentric - 0.01)
+        // Each edge sits at its own guide, or at the physical inset when the guide is smaller.
+        XCTAssertEqual(frame.minX, max(guideInsets.left, physical), accuracy: 0.01)
+        XCTAssertEqual(container.bounds.width - frame.maxX, max(guideInsets.right, physical), accuracy: 0.01)
+        // The wide leading guide must not pull the opposite edge inside the physical inset.
+        XCTAssertGreaterThanOrEqual(container.bounds.width - frame.maxX, physical - 0.01)
+    }
+
+    func testWhenConcentricGuideHasResolvedThenThePillTucksInFromTheGuide() {
+        // The system's concentric inset wins over the fallback once the guide reports a value on
+        // both sides; the narrower side sets the inset when a Dynamic Island widens the other.
+        let tuck = BrowserToolbarView.floatingConcentricTuck
+        XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 18, right: 18)), 18 + tuck, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 57, right: 18)), 18 + tuck, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: 18, physicalInset: 18 + tuck), tuck, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateBottomOffset(guideBottomGap: 34, physicalInset: 18 + tuck), 34 - 18 - tuck, accuracy: 0.01)
+    }
+
+    func testWhenConcentricGuideIsUnresolvedThenTheFallbackInsetIsUsed() {
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 0, right: 0)), concentric, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 57, right: 0)), concentric, accuracy: 0.01)
     }
 
     func testWhenGuideGapExceedsConcentricInsetThenGlassShiftsDown() {
@@ -328,9 +348,12 @@ final class BrowserToolbarViewTests: XCTestCase {
         let frame = sut.restingCapsuleFrame(in: container)
 
         if #available(iOS 26.0, *) {
-            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            // Every edge follows the system's concentric guide (plus the tuck), so the inset is
+            // device-specific but equal all round.
+            let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: BrowserToolbarView.horizontalGuideInsets(in: container))
+            XCTAssertEqual(frame.minX, physical, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, physical, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, physical, accuracy: 0.01)
         }
     }
 

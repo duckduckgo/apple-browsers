@@ -22,8 +22,13 @@ import WebExtensions
 @available(macOS 15.4, *)
 struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
 
+    /// Applies to the web views the extension controller creates (background, popup, options pages) — not to tab web views.
+    ///
+    /// Includes a Chrome token because Chrome-only extensions branch on the presence of ` Chrome/` in `navigator.userAgent`: they use it
+    /// to pick their native messaging channel and their clipboard implementation, and on the Safari branch they target a Safari app
+    /// extension host we do not provide.
     var applicationNameForUserAgent: String {
-        UserAgent.brandedDefaultSuffix
+        UserAgent.webExtensionSuffix
     }
 
     var isInspectable: Bool {

@@ -22,10 +22,19 @@ import os.log
 /// Rewrites a Manifest V3 `background.service_worker` declaration into an equivalent
 /// `background.page` declaration in an installed extension's manifest.
 ///
-/// Our `WKWebExtension` host never starts a `service_worker` background, while a `page` or
-/// `scripts` background runs as expected. Extension vendors hit the same limitation in Safari and
-/// work around it the same way — 1Password's Safari build, for instance, ships the very same worker
-/// code as a background page — so loading a Chrome build in our host only needs that rewrite.
+/// Our `WKWebExtension` host does start a `service_worker` background — measured on macOS 26.6.2 —
+/// but it is unforgiving: a throw at the top level of the worker aborts its registration outright,
+/// so `loadBackgroundContent()` never completes and `WKWebExtensionContext` reports error code 6. A
+/// background page running the same script survives the same throw and keeps whatever the script
+/// managed to set up before it. Extension vendors work around the same brittleness in Safari the
+/// same way — 1Password's Safari build, for instance, ships the very same worker code as a
+/// background page.
+///
+/// The conversion therefore buys two things:
+/// - a top-level exception in a Chrome build becomes survivable rather than fatal;
+/// - the generated page is a manifest-level place to load a script *before* the extension's own
+///   code, which a module service worker offers no hook for, so we can install API stubs without
+///   editing the extension's own sources.
 ///
 /// The patch is deliberately generic and conservative:
 /// - it only applies when `background.service_worker` is the *only* background declaration, so a

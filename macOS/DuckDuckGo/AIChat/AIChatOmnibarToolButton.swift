@@ -490,8 +490,7 @@ final class AIChatOmnibarToolButton: NSView {
         refreshHoverState()
     }
 
-    /// Re-derives hover from the pointer's real position when event ordering or modal menu
-    /// tracking makes the tracking-area callbacks unreliable.
+    /// Re-derives hover from the pointer's real position when event ordering or modal menu tracking makes callbacks unreliable.
     private func refreshHoverState() {
         guard isEnabled, let window else {
             isHovered = false

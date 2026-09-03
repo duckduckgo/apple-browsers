@@ -84,7 +84,6 @@ final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
     private var onboardingStateUpdater: MockOnboardingStateUpdater!
     private var autoconsentStats: MockAutoconsentStats!
     private var presenter: MockAutoconsentStatsPopoverPresenter!
-    private var stateChangedSubject: PassthroughSubject<Void, Never>!
     private var sut: CookiePopupsBlockedPromoDelegate!
 
     override func setUp() {
@@ -95,9 +94,6 @@ final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
         keyValueStore = InMemoryThrowingKeyValueStore()
         windowControllersManager = WindowControllersManagerMock()
         setSelectedTabContent(.url(URL.duckDuckGo, source: .ui))
-
-        stateChangedSubject = PassthroughSubject<Void, Never>()
-        windowControllersManager.stateChanged = stateChangedSubject.eraseToAnyPublisher()
 
         cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(
             persistor: MockCookiePopupProtectionPreferencesPersistor(),
@@ -131,7 +127,6 @@ final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
         onboardingStateUpdater = nil
         appearancePreferences = nil
         cookiePopupProtectionPreferences = nil
-        stateChangedSubject = nil
         windowControllersManager = nil
         keyValueStore = nil
         featureFlagger = nil
@@ -192,29 +187,17 @@ final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
         XCTAssertFalse(sut.isEligible)
     }
 
+    func testWhenLegacyFlagSetThenNotEligible() {
+        try? keyValueStore.set(true, forKey: CookiePopupsBlockedPromoDelegate.StorageKey.blockedCookiesPopoverSeen)
+        XCTAssertFalse(sut.isEligible)
+    }
+
     func testWhenBelowThresholdThenNotEligible() {
         setBlockedCount(4)
         XCTAssertFalse(sut.isEligible)
     }
 
-    func testWhenOnNewTabPageThenNotEligible() {
-        setSelectedTabContent(.newtab)
-        sut = makeSUT()
-        XCTAssertFalse(sut.isEligible)
-    }
-
     // MARK: - isEligiblePublisher
-
-    func testWhenTabStateChangesToNTPThenEligibilityPublisherDoesNotReemit() {
-        var received: [Bool] = []
-        let cancellable = sut.isEligiblePublisher.sink { received.append($0) }
-
-        setSelectedTabContent(.newtab)
-        stateChangedSubject.send(())
-
-        cancellable.cancel()
-        XCTAssertEqual(received, [true])
-    }
 
     func testWhenRefreshEligibilityCalledThenPublisherReemits() {
         var received: [Bool] = []
@@ -227,27 +210,6 @@ final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
         XCTAssertEqual(received, [true, false])
     }
 
-    // MARK: - show() — migration bridge
-
-    func testWhenLegacyFlagAlreadySetThenShowRetiresThePromo() async {
-        try? keyValueStore.set(true, forKey: CookiePopupsBlockedPromoDelegate.StorageKey.blockedCookiesPopoverSeen)
-
-        let result = await sut.show(history: PromoHistoryRecord(id: "cookie-popups-blocked"), force: false)
-
-        XCTAssertEqual(result, .retired)
-        XCTAssertFalse(presenter.showPopoverCalled)
-    }
-
-    func testWhenForcedThenLegacyFlagIsIgnored() async {
-        try? keyValueStore.set(true, forKey: CookiePopupsBlockedPromoDelegate.StorageKey.blockedCookiesPopoverSeen)
-        presenter.showPopoverReturnValue = false
-
-        let result = await sut.show(history: PromoHistoryRecord(id: "cookie-popups-blocked"), force: true)
-
-        XCTAssertEqual(result, .noChange)
-        XCTAssertTrue(presenter.showPopoverCalled)
-    }
-
     // MARK: - show() — presentation failure
 
     func testWhenPresenterCannotShowThenShowReturnsNoChange() async {
@@ -256,6 +218,16 @@ final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
         let result = await sut.show(history: PromoHistoryRecord(id: "cookie-popups-blocked"), force: false)
 
         XCTAssertEqual(result, .noChange)
+    }
+
+    func testWhenOnNewTabPageThenShowReturnsNoChange() async {
+        setSelectedTabContent(.newtab)
+        presenter.showPopoverReturnValue = false
+
+        let result = await sut.show(history: PromoHistoryRecord(id: "cookie-popups-blocked"), force: false)
+
+        XCTAssertEqual(result, .noChange)
+        XCTAssertFalse(presenter.showPopoverCalled)
     }
 
     // MARK: - dismissDueToNewTabBeingShown()

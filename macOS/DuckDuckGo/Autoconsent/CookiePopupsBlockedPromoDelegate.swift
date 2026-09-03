@@ -48,8 +48,6 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
     private let presenter: AutoconsentStatsPopoverPresenting
 
     private var resultContinuation: CheckedContinuation<PromoResult, Never>?
-    private let notOnNTPSubject: CurrentValueSubject<Bool, Never>
-    private var stateChangedCancellable: AnyCancellable?
     private let refreshSubject = PassthroughSubject<Void, Never>()
 
     @MainActor
@@ -69,17 +67,6 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
         self.onboardingStateUpdater = onboardingStateUpdater
         self.autoconsentStats = autoconsentStats
         self.presenter = presenter ?? AutoconsentStatsPopoverPresenter(windowControllersManager: windowControllersManager)
-        self.notOnNTPSubject = CurrentValueSubject(windowControllersManager.selectedTab?.content != .newtab)
-
-        stateChangedCancellable = windowControllersManager.stateChanged
-            .sink { [weak self] in
-                guard let self else { return }
-                // Tab close/reselection can fire this synchronously while `selectedTab` still reflects
-                // the tab being closed. Deferring lets the selection settle before we read it.
-                DispatchQueue.main.async {
-                    self.notOnNTPSubject.send(self.windowControllersManager.selectedTab?.content != .newtab)
-                }
-            }
     }
 
     var isEligible: Bool { computeEligibility() }
@@ -101,7 +88,7 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
         guard cookiePopupProtectionPreferences.isAutoconsentEnabled,
               appearancePreferences.isProtectionsReportVisible,
               onboardingStateUpdater.state == .onboardingCompleted,
-              notOnNTPSubject.value,
+              !hasBeenPresented(),
               AppDelegate.firstLaunchDate.daysSinceNow() >= Constants.minimumDaysSinceInstallation
         else { return false }
 
@@ -111,10 +98,8 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        if !force, hasBeenPresented() {
-            return .retired
-        }
-        guard !presenter.isPopoverBeingPresented() else {
+        guard !presenter.isPopoverBeingPresented(),
+              force || windowControllersManager.selectedTab?.content != .newtab else {
             return .noChange
         }
 
@@ -156,9 +141,6 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func hide() {
-        // If a continuation is still pending here, this is the promo queue's own timeout (already recorded
-        // permanently via PromoType.timeoutResult) or another eligibility check failing (correctly left
-        // as a transient .noChange).
         if resultContinuation != nil {
             PixelKit.fire(AutoconsentPixel.popoverAutoDismissed, frequency: .daily)
         }
@@ -185,8 +167,6 @@ final class CookiePopupsBlockedPromoDelegate: InternalPromoDelegate {
         }
     }
 
-    /// One-time migration-bridge read only - never written by this class. PromoService's own history is
-    /// the sole source of truth for every outcome going forward.
     private func hasBeenPresented() -> Bool {
         (try? keyValueStore.object(forKey: StorageKey.blockedCookiesPopoverSeen)) as? Bool ?? false
     }

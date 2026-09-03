@@ -28,6 +28,7 @@ extension SubscriptionURL {
     public enum PerformanceOptimizedPaywallEntryPoint: String, CaseIterable {
         case vpn
         case duckai
+        case pir
 
         /// Resolves the entry point a `featurePage` query item stands for, or `nil` when the pre-rendered
         /// pages don't cover it (`winback`, say) and today's client-rendered paywall should be kept.
@@ -48,20 +49,24 @@ extension SubscriptionURL {
     public struct PerformanceOptimizedPaywallPaths: Equatable {
 
         public static let `default` = PerformanceOptimizedPaywallPaths(vpn: "/subscriptions/new/mobile/vpn",
-                                                                      duckai: "/subscriptions/new/mobile/duckai")
+                                                                      duckai: "/subscriptions/new/mobile/duckai",
+                                                                      pir: "/subscriptions/new/mobile/pir")
 
         public let vpn: String
         public let duckai: String
+        public let pir: String
 
-        public init(vpn: String, duckai: String) {
+        public init(vpn: String, duckai: String, pir: String) {
             self.vpn = vpn
             self.duckai = duckai
+            self.pir = pir
         }
 
         public func path(for entryPoint: PerformanceOptimizedPaywallEntryPoint) -> String {
             switch entryPoint {
             case .vpn: vpn
             case .duckai: duckai
+            case .pir: pir
             }
         }
     }
@@ -70,8 +75,8 @@ extension SubscriptionURL {
     ///
     /// Reads the entry point off the URL's `featurePage` query item, swaps in that page's path and states
     /// `trial` and — when Personal Information Removal is missing from the offering — `pir`. Every other
-    /// query item, `origin` included, is carried over untouched. `featurePage` is dropped: the path now
-    /// carries the emphasis.
+    /// query item, `origin` included, is carried over untouched, in its original order. `featurePage` is
+    /// dropped: the path now carries the emphasis.
     ///
     /// - Returns: The rewritten URL, or `nil` when the pre-rendered pages don't cover this URL and the
     ///   caller should keep the one it has.
@@ -88,7 +93,9 @@ extension SubscriptionURL {
 
         components.path = paths.path(for: entryPoint)
 
-        var rewrittenQueryItems = queryItems.filter { $0.name != QueryParameter.featurePage }
+        // Drops the three names this rewrite owns, so `trial` and `pir` are stated exactly once even if
+        // the URL arrived carrying them. Nothing else is removed.
+        var rewrittenQueryItems = queryItems.filter { !QueryParameter.rewritten.contains($0.name) }
         rewrittenQueryItems.append(URLQueryItem(name: QueryParameter.trial, value: String(isTrialEligible)))
         if !isPersonalInformationRemovalAvailable {
             rewrittenQueryItems.append(URLQueryItem(name: QueryParameter.personalInformationRemoval, value: "false"))

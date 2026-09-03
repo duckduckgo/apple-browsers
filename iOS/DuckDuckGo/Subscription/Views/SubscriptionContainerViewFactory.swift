@@ -96,6 +96,12 @@ enum SubscriptionContainerViewFactory {
             // actually open — `SubscriptionContainerViewModel` applies that same default otherwise.
             let purchaseURL = redirectPurchaseURL ?? subscriptionManager.url(for: .purchase)
 
+            // An intercepted `/pro` link keeps today's paywall: it isn't one this app chose to open.
+            // `urlForPurchaseFromRedirect` has already rebuilt it onto `/subscriptions`, so the redirect's
+            // own path is all that still tells the two apart — and nothing in the app produces `/pro`,
+            // only `TabURLInterceptor`, which copies the intercepted URL verbatim.
+            if redirectURLComponents?.path == SubscriptionPurchaseFlowPath.pro.rawValue { return purchaseURL }
+
             let paywalls = DefaultPerformanceOptimizedPaywallsProvider(
                 privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                 isFeatureEnabled: { featureFlagger.isFeatureOn(.performanceOptimizedPaywalls) }

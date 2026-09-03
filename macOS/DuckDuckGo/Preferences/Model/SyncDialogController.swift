@@ -133,6 +133,7 @@ final class SyncDialogController {
         self.managementDialogModel = managementDialogModel
         self.managementDialogModel.isAppRebranded = DesignSystemRebrand.isAppRebranded()
         self.managementDialogModel.isSimplifiedSyncSetupV2Enabled = self.featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
+        self.managementDialogModel.thisDeviceName = Self.deviceInfo().name
 
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
 
@@ -234,8 +235,12 @@ final class SyncDialogController {
     }
 
     @MainActor
-    private func showNowSyncing() {
-        presentDialog(for: .nowSyncing)
+    private func showSyncSuccess() {
+        if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
+            presentDialog(for: .saveRecoveryCode(recoveryCode ?? ""))
+        } else {
+            presentDialog(for: .nowSyncing)
+        }
     }
 
     private func startPollingForRecoveryKey(isRecovery: Bool) {
@@ -306,14 +311,14 @@ final class SyncDialogController {
         }
     }
 
-    private func waitForDevicesToChangeThenPresentSyncing() {
+    private func waitForDevicesToChangeThenPresentSuccess() {
         $devices.removeDuplicates()
             .dropFirst()
             .prefix(1)
             .sink { [weak self] _ in
                 guard let self else { return }
                 Task {
-                    self.presentDialog(for: .nowSyncing)
+                    self.showSyncSuccess()
                 }
             }.store(in: &cancellables)
     }
@@ -521,7 +526,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func recoveryCodeNextPressed() {
-        showNowSyncing()
+        showSyncSuccess()
     }
 
     func turnOnSync() {
@@ -554,7 +559,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
             try await syncService.createAccount(deviceName: device.name, deviceType: device.type)
             let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
             pixelFiring?.fire(GeneralPixel.syncSignupDirect, options: .parameters(additionalParameters))
-            managementDialogModel.endFlow()
+            presentDialog(for: .saveRecoveryCode(recoveryCode ?? ""))
         } catch {
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToServer, description: error.localizedDescription)
             pixelFiring?.fire(DebugEvent(GeneralPixel.syncSignupError(error: error)))
@@ -576,10 +581,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         startPollingForRecoveryKey(isRecovery: true)
     }
 
-    func copyCode() {
-        var code: String?
-        code = codeForDisplayOrPasting ?? recoveryCode
-        guard let code else { return }
+    func copyCode(_ code: String) {
         let pasteboard = NSPasteboard.general
         pasteboard.declareTypes([.string], owner: nil)
         pasteboard.setString(code, forType: .string)
@@ -719,9 +721,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         pairingV2PeerKind = nil
         // Temporary handling as devices don't update when 3p device added to account
         if shouldWaitForDevicesToChange {
-            waitForDevicesToChangeThenPresentSyncing()
+            waitForDevicesToChangeThenPresentSuccess()
         } else {
-            presentDialog(for: .nowSyncing)
+            showSyncSuccess()
         }
     }
 

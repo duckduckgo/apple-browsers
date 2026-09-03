@@ -21,6 +21,7 @@ import AppKit
 import Combine
 import FeatureFlags_macOS
 import PixelKit
+import PixelExperimentKit
 import PrivacyConfig
 
 /// Represents an event of hiding or showing an AI Chat tab sidebar.
@@ -110,6 +111,7 @@ final class AIChatCoordinator: AIChatCoordinating {
     private let featureFlagger: FeatureFlagger
     private var preferencesStorage: AIChatPreferencesStorage
     private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
+    private let fireNewChatExperimentPixels: () -> Void
     private let sidebarPresenceDidChangeSubject = PassthroughSubject<AIChatPresenceChange, Never>()
     private let chatFloatingStateDidChangeSubject = PassthroughSubject<TabIdentifier, Never>()
 
@@ -146,7 +148,8 @@ final class AIChatCoordinator: AIChatCoordinating {
         pixelFiring: PixelFiring?,
         featureFlagger: FeatureFlagger,
         preferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
+        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
+        fireNewChatExperimentPixels: @escaping () -> Void = { PixelKit.fireNewAIChatExperimentPixels() }
     ) {
         self.sidebarHost = sidebarHost
         self.sessionStore = sessionStore
@@ -157,6 +160,7 @@ final class AIChatCoordinator: AIChatCoordinating {
         self.featureFlagger = featureFlagger
         self.preferencesStorage = preferencesStorage
         self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
+        self.fireNewChatExperimentPixels = fireNewChatExperimentPixels
 
         if let stored = preferencesStorage.lastUsedSidebarWidth, stored > 0 {
             self.windowDefaultWidth = Swift.min(Constants.maxSidebarWidth, Swift.max(Constants.minSidebarWidth, CGFloat(stored)))
@@ -309,7 +313,11 @@ final class AIChatCoordinator: AIChatCoordinating {
     private func showSidebar(for tabID: TabIdentifier, animated: Bool) {
         sessionStore.expireSessionIfNeeded(for: tabID)
 
+        let isNewConversation = sessionStore.sessions[tabID] == nil
         let session = sessionStore.getOrCreateSession(for: tabID, burnerMode: sidebarHost.burnerMode)
+        if isNewConversation {
+            fireNewChatExperimentPixels()
+        }
         let chatViewController = session.chatViewController ?? session.makeChatViewController(tabID: tabID)
 
         chatViewController.isChatFloatingEnabled = isChatFloatingEnabled

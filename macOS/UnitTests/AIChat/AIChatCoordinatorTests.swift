@@ -147,6 +147,47 @@ final class AIChatCoordinatorTests: XCTestCase {
         XCTAssertEqual(presenceChangeReceived?.isShown, true)
     }
 
+    func testToggleSidebar_newSession_firesNewChatExperimentPixel() {
+        let tabID = "new-chat-tab"
+        mockSidebarHost.currentTabID = tabID
+        var fireCount = 0
+        let coordinator = AIChatCoordinator(
+            sidebarHost: mockSidebarHost,
+            sessionStore: mockSessionStore,
+            aiChatMenuConfig: mockAIChatMenuConfig,
+            aiChatTabOpener: mockAIChatTabOpener,
+            windowControllersManager: mockWindowControllersManager,
+            pixelFiring: mockPixelFiring,
+            featureFlagger: mockFeatureFlagger,
+            fireNewChatExperimentPixels: { fireCount += 1 }
+        )
+
+        coordinator.toggleSidebar()
+
+        XCTAssertEqual(fireCount, 1, "Opening the sidebar with a fresh session must count as a new chat")
+    }
+
+    func testToggleSidebar_existingSession_doesNotFireNewChatExperimentPixel() {
+        let tabID = "existing-session-tab"
+        mockSidebarHost.currentTabID = tabID
+        _ = mockSessionStore.getOrCreateSession(for: tabID, burnerMode: .regular)
+        var fireCount = 0
+        let coordinator = AIChatCoordinator(
+            sidebarHost: mockSidebarHost,
+            sessionStore: mockSessionStore,
+            aiChatMenuConfig: mockAIChatMenuConfig,
+            aiChatTabOpener: mockAIChatTabOpener,
+            windowControllersManager: mockWindowControllersManager,
+            pixelFiring: mockPixelFiring,
+            featureFlagger: mockFeatureFlagger,
+            fireNewChatExperimentPixels: { fireCount += 1 }
+        )
+
+        coordinator.toggleSidebar()
+
+        XCTAssertEqual(fireCount, 0, "Reusing an existing session is a resume, not a new chat")
+    }
+
     func testToggleSidebar_hidesSidebarWhenShowing() {
         // Given
         let tabID = "test-tab"

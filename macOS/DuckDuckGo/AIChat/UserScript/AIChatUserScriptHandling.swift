@@ -23,6 +23,7 @@ import Common
 import FoundationExtensions
 import Foundation
 import PixelKit
+import PixelExperimentKit
 import Subscription
 import UserScript
 import OSLog
@@ -199,6 +200,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var conversationSource: AIChatConversationSource?
     private var didConsumeConversationSource = false
     private let conversationSourceHandler: AIChatConversationSourceHandler
+    private let fireNewChatExperimentPixels: () -> Void
 
     /// Whether page context with content is currently attached to this chat — set by the native
     /// auto-attach push and updated by the frontend's add/remove toggle. Read at prompt submit for
@@ -222,7 +224,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         freeTrialConversionService: FreeTrialConversionInstrumentationService = Application.appDelegate.freeTrialConversionService,
         notificationCenter: NotificationCenter = .default,
         voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil,
-        conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
+        conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
+        fireNewChatExperimentPixels: @escaping () -> Void = { PixelKit.fireNewAIChatExperimentPixels() }
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
@@ -236,6 +239,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
         self.conversationSourceHandler = conversationSourceHandler
+        self.fireNewChatExperimentPixels = fireNewChatExperimentPixels
         self.voiceChatFailureHandler = voiceChatFailureHandler ?? DuckAiVoiceChatFailureHandler(
             permissionCenterPresenter: NotificationCenterPermissionCenterPresenter(
                 notificationCenter: notificationCenter,
@@ -1117,6 +1121,9 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             }
         case .userDidAcceptTermsAndConditions:
             handleTermsAccepted()
+            completion?()
+        case .userDidCreateNewChat:
+            fireNewChatExperimentPixels()
             completion?()
         case .userDidSelectSuggestion:
             pixelFiring?.fire(

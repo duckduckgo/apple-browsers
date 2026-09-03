@@ -18,6 +18,8 @@
 
 import Foundation
 import AIChat
+import PixelKit
+import PixelExperimentKit
 
 /// Represents different triggers for opening an AI chat tab.
 ///
@@ -119,30 +121,36 @@ protocol AIChatTabOpening {
 struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
     private let aiChatTabManaging: AIChatTabManaging
+    private let fireNewChatExperimentPixels: () -> Void
 
     let aiChatRemoteSettings = AIChatRemoteSettings()
 
     init(
         promptHandler: AIChatPromptHandler,
-        aiChatTabManaging: AIChatTabManaging
+        aiChatTabManaging: AIChatTabManaging,
+        fireNewChatExperimentPixels: @escaping () -> Void = { PixelKit.fireNewAIChatExperimentPixels() }
     ) {
         self.promptHandler = promptHandler
         self.aiChatTabManaging = aiChatTabManaging
+        self.fireNewChatExperimentPixels = fireNewChatExperimentPixels
     }
 
     // MARK: - New Simplified API
 
     @MainActor
     func openAIChatTab(with trigger: AIChatOpenTrigger, behavior: LinkOpenBehavior) {
+        var startedNewChat = false
+
         switch trigger {
         case .newChat:
-            openAIChatTab(query: nil, with: behavior, autoSubmit: true)
+            startedNewChat = openAIChatTab(query: nil, with: behavior, autoSubmit: true)
 
         case .query(let query, shouldAutoSubmit: let shouldAutoSubmit):
-            openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)
+            startedNewChat = openAIChatTab(query: query, with: behavior, autoSubmit: shouldAutoSubmit)
 
         case .url(let url):
-            aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
+            let didOpen = aiChatTabManaging.openAIChat(url, with: behavior, hasPrompt: false)
+            startedNewChat = didOpen && url.getParameter(named: AIChatURLParameters.modeName) != nil
 
         case .payload(let payload):
             aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, payload: payload)
@@ -151,16 +159,18 @@ struct AIChatTabOpener: AIChatTabOpening {
             aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, restorationData: data)
 
         case .existingChat(let chatId):
-            let chatURL = buildChatURL(for: chatId)
-            aiChatTabManaging.openAIChat(chatURL, with: behavior, hasPrompt: false)
+            aiChatTabManaging.openAIChat(buildChatURL(for: chatId), with: behavior, hasPrompt: false)
 
         case .mode(let mode):
-            let prompt = AIChatNativePrompt.queryPrompt("", autoSubmit: false, mode: mode)
-            promptHandler.setData(prompt)
-            aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: behavior, hasPrompt: true)
+            promptHandler.setData(AIChatNativePrompt.queryPrompt("", autoSubmit: false, mode: mode))
+            startedNewChat = aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: behavior, hasPrompt: true)
 
         case .openSettings:
             aiChatTabManaging.insertAIChatTabRequestingOpenSettings(with: aiChatRemoteSettings.aiChatURL)
+        }
+
+        if startedNewChat {
+            fireNewChatExperimentPixels()
         }
     }
 
@@ -179,24 +189,41 @@ struct AIChatTabOpener: AIChatTabOpening {
 
     @MainActor
     func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController) {
-        promptHandler.setData(.queryPrompt(query, autoSubmit: true))
-        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewTabOf: windowController, hasPrompt: true)
+        openNewChatTab(withQuery: query, target: .newTabOf(windowController))
     }
 
     @MainActor
     func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint) {
-        promptHandler.setData(.queryPrompt(query, autoSubmit: true))
-        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewWindowAt: droppingPoint, hasPrompt: true)
+        openNewChatTab(withQuery: query, target: .newWindowAt(droppingPoint))
     }
 
     // MARK: - Private Helpers
 
+    private enum NewChatPromptTarget {
+        case newTabOf(MainWindowController)
+        case newWindowAt(NSPoint)
+    }
+
     @MainActor
-    private func openAIChatTab(query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) {
+    private func openNewChatTab(withQuery query: String, target: NewChatPromptTarget) {
+        promptHandler.setData(.queryPrompt(query, autoSubmit: true))
+        switch target {
+        case .newTabOf(let windowController):
+            aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewTabOf: windowController, hasPrompt: true)
+        case .newWindowAt(let droppingPoint):
+            aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewWindowAt: droppingPoint, hasPrompt: true)
+        }
+        fireNewChatExperimentPixels()
+    }
+
+    /// Returns `true` if a new chat surface was actually opened (`false` on a no-op).
+    @MainActor
+    @discardableResult
+    private func openAIChatTab(query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) -> Bool {
         if let query = query {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
-        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
+        return aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
     }
 
     /// Builds a URL to open an existing chat by its ID.
@@ -216,8 +243,10 @@ struct AIChatTabOpener: AIChatTabOpening {
 }
 
 protocol AIChatTabManaging {
+    /// Returns `true` if a chat surface was actually opened/shown, `false` for a no-op or existing-chat navigation.
     @MainActor
-    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool)
+    @discardableResult
+    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool) -> Bool
 
     @MainActor
     func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool)
@@ -255,7 +284,8 @@ extension WindowControllersManager: AIChatTabManaging {
     ///   - hasPrompt: With `.currentTab`, if the current tab is already an AI chat and a prompt was supplied,
     ///                opens a fresh chat in a new selected tab so the loaded conversation is left untouched.
     ///                Ignored for `.newTab` / `.newWindow`, which always open a new tab/window.
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) {
+    @discardableResult
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) -> Bool {
 
         let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
 
@@ -267,15 +297,20 @@ extension WindowControllersManager: AIChatTabManaging {
                     // selected tab rather than injecting the prompt into the loaded conversation,
                     // which users found confusing.
                     open(url, with: .newTab(selected: true), source: .ui, target: nil)
+                    return true
                 } else if url.getParameter(named: "chatID") != nil {
                     // Navigate to a specific existing chat — must load even if already on duck.ai
                     show(url: url, source: .ui, newTab: false)
+                    return false
                 }
+                return false
             } else {
                 show(url: url, source: .ui, newTab: false)
+                return true
             }
         default:
             open(url, with: linkOpenBehavior, source: .ui, target: nil)
+            return true
         }
     }
 

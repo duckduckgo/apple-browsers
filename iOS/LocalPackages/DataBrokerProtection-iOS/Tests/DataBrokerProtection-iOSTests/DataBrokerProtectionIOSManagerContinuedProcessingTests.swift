@@ -26,7 +26,7 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
 
     func testWhenPrepareContinuedProcessingInitialRunAndPendingScansExist_thenReturnsInitialScanPlan() async throws {
         // Given
-        let (sut, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.brokerProfileQueryDataToReturn = [
             DBPIOSManagerTestUtils.makeBrokerProfileQueryData(
                 brokerId: 1,
@@ -44,9 +44,9 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         XCTAssertTrue(dependencies.eventsHandler.profileSavedFired)
     }
 
-    func testWhenCoordinatorIsReadyForScanOperations_thenStartsQueueAndEmitsScanPhaseCompleted() async {
+    func testWhenCoordinatorIsReadyForScanOperations_thenStartsQueueAndEmitsScanPhaseCompleted() async throws {
         // Given
-        let (sut, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         let expectation = expectation(description: "scan phase completed")
         dependencies.continuedProcessingCoordinator.onEvent = { event in
             if case .scanPhaseCompleted = event {
@@ -62,9 +62,9 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         XCTAssertTrue(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
     }
 
-    func testWhenCoordinatorIsReadyForOptOutOperations_thenStartsQueueAndEmitsOptOutPhaseCompleted() async {
+    func testWhenCoordinatorIsReadyForOptOutOperations_thenStartsQueueAndEmitsOptOutPhaseCompleted() async throws {
         // Given
-        let (sut, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         let expectation = expectation(description: "opt-out phase completed")
         dependencies.continuedProcessingCoordinator.onEvent = { event in
             if case .optOutPhaseCompleted = event {
@@ -80,9 +80,9 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         XCTAssertTrue(dependencies.queueManager.didCallStartImmediateOptOutOperationsIfPermitted)
     }
 
-    func testWhenCoordinatorDidRequestStopOperations_thenStopsQueue() {
+    func testWhenCoordinatorDidRequestStopOperations_thenStopsQueue() async throws {
         // Given
-        let (sut, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
 
         // When
         sut.coordinatorDidRequestStopOperations()
@@ -94,7 +94,7 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
     func testWhenSaveProfileAndFeatureFlagIsOff_thenFallsBackToLegacySave() async throws {
         // Given
         let featureFlagger = MockDBPFeatureFlagger(isContinuedProcessingFeatureOn: false)
-        let (sut, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
 
         // When
         try await sut.saveProfile(DBPIOSManagerTestUtils.makeProfile())
@@ -107,7 +107,7 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
 
     func testWhenSaveProfileAndFeatureFlagIsOn_thenStartsContinuedProcessing() async throws {
         // Given
-        let (sut, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager(
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(
             featureFlagger: MockDBPFeatureFlagger(isContinuedProcessingFeatureOn: true)
         )
         dependencies.database.brokerProfileQueryDataToReturn = [
@@ -132,7 +132,7 @@ final class DataBrokerProtectionIOSManagerContinuedProcessingTests: XCTestCase {
         // Given
         let coordinator = MockContinuedProcessingCoordinator()
         coordinator.startInitialRunError = NSError(domain: "test", code: 1)
-        let (sut, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager(
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(
             featureFlagger: MockDBPFeatureFlagger(isContinuedProcessingFeatureOn: true),
             continuedProcessingCoordinator: coordinator
         )

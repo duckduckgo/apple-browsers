@@ -58,8 +58,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   profileStateManager: DBPProfileStateManaging,
                                   isWebViewInspectable: Bool = false,
                                   freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
-                                  contentBlocking: DBPWebViewContentBlocking,
-                                  shouldDeferSecureVaultInitialization: Bool = false) -> DataBrokerProtectionIOSManager? {
+                                  contentBlocking: DBPWebViewContentBlocking) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -99,39 +98,9 @@ public class DataBrokerProtectionIOSManagerProvider {
             )
         }
 
-        if shouldDeferSecureVaultInitialization {
-            return DataBrokerProtectionIOSManager.withDeferredVaultResources(
-                provider: vaultResourcesProvider,
-                contentScopeProperties: contentScopeProperties,
-                authenticationManager: authenticationManager,
-                userNotificationService: userNotificationService,
-                sharedPixelsHandler: sharedPixelsHandler,
-                iOSPixelsHandler: iOSPixelsHandler,
-                privacyConfigManager: privacyConfigurationManager,
-                quickLinkOpenURLHandler: quickLinkOpenURLHandler,
-                feedbackViewCreator: feedbackViewCreator,
-                featureFlagger: featureFlagger,
-                settings: dbpSettings,
-                subscriptionManager: subscriptionManager,
-                wideEvent: wideEvent,
-                eventsHandler: eventsHandler,
-                isWebViewInspectable: isWebViewInspectable,
-                freeTrialConversionService: freeTrialConversionService,
-                freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                profileStateManager: profileStateManager
-            )
-        }
-
-        let vaultResources: DBPVaultResources
-        do {
-            vaultResources = try vaultResourcesProvider()
-        } catch {
-            assertionFailure("Failed to make secure storage vault")
-            return nil
-        }
-
-        return DataBrokerProtectionIOSManager.withVaultResources(
-            vaultResources,
+        return DataBrokerProtectionIOSManager.withDeferredVaultResources(
+            provider: vaultResourcesProvider,
+            contentScopeProperties: contentScopeProperties,
             authenticationManager: authenticationManager,
             userNotificationService: userNotificationService,
             sharedPixelsHandler: sharedPixelsHandler,

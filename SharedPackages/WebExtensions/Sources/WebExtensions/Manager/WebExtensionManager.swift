@@ -96,10 +96,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // WebKit lacks several Chrome APIs (`notifications`, `offscreen`, `idle`, …), and a
         // top-level reference to one aborts an extension's background script. The stub script
         // defines them. A user script on the controller's configuration reaches every page the
-        // extension owns — the background page, the action popup, the options page — where a
-        // `<script>` tag in a generated page reaches only that page. The stubs return early
-        // when neither `chrome` nor `browser` is defined, so a page that is not an extension
-        // page is left alone.
+        // extension owns — the background page, the action popup, the options page and, with
+        // `forMainFrameOnly: false`, the offscreen iframe the stub script creates — where a
+        // `<script>` tag in a generated page reaches only that page. A user script is also
+        // exempt from the page's CSP, which such a tag is not. The stubs return early when
+        // neither `chrome` nor `browser` is defined, so a page that is not an extension page
+        // is left alone.
         let stubScript = WKUserScript(source: WebExtensionAPIStubScript.source,
                                       injectionTime: .atDocumentStart,
                                       forMainFrameOnly: false)

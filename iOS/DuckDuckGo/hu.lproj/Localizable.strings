@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Szinkronizálási és biztonsági mentési hiba";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Beállítások szinkronizálása";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Kérjük, próbáld újra.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-figyelmeztetés";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Helyreállítási kód a vágólapra másolva";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Szerveradatok törlése";

@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Грешка при синхронизиране и архивиране";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Настройки за синхронизиране";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Моля, опитайте отново.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Известие за SwiftUI";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Кодът за възстановяване и копиран в клипборда";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Изтриване на данните от сървъра";

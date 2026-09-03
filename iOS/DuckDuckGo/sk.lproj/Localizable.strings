@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Chyba synchronizácie a zálohovania";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Nastavenia synchronizácie";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Skús to znova.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Upozornenie SwiftUI";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Kód obnovenia bol skopírovaný do schránky";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Zmazanie údajov servera";

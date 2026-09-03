@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Erro de sincronização e cópia de segurança";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Definições de sincronização";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Tenta novamente.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alerta SwiftUI";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Código de recuperação copiado para a área de transferência";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Eliminar dados do servidor";

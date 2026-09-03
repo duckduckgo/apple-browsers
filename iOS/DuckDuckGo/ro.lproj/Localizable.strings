@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Eroare de sincronizare și backup";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Setări de sincronizare";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Încearcă din nou.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alertă SwiftUI";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Codul de recuperare a fost copiat în clipboard";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Șterge datele serverului";

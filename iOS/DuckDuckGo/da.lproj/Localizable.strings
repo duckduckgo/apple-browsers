@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Fejl ved synkronisering og sikkerhedskopiering";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Synkroniseringsindstillinger";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Prøv igen.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-advarsler";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Gendannelseskode kopieret til udklipsholder";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Slet serverdata";

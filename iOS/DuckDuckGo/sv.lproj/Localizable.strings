@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Synkroniserings- och säkerhetskopieringsfel";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Synkronisera inställningar";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Försök igen.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-varning";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Återställningskoden har kopierats till urklipp";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Radera serverdata";

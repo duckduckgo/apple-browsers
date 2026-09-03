@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Sinhronizācijas un dublēšanas kļūda";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Sinhronizācijas iestatījumi";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Lūdzu, mēģini vēlreiz.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI brīdinājums";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Atgūšanas kods ir nokopēts starpliktuvē";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Dzēst servera datus";

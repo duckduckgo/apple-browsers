@@ -508,9 +508,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Sync & Backup Error";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Sync Settings";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Please try again.";
 
@@ -4893,9 +4890,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "View All Plans";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Recovery code copied to clipboard";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Delete Server Data";

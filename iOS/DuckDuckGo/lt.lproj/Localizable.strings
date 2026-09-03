@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Sinchronizavimo ir atsarginės kopijos kūrimo klaida";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Sinchronizavimo parametrai";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Bandykite dar kartą.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI įspėjimas";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Atkūrimo kodas nukopijuotas į mainų sritį";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Ištrinti serverio duomenis";

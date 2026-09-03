@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Napaka pri sinhronizaciji in varnostnem kopiranju";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Nastavitve sinhronizacije";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Poskusite znova.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Opozorilo SwiftUI";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Obnovitvena koda je bila kopirana v odložišče";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Izbriši podatke strežnika";

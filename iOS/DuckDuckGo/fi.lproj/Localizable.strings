@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Synkronointi- ja varmuuskopiointivirhe";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Synkronointiasetukset";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Yritä uudelleen.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-ilmoitus";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Palautuskoodi kopioitu leikepöydälle";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Poista palvelimen tiedot";

@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Sünkroonimise ja varundamise tõrge";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Sünkroonimise sätted";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Proovi uuesti.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI teade";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Taastamiskood kopeeriti lõikelauale";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Kustuta serveri andmed";

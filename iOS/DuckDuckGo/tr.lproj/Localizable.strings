@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Senkronizasyon ve Yedekleme Hatası";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Senkronizasyon Ayarları";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Lütfen tekrar deneyin.";
 
@@ -5129,9 +5126,6 @@
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI Uyarısı";
-
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Kurtarma kodu panoya kopyalandı";
 
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Sunucu Verilerini Sil";

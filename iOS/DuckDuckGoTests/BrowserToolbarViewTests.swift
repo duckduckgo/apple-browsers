@@ -208,13 +208,14 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         let frame = sut.restingCapsuleFrame(in: container)
 
-        XCTAssertEqual(BrowserToolbarView.floatingStandaloneButtonRowHorizontalPadding, 16)
         if #available(iOS 26.0, *) {
-            let guide = container.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
-            let expected = guide.layoutFrame.minX + BrowserToolbarView.floatingConcentricGlassInset
-            XCTAssertEqual(frame.minX, expected, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.width - frame.maxX, expected, accuracy: 0.01)
+            // The standalone pill shares the combined bottom chrome's physical inset on every edge,
+            // so the two line up when the layout switches between them.
+            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
         } else {
+            XCTAssertEqual(BrowserToolbarView.floatingStandaloneButtonRowHorizontalPadding, 16)
             XCTAssertEqual(BrowserToolbarView.floatingStandaloneHorizontalInset, 24)
             XCTAssertEqual(frame.minX, 24, accuracy: 0.01)
             XCTAssertEqual(container.bounds.width - frame.maxX, 24, accuracy: 0.01)
@@ -333,13 +334,19 @@ final class BrowserToolbarViewTests: XCTestCase {
         }
     }
 
-    func testWhenStandaloneFloatingThenBottomMarginIsTwentyOnePoints() {
+    func testWhenStandaloneFloatingThenBottomMarginMatchesCombinedChrome() {
         let sut = makeSUT(embeddedOmnibar: false)
 
-        XCTAssertEqual(BrowserToolbarView.floatingStandaloneBottomMargin, 21)
-        XCTAssertEqual(sut.floatingBottomMargin, 21, accuracy: 0.01)
-        XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .top), 24)
-        XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .top), 21)
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(sut.floatingBottomMargin, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .top), BrowserToolbarView.floatingEmbeddedConcentricInset)
+            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .top), BrowserToolbarView.floatingEmbeddedConcentricInset)
+        } else {
+            XCTAssertEqual(BrowserToolbarView.floatingStandaloneBottomMargin, 21)
+            XCTAssertEqual(sut.floatingBottomMargin, 21, accuracy: 0.01)
+            XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .top), 24)
+            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .top), 21)
+        }
     }
 
     func testWhenEmbeddedFloatingThenBottomMarginMatchesPlatformGeometry() {
@@ -387,6 +394,43 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         // Both rows carry 44pt controls, so aligned centres mean the same distance from the glass
         // edge as the address field's icons: its 16pt text-area padding plus half a control.
+        let expectedInset = BrowserToolbarView.floatingEmbeddedAddressBarIconInset
+        XCTAssertEqual(first - capsule.minX, expectedInset, accuracy: 0.5)
+        XCTAssertEqual(capsule.maxX - last, expectedInset, accuracy: 0.5)
+    }
+
+    func testWhenStandaloneFloatingThenOuterButtonsSitWhereTheCombinedChromeIconsDo() throws {
+        guard #available(iOS 26.0, *) else { throw XCTSkip("Floating UI is iOS 26+") }
+        let sut = makeSUT(embeddedOmnibar: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        window.addSubview(sut)
+        window.makeKeyAndVisible()
+        let horizontalGuide = window.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: horizontalGuide.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: horizontalGuide.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: window.bottomAnchor),
+            sut.heightAnchor.constraint(equalToConstant: 62)
+        ])
+        sut.setToolbarButtons([
+            makeToolbarButton(identifier: "back", width: 44),
+            makeToolbarButton(identifier: "forward", width: 44),
+            makeToolbarButton(identifier: "fire", width: 44),
+            makeToolbarButton(identifier: "tabs", width: 44),
+            makeToolbarButton(identifier: "menu", width: 44)
+        ])
+        window.layoutIfNeeded()
+
+        let centers = sut.arrangedToolbarButtonViews.map { view in
+            window.convert(view.center, from: view.superview).x
+        }
+        let first = try XCTUnwrap(centers.first)
+        let last = try XCTUnwrap(centers.last)
+        let capsule = sut.restingCapsuleFrame(in: window)
+
+        // The split pill's outer buttons land exactly where the combined bottom chrome's icons do,
+        // so switching address bar position doesn't move them.
         let expectedInset = BrowserToolbarView.floatingEmbeddedAddressBarIconInset
         XCTAssertEqual(first - capsule.minX, expectedInset, accuracy: 0.5)
         XCTAssertEqual(capsule.maxX - last, expectedInset, accuracy: 0.5)

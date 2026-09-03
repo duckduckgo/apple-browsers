@@ -127331,6 +127331,9 @@
         }
       }
     },
+    "Website Content" : {
+
+    },
     "whats.new.menu.item" : {
       "comment" : "Title of the dialog menu item that opens the 'What's New' page",
       "extractionState" : "extracted_with_value",

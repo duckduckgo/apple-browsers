@@ -33,6 +33,7 @@ struct PreferencesSection: Hashable, Identifiable {
                                 includingSync: Bool,
                                 includingAIChat: Bool,
                                 includingYouTubeAdBlocking: Bool,
+                                includingWebsitePermissions: Bool = false,
                                 subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         var privacyPanes: [PreferencePaneIdentifier] = [
             .defaultBrowser, .privateSearch, .webTrackingProtection, .threatProtection, .cookiePopupProtection, .emailProtection
@@ -57,7 +58,17 @@ struct PreferencesSection: Hashable, Identifiable {
                 panes.append(.aiChat)
             }
 
-            return [.general] + panes.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
+            var sortedPanes = panes.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
+
+            if includingWebsitePermissions {
+                if let syncIndex = sortedPanes.firstIndex(of: .sync) {
+                    sortedPanes.insert(.websitePermissions, at: syncIndex)
+                } else {
+                    sortedPanes.append(.websitePermissions)
+                }
+            }
+
+            return [.general] + sortedPanes
         }()
 
         // App Store guidelines don't allow references to other platforms, so the Mac App Store build omits the otherPlatforms section.
@@ -154,6 +165,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case autofill
     case accessibility
     case duckPlayer = "duckplayer"
+    case websitePermissions
     case otherPlatforms = "https://duckduckgo.com/app/devices?origin=funnel_app_macos"
     case aiChat = "aichat"
     case about
@@ -226,6 +238,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.accessibility
         case .duckPlayer:
             return UserText.duckPlayer
+        case .websitePermissions:
+            return UserText.websitePermissions
         case .aiChat:
             return UserText.aiFeatures
         case .about:
@@ -277,6 +291,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.accessibilityIcon
         case .duckPlayer:
             return settingsIconProvider.duckPlayerIcon
+        case .websitePermissions:
+            return settingsIconProvider.websitePermissionsIcon
         case .about:
             return settingsIconProvider.aboutIcon
         case .otherPlatforms:

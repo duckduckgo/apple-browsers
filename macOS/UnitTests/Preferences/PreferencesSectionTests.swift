@@ -43,6 +43,26 @@ final class PreferencesSectionTests: XCTestCase {
         XCTAssertFalse(regularPanesSection.panes.contains(.duckPlayer))
         XCTAssertFalse(regularPanesSection.panes.contains(.sync))
         XCTAssertFalse(regularPanesSection.panes.contains(.aiChat))
+        XCTAssertFalse(regularPanesSection.panes.contains(.websitePermissions))
+    }
+
+    func testWebsitePermissionsPaneAddedBeforeSyncWhenEnabled() throws {
+        // Given
+        let subscriptionState = PreferencesSidebarSubscriptionState()
+
+        // When
+        let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
+                                                          includingSync: true,
+                                                          includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: true,
+                                                          subscriptionState: subscriptionState)
+
+        // Then
+        let regularPanesSection = sections.first { $0.id == .regularPreferencePanes }!
+        let websitePermissionsIndex = try XCTUnwrap(regularPanesSection.panes.firstIndex(of: .websitePermissions))
+        let syncIndex = try XCTUnwrap(regularPanesSection.panes.firstIndex(of: .sync))
+        XCTAssertEqual(websitePermissionsIndex + 1, syncIndex)
     }
 
     func testDuckPlayerPaneAddedToRegularSectionWhenEnabled() throws {

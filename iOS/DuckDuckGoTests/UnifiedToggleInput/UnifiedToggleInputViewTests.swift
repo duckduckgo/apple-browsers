@@ -50,6 +50,45 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
     }
 
+    func testWhenExpandedInputShowsToggleThenDismissButtonHasNoBackground() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: false), animated: false)
+
+        let dismissButton = try XCTUnwrap(findButton(accessibilityIdentifier: "UnifiedToggleInput.Button.Dismiss", in: sut))
+        XCTAssertEqual(dismissButton.alpha, 1)
+        XCTAssertNil(dismissButton.backgroundColor)
+    }
+
+    func testWhenExpandedInputHidesToggleThenDismissButtonHasNoBackground() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
+
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        let dismissButton = try XCTUnwrap(findButton(accessibilityIdentifier: "UnifiedToggleInput.Button.Dismiss", in: sut))
+        XCTAssertEqual(dismissButton.alpha, 1)
+        XCTAssertNil(dismissButton.backgroundColor)
+    }
+
+    func testWhenSearchOnlyInputShowsAIChatShortcutThenButtonHasNoPersistentBackdrop() throws {
+        let handler = UnifiedToggleInputHandler(
+            isVoiceSearchEnabled: false,
+            isToggleEnabled: false,
+            isAIChatShortcutAvailable: true
+        )
+        handler.setToggleState(.search)
+        let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
+
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        let aiChatButton = try XCTUnwrap(findButton(accessibilityIdentifier: "Browser.OmniBar.Button.AIChat", in: sut))
+        let persistentBackgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        XCTAssertFalse(aiChatButton.isHidden)
+        XCTAssertFalse(aiChatButton.subviews.contains { $0.backgroundColor?.isEqual(persistentBackgroundColor) == true })
+    }
+
     func testWhenExpandedInputHidesToggleThenModeSyncDoesNotShowOutline() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)

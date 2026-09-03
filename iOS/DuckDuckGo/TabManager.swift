@@ -315,7 +315,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             return
         }
         _currentBrowsingMode = mode
-        fireModeDelegate?.tabManagerDidChangeBrowsingMode(mode)
         PixelKit.fire(Pixel.Event.browsingModeSwitched, options: .parameters([
             PixelParameters.browsingMode: mode.pixelParamValue,
             PixelParameters.source: source.rawValue

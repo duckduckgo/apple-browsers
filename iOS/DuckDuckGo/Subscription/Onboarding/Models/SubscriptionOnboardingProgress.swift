@@ -58,6 +58,14 @@ extension SubscriptionOnboardingProgressPersisting {
         defer { progressLock.unlock() }
         completionViewCount += 1
     }
+
+    mutating func recordFullyCompletedIfNeeded(now: Date) -> Bool {
+        progressLock.lock()
+        defer { progressLock.unlock() }
+        guard fullyCompletedAt == nil else { return false }
+        fullyCompletedAt = now
+        return true
+    }
 }
 
 struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPersisting {
@@ -78,24 +86,24 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
     /// Unrecognised raw values are dropped rather than failing the whole read, so a downgrade after a new checklist item ships leaves the remaining progress intact.
     var completedItems: Set<SubscriptionOnboardingChecklistItem> {
         get {
-            let stored = read(.completedItems) as? [String] ?? []
+            let stored: [String] = read(.completedItems) ?? []
             return Set(stored.compactMap(SubscriptionOnboardingChecklistItem.init(rawValue:)))
         }
         set { write(newValue.map(\.rawValue).sorted(), for: .completedItems) }
     }
 
     var cardFirstShownDate: Date? {
-        get { read(.cardFirstShownDate) as? Date }
+        get { read(.cardFirstShownDate) }
         set { write(newValue, for: .cardFirstShownDate) }
     }
 
     var fullyCompletedAt: Date? {
-        get { read(.fullyCompletedAt) as? Date }
+        get { read(.fullyCompletedAt) }
         set { write(newValue, for: .fullyCompletedAt) }
     }
 
     var completionViewCount: Int {
-        get { read(.completionViewCount) as? Int ?? 0 }
+        get { read(.completionViewCount) ?? 0 }
         set { write(newValue, for: .completionViewCount) }
     }
 }
@@ -136,20 +144,10 @@ struct SubscriptionOnboardingProgress {
     }
 
     /// Stays up for the rest of the run once complete, capped at 2 views total once complete, and expires 14 days after it first appeared regardless.
-    mutating func shouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
+    mutating func shouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStateManaging) -> Bool {
         let isComplete = percentage >= 100
         if isComplete {
-            let wasAlreadyComplete: Bool
-            do {
-                progressLock.lock()
-                defer { progressLock.unlock() }
-                wasAlreadyComplete = persistor.fullyCompletedAt != nil
-                if !wasAlreadyComplete {
-                    persistor.fullyCompletedAt = now
-                }
-            }
-
-            if !wasAlreadyComplete {
+            if persistor.recordFullyCompletedIfNeeded(now: now) {
                 session.recordCompletedDuringThisSession()
             }
             guard isWithinCompletionCriteria(session: session) else { return false }
@@ -165,7 +163,7 @@ struct SubscriptionOnboardingProgress {
     }
 
     /// The session latch and view cap, evaluated together since both callers below need the same pair. Read-only.
-    private func isWithinCompletionCriteria(session: SubscriptionOnboardingSessionStating) -> Bool {
+    private func isWithinCompletionCriteria(session: SubscriptionOnboardingSessionStateManaging) -> Bool {
         session.didCompleteDuringThisSession && persistor.completionViewCount < Self.maxCompletionViews
     }
 
@@ -176,7 +174,7 @@ struct SubscriptionOnboardingProgress {
     }
 
     /// A non-writing preview of ``shouldShowSetupCard(now:session:)``, safe to call from a View `init`.
-    func previewShouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStating) -> Bool {
+    func previewShouldShowSetupCard(now: Date, session: SubscriptionOnboardingSessionStateManaging) -> Bool {
         if percentage >= 100 {
             guard isWithinCompletionCriteria(session: session) else { return false }
         }
@@ -204,9 +202,9 @@ extension SubscriptionOnboardingProgress {
 /// A failed read makes a customer look like they made no progress; a failed write silently loses a step.
 private extension SubscriptionOnboardingProgressPersistor {
 
-    func read(_ key: Key) -> Any? {
+    func read<T>(_ key: Key) -> T? {
         do {
-            return try keyValueStore.object(forKey: key.rawValue)
+            return try keyValueStore.object(forKey: key.rawValue) as? T
         } catch {
             Logger.subscription.error("Onboarding progress read failed for \(key.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
             return nil

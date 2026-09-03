@@ -21,12 +21,12 @@
 ///
 /// Held at app scope and injected. `SettingsViewModel` is rebuilt on every Settings presentation, so a flag
 /// owned any lower would reset mid-session and take the card with it.
-protocol SubscriptionOnboardingSessionStating: AnyObject {
+protocol SubscriptionOnboardingSessionStateManaging: AnyObject {
     var didCompleteDuringThisSession: Bool { get }
     func recordCompletedDuringThisSession()
 }
 
-final class SubscriptionOnboardingSessionState: SubscriptionOnboardingSessionStating {
+final class SubscriptionOnboardingSessionState: SubscriptionOnboardingSessionStateManaging {
 
     private(set) var didCompleteDuringThisSession = false
 

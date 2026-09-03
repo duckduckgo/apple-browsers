@@ -359,16 +359,16 @@ public struct ConfettiColor {
 }
 
 public extension ConfettiColor {
-    static let brandMandarin = ConfettiColor(fill: Color(singleUseColor: .rebranding(.confettiMandarinFill)),
-                                             stroke: Color(singleUseColor: .rebranding(.confettiMandarinStroke)))
-    static let brandPondwater = ConfettiColor(fill: Color(singleUseColor: .rebranding(.confettiPondwaterFill)),
-                                              stroke: Color(singleUseColor: .rebranding(.confettiPondwaterStroke)))
-    static let brandLilypad = ConfettiColor(fill: Color(singleUseColor: .rebranding(.confettiLilypadFill)),
-                                            stroke: Color(singleUseColor: .rebranding(.confettiLilypadStroke)))
-    static let brandBlossom = ConfettiColor(fill: Color(singleUseColor: .rebranding(.confettiBlossomFill)),
-                                            stroke: Color(singleUseColor: .rebranding(.confettiBlossomStroke)))
-    static let brandPollen = ConfettiColor(fill: Color(singleUseColor: .rebranding(.confettiPollenFill)),
-                                           stroke: Color(singleUseColor: .rebranding(.confettiPollenStroke)))
+    static let brandMandarin = ConfettiColor(fill: Color(singleUseColor: .confettiMandarinFill),
+                                             stroke: Color(singleUseColor: .confettiMandarinStroke))
+    static let brandPondwater = ConfettiColor(fill: Color(singleUseColor: .confettiPondwaterFill),
+                                              stroke: Color(singleUseColor: .confettiPondwaterStroke))
+    static let brandLilypad = ConfettiColor(fill: Color(singleUseColor: .confettiLilypadFill),
+                                            stroke: Color(singleUseColor: .confettiLilypadStroke))
+    static let brandBlossom = ConfettiColor(fill: Color(singleUseColor: .confettiBlossomFill),
+                                            stroke: Color(singleUseColor: .confettiBlossomStroke))
+    static let brandPollen = ConfettiColor(fill: Color(singleUseColor: .confettiPollenFill),
+                                           stroke: Color(singleUseColor: .confettiPollenStroke))
 
     static let brand: [ConfettiColor] = [.brandMandarin, .brandPondwater, .brandLilypad, .brandBlossom, .brandPollen]
 }

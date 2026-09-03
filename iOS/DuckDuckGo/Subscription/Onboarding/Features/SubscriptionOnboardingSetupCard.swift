@@ -21,7 +21,6 @@ import SwiftUI
 import DesignResourcesKit
 import DuckUI
 import UIComponents
-import Persistence
 
 /// The Subscription Settings re-entry card, carrying the current setup `percentage` and a CTA to resume.
 struct SubscriptionOnboardingSetupCard: View {
@@ -33,7 +32,7 @@ struct SubscriptionOnboardingSetupCard: View {
 
     private let visual: Graphic
     private let progress: SubscriptionOnboardingProgress
-    private let session: SubscriptionOnboardingSessionStating
+    private let session: SubscriptionOnboardingSessionStateManaging
     /// Whether the onboarding flow is on screen over this card.
     private let isPresentingFlow: Bool
     private let onContinue: () -> Void
@@ -43,7 +42,7 @@ struct SubscriptionOnboardingSetupCard: View {
 
     init(visual: Graphic,
          progress: SubscriptionOnboardingProgress,
-         session: SubscriptionOnboardingSessionStating,
+         session: SubscriptionOnboardingSessionStateManaging,
          isPresentingFlow: Bool = false,
          onContinue: @escaping () -> Void) {
         self.visual = visual

@@ -21,7 +21,7 @@ import SwiftUI
 import UIKit
 
 extension View {
-    // (TODO|Post-iOS15-Drop): `NavigationView` + `.navigationViewStyle(.stack)` become a plain `NavigationStack`.
+    #warning("Post-iOS15-Drop: `NavigationView` + `.navigationViewStyle(.stack)` become a plain `NavigationStack`.")
     func subscriptionOnboardingNavigationContainer() -> some View {
         NavigationView {
             self.subscriptionOnboardingInteractivePopEnabled()

@@ -326,7 +326,7 @@ private extension SubscriptionOnboardingBaseView {
 private extension View {
     /// Paints the navigation bar with the page color so it matches the flat `surfaceTertiary` page.
     /// `toolbarBackground` is iOS 16+, so on iOS 15 the bar keeps the system default background.
-    // (TODO|Post-iOS15-Drop): drop the fork and apply `toolbarBackground` unconditionally.
+    #warning("Post-iOS15-Drop: drop the fork and apply `toolbarBackground` unconditionally.")
     @ViewBuilder
     func navigationBarBackground(_ color: Color) -> some View {
         if #available(iOS 16.0, *) {

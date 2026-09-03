@@ -340,14 +340,83 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
 
         XCTAssertNil(sut.cardFirstShownDate)
     }
+
+    // MARK: - Fully completed
+
+    func testWhenNeverFullyCompletedThenTheDateIsNil() {
+        XCTAssertNil(sut.fullyCompletedAt)
+    }
+
+    func testWhenRecordingFullyCompletedThenTheDateIsStoredAndTrueIsReturned() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+
+        let recorded = sut.recordFullyCompletedIfNeeded(now: now)
+
+        XCTAssertTrue(recorded)
+        XCTAssertEqual(sut.fullyCompletedAt, now)
+    }
+
+    func testWhenRecordingFullyCompletedAgainThenTheOriginalDateIsKeptAndFalseIsReturned() {
+        let first = Date(timeIntervalSince1970: 1_000_000)
+        let later = Date(timeIntervalSince1970: 2_000_000)
+
+        let firstRecorded = sut.recordFullyCompletedIfNeeded(now: first)
+        let secondRecorded = sut.recordFullyCompletedIfNeeded(now: later)
+
+        XCTAssertTrue(firstRecorded)
+        XCTAssertFalse(secondRecorded)
+        XCTAssertEqual(sut.fullyCompletedAt, first)
+    }
+
+    // MARK: - Storage failures
+
+    func testWhenReadFailsThenCompletedItemsIsEmptyRatherThanCrashing() {
+        sut.completedItems = [.vpn]
+        keyValueStore.errorToThrow = InMemoryThrowingStore.StubError.forced
+
+        XCTAssertTrue(sut.completedItems.isEmpty)
+    }
+
+    func testWhenReadFailsThenDatesAreNilRatherThanCrashing() {
+        sut.recordCardFirstShownIfNeeded(now: Date())
+        keyValueStore.errorToThrow = InMemoryThrowingStore.StubError.forced
+
+        XCTAssertNil(sut.cardFirstShownDate)
+        XCTAssertNil(sut.fullyCompletedAt)
+    }
+
+    func testWhenWriteFailsThenTheValueIsSilentlyNotPersisted() {
+        keyValueStore.errorToThrow = InMemoryThrowingStore.StubError.forced
+
+        sut.completedItems = [.vpn]
+
+        keyValueStore.errorToThrow = nil
+        XCTAssertTrue(sut.completedItems.isEmpty)
+    }
 }
 
 /// A local stub rather than `PersistenceTestingUtils`
 private final class InMemoryThrowingStore: ThrowingKeyValueStoring {
 
-    private var values: [String: Any] = [:]
+    enum StubError: Error {
+        case forced
+    }
 
-    func object(forKey key: String) throws -> Any? { values[key] }
-    func set(_ value: Any?, forKey key: String) throws { values[key] = value }
-    func removeObject(forKey key: String) throws { values.removeValue(forKey: key) }
+    private var values: [String: Any] = [:]
+    var errorToThrow: Error?
+
+    func object(forKey key: String) throws -> Any? {
+        if let errorToThrow { throw errorToThrow }
+        return values[key]
+    }
+
+    func set(_ value: Any?, forKey key: String) throws {
+        if let errorToThrow { throw errorToThrow }
+        values[key] = value
+    }
+
+    func removeObject(forKey key: String) throws {
+        if let errorToThrow { throw errorToThrow }
+        values.removeValue(forKey: key)
+    }
 }

@@ -1030,6 +1030,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         store.completedItems = []
         store.cardFirstShownDate = nil
         store.fullyCompletedAt = nil
+        store.completionViewCount = 0
         showAlert(title: "Onboarding progress reset")
     }
 

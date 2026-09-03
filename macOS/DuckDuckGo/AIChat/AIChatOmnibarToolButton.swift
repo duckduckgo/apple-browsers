@@ -191,6 +191,11 @@ final class AIChatOmnibarToolButton: NSView {
 
     var isEnabled: Bool = true {
         didSet {
+            guard isEnabled != oldValue else { return }
+            if !isEnabled {
+                isMouseDown = false
+                isHovered = false
+            }
             updateAppearance()
         }
     }
@@ -485,9 +490,10 @@ final class AIChatOmnibarToolButton: NSView {
         refreshHoverState()
     }
 
-    /// For the cases where the tracking area can't be trusted — see `sendMenuOpeningAction`.
+    /// Re-derives hover from the pointer's real position when event ordering or modal menu
+    /// tracking makes the tracking-area callbacks unreliable.
     private func refreshHoverState() {
-        guard let window else {
+        guard isEnabled, let window else {
             isHovered = false
             return
         }
@@ -503,11 +509,11 @@ final class AIChatOmnibarToolButton: NSView {
     /// unconditionally would leave the hover fill visible until the pointer crosses the view again.
     private func updateHoverState(_ hovering: Bool, from event: NSEvent) {
         guard event.timestamp >= lastHoverEventTimestamp else {
-            refreshHoverState()
+            resetTransientFillState()
             return
         }
         lastHoverEventTimestamp = event.timestamp
-        isHovered = hovering
+        isHovered = hovering && isEnabled
         if !hovering {
             isMouseDown = false
         }

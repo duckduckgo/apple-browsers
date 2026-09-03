@@ -350,7 +350,8 @@ final class AIChatModelPickerButton: NSView {
         refreshHoverState()
     }
 
-    /// For the cases where the tracking area can't be trusted — see `sendMenuOpeningAction`.
+    /// Re-derives hover from the pointer's real position when event ordering or modal menu
+    /// tracking makes the tracking-area callbacks unreliable.
     private func refreshHoverState() {
         guard isEnabled, !isReadOnly, let window else {
             isHovered = false
@@ -368,7 +369,7 @@ final class AIChatModelPickerButton: NSView {
     /// unconditionally would leave the hover fill visible until the pointer crosses the view again.
     private func updateHoverState(_ hovering: Bool, from event: NSEvent) {
         guard event.timestamp >= lastHoverEventTimestamp else {
-            refreshHoverState()
+            resetTransientFillState()
             return
         }
         lastHoverEventTimestamp = event.timestamp

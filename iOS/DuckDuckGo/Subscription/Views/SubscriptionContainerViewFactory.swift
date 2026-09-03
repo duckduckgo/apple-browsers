@@ -20,6 +20,7 @@
 import SwiftUI
 import Subscription
 import Common
+import Core
 import FoundationExtensions
 import BrowserServicesKit
 import PrivacyConfig
@@ -87,7 +88,27 @@ enum SubscriptionContainerViewFactory {
             return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
         }()
 
-        let initialURL = landingURL ?? redirectPurchaseURL
+        let initialURL: URL = {
+            // A landing URL is an explicit destination, like the post-purchase welcome page, never a paywall.
+            if let landingURL { return landingURL }
+
+            // Falls back to the default purchase URL so the rewrite below sees the URL the flow will
+            // actually open — `SubscriptionContainerViewModel` applies that same default otherwise.
+            let purchaseURL = redirectPurchaseURL ?? subscriptionManager.url(for: .purchase)
+
+            let paywalls = DefaultPerformanceOptimizedPaywallsProvider(
+                privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                isFeatureEnabled: { featureFlagger.isFeatureOn(.performanceOptimizedPaywalls) }
+            )
+            guard paywalls.isEnabled else { return purchaseURL }
+
+            return SubscriptionURL.performanceOptimizedPaywallURL(
+                basedOn: purchaseURL,
+                paths: paywalls.paths,
+                isTrialEligible: subscriptionManager.isUserEligibleForFreeTrial(),
+                isPersonalInformationRemovalAvailable: subscriptionManager.currentStorefrontRegion == .usa
+            ) ?? purchaseURL
+        }()
 
         let origin = redirectURLComponents?.queryItems?.first(where: { $0.name == AttributionParameter.origin })?.value
 

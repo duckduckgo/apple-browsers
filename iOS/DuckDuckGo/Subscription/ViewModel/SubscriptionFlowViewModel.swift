@@ -297,6 +297,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     private func shouldAllowWebViewBackNavigationForURL(currentURL: URL) -> Bool {
         return !currentURL.shouldPreventBackNavigation &&
+        // The flow's own starting page is its root, whatever path it sits on. `performanceOptimizedPaywalls`
+        // moves the first paywall off `/subscriptions`, so matching `.purchase` alone no longer catches it.
+        !isCurrentURL(matching: initialURL) &&
         !isCurrentURL(matching: .purchase) &&
         !isCurrentURL(matching: .plans) &&
         !isCurrentURL(matching: .welcome) &&

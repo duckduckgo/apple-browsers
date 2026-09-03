@@ -209,6 +209,9 @@ class FloatingUIXCUITestCase: XCTestCase {
 
         moveAddressBar(to: barPosition)
         assertChromeButtonsAreUsable()
+        // Relocating after a focus/dismiss cycle: the focus transition hides the omnibar's
+        // collection view, and only re-hosting restores it.
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
 
         let menuButton = element(withIdentifier: AccessibilityID.toolbarMenu)
         XCTAssertTrue(menuButton.waitForHittable(timeout: timeout))

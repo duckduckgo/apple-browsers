@@ -14,6 +14,25 @@ function syncHeaderOffset() {
 
 function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
 
+function permissionTypeLabel(type) {
+    var labels = {
+        camera: "🎥 camera",
+        microphone: "🎙️ microphone",
+        geolocation: "📍 geolocation",
+        popups: "🪟 popups",
+        notification: "🔔 notification",
+        autoplay_policy: "▶️ autoplay_policy"
+    };
+    if (labels[type]) { return labels[type]; }
+    if (type.indexOf("external_") === 0) { return "🔗 " + type; }
+    return "🧩 " + type;
+}
+
+function persistedDecision(row) {
+    if (row.isRemoved) { return "ask"; }
+    return row.allow ? "allow" : "deny";
+}
+
 function sortRows(rows) {
     var k = state.sort.key, d = state.sort.dir;
     var arr = rows.slice();
@@ -59,7 +78,7 @@ function renderTypeFilterOptions() {
     all.value = "";
     select.appendChild(all);
     types.forEach(function(t) {
-        var option = el("option", t);
+        var option = el("option", permissionTypeLabel(t));
         option.value = t;
         select.appendChild(option);
     });
@@ -114,7 +133,9 @@ function boolCell(value) {
 function effectiveCell(row) {
     var td = el("td");
     td.className = "effective derived";
-    td.appendChild(el("span", row.effective));
+    var decision = el("span", row.effective);
+    decision.className = "decision " + row.effectiveDecision;
+    td.appendChild(decision);
     if (row.isOverridden) {
         var badge = el("span", "override");
         badge.className = "badge override";
@@ -133,7 +154,8 @@ function render() {
     body.textContent = "";
     rows.forEach(function(row) {
         var tr = document.createElement("tr");
-        if (row.isOverridden) { tr.className = "overridden"; }
+        tr.className = "decision-" + persistedDecision(row);
+        if (row.isOverridden) { tr.classList.add("overridden"); }
 
         var cbCell = el("td");
         var box = document.createElement("input");
@@ -143,11 +165,17 @@ function render() {
         cbCell.appendChild(box);
         tr.appendChild(cbCell);
 
-        var domainCell = el("td", row.domainEncrypted);
+        var domainCell = el("td");
         domainCell.className = "domain";
+        var domainLink = el("a", row.domainEncrypted);
+        domainLink.href = "https://" + row.domainEncrypted;
+        domainLink.target = "_blank";
+        domainLink.rel = "noopener noreferrer";
+        domainLink.title = "Open " + row.domainEncrypted + " in a new tab";
+        domainCell.appendChild(domainLink);
         tr.appendChild(domainCell);
 
-        var typeCell = el("td", row.permissionType);
+        var typeCell = el("td", permissionTypeLabel(row.permissionType));
         typeCell.className = "type";
         tr.appendChild(typeCell);
 

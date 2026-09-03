@@ -136,6 +136,14 @@ private extension PersistedPermissionDecision {
         case .ask: return "ask"
         }
     }
+
+    var autoplayDebugName: String {
+        switch self {
+        case .allow: return "video and audio"
+        case .ask: return "stop videos with sound"
+        case .deny: return "never"
+        }
+    }
 }
 
 /// JSON row shape consumed by the inspector page's script. Field names match the
@@ -147,6 +155,7 @@ private struct Row: Encodable {
     let allow: Bool
     let isRemoved: Bool
     let effective: String
+    let effectiveDecision: String
     let isOverridden: Bool
     let isFireproof: Bool
 
@@ -156,7 +165,10 @@ private struct Row: Encodable {
         permissionType = entry.permissionType
         allow = entry.allow
         isRemoved = entry.isRemoved
-        effective = entry.effectiveDecision.debugName
+        effectiveDecision = entry.effectiveDecision.debugName
+        effective = entry.permissionType == PermissionType.autoplayPolicy.rawValue
+            ? entry.effectiveDecision.autoplayDebugName
+            : effectiveDecision
         isOverridden = entry.isOverridden
         self.isFireproof = isFireproof
     }

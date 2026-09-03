@@ -207,7 +207,6 @@ final class DuckSchemeHandlerTests: XCTestCase {
         XCTAssertNotNil(Bundle.main.url(forResource: "permissions-inspector", withExtension: "js"))
     }
 
-
     @MainActor
     func testPermissionsInspectorServesPageHTML() throws {
         let inspector = makePermissionsInspector(permissionManager: PermissionManagerMock())
@@ -275,6 +274,21 @@ final class DuckSchemeHandlerTests: XCTestCase {
         XCTAssertTrue(json.contains("\"allow\":false"))
         XCTAssertTrue(json.contains("\"effective\":\"allow\""))
         XCTAssertTrue(json.contains("\"isOverridden\":true"))
+    }
+
+    @MainActor
+    func testPermissionsInspectorListMapsAutoplayEffectiveDecision() throws {
+        let permissionManager = PermissionManagerMock()
+        permissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .autoplayPolicy)
+        let inspector = makePermissionsInspector(permissionManager: permissionManager)
+        let url = try XCTUnwrap(URL(string: "duck://permissions/api/list"))
+        let task = MockSchemeTask(request: URLRequest(url: url))
+
+        inspector.handle(requestURL: url, urlSchemeTask: task)
+
+        let json = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertTrue(json.contains("\"effective\":\"stop videos with sound\""))
+        XCTAssertTrue(json.contains("\"effectiveDecision\":\"ask\""))
     }
 
     @MainActor

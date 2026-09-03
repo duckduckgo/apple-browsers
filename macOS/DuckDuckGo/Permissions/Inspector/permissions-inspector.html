@@ -26,15 +26,32 @@
                     .sortable { cursor: pointer; user-select: none; }
                     .sortable:hover { text-decoration: underline; }
                     td.domain { overflow-wrap: anywhere; font-family: ui-monospace, monospace; font-size: 11px; }
+                    td.domain a { color: LinkText; text-decoration: none; }
+                    td.domain a:hover { text-decoration: underline; }
                     td.type, td.bool { white-space: nowrap; font-family: ui-monospace, monospace; font-size: 11px; }
                     td.effective { white-space: nowrap; }
                     /* Columns that aren't stored columns. */
                     th.derived, td.derived { border-left: 1px solid rgba(128,128,128,0.4); }
                     th.derived { font-style: italic; }
+                    tr.decision-allow td:first-child { border-left: 3px solid #1a7f37; }
+                    tr.decision-ask td:first-child { border-left: 3px solid #9a6700; }
+                    tr.decision-deny td:first-child { border-left: 3px solid #cf222e; }
                     tr.overridden { background: rgba(192,57,43,0.10); }
                     .badge { display: inline-block; padding: 0 5px; border-radius: 3px; font-size: 10px; text-transform: uppercase;
                         letter-spacing: 0.04em; background: rgba(128,128,128,0.25); }
                     .badge.override { background: rgba(192,57,43,0.30); }
+                    .decision { display: inline-block; padding: 1px 7px; border-radius: 999px; font-weight: 600; }
+                    .decision.allow { color: #1a7f37; background: rgba(46,160,67,0.16); }
+                    .decision.ask { color: #9a6700; background: rgba(191,135,0,0.18); }
+                    .decision.deny { color: #cf222e; background: rgba(207,34,46,0.14); }
+                    @media (prefers-color-scheme: dark) {
+                        tr.decision-allow td:first-child { border-left-color: #56d364; }
+                        tr.decision-ask td:first-child { border-left-color: #e3b341; }
+                        tr.decision-deny td:first-child { border-left-color: #ff7b72; }
+                        .decision.allow { color: #56d364; }
+                        .decision.ask { color: #e3b341; }
+                        .decision.deny { color: #ff7b72; }
+                    }
                 </style>
     </head>
     <body>

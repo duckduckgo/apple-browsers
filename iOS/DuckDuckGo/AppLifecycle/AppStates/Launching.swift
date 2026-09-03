@@ -29,6 +29,7 @@ import PixelKit
 import BrowserServicesKit
 import Subscription
 import RemoteMessaging
+import ScreenTimeDataCleaner
 import WebExtensions
 import FeatureFlags_iOS
 
@@ -110,6 +111,9 @@ struct Launching: LaunchingHandling {
             storage: appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring(),
             statisticsStore: StatisticsUserDefaults()
         )
+
+        // Pre-mark existing installs (before statistics load) so first_prompt_new_install can only fire on brand-new installs.
+        DuckAIFirstPromptNewInstallCohort.assignIfNeeded(statisticsStore: StatisticsUserDefaults())
 
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services
@@ -379,6 +383,14 @@ struct Launching: LaunchingHandling {
         )
 
         let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
+        let aiChatService = AIChatService(aiChatSettings: aiChatSettings)
+        let applicationShortcutItemsService = ApplicationShortcutItemsService(shortcutItemProviders: [
+            { aiChatService.shortcutItem() },
+            { await vpnService.shortcutItem() }
+        ], shortcutItemsFilter: { shortcutItems in
+            guard !vpnService.isSubscriptionPresent else { return shortcutItems }
+            return shortcutItems.filter { $0.type != ShortcutKey.openVPNSettings }
+        })
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
@@ -413,7 +425,8 @@ struct Launching: LaunchingHandling {
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
                                wideEventService: wideEventService,
-                               aiChatService: AIChatService(aiChatSettings: aiChatSettings),
+                               aiChatService: aiChatService,
+                               applicationShortcutItemsService: applicationShortcutItemsService,
                                eventHubService: eventHubService
         )
 
@@ -425,6 +438,16 @@ struct Launching: LaunchingHandling {
                 taskContext.finish()
             }
         })
+        if #available(iOS 26, *) {
+            launchTaskManager.register(task: BlockLaunchTask(name: "Report Screen Time Data") { taskContext in
+                Task { @MainActor in
+                    if await ScreenTimeDataCleaner().hasScreenTimeData() {
+                        PixelKit.fire(ScreenTimeDataPixel.recordsFound, frequency: .dailyAndCount)
+                    }
+                    taskContext.finish()
+                }
+            })
+        }
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
@@ -478,8 +501,7 @@ struct Launching: LaunchingHandling {
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
                     label: .default,
                     keyValueStore: keyValueStore,
-                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter(),
-                    lockedLaunchFixEnabled: featureFlagger.isFeatureOn(.duckAINativeStorageMigrationLockedLaunchFix)
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
                 ).run()
                 if outcome == .skip {
                     return nil
@@ -535,6 +557,17 @@ struct Launching: LaunchingHandling {
             backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger)
         )
     }
+
+}
+
+private enum ScreenTimeDataPixel: PixelKit.Event {
+
+    case recordsFound
+
+    var name: String { "screen-time_records-present" }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
 
 }
 

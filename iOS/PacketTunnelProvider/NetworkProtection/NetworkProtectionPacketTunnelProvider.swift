@@ -714,23 +714,23 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         return fileStore
     }
 
-    private static func setupPixelKit(vpnFileStoreDirectory: URL?) {
-        let pixelKitDefaults: ThrowingKeyValueStoring
-        if let vpnFileStoreDirectory,
-           let fileStore = try? KeyValueFileStore(
-               location: vpnFileStoreDirectory,
-               name: "pixelkit",
-               writeOptions: [.atomic, .noFileProtection]
-           ) {
-            pixelKitDefaults = fileStore
-        } else {
-            pixelKitDefaults = UserDefaults.networkProtectionGroupDefaults
+    /// - Returns: the file store PixelKit's `defaults` was set up with, or `nil` when it fell back
+    ///   to `UserDefaults.networkProtectionGroupDefaults`.
+    private static func setupPixelKit(vpnFileStoreDirectory: URL?) -> KeyValueFileStore? {
+        let pixelKitFileStore: KeyValueFileStore? = vpnFileStoreDirectory.flatMap {
+            try? KeyValueFileStore(
+                location: $0,
+                name: "pixelkit",
+                writeOptions: [.atomic, .noFileProtection]
+            )
         }
+        let pixelKitDefaults: ThrowingKeyValueStoring = pixelKitFileStore ?? UserDefaults.networkProtectionGroupDefaults
 
+        // Configuring PixelKit
         PixelKit.setUp(
             dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
             appVersion: AppVersion.shared.versionNumber,
-            source: (UIDevice.current.userInterfaceIdiom == .phone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS).rawValue,
+            source: (UIDevice.current.userInterfaceIdiom == .pad ? PixelKit.Source.iPadOS : PixelKit.Source.iOS).rawValue,
             session: "ios-vpn-tunnel",
             defaultHeaders: [:],
             defaults: pixelKitDefaults
@@ -751,16 +751,40 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 }
             }
         }
+
+        return pixelKitFileStore
     }
 
     private static func configurePixelStorage() {
         do {
             let vpnFileStoreDirectory = try Self.vpnFileStoreDirectory()
-            Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
-            Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
+            let pixelKitStore = Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
+            let legacyStores = Self.configureDailyPixelFileStore(vpnFileStoreDirectory: vpnFileStoreDirectory)
+
+            // One-off migration from Pixel to PixelKit
+            let destination: ThrowingKeyValueStoring = pixelKitStore ?? UserDefaults.networkProtectionGroupDefaults
+            LegacyPixelStateMigration(
+                destination: destination,
+                dailyStore: legacyStores.daily.map(KeyValueFileStoreLegacyPixelStore.init),
+                uniqueStore: legacyStores.unique.map(KeyValueFileStoreLegacyPixelStore.init),
+                debounceStore: nil,
+                completionFlagStore: destination
+            ).run()
         } catch {
-            Self.setupPixelKit(vpnFileStoreDirectory: nil)
+            // Always falls back to UserDefaults.networkProtectionGroupDefaults here.
+            _ = Self.setupPixelKit(vpnFileStoreDirectory: nil)
             Pixel.fire(pixel: .networkProtectionPixelStorageSetupFailure, error: error)
+
+            // One-off migration from Pixel to PixelKit, using the fallback UserDefaults
+            let destination: ThrowingKeyValueStoring = UserDefaults.networkProtectionGroupDefaults
+            LegacyPixelStateMigration(
+                destination: destination,
+                dailyStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.daily),
+                uniqueStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.unique),
+                debounceStore: nil,
+                completionFlagStore: destination,
+                completionFlagKey: "\(LegacyPixelStateMigration.completionFlagKey).ios-vpn-tunnel-fallback"
+            ).run()
         }
     }
 
@@ -811,24 +835,28 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         return directory
     }
 
-    private static func configureDailyPixelFileStore(vpnFileStoreDirectory: URL?) {
-        guard let vpnFileStoreDirectory else { return }
+    private static func configureDailyPixelFileStore(vpnFileStoreDirectory: URL?) -> (daily: KeyValueFileStore?, unique: KeyValueFileStore?) {
+        guard let vpnFileStoreDirectory else { return (daily: nil, unique: nil) }
 
-        if let dailyPixelFileStore = try? KeyValueFileStore(
+        let dailyPixelFileStore = try? KeyValueFileStore(
             location: vpnFileStoreDirectory,
             name: "daily-pixel",
             writeOptions: [.atomic, .noFileProtection]
-        ) {
+        )
+        if let dailyPixelFileStore {
             DailyPixel.storage = dailyPixelFileStore
         }
 
-        if let uniquePixelFileStore = try? KeyValueFileStore(
+        let uniquePixelFileStore = try? KeyValueFileStore(
             location: vpnFileStoreDirectory,
             name: "unique-pixel",
             writeOptions: [.atomic, .noFileProtection]
-        ) {
+        )
+        if let uniquePixelFileStore {
             UniquePixel.storage = uniquePixelFileStore
         }
+
+        return (daily: dailyPixelFileStore, unique: uniquePixelFileStore)
     }
 
     private let activationDateStore = DefaultVPNActivationDateStore()

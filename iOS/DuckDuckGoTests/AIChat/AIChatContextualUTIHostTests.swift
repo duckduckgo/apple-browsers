@@ -90,6 +90,16 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(voiceCallCount, 1)
     }
 
+    func test_duckAIPromptSubmission_forwardsContextualOrigin() {
+        var submittedOrigins: [AIChatEntryPointSource?] = []
+        makeSUT()
+        sut.onDuckAIPromptSubmitted = { submittedOrigins.append($0) }
+
+        sut.unifiedToggleInputDidSubmitDuckAIPrompt(origin: .contextualChat)
+
+        XCTAssertEqual(submittedOrigins, [.contextualChat])
+    }
+
     func test_chipRemoveAction_firesRemoveCallbackOnly() {
         let url = URL(string: "https://example.com/a")!
         var removeCallCount = 0

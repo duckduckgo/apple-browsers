@@ -55,6 +55,7 @@ struct Background: BackgroundHandling {
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
+        services.applicationShortcutItemsService.suspend()
         try? lastBackgroundDateStorage.set(Date(), for: \.lastBackgroundDate)
         appDependencies.backgroundTaskManager.startBackgroundTask()
 
@@ -70,7 +71,6 @@ struct Background: BackgroundHandling {
 
         appDependencies.mainCoordinator.onBackground()
 
-        updateApplicationShortcutItems()
         cleanScreenTimeDataOniOS26()
     }
 
@@ -80,15 +80,6 @@ struct Background: BackgroundHandling {
 
         ScreenTimeDataCleaningBackgroundTask().start {
             await ScreenTimeDataCleaner().removeScreenTimeData()
-        }
-    }
-
-    private func updateApplicationShortcutItems() {
-        Task { @MainActor in
-            UIApplication.shared.shortcutItems = [
-                services.aiChatService.shortcutItem(),
-                await services.vpnService.shortcutItem()
-            ].compactMap { $0 }
         }
     }
 

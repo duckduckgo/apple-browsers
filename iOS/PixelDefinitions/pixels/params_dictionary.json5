@@ -21,6 +21,11 @@
         "description": "The Unified Toggle Input surface the pixel was fired from, distinguishing the contextual chat sheet from the Duck.ai tab and the address bar.",
         "enum": ["address_bar", "duck_ai", "contextual_chat"]
     },
+    "aichat_first_prompt_new_install": {
+        "key": "first_prompt_new_install",
+        "type": "boolean",
+        "description": "Present (true) only when this submission is the first Duck.ai prompt ever submitted on a brand-new install. Omitted on every later submission. Installs that predate this parameter are excluded at launch (their existing install statistics pre-mark the flag), so updating users never report it."
+    },
     "unified_input_page_type": {
         "key": "page_type",
         "type": "string",
@@ -55,6 +60,18 @@
         "type": "string",
         "description": "The channel the user is on",
         "enum": ["phone", "tablet"]
+    },
+    "subscriptionAuthSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The legacy app component identifier for the process that encountered the subscription authentication event",
+        "enum": ["MainApp", "SysExt"]
+    },
+    "subscriptionAuthTokenCachePolicy": {
+        "key": "policycache",
+        "type": "string",
+        "description": "The token cache policy used by the failed token request",
+        "enum": ["Local", "Local valid", "Local force refresh", "Create if needed"]
     },
     "errorDomain": {
         "key": "d",
@@ -285,6 +302,11 @@
         "key": "duration",
         "type": "number",
         "description": "Total duration of the opt-out attempt in milliseconds"
+    },
+    "dbpAwakeDuration": {
+        "key": "awake_duration",
+        "type": "number",
+        "description": "Total duration excluding machine sleep in milliseconds"
     },
     "dbpConfirmationAttemptNumber": {
         "key": "attempt_number",

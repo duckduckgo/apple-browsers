@@ -266,6 +266,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppRoutingTests"
+               BuildableName = "AppRoutingTests"
+               BlueprintName = "AppRoutingTests"
+               ReferencedContainer = "container:LocalPackages/AppRouting">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "SnapshotTestingSupportTests"
                BuildableName = "SnapshotTestingSupportTests"
                BlueprintName = "SnapshotTestingSupportTests"
@@ -280,6 +290,16 @@
                BuildableName = "FeatureFlagsTests"
                BlueprintName = "FeatureFlagsTests"
                ReferencedContainer = "container:LocalPackages/FeatureFlags-iOS">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtection-iOSTests"
+               BuildableName = "DataBrokerProtection-iOSTests"
+               BlueprintName = "DataBrokerProtection-iOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-iOS">
             </BuildableReference>
          </TestableReference>
       </Testables>

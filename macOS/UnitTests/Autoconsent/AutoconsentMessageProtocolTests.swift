@@ -23,7 +23,7 @@ import FeatureFlags_macOS
 import FoundationExtensions
 import History
 import HistoryView
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -115,17 +115,15 @@ class AutoconsentMessageProtocolTests: XCTestCase {
 
     @MainActor
     func testWhenNativeAutoconsentPixelFiresThenHeuristicModeMatchesInitConfiguration() {
-        let cases: [(preference: CookiePopupPreference, preferenceSettingEnabled: Bool, heuristicEnabled: Bool, expectedMode: String)] = [
-            (.default, false, true, "reject"),
-            (.default, true, true, "tier1"),
-            (.max, true, true, "tier2"),
-            (.default, true, false, "off"),
+        let cases: [(preference: CookiePopupPreference, heuristicEnabled: Bool, expectedMode: String)] = [
+            (.default, true, "tier1"),
+            (.max, true, "tier2"),
+            (.default, false, "off"),
         ]
 
         for testCase in cases {
             assertHeuristicMode(
                 preference: testCase.preference,
-                preferenceSettingEnabled: testCase.preferenceSettingEnabled,
                 heuristicEnabled: testCase.heuristicEnabled,
                 expectedMode: testCase.expectedMode
             )
@@ -337,13 +335,9 @@ class AutoconsentMessageProtocolTests: XCTestCase {
 
     @MainActor
     private func assertHeuristicMode(preference: CookiePopupPreference,
-                                     preferenceSettingEnabled: Bool,
                                      heuristicEnabled: Bool,
                                      expectedMode: String) {
         config = MockPrivacyConfiguration()
-        config.isSubfeatureEnabledCheck = { subfeature, _ in
-            subfeature.rawValue == AutoconsentSubfeature.cookiePopupPreferenceSetting.rawValue && preferenceSettingEnabled
-        }
         preferences = CookiePopupProtectionPreferences(
             persistor: MockCookiePopupProtectionPreferencesPersistor(),
             windowControllersManager: WindowControllersManagerMock()

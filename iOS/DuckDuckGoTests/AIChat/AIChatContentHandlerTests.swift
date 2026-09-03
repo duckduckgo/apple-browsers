@@ -755,12 +755,6 @@ final class AIChatContentHandlerTests: XCTestCase {
 
 // MARK: - Mocks
 
-final class MockAIChatRequestAuthHandler: AIChatRequestAuthorizationHandling {
-    func shouldAllowRequestWithNavigationAction(_ navigationAction: WKNavigationAction) -> Bool {
-        true
-    }
-}
-
 final class MockIPadDuckAIControlsFeatureProvider: IPadDuckAIControlsFeatureProviding {
     var isAvailable: Bool
 
@@ -916,6 +910,8 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }

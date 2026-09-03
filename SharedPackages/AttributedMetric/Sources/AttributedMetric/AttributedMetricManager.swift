@@ -326,8 +326,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                    count: bucket.value,
                                                                    bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           doNotEnforcePrefix: true)
+                           includeAppVersionParameter: false)
         case .months(let month):
             Logger.attributedMetric.log("\(month, privacy: .public) month(s) from installation")
             guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userRetentionMonth) else {
@@ -340,8 +339,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                     count: bucket.value,
                                                                     bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           doNotEnforcePrefix: true)
+                           includeAppVersionParameter: false)
         }
     }
 
@@ -388,8 +386,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                 daysSinceInstalled: addDaysSinceInstalled ? daysSinceInstalled : nil,
                                                                 bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       doNotEnforcePrefix: true)
+                       includeAppVersionParameter: false)
     }
 
     // MARK: - Average searches
@@ -423,8 +420,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                                        dayAverage: result.dayAverage,
                                                                                        bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           doNotEnforcePrefix: true)
+                           includeAppVersionParameter: false)
         case .months:
             guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageSearchesPastWeek) else {
                 Logger.attributedMetric.error("Failed to bucket average search count value")
@@ -438,8 +434,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                              dayAverage: result.dayAverage,
                                                                              bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           doNotEnforcePrefix: true)
+                           includeAppVersionParameter: false)
         }
     }
 
@@ -475,8 +470,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                          dayAverage: result.dayAverage,
                                                                          bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       doNotEnforcePrefix: true)
+                       includeAppVersionParameter: false)
     }
 
     // MARK: - Average Duck.ai chats
@@ -511,8 +505,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                             dayAverage: result.dayAverage,
                                                                             bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       doNotEnforcePrefix: true)
+                       includeAppVersionParameter: false)
     }
 
     // MARK: - Subscription
@@ -548,8 +541,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                             month: bucket.value,
                                                             bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       doNotEnforcePrefix: true)
+                       includeAppVersionParameter: false)
     }
 
     func processSubscriptionCheck() {
@@ -593,8 +585,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                                     month: bucket.value,
                                                                     bucketVersion: bucket.version),
                                frequency: .legacyDailyNoSuffix,
-                               includeAppVersionParameter: false,
-                               doNotEnforcePrefix: true)
+                               includeAppVersionParameter: false)
                 dataStorage.subscriptionMonth1Fired = true
             } catch {
                 Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
@@ -603,14 +594,15 @@ public final class AttributedMetricManager: @unchecked Sendable {
             // At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
             do {
                 let subscriptionMonth = Int(monthsActive.rounded(.up))
+                guard subscriptionMonth > (dataStorage.subscriptionLastMonthFired ?? 1) else { return }
                 let bucket = try bucketModifier.bucket(value: subscriptionMonth, pixelName: .userSubscribed)
                 pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
                                                                     installDate: originOrInstall.installDate,
                                                                     month: bucket.value,
                                                                     bucketVersion: bucket.version),
                                frequency: .legacyDailyNoSuffix,
-                               includeAppVersionParameter: false,
-                               doNotEnforcePrefix: true)
+                               includeAppVersionParameter: false)
+                dataStorage.subscriptionLastMonthFired = subscriptionMonth
             } catch {
                 Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
             }
@@ -647,7 +639,6 @@ public final class AttributedMetricManager: @unchecked Sendable {
                                                               devices: bucket.value,
                                                               bucketVersion: bucket.version),
                        frequency: .standard,
-                       includeAppVersionParameter: false,
-                       doNotEnforcePrefix: true)
+                       includeAppVersionParameter: false)
     }
 }

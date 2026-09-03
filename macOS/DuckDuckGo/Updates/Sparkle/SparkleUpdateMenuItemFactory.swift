@@ -35,7 +35,7 @@ final class SparkleUpdateMenuItemFactory {
         let item = NSMenuItem(title: title)
         item.target = controller
         item.action = #selector(SparkleUpdateControllerObjC.runUpdateFromMenuItem)
-        item.image = DesignSystemImages.Glyphs.Size12.updateRecolorable
+        item.withImage(DesignSystemImages.Glyphs.Size12.updateRecolorable, visibleOnMacOS27: true)
         return item
     }
 

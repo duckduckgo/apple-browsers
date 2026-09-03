@@ -23,55 +23,36 @@ import Foundation
 import os.log
 import PixelKit
 
-/// The PixelKit event shape shared by both EventHub pixel paths on iOS — telemetry and the failure events
-/// below. See `IOSEventHubPixelFiring`'s doc comment for why the empty `namePrefix` is what produces the
-/// names `event_hub.json5` declares.
-private struct EventHubPixelKitEvent: PixelKit.Event, PixelKitEventWithCustomPrefix {
-    let namePrefix = ""
+/// PixelKit event for EventHub-originated pixels, shared by the telemetry and failure paths below.
+private struct EventHubPixelKitEvent: PixelKit.Event {
+    /// Frozen: matches the suffix order declared in `event_hub.json5`.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
+    /// No prefix: names come fully formed from `event_hub.json5`.
+    let namePrefix: PixelKitNamePrefix = .none
     let name: String
     let parameters: [String: String]?
     let standardParameters: [PixelKitStandardParameter]? = nil
-    /// Declared explicitly rather than left to `PixelKit.Event`'s reflection-based default, which would
-    /// find nothing on a struct whose error is not an associated value.
+    /// Declared explicitly: the reflection-based default finds nothing on a struct whose error is
+    /// not an associated value.
     let error: NSError?
 }
 
-/// Fires EventHub-originated pixels through PixelKit, appending iOS' platform and form-factor markers per
-/// the Tech Design's platform-suffix split (`EventHub` itself fires the bare governed config name).
-///
-/// The conformance to `PixelKitEventWithCustomPrefix` with an **empty** `namePrefix` is deliberate, and is
-/// the only combination that produces the name `event_hub.json5` declares. `PixelKit`'s name resolution
-/// has three relevant paths:
-///
-/// - no `PixelKitEventWithCustomPrefix`: on iOS the name is returned untouched, so it would carry no
-///   platform or form-factor marker at all and would not match the declared `platform`/`form_factor`
-///   suffixes.
-/// - `PixelKitEventWithCustomPrefix` with the conventional `"m_"` prefix (what `WideEventFailureEvent`
-///   uses): appends the platform suffix but reintroduces the legacy `m_` prefix these names must not have.
-/// - `PixelKitEventWithCustomPrefix` with `""`: appends `platformSuffix` (`_ios_phone` / `_ios_tablet`,
-///   derived from the `source` given to `PixelKit.setUp`) and prepends nothing. This is what we want.
+/// Fires EventHub telemetry pixels through PixelKit.
 struct IOSEventHubPixelFiring: EventHubPixelFiring {
 
     func enqueueFirePixel(named name: String, parameters: [String: String]) {
-        // The governed name, without the platform suffix PixelKit appends when it builds the request.
         Logger.eventHub.info("PixelKit fire: \(name, privacy: .public) \(parameters, privacy: .private)")
-        // `frequency` stays `.standard`: EventHub has already done the period aggregation, so PixelKit
-        // must not apply a second layer of daily de-duplication on top of it.
         PixelKit.fire(EventHubPixelKitEvent(name: name, parameters: parameters, error: nil))
     }
 }
 
-/// Reports EventHub's own failures (`EventHubDebugEvent`) as PixelKit error pixels, under the same naming
-/// rules as the telemetry above — `EventHubDebugEvent.pixelName` supplies the shared base name and PixelKit
-/// appends the platform marker.
+/// Reports `EventHubDebugEvent` failures as PixelKit pixels.
 final class IOSEventHubDebugEventMapping: EventMapping<EventHubDebugEvent> {
 
     init() {
         super.init { event, error, _, _ in
             Logger.eventHub.error("PixelKit fire: \(event.pixelName, privacy: .public) \(event.pixelParameters, privacy: .private)")
-            // `.dailyAndCount`, unlike the telemetry path: these fire from failures that repeat on every
-            // attempt — a store that cannot write fails again at each flush — so the daily pixel bounds
-            // how many users are affected while the count keeps the rate visible.
             PixelKit.fire(EventHubPixelKitEvent(name: event.pixelName,
                                                 parameters: event.pixelParameters,
                                                 error: error.map { $0 as NSError }),

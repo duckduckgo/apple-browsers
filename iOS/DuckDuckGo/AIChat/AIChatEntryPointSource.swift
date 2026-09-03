@@ -22,7 +22,9 @@ import Core
 import PixelKit
 
 /// Fires as `m_aichat_entry_point`; the `m_` prefix plus the platform suffix are applied by PixelKit.
-enum AIChatEntryPointPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum AIChatEntryPointPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     case entryPoint
 
@@ -32,7 +34,7 @@ enum AIChatEntryPointPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "m_" }
+    var namePrefix: PixelKitNamePrefix { .custom("m_") }
 
     /// Shared so entry paths outside `MainViewController` can report too.
     static func fire(source: AIChatEntryPointSource,
@@ -50,7 +52,7 @@ enum AIChatEntryPointPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
     }
 }
 
-enum AIChatEntryPointSource: String {
+public enum AIChatEntryPointSource: String {
     case addressBarPrompt = "address_bar_prompt"
     case addressBarIcon = "address_bar_icon"
     case addressBarShortcutChip = "address_bar_shortcut_chip"
@@ -60,6 +62,7 @@ enum AIChatEntryPointSource: String {
     case browsingMenuNTP = "browsing_menu_ntp"
     case browsingMenuWebpage = "browsing_menu_webpage"
     case tabSwitcher = "tab_switcher"
+    case tabSwitcherExistingChat = "tab_switcher_existing_chat"
     case tabsBarButton = "tabs_bar_button"
     case chatHistoryNewChat = "chat_history_new_chat"
     case chatHistoryOpenChat = "chat_history_open_chat"
@@ -76,6 +79,7 @@ enum AIChatEntryPointSource: String {
     case widgetControlCenter = "widget_control_center"
     case siri
     case deepLinkOther = "deep_link_other"
+    case returnToChatCard = "return_to_chat_card"
 }
 
 extension AIChatEntryPointSource {

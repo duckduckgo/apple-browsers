@@ -171,6 +171,9 @@ final class AIChatContextualChatSessionState {
     private var isManualAttachInProgress = false
     private var isManualAttachFromFrontend = false
 
+    /// True while the loading chip is showing;
+    private var isDocumentChipLoading = false
+
     /// Flag to prevent duplicate navigation processing
     private var isProcessingNavigation = false
 
@@ -240,10 +243,6 @@ final class AIChatContextualChatSessionState {
     /// Whether automatic context collection is enabled
     var shouldAutoCollectContext: Bool {
         aiChatSettings.isAutomaticContextAttachmentEnabled
-    }
-
-    var supportsMultipleContexts: Bool {
-        featureFlagger.isFeatureOn(.multiplePageContexts)
     }
 
     var showsSuggestionsStartSurface: Bool {
@@ -396,6 +395,7 @@ final class AIChatContextualChatSessionState {
         userDowngradedToPlaceholder = false
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
+        isDocumentChipLoading = false
         isProcessingNavigation = false
         pendingSignalsOnlyCollection = false
         suggestionsResolveTask?.cancel()
@@ -509,11 +509,9 @@ final class AIChatContextualChatSessionState {
     }
 
     /// Sends a null context as a navigation signal.
-    /// Used when auto-collect is OFF but multiple contexts are supported,
-    /// so the FE can show the "Add page content" button for the new page.
+    /// Used when auto-collect is OFF, so the FE can show the "Ask about page"
+    /// button for the new page.
     func notifyFrontendOfMultiContextNavigation() {
-        guard supportsMultipleContexts else { return }
-
         var targets: PageContextDeliveryTargets = []
         if shouldDeliverToFrontendBridge(nil) {
             targets.insert(.frontendBridge)
@@ -557,6 +555,12 @@ final class AIChatContextualChatSessionState {
         suppressesAutoAttachForSelectionEntry = false
     }
 
+    func setDocumentChipLoading(_ isLoading: Bool) {
+        guard isDocumentChipLoading != isLoading else { return }
+        isDocumentChipLoading = isLoading
+        rebuildViewState()
+    }
+
     func beginLoadingSuggestions() {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
         suggestionsResolveTask?.cancel()
@@ -583,7 +587,7 @@ final class AIChatContextualChatSessionState {
             return
         }
 
-        let context = context.flatMap { $0.contextData.content.isEmpty ? nil : $0 }
+        let context = context.flatMap { $0.contextData.hasAttachedPage ? $0 : nil }
 
         guard let context = context else {
             guard shouldProcessNilContextUpdate else {
@@ -693,14 +697,12 @@ final class AIChatContextualChatSessionState {
 
         let shouldDeliver: Bool
         switch frontendState {
-        case .chatWithoutInitialContext, .restoredChat:
+        case .chatWithoutInitialContext, .restoredChat, .chatWithInitialContext:
             shouldDeliver = true
-        case .chatWithInitialContext:
-            shouldDeliver = supportsMultipleContexts
         case .noChat:
             shouldDeliver = false
         }
-        Logger.aiChat.debug("[SessionState] shouldDeliverToFrontendBridge=\(shouldDeliver) (frontendState=\(self.frontendState), multipleContexts=\(self.supportsMultipleContexts), uti=\(self.isUnifiedToggleInputActive))")
+        Logger.aiChat.debug("[SessionState] shouldDeliverToFrontendBridge=\(shouldDeliver) (frontendState=\(self.frontendState), uti=\(self.isUnifiedToggleInputActive))")
         return shouldDeliver
     }
 
@@ -799,7 +801,8 @@ private extension AIChatContextualChatSessionState {
         emit(.deliverPageContext(payload, targets: .frontendBridge))
     }
 
-    /// Strips page content, keeping metadata + page-type signals so the FE renders page-tailored suggestions without attaching content.
+    /// Strips page content / document bytes, keeping metadata + page-type signals so the FE can
+    /// show suggestions without attaching content.
     func signalsOnlyPayload(from context: AIChatPageContextData) -> AIChatPageContextData {
         AIChatPageContextData(
             title: context.title,
@@ -810,7 +813,9 @@ private extension AIChatContextualChatSessionState {
             fullContentLength: 0,
             attachable: true,
             pageTypeSignals: context.pageTypeSignals,
-            attached: false
+            attached: false,
+            mimeType: context.mimeType,
+            data: nil
         )
     }
 
@@ -826,25 +831,26 @@ private extension AIChatContextualChatSessionState {
     /// Beyond one attachment a single-line suggestion can no longer say which part of the prompt it
     /// acts on.
     private var shouldHideSuggestions: Bool {
-        attachmentCount > 1
+        attachmentCount > 1 || isDocumentChipLoading
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
-        // These are all page-scoped, so beside an attached selection they act on the wrong thing.
+        if isDocumentChipLoading {
+            return []
+        }
         if !attachedSelections.isEmpty, frontendState == .noChat {
             return []
         }
         // No "Ask about page" for pages that can't be attached — it would no-op on tap.
         guard isCurrentPageAttachable() else { return [] }
-        // Dropped only while the strip is actually offering its own re-attach button, which takes an
-        // explicit removal — feature availability alone would also drop it after a new chat, where the
-        // strip has cleared that offer and neither affordance would be left.
-        let actions = quickActionsIgnoringReattachAffordance()
+        // An explicit removal is the user declining page context: re-attaching is the attachment
+        // menu's job from then on, so offering it here as well would talk them back out of it.
+        let actions = quickActionsForChipState()
         guard floatingInputFeature.isAvailable, userDowngradedToPlaceholder else { return actions }
         return actions.filter { $0 != .askAboutPage }
     }
 
-    private func quickActionsIgnoringReattachAffordance() -> [AIChatContextualQuickAction] {
+    private func quickActionsForChipState() -> [AIChatContextualQuickAction] {
         if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
             switch chipState {
             case .placeholder: return [.askAboutPage]
@@ -919,7 +925,7 @@ private extension AIChatContextualChatSessionState {
             chipState: chipState,
             quickActions: quickActions,
             suggestions: shouldHideSuggestions ? [] : visibleSuggestions(reserving: quickActions.count),
-            suggestionsLoadState: suggestionsLoadState,
+            suggestionsLoadState: isDocumentChipLoading ? .loaded : suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
             suggestionsPageType: suggestionsPageType,
             suggestionsScope: suggestionsScope

@@ -387,7 +387,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         configuration: HomePageMessagesConfiguration,
         isOpenedAfterIdle: Bool = false
     ) -> NewTabPageMessagesModel {
-        let remoteMessageActionHandler = RemoteMessagingActionHandler(lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher())
+        let remoteMessageActionHandler = RemoteMessagingActionHandler(surveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefresher())
         remoteMessageActionHandler.messageNavigator = DefaultMessageNavigator(delegate: self)
 
         return NewTabPageMessagesModel(homePageMessagesConfiguration: configuration,

@@ -21,6 +21,16 @@ import UIKit
 
 class BarsAnimator {
 
+    struct Metrics {
+        static let floatingTransitionTravel: CGFloat = 80
+
+        static let legacyTransitionSpeed: CGFloat = 0.5
+
+        static let floatingVelocityCommitThreshold: CGFloat = 0.15
+        static let floatingFastStepThreshold: CGFloat = 0.35
+        static let floatingFastStepAnimationDuration: CGFloat = 0.12
+    }
+
     weak var delegate: BrowserChromeDelegate?
 
     private(set) var barsState: State = .revealed
@@ -30,7 +40,10 @@ class BarsAnimator {
 
     var transitionStartPosY: CGFloat = 0
 
+    private var transitionStartProgress: CGFloat = 0
+
     private var bottomRevealGestureState: BottomBounceRevealing = .possible
+
     private var combinedBarsHeight: CGFloat {
         guard let delegate = delegate else { return 0 }
         return delegate.toolbarHeight + delegate.omniBar.barView.expectedHeight
@@ -50,21 +63,88 @@ class BarsAnimator {
 
     func didStartScrolling(in scrollView: UIScrollView) {
         draggingStartPosY = scrollView.contentOffset.y
+
+        if delegate?.isFloatingChromeEnabled == true {
+            // Capture rendered visibility first, then pin any in-flight morph so tracking
+            // starts from that value without re-applying settled 0/1 chrome side effects.
+            let currentBarsVisibility = delegate?.currentBarsVisibility ?? 1
+            delegate?.pinFloatingChromeMorphIfNeeded()
+            transitionProgress = 1 - currentBarsVisibility
+            if transitionProgress <= 0 {
+                barsState = .revealed
+            } else if transitionProgress >= 1 {
+                barsState = .hidden
+            } else {
+                barsState = .transitioning
+            }
+            transitionStartPosY = scrollView.contentOffset.y
+            transitionStartProgress = transitionProgress
+        }
     }
 
     func didScroll(in scrollView: UIScrollView) {
-
-        switch barsState {
-        case .revealed:
-            revealedAndScrolling(in: scrollView)
-
-        case .transitioning:
-            transitioningAndScrolling(in: scrollView)
-
-        case .hidden:
-            hiddenAndScrolling(in: scrollView)
-
+        guard delegate?.isFloatingChromeEnabled == true else {
+            switch barsState {
+            case .revealed:
+                revealedAndScrolling(in: scrollView)
+            case .transitioning:
+                transitioningAndScrolling(in: scrollView)
+            case .hidden:
+                hiddenAndScrolling(in: scrollView)
+            }
+            return
         }
+        floatingDidScroll(in: scrollView)
+    }
+
+    private func floatingDidScroll(in scrollView: UIScrollView) {
+        if barsState == .hidden {
+            let startedDraggingAtBottom = draggingStartPosY >= scrollView.contentOffsetYAtBottom
+            if startedDraggingAtBottom, bottomRevealGestureState == .possible {
+                if scrollView.contentOffset.y > scrollView.contentOffsetYAtBottom {
+                    revealBars(animated: true)
+                    bottomRevealGestureState = .triggered
+                    return
+                } else {
+                    bottomRevealGestureState = .cancelled
+                }
+            }
+        }
+        guard bottomRevealGestureState != .triggered else { return }
+
+        // Page top is at `-adjustedContentInset.top` (not 0) when the scroll view has a top inset.
+        let pageTopY = -scrollView.adjustedContentInset.top
+        if draggingStartPosY <= pageTopY, scrollView.contentOffset.y <= pageTopY, barsState != .hidden {
+            if barsState != .revealed || transitionProgress != 0 {
+                barsState = .revealed
+                transitionProgress = 0
+                delegate?.setBarsVisibility(1, animated: false, animationDuration: nil)
+            }
+            transitionStartPosY = pageTopY
+            transitionStartProgress = 0
+            return
+        }
+
+        let ratio = calculateTransitionRatio(for: scrollView.contentOffset.y)
+        let ratioMatchesSettledState =
+            ((barsState == .hidden && ratio == 1) || (barsState == .revealed && ratio == 0))
+            && transitionProgress == ratio
+        guard !ratioMatchesSettledState else { return }
+
+        let shouldAnimateFastStep = (ratio == 0 || ratio == 1)
+            && abs(ratio - transitionProgress) >= Metrics.floatingFastStepThreshold
+        if ratio >= 1.0 {
+            barsState = .hidden
+        } else if ratio <= 0.0 {
+            barsState = .revealed
+        } else {
+            barsState = .transitioning
+        }
+        transitionProgress = ratio
+        delegate?.setBarsVisibility(
+            1.0 - ratio,
+            animated: shouldAnimateFastStep,
+            animationDuration: shouldAnimateFastStep ? Metrics.floatingFastStepAnimationDuration : nil)
     }
 
     private func revealedAndScrolling(in scrollView: UIScrollView) {
@@ -79,6 +159,7 @@ class BarsAnimator {
         }
 
         transitionStartPosY = draggingStartPosY < 0 ? 0 : draggingStartPosY
+        transitionStartProgress = transitionProgress
         barsState = .transitioning
 
         let ratio = calculateTransitionRatio(for: scrollView.contentOffset.y)
@@ -124,6 +205,7 @@ class BarsAnimator {
         guard scrollView.contentOffset.y < 0 else { return }
 
         transitionStartPosY = 0
+        transitionStartProgress = transitionProgress
         barsState = .transitioning
 
         let ratio = calculateTransitionRatio(for: scrollView.contentOffset.y)
@@ -137,15 +219,15 @@ class BarsAnimator {
 
         guard barsHeight > 0 else { return 0 }
 
-        let cumulativeDistance = (barsHeight * transitionProgress) + distance
-        let normalizedDistance = max(cumulativeDistance, 0)
+        guard delegate?.isFloatingChromeEnabled == true else {
+            let cumulativeDistance = (barsHeight * transitionProgress) + distance
+            let normalizedDistance = max(cumulativeDistance, 0)
 
-        // We used to fix the scroll position in place as the transition happened
-        //  but now the bars disappear too. This adjusts for that.
-        let transitionSpeed = 0.5
-        
-        let ratio = min(normalizedDistance / barsHeight * transitionSpeed, 1.0)
-        return ratio
+            return min(normalizedDistance / barsHeight * Metrics.legacyTransitionSpeed, 1.0)
+        }
+
+        let target = transitionStartProgress + distance / Metrics.floatingTransitionTravel
+        return target.clamped(to: 0...1)
     }
 
     func didFinishScrolling(in scrollView: UIScrollView, velocity: CGFloat) {
@@ -157,6 +239,15 @@ class BarsAnimator {
             return
         }
 
+        guard delegate?.isFloatingChromeEnabled == true else {
+            finishLegacyScrolling(in: scrollView, velocity: velocity)
+            return
+        }
+
+        finishFloatingScrolling(in: scrollView, velocity: velocity)
+    }
+
+    private func finishLegacyScrolling(in scrollView: UIScrollView, velocity: CGFloat) {
         guard velocity >= 0 else {
             revealBars(animated: true)
             return
@@ -183,23 +274,51 @@ class BarsAnimator {
         }
     }
 
-    func revealBars(animated: Bool) {
+    private func finishFloatingScrolling(in scrollView: UIScrollView, velocity: CGFloat) {
+        let isFastFlick = abs(velocity) >= Metrics.floatingVelocityCommitThreshold
+        if isFastFlick {
+            if velocity < 0 {
+                revealBars(animated: true)
+            } else {
+                let isAboveExtendedBottomBounceArea = scrollView.contentOffset.y < scrollView.contentOffsetYAtBottom - combinedBarsHeight
+                if barsState == .transitioning || isAboveExtendedBottomBounceArea {
+                    hideBars(animated: true)
+                }
+            }
+            return
+        }
+
+        switch barsState {
+        case .revealed, .hidden:
+            break
+
+        case .transitioning:
+            if transitionProgress > 0.5 {
+                hideBars(animated: true)
+            } else {
+                revealBars(animated: true)
+            }
+        }
+    }
+
+    func revealBars(animated: Bool, animationDuration: CGFloat? = nil) {
         let alreadyRevealed = barsState == .revealed
 
         barsState = .revealed
         transitionProgress = 0
 
-        delegate?.setBarsVisibility(1, animated: animated && !alreadyRevealed, animationDuration: nil)
+        delegate?.setBarsVisibility(1, animated: animated && !alreadyRevealed, animationDuration: animationDuration)
     }
 
-    func hideBars(animated: Bool) {
+    func hideBars(animated: Bool, animationDuration: CGFloat? = nil) {
         guard barsState != .hidden else { return }
 
         barsState = .hidden
         transitionProgress = 1.0
 
-        delegate?.setBarsVisibility(0, animated: animated, animationDuration: nil)
+        delegate?.setBarsVisibility(0, animated: animated, animationDuration: animationDuration)
     }
+
 }
 
 private extension UIScrollView {

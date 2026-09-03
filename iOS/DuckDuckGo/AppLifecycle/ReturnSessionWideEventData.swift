@@ -32,7 +32,7 @@ final class ReturnSessionWideEventData: WideEventData {
         mobileMetaType: "ios-return-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-return-session",
-        version: "1.0.0"
+        version: "1.2.0"
     )
 
     /// `ntp` is the after-idle NTP; `ntpUserInitiated` is an NTP reached without the treatment.
@@ -55,6 +55,11 @@ final class ReturnSessionWideEventData: WideEventData {
         case chatSelected = "chat_selected"
     }
 
+    /// Fallback for `source` when an `ai_prompt_submitted` terminal has no attributed entry point.
+    enum PromptSourceFallback: String {
+        case unknown
+    }
+
     var globalData: WideEventGlobalData
     var contextData: WideEventContextData
     var appData: WideEventAppData
@@ -65,6 +70,9 @@ final class ReturnSessionWideEventData: WideEventData {
     var timeAwayMs: Int?
     var focused: Bool
     var statusReason: StatusReason?
+    /// What triggered the prompt submission (an `AIChatEntryPointSource` raw value). Set only
+    /// when `statusReason` is `.aiPromptSubmitted`. Optional so old pending flows decode.
+    var promptOrigin: String?
     var sessionInterval: WideEvent.MeasuredInterval
     var firstInteractionInterval: WideEvent.MeasuredInterval
     var pageEngaged: Bool
@@ -130,12 +138,14 @@ extension ReturnSessionWideEventData {
 
     func jsonParameters() -> [String: Encodable] {
         let bucket = Self.durationBucket
+        let source = statusReason == .aiPromptSubmitted ? (promptOrigin ?? PromptSourceFallback.unknown.rawValue) : nil
         return Dictionary(compacting: [
             (WideEventParameter.ReturnSessionFeature.landedOn, landedOn.rawValue),
             (WideEventParameter.ReturnSessionFeature.afterIdle, afterIdle),
             (WideEventParameter.ReturnSessionFeature.timeAwayMsBucketed, timeAwayMs.map { String(Self.timeAwayBucketMs($0)) }),
             (WideEventParameter.ReturnSessionFeature.focused, focused),
             (WideEventParameter.Feature.statusReason, statusReason?.rawValue),
+            (WideEventParameter.ReturnSessionFeature.source, source),
             (WideEventParameter.ReturnSessionFeature.sessionDurationMsBucketed, sessionInterval.stringValue(bucket)),
             (WideEventParameter.ReturnSessionFeature.timeToFirstInteractionMsBucketed, firstInteractionInterval.stringValue(bucket)),
             (WideEventParameter.ReturnSessionFeature.pageEngaged, pageEngaged),
@@ -170,6 +180,7 @@ extension WideEventParameter {
         static let afterIdle = "feature.data.ext.after_idle"
         static let timeAwayMsBucketed = "feature.data.ext.time_away_ms_bucketed"
         static let focused = "feature.data.ext.focused"
+        static let source = "feature.data.ext.source"
         static let sessionDurationMsBucketed = "feature.data.ext.session_duration_ms_bucketed"
         static let timeToFirstInteractionMsBucketed = "feature.data.ext.time_to_first_interaction_ms_bucketed"
         static let pageEngaged = "feature.data.ext.page_engaged"

@@ -409,10 +409,16 @@ extension MainViewFactory {
         superview.addSubview(coordinator.suggestionTrayContainer)
     }
 
-    final class UnifiedInputContentContainer: UIView { }
+    final class UnifiedInputContentContainer: UIView {
+        override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            guard !isHidden, isUserInteractionEnabled, alpha > 0.01 else { return nil }
+            return super.hitTest(point, with: event)
+        }
+    }
     private func createUnifiedInputContentContainer() {
         coordinator.unifiedInputContentContainer = UnifiedInputContentContainer()
         coordinator.unifiedInputContentContainer.isHidden = true
+        coordinator.unifiedInputContentContainer.isUserInteractionEnabled = false
         coordinator.unifiedInputContentContainer.backgroundColor = .clear
         superview.addSubview(coordinator.unifiedInputContentContainer)
     }
@@ -421,6 +427,7 @@ extension MainViewFactory {
     private func createFocusedStateBackground() {
         coordinator.focusedStateBackground = FocusedStateBackgroundView()
         coordinator.focusedStateBackground.isHidden = true
+        coordinator.focusedStateBackground.isUserInteractionEnabled = false
         coordinator.focusedStateBackground.backgroundColor = UIColor(designSystemColor: .panel)
         superview.addSubview(coordinator.focusedStateBackground)
     }
@@ -626,14 +633,26 @@ extension MainViewFactory {
 
         // Changing this?  Best change TabSwitcherViewController too
         let isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
-        let toolbarWidthMod = isFloatingUIEnabled ? 0.0 : (isiOS26 ? 14.0 : 4.0)
-
         let toolbar = coordinator.toolbar!
-        coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
-        // Match the toolbar's internal buttons-only height for the current style so the initial
-        // constraint doesn't conflict before `updateToolbarLayoutForAddressBarPosition` runs.
+
         let initialToolbarHeight = isFloatingUIEnabled ? BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled) : BrowserToolbarView.legacyButtonsHeight
         coordinator.constraints.toolbarHeight = toolbar.constrainAttribute(.height, to: initialToolbarHeight)
+
+        if #available(iOS 26.0, *), isFloatingUIEnabled {
+            let horizontalGuide = superview.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+            let verticalGuide = superview.layoutGuide(for: .safeArea(cornerAdaptation: .vertical))
+            coordinator.constraints.toolbarBottom = toolbar.bottomAnchor.constraint(equalTo: verticalGuide.bottomAnchor)
+            NSLayoutConstraint.activate([
+                toolbar.leadingAnchor.constraint(equalTo: horizontalGuide.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: horizontalGuide.trailingAnchor),
+                coordinator.constraints.toolbarHeight,
+                coordinator.constraints.toolbarBottom,
+            ])
+            return
+        }
+
+        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
+        coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
         NSLayoutConstraint.activate([
             toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),

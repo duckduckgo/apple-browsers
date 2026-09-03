@@ -19,8 +19,7 @@
 
 import Core
 import Onboarding
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import SetDefaultBrowserTestSupport
 import SystemSettingsPiPTutorialTestSupport

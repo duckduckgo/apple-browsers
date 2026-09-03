@@ -51,6 +51,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onPromptSubmitted: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
+    var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?
 
@@ -73,7 +74,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
-        start: ContextualInputStart = .expandedOnExistingChat
+        start: ContextualInputStart = .expandedOnExistingChat,
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil
     ) {
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
@@ -93,16 +95,14 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             duckAIWideEventFlowScope: duckAIWideEventFlowScope,
             contextualStart: start,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
-            placesAttachmentsAboveInput: isFloatingInputAvailable
+            placesAttachmentsAboveInput: isFloatingInputAvailable,
+            usageLimitsStore: usageLimitsStore
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
             initialAttachedContext: initialAttachedContext,
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
-            isAutoAttachEnabled: isAutoAttachEnabled,
-            showsAttachAffordance: { [isFloatingInputAvailable] in
-                isFloatingInputAvailable && !hasActiveChat()
-            }
+            isAutoAttachEnabled: isAutoAttachEnabled
         )
         coordinator.delegate = self
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
@@ -427,7 +427,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         // Back on the start state, so the next prompt is a first prompt again and reports itself.
         hasDeliveredFirstPrompt = false
         clearAttachedContext()
-        chipViewModel.clearReattachOffer()
         if startsPreSubmit, let currentUserScript {
             coordinator.unbind()
             isBoundToUserScript = false
@@ -472,14 +471,16 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     private func reportFirstPromptSubmission() {
         guard claimFirstPromptSubmission() else { return }
-        // The offer was made on the pre-chat surface; the chat it starts is where it stops applying.
-        chipViewModel.clearReattachOffer()
         onPromptSubmitted?()
         commitDeferredBindIfNeeded()
     }
 
     func unifiedToggleInputDidSubmitPromptToBoundChat() {
         reportFirstPromptSubmission()
+    }
+
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
+        onDuckAIPromptSubmitted?(origin)
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String,

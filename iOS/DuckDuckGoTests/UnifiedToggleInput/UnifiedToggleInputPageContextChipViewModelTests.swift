@@ -41,62 +41,63 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
 
     private func makeSUT(
         initialAttachedContext: AIChatPageContext? = nil,
-        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
-        showsAttachAffordance: @escaping () -> Bool = { false }
+        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered
     ) {
         sut = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
             initialAttachedContext: initialAttachedContext,
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
-            isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
-            showsAttachAffordance: showsAttachAffordance
+            isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false }
         )
         sut.onAttachActionRequested = { [weak self] in self?.attachCalls += 1 }
         sut.onRemoveActionRequested = { [weak self] in self?.removeCalls += 1 }
     }
 
-    // MARK: - Re-attach offer
+    // MARK: - Removal
 
-    /// The offer belongs to the pre-chat surface, where attaching the page is the whole point.
-    func test_removingTheChip_offersReattach_whenTheSurfaceStillWantsIt() {
+    /// The attachment menu is the way back, so a removal leaves nothing behind.
+    func test_removingTheChip_leavesNothingVisible() {
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url),
-                initialAttachmentDeliveryState: .pendingSubmit,
-                showsAttachAffordance: { true })
+                initialAttachmentDeliveryState: .pendingSubmit)
 
         sut.tapToRemove()
 
-        XCTAssertTrue(sut.isVisible, "the placeholder stands in for the chip the user just dismissed")
+        XCTAssertFalse(sut.isVisible)
         XCTAssertEqualState(sut.state, .placeholder)
+        XCTAssertEqual(removeCalls, 1)
     }
 
-    /// Once a chat exists the attachment menu is the way back, so a removal is just a removal.
-    func test_removingTheChip_doesNotOfferReattach_onceTheSurfaceDeclines() {
-        let url = "https://en.wikipedia.org/wiki/Cat"
-        originatingURL.send(URL(string: url))
-        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url),
-                initialAttachmentDeliveryState: .pendingSubmit,
-                showsAttachAffordance: { false })
+    // MARK: - Loading
 
-        sut.tapToRemove()
-
-        XCTAssertFalse(sut.isVisible)
+    func test_beginLoading_showsLoadingChip() {
+        makeSUT()
+        sut.beginLoading()
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqualState(sut.state, .loading)
     }
 
-    /// Evaluated at removal time, not construction — the same view model spans both sides of the boundary.
-    func test_reattachOffer_readsTheSurfaceAtRemovalTime() {
-        let url = "https://en.wikipedia.org/wiki/Cat"
+    func test_setAttached_replacesLoadingWithAttachedChip() {
+        let url = "https://example.com/spec.pdf"
         originatingURL.send(URL(string: url))
-        var wantsAffordance = true
-        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url),
-                initialAttachmentDeliveryState: .pendingSubmit,
-                showsAttachAffordance: { wantsAffordance })
+        makeSUT()
+        sut.beginLoading()
 
-        wantsAffordance = false
-        sut.tapToRemove()
+        sut.setAttached(makeContext(title: "Spec", url: url), deliveryState: .pendingSubmit)
+
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqualState(sut.state, .attached(title: "Spec", favicon: nil))
+    }
+
+    func test_endLoading_afterFailedRead_leavesNoLoadingChip() {
+        makeSUT()
+        sut.beginLoading()
+
+        sut.endLoading()
 
         XCTAssertFalse(sut.isVisible)
+        XCTAssertEqualState(sut.state, .placeholder)
     }
 
     // MARK: - State transitions
@@ -510,6 +511,8 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         case (.placeholder, .placeholder):
             return
         case (.attached(let lt, _), .attached(let rt, _)) where lt == rt:
+            return
+        case (.loading, .loading):
             return
         default:
             XCTFail("State mismatch: \(lhs) vs \(rhs)", file: file, line: line)

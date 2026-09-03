@@ -19,6 +19,7 @@
 
 import AIChat
 import BrowserServicesKit
+import Combine
 import Core
 import DuckAiDataStore
 import Foundation
@@ -38,9 +39,11 @@ import FeatureFlags_iOS
 /// shared app-group container, the existing directory is moved into Application
 /// Support; see `DuckAiNativeStorageContainerMigration`.
 ///
-/// Conforms to `DuckAiNativeStorageHandling` so consumers don't need to know about
-/// rotation; only `FireExecutor` calls `syncWithCurrentFireModeID()` directly on the concrete type.
-final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
+/// Conforms to `DuckAiNativeStorageHandling` and `DuckAiNativeChatsObserving` so
+/// the chat-history sheet can observe Fire chats. Consumers don't need to know
+/// about rotation; only `FireExecutor` calls `syncWithCurrentFireModeID()` on
+/// the concrete type.
+final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAiNativeChatsObserving {
 
     private enum Constants {
         static let fireModeDirectoryName = "DuckAiNativeStorage-fireMode"
@@ -90,8 +93,7 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.fireModeMigratedFromAppGroup",
                     label: .fireMode,
                     keyValueStore: keyValueStore,
-                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter(),
-                    lockedLaunchFixEnabled: featureFlagger.isFeatureOn(.duckAINativeStorageMigrationLockedLaunchFix)
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
                 ).run()
                 if outcome == .skip {
                     return nil
@@ -233,6 +235,14 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling {
     func putChats(_ chats: [DuckAiChatRecord]) throws { try inner.putChats(chats) }
     func getChat(chatId: String) throws -> DuckAiChatRecord? { try inner.getChat(chatId: chatId) }
     func getAllChats() throws -> [DuckAiChatRecord] { try inner.getAllChats() }
+    func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
+        if let observing = inner as? DuckAiNativeChatsObserving {
+            return observing.chatsPublisher()
+        }
+        return Just((try? inner.getAllChats()) ?? [])
+            .setFailureType(to: Error.self)
+            .eraseToAnyPublisher()
+    }
     func deleteChat(chatId: String) throws { try inner.deleteChat(chatId: chatId) }
     func deleteAllChats() throws { try inner.deleteAllChats() }
 

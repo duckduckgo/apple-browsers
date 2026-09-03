@@ -384,11 +384,11 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: UserText.shareMenuItem)
                 .submenu(sharingMenu)
-                .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
+                .withImage(DesignSystemImages.Glyphs.Size12.shareApple, visibleOnMacOS27: true)
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), keyEquivalent: "p")
-                .withImage(DesignSystemImages.Glyphs.Size12.print)
+                .withImage(DesignSystemImages.Glyphs.Size12.print, visibleOnMacOS27: true)
         }
     }
 
@@ -538,7 +538,7 @@ final class MainMenu: NSMenu {
                             .withAccessibilityIdentifier("MainMenu.favoriteThisPage")
                         NSMenuItem.separator()
                     })
-                    .withImage(DesignSystemImages.Glyphs.Size12.favorite)
+                    .withImage(DesignSystemImages.Glyphs.Size12.favorite, visibleOnMacOS27: true)
 
                 NSMenuItem.separator()
             })
@@ -940,11 +940,16 @@ final class MainMenu: NSMenu {
 
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
+            NSMenuItem(title: "Data Import")
+                .submenu(DataImportDebugMenu(title: "Data Import"))
             NSMenuItem(title: "Favicons") {
                 NSMenuItem(title: "Clear In-Memory Cache", action: #selector(AppDelegate.debugClearFaviconsCache)).withAccessibilityIdentifier("MainMenu.clearFaviconsCache")
                 NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
             }
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
+            NSMenuItem(title: "Permissions") {
+                NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectPermissions(_:))).withAccessibilityIdentifier("MainMenu.inspectPermissions")
+            }
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "Performance Debugging") {
                 NSMenuItem(title: "Export Allocation Stats", action: #selector(AppDelegate.exportMemoryAllocationStats), keyEquivalent: [.control, .command, .shift, .option, "m"])
@@ -1328,7 +1333,7 @@ final class MainMenu: NSMenu {
 
     @MainActor private func makeAIChatMenu() -> AIChatMenu {
         let actions = AIChatMenu.Actions.makeDefault(
-            conversationSource: .mainMenu,
+            conversationSources: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: aiChatHistoryCleaner,

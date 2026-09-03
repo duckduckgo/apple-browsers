@@ -25,12 +25,11 @@ import Suggestions
 /// Title/subtitle/icon logic mirrors the legacy renderers so output is identical.
 enum SuggestionRowMapper {
 
-    /// `includesDeleteAccessory` adds the X-to-remove affordance to history rows. The Search
-    /// autocomplete enables it; the Duck.ai suggestions list does not (matches the legacy surface).
+    /// History rows always carry the X-to-remove affordance, on both the Search autocomplete and
+    /// the Duck.ai suggestions list.
     static func row(for suggestion: Suggestion,
                     query: String?,
-                    idPrefix: String,
-                    includesDeleteAccessory: Bool = false) -> SuggestionRow {
+                    idPrefix: String) -> SuggestionRow {
         switch suggestion {
         case .website(let url):
             return SuggestionRow(
@@ -58,7 +57,7 @@ enum SuggestionRowMapper {
                 title: url.searchQuery ?? "",
                 query: nil,
                 subtitle: UserText.autocompleteSearchDuckDuckGo,
-                accessory: includesDeleteAccessory ? .delete : .none,
+                accessory: .delete,
                 accessibilityID: "Autocomplete.Suggestions.ListItem.SERPHistory-\(url.searchQuery ?? "")")
 
         case .historyEntry(let title, let url, _):
@@ -68,7 +67,7 @@ enum SuggestionRowMapper {
                 title: title ?? url.formattedForSuggestion(),
                 query: nil,
                 subtitle: title == nil ? nil : url.formattedForSuggestion(),
-                accessory: includesDeleteAccessory ? .delete : .none,
+                accessory: .delete,
                 accessibilityID: "Autocomplete.Suggestions.ListItem.History-\(url.formattedForSuggestion())")
 
         case .openTab(let title, let url, _, _):
@@ -108,12 +107,12 @@ enum SuggestionRowMapper {
         }
     }
 
-    static func row(for chat: AIChatSuggestion, includesFireDelete: Bool = false) -> SuggestionRow {
+    static func row(for chat: AIChatSuggestion) -> SuggestionRow {
         SuggestionRow(
             id: "chat-\(chat.id)",
             icon: chat.isPinned ? .aiChatPinned : .aiChat,
             title: chat.title,
-            accessory: includesFireDelete ? .fire : .none,
+            accessory: .fire,
             accessibilityID: "DuckAISuggestions.Chat-\(chat.id)")
     }
 

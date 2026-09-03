@@ -183,6 +183,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable?
+    func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable?
+    func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable?
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -215,7 +217,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private let migrationStore = AIChatMigrationStore()
-    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let devicePlatform: DevicePlatformProviding.Type
     private let aichatContextualModeFeature: AIChatContextualModeFeatureProviding
     private var contextualModePixelHandler: AIChatContextualModePixelFiring?
     private let keyValueStore: KeyValueStoring
@@ -243,7 +245,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          featureFlagger: FeatureFlagger,
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
-         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
          aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
@@ -258,7 +260,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
         self.promptHandler = promptHandler
-        self.aichatFullModeFeature = aichatFullModeFeature
+        self.devicePlatform = devicePlatform
         self.aichatContextualModeFeature = aichatContextualModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
@@ -384,13 +386,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         switch displayMode {
         case .fullTab:
-            supportsFullMode = aichatFullModeFeature.isAvailable
+            supportsFullMode = devicePlatform.isIphone
             supportsContextualMode = false
         case .contextual:
             supportsFullMode = false
             supportsContextualMode = aichatContextualModeFeature.isAvailable
         case .none:
-            supportsFullMode = aichatFullModeFeature.isAvailable || defaults.supportsAIChatFullMode
+            supportsFullMode = devicePlatform.isIphone || defaults.supportsAIChatFullMode
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
@@ -399,6 +401,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let fireMode = isFireModeProvider?() ?? false
 
         let supportsSuggestions = supportsContextualMode && featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+        let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
+            && devicePlatform.isIphone
+            && supportsNativeChatInput
+            && isNativeStorageBridgeAvailable
         let config = AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
@@ -415,10 +421,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
-            supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
+            supportsMultipleContexts: supportsContextualMode,
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
+            supportsPromoCards: featureFlagger.isFeatureOn(.nativePromoCards) && supportsNativeChatInput,
             supportsSuggestions: supportsSuggestions,
+            supportsNativeUsageWarnings: supportsNativeUsageWarnings,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
         )
@@ -622,6 +630,18 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatShowModelPicker, object: message.messageWebView)
+        return nil
+    }
+    
+    @MainActor
+    func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatShowReasoningPicker, object: message.messageWebView)
+        return nil
+    }
+
+    @MainActor
+    func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatOpenFilePicker, object: message.messageWebView)
         return nil
     }
 

@@ -81,8 +81,6 @@ protocol FireExecutorDelegate: AnyObject {
     func didFinishBurningTabs(fireRequest: FireRequest)
     func willStartBurningData(fireRequest: FireRequest)
     func didFinishBurningData(fireRequest: FireRequest)
-    func willStartBurningAIHistory(fireRequest: FireRequest)
-    func didFinishBurningAIHistory(fireRequest: FireRequest)
     func didFinishBurning(fireRequest: FireRequest)
 }
 
@@ -138,6 +136,7 @@ class FireExecutor: FireExecuting {
     private let aiChatDeleter: AIChatDeleting
     private let idManager: DataStoreIDManaging
     private let fireModeStorageController: FireModeNativeStorageController?
+    private let clearAppSwitcherSnapshots: @MainActor () async -> Void
 
     weak var delegate: FireExecutorDelegate?
     private(set) var burnInProgress = false
@@ -169,7 +168,10 @@ class FireExecutor: FireExecuting {
          fireModeStorageController: FireModeNativeStorageController? = nil,
          pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
          wideEvent: WideEventManaging? = nil,
-         idManager: DataStoreIDManaging = DataStoreIDManager.shared) {
+         idManager: DataStoreIDManaging = DataStoreIDManager.shared,
+         clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {
+             await AppSwitcherSnapshotCleaner().clearSnapshots()
+         }) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.favicons = favicons
@@ -192,6 +194,7 @@ class FireExecutor: FireExecuting {
         self.appSettings = appSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
         self.fireModeStorageController = fireModeStorageController
+        self.clearAppSwitcherSnapshots = clearAppSwitcherSnapshots
         self.pixelsReporter = pixelsReporter
         self.dataClearingWideEventService = wideEvent.map { DataClearingWideEventService(wideEvent: $0) }
         let aiChatDeleter = AIChatDeleter(historyCleanerProvider: self.historyCleanerProvider,
@@ -283,7 +286,7 @@ class FireExecutor: FireExecuting {
         // Start async tasks
         async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(request: request, applicationState: applicationState, domains: domains) : ()
         
-        async let aiTask: Void = shouldBurnAIChats ? burnAIHistoryWithDelegateCallbacks(request: request) : ()
+        async let aiTask: Void = shouldBurnAIChats ? burnAIHistory(request: request) : ()
 
         // Execute sync tasks
         cancelOngoingDownloadsIfNeeded(request)
@@ -299,6 +302,8 @@ class FireExecutor: FireExecuting {
         if shouldBurnData {
             fireModeStorageController?.syncWithCurrentFireModeID()
         }
+
+        await clearAppSwitcherSnapshotsIfNeeded()
 
         // Notify delegate that we finished
         await didFinishBurning(fireRequest: request)
@@ -336,19 +341,35 @@ class FireExecutor: FireExecuting {
     @discardableResult
     @MainActor
     func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error> {
-        await aiChatDeleter.deleteChat(chatID: chatID, isFireMode: isFireMode)
+        let result = await aiChatDeleter.deleteChat(chatID: chatID, isFireMode: isFireMode)
+        return await clearAppSwitcherSnapshotsIfNeeded(after: result)
     }
 
     @discardableResult
     @MainActor
     func burnChats(chatIDs: [String], isFireMode: Bool) async -> Result<Void, Error> {
-        await aiChatDeleter.deleteChats(chatIDs: chatIDs, isFireMode: isFireMode)
+        let result = await aiChatDeleter.deleteChats(chatIDs: chatIDs, isFireMode: isFireMode)
+        return await clearAppSwitcherSnapshotsIfNeeded(after: result)
     }
 
     @discardableResult
     @MainActor
     func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
-        await aiChatDeleter.deleteAllChats(isFireMode: isFireMode)
+        let result = await aiChatDeleter.deleteAllChats(isFireMode: isFireMode)
+        return await clearAppSwitcherSnapshotsIfNeeded(after: result)
+    }
+
+    @MainActor
+    private func clearAppSwitcherSnapshotsIfNeeded() async {
+        guard featureFlagger.isFeatureOn(.appSwitcherSnapshotClearing) else { return }
+        await clearAppSwitcherSnapshots()
+    }
+
+    @MainActor
+    private func clearAppSwitcherSnapshotsIfNeeded(after result: Result<Void, Error>) async -> Result<Void, Error> {
+        guard case .success = result else { return result }
+        await clearAppSwitcherSnapshotsIfNeeded()
+        return result
     }
 
     @MainActor
@@ -370,13 +391,6 @@ class FireExecutor: FireExecuting {
         delegate?.willStartBurningData(fireRequest: request)
         await burnData(scope: request.scope, applicationState: applicationState, domains: domains)
         delegate?.didFinishBurningData(fireRequest: request)
-    }
-    
-    @MainActor
-    private func burnAIHistoryWithDelegateCallbacks(request: FireRequest) async {
-        delegate?.willStartBurningAIHistory(fireRequest: request)
-        await burnAIHistory(request: request)
-        delegate?.didFinishBurningAIHistory(fireRequest: request)
     }
     
     // MARK: Burn Tabs Helpers

@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import DesignResourcesKit
 
 enum FloatingOmnibarSwipeDirection: Equatable {
     case left
@@ -90,6 +91,10 @@ final class BrowserToolbarView: UIView {
 
     static let extendedHitWidth: CGFloat = 45
     static let floatingButtonsHeight: CGFloat = 62
+    /// Button row height when the address field is hosted in the bottom floating chrome.
+    static let floatingEmbeddedButtonsHeight: CGFloat = 44
+    static let buttonRowCollapseScaleAmount: CGFloat = 0.2
+    static let buttonRowCollapseTranslationY: CGFloat = 8
 
     /// Non-floating (legacy) buttons-only bar height, matching the original `UIToolbar` on `main`.
     /// The floating style uses the taller `buttonsHeight`.
@@ -101,25 +106,69 @@ final class BrowserToolbarView: UIView {
     /// buttons sit where the production `UIToolbar` placed them. Tuned to match production's
     /// end-button centres; the floating style keeps the tighter `horizontalEdgePadding`.
     private static let legacyButtonRowHorizontalPadding: CGFloat = 20
-    /// Inset for the floating button row so the outer buttons' centres line up with the embedded
-    /// omnibar's leading/trailing icons (loupe/shield ↔ back, AI chat ↔ menu). Separate from
-    /// `horizontalEdgePadding` so tuning it doesn't shift the omnibar field.
-    private static let floatingButtonRowHorizontalPadding: CGFloat = 16
+    /// Mirrors `DefaultOmniBarView`'s text-area padding.
+    private static let embeddedAddressBarTextAreaPadding: CGFloat = 16
 
+    /// Distance from the glass edge to the centre of the outermost icon in either row of the
+    /// combined bottom chrome.
+    static let floatingEmbeddedAddressBarIconInset =
+        embeddedAddressBarTextAreaPadding + BrowserChromeButton.toolbarButtonSize / 2
+
+    /// Inset for the combined (bottom) floating button row, so its outer buttons' centres land on
+    /// `floatingEmbeddedAddressBarIconInset` alongside the embedded omnibar's icons.
+    static let floatingEmbeddedButtonRowHorizontalPadding =
+        floatingEmbeddedAddressBarIconInset - horizontalEdgePadding - BrowserChromeButton.toolbarButtonSize / 2
+    /// Inner side inset of the standalone (top address bar) floating toolbar.
+    static let floatingStandaloneButtonRowHorizontalPadding: CGFloat = 16
     // This is only used in floating UI
     private static let floatingUICornerRadius: CGFloat = 40
 
-    private static let floatingBarOuterInsets = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+    static let floatingEmbeddedHorizontalInset: CGFloat = 16
+    static let floatingEmbeddedConcentricInset: CGFloat = 20
+    /// Outer side inset of the standalone top-address-bar toolbar.
+    static let floatingStandaloneHorizontalInset: CGFloat = 24
+    /// Extra inset of the custom glass inside the concentric layout-guide pin. Used by the
+    /// standalone (split, top-address-bar) pill so it matches iOS 26 `UIToolbar` glass padding.
+    /// Combined bottom chrome instead keeps its own equal rest-state inset on every edge.
+    static let floatingConcentricGlassInset: CGFloat = 20
+    private static let floatingConcentricGlassInsets = UIEdgeInsets(top: 0, left: floatingConcentricGlassInset, bottom: 0, right: floatingConcentricGlassInset)
+    private static let floatingEmbeddedBarOuterInsets = UIEdgeInsets(top: 0, left: floatingEmbeddedHorizontalInset, bottom: 0, right: floatingEmbeddedHorizontalInset)
+    private static let floatingStandaloneBarOuterInsets = UIEdgeInsets(top: 0, left: floatingStandaloneHorizontalInset, bottom: 0, right: floatingStandaloneHorizontalInset)
     private static let legacyBarOuterInsets = UIEdgeInsets.zero
 
     /// In the floating style the toolbar is laid out against the safe-area bottom (so the chrome
     /// hide/show math stays valid), but the capsule should float this close to the physical device
     /// bottom. The glass is shifted down into the home-indicator region by the difference.
-    private static let floatingBottomMarginWithEmbedded: CGFloat = 16
-    private static let floatingBottomMarginStandalone: CGFloat = 21
+    static let floatingEmbeddedBottomMargin: CGFloat = 16
+    static let floatingStandaloneBottomMargin: CGFloat = 21
 
-    private static let verticalContentPadding: CGFloat = 2
-    private static let omnibarToButtonsSpacing: CGFloat = 2
+    static func floatingOuterHorizontalInset(for addressBarPosition: AddressBarPosition) -> CGFloat {
+        if #available(iOS 26.0, *), addressBarPosition.isBottom {
+            return floatingEmbeddedConcentricInset
+        }
+        return addressBarPosition.isBottom ? floatingEmbeddedHorizontalInset : floatingStandaloneHorizontalInset
+    }
+
+    /// Extra inset inside the corner-adapted guide so combined bottom chrome sits
+    /// `floatingEmbeddedConcentricInset` from the physical screen edges. Zero when the guide is
+    /// already larger (landscape Dynamic Island) so the glass never leaves the toolbar.
+    static func embeddedRestStateInnerInset(guideInset: CGFloat) -> CGFloat {
+        max(0, floatingEmbeddedConcentricInset - max(0, guideInset))
+    }
+
+    static func floatingBottomMargin(for addressBarPosition: AddressBarPosition) -> CGFloat {
+        if #available(iOS 26.0, *), addressBarPosition.isBottom {
+            return floatingEmbeddedConcentricInset
+        }
+        return addressBarPosition.isBottom ? floatingEmbeddedBottomMargin : floatingStandaloneBottomMargin
+    }
+
+    /// Inner padding of the combined bottom floating chrome (address field + buttons). The standalone
+    /// floating toolbar used in top-address-bar mode keeps the original 2pt padding.
+    private static let floatingEmbeddedVerticalContentPadding: CGFloat = 16
+    private static let floatingEmbeddedOmnibarToButtonsSpacing: CGFloat = 12
+    private static let defaultVerticalContentPadding: CGFloat = 2
+    private static let defaultOmnibarToButtonsSpacing: CGFloat = 2
     private static let expandedContentToOmnibarSpacing: CGFloat = 8
     private static let expandedButtonsBottomPadding: CGFloat = 10
     private static let expandedContentTopPadding: CGFloat = 8
@@ -141,28 +190,27 @@ final class BrowserToolbarView: UIView {
             return view
         }
     }()
+    private var materialInterfaceStyle: UIUserInterfaceStyle?
 
     private let buttonStack: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
         stack.alignment = .center
-        // Equal center-to-center spacing (not equal gaps) so a wider button — e.g. the tab-count
-        // control — doesn't shift the other columns. With equal-width end buttons this keeps the
-        // centre (fire) button at the bar's midpoint, matching the tab switcher's bottom bar so the
-        // buttons stay put across the tab-switcher transition.
         stack.distribution = .equalCentering
         stack.isLayoutMarginsRelativeArrangement = true
         stack.layoutMargins = UIEdgeInsets(top: 0, left: BrowserToolbarView.horizontalEdgePadding, bottom: 0, right: BrowserToolbarView.horizontalEdgePadding)
+        stack.clipsToBounds = true
+        stack.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
-    
+
     private let contentStack: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
         stack.alignment = .fill
         stack.distribution = .fill
-        stack.spacing = omnibarToButtonsSpacing
+        stack.spacing = defaultOmnibarToButtonsSpacing
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
@@ -179,17 +227,49 @@ final class BrowserToolbarView: UIView {
         return view
     }()
     
-    private lazy var omnibarHeightConstraint = omnibarContainer.heightAnchor.constraint(equalToConstant: 0)
-    private lazy var buttonsHeightConstraint = materialBackgroundView.heightAnchor.constraint(equalToConstant: Self.legacyButtonsHeight)
+    private lazy var omnibarHeightConstraint: NSLayoutConstraint = {
+        let constraint = omnibarContainer.heightAnchor.constraint(equalToConstant: 0)
+        omnibarContainer.setContentCompressionResistancePriority(.required, for: .vertical)
+        omnibarContainer.setContentHuggingPriority(.required, for: .vertical)
+        return constraint
+    }()
+    /// Hosts the glass so the home-indicator shift can be applied to a plain view. Transforming
+    /// `UIVisualEffectView` itself makes Liquid Glass interpolate independently of `contentView`.
+    private let chromeContainer: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
+        return view
+    }()
+    /// Icons sit here as a sibling of the glass, not inside `UIVisualEffectView.contentView`. Nested
+    /// glass interpolates on a different clock from `contentView` descendants when the pill moves.
+    private let chromeContentHost: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
+        view.clipsToBounds = true
+        view.layer.cornerCurve = .continuous
+        return view
+    }()
+    private lazy var buttonsHeightConstraint = chromeContainer.heightAnchor.constraint(equalToConstant: Self.legacyButtonsHeight)
+    private lazy var buttonRowHeightConstraint: NSLayoutConstraint = {
+        let constraint = buttonStack.heightAnchor.constraint(equalToConstant: 0)
+        constraint.isActive = false
+        return constraint
+    }()
     private lazy var expandedContentHeightConstraint = expandedContentContainer.heightAnchor.constraint(equalToConstant: 0)
-    private lazy var materialBackgroundTopConstraint = materialBackgroundView.topAnchor.constraint(equalTo: topAnchor, constant: Self.barOuterInsets.top)
-    private lazy var contentStackBottomConstraint = contentStack.bottomAnchor.constraint(equalTo: materialBackgroundView.contentView.bottomAnchor, constant: -Self.verticalContentPadding)
+    private lazy var materialBackgroundTopConstraint = chromeContainer.topAnchor.constraint(equalTo: topAnchor)
+    private lazy var contentStackTopConstraint = contentStack.topAnchor.constraint(equalTo: chromeContentHost.topAnchor, constant: Self.defaultVerticalContentPadding)
+    private lazy var contentStackBottomConstraint = contentStack.bottomAnchor.constraint(equalTo: chromeContentHost.bottomAnchor, constant: -Self.defaultVerticalContentPadding)
     private var materialBackgroundLeadingConstraint: NSLayoutConstraint!
     private var materialBackgroundTrailingConstraint: NSLayoutConstraint!
     private var materialBackgroundBottomConstraint: NSLayoutConstraint!
+    private var contentStackLeadingConstraint: NSLayoutConstraint!
+    private var contentStackTrailingConstraint: NSLayoutConstraint!
     private weak var hostedOmnibarView: UIView?
     private weak var swipeIncomingOmnibarView: UIView?
     private var swipeIncomingOmnibarConstraints: [NSLayoutConstraint] = []
+    private var isOmnibarMorphing = false
     private let outgoingSwipeMask = CAShapeLayer()
     private let incomingSwipeMask = CAShapeLayer()
     private weak var hostedExpandedContentView: UIView?
@@ -198,12 +278,16 @@ final class BrowserToolbarView: UIView {
     /// floats near the device bottom (see `floatingBottomMargin`). Kept in sync with the host's
     /// safe-area inset in `layoutSubviews`; also widens the hit-test region.
     private var floatingBottomOffset: CGFloat = 0
+    /// Extra translation applied while the split (top address bar) pill hides. The layout slot stays
+    /// put so we can slide a plain container instead of moving `UIVisualEffectView` via Auto Layout.
+    private var standaloneHideProgress: CGFloat = 0
+    /// 0 = button row fully in layout, 1 = button row and field-to-buttons gap collapsed out of layout
+    /// so the address field keeps its height while the chrome shrinks around it.
+    private var buttonRowCollapseProgress: CGFloat = 0
     /// The tab switcher reuses this bar purely for button-position parity with the browser, but
     /// paints its own backdrop — so in the non-floating style its own background must stay clear.
     private var isLegacyBackgroundTransparent = false
-    private static var barOuterInsets: UIEdgeInsets {
-        floatingBarOuterInsets
-    }
+    private var toolbarButtonViews: [UIView] = []
     
     private var hasEmbeddedOmnibar: Bool {
         omnibarHeightConstraint.constant > 0
@@ -213,30 +297,131 @@ final class BrowserToolbarView: UIView {
         expandedContentHeightConstraint.constant > 0
     }
 
-    /// Buttons-only bar height for the current style. Floating uses the taller `buttonsHeight`; the
-    /// non-floating style matches the original `UIToolbar` height so flag-off chrome is unchanged.
+    private var usesStandaloneFloatingChrome: Bool {
+        isFloatingStyleEnabled && !hasEmbeddedOmnibar
+    }
+
+    private var usesCombinedBottomChromeGeometry: Bool {
+        isFloatingStyleEnabled && (hasEmbeddedOmnibar || isOmnibarMorphing)
+    }
+
+    private var currentBarOuterInsets: UIEdgeInsets {
+        guard isFloatingStyleEnabled else { return Self.legacyBarOuterInsets }
+        if #available(iOS 26.0, *) {
+            return usesCombinedBottomChromeGeometry ? embeddedRestStateOuterInsets : Self.floatingConcentricGlassInsets
+        }
+        return usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBarOuterInsets : Self.floatingStandaloneBarOuterInsets
+    }
+
+    /// Horizontal compensation for the combined bottom chrome. Its host is pinned to the
+    /// corner-adapted guide, so this keeps the glass at the same physical inset on every edge
+    /// unless the guide already exceeds that inset. Each edge is compensated from its own guide:
+    /// in landscape the Dynamic Island only enlarges the guide on one side.
+    @available(iOS 26.0, *)
+    private var embeddedRestStateOuterInsets: UIEdgeInsets {
+        guard let host = superview, host.bounds.width > 0 else {
+            return UIEdgeInsets(
+                top: 0,
+                left: Self.floatingEmbeddedConcentricInset,
+                bottom: 0,
+                right: Self.floatingEmbeddedConcentricInset)
+        }
+        let guideInsets = Self.horizontalGuideInsets(in: host)
+        return UIEdgeInsets(
+            top: 0,
+            left: Self.embeddedRestStateInnerInset(guideInset: guideInsets.left),
+            bottom: 0,
+            right: Self.embeddedRestStateInnerInset(guideInset: guideInsets.right))
+    }
+
+    /// Distance from the physical bottom edge of `view` to its corner-adapted safe area guide.
+    /// Reports zero for an unresolved guide, for the same reason as `horizontalGuideInsets(in:)`.
+    @available(iOS 26.0, *)
+    static func verticalGuideBottomInset(in view: UIView) -> CGFloat {
+        let layoutFrame = view.layoutGuide(for: .safeArea(cornerAdaptation: .vertical)).layoutFrame
+        guard !layoutFrame.isEmpty else { return 0 }
+        return max(0, view.bounds.maxY - layoutFrame.maxY)
+    }
+
+    /// Shift that puts combined bottom chrome `floatingEmbeddedConcentricInset` from the physical
+    /// bottom. The layout slot's bottom sits on the guide, so a guide gap wider than the inset
+    /// shifts the glass down and a narrower one shifts it up; it is not clamped to a downward
+    /// shift, or the glass would sit flush on devices whose guide already reaches the bottom.
+    static func embeddedRestStateBottomOffset(guideBottomGap: CGFloat) -> CGFloat {
+        guideBottomGap - floatingEmbeddedConcentricInset
+    }
+
+    /// Distance from each physical edge of `view` to its corner-adapted safe area guide.
+    /// The guide only resolves once the view is in a window; until then its layout frame is
+    /// empty, which carries no inset information. Reporting zero keeps callers from reading an
+    /// unresolved guide as "the whole width is unsafe".
+    @available(iOS 26.0, *)
+    static func horizontalGuideInsets(in view: UIView) -> (left: CGFloat, right: CGFloat) {
+        let layoutFrame = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal)).layoutFrame
+        guard !layoutFrame.isEmpty else { return (0, 0) }
+        return (max(0, layoutFrame.minX),
+                max(0, view.bounds.maxX - layoutFrame.maxX))
+    }
+
+    private var currentButtonRowHorizontalPadding: CGFloat {
+        guard isFloatingStyleEnabled else { return Self.legacyButtonRowHorizontalPadding }
+        return usesEmbeddedBottomChromeMetrics
+            ? Self.floatingEmbeddedButtonRowHorizontalPadding
+            : Self.floatingStandaloneButtonRowHorizontalPadding
+    }
+
+    private var currentContentStackHorizontalInset: CGFloat {
+        usesStandaloneFloatingChrome ? 0 : Self.horizontalEdgePadding
+    }
+
+    /// Buttons-only bar height for the current style. Floating standalone (top address bar) keeps the
+    /// original 62pt row; the non-floating style matches the original `UIToolbar` height.
     private var buttonsOnlyHeight: CGFloat {
         isFloatingStyleEnabled ? Self.floatingButtonsHeight : Self.legacyButtonsHeight
     }
 
+    private var usesEmbeddedBottomChromeMetrics: Bool {
+        isFloatingStyleEnabled && hasEmbeddedOmnibar
+    }
+
+    private var currentVerticalContentPadding: CGFloat {
+        usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedVerticalContentPadding : Self.defaultVerticalContentPadding
+    }
+
+    private var currentOmnibarToButtonsSpacing: CGFloat {
+        usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedOmnibarToButtonsSpacing : Self.defaultOmnibarToButtonsSpacing
+    }
+
     static func totalHeight(withOmnibarHeight omnibarHeight: CGFloat, isFloating: Bool) -> CGFloat {
-        let targetHeight = isFloating ? floatingButtonsHeight : legacyButtonsHeight
         guard omnibarHeight > 0 else {
-            return targetHeight
+            return isFloating ? floatingButtonsHeight : legacyButtonsHeight
         }
-        return (verticalContentPadding * 2) + targetHeight + omnibarHeight + omnibarToButtonsSpacing
+        if isFloating {
+            return (floatingEmbeddedVerticalContentPadding * 2)
+                + floatingEmbeddedButtonsHeight
+                + omnibarHeight
+                + floatingEmbeddedOmnibarToButtonsSpacing
+        }
+        return (defaultVerticalContentPadding * 2) + legacyButtonsHeight + omnibarHeight + defaultOmnibarToButtonsSpacing
+    }
+
+    static func singleRowHeight(withOmnibarHeight omnibarHeight: CGFloat) -> CGFloat {
+        (floatingEmbeddedVerticalContentPadding * 2) + omnibarHeight
     }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = .clear
 
-        addSubview(materialBackgroundView)
-        materialBackgroundView.contentView.addSubview(contentStack)
+        addSubview(chromeContainer)
+        chromeContainer.addSubview(materialBackgroundView)
+        chromeContainer.addSubview(chromeContentHost)
+        chromeContentHost.addSubview(contentStack)
         contentStack.addArrangedSubview(expandedContentContainer)
         contentStack.addArrangedSubview(omnibarContainer)
         contentStack.addArrangedSubview(buttonStack)
 
+        chromeContainer.clipsToBounds = false
         materialBackgroundView.clipsToBounds = false
         expandedContentContainer.isHidden = true
 
@@ -248,19 +433,29 @@ final class BrowserToolbarView: UIView {
         materialBackgroundView.layer.shadowRadius = 10
         materialBackgroundView.layer.shadowOffset = CGSize(width: 0, height: 4)
 
-        materialBackgroundLeadingConstraint = materialBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.legacyBarOuterInsets.left)
-        materialBackgroundTrailingConstraint = materialBackgroundView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.legacyBarOuterInsets.right)
-        materialBackgroundBottomConstraint = materialBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Self.legacyBarOuterInsets.bottom)
+        materialBackgroundLeadingConstraint = chromeContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.legacyBarOuterInsets.left)
+        materialBackgroundTrailingConstraint = chromeContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.legacyBarOuterInsets.right)
+        materialBackgroundBottomConstraint = chromeContainer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Self.legacyBarOuterInsets.bottom)
+        contentStackLeadingConstraint = contentStack.leadingAnchor.constraint(equalTo: chromeContentHost.leadingAnchor, constant: Self.horizontalEdgePadding)
+        contentStackTrailingConstraint = contentStack.trailingAnchor.constraint(equalTo: chromeContentHost.trailingAnchor, constant: -Self.horizontalEdgePadding)
 
         NSLayoutConstraint.activate([
+            materialBackgroundView.topAnchor.constraint(equalTo: chromeContainer.topAnchor),
+            materialBackgroundView.leadingAnchor.constraint(equalTo: chromeContainer.leadingAnchor),
+            materialBackgroundView.trailingAnchor.constraint(equalTo: chromeContainer.trailingAnchor),
+            materialBackgroundView.bottomAnchor.constraint(equalTo: chromeContainer.bottomAnchor),
+            chromeContentHost.topAnchor.constraint(equalTo: chromeContainer.topAnchor),
+            chromeContentHost.leadingAnchor.constraint(equalTo: chromeContainer.leadingAnchor),
+            chromeContentHost.trailingAnchor.constraint(equalTo: chromeContainer.trailingAnchor),
+            chromeContentHost.bottomAnchor.constraint(equalTo: chromeContainer.bottomAnchor),
             materialBackgroundLeadingConstraint,
             materialBackgroundTrailingConstraint,
             materialBackgroundTopConstraint,
             materialBackgroundBottomConstraint,
             buttonsHeightConstraint,
-            contentStack.leadingAnchor.constraint(equalTo: materialBackgroundView.contentView.leadingAnchor, constant: Self.horizontalEdgePadding),
-            contentStack.trailingAnchor.constraint(equalTo: materialBackgroundView.contentView.trailingAnchor, constant: -Self.horizontalEdgePadding),
-            contentStack.topAnchor.constraint(equalTo: materialBackgroundView.contentView.topAnchor, constant: Self.verticalContentPadding),
+            contentStackLeadingConstraint,
+            contentStackTrailingConstraint,
+            contentStackTopConstraint,
             contentStackBottomConstraint,
             expandedContentHeightConstraint,
             omnibarHeightConstraint,
@@ -275,7 +470,7 @@ final class BrowserToolbarView: UIView {
     }
 
     var arrangedToolbarButtonViews: [UIView] {
-        buttonStack.arrangedSubviews
+        toolbarButtonViews
     }
 
     func setFloatingStyleEnabled(_ enabled: Bool, animated: Bool = false) {
@@ -293,29 +488,70 @@ final class BrowserToolbarView: UIView {
     }
 
     func setToolbarButtons(_ views: [UIView]) {
+        toolbarButtonViews = views
+        rebuildButtonRow()
+    }
+
+    private func rebuildButtonRow() {
         buttonStack.arrangedSubviews.forEach {
             buttonStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        for view in views {
+        buttonStack.distribution = .equalCentering
+        toolbarButtonViews.forEach { view in
+            view.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
             buttonStack.addArrangedSubview(view)
         }
     }
-    
+
+    private func applyContentStackMetrics() {
+        contentStackTopConstraint.constant = currentVerticalContentPadding
+        if !hasExpandedContent {
+            contentStackBottomConstraint.constant = -currentVerticalContentPadding
+        }
+        let collapse = usesEmbeddedBottomChromeMetrics ? buttonRowCollapseProgress.clamped(to: 0...1) : 0
+        contentStack.spacing = currentOmnibarToButtonsSpacing * (1 - collapse)
+        if usesEmbeddedBottomChromeMetrics {
+            buttonRowHeightConstraint.constant = Self.floatingEmbeddedButtonsHeight * (1 - collapse)
+            buttonRowHeightConstraint.isActive = true
+        } else {
+            buttonRowHeightConstraint.isActive = false
+        }
+        applyHorizontalChromeMetrics()
+    }
+
+    private func applyHorizontalChromeMetrics() {
+        let insets = currentBarOuterInsets
+        // `insets` are physical (left/right); these constraints are directional, so mirror in RTL.
+        let isRightToLeft = effectiveUserInterfaceLayoutDirection == .rightToLeft
+        materialBackgroundLeadingConstraint.constant = isRightToLeft ? insets.right : insets.left
+        materialBackgroundTrailingConstraint.constant = isRightToLeft ? -insets.left : -insets.right
+        if !hasExpandedContent {
+            materialBackgroundTopConstraint.constant = insets.top
+        }
+        materialBackgroundBottomConstraint.constant = -insets.bottom
+        contentStackLeadingConstraint.constant = currentContentStackHorizontalInset
+        contentStackTrailingConstraint.constant = -currentContentStackHorizontalInset
+        let buttonRowPadding = currentButtonRowHorizontalPadding
+        buttonStack.layoutMargins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
+    }
+
     func setOmnibarView(_ view: UIView?, height: CGFloat) {
         endOmnibarSwipe()
         hostedOmnibarView?.removeFromSuperview()
         hostedOmnibarView = nil
+        isOmnibarMorphing = false
+        buttonRowCollapseProgress = 0
         
         guard let view else {
-            omnibarHeightConstraint.constant = 0
-            buttonsHeightConstraint.constant = buttonsOnlyHeight
-            updateCornerStyle()
+            applyOmnibarDetachmentPose()
             return
         }
         
         omnibarHeightConstraint.constant = height
         buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: isFloatingStyleEnabled)
+        applyContentStackMetrics()
+        rebuildButtonRow()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.isUserInteractionEnabled = true
         (view as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
@@ -330,6 +566,57 @@ final class BrowserToolbarView: UIView {
         ])
         
         updateCornerStyle()
+        scheduleHostedOmnibarMaterialRefresh()
+    }
+
+    func prepareForOmnibarDetachment() {
+        endOmnibarSwipe()
+        hostedOmnibarView?.removeFromSuperview()
+        hostedOmnibarView = nil
+        isOmnibarMorphing = true
+        updateCornerStyle()
+    }
+
+    func applyOmnibarDetachmentPose() {
+        buttonRowCollapseProgress = 0
+        omnibarHeightConstraint.constant = 0
+        buttonsHeightConstraint.constant = buttonsOnlyHeight
+        applyContentStackMetrics()
+        rebuildButtonRow()
+        updateCornerStyle()
+    }
+
+    func prepareForOmnibarAttachment(height: CGFloat) {
+        guard isFloatingStyleEnabled, hostedOmnibarView == nil else { return }
+        isOmnibarMorphing = true
+        buttonRowCollapseProgress = 0
+        omnibarHeightConstraint.constant = height
+        buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: true)
+        applyContentStackMetrics()
+        rebuildButtonRow()
+        updateCornerStyle()
+    }
+
+    func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle) {
+        guard isFloatingStyleEnabled else { return }
+        materialInterfaceStyle = interfaceStyle
+        UIView.performWithoutAnimation {
+            materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
+            materialBackgroundView.effect = nil
+            materialBackgroundView.effect = materialEffect()
+            materialBackgroundView.layoutIfNeeded()
+        }
+        scheduleHostedOmnibarMaterialRefresh()
+    }
+
+    private func scheduleHostedOmnibarMaterialRefresh() {
+        guard isFloatingStyleEnabled else { return }
+        let omnibarView = hostedOmnibarView as? DefaultOmniBarView
+        let interfaceStyle = materialInterfaceStyle
+        DispatchQueue.main.async { [weak self, weak omnibarView] in
+            guard let self, let omnibarView, hostedOmnibarView === omnibarView else { return }
+            omnibarView.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        }
     }
 
     func isHostingOmnibarView(_ view: UIView) -> Bool {
@@ -494,8 +781,8 @@ final class BrowserToolbarView: UIView {
             let collapseLayout = {
                 self.expandedContentHeightConstraint.constant = 0
                 self.contentStack.setCustomSpacing(0, after: self.expandedContentContainer)
-                self.contentStackBottomConstraint.constant = -Self.verticalContentPadding
-                self.materialBackgroundTopConstraint.constant = Self.barOuterInsets.top
+                self.contentStackBottomConstraint.constant = -self.currentVerticalContentPadding
+                self.materialBackgroundTopConstraint.constant = self.currentBarOuterInsets.top
                 self.layoutIfNeeded()
             }
             if animated {
@@ -526,8 +813,8 @@ final class BrowserToolbarView: UIView {
         expandedContentHeightConstraint.constant = expandedContainerHeight
         expandedContentContainer.isHidden = false
         contentStack.setCustomSpacing(Self.expandedContentToOmnibarSpacing, after: expandedContentContainer)
-        contentStackBottomConstraint.constant = -(Self.verticalContentPadding + Self.expandedButtonsBottomPadding)
-        materialBackgroundTopConstraint.constant = Self.barOuterInsets.top - expandedContainerHeight - Self.expandedContentToOmnibarSpacing
+        contentStackBottomConstraint.constant = -(currentVerticalContentPadding + Self.expandedButtonsBottomPadding)
+        materialBackgroundTopConstraint.constant = currentBarOuterInsets.top - expandedContainerHeight - Self.expandedContentToOmnibarSpacing
 
         view.translatesAutoresizingMaskIntoConstraints = false
         expandedContentContainer.addSubview(view)
@@ -560,73 +847,166 @@ final class BrowserToolbarView: UIView {
     }
     
     override func layoutSubviews() {
+        applyHorizontalChromeMetrics()
         super.layoutSubviews()
         updateFloatingBottomOffset()
         updateCornerStyle()
     }
 
     var floatingBottomMargin: CGFloat {
-        hasEmbeddedOmnibar ? Self.floatingBottomMarginWithEmbedded : Self.floatingBottomMarginStandalone
+        if #available(iOS 26.0, *), usesCombinedBottomChromeGeometry {
+            return Self.floatingEmbeddedConcentricInset
+        }
+        return hasEmbeddedOmnibar ? Self.floatingEmbeddedBottomMargin : Self.floatingStandaloneBottomMargin
+    }
+
+    var visibleCapsuleRect: CGRect {
+        guard isFloatingStyleEnabled else { return bounds }
+        let shadowSpill = materialBackgroundView.layer.shadowRadius + materialBackgroundView.layer.shadowOffset.height
+        return bounds.union(chromeContainer.frame.insetBy(dx: -shadowSpill, dy: -shadowSpill))
     }
 
     /// Floating style only; returns `.zero` otherwise.
     func restingCapsuleFrame(in view: UIView) -> CGRect {
         guard isFloatingStyleEnabled else { return .zero }
         let bounds = view.bounds
-        let safeBottom = view.safeAreaInsets.bottom
-        let insets = Self.floatingBarOuterInsets
-        let width = bounds.width - insets.left - insets.right
-        let height = buttonsHeightConstraint.constant
-        let offset = max(0, safeBottom - floatingBottomMargin)
-        let bottom = bounds.maxY - safeBottom + offset
-        return CGRect(x: bounds.minX + insets.left, y: bottom - height, width: width, height: height)
+        let height = hasEmbeddedOmnibar
+            ? Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
+            : buttonsHeightConstraint.constant
+
+        let left: CGFloat
+        let right: CGFloat
+        let bottom: CGFloat
+        if #available(iOS 26.0, *) {
+            if usesCombinedBottomChromeGeometry {
+                let guideInsets = Self.horizontalGuideInsets(in: view)
+                left = guideInsets.left + Self.embeddedRestStateInnerInset(guideInset: guideInsets.left)
+                right = guideInsets.right + Self.embeddedRestStateInnerInset(guideInset: guideInsets.right)
+                bottom = bounds.maxY - Self.floatingEmbeddedConcentricInset
+            } else {
+                let guideInsets = Self.horizontalGuideInsets(in: view)
+                let glassInset = currentBarOuterInsets.left
+                left = guideInsets.left + glassInset
+                right = guideInsets.right + glassInset
+                bottom = bounds.maxY - Self.verticalGuideBottomInset(in: view)
+            }
+        } else {
+            let insets = currentBarOuterInsets
+            left = insets.left
+            right = insets.right
+            let safeBottom = view.safeAreaInsets.bottom
+            let offset = max(0, safeBottom - floatingBottomMargin)
+            bottom = bounds.maxY - safeBottom + offset
+        }
+
+        let width = max(0, bounds.width - left - right)
+        return CGRect(x: bounds.minX + left, y: bottom - height, width: width, height: height)
     }
-    
-    /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,
-    /// leaving `floatingBottomMargin`. Done as a transform (not a constraint change) so it doesn't
-    /// disturb the toolbar's layout slot or the runtime chrome hide/show constant logic.
+
+    @discardableResult
+    func setButtonRowCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) -> CGFloat {
+        let fullHeight = Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant, isFloating: isFloatingStyleEnabled)
+
+        guard isFloatingStyleEnabled, hasEmbeddedOmnibar, !hasExpandedContent, !reduceMotion else {
+            buttonRowCollapseProgress = 0
+            buttonStack.alpha = 1
+            buttonStack.transform = .identity
+            buttonsHeightConstraint.constant = fullHeight
+            applyContentStackMetrics()
+            return fullHeight
+        }
+
+        let progress = collapseProgress.clamped(to: 0...1)
+        buttonRowCollapseProgress = progress
+        applyContentStackMetrics()
+        buttonStack.alpha = 1 - progress
+        let scale = 1 - Self.buttonRowCollapseScaleAmount * progress
+        buttonStack.transform = CGAffineTransform(scaleX: scale, y: scale)
+            .concatenating(CGAffineTransform(translationX: 0, y: Self.buttonRowCollapseTranslationY * progress))
+
+        let singleRowHeight = Self.singleRowHeight(withOmnibarHeight: omnibarHeightConstraint.constant)
+        let height = fullHeight - (fullHeight - singleRowHeight) * progress
+        buttonsHeightConstraint.constant = height
+        updateCornerStyle()
+        return height
+    }
+
+    func setStandaloneCollapseProgress(_ progress: CGFloat, reduceMotion: Bool) {
+        standaloneHideProgress = reduceMotion ? 0 : progress.clamped(to: 0...1)
+        applyMaterialBackgroundTransform()
+    }
+
+    private var standaloneHideTranslation: CGFloat {
+        let slideDistance = bounds.height + (superview?.safeAreaInsets.bottom ?? 0)
+        return slideDistance * standaloneHideProgress
+    }
+
+    private func applyMaterialBackgroundTransform() {
+        chromeContainer.transform = CGAffineTransform(translationX: 0, y: floatingBottomOffset + standaloneHideTranslation)
+    }
+
+    /// On iOS 26 the host pins this bar to the concentric vertical guide. Split (standalone) chrome
+    /// stays there. Combined bottom chrome is shifted down to keep the same physical inset on every
+    /// edge. Below iOS 26 the layout slot sits on the safe area and the glass is shifted down toward
+    /// the device bottom, leaving `floatingBottomMargin`.
     private func updateFloatingBottomOffset() {
-        let hostBottomInset = superview?.safeAreaInsets.bottom ?? 0
-        let target = isFloatingStyleEnabled ? max(0, hostBottomInset - floatingBottomMargin) : 0
+        let target: CGFloat
+        if #available(iOS 26.0, *), isFloatingStyleEnabled {
+            if usesCombinedBottomChromeGeometry, let host = superview, host.bounds.height > 0 {
+                let guideBottomGap = Self.verticalGuideBottomInset(in: host)
+                target = Self.embeddedRestStateBottomOffset(guideBottomGap: guideBottomGap)
+            } else {
+                target = 0
+            }
+        } else {
+            let hostBottomInset = superview?.safeAreaInsets.bottom ?? 0
+            target = isFloatingStyleEnabled ? hostBottomInset - floatingBottomMargin : 0
+        }
         guard target != floatingBottomOffset else { return }
         floatingBottomOffset = target
-        materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: target)
+        applyMaterialBackgroundTransform()
     }
 
     private func updateCornerStyle() {
         guard isFloatingStyleEnabled else {
             materialBackgroundView.contentView.layer.cornerRadius = 0
+            chromeContentHost.layer.cornerRadius = 0
             return
         }
+
+        let usesRestStateCorners = isOmnibarMorphing || hasEmbeddedOmnibar || hasExpandedContent
 
         if #available(iOS 26, *) {
-            materialBackgroundView.cornerConfiguration = hasEmbeddedOmnibar || hasExpandedContent
-                ? .corners(radius: UICornerRadius.containerConcentric(minimum: Self.floatingUICornerRadius))
-                : .capsule()
+            if usesRestStateCorners {
+                let configuration = UICornerConfiguration.corners(
+                    radius: .containerConcentric(minimum: Self.floatingUICornerRadius))
+                materialBackgroundView.cornerConfiguration = configuration
+                chromeContentHost.cornerConfiguration = configuration
+            } else {
+                materialBackgroundView.cornerConfiguration = .capsule()
+                chromeContentHost.cornerConfiguration = .capsule()
+            }
             return
         }
 
-        materialBackgroundView.contentView.layer.cornerRadius = hasEmbeddedOmnibar || hasExpandedContent
+        let radius = usesRestStateCorners
             ? Self.floatingUICornerRadius
-            : materialBackgroundView.contentView.bounds.height / 2
+            : max(chromeContentHost.bounds.height, materialBackgroundView.bounds.height) / 2
+        chromeContentHost.layer.cornerRadius = radius
+        materialBackgroundView.contentView.layer.cornerRadius = radius
     }
 
     private func applyCurrentStyle(animated: Bool) {
-        let insets = isFloatingStyleEnabled ? Self.floatingBarOuterInsets : Self.legacyBarOuterInsets
         let legacyBackgroundColor: UIColor = isLegacyBackgroundTransparent ? .clear : ThemeManager.shared.currentTheme.barBackgroundColor
         let updates = {
-            self.materialBackgroundLeadingConstraint.constant = insets.left
-            self.materialBackgroundTrailingConstraint.constant = -insets.right
-            self.materialBackgroundTopConstraint.constant = insets.top
-            self.materialBackgroundBottomConstraint.constant = -insets.bottom
             self.materialBackgroundView.layer.shadowOpacity = self.isFloatingStyleEnabled ? 0.12 : 0
             self.materialBackgroundView.effect = self.isFloatingStyleEnabled ? self.materialEffect() : nil
             self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
-            let buttonRowPadding = self.isFloatingStyleEnabled ? Self.floatingButtonRowHorizontalPadding : Self.legacyButtonRowHorizontalPadding
-            self.buttonStack.layoutMargins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
-            // Keep the buttons-only height in sync with the style (49 legacy / 56 floating). The
-            // embedded-omnibar height is floating-only and owned by `setOmnibarView`, so leave it.
+            self.applyContentStackMetrics()
+            self.rebuildButtonRow()
+            // Keep the buttons-only height in sync with the style (49 legacy / 62 floating standalone).
+            // The embedded-omnibar height is floating-only and owned by `setOmnibarView`, so leave it.
             if !self.hasEmbeddedOmnibar {
                 self.buttonsHeightConstraint.constant = self.buttonsOnlyHeight
             }
@@ -641,11 +1021,27 @@ final class BrowserToolbarView: UIView {
         }
     }
 
+    /// Rebuilds the glass so it re-resolves against whatever is now behind the capsule. Swapping the
+    /// surface under the bar (web page <-> new tab page) doesn't invalidate the effect on its own, so
+    /// a light page's material survives into a dark NTP and the capsule reads lighter than its backdrop.
+    func refreshMaterialBackdrop() {
+        guard isFloatingStyleEnabled else { return }
+        UIView.performWithoutAnimation {
+            materialBackgroundView.effect = nil
+            materialBackgroundView.effect = materialEffect()
+            materialBackgroundView.layoutIfNeeded()
+        }
+    }
+
     private func materialEffect() -> UIVisualEffect {
         if #available(iOS 26.0, *) {
-            UIGlassEffect(style: .regular)
+            let effect = UIGlassEffect(style: .regular)
+            if materialInterfaceStyle == .dark {
+                effect.tintColor = UIColor(designSystemColor: .surfaceCanvas)
+            }
+            return effect
         } else {
-            UIBlurEffect(style: .systemThinMaterial)
+            return UIBlurEffect(style: .systemThinMaterial)
         }
     }
 
@@ -655,7 +1051,7 @@ final class BrowserToolbarView: UIView {
         // The glass is shifted down by `floatingBottomOffset`, so the interactive region is the
         // bounds offset by the same amount (this also lets the now-empty strip above the capsule
         // pass touches through to the content behind it).
-        let interactiveRect = bounds.offsetBy(dx: 0, dy: floatingBottomOffset)
+        let interactiveRect = bounds.offsetBy(dx: 0, dy: floatingBottomOffset + standaloneHideTranslation)
         if interactiveRect.contains(point) {
             return true
         }
@@ -663,6 +1059,13 @@ final class BrowserToolbarView: UIView {
         guard hasExpandedContent else { return false }
         let expandedRect = interactiveRect.insetBy(dx: 0, dy: -expandedContentHeightConstraint.constant)
         return expandedRect.contains(point)
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            scheduleHostedOmnibarMaterialRefresh()
+        }
     }
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
@@ -684,7 +1087,7 @@ final class BrowserToolbarView: UIView {
             }
         }
 
-        for subview in buttonStack.arrangedSubviews {
+        for subview in toolbarButtonViews {
             let location = convert(point, to: subview)
             if let hit = subview.hitTest(location, with: event) {
                 return hit

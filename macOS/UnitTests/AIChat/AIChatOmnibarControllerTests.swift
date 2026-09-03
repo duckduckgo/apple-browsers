@@ -1321,6 +1321,137 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(controller.selectedModelSupportsImageGeneration)
     }
 
+    // MARK: - Updated Create Image Model Switching Tests
+
+    func testWhenUpdatedCreateImageIsEnabledAndSelectedModelIsUnsupported_ThenSuggestedModelIsSelectedAndNoticeIsReturned() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "mistral", modelShortName: "Mistral Small"),
+            makeRemoteModel(id: "first-capable", modelShortName: "GPT-5.4", supportedTools: ["GenerateImage"], label: .usesLimitsFaster),
+            makeRemoteModel(id: "suggested", modelShortName: "GPT-5.4 mini", supportedTools: ["GenerateImage"], label: .everydayUse)
+        ]
+        mockPreferences.selectedModelId = "mistral"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        let notice = controller.toggleImageGenerationMode()
+
+        // Then
+        XCTAssertTrue(controller.isImageGenerationMode)
+        XCTAssertEqual(mockPreferences.selectedModelId, "suggested")
+        XCTAssertEqual(notice?.previousModelShortName, "Mistral Small")
+        XCTAssertEqual(notice?.newModelShortName, "GPT-5.4 mini")
+        XCTAssertEqual(notice?.previousModelHasExtraPrivacyProtections, false)
+    }
+
+    func testWhenUpdatedCreateImageSwitchesFromOSSModel_ThenNoticeMentionsExtraPrivacyProtections() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "gpt-oss-120b", modelShortName: "GPT-OSS", provider: "tinfoil"),
+            makeRemoteModel(id: "image-model", modelShortName: "GPT-5.4", supportedTools: ["GenerateImage"])
+        ]
+        mockPreferences.selectedModelId = "gpt-oss-120b"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        let notice = controller.toggleImageGenerationMode()
+
+        // Then
+        XCTAssertEqual(mockPreferences.selectedModelId, "image-model")
+        XCTAssertEqual(notice?.previousModelShortName, "GPT-OSS")
+        XCTAssertEqual(notice?.newModelShortName, "GPT-5.4")
+        XCTAssertEqual(notice?.previousModelHasExtraPrivacyProtections, true)
+    }
+
+    func testWhenSelectedModelAlreadySupportsImageGeneration_ThenModelIsNotChangedAndNoticeIsNotReturned() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "selected", supportedTools: ["GenerateImage"]),
+            makeRemoteModel(id: "suggested", supportedTools: ["GenerateImage"], label: .everydayUse)
+        ]
+        mockPreferences.selectedModelId = "selected"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        let notice = controller.toggleImageGenerationMode()
+
+        // Then
+        XCTAssertEqual(mockPreferences.selectedModelId, "selected")
+        XCTAssertNil(notice)
+    }
+
+    func testWhenUpdatedCreateImageIsDisabled_ThenUnsupportedSelectedModelIsNotChanged() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = false
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "unsupported"),
+            makeRemoteModel(id: "image-model", supportedTools: ["GenerateImage"], label: .everydayUse)
+        ]
+        mockPreferences.selectedModelId = "unsupported"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        let notice = controller.toggleImageGenerationMode()
+
+        // Then
+        XCTAssertTrue(controller.isImageGenerationMode)
+        XCTAssertEqual(mockPreferences.selectedModelId, "unsupported")
+        XCTAssertNil(notice)
+    }
+
+    func testWhenNoAccessibleModelSupportsImageGeneration_ThenSelectedModelIsNotChangedAndLegacyModeIsUsed() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "unsupported"),
+            makeRemoteModel(id: "inaccessible", entityHasAccess: false, supportedTools: ["GenerateImage"], label: .everydayUse)
+        ]
+        mockPreferences.selectedModelId = "unsupported"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        let notice = controller.toggleImageGenerationMode()
+
+        // Then
+        XCTAssertEqual(mockPreferences.selectedModelId, "unsupported")
+        XCTAssertNil(notice)
+        XCTAssertNil(controller.effectiveModelId)
+        XCTAssertNil(controller.effectiveToolChoice)
+        XCTAssertEqual(controller.effectiveMode, AIChatNativePrompt.imageGenerationMode)
+    }
+
+    func testWhenUpdatedCreateImageIsActivatedBeforeModelsLoad_ThenModelSwitchesAfterFetchAndModeStaysActive() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "unsupported", modelShortName: "Mistral Small"),
+            makeRemoteModel(id: "image-model", modelShortName: "GPT-5.4 mini", supportedTools: ["GenerateImage"], label: .everydayUse)
+        ]
+        mockPreferences.selectedModelId = "unsupported"
+        var receivedNotice: AIChatCreateImageModelSwitchNotice?
+        controller.onCreateImageModelSwitchNotice = { receivedNotice = $0 }
+        XCTAssertNil(controller.toggleImageGenerationMode())
+        XCTAssertTrue(controller.isImageGenerationMode)
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertTrue(controller.isImageGenerationMode)
+        XCTAssertEqual(mockPreferences.selectedModelId, "image-model")
+        XCTAssertEqual(receivedNotice?.previousModelShortName, "Mistral Small")
+        XCTAssertEqual(receivedNotice?.newModelShortName, "GPT-5.4 mini")
+    }
+
     func testWhenSwitchingToUnsupportedModel_ThenImageGenerationModeIsDeactivated() async {
         // Given
         mockModelsService.modelsToReturn = [
@@ -1362,6 +1493,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     func testWhenFetchModelsRevealsUnsupportedPersistedModel_ThenImageGenerationModeIsDeactivated() async {
         // Given — user toggled Create Image before models loaded (conservative default allowed it),
         // persisted model turns out not to support it
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = false
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "no-img", supportedTools: [])
         ]
@@ -2179,6 +2311,51 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(gated.allSatisfy(\.routesToUpsell), "With the upsell on, a gated row opens the purchase dialog")
     }
 
+    /// The usage card's "Switch to a Free Model" chevron. That message means the advanced allowance
+    /// is spent, so the menu behind it must not list the models it was spent on.
+    func testModelPickerItems_freeModelsOnly_listsOnlyModelsTheFreeTierGets() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        // A free-tier model lists every tier in the live payload — "free" marks what it costs, not
+        // who may select it, and a paid user must still be able to switch onto one.
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
+            makeRemoteModel(id: "basic", accessTier: ["free", "plus"]),
+            makeRemoteModel(id: "plus-only", accessTier: ["plus"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: .plus, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil, freeModelsOnly: true)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a", "basic"])
+        XCTAssertTrue(gatedRows(items).isEmpty, "A paid model is exactly what this menu exists to avoid")
+    }
+
+    /// A paid model the user *can* select is still the wrong offer here — their allowance for it is gone.
+    func testModelPickerItems_freeModelsOnly_dropsPaidModelsTheUserHasAccessTo() async {
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: .pro, trialEligible: false)
+
+        let items = controller.modelPickerItems(selectedModelId: nil, freeModelsOnly: true)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"])
+        XCTAssertEqual(separatorCount(items), 0, "Nothing to divide off — there is no second section")
+    }
+
+    /// The toolbar's own picker is unchanged: it still offers everything, gated section included.
+    func testModelPickerItems_withoutTheFreeOnlyFlag_stillOffersPaidModels() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil)
+
+        XCTAssertEqual(gatedRows(items).map(\.id), ["pro-only"])
+    }
+
     /// The gated section is exactly `[separator, header, gated…]`, in that order, at the end.
     func testModelPickerItems_gatedSectionOrdering() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
@@ -2420,6 +2597,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     /// submit body silently drops the file payload when that returns `false`.
     private func makeRemoteModel(
         id: String,
+        modelShortName: String? = nil,
+        provider: String = "openai",
         supportsImageUpload: Bool = false,
         supportedFileTypes: [String]? = nil,
         entityHasAccess: Bool = true,
@@ -2432,8 +2611,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         AIChatRemoteModel(
             id: id,
             name: id,
-            modelShortName: nil,
-            provider: "openai",
+            modelShortName: modelShortName,
+            provider: provider,
             entityHasAccess: entityHasAccess,
             supportsImageUpload: supportsImageUpload,
             supportedFileTypes: supportedFileTypes,
@@ -2662,6 +2841,118 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         XCTAssertTrue(delegate.requestsVoiceSessionCalled)
         XCTAssertFalse(mockTabOpener.openVoiceSessionCalled, "The host resolves the window first for this surface")
+    }
+}
+
+@MainActor
+final class AIChatCreateImagePresentationPolicyTests: XCTestCase {
+
+    func testWhenUpdatedCreateImageIsEnabled_ThenItemIsVisibleForUnsupportedModel() {
+        let policy = makePolicy(
+            isUpdatedCreateImageEnabled: true,
+            selectedModelSupportsImageGeneration: false
+        )
+
+        XCTAssertTrue(policy.isImageGenerationItemVisible)
+    }
+
+    func testWhenUpdatedCreateImageIsDisabled_ThenItemVisibilityFollowsSelectedModelSupport() {
+        let unsupportedModelPolicy = makePolicy(
+            isUpdatedCreateImageEnabled: false,
+            selectedModelSupportsImageGeneration: false
+        )
+        let supportedModelPolicy = makePolicy(
+            isUpdatedCreateImageEnabled: false,
+            selectedModelSupportsImageGeneration: true
+        )
+
+        XCTAssertFalse(unsupportedModelPolicy.isImageGenerationItemVisible)
+        XCTAssertTrue(supportedModelPolicy.isImageGenerationItemVisible)
+    }
+
+    func testWhenUpdatedCreateImageModeIsActive_ThenModelPickerIsVisibleAndReadOnly() {
+        let policy = makePolicy(
+            isUpdatedCreateImageEnabled: true,
+            isImageGenerationMode: true
+        )
+
+        XCTAssertTrue(policy.shouldShowModelPicker)
+        XCTAssertTrue(policy.shouldMakeModelPickerReadOnly)
+    }
+
+    func testWhenImageGenerationModeIsInactive_ThenModelPickerIsVisibleAndInteractive() {
+        let policy = makePolicy(
+            isUpdatedCreateImageEnabled: true,
+            isImageGenerationMode: false
+        )
+
+        XCTAssertTrue(policy.shouldShowModelPicker)
+        XCTAssertFalse(policy.shouldMakeModelPickerReadOnly)
+    }
+
+    func testWhenUpdatedCreateImageIsDisabledAndImageGenerationModeIsActive_ThenModelPickerIsHidden() {
+        let policy = makePolicy(
+            isUpdatedCreateImageEnabled: false,
+            isImageGenerationMode: true
+        )
+
+        XCTAssertFalse(policy.shouldShowModelPicker)
+        XCTAssertFalse(policy.shouldMakeModelPickerReadOnly)
+    }
+
+    private func makePolicy(
+        isImageGenerationEnabled: Bool = true,
+        isUpdatedCreateImageEnabled: Bool,
+        selectedModelSupportsImageGeneration: Bool = true,
+        isOmnibarToolsEnabled: Bool = true,
+        hasModelPickerContent: Bool = true,
+        isImageGenerationMode: Bool = false
+    ) -> AIChatCreateImagePresentationPolicy {
+        AIChatCreateImagePresentationPolicy(
+            isImageGenerationEnabled: isImageGenerationEnabled,
+            isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled,
+            selectedModelSupportsImageGeneration: selectedModelSupportsImageGeneration,
+            isOmnibarToolsEnabled: isOmnibarToolsEnabled,
+            hasModelPickerContent: hasModelPickerContent,
+            isImageGenerationMode: isImageGenerationMode
+        )
+    }
+}
+
+@MainActor
+final class AIChatModelPickerButtonReadOnlyTests: XCTestCase {
+
+    func testWhenButtonIsReadOnly_ThenItCannotReceiveFocusOrMouseInteraction() {
+        let button = AIChatModelPickerButton(frame: NSRect(x: 0, y: 0, width: 120, height: 28))
+
+        button.isReadOnly = true
+
+        XCTAssertFalse(button.acceptsFirstResponder)
+        XCTAssertFalse(button.canBecomeKeyView)
+        XCTAssertNil(button.hitTest(NSPoint(x: 10, y: 10)))
+        XCTAssertEqual(button.accessibilityRole(), .staticText)
+    }
+
+    func testWhenButtonBecomesReadOnly_ThenMenuIndicatorSpaceIsRemoved() {
+        let button = AIChatModelPickerButton()
+        button.modelName = "GPT-5.4"
+        let interactiveWidth = button.intrinsicContentSize.width
+
+        button.isReadOnly = true
+
+        XCTAssertLessThan(button.intrinsicContentSize.width, interactiveWidth)
+    }
+
+    func testWhenButtonReturnsToInteractiveMode_ThenItCanReceiveInteractionAgain() {
+        let button = AIChatModelPickerButton(frame: NSRect(x: 0, y: 0, width: 120, height: 28))
+        button.isReadOnly = true
+
+        button.isReadOnly = false
+
+        XCTAssertTrue(button.acceptsFirstResponder)
+        XCTAssertTrue(button.canBecomeKeyView)
+        XCTAssertTrue(button.hitTest(NSPoint(x: 10, y: 10)) === button)
+        XCTAssertEqual(button.accessibilityRole(), .popUpButton)
     }
 }
 

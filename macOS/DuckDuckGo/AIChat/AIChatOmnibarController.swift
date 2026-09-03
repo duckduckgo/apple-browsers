@@ -860,13 +860,23 @@ final class AIChatOmnibarController {
     private func switchToImageGenerationModelIfNeeded() -> AIChatCreateImageModelSwitchNotice? {
         guard isUpdatedCreateImageEnabled,
               let previousModel = selectedModel,
-              !previousModel.supportsTool(.imageGeneration),
-              let fallbackModel = imageGenerationModel else {
+              !previousModel.supportsTool(.imageGeneration) else {
+            return nil
+        }
+
+        guard let fallbackModel = imageGenerationModel else {
+            pixelHandler.fire(.createImageUnavailable)
             return nil
         }
 
         updateSelectedModel(fallbackModel.id)
-        return AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        let notice = AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        pixelHandler.fire(.createImageModelSwitched(
+            fromModelId: previousModel.id,
+            toModelId: fallbackModel.id,
+            fromModelPrivacyPreserving: notice.previousModelHasExtraPrivacyProtections
+        ))
+        return notice
     }
 
     /// The model ID to use for the current submission. In image-generation mode an
@@ -1358,6 +1368,9 @@ final class AIChatOmnibarController {
         pixelHandler.fire(.promptSubmitted)
 
         if isImageGenerationMode {
+            if !selectedModelSupportsImageGeneration {
+                pixelHandler.fire(.createImageSubmittedWithUnsupportedModel)
+            }
             pixelHandler.fire(.imageGenerationSubmitted)
         } else if isWebSearchMode {
             pixelHandler.fire(.webSearchSubmitted)

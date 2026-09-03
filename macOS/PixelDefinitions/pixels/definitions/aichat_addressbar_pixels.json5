@@ -369,6 +369,59 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_addressbar_create_image_model_switched": {
+        "description": "Fired when selecting Create Image switches an unsupported model to an accessible image-capable model",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "from_model_id",
+                "type": "string",
+                "description": "Identifier of the unsupported model selected before the switch"
+            },
+            {
+                "key": "to_model_id",
+                "type": "string",
+                "description": "Identifier of the image-capable model selected automatically"
+            },
+            {
+                "key": "from_model_privacy_preserving",
+                "type": "boolean",
+                "description": "Whether the model selected before the switch had extra privacy protections"
+            },
+            {
+                "key": "entry_point",
+                "type": "string",
+                "enum": ["tools_menu"],
+                "description": "Where the user selected Create Image"
+            }
+        ]
+    },
+    "m_mac_aichat_addressbar_create_image_model_switch_notice_dismissed": {
+        "description": "Fired when the user dismisses the notice shown after Create Image switches models",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_create_image_unavailable": {
+        "description": "Fired when Create Image cannot find an accessible image-capable model",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_create_image_submitted_with_unsupported_model": {
+        "description": "Error monitor fired when a Create Image prompt is submitted while the selected model is known not to support image generation",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_aichat_addressbar_web_search_activated": {
         "description": "Fired when user selects the Web Search tool to enter web search mode",
         "owners": ["tomasstrba"],

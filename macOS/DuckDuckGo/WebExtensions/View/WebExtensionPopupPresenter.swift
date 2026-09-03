@@ -60,9 +60,6 @@ final class WebExtensionPopupPanel: NSPanel {
 final class WebExtensionPopupPresenter {
 
     private enum Constants {
-        /// Square corners are the point of this panel, so the radius stays at zero.
-        static let cornerRadius: CGFloat = 0
-
         /// Gap between the toolbar button and the popup.
         static let verticalOffset: CGFloat = 4
 
@@ -118,11 +115,8 @@ final class WebExtensionPopupPresenter {
         self.anchorButton = button
         self.popupWebView = popupWebView
 
-        let initialSize = Constants.fallbackSize
-
-        let contentView = NSView(frame: NSRect(origin: .zero, size: initialSize))
+        let contentView = NSView(frame: NSRect(origin: .zero, size: Constants.fallbackSize))
         contentView.wantsLayer = true
-        contentView.layer?.cornerRadius = Constants.cornerRadius
         contentView.layer?.masksToBounds = true
         // The popup page paints its own background, but only once it loads. An opaque body
         // keeps the panel visible until then, instead of a fully transparent rectangle.
@@ -133,25 +127,19 @@ final class WebExtensionPopupPresenter {
         contentView.addSubview(popupWebView)
         panel.contentView = contentView
 
-        // Size the panel from `initialSize`, not from the content view. AppKit resizes the
-        // content view to the frame the panel already has, which is the placeholder size
+        // Size the panel from the fallback size, not from the content view. AppKit resizes
+        // the content view to the frame the panel already has, which is the placeholder size
         // from `WebExtensionPopupPanel.init`.
-        panel.setFrame(frame(forContentSize: initialSize, below: button, in: parentWindow),
+        panel.setFrame(frame(forContentSize: Constants.fallbackSize, below: button, in: parentWindow),
                        display: false)
 
         parentWindow.addChildWindow(panel, ordered: .above)
         panel.orderFront(nil)
         panel.makeKey()
 
-        // Read-only state. Never drive the extension from here: a call such as
-        // `loadBackgroundContent()` makes WebKit hold the popup back until the background
-        // content is ready, and an extension whose worker never starts then shows no popup.
-        Logger.webExtensions.debug("""
-        🧩 Popup of \(context.uniqueIdentifier) shown at \(NSStringFromRect(panel.frame), privacy: .public), \
-        page \(popupWebView.url?.absoluteString ?? "nil", privacy: .public), \
-        hasBackgroundContent=\(context.webExtension.hasBackgroundContent, privacy: .public)
-        """)
-
+        // Never drive the extension from here: a call such as `loadBackgroundContent()` makes
+        // WebKit hold the popup back until the background content is ready, and an extension
+        // whose worker never starts then shows no popup. Only observe the page.
         observePopupSize(of: popupWebView)
         startWatchingForClicksOutside()
     }

@@ -99,7 +99,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
     /// Talks to native messaging hosts. `nil` where hosts are unavailable, such as on iOS.
-    public private(set) var nativeMessagingHandler: WebExtensionNativeMessagingHandling?
+    let nativeMessagingHandler: WebExtensionNativeMessagingHandling?
 
     /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
     private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
@@ -133,8 +133,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
     /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
-
-    // MARK: - AsyncStream
 
     private var continuation: AsyncStream<Void>.Continuation?
     public private(set) lazy var extensionUpdates = AsyncStream<Void> { [weak self] continuation in
@@ -718,7 +716,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     func notifyUpdate() {
-        continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
         NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: self)
     }
@@ -728,9 +725,9 @@ public extension Notification.Name {
 
     /// Posted by `WebExtensionManager` when the set of loaded extensions changes.
     ///
-    /// Unlike `extensionUpdates`, which an `AsyncStream` limits to a single consumer,
-    /// this notification reaches every observer. Per-window UI needs that, because each
-    /// browser window keeps its own set of extension toolbar buttons.
+    /// A notification reaches every observer, where the lifecycle delegate is a single
+    /// object. Per-window UI needs that, because each browser window keeps its own set of
+    /// extension toolbar buttons.
     static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
 }
 

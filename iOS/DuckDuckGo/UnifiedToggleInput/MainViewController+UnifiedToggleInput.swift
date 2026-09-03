@@ -1098,8 +1098,7 @@ extension MainViewController {
         // (below the bar, whether the bar is legacy chrome or floating glass), so scrolling both to
         // the top makes the handoff seamless.
         let usesTopPortraitLayout = !coordinator.cardPosition.isBottom && !isPhoneLandscape
-        let searchOnlyContentToScroll = usesTopPortraitLayout && isSearchContentToSearchContent
-            && !coordinator.isToggleVisible
+        let searchContentToScroll = usesTopPortraitLayout && isSearchContentToSearchContent
             ? coordinator.contentViewController
             : nil
         let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
@@ -1128,7 +1127,7 @@ extension MainViewController {
             prepareSearchContentForDismiss(
                 coordinator: coordinator,
                 isSearchContentToSearchContent: isSearchContentToSearchContent,
-                preservingScrollPosition: searchOnlyContentToScroll != nil
+                preservingScrollPosition: searchContentToScroll != nil
             )
         }
 
@@ -1139,7 +1138,7 @@ extension MainViewController {
             // Reconcile the stored offset only after the focused host is hidden, so cancelling a
             // native scroll that outlasts the collapse cannot produce a visible final-frame snap.
             DispatchQueue.main.async {
-                searchOnlyContentToScroll?.scrollToTop(animated: false)
+                searchContentToScroll?.scrollToTop(animated: false)
                 self?.logNewTabPageScrollGeometry(phase: "ntp-after-settle")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     self?.logNewTabPageScrollGeometry(phase: "ntp-late")
@@ -1180,10 +1179,10 @@ extension MainViewController {
 
         // The collapse animator now owns the final inset; start a native scroll that replaces
         // an in-flight drag/deceleration instead of competing with it in the animation block.
-        searchOnlyContentToScroll?.scrollToTop(animated: true)
+        searchContentToScroll?.scrollToTop(animated: true)
         // The resting NTP keeps whatever offset it had before focus (SwiftUI re-applies it after UIKit
         // clamps), so it has to land at the top too before the handoff reveals it.
-        if searchOnlyContentToScroll != nil {
+        if searchContentToScroll != nil {
             newTabPageViewController?.scrollToTop()
         }
 
@@ -1711,7 +1710,7 @@ extension MainViewController: UnifiedToggleInputFloatingReturnKeyDelegate {
 
 }
 
-/// Diagnostics for the Search-only NTP handoff: logs every NTP scroll view geometry change during a
+/// Diagnostics for the Search content NTP handoff: logs every NTP scroll view geometry change during a
 /// UTI omnibar session together with the call stack that produced it.
 private final class NTPScrollGeometryTracer {
     private var observations: [NSKeyValueObservation] = []

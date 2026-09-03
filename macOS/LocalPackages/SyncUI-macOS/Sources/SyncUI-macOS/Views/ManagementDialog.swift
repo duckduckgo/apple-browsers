@@ -25,6 +25,7 @@ public enum PreparingToSyncMode: Equatable {
 
 public enum ManagementDialogKind: Equatable {
     case deleteAccount(_ devices: [SyncDevice])
+    case deleteAccountV2(_ devices: [SyncDevice])
     case turnOffSync
     case deviceDetails(_ device: SyncDevice)
     case deviceDetailsV2(_ device: SyncDevice)
@@ -101,6 +102,8 @@ public struct ManagementDialog: View {
                 RemoveDeviceViewV2(device: device)
             case .deleteAccount(let devices):
                 DeleteAccountView(devices: devices)
+            case .deleteAccountV2(let devices):
+                DeleteAccountViewV2(devices: devices)
             case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):
                 if model.isSimplifiedSyncSetupV2Enabled {
                     SyncWithAnotherDeviceViewV2(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)

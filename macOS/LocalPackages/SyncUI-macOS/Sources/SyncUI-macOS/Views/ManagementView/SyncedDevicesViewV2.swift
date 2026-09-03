@@ -49,6 +49,8 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
                 isVisible = false
             }
 
+            SyncedDevicesSeparatorV2()
+
             Button {
                 Task {
                     await model.syncWithAnotherDevicePressed()
@@ -66,110 +68,6 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
             .padding(8)
         }
         .syncRoundedBorder(cornerRadius: 12)
-    }
-}
-
-private struct SyncedDevicesListV2: View {
-
-    let devices: [SyncDevice]
-
-    @State var hoveredDevice: SyncDevice?
-
-    var presentDeviceDetails: ((SyncDevice) async -> Void)?
-
-    var body: some View {
-        VStack(spacing: 0) {
-            if devices.isEmpty {
-                ProgressView()
-                    .padding()
-            }
-
-            ForEach(devices) { device in
-                if !device.isCurrent {
-                    separator
-                }
-                deviceRow(for: device)
-            }
-            separator
-        }
-    }
-
-    @ViewBuilder
-    private func deviceRow(for device: SyncDevice) -> some View {
-        SyncPreferencesRow {
-            SyncedDeviceIconV2(kind: device.kind)
-        } centerContent: {
-            HStack {
-                Text(device.name)
-                if device.isCurrent {
-                    Text("(\(UserText.thisDevice))")
-                        .foregroundColor(Color(NSColor.secondaryLabelColor))
-                }
-                Spacer()
-            }
-        } rightContent: {
-            deviceAction(for: device)
-        }
-        .onHover { hovering in
-            hoveredDevice = hovering ? device : nil
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityAction(named: Text(UserText.currentDeviceDetails)) {
-            Task {
-                await presentDeviceDetails?(device)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func deviceAction(for device: SyncDevice) -> some View {
-        if let presentDeviceDetails {
-            Button(UserText.currentDeviceDetails) {
-                Task {
-                    await presentDeviceDetails(device)
-                }
-            }
-            .accessibilityHidden(true)
-            .visibility(hoveredDevice?.id == device.id ? .visible : .gone)
-        }
-    }
-
-    private var separator: some View {
-        Rectangle()
-            .fill(Color(.blackWhite10))
-            .frame(height: 1)
-            .padding(.init(top: 0, leading: 10, bottom: 0, trailing: 10))
-    }
-}
-
-struct SyncedDeviceIconV2: View {
-    var kind: SyncDevice.Kind
-
-    private var image: DesignSystemImage {
-        switch kind {
-        case .current, .desktop:
-            return DesignSystemImages.Glyphs.Size16.deviceLaptop
-        case .mobile:
-            return DesignSystemImages.Glyphs.Size16.deviceMobile
-        case .thirdParty:
-            return DesignSystemImages.Glyphs.Size16.deviceAll
-        }
-    }
-
-    private var accessibilityIdentifier: String {
-        switch kind {
-        case .current, .desktop:
-            return "SyncSettings.syncedDevice.desktop"
-        case .mobile:
-            return "SyncSettings.syncedDevice.mobile"
-        case .thirdParty:
-            return "SyncSettings.syncedDevice.thirdParty"
-        }
-    }
-
-    var body: some View {
-        Image(nsImage: image)
-            .accessibilityIdentifier(accessibilityIdentifier)
     }
 }
 

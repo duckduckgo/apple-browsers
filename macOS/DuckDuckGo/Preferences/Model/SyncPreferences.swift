@@ -423,8 +423,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     }
 
     @MainActor
-    func presentDeleteAccount() {
-        syncSettingsHandler.presentDeleteAccount()
+    func presentDeleteAccount() async {
+        await syncSettingsHandler.presentDeleteAccount()
     }
 
     @MainActor

@@ -197,6 +197,9 @@ class MainViewCoordinator {
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
         addressBarPosition = position
         applyContentContainerTopAnchorForCurrentState()
+        // Default before any branch runs; only the toolbar-attach path below overrides it, so
+        // readers within this pass can't see a stale value.
+        isOmnibarInToolbar = false
         guard isFloatingUIEnabled else {
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
@@ -204,7 +207,6 @@ class MainViewCoordinator {
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
             setContentContainerBottomAnchorMode(requesting: .toolbar)
-            isOmnibarInToolbar = false
             return
         }
 
@@ -218,11 +220,10 @@ class MainViewCoordinator {
             navigationBarContainer.isHidden = false
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
-            bringFloatingTopNavigationBarToFrontIfNeeded()
+            bringFloatingNavigationBarToFrontIfNeeded()
             // Span content full-bleed to the main view bottom (behind the floating toolbar) so the
             // web scroll edge sits at the screen bottom and content doesn't move when the bars hide.
             setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
-            isOmnibarInToolbar = false
         case .bottom:
             guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
                 isFloatingUIEnabled: isFloatingUIEnabled,
@@ -235,7 +236,6 @@ class MainViewCoordinator {
                 navigationBarContainer.isHidden = false
                 navigationBarContainer.alpha = 1
                 navigationBarContainer.isUserInteractionEnabled = true
-                isOmnibarInToolbar = false
                 return
             }
             toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
@@ -448,7 +448,7 @@ class MainViewCoordinator {
         navigationBarContainer.backgroundColor = .clear
 
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
-        bringFloatingTopNavigationBarToFrontIfNeeded()
+        bringFloatingNavigationBarToFrontIfNeeded()
 
         if addressBarPosition == .top {
             setAddressBarBottomActive(false)
@@ -668,7 +668,7 @@ class MainViewCoordinator {
             omniBar?.barView.setIconContainersAlpha(1)
         }
         restoreContentContainerBottomAnchorAfterUnifiedToggleInput()
-        bringFloatingTopNavigationBarToFrontIfNeeded()
+        bringFloatingNavigationBarToFrontIfNeeded()
     }
 
     private var shouldHostOmnibarInFloatingToolbarAfterUTIExit: Bool {
@@ -705,13 +705,13 @@ class MainViewCoordinator {
         hideFocusedStateBackground()
         focusedStateBackground.alpha = 1
         superview.insertSubview(statusBackground, aboveSubview: topSlideContainer)
-        bringFloatingTopNavigationBarToFrontIfNeeded()
+        bringFloatingNavigationBarToFrontIfNeeded()
     }
 
-    /// Keeps the top floating omnibar above full-screen UTI layers so menu and customize long-press
-    /// gestures stay tappable after focus/dismiss cycles.
-    func bringFloatingTopNavigationBarToFrontIfNeeded() {
-        guard isFloatingUIEnabled, addressBarPosition == .top else { return }
+    /// Keeps the floating omnibar above full-screen UTI layers so its gestures stay tappable
+    /// after focus/dismiss cycles. Inverse of `bringSubviewToFront(toolbar)` at the attach sites.
+    func bringFloatingNavigationBarToFrontIfNeeded() {
+        guard isFloatingUIEnabled, !isOmnibarInToolbar else { return }
         superview.bringSubviewToFront(navigationBarContainer)
         applyAITabCollapsedTopSeparatorVisibility()
     }

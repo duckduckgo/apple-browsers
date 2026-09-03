@@ -1069,7 +1069,6 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
-        coordinator.viewController.deactivateInput()
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
@@ -1121,6 +1120,10 @@ extension MainViewController {
                 self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
             }
         )
+
+        // Resign only once the animator owns the container's position, so the collapse stays on a
+        // single timeline instead of being handed to the keyboard's.
+        coordinator.viewController.deactivateInput()
 
         if let omnibarPlaceholderColor {
             coordinator.viewController.animatePlaceholderColorTransition(

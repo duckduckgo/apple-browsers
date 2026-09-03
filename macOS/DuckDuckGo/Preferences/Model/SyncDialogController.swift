@@ -43,9 +43,9 @@ protocol SyncSettingsViewHandling {
     /// Initiates the process to turn off sync for the current device
     func turnOffSyncPressed()
 
-    /// Presents the device details view for the specified sync device
+    /// Presents the device details view for the specified sync device, authenticating the user first when required
     /// - Parameter device: The sync device to display details for
-    func presentDeviceDetails(_ device: SyncDevice)
+    func presentDeviceDetails(_ device: SyncDevice) async
 
     /// Presents the remove device confirmation dialog for the specified device
     /// - Parameter device: The sync device to remove
@@ -638,12 +638,15 @@ extension SyncDialogController: SyncSettingsViewHandling {
     }
 
     @MainActor
-    func presentDeviceDetails(_ device: SyncDevice) {
-        if featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) {
-            presentDialog(for: .deviceDetailsV2(device))
-        } else {
+    func presentDeviceDetails(_ device: SyncDevice) async {
+        guard featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) else {
             presentDialog(for: .deviceDetails(device))
+            return
         }
+        guard await checkAuthenticated() else {
+            return
+        }
+        presentDialog(for: .deviceDetailsV2(device))
     }
 
     @MainActor

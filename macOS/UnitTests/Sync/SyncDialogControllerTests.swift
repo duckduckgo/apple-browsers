@@ -283,23 +283,52 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testPresentDeviceDetails_whenSimplifiedSyncSetupV2Disabled_showsDeviceDetails() {
+    func testPresentDeviceDetails_whenSimplifiedSyncSetupV2Disabled_showsDeviceDetailsWithoutAuthenticating() async {
         featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = false
+        authenticator.stubAuthenticateUser = .failure
         let device = SyncDevice(kind: .current, name: "test", id: "test")
 
-        syncDialogController.presentDeviceDetails(device)
+        await syncDialogController.presentDeviceDetails(device)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetails(device))
     }
 
     @MainActor
-    func testPresentDeviceDetails_whenSimplifiedSyncSetupV2Enabled_showsDeviceDetailsV2() {
+    func testPresentDeviceDetails_whenSimplifiedSyncSetupV2EnabledAndAuthenticated_showsDeviceDetailsV2() async {
         featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
         let device = SyncDevice(kind: .current, name: "test", id: "test")
 
-        syncDialogController.presentDeviceDetails(device)
+        await syncDialogController.presentDeviceDetails(device)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetailsV2(device))
+    }
+
+    @MainActor
+    func testPresentDeviceDetails_whenSimplifiedSyncSetupV2EnabledAndAuthenticationCancelled_doesNotShowDeviceDetailsV2AndEndsFlow() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        authenticator.stubAuthenticateUser = .failure
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        var didEndFlowCalled = false
+        coordinationDelegate.didEndFlowCalled = { didEndFlowCalled = true }
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        await syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertTrue(didEndFlowCalled)
+    }
+
+    @MainActor
+    func testPresentDeviceDetails_whenSimplifiedSyncSetupV2EnabledAndNoAuthAvailable_showsUnableToAuthenticateError() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        await syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .empty)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
     }
 
     @MainActor

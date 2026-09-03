@@ -135,6 +135,17 @@ enum UserText {
     static let preparingToSyncCheckOtherDeviceTitleV2 = NotLocalizedString("preferences.preparing-to-sync-v2.check-other-device-title", value: "Check your other device...", comment: "Title shown while the joining device waits for the other device during sync set up (V2)")
     static let preparingToSyncDialogActionV2 = NotLocalizedString("preferences.preparing-to-sync-v2.dialog-action", value: "Connecting...", comment: "Status text while preparing to sync (V2)")
 
+    // Sync success dialog (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let syncSuccessFallbackDeviceNameV2 = NotLocalizedString("preferences.sync.success-v2.fallback-device-name", value: "This device", comment: "Fallback device name in the Sync success dialog when the current device name is unavailable (V2)")
+    static func syncSuccessTitleV2(deviceName: String) -> String {
+        let format = NotLocalizedString("preferences.sync.success-v2.title", value: "%@ has been added to Sync & Backup.", comment: "Title in the Sync success dialog. %@ is the name of the device that was added (V2)")
+        return String(format: format, deviceName)
+    }
+    static let syncSuccessDescriptionV2 = NotLocalizedString("preferences.sync.success-v2.description", value: "Use this code to restore your synced data if you lose access to your devices. Keep it safe.", comment: "Recovery code explanation in the Sync success dialog (V2)")
+    static let syncSuccessRecoveryCodeLabelV2 = NotLocalizedString("preferences.sync.success-v2.recovery-code-label", value: "Recovery Code", comment: "Recovery code label in the Sync success dialog (V2)")
+    static let syncSuccessCopyCodeButtonV2 = NotLocalizedString("preferences.sync.success-v2.copy-code-button", value: "Copy Code", comment: "Button to copy the recovery code in the Sync success dialog (V2)")
+    static let syncSuccessDownloadPDFButtonV2 = NotLocalizedString("preferences.sync.success-v2.download-pdf-button", value: "Download as PDF", comment: "Button to download the recovery code as a PDF in the Sync success dialog (V2)")
+
     // Enter recovery code dialog
     static let enterRecoveryCodeDialogTitle = NSLocalizedString("preferences.enter-recovery-code.dialog-title", bundle: Bundle.module, value: "Enter Code", comment: "Sync enter recovery code dialog title")
     static let enterRecoveryCodeDialogSubtitle = NSLocalizedString("preferences.enter-recovery-code.dialog-subtitle", bundle: Bundle.module, value: "Enter the code on your Recovery PDF, or another synced device, to recover your synced data.", comment: "Sync enter recovery code dialog subtitle")

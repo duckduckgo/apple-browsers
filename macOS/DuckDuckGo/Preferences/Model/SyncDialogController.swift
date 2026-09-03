@@ -99,6 +99,7 @@ final class SyncDialogController {
     private var cancellables = Set<AnyCancellable>()
     private var syncPromoSource: String?
     private var pairingV2PeerKind: PairingV2DeviceKind?
+    private var didCreateSyncAccountDuringPairing = false
     private var displayedCodeSetupSource: SyncSetupSource?
 
     @Published var stringForQR: String?
@@ -243,8 +244,23 @@ final class SyncDialogController {
         }
     }
 
+    private func completeV2HostFlow(shouldWaitForDevicesToChange: Bool) {
+        guard didCreateSyncAccountDuringPairing else {
+            managementDialogModel.endFlow()
+            return
+        }
+
+        didCreateSyncAccountDuringPairing = false
+        if shouldWaitForDevicesToChange {
+            waitForDevicesToChangeThenPresentSuccess()
+        } else {
+            showSyncSuccess()
+        }
+    }
+
     private func startPollingForRecoveryKey(isRecovery: Bool) {
         pairingV2PeerKind = nil
+        didCreateSyncAccountDuringPairing = false
         Task { @MainActor in
             defer { managementDialogModel.isConnectingAnotherDevice = false }
             do {
@@ -344,6 +360,7 @@ final class SyncDialogController {
 
     private func startPollingForPublicKey() {
         pairingV2PeerKind = nil
+        didCreateSyncAccountDuringPairing = false
         Task { @MainActor in
             defer { managementDialogModel.isConnectingAnotherDevice = false }
             do {
@@ -626,6 +643,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func didEndFlow() {
+        didCreateSyncAccountDuringPairing = false
         let controller = self.connectionController
         let delegate = self.coordinationDelegate
 
@@ -719,6 +737,12 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
                                                                       peerKind: pairingV2PeerKind?.syncSetupPeerKind,
                                                                       myRole: SyncSetupPixelKitEvent.ParameterValue.host))
         pairingV2PeerKind = nil
+
+        if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
+            completeV2HostFlow(shouldWaitForDevicesToChange: shouldWaitForDevicesToChange)
+            return
+        }
+
         // Temporary handling as devices don't update when 3p device added to account
         if shouldWaitForDevicesToChange {
             waitForDevicesToChangeThenPresentSuccess()
@@ -789,6 +813,12 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {
         let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
         PixelKit.fire(GeneralPixel.syncSignupConnect, withAdditionalParameters: additionalParameters)
+
+        if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
+            didCreateSyncAccountDuringPairing = true
+            return
+        }
+
         guard shouldShowSyncEnabled else {
             return
         }
@@ -800,6 +830,12 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
 
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
         sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
+
+        if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
+            completeV2HostFlow(shouldWaitForDevicesToChange: false)
+            return
+        }
+
         guard shouldShowSyncEnabled else { return }
         Task {
             presentDialog(for: .saveRecoveryCode(recoveryCode ?? ""))

@@ -1093,13 +1093,15 @@ final class SyncDialogControllerTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 5)
     }
 
-    func testSyncThisDeviceOnlyFromPrompt_whenSucceeds_firesSignupPixelAndEndsFlow() async {
+    func testSyncThisDeviceOnlyFromPrompt_whenSucceeds_firesSignupPixelAndShowsRecoveryCode() async {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         managementDialogModel.currentDialog = .syncAnotherDevicePrompt
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
 
         await syncDialogController.syncThisDeviceOnlyFromPrompt()
 
         XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == "m_mac_sync_signup_direct" })
-        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
         XCTAssertFalse(managementDialogModel.isConnectingThisDeviceOnly)
     }
 
@@ -1343,18 +1345,56 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(dialog)
     }
 
-    func testControllerDidFinishTransmittingRecoveryKey_waitsForDevices() {
-        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+    func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForNewHostAndWaitingForDevices_presentsRecoveryCode() async {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        let expectation = expectation(description: "V2 recovery-code success dialog presented")
 
-        // The method sets up a publisher to wait for device changes
-        // We can verify this by checking that the devices publisher is being observed
-        XCTAssertNotNil(syncDialogController)
+        managementDialogModel.$currentDialog
+            .filter { $0 == .saveRecoveryCode(self.testRecoveryCode) }
+            .prefix(1)
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+        syncDialogController.devices = [SyncDevice(kind: .desktop, name: "Test Device", id: "test-id")]
+
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
     }
 
-    func testControllerDidFinishTransmittingRecoveryKey_whenNoDeviceChangeExpected_presentsNowSyncing() {
+    func testControllerDidFinishTransmittingRecoveryKey_whenV2DisabledAndNoDeviceChangeExpected_presentsNowSyncing() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = false
+
         syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .nowSyncing)
+    }
+
+    func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForNewHostAndNoDeviceChangeExpected_presentsRecoveryCode() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+    }
+
+    func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForExistingHost_endsWithoutPresentingSuccess() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+
+        XCTAssertNil(managementDialogModel.currentDialog)
     }
 
     func testControllerWillBeginTransmittingRecoveryKey_presentsPrepareDialog() async {
@@ -1375,7 +1415,8 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
-    func testControllerDidCreateSyncAccount_presentsSaveRecoveryCodeDialog() {
+    func testControllerDidCreateSyncAccount_whenV2Disabled_presentsSaveRecoveryCodeDialog() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = false
         // Use the mock account that has a recovery code already set
         ddgSyncing.account = SyncAccount.mock
 
@@ -1388,7 +1429,18 @@ final class SyncDialogControllerTests: XCTestCase {
         }
     }
 
-    func testControllerDidCompleteAccountConnection_whenShouldShowSyncEnabled_presentsRecoveryDialog() async {
+    func testControllerDidCreateSyncAccount_whenV2Enabled_doesNotPresentSuccessBeforeConnectionCompletes() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+    }
+
+    func testControllerDidCompleteAccountConnection_whenV2DisabledAndShouldShowSyncEnabled_presentsRecoveryDialog() async {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = false
         ddgSyncing.account = SyncAccount.mock
 
         let expectation = expectation(description: "saveRecoveryCode dialog presented")
@@ -1404,13 +1456,36 @@ final class SyncDialogControllerTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 5.0)
     }
 
-    func testControllerDidCompleteAccountConnection_whenShouldNotShowSyncEnabled_doesNotPresentDialog() {
+    func testControllerDidCompleteAccountConnection_whenV2DisabledAndShouldNotShowSyncEnabled_doesNotPresentDialog() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = false
         let initialDialog = managementDialogModel.currentDialog
 
         syncDialogController.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: false, setupSource: .connect, codeSource: .pastedCode)
 
         // Dialog should remain unchanged
         XCTAssertEqual(managementDialogModel.currentDialog, initialDialog)
+    }
+
+    func testControllerDidCompleteAccountConnection_whenV2EnabledForNewHost_presentsRecoveryDialogAfterConnectionCompletes() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+
+        syncDialogController.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: false, setupSource: .connect, codeSource: .pastedCode)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+    }
+
+    func testControllerDidCompleteAccountConnection_whenV2EnabledForExistingHost_endsWithoutPresentingSuccess() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+
+        syncDialogController.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: true, setupSource: .connect, codeSource: .pastedCode)
+
+        XCTAssertNil(managementDialogModel.currentDialog)
     }
 
     func testControllerDidCompletePairingWithAlreadyConnectedAccount_presentsAlreadyPairedError() {

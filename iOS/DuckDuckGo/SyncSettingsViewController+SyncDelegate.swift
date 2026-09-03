@@ -173,9 +173,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             defer { optionsViewModel.isBusy = false }
             do {
                 guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
-                    if useSimplifiedLayoutV2 {
-                        optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
-                    }
+                    optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
                     return
                 }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
@@ -189,20 +187,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
 
-                if useSimplifiedLayoutV2 {
-                    optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, isRecovery: false)
-                } else {
-                    let didShowPrompt = optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
-                    if didShowPrompt {
-                        optionsViewModel.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
-                    } else {
-                        self.showSimplifiedSyncEnabledToast()
-                    }
-                }
+                optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, isRecovery: false)
             } catch {
-                if useSimplifiedLayoutV2 {
-                    optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
-                }
+                optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
                 self.firePixelIfNeededFor(event: .syncSignupError, error: error)
                 ActionMessageView.present(message: UserText.simplifiedSyncSetupFailedToast)
             }
@@ -654,9 +641,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         model.delegate = self
         scanCodeViewModel = model
 
-        let rootView = useSimplifiedLayoutV2
-            ? AnyView(ScanQRCodeViewV2(model: model))
-            : AnyView(SimplifiedScanOrShowCodeView(model: model))
+        let rootView = ScanQRCodeViewV2(model: model)
         let controller = UIHostingController(rootView: rootView)
 
         let navController = UIDevice.current.userInterfaceIdiom == .phone
@@ -675,20 +660,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         } else {
             navController.modalPresentationStyle = .fullScreen
         }
-        navigationController?.present(navController, animated: true) {
-            guard !self.useSimplifiedLayoutV2 else { return }
-            self.checkCameraPermission(model: model)
-
-            guard let onPresentPixelInfo else { return }
-            let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
-            var parameters = [
-                PixelParameters.source: pixelSource,
-                SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
-                PixelParameters.uiVersion: self.syncUIVersion
-            ]
-            parameters[SyncSetupPixelInfo.Parameter.flowVersion] = onPresentPixelInfo.flowVersion
-            self.pixelFiring?.fire(onPresentPixelInfo.pixel, options: .parameters(parameters))
-        }
+        navigationController?.present(navController, animated: true)
     }
 
     func requestCameraPermission(for model: ScanOrPasteCodeViewModel) {
@@ -808,8 +780,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         let deviceCount = viewModel.devices.count
         let pixelParameters = uiVersionParameters
         return await withCheckedContinuation { continuation in
-            let alert = UIAlertController(title: useSimplifiedLayoutV2 ? UserText.simplifiedSyncDeleteAllConfirmTitle : UserText.syncDeleteAllConfirmTitle,
-                                          message: useSimplifiedLayoutV2 ? UserText.simplifiedSyncDeleteAllConfirmMessage : UserText.syncDeleteAllConfirmMessage,
+            let alert = UIAlertController(title: UserText.simplifiedSyncDeleteAllConfirmTitle,
+                                          message: UserText.simplifiedSyncDeleteAllConfirmMessage,
                                           preferredStyle: .alert)
             alert.addAction(title: UserText.actionCancel, style: .cancel) {
                 continuation.resume(returning: false)
@@ -823,9 +795,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         self?.pixelFiring?.fire(Pixel.Event.syncDisabledAndDeleted, options: .parameters(parameters))
                         self?.viewModel.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
-                        if self?.useSimplifiedLayoutV2 == true {
-                            ActionMessageView.present(message: UserText.simplifiedSyncDataDeletedToast)
-                        }
+                        ActionMessageView.present(message: UserText.simplifiedSyncDataDeletedToast)
                         continuation.resume(returning: true)
                     } catch {
                         await self?.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)

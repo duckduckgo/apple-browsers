@@ -24,6 +24,13 @@ import UIKit
 
 private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView> {
 
+    func scrollToTop() {
+        guard let listScrollView = firstScrollView(in: view) else { return }
+        view.layoutIfNeeded()
+        listScrollView.contentOffset = CGPoint(x: listScrollView.contentOffset.x,
+                                               y: -listScrollView.adjustedContentInset.top)
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
@@ -64,7 +71,7 @@ final class UnifiedSuggestionsHost {
     /// Tap-ahead arrow direction follows the UTI's live position, so it's mutable (not just the
     /// config's install-time value, which is stale once the bar position is finalized).
     private var isAddressBarAtBottom: Bool
-    private var hostingController: UIHostingController<UnifiedSuggestionsView>?
+    private var hostingController: UnifiedSuggestionsHostingController?
     private var logoHostingController: UIHostingController<UnifiedSuggestionsLogoView>?
     private var escapeHatch: EscapeHatchModel?
     private var contentInsets: UIEdgeInsets = .zero
@@ -210,6 +217,10 @@ final class UnifiedSuggestionsHost {
         guard #available(iOS 17, *), !viewModel.isFireTab, !usesHostingTopInsetForDismissal else { return }
         usesHostingTopInsetForDismissal = true
         applyCombinedInsets()
+    }
+
+    func scrollToTop() {
+        hostingController?.scrollToTop()
     }
 
     /// Updates the tap-ahead arrow direction to match the UTI's current position.

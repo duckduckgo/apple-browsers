@@ -1093,6 +1093,9 @@ extension MainViewController {
             && newTabPageViewController?.restingContentIsLogo == true
         let isSearchContentToSearchContent = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsSearchContent == true
+        let searchOnlyContentToScroll = isSearchContentToSearchContent && !coordinator.isToggleVisible
+            ? coordinator.contentViewController
+            : nil
         let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
@@ -1138,6 +1141,7 @@ extension MainViewController {
                         forInputHeight: self.viewCoordinator.standardNavigationBarContainerHeight
                     )
                 }
+                searchOnlyContentToScroll?.scrollToTop()
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }

@@ -4900,12 +4900,6 @@ Take back control of your personal information with the browser designed for dat
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Delete Server Data";
 
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Delete server data?";
-
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sync Now";
 
@@ -4986,9 +4980,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "New device added!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup enabled";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Recovery code copied";

@@ -5136,12 +5136,6 @@
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Изтриване на данните от сървъра";
 
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Резервното копие ще бъде изтрито от сървъра. Синхронизацията на всички устройства ще бъде изключена, но от устройствата няма да бъде изтрито нищо.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Изтриване на данните от сървъра?";
-
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Синхронизиране сега";
 
@@ -5222,9 +5216,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Новото устройство е добавено!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Функцията Sync & Backup е активирана";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Кодът за възстановяване е копиран";

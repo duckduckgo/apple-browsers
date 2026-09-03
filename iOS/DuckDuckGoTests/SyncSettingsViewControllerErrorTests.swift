@@ -98,7 +98,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenSimplifiedSyncSetupV2IsEnabledThenSyncUIVersionIsV2() {
+    func testWhenSyncSettingsAreShownThenSyncUIVersionIsV2() {
         XCTAssertEqual(vc.syncUIVersion, "v2")
         XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v2"])
     }
@@ -440,7 +440,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenV1ConnectCreatesAccountWithSimplifiedV2LayoutThenCompletionShowsSuccess() {
+    func testWhenLegacyConnectCreatesAccountWithConnectingSheetThenCompletionShowsSuccess() {
         let spyVC = SpySyncSettingsViewController(
             syncService: ddgSyncing,
             syncBookmarksAdapter: syncBookmarksAdapter,
@@ -541,7 +541,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenV2AccountConflictHasMultipleDevicesThenSwitchesWithoutPrompting() async throws {
+    func testWhenAccountConflictHasMultipleDevicesThenSwitchesWithoutPrompting() async throws {
         vc.viewModel.devices = [
             SyncSettingsViewModel.Device(id: "1", name: "iPhone", type: "iPhone", isThisDevice: true),
             SyncSettingsViewModel.Device(id: "2", name: "Macbook Pro", type: "Macbook Pro", isThisDevice: false)

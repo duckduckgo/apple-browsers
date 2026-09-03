@@ -5136,12 +5136,6 @@
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Kustuta serveri andmed";
 
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Sinu varukoopia kustutatakse serverist. Kõigi seadmete sünkroonimine katkestatakse, kuid ühestki seadmest ei kustutata midagi.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Kas kustutada serveri andmed?";
-
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sünkrooni kohe";
 
@@ -5222,9 +5216,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Uus seade lisatud!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup lubatud";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Taastamiskood kopeeritud";

@@ -211,7 +211,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             let okAction = UIAlertAction(title: type.buttonTitle, style: .default, handler: nil)
             alertController.addAction(okAction)
 
-            if isPresentingV2ConnectingSheet {
+            if isPresentingConnectingSheet {
                 viewModel.dismissConnectingSheet()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     guard let self else {
@@ -506,7 +506,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         switch entryPoint {
         case .pairing:
             showSyncWithAnotherDevice()
-        case .simplifiedToggleV2:
+        case .simplifiedToggle:
             viewModel.isBusy = false
             viewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
         }
@@ -622,7 +622,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         model.delegate = self
         scanCodeViewModel = model
 
-        let rootView = ScanQRCodeViewV2(model: model)
+        let rootView = ScanQRCodeView(model: model)
         let controller = UIHostingController(rootView: rootView)
 
         let navController = UIDevice.current.userInterfaceIdiom == .phone
@@ -682,7 +682,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         let isConfirmed = await presentPairingV2ConfirmationAlert(message: message)
         if !isConfirmed {
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
-            if isPresentingV2ConnectingSheet {
+            if isPresentingConnectingSheet {
                 viewModel.connectingSheetPhase = nil
             } else {
                 dismissPairingV2UIAfterDeniedConfirmation()
@@ -872,7 +872,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             switch entryPoint {
             case .pairing:
                 return .syncPairing
-            case .simplifiedToggleV2:
+            case .simplifiedToggle:
                 return .syncBackup
             }
         case .recover:

@@ -76,12 +76,6 @@
 /* Standard Buttons - Done Button */
 "done.button" = "Feito";
 
-/* Edit Device View - Header */
-"edit.device.header" = "Nome do dispositivo";
-
-/* Edit Device View - Title */
-"edit.device.title" = "Editar %@";
-
 /* Fetch Favicons Onboarding - Button Title */
 "fetch.favicons.onboarding.button.title" = "Manter os ícones dos favoritos atualizados";
 
@@ -97,14 +91,8 @@
 /* No comment provided by engineer. */
 "Keep Development" = "Manter desenvolvimento";
 
-/* Manually Enter Code View - Title */
-"manually.enter.code.title" = "Introduzir manualmente o código";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Agora não";
-
-/* Standard Buttons - Paste Button */
-"paste.button" = "Colar";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Gerir marcadores";
@@ -114,9 +102,6 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Gerir cartões de crédito…";
-
-/* Preparing to sync title */
-"preparing.to.sync.title" = "A preparar para sincronizar";
 
 /* Recover Synced Data Sheet - Button */
 "recover.synced.data.sheet.button" = "Recuperar dados sincronizados";
@@ -175,21 +160,6 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Recuperação";
 
-/* Sync settings 'Already set up' section header containing useful options */
-"sync.simplified.already.set.up.section.header" = "Já está configurada noutro dispositivo?";
-
-/* Prompt body text after enabling sync */
-"sync.simplified.another.device.body" = "Os marcadores, dados de preenchimento automático e conversas do Duck.ai são guardados de forma segura. Agora mantém-nos sincronizados com o teu computador ou tablet.";
-
-/* Primary button to sync another device when sync is enabled */
-"sync.simplified.another.device.button" = "Sincronizar outro dispositivo";
-
-/* Prompt secondary button */
-"sync.simplified.another.device.notnow" = "Agora não";
-
-/* Prompt title after enabling sync */
-"sync.simplified.another.device.title" = "Sincronizar os teus dados com outro dispositivo?";
-
 /* Body on the sync-setup prompt explaining the sync-another-device option */
 "sync.simplified.another.device.v2.body" = "Vamos ajudar-te a sincronizar os teus dispositivos.";
 
@@ -205,9 +175,6 @@
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Usa os mesmos marcadores favoritos no telemóvel e no computador.";
 
-/* Text shown next to toggle while sync is being set up */
-"sync.simplified.connecting" = "A ligar…";
-
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "O Sync & Backup é encriptado ponto a ponto em todos os teus dispositivos.";
 
@@ -220,7 +187,7 @@
 /* Description on the device-added success screen explaining what the recovery code is for */
 "sync.simplified.device.added.v2.description" = "Usa este código para restaurar os teus dados caso percas o acesso aos teus dispositivos. Mantém-no seguro.";
 
-/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title. */
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedTitle. */
 "sync.simplified.device.added.v2.fallback.device.name" = "Este dispositivo";
 
 /* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
@@ -256,26 +223,14 @@
 /* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.enter.code.steps" = "Acede a **Sync & Backup** › **Sincronizar com outro dispositivo** › **Copiar código de texto**.";
 
-/* Title on the enter-code tab of the V2 scan screen */
+/* Title on the enter-code tab of the scan screen */
 "sync.simplified.enter.code.title" = "Introduz o código de sincronização.";
-
-/* Button subtitle to get the DuckDuckGo desktop browser */
-"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo para Mac e Windows";
-
-/* Button title to get the DuckDuckGo desktop browser. */
-"sync.simplified.get.desktop.browser.title" = "Obter navegador para computador";
 
 /* Row label to get the DuckDuckGo desktop browser */
 "sync.simplified.get.our.desktop.browser.title" = "Obtém o nosso navegador para desktop";
 
 /* Sync setup row label to recover synced data using an existing recovery code */
 "sync.simplified.have.recovery.code.button" = "Tenho um código de recuperação";
-
-/* Description of the Sync & Backup feature (when AI chat sync is available) */
-"sync.simplified.header.message" = "Guarda marcadores, dados de preenchimento automático e conversas do Duck.ai, e sincroniza-os entre os teus dispositivos com encriptação ponto a ponto.";
-
-/* Description of the Sync & Backup feature */
-"sync.simplified.header.message.basic" = "Guarda marcadores e dados de preenchimento automático, e sincroniza-os entre os teus dispositivos com encriptação ponto a ponto.";
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic.v2" = "Sincroniza os teus dados de preenchimento automático e marcadores, encriptados ponto a ponto nas tuas aplicações DuckDuckGo.";
@@ -319,9 +274,6 @@
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "aplicação DuckDuckGo";
 
-/* Floating prompt over QR code scanner preview */
-"sync.simplified.scan-or-view-code.camera.prompt" = "Aponta a câmara para o QR para ler";
-
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "A ligar…";
 
@@ -334,43 +286,19 @@
 /* Title of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.title" = "Cola o código no teu outro dispositivo";
 
-/* Button to navigate to manual sync code entry */
-"sync.simplified.scan-or-view-code.manually.enter.code" = "Introduzir manualmente o código";
-
-/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
-"sync.simplified.scan-or-view-code.paste.code.instructions" = "Acede a **Definições > Sincronização e cópia de segurança > Sincronizar com outro dispositivo** e seleciona **Ver código de texto** na aplicação DuckDuckGo noutro dispositivo sincronizado e cola o código aqui para sincronizar este dispositivo.";
-
 /* Status text while verifying a pasted sync code */
 "sync.simplified.scan-or-view-code.paste.code.verifying" = "A verificar o código";
-
-/* First line of QR code scanning instructions */
-"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Abre a aplicação DuckDuckGo no teu outro dispositivo.";
-
-/* Second line of QR code scanning instructions */
-"sync.simplified.scan-or-view-code.scan.instructions.line2" = "Encontra o código QR em Definições > Sincronização e cópia de segurança > Sincronizar com outro dispositivo.";
 
 /* Title of button to share a sync code */
 "sync.simplified.scan-or-view-code.share" = "Partilhar código";
 
-/* Button title to show QR code scanner */
-"sync.simplified.scan-or-view-code.tab.scan" = "Ler código QR";
-
-/* Button title to view your sync code */
-"sync.simplified.scan-or-view-code.tab.view.code" = "Ver código";
-
-/* Navigation title for simplified QR scanning screen */
-"sync.simplified.scan-or-view-code.title" = "Sincroniza os teus dispositivos";
-
-/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Lê ou cola este código no teu outro dispositivo";
-
-/* Close button in the V2 scan screen navigation bar */
+/* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Fechar";
 
 /* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo para desktop";
 
-/* Heading overlaid on the camera on the scan-QR tab of the V2 scan screen */
+/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
 "sync.simplified.scan.v2.qr.heading" = "Lê o código QR para sincronizar";
 
 /* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
@@ -382,10 +310,10 @@
 /* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.scan.v2.qr.steps" = "e vai a **Sync & Backup** › **Sincronizar com outro dispositivo**";
 
-/* V2 segmented control tab title for entering a code */
+/* Segmented control tab title for entering a code */
 "sync.simplified.scan.v2.tab.enter.code" = "Introduzir código";
 
-/* V2 segmented control tab title for scanning a QR code */
+/* Segmented control tab title for scanning a QR code */
 "sync.simplified.scan.v2.tab.scan.qr" = "Ler código QR";
 
 /* Status label shown next to the title when Sync & Backup is disabled */
@@ -409,14 +337,8 @@
 /* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
 "sync.simplified.this.device.only" = "Sincronizar apenas este dispositivo";
 
-/* Sync & Backup enabled / disabled toggle title */
-"sync.simplified.toggle.title" = "Sincronização e cópia de segurança";
-
 /* Sync & Backup enabled / disabled toggle title, referring to the current device */
 "sync.simplified.toggle.title.this.device" = "Sincronizar este dispositivo";
-
-/* Use Recovery Code sync setup button label */
-"sync.simplified.use.recovery.code.button" = "Utilizar código de recuperação";
 
 /* Sync With Another Device sync setup button label */
 "sync.simplified.with.another.device.button" = "Sincronizar com outro dispositivo";
@@ -432,9 +354,6 @@
 
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "A sincronização e a cópia de segurança não estão disponíveis";
-
-/* Synced Devices - Section Header */
-"synced.devices.section.header" = "Dispositivos sincronizados";
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Este dispositivo";

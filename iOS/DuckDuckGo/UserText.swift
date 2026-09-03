@@ -1347,8 +1347,6 @@ public struct UserText {
     // MARK: Sync
 
     public static let syncUserUserAuthenticationReason = NSLocalizedString("sync.user.auth.reason", value: "Unlock device to set up Sync & Backup", comment: "Reason for auth when setting up Sync")
-    public static let syncDeleteAllConfirmTitle = NSLocalizedString("sync.delete.all.confirm.title", value: "Delete server data?", comment: "Title of the dialog to confirm deleting Sync server data")
-    public static let syncDeleteAllConfirmMessage = NSLocalizedString("sync.delete.all.confirm.message", value: "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.", comment: "Message for the dialog to confirm deleting Sync server data")
     public static let syncDeleteAllConfirmAction = NSLocalizedString("sync.delete.all.confirm.action", value: "Delete Server Data", comment: "Caption for a button to delete Sync server data")
     public static let syncRemoveDeviceTitle = NSLocalizedString("sync.remove-device.title", value: "Remove Device?", comment: "Title of the dialog to remove device from Sync")
     public static func syncRemoveDeviceMessage(_ deviceName: String) -> String {
@@ -1373,7 +1371,6 @@ public struct UserText {
     }
 
     // Simplified Sync
-    public static let simplifiedSyncEnabledToast = NSLocalizedString("sync.simplified.enabled.toast", value: "Sync & Backup enabled", comment: "Toast message shown after sync is successfully enabled")
     public static let simplifiedDeviceSyncedSuccessfullyToast = NSLocalizedString("sync.simplified.device-synced.toast", value: "New device added!", comment: "Toast message shown after sync is enabled by connecting with another device")
     public static let simplifiedSyncTurnOffTitle = NSLocalizedString("sync.simplified.turn.off.title", value: "Turn Off Sync & Backup?", comment: "Alert title when turning off sync")
     public static let simplifiedSyncTurnOffMessage = NSLocalizedString("sync.simplified.turn.off.message", value: "Your bookmarks and passwords on this device won't be affected.", comment: "Alert message when turning off sync")

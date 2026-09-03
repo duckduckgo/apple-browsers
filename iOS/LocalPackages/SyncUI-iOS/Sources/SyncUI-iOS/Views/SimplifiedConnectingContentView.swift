@@ -1,5 +1,5 @@
 //
-//  SimplifiedConnectingContentViewV2.swift
+//  SimplifiedConnectingContentView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -21,7 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import Lottie
 
-struct SimplifiedConnectingContentViewV2: View {
+struct SimplifiedConnectingContentView: View {
 
     let isRecovery: Bool
     let isFinishing: Bool
@@ -66,21 +66,21 @@ struct SimplifiedConnectingContentViewV2: View {
     }
 
     private var title: String {
-        isRecovery ? UserText.simplifiedRecoveringDataV2Title : UserText.simplifiedConnectingV2Title
+        isRecovery ? UserText.simplifiedRecoveringDataTitle : UserText.simplifiedConnectingTitle
     }
 }
 
 #if DEBUG
 #Preview("Connecting") {
-    SimplifiedConnectingContentViewV2(isRecovery: false, isFinishing: false, onAnimationFinished: {})
+    SimplifiedConnectingContentView(isRecovery: false, isFinishing: false, onAnimationFinished: {})
 }
 
 #Preview("Connecting – Dark") {
-    SimplifiedConnectingContentViewV2(isRecovery: false, isFinishing: false, onAnimationFinished: {})
+    SimplifiedConnectingContentView(isRecovery: false, isFinishing: false, onAnimationFinished: {})
         .preferredColorScheme(.dark)
 }
 
 #Preview("Recovering") {
-    SimplifiedConnectingContentViewV2(isRecovery: true, isFinishing: false, onAnimationFinished: {})
+    SimplifiedConnectingContentView(isRecovery: true, isFinishing: false, onAnimationFinished: {})
 }
 #endif

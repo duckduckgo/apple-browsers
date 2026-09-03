@@ -5136,12 +5136,6 @@
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Eliminare i dati del server";
 
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Il tuo backup verrà eliminato dal server. Tutti i dispositivi verranno disconnessi dalla sincronizzazione, ma nessun dato verrà eliminato da alcun dispositivo.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Eliminare i dati del server?";
-
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sincronizza adesso";
 
@@ -5222,9 +5216,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Nuovo dispositivo aggiunto.";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup abilitati";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Codice di ripristino copiato";

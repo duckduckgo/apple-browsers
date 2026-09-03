@@ -1,5 +1,5 @@
 //
-//  SyncAnotherDevicePromptViewV2.swift
+//  SyncAnotherDevicePromptView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -21,7 +21,7 @@ import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
-struct SyncAnotherDevicePromptViewV2: View {
+struct SyncAnotherDevicePromptView: View {
 
     @ObservedObject var model: SyncSettingsViewModel
 
@@ -34,12 +34,12 @@ struct SyncAnotherDevicePromptViewV2: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
 
-                    Text(UserText.simplifiedSyncAnotherDeviceV2Title)
+                    Text(UserText.simplifiedSyncAnotherDeviceTitle)
                         .daxTitle1()
                         .multilineTextAlignment(.center)
                         .padding(.vertical, 24)
 
-                    Text(UserText.simplifiedSyncAnotherDeviceV2Body)
+                    Text(UserText.simplifiedSyncAnotherDeviceBody)
                         .daxBodyRegular()
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -114,19 +114,19 @@ private extension SyncSettingsViewModel {
 
 #Preview("Rebranded") {
     RebrandedPreview(isRebranded: true) {
-        SyncAnotherDevicePromptViewV2(model: .previewModel())
+        SyncAnotherDevicePromptView(model: .previewModel())
     }
 }
 
 #Preview("Connecting") {
     RebrandedPreview(isRebranded: true) {
-        SyncAnotherDevicePromptViewV2(model: .previewModel(isConnecting: true))
+        SyncAnotherDevicePromptView(model: .previewModel(isConnecting: true))
     }
 }
 
 #Preview("Legacy brand") {
     RebrandedPreview(isRebranded: false) {
-        SyncAnotherDevicePromptViewV2(model: .previewModel())
+        SyncAnotherDevicePromptView(model: .previewModel())
     }
 }
 

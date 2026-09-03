@@ -144,7 +144,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public enum SyncSetupEntryPoint: Equatable {
         case pairing
-        case simplifiedToggleV2
+        case simplifiedToggle
     }
 
     public enum PreservedAccountContinuation: Equatable {
@@ -358,7 +358,7 @@ public class SyncSettingsViewModel: ObservableObject {
             switch entryPoint {
             case .pairing:
                 delegate?.showSyncWithAnotherDevice()
-            case .simplifiedToggleV2:
+            case .simplifiedToggle:
                 isBusy = false
                 connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
             }
@@ -385,12 +385,12 @@ public class SyncSettingsViewModel: ObservableObject {
         self.recoveryCode = recoveryCode
     }
 
-    public func showSyncAnotherDevicePromptFromToggleV2() {
+    public func enableSyncToggleTapped() {
         guard !isBusy else { return }
         guard isAccountCreationAvailable else { return }
         isBusy = true
         Task { @MainActor in
-            await beginFlow(for: .setup(.simplifiedToggleV2))
+            await beginFlow(for: .setup(.simplifiedToggle))
         }
     }
 

@@ -1,5 +1,5 @@
 //
-//  SimplifiedSyncSettingsViewV2.swift
+//  SimplifiedSyncSettingsView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,10 +22,7 @@ import DuckUI
 import SwiftUI
 import UIComponents
 
-// V2 of the Sync & Backup settings screen. Started as a copy of SimplifiedSyncSettingsView
-// and is being reshaped for the Simplified Sync Setup follow-up redesign.
-// https://app.asana.com/1/137249556945/project/1214200115953388/task/1215960387490701
-public struct SimplifiedSyncSettingsViewV2: View {
+public struct SimplifiedSyncSettingsView: View {
 
     @ObservedObject public var model: SyncSettingsViewModel
 
@@ -73,7 +70,7 @@ public struct SimplifiedSyncSettingsViewV2: View {
         .sheet(item: $model.connectingSheetPhase, onDismiss: {
             model.connectingSheetDidDismiss()
         }, content: {_ in
-            SimplifiedConnectingSheetViewV2(model: model)
+            SimplifiedConnectingSheetView(model: model)
                 .interactiveDismissDisabled()
         })
     }
@@ -81,7 +78,7 @@ public struct SimplifiedSyncSettingsViewV2: View {
 
 // MARK: - Sync Disabled Content
 
-extension SimplifiedSyncSettingsViewV2 {
+extension SimplifiedSyncSettingsView {
 
     @ViewBuilder
     var syncWarningBanners: some View {
@@ -162,7 +159,7 @@ extension SimplifiedSyncSettingsViewV2 {
         if model.isSyncEnabled {
             return model.isAIChatSyncEnabled ? UserText.simplifiedSyncEnabledHeaderMessage : UserText.simplifiedSyncEnabledHeaderMessageBasic
         } else {
-            return model.isAIChatSyncEnabled ? UserText.simplifiedSyncHeaderMessageV2 : UserText.simplifiedSyncHeaderMessageBasicV2
+            return model.isAIChatSyncEnabled ? UserText.simplifiedSyncHeaderMessage : UserText.simplifiedSyncHeaderMessageBasic
         }
     }
 
@@ -202,7 +199,7 @@ extension SimplifiedSyncSettingsViewV2 {
     var syncToggleSection: some View {
         Section {
             HStack {
-                Text(UserText.simplifiedSyncToggleTitleThisDevice)
+                Text(UserText.simplifiedSyncToggleTitle)
                     .daxBodyRegular()
                 Spacer()
                 Toggle("", isOn: Binding(
@@ -210,7 +207,7 @@ extension SimplifiedSyncSettingsViewV2 {
                     set: { newValue in
                         if newValue {
                             model.delegate?.fireSyncSetupPixel(event: .backUpThisDeviceTapped)
-                            model.showSyncAnotherDevicePromptFromToggleV2()
+                            model.enableSyncToggleTapped()
                         } else {
                             model.disableSyncToggleTapped()
                         }
@@ -218,7 +215,7 @@ extension SimplifiedSyncSettingsViewV2 {
                 ))
                 .labelsHidden()
                 .tint(Color(designSystemColor: .accentPrimary))
-                .accessibilityLabel(UserText.simplifiedSyncToggleTitleThisDevice)
+                .accessibilityLabel(UserText.simplifiedSyncToggleTitle)
                 .accessibility(identifier: "SyncToggle")
             }
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
@@ -299,7 +296,7 @@ extension SimplifiedSyncSettingsViewV2 {
 
 // MARK: - Sync Enabled Content
 
-extension SimplifiedSyncSettingsViewV2 {
+extension SimplifiedSyncSettingsView {
 
     @ViewBuilder
     var syncEnabledSections: some View {
@@ -450,7 +447,7 @@ extension SimplifiedSyncSettingsViewV2 {
             .accessibility(identifier: "device")
             .background(
                 NavigationLink(isActive: manageDeviceBinding(for: device)) {
-                    ManageDeviceViewV2(model: model, device: device)
+                    ManageDeviceView(model: model, device: device)
                 } label: {
                     EmptyView()
                 }
@@ -641,7 +638,7 @@ private extension SyncSettingsViewModel.Device {
 #Preview("Sync Off") {
     RebrandedPreview(isRebranded: true) {
         NavigationView {
-            SimplifiedSyncSettingsViewV2(model: .preview(isSyncEnabled: false))
+            SimplifiedSyncSettingsView(model: .preview(isSyncEnabled: false))
                 .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -650,7 +647,7 @@ private extension SyncSettingsViewModel.Device {
 #Preview("Sync On – This Device Only") {
     RebrandedPreview(isRebranded: true) {
         NavigationView {
-            SimplifiedSyncSettingsViewV2(model: .preview(isSyncEnabled: true, devices: [.thisDevice], autoRestoreProvider: .enabled))
+            SimplifiedSyncSettingsView(model: .preview(isSyncEnabled: true, devices: [.thisDevice], autoRestoreProvider: .enabled))
                 .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -659,7 +656,7 @@ private extension SyncSettingsViewModel.Device {
 #Preview("Sync On – Multiple Devices") {
     RebrandedPreview(isRebranded: true) {
         NavigationView {
-            SimplifiedSyncSettingsViewV2(model: .preview(isSyncEnabled: true, devices: [.thisDevice, .desktop, .otherMobile], autoRestoreProvider: .enabled))
+            SimplifiedSyncSettingsView(model: .preview(isSyncEnabled: true, devices: [.thisDevice, .desktop, .otherMobile], autoRestoreProvider: .enabled))
                 .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -668,7 +665,7 @@ private extension SyncSettingsViewModel.Device {
 #Preview("Sync On – Loading Devices") {
     RebrandedPreview(isRebranded: true) {
         NavigationView {
-            SimplifiedSyncSettingsViewV2(model: .preview(isSyncEnabled: true, devices: []))
+            SimplifiedSyncSettingsView(model: .preview(isSyncEnabled: true, devices: []))
                 .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -677,7 +674,7 @@ private extension SyncSettingsViewModel.Device {
 #Preview("Sync Off (Legacy brand)") {
     RebrandedPreview(isRebranded: false) {
         NavigationView {
-            SimplifiedSyncSettingsViewV2(model: .preview(isSyncEnabled: false))
+            SimplifiedSyncSettingsView(model: .preview(isSyncEnabled: false))
                 .navigationBarTitleDisplayMode(.inline)
         }
     }

@@ -31,7 +31,7 @@ import Persistence
 import FeatureFlags_iOS
 
 @MainActor
-class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsViewV2> {
+class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView> {
 
     struct SourceConstants {
         static let startSyncFlow = "sync-start"
@@ -154,7 +154,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         )
         self.viewModel = viewModel
 
-        let rootView = SimplifiedSyncSettingsViewV2(model: viewModel)
+        let rootView = SimplifiedSyncSettingsView(model: viewModel)
 
         super.init(rootView: rootView)
 
@@ -523,7 +523,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
     }
 
-    var isPresentingV2ConnectingSheet: Bool {
+    var isPresentingConnectingSheet: Bool {
         viewModel.connectingSheetPhase != nil
     }
 
@@ -560,7 +560,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     }
 
     func codeCollectionCancelled(source: CodeCollectionSource) {
-        assert(navigationController?.visibleViewController is UIHostingController<ScanQRCodeViewV2>)
+        assert(navigationController?.visibleViewController is UIHostingController<ScanQRCodeView>)
         needsPreservedAccountCleanupBeforeServerOperation = false
         autoRestorePromptSource = nil
         dismissPresentedViewController()
@@ -588,7 +588,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {
         Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: sourcePixelParameters, includedParameters: [.appVersion])
 
-        if shouldShowSyncEnabled, !isPresentingV2ConnectingSheet {
+        if shouldShowSyncEnabled, !isPresentingConnectingSheet {
             dismissVCAndShowDeviceSyncedToast()
         }
         viewModel.syncEnabled(recoveryCode: recoveryCode)
@@ -619,7 +619,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                    withAdditionalParameters: parameters,
                    includedParameters: [.appVersion])
         pairingV2PeerKind = nil
-        let presentResult: (SyncSettingsViewController) -> Void = isPresentingV2ConnectingSheet
+        let presentResult: (SyncSettingsViewController) -> Void = isPresentingConnectingSheet
             ? { $0.presentSuccessScreen(isRecovery: false) }
             : { $0.dismissVCAndShowDeviceSyncedToast() }
         if shouldWaitForDevicesToChange {
@@ -648,7 +648,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole, shouldPromptBeforeSwitchingAccounts: Bool) async {
-        // For V2 we're intentionally not showing prompt here
+        // The connecting sheet owns the completion prompt.
         if shouldPromptBeforeSwitchingAccounts && viewModel.devices.count > 1 {
             promptToSwitchAccounts(recoveryKey: recoveryKey)
         } else {

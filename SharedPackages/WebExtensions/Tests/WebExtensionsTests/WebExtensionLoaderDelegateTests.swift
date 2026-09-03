@@ -190,6 +190,52 @@ final class WebExtensionLoaderDelegateTests: XCTestCase {
         XCTAssertNotEqual(context.permissionStatus(for: storagePermission), .grantedExplicitly)
     }
 
+    // MARK: - Optional Permission Granting Tests
+
+    @MainActor
+    func testWhenExtensionDeclaresOptionalPermissions_ThenTheyAreGranted() async throws {
+        let identifier = "test-extension-id"
+        let extensionURL = try createTestWebExtensionWithPermissions(
+            optionalPermissions: ["nativeMessaging"]
+        )
+        storageProvider.resolvedExtensionURL = extensionURL
+
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+        let context = try XCTUnwrap(delegateMock.willLoadContext)
+        XCTAssertTrue(context.hasPermission(.nativeMessaging))
+    }
+
+    @MainActor
+    func testWhenExtensionDeclaresOnlyRequiredPermissions_ThenOptionalPermissionIsNotGranted() async throws {
+        let identifier = "test-extension-id"
+        let extensionURL = try createTestWebExtensionWithPermissions(
+            permissions: ["storage"]
+        )
+        storageProvider.resolvedExtensionURL = extensionURL
+
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+        let context = try XCTUnwrap(delegateMock.willLoadContext)
+        XCTAssertEqual(context.permissionStatus(for: WKWebExtension.Permission("storage")), .grantedExplicitly)
+        XCTAssertFalse(context.hasPermission(.nativeMessaging))
+    }
+
+    @MainActor
+    func testWhenExtensionDeclaresOptionalHostPermissions_ThenTheyAreNotGranted() async throws {
+        let identifier = "test-extension-id"
+        let extensionURL = try createTestWebExtensionWithPermissions(
+            optionalHostPermissions: ["https://example.com/*"]
+        )
+        storageProvider.resolvedExtensionURL = extensionURL
+
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+        let context = try XCTUnwrap(delegateMock.willLoadContext)
+        let url = try XCTUnwrap(URL(string: "https://example.com/"))
+        XCTAssertFalse(context.hasAccess(to: url))
+    }
+
     // MARK: - Test Helpers
 
     private func createTestWebExtension() throws -> URL {
@@ -198,7 +244,9 @@ final class WebExtensionLoaderDelegateTests: XCTestCase {
 
     private func createTestWebExtensionWithPermissions(
         permissions: [String] = [],
-        hostPermissions: [String] = []
+        hostPermissions: [String] = [],
+        optionalPermissions: [String] = [],
+        optionalHostPermissions: [String] = []
     ) throws -> URL {
         let tempDir = FileManager.default.temporaryDirectory
         let extensionDir = tempDir.appendingPathComponent("TestExtension-\(UUID().uuidString)")
@@ -211,6 +259,14 @@ final class WebExtensionLoaderDelegateTests: XCTestCase {
             "host_permissions": [\(hostPermissions.map { "\"\($0)\"" }.joined(separator: ", "))],
         """
 
+        let optionalPermissionsJSON = optionalPermissions.isEmpty ? "" : """
+            "optional_permissions": [\(optionalPermissions.map { "\"\($0)\"" }.joined(separator: ", "))],
+        """
+
+        let optionalHostPermissionsJSON = optionalHostPermissions.isEmpty ? "" : """
+            "optional_host_permissions": [\(optionalHostPermissions.map { "\"\($0)\"" }.joined(separator: ", "))],
+        """
+
         let manifest = """
         {
             "manifest_version": 3,
@@ -218,6 +274,8 @@ final class WebExtensionLoaderDelegateTests: XCTestCase {
             "version": "1.0.0",
             \(permissionsJSON)
             \(hostPermissionsJSON)
+            \(optionalPermissionsJSON)
+            \(optionalHostPermissionsJSON)
             "description": "Minimal test extension for unit tests"
         }
         """

@@ -179,6 +179,7 @@ final class NativeMessagingHostSession {
                         self.messageHandler?(message)
                     }
                 }
+                Self.waitForExit(of: process)
                 await MainActor.run {
                     self.finishAfterDrain()
                 }
@@ -195,6 +196,13 @@ final class NativeMessagingHostSession {
     @MainActor
     private func finishAfterDrain() {
         guard !didFinish else { return }
+
+        // EOF on the output pipe and `Process` reporting the exit race each other, so the
+        // status the termination handler records may not have arrived. The process still
+        // carries it, and without it a host that failed looks like one that ended well.
+        if exitStatus == nil, !process.isRunning {
+            exitStatus = process.terminationStatus
+        }
 
         if let exitStatus, exitStatus != 0 {
             // Two causes look the same here. The host may have nothing to talk to, as
@@ -242,6 +250,19 @@ final class NativeMessagingHostSession {
 
     /// Describes a host message by its `type` fields only.
     ///
+    /// Waits briefly for a host that closed its output to finish exiting.
+    ///
+    /// A host's exit status is what tells one that failed from one that ended normally, and
+    /// the read loop reaches EOF at about the moment `Process` learns of the exit. This runs
+    /// on the read loop's own thread and never on the main one, and it gives up rather than
+    /// wait on a host that closed its output and stayed up.
+    private static func waitForExit(of process: Process, timeout: TimeInterval = 1) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning, Date() < deadline {
+            usleep(5_000)
+        }
+    }
+
     /// Reads exactly `count` bytes, or returns `nil` once the host closes its output.
     private static func readExactly(_ count: Int, from handle: FileHandle) throws -> Data? {
         var data = Data()

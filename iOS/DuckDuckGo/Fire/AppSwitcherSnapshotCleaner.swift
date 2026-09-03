@@ -56,7 +56,7 @@ actor AppSwitcherSnapshotCleaner {
         } catch {
             let errorDescription = error.localizedDescription
             Logger.general.error("Failed to enumerate app switcher snapshots: \(errorDescription, privacy: .public)")
-            pixelFiring?.fire(DataClearingPixels.appSwitcherSnapshotEnumerationFailed(error), frequency: .dailyAndCount)
+            pixelFiring?.fire(AppSwitcherSnapshotClearingPixel.failed(error), frequency: .dailyAndCount)
             return
         }
 
@@ -76,7 +76,24 @@ actor AppSwitcherSnapshotCleaner {
         }
 
         if let firstRemovalError {
-            pixelFiring?.fire(DataClearingPixels.appSwitcherSnapshotRemovalFailed(firstRemovalError), frequency: .dailyAndCount)
+            pixelFiring?.fire(AppSwitcherSnapshotClearingPixel.failed(firstRemovalError), frequency: .dailyAndCount)
         }
     }
+}
+
+private enum AppSwitcherSnapshotClearingPixel: PixelKit.Event {
+    case failed(Error)
+
+    var name: String { "app-switcher_snapshot_clearing_failed" }
+
+    var parameters: [String: String]? { nil }
+
+    var error: NSError? {
+        switch self {
+        case .failed(let error):
+            return error as NSError
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }

@@ -28,28 +28,13 @@ enum DataClearingPixels {
 
     /// User performed action before data clearing completed
     case userActionBeforeCompletion
-
-    /// App switcher snapshot directory enumeration failed
-    case appSwitcherSnapshotEnumerationFailed(Error)
-
-    /// App switcher snapshot removal failed
-    case appSwitcherSnapshotRemovalFailed(Error)
 }
 
 // MARK: - PixelKit.Event Protocol
 
 extension DataClearingPixels: PixelKit.Event {
-    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
-        switch self {
-        case .appSwitcherSnapshotRemovalFailed:
-            return .standard
-        case .retriggerIn20s,
-             .userActionBeforeCompletion,
-             .appSwitcherSnapshotEnumerationFailed:
-            // These existing pixel signatures predate the current PixelKit defaults and do not send the platform marker suffix.
-            return .legacyOmitted
-        }
-    }
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
 
     var name: String {
         switch self {
@@ -57,10 +42,6 @@ extension DataClearingPixels: PixelKit.Event {
             return "m_fire_retrigger_in_20s"
         case .userActionBeforeCompletion:
             return "m_fire_user_action_before_completion"
-        case .appSwitcherSnapshotEnumerationFailed:
-            return "app-switcher_snapshot_enumeration_failed"
-        case .appSwitcherSnapshotRemovalFailed:
-            return "app-switcher_snapshot_removal_failed"
         }
     }
 
@@ -69,13 +50,7 @@ extension DataClearingPixels: PixelKit.Event {
     }
 
     var error: NSError? {
-        switch self {
-        case .appSwitcherSnapshotEnumerationFailed(let error),
-             .appSwitcherSnapshotRemovalFailed(let error):
-            return error as NSError
-        default:
-            return nil
-        }
+        return nil
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
@@ -89,9 +64,9 @@ extension DataClearingPixels: PixelKit.Event {
 ///
 /// Kept separate from `DataClearingPixels` for two reasons, both of which would otherwise change
 /// pixels this type does not own:
-/// - these four have always sent the `_ios_phone` / `_ios_tablet` marker while the legacy cases on
-///   `DataClearingPixels` have not. Merging them would start marking `m_fire_retrigger_in_20s` and
-///   `m_fire_user_action_before_completion` too.
+/// - these four have always sent the `_ios_phone` / `_ios_tablet` marker and `DataClearingPixels`
+///   never has, so the two need different `platformSuffixPolicy` values. Merging them would start
+///   marking `m_fire_retrigger_in_20s` and `m_fire_user_action_before_completion` too.
 /// - `DataClearingPixels` reports `pixelSource`, which these four do not declare in
 ///   `forget_all.json5`.
 enum DataClearingCompletionPixels {

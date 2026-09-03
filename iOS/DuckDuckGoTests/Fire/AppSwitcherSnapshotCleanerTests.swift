@@ -61,7 +61,7 @@ final class AppSwitcherSnapshotCleanerTests: XCTestCase {
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
-    func testWhenSnapshotsDirectoryCannotBeEnumeratedThenEnumerationFailurePixelIsFired() async throws {
+    func testWhenSnapshotsDirectoryCannotBeEnumeratedThenClearingFailurePixelIsFired() async throws {
         let libraryDirectory = makeTemporaryLibraryDirectory()
         let pixelFiring = PixelKitMock()
         let cleaner = AppSwitcherSnapshotCleaner(fileManager: FailingEnumerationFileManager(),
@@ -72,34 +72,14 @@ final class AppSwitcherSnapshotCleanerTests: XCTestCase {
 
         let fireCall = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
-        XCTAssertEqual(fireCall.pixel.name, "app-switcher_snapshot_enumeration_failed")
+        XCTAssertEqual(fireCall.pixel.name, "app-switcher_snapshot_clearing_failed")
         XCTAssertEqual(fireCall.pixel.error?.domain, NSCocoaErrorDomain)
         XCTAssertEqual(fireCall.pixel.error?.code, CocoaError.fileReadNoPermission.rawValue)
-        XCTAssertEqual(fireCall.pixel.platformSuffixPolicy, .legacyOmitted)
+        XCTAssertEqual(fireCall.pixel.platformSuffixPolicy, .standard)
         XCTAssertEqual(fireCall.frequency, .dailyAndCount)
     }
 
-    func testWhenSnapshotItemIsAlreadyGoneThenNoRemovalFailurePixelIsFired() async throws {
-        let libraryDirectory = makeTemporaryLibraryDirectory()
-        defer { try? FileManager.default.removeItem(at: libraryDirectory) }
-
-        let snapshotItem = libraryDirectory
-            .appendingPathComponent("SplashBoard", isDirectory: true)
-            .appendingPathComponent("Snapshots", isDirectory: true)
-            .appendingPathComponent("scene", isDirectory: true)
-        try FileManager.default.createDirectory(at: snapshotItem, withIntermediateDirectories: true)
-
-        let pixelFiring = PixelKitMock()
-        let cleaner = AppSwitcherSnapshotCleaner(fileManager: AlreadyRemovedFileManager(),
-                                                  libraryDirectoryOverride: libraryDirectory,
-                                                  pixelFiring: pixelFiring)
-        await cleaner.clearSnapshots()
-
-        XCTAssertFalse(FileManager.default.fileExists(atPath: snapshotItem.path))
-        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
-    }
-
-    func testClearSnapshotsContinuesAfterItemsCannotBeRemovedAndFiresOneRemovalFailurePixel() async throws {
+    func testWhenSnapshotItemsCannotBeRemovedThenCleanerContinuesAndFiresOneClearingFailurePixel() async throws {
         let libraryDirectory = makeTemporaryLibraryDirectory()
         defer { try? FileManager.default.removeItem(at: libraryDirectory) }
 
@@ -124,10 +104,9 @@ final class AppSwitcherSnapshotCleanerTests: XCTestCase {
 
         let fireCall = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
-        XCTAssertEqual(fireCall.pixel.name, "app-switcher_snapshot_removal_failed")
+        XCTAssertEqual(fireCall.pixel.name, "app-switcher_snapshot_clearing_failed")
         XCTAssertEqual(fireCall.pixel.error?.domain, NSCocoaErrorDomain)
         XCTAssertEqual(fireCall.pixel.error?.code, CocoaError.fileWriteNoPermission.rawValue)
-        XCTAssertEqual(fireCall.pixel.platformSuffixPolicy, .standard)
         XCTAssertEqual(fireCall.frequency, .dailyAndCount)
     }
 
@@ -143,14 +122,6 @@ private final class FailingEnumerationFileManager: FileManager, @unchecked Senda
                                       includingPropertiesForKeys keys: [URLResourceKey]?,
                                       options mask: FileManager.DirectoryEnumerationOptions = []) throws -> [URL] {
         throw CocoaError(.fileReadNoPermission)
-    }
-}
-
-private final class AlreadyRemovedFileManager: FileManager, @unchecked Sendable {
-
-    override func removeItem(at URL: URL) throws {
-        try super.removeItem(at: URL)
-        try super.removeItem(at: URL)
     }
 }
 

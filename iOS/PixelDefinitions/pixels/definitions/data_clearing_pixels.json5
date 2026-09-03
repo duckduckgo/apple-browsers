@@ -16,15 +16,15 @@
     },
 
     "app-switcher_snapshot_enumeration_failed": {
-        "description": "Fired when the app cannot enumerate the iOS app switcher snapshot directory. Does not fire when the directory is absent, because there are no snapshots to clear",
+        "description": "Legacy pixel fired by older app versions when the app cannot enumerate the iOS app switcher snapshot directory, including when the expected private OS path is missing",
         "owners": ["bkunat"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
 
-    "app-switcher_snapshot_removal_failed": {
-        "description": "Fired once per cleanup attempt when the app cannot remove one or more items from the iOS app switcher snapshot directory. Error parameters describe the first removal failure",
+    "app-switcher_snapshot_clearing_failed": {
+        "description": "Fired once per cleanup attempt when app-switcher snapshot clearing fails for a reason other than a missing directory or item. Error parameters describe the first failure",
         "owners": ["bkunat"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],

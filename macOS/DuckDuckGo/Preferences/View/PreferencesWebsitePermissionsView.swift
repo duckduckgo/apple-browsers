@@ -1,5 +1,5 @@
 //
-//  WebsitePermissionsView.swift
+//  PreferencesWebsitePermissionsView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,11 +19,11 @@
 import PreferencesUI_macOS
 import SwiftUI
 
-struct WebsitePermissionsView: View {
+struct PreferencesWebsitePermissionsView: View {
     var body: some View {
         PreferencePane {
             TextMenuTitle(UserText.websitePermissions)
-            Text("Website Content")
+            Text(verbatim: "Website Content")
         }
     }
 }

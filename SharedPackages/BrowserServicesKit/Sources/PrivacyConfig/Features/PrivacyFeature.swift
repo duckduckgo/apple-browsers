@@ -177,7 +177,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case webNotifications
 
     /// Enables the Website Permissions entry point in Settings.
-    case websitePermissions
+    case websitePermissionsSettings
 
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true

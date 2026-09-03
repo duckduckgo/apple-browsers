@@ -22,9 +22,8 @@ import DuckUI
 import SwiftUI
 import UIComponents
 
-// V2 of the Sync & Backup settings screen, gated behind the simplifiedSyncSetupV2 feature
-// flag. Started as a copy of SimplifiedSyncSettingsView and is being reshaped for the
-// Simplified Sync Setup follow-up redesign; the original stays in place for users off the flag.
+// V2 of the Sync & Backup settings screen. Started as a copy of SimplifiedSyncSettingsView
+// and is being reshaped for the Simplified Sync Setup follow-up redesign.
 // https://app.asana.com/1/137249556945/project/1214200115953388/task/1215960387490701
 public struct SimplifiedSyncSettingsViewV2: View {
 

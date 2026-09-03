@@ -98,24 +98,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenSimplifiedSyncSetupV2IsDisabledThenSyncUIVersionIsV1() {
-        XCTAssertEqual(vc.syncUIVersion, "v1")
-        XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v1"])
-    }
-
-    @MainActor
     func testWhenSimplifiedSyncSetupV2IsEnabledThenSyncUIVersionIsV2() {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.simplifiedSyncSetupV2])
-        let vc = SyncSettingsViewController(
-            syncService: ddgSyncing,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
-            syncCreditCardsAdapter: syncCreditCardsAdapter,
-            syncPausedStateManager: errorHandler,
-            featureFlagger: featureFlagger,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
-        )
-
         XCTAssertEqual(vc.syncUIVersion, "v2")
         XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v2"])
     }
@@ -458,7 +441,6 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
     @MainActor
     func testWhenV1ConnectCreatesAccountWithSimplifiedV2LayoutThenCompletionShowsSuccess() {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.simplifiedSyncSetupV2])
         let spyVC = SpySyncSettingsViewController(
             syncService: ddgSyncing,
             syncBookmarksAdapter: syncBookmarksAdapter,

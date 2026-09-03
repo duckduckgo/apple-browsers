@@ -32,7 +32,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func recoveryCodeNextPressed()
     func turnOnSync()
     func enterRecoveryCodePressed()
-    func copyCode()
+    func copyCode(_ code: String)
     func syncAnotherDevicePromptDidAppear()
     func syncThisDeviceOnlyFromPrompt() async
     func syncWithAnotherDeviceFromPrompt()

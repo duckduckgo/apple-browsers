@@ -36,6 +36,7 @@ protocol DuckAISessionInstrumentation: AnyObject {
     func visibleTabDidChange(_ tab: DuckAISessionTabSnapshot?)
 
     /// A user action that will leave Duck.ai is about to run. The next visible-tab change consumes it.
+    /// First trigger wins, and `newTab()` records `.newTabOpened`, so record more specific triggers before it.
     func recordPendingExit(tabUID: TabUID, trigger: DuckAISessionWideEventData.ExitTrigger)
 
     func promptSubmitted(tabUID: TabUID)

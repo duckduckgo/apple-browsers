@@ -525,10 +525,13 @@ class MainViewCoordinator {
     // MARK: - Omnibar Editing Layout
 
     @MainActor
+    /// `resigningInput` is invoked once the animator owns the container's position. Resigning any
+    /// earlier hands the container to the keyboard's animation, which lands it short of the pill.
     func hideUnifiedToggleInputOmnibar(reattachingOmnibar: Bool = true,
                                        contentSnapshot: UIView? = nil,
                                        additionalAnimations: (() -> Void)? = nil,
                                        interruptCleanup: (() -> Void)? = nil,
+                                       resigningInput: (() -> Void)? = nil,
                                        completion: (() -> Void)? = nil) {
         // Replacement dismiss owns NTP chrome until it finishes. Drop the previous
         // interruptCleanup first — otherwise stopping the in-flight animator restores
@@ -562,6 +565,7 @@ class MainViewCoordinator {
         }
         omnibarDismissAnimator = animator
         animator.startAnimation()
+        resigningInput?()
     }
 
     private func installOmnibarDismissContentSnapshot(_ snapshot: UIView) {

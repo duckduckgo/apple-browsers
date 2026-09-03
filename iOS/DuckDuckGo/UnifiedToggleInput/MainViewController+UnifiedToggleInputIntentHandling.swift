@@ -384,6 +384,7 @@ private extension MainViewController {
                 reattachingOmnibar: reattachingOmnibar,
                 additionalAnimations: additionalAnimations,
                 interruptCleanup: restoreNTPChromeIfNeeded,
+                resigningInput: { coordinator?.viewController.deactivateInput() },
                 completion: onDismissed)
             if let coordinator, let omnibarPlaceholderColor, let utiPlaceholderColor {
                 coordinator.viewController.animatePlaceholderColorTransition(
@@ -395,6 +396,7 @@ private extension MainViewController {
         } else {
             // Match the animated path: restore resting layout before cleanup, else the returning tab's content is stranded.
             viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
+            coordinator?.viewController.deactivateInput()
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss(reattachingOmnibar: reattachingOmnibar)
             onDismissed()
         }

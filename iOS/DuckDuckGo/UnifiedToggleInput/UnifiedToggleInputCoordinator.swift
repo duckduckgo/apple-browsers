@@ -1066,12 +1066,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if resetView {
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
-            applyToolbarPresentation()
-            viewController.deactivateInput()
-        } else {
-            applyToolbarPresentation()
-            viewController.deactivateInput()
         }
+        applyToolbarPresentation()
+        // Resign is sequenced by the dismiss animation, not here — see `hideUnifiedToggleInputOmnibar`.
         return true
     }
 

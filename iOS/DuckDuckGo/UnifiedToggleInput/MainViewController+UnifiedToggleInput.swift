@@ -1116,14 +1116,13 @@ extension MainViewController {
             interruptCleanup: { [weak self] in
                 self?.restoreChromeAfterInterruptedOmnibarDismiss()
             },
+            resigningInput: { [weak coordinator] in
+                coordinator?.viewController.deactivateInput()
+            },
             completion: { [weak self] in
                 self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
             }
         )
-
-        // Resign only once the animator owns the container's position, so the collapse stays on a
-        // single timeline instead of being handed to the keyboard's.
-        coordinator.viewController.deactivateInput()
 
         if let omnibarPlaceholderColor {
             coordinator.viewController.animatePlaceholderColorTransition(

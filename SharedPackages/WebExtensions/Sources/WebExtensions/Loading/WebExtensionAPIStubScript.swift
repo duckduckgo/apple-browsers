@@ -39,6 +39,15 @@ import Foundation
 /// `undefined`; where callers read straight off the result — `storage.managed.get()` — the stub is
 /// shaped to answer with the empty value Chrome would return.
 ///
+/// `chrome.offscreen` goes one step further and actually works. Bitwarden copies to the clipboard by
+/// opening an offscreen document, messaging it and closing it again, so a no-op `createDocument`
+/// turns "copy password" into silence. An extension iframe inside the background page is itself an
+/// extension page with the full `chrome.*` API, so the offscreen page's `runtime.onMessage`
+/// listeners run and messages sent from the background page reach it — the stub therefore creates a
+/// hidden iframe pointing at the requested document. Whether a clipboard write from that hidden
+/// frame succeeds under WebKit is not measured yet; this turns a silent no-op into a real attempt,
+/// and the outcome shows up in the extension's own logs.
+///
 /// Two behaviors of the host are worth calling out, both established by measurement on macOS 26.6.2:
 /// - `chrome.webNavigation`, `chrome.tabs` and friends are native wrapper objects that WebKit
 ///   discards once JavaScript stops referencing them, taking any property we added with them: an
@@ -70,16 +79,18 @@ enum WebExtensionAPIStubScript {
             return;
         }
 
+        // Namespaces WebKit does not define at all. Without a "kind" the namespace becomes a
+        // generic nestable stub; "offscreen" is purpose-shaped (see makeOffscreen below).
         var missingNamespaces = [
-            "notifications",
-            "offscreen",
-            "downloads",
-            "idle",
-            "management",
-            "privacy",
-            "browsingData",
-            "topSites",
-            "sidePanel"
+            { name: "notifications" },
+            { name: "offscreen", kind: "offscreen" },
+            { name: "downloads" },
+            { name: "idle" },
+            { name: "management" },
+            { name: "privacy" },
+            { name: "browsingData" },
+            { name: "topSites" },
+            { name: "sidePanel" }
         ];
 
         // Members missing from namespaces that WebKit does implement, addressed by dotted path.
@@ -216,12 +227,134 @@ enum WebExtensionAPIStubScript {
             };
         }
 
+        // Resolves a document URL against the background page the way `new URL(url, location.href)`
+        // would, for the shapes an extension actually passes: a relative path, a root-relative path,
+        // or an already absolute URL.
+        function resolveDocumentURL(url) {
+            var target = url === undefined || url === null ? "" : String(url);
+            var base = globalThis.location && globalThis.location.href ? String(globalThis.location.href) : "";
+            var schemeEnd = target.indexOf("://");
+            if (schemeEnd > 0 && (target.indexOf("/") === -1 || schemeEnd < target.indexOf("/"))) {
+                return target;
+            }
+            var end = base.length;
+            var query = base.indexOf("?");
+            var fragment = base.indexOf("#");
+            if (query !== -1 && query < end) {
+                end = query;
+            }
+            if (fragment !== -1 && fragment < end) {
+                end = fragment;
+            }
+            var origin = base.slice(0, end);
+            var originSchemeEnd = origin.indexOf("://");
+            var directoryEnd = origin.lastIndexOf("/");
+            if (directoryEnd <= originSchemeEnd + 2) {
+                // The base has no path segment of its own, so everything hangs off its root.
+                return origin + "/" + (target.charAt(0) === "/" ? target.slice(1) : target);
+            }
+            if (target.charAt(0) === "/") {
+                var authorityEnd = origin.indexOf("/", originSchemeEnd + 3);
+                return origin.slice(0, authorityEnd) + target;
+            }
+            return origin.slice(0, directoryEnd + 1) + target;
+        }
+
+        var offscreenReasonNames = [
+            "TESTING", "AUDIO_PLAYBACK", "IFRAME_SCRIPTING", "DOM_SCRAPING", "BLOBS", "DOM_PARSER",
+            "USER_MEDIA", "DISPLAY_MEDIA", "WEB_RTC", "CLIPBOARD", "LOCAL_STORAGE", "WORKERS",
+            "BATTERY_STATUS", "MATCH_MEDIA", "GEOLOCATION"
+        ];
+
+        // `chrome.offscreen` is the one stub that does real work. Bitwarden copies to the clipboard
+        // by opening an offscreen document, sending it a message and closing it again, so a no-op
+        // `createDocument` makes "copy password" do nothing at all. An extension iframe inside the
+        // background page is itself an extension page with the full API: the offscreen page's
+        // `runtime.onMessage` listeners run there and messages from the background page reach them.
+        // Whether the clipboard write from that hidden frame is allowed under WebKit has not been
+        // measured — this turns a silent no-op into a real attempt whose outcome shows up in the
+        // extension's own logs.
+        function makeOffscreen() {
+            var documentFrame = null;
+            var loadTimeoutInMilliseconds = 5000;
+
+            var reason = {};
+            offscreenReasonNames.forEach(function(name) {
+                reason[name] = name;
+            });
+
+            var offscreen = {
+                Reason: Object.freeze(reason),
+                hasDocument: makeResolver(function() {
+                    return documentFrame !== null;
+                }),
+                createDocument: function(parameters) {
+                    var callback = arguments.length > 1 ? arguments[arguments.length - 1] : undefined;
+                    if (documentFrame !== null) {
+                        // Chrome's own wording, so an extension matching on the message still matches.
+                        return Promise.reject(new Error("Only a single offscreen document may be created."));
+                    }
+
+                    var frame = document.createElement("iframe");
+                    frame.setAttribute("hidden", "hidden");
+                    frame.setAttribute("aria-hidden", "true");
+                    frame.style.width = "0";
+                    frame.style.height = "0";
+                    frame.style.border = "0";
+                    frame.src = resolveDocumentURL(parameters ? parameters.url : undefined);
+                    documentFrame = frame;
+                    (document.body || document.documentElement).appendChild(frame);
+
+                    return new Promise(function(resolve) {
+                        var isSettled = false;
+                        function finish() {
+                            if (isSettled) {
+                                return;
+                            }
+                            isSettled = true;
+                            if (typeof callback === "function") {
+                                invokeCallback(callback, undefined);
+                            }
+                            resolve(undefined);
+                        }
+                        frame.addEventListener("load", finish);
+                        // A document that never loads must not leave the caller awaiting forever.
+                        setTimeout(finish, loadTimeoutInMilliseconds);
+                    });
+                },
+                closeDocument: function() {
+                    var callback = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
+                    if (documentFrame === null) {
+                        return Promise.reject(new Error("No current offscreen document."));
+                    }
+                    var frame = documentFrame;
+                    documentFrame = null;
+                    if (typeof frame.remove === "function") {
+                        frame.remove();
+                    } else if (frame.parentNode) {
+                        frame.parentNode.removeChild(frame);
+                    }
+                    if (typeof callback === "function") {
+                        invokeCallback(callback, undefined);
+                    }
+                    return Promise.resolve(undefined);
+                }
+            };
+
+            // The namespace owns the open document, so it has to outlive the wrapper it hangs off.
+            retain(offscreen);
+            return offscreen;
+        }
+
         function makeMember(kind) {
             if (kind === "event") {
                 return makeEvent();
             }
             if (kind === "managedStorage") {
                 return makeManagedStorage();
+            }
+            if (kind === "offscreen") {
+                return makeOffscreen();
             }
             return makeStub();
         }
@@ -259,14 +392,14 @@ enum WebExtensionAPIStubScript {
 
         missingNamespaces.forEach(function(namespace) {
             try {
-                if (api[namespace] !== undefined) {
+                if (api[namespace.name] !== undefined) {
                     return;
                 }
-                if (define(api, namespace, makeStub())) {
-                    stubbedNamespaces.push(namespace);
+                if (define(api, namespace.name, makeMember(namespace.kind))) {
+                    stubbedNamespaces.push(namespace.name);
                 }
             } catch (error) {
-                console.info("[DuckDuckGo] Could not stub chrome." + namespace + ": " + error);
+                console.info("[DuckDuckGo] Could not stub chrome." + namespace.name + ": " + error);
             }
         });
 

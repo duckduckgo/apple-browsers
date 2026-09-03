@@ -598,7 +598,9 @@ extension URL {
     }
 
     var isInternalFeedbackForm: Bool {
-        host == URL.internalFeedbackFormHost
+        scheme == "https"
+            && host == URL.internalFeedbackFormHost
+            && path.hasPrefix(URL.internalFeedbackForm.path)
     }
 
     static var webTrackingProtection: URL {

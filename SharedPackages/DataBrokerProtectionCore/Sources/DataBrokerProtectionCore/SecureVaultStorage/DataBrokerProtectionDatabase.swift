@@ -703,9 +703,15 @@ extension DataBrokerProtectionDatabase {
 
         let databaseBrokerProfileQueryData = try fetchActiveBrokerProfileQueryData()
         let databaseProfileQueries = databaseBrokerProfileQueryData.map { $0.profileQuery }
+        let activeDatabaseProfileQueries = Set(databaseProfileQueries.filter { !$0.deprecated })
 
         // The queries we need to create are the one that exist on the new ones but not in the database
         let profileQueriesToCreate = Set(newProfileQueries).subtracting(Set(databaseProfileQueries))
+
+        let profileQueriesToReactivate = Set(databaseProfileQueries.filter(\.deprecated))
+            .subtracting(activeDatabaseProfileQueries)
+            .intersection(Set(newProfileQueries))
+            .map { $0.with(deprecated: false) }
 
         // Updated profile queries. This is only for use for deprecated matches.
         // We do not use it for updating a particular profile query. The reason is that
@@ -752,6 +758,14 @@ extension DataBrokerProtectionDatabase {
                                      vault: vault)
         }
 
+        // Reactivate
+        if !profileQueriesToReactivate.isEmpty {
+            try updateProfileQueries(profileQueriesToReactivate,
+                                     profileID: profileID,
+                                     brokerIDs: brokerIDs,
+                                     vault: vault)
+        }
+
         // Create
         if !profileQueriesToCreate.isEmpty {
             try initializeDatabaseForProfile(
@@ -783,8 +797,13 @@ extension DataBrokerProtectionDatabase {
                                                   profileId: profileID)
 
             if !profile.deprecated {
-                for brokerID in brokerIDs where !profile.deprecated {
-                    try updatePreferredRunDate(Date(), brokerId: brokerID, profileQueryId: profileQueryID)
+                let preferredRunDate = Date()
+                for brokerID in brokerIDs {
+                    if try vault.fetchScan(brokerId: brokerID, profileQueryId: profileQueryID) != nil {
+                        try vault.updatePreferredRunDate(preferredRunDate, brokerId: brokerID, profileQueryId: profileQueryID)
+                    } else {
+                        try vault.save(brokerId: brokerID, profileQueryId: profileQueryID, lastRunDate: nil, preferredRunDate: preferredRunDate)
+                    }
                 }
             }
         }

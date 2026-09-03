@@ -275,6 +275,57 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
         XCTAssertFalse(vault.wasUpdateProfileQueryCalled)
         XCTAssertTrue(vault.wasDeleteProfileQueryCalled)
     }
+
+    func testSaveProfileWithMatchingDeprecatedQuery_thenReactivatesQueryAndSchedulesMissingBrokerScans() async throws {
+        let vault: DataBrokerProtectionSecureVaultMock = try DataBrokerProtectionSecureVaultMock(providers:
+                                                            SecureStorageProviders(
+                                                                crypto: EmptySecureStorageCryptoProviderMock(),
+                                                                database: SecureStorageDatabaseProviderMock(),
+                                                                keystore: EmptySecureStorageKeyStoreProviderMock()))
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                    pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                                                    vault: vault,
+                                                    localBrokerService: MockLocalBrokerJSONService())
+        let profile = DataBrokerProtectionProfile(
+            names: [.init(firstName: "First", lastName: "Last")],
+            addresses: [.init(city: "City", state: "State")],
+            phones: [],
+            birthYear: 1980
+        )
+        let deprecatedProfileQuery = ProfileQuery.mock.with(deprecated: true)
+        let existingScan = ScanJobData(
+            brokerId: 1,
+            profileQueryId: 1,
+            preferredRunDate: .distantFuture,
+            historyEvents: [.mock(type: .matchesFound(count: 1))]
+        )
+
+        vault.profile = profile
+        vault.profileQueries = [deprecatedProfileQuery]
+        vault.brokers = [.mock, .mockWithDefaults(id: 2, name: "Second broker")]
+        vault.fetchScanHandler = { brokerId, profileQueryId in
+            brokerId == existingScan.brokerId && profileQueryId == existingScan.profileQueryId ? existingScan : nil
+        }
+
+        let beforeSave = Date()
+        try await database.save(profile)
+
+        XCTAssertFalse(vault.wasSaveProfileQueryCalled)
+        XCTAssertEqual(vault.updatedProfileQueries.count, 1)
+        XCTAssertEqual(vault.updatedProfileQueries.first?.id, deprecatedProfileQuery.id)
+        XCTAssertEqual(vault.updatedProfileQueries.first?.deprecated, false)
+
+        XCTAssertEqual(vault.updatedScanPreferredRunDates.count, 1)
+        XCTAssertEqual(vault.updatedScanPreferredRunDates.first?.brokerId, 1)
+        XCTAssertEqual(vault.updatedScanPreferredRunDates.first?.profileQueryId, 1)
+        XCTAssertGreaterThanOrEqual(vault.updatedScanPreferredRunDates.first?.date ?? .distantPast, beforeSave)
+
+        XCTAssertEqual(vault.savedScanJobs.count, 1)
+        XCTAssertEqual(vault.savedScanJobs.first?.brokerId, 2)
+        XCTAssertEqual(vault.savedScanJobs.first?.profileQueryId, 1)
+        XCTAssertNil(vault.savedScanJobs.first?.lastRunDate)
+        XCTAssertGreaterThanOrEqual(vault.savedScanJobs.first?.preferredRunDate ?? .distantPast, beforeSave)
+    }
 }
 
 extension ProfileQuery: Comparable {

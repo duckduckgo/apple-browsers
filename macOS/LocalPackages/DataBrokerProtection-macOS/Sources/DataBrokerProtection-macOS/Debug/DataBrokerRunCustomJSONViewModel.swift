@@ -182,6 +182,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var presetsText: String = ""
     @Published var presets: [ProfilePreset] = []
     @Published var usesConfiguredTimeouts = true
+    @Published var hidesWebView = false
 
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
@@ -318,6 +319,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 let brokerProfileQueryData = createBrokerProfileQueryData(for: dataBroker)
                 let group = DispatchGroup()
                 let scanTimeout = self.usesConfiguredTimeouts ? self.brokerJobExecutionConfig.scanJobTimeout : nil
+                let showWebView = !self.hidesWebView
 
                 for query in brokerProfileQueryData {
                     group.enter()
@@ -347,7 +349,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 shouldRunNextStep: { true }
                             )
                             let extractedProfiles = try await self.withOptionalTimeout(scanTimeout) {
-                                try await runner.scan(showWebView: true) { true }
+                                try await runner.scan(showWebView: showWebView) { true }
                             }
                             let brokerId = DebugHelper.stableId(for: query.dataBroker)
                             let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
@@ -410,6 +412,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         progressText = "Starting opt-out..."
         addOptOutStartedEvent(for: scanResult)
         let optOutTimeout = usesConfiguredTimeouts ? brokerJobExecutionConfig.optOutJobTimeout : nil
+        let showWebView = !hidesWebView
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: dataBroker,
             profileQuery: scanResult.profileQuery,
@@ -446,7 +449,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
                 try await self.withOptionalTimeout(optOutTimeout) {
                     try await runner.optOut(extractedProfile: scanResult.extractedProfile,
-                                            showWebView: true) { true }
+                                            showWebView: showWebView) { true }
                 }
 
                 if scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {

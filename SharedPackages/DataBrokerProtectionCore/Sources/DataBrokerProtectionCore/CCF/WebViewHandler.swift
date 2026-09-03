@@ -58,6 +58,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var didDetectChallenge = false
     private var didReportChallengeClearance = false
     private var challengeTask: Task<Void, Never>?
+    private var challengePanel: ChallengeOffscreenPanel?
     private var expectedBrokerURL: URL?
     private var isChallengeResponse = false
     private var isAwaitingChallengeDestination = false
@@ -145,25 +146,6 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             window?.contentView = webView
 
             window?.makeKeyAndOrderFront(nil)
-        } else if let webView {
-            let panel = ChallengeOffscreenPanel(
-                contentRect: NSRect(origin: .zero, size: webView.frame.size),
-                styleMask: [.nonactivatingPanel, .borderless],
-                backing: .buffered,
-                defer: false)
-            panel.becomesKeyOnlyIfNeeded = true
-            panel.hidesOnDeactivate = false
-            panel.isFloatingPanel = false
-            panel.isReleasedWhenClosed = false
-            panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary, .stationary]
-            panel.backgroundColor = .white
-            panel.acceptsMouseMovedEvents = true
-            panel.ignoresMouseEvents = false
-            panel.contentView = webView
-
-            panel.setFrameOrigin(ChallengeOffscreenPanel.nextOrigin(for: webView.frame.size))
-            panel.orderFrontRegardless()
-            window = panel
         }
 #elseif os(iOS)
         if showWebView {
@@ -230,6 +212,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 #if os(macOS)
         challengeTask?.cancel()
         challengeTask = nil
+        closeChallengePanel()
         isChallengeResponse = false
         isAwaitingChallengeDestination = false
         urlObservation?.invalidate()
@@ -407,12 +390,14 @@ private extension DataBrokerProtectionWebViewHandler {
         isAwaitingChallengeDestination = false
         challengeTask?.cancel()
         challengeTask = nil
+        closeChallengePanel()
         reportChallengeEvent("Solved challenge; expected broker destination reached")
         logChallengeClearanceCookie()
     }
 
     func startChallengeSolver() {
         challengeTask?.cancel()
+        closeChallengePanel()
         challengeTask = Task { [weak self] in
             await self?.solveChallenge()
         }
@@ -420,6 +405,8 @@ private extension DataBrokerProtectionWebViewHandler {
 
     func solveChallenge() async {
         guard let webView else { return }
+        attachChallengePanelIfNeeded(to: webView)
+        defer { closeChallengePanel() }
         let deadline = Date().addingTimeInterval(45)
         var nextSnapshotAttempt = Date.distantPast
         var didClick = false
@@ -434,7 +421,7 @@ private extension DataBrokerProtectionWebViewHandler {
             if !didClick, Date() >= nextSnapshotAttempt {
                 nextSnapshotAttempt = Date().addingTimeInterval(2)
                 if let point = await stableSnapshotCheckboxPoint(in: webView) {
-                    _ = window?.makeFirstResponder(webView)
+                    _ = webView.window?.makeFirstResponder(webView)
                     let result = await ChallengeClick.checkbox(at: point, in: webView)
                     reportChallengeEvent("Sent snapshot checkbox click; \(result)")
                     didClick = true
@@ -454,6 +441,7 @@ private extension DataBrokerProtectionWebViewHandler {
     }
 
     func stableSnapshotCheckboxPoint(in webView: WKWebView) async -> NSPoint? {
+        challengePanel?.moveOffscreen()
         let snapshotRect = webView.bounds
         guard let firstImage = await challengeSnapshot(of: webView, rect: snapshotRect),
               let firstLabel = await ChallengeVision.findChallengeLabel(in: firstImage),
@@ -487,8 +475,6 @@ private extension DataBrokerProtectionWebViewHandler {
             let request = ChallengeSnapshotRequest(continuation: continuation)
             let configuration = WKSnapshotConfiguration()
             configuration.rect = rect
-            let backingScale = max(webView.window?.backingScaleFactor ?? 1, 1)
-            configuration.snapshotWidth = NSNumber(value: Double(rect.width / backingScale))
             webView.takeSnapshot(with: configuration) { image, _ in
                 Task { @MainActor in
                     request.finish(with: image?.cgImage(forProposedRect: nil, context: nil, hints: nil))
@@ -540,8 +526,34 @@ private extension DataBrokerProtectionWebViewHandler {
     func resetChallengeState() {
         challengeTask?.cancel()
         challengeTask = nil
+        closeChallengePanel()
         isChallengeResponse = false
         isAwaitingChallengeDestination = false
+    }
+
+    func attachChallengePanelIfNeeded(to webView: WKWebView) {
+        guard webView.window == nil else { return }
+        let panel = ChallengeOffscreenPanel(
+            contentRect: NSRect(origin: .zero, size: webView.frame.size),
+            styleMask: [.nonactivatingPanel, .borderless],
+            backing: .buffered,
+            defer: false)
+        panel.becomesKeyOnlyIfNeeded = true
+        panel.hidesOnDeactivate = false
+        panel.isFloatingPanel = false
+        panel.isReleasedWhenClosed = false
+        panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary, .stationary]
+        panel.backgroundColor = .white
+        panel.acceptsMouseMovedEvents = true
+        panel.ignoresMouseEvents = false
+        panel.contentView = webView
+        challengePanel = panel
+        panel.presentOffscreen()
+    }
+
+    func closeChallengePanel() {
+        challengePanel?.dismissOffscreen()
+        challengePanel = nil
     }
 
     @objc func copyURLFromAddressBar() {

@@ -53,6 +53,7 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
         guard let confirmationURL = confirmationURL(for: scanResult) else { return }
         isProgressActive = true
         progressText = "Continuing opt-out..."
+        let showWebView = !hidesWebView
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: scanResult.dataBroker,
             profileQuery: scanResult.profileQuery,
@@ -92,7 +93,7 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
                 )
 
                 try await runner.optOut(extractedProfile: scanResult.extractedProfile,
-                                        showWebView: true) { true }
+                                        showWebView: showWebView) { true }
 
                 addOptOutConfirmedEvent(for: scanResult)
                 Task { @MainActor in

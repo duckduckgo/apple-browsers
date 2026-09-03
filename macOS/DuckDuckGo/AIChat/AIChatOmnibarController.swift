@@ -1365,16 +1365,7 @@ final class AIChatOmnibarController {
             return
         }
 
-        pixelHandler.fire(.promptSubmitted)
-
-        if isImageGenerationMode {
-            if !selectedModelSupportsImageGeneration {
-                pixelHandler.fire(.createImageSubmittedWithUnsupportedModel)
-            }
-            pixelHandler.fire(.imageGenerationSubmitted)
-        } else if isWebSearchMode {
-            pixelHandler.fire(.webSearchSubmitted)
-        }
+        firePromptSubmissionPixels()
 
         // Snapshot everything that could change between now and when the async submit Task
         // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and
@@ -1504,6 +1495,22 @@ final class AIChatOmnibarController {
         }
 
         currentText = ""
+    }
+
+    private func firePromptSubmissionPixels() {
+        pixelHandler.fire(.promptSubmitted)
+
+        switch activeToolMode {
+        case .imageGeneration:
+            if !selectedModelSupportsImageGeneration {
+                pixelHandler.fire(.createImageSubmittedWithUnsupportedModel)
+            }
+            pixelHandler.fire(.imageGenerationSubmitted)
+        case .webSearch:
+            pixelHandler.fire(.webSearchSubmitted)
+        case nil:
+            break
+        }
     }
 
     /// Eagerly extracts the page context for each omnibar-attached tab, returning a

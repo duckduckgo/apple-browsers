@@ -377,6 +377,48 @@ final class SubscriptionURLTests: XCTestCase {
         XCTAssertEqual(components?.url, expectedURL)
     }
 
+    // MARK: - First paywall, performance-optimized (not implemented)
+
+    // With `performanceOptimizedPaywalls` on, the two entry points this app opens itself become:
+    //
+    //     VPN      (no featurePage)      /subscriptions/new/mobile/vpn
+    //     Duck.ai  (featurePage=duckai)  /subscriptions/new/mobile/duckai
+    //
+    //     trial=true|false   always stated
+    //     pir=false          only when the offering excludes Personal Information Removal
+    //     origin             unchanged
+    //
+    // Everything else keeps today's URL: other featurePages, intercepted `/pro` links, desktop.
+
+    /// Delete the `XCTSkipIf` and replace the `XCTFail` with assertions against whatever builds them.
+    func testFirstPaywallURLsWhenPerformanceOptimizedPaywallsIsOn() throws {
+        try XCTSkipIf(true, "Pending: the server-rendered first paywall is not implemented")
+
+        let required = [
+            "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false",
+            "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=true",
+            "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false&pir=false",
+            "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=true&pir=false",
+            "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=false",
+            "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=true",
+            "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=false&pir=false",
+            "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=true&pir=false"
+        ]
+
+        XCTFail("Nothing produces the server-rendered first paywall URLs yet: \(required.joined(separator: ", "))")
+    }
+
+    /// `trial` and `pir` pick what the page reveals, not which page it is, so screen matching has to
+    /// ignore them. Already a real assertion: delete the `XCTSkipIf` and it fails.
+    func testForComparisonIgnoresFirstPaywallStateParameters() throws {
+        try XCTSkipIf(true, "Pending: forComparison() does not ignore trial and pir yet")
+
+        let page = URL(string: "https://duckduckgo.com/subscriptions/new/mobile/vpn")!
+        let pageWithState = URL(string: "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=true&pir=false")!
+
+        XCTAssertEqual(pageWithState.forComparison(), page.forComparison())
+    }
+
     func testPurchaseURLComponentsWithOnlyOrigin() throws {
         // Given
         let origin = "funnel_appsettings_ios"

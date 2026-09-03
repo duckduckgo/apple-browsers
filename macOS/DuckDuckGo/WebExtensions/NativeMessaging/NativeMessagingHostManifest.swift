@@ -98,7 +98,13 @@ enum NativeMessagingHostManifestLocator {
     }
 
     /// Returns the manifest of the named host, and the executable it points to.
-    static func locate(name: String) throws -> (manifest: NativeMessagingHostManifest, executable: URL) {
+    ///
+    /// - Parameters:
+    ///   - name: The host name, which is also the manifest's file name without the extension.
+    ///   - searchDirectories: The directories to search, in order. Defaults to the browsers'
+    ///     own manifest directories, and tests pass a directory of their own.
+    static func locate(name: String,
+                       searchDirectories: [URL] = Self.searchDirectories) throws -> (manifest: NativeMessagingHostManifest, executable: URL) {
         for directory in searchDirectories {
             let manifestURL = directory.appendingPathComponent("\(name).json")
             guard FileManager.default.fileExists(atPath: manifestURL.path) else { continue }

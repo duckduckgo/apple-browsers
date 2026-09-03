@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import UserScript
 import WebKit
 
@@ -99,24 +100,56 @@ public protocol InternalFeedbackAttachmentsProviding: AnyObject {
 
 public final class InternalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding {
 
-    private var screenshotPNGData: Data?
+    /// A screenshot must last long enough to survive the user signing into the form for it to be used.
+    private static let defaultScreenshotLifetime: TimeInterval = .minutes(5)
 
-    public init() {}
+    private let screenshotLifetime: TimeInterval
+    private var screenshotPNGData: Data?
+    private var screenshotExpirationDate: Date?
+    private var screenshotExpirationTask: Task<Void, Never>?
+
+    public convenience init() {
+        self.init(screenshotLifetime: Self.defaultScreenshotLifetime)
+    }
+
+    init(screenshotLifetime: TimeInterval) {
+        self.screenshotLifetime = max(screenshotLifetime, 0)
+    }
 
     @MainActor
     public func setScreenshotPNGData(_ data: Data?) {
+        clear()
+        guard let data, !data.isEmpty else { return }
+
         screenshotPNGData = data
+        screenshotExpirationDate = Date().addingTimeInterval(screenshotLifetime)
+
+        let lifetimeNanoseconds = UInt64(screenshotLifetime * 1_000_000_000)
+        screenshotExpirationTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: lifetimeNanoseconds)
+            } catch {
+                return
+            }
+            self?.clear()
+        }
     }
 
     @MainActor
     public func clear() {
+        screenshotExpirationTask?.cancel()
+        screenshotExpirationTask = nil
         screenshotPNGData = nil
+        screenshotExpirationDate = nil
     }
 
     @MainActor
     public func attachments() -> InternalFeedbackAttachments {
-        defer { screenshotPNGData = nil }
-        guard let screenshotPNGData, !screenshotPNGData.isEmpty else {
+        guard let screenshotPNGData,
+              !screenshotPNGData.isEmpty,
+              let screenshotExpirationDate,
+              screenshotExpirationDate > Date() else {
+            clear()
             return InternalFeedbackAttachments()
         }
         return InternalFeedbackAttachments(

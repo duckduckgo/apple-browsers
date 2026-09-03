@@ -67,7 +67,7 @@ final class InternalFeedbackUserScriptTests: XCTestCase {
         XCTAssertTrue(payload.isEmpty)
     }
 
-    func testGetAttachmentsReturnsPendingScreenshotOnlyOnce() async throws {
+    func testGetAttachmentsReturnsPendingScreenshotUntilCleared() async throws {
         let attachmentsProvider = InternalFeedbackAttachmentsProvider()
         attachmentsProvider.setScreenshotPNGData(Data([0, 1]))
         let script = InternalFeedbackUserScript(
@@ -78,10 +78,20 @@ final class InternalFeedbackUserScriptTests: XCTestCase {
 
         let firstResult = try await handler([:], WKScriptMessage.mock()) as? InternalFeedbackAttachments
         let secondResult = try await handler([:], WKScriptMessage.mock()) as? InternalFeedbackAttachments
+        attachmentsProvider.clear()
+        let clearedResult = try await handler([:], WKScriptMessage.mock()) as? InternalFeedbackAttachments
 
         XCTAssertEqual(firstResult?.screenshot?.base64, "AAE=")
         XCTAssertEqual(firstResult?.screenshot?.mimeType, "image/png")
-        XCTAssertNil(secondResult?.screenshot)
+        XCTAssertEqual(secondResult?.screenshot?.base64, "AAE=")
+        XCTAssertNil(clearedResult?.screenshot)
+    }
+
+    func testGetAttachmentsDoesNotReturnExpiredScreenshot() {
+        let attachmentsProvider = InternalFeedbackAttachmentsProvider(screenshotLifetime: 0)
+        attachmentsProvider.setScreenshotPNGData(Data([0, 1]))
+
+        XCTAssertNil(attachmentsProvider.attachments().screenshot)
     }
 }
 

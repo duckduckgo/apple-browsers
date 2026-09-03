@@ -88,6 +88,12 @@ extension DebugScreensViewModel {
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
             resetModalPromptsCooldownPeriodScreen,
+            .action(title: "Copy Cookies to Shared Session", { _ in
+                Task {
+                    let cookies = await DDGWebsiteDataStoreProvider.current(fireMode: false).httpCookieStore.allCookies()
+                    cookies.forEach { HTTPCookieStorage.shared.setCookie($0) }
+                }
+            }),
 
             // MARK: SwiftUI Views
             .view(title: "DuckUI", { _ in

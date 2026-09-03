@@ -38,6 +38,15 @@ enum WidgetsPixelKitSetup {
     }()
 }
 
+/// Configures `PixelKit.shared` for the Widgets extension process, once. Guarded to the extension
+/// only: these intents also compile into the main app, which already has its own `PixelKit.shared`.
+enum WidgetsPixelKitSetup {
+    static let didSetUp: Void = {
+        guard Bundle.main.bundlePath.hasSuffix(".appex") else { return }
+        PixelKitExtensionSetup.setUp(session: "ios-widgets", defaults: UserDefaults.networkProtectionGroupDefaults)
+    }()
+}
+
 // MARK: - Enable & Disable
 
 /// App intent to disable the VPN

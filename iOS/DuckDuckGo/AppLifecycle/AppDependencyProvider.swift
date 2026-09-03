@@ -145,9 +145,7 @@ final class AppDependencyProvider: DependencyProvider {
             }
         }
 
-        // Carries the legacy `DailyPixel` / `UniquePixel` / debounce last-fire dates into PixelKit's
-        // throttle store, so migrated pixels do not forget they already fired. Runs once per app
-        // version, after `setUp` so it writes to the same store PixelKit reads.
+        // Carries legacy pixel last-fire dates into PixelKit's throttle store; must run after `setUp`.
         LegacyPixelStateMigration(
             destination: pixelKitDefaults,
             dailyStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.daily),

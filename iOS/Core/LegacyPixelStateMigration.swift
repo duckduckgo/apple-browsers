@@ -73,6 +73,7 @@ public struct LegacyPixelStateMigration {
     private let destination: ThrowingKeyValueStoring
     private let sources: [(store: LegacyPixelLastFireDateSource?, mapKey: String)]
     private let completionFlagStore: ThrowingKeyValueStoring
+    private let completionFlagKey: String
     private let migrationVersion: String
     private let logger = Logger(subsystem: "PixelMigration", category: "LegacyPixelStateMigration")
 
@@ -85,18 +86,26 @@ public struct LegacyPixelStateMigration {
     ///     `.uniqueByName` and `.legacyInitial`.
     ///   - debounceStore: `Pixel.storage`, migrated to `debounce`.
     ///   - completionFlagStore: where the last-migrated version lives.
+    ///   - completionFlagKey: pass a value distinct per caller whenever `completionFlagStore` might
+    ///     be shared with another `LegacyPixelStateMigration` instance (e.g. two app-extension
+    ///     processes both falling back to the same app-group `UserDefaults`) - otherwise whichever
+    ///     instance runs first for a version marks the shared flag complete and the other skips,
+    ///     never migrating its own distinct legacy state. Defaults to the pre-existing key for
+    ///     every caller that already has its own store.
     ///   - migrationVersion: re-runs whenever this differs from the stored value.
     public init(destination: ThrowingKeyValueStoring,
                 dailyStore: LegacyPixelLastFireDateSource?,
                 uniqueStore: LegacyPixelLastFireDateSource?,
                 debounceStore: LegacyPixelLastFireDateSource?,
                 completionFlagStore: ThrowingKeyValueStoring,
+                completionFlagKey: String = LegacyPixelStateMigration.completionFlagKey,
                 migrationVersion: String = AppVersion.shared.versionNumber) {
         self.destination = destination
         self.sources = [(dailyStore, "daily"),
                         (uniqueStore, "uniqueByName"),
                         (debounceStore, "debounce")]
         self.completionFlagStore = completionFlagStore
+        self.completionFlagKey = completionFlagKey
         self.migrationVersion = migrationVersion
     }
 
@@ -131,7 +140,7 @@ public struct LegacyPixelStateMigration {
         }
 
         logger.log("Migrated \(migrated, privacy: .public) legacy pixel last-fire dates into PixelKit")
-        try? completionFlagStore.set(migrationVersion, forKey: Self.completionFlagKey)
+        try? completionFlagStore.set(migrationVersion, forKey: completionFlagKey)
     }
 
     private var hasAlreadyRun: Bool {
@@ -142,7 +151,7 @@ public struct LegacyPixelStateMigration {
             // Anything that is not this version's string means "run": a missing value on a fresh
             // install, a different version on upgrade, or the `true` this key held before it became
             // version-keyed.
-            let flag = try completionFlagStore.object(forKey: Self.completionFlagKey)
+            let flag = try completionFlagStore.object(forKey: completionFlagKey)
             let alreadyRun = (flag as? String) == migrationVersion
             if !alreadyRun {
                 logger.log("Legacy pixel state migration has not run for version \(migrationVersion, privacy: .public) (last recorded: \(String(describing: flag), privacy: .public)); running")

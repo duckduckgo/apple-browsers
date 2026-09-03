@@ -50,11 +50,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
     let isProtectedDataAvailable: () -> Bool
     let maxAttempts: Int
 
-    /// When true, the protected-data gate only guards the relocation; completed /
-    /// not-needed migrations proceed on locked launches. When false, the legacy
-    /// behavior applies (any locked launch defers). Phased-rollout / kill switch.
-    let lockedLaunchFixEnabled: Bool
-
     private let stateStore: MigrationStateStore
     private let protectionDispatcher: ProtectionDispatcher
 
@@ -67,7 +62,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
          pixelFiring: DuckAiNativeStorageContainerMigrationPixelFiring = NullDuckAiNativeStorageContainerMigrationPixelFiring(),
          isProtectedDataAvailable: @escaping () -> Bool = { DuckAiNativeStorageContainerMigration.defaultIsProtectedDataAvailable() },
          maxAttempts: Int = DuckAiNativeStorageContainerMigration.defaultMaxAttempts,
-         lockedLaunchFixEnabled: Bool = true,
          protectionDispatcher: @escaping ProtectionDispatcher = { work in
              DispatchQueue.global(qos: .utility).async(execute: work)
          }) {
@@ -79,7 +73,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         self.isProtectedDataAvailable = isProtectedDataAvailable
         // 0 / negative would give up on the first failure.
         self.maxAttempts = max(1, maxAttempts)
-        self.lockedLaunchFixEnabled = lockedLaunchFixEnabled
         self.stateStore = MigrationStateStore(keyValueStore: keyValueStore, migrationKey: migrationKey)
         self.protectionDispatcher = protectionDispatcher
     }
@@ -88,10 +81,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
 
     @discardableResult
     func run() -> DuckAiNativeStorageContainerMigrationOutcome {
-        if !lockedLaunchFixEnabled, let deferred = deferIfProtectedDataUnavailable() {
-            return deferred
-        }
-
         do {
             return try performMigration()
         } catch let kvError as MigrationStateStore.ReadError {
@@ -129,7 +118,7 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
             return .proceed
         }
 
-        if lockedLaunchFixEnabled, let deferred = deferIfProtectedDataUnavailable() {
+        if let deferred = deferIfProtectedDataUnavailable() {
             return deferred
         }
 

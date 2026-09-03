@@ -71,7 +71,6 @@ public enum NativeMessagingFraming {
 
     /// Decodes the payload of a frame.
     public static func decodePayload(_ payload: Data) throws -> Any {
-        let message = try JSONSerialization.jsonObject(with: payload)
-        return message
+        try JSONSerialization.jsonObject(with: payload)
     }
 }

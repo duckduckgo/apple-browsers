@@ -16,14 +16,110 @@
 //  limitations under the License.
 //
 
+import AppKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import PreferencesUI_macOS
 import SwiftUI
 
 struct WebsitePermissionsView: View {
+
+    @ObservedObject var model: WebsitePermissionsViewModel
+
     var body: some View {
-        PreferencePane {
-            TextMenuTitle(UserText.websitePermissions)
-            Text("Website Content")
+        PreferencePane(UserText.websitePermissions) {
+            PreferencePaneSection(UserText.permissionsSection) {
+                VStack(spacing: 0) {
+                    ForEach(Array(model.rows.enumerated()), id: \.element.id) { index, row in
+                        WebsitePermissionRowView(row: row)
+
+                        if index < model.rows.count - 1 {
+                            Divider()
+                                .padding(.leading, 52)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .background(Color(designSystemColor: .containerFillSecondary))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
         }
+    }
+}
+
+private struct WebsitePermissionRowView: View {
+
+    let row: WebsitePermissionRow
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(nsImage: row.category.icon)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 20, height: 20)
+                .foregroundColor(Color(designSystemColor: .iconsSecondary))
+
+            HStack(spacing: 6) {
+                Text(row.category.title)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                if row.count > 0 {
+                    Text(verbatim: "•")
+                        .foregroundColor(Color(designSystemColor: .textTertiary))
+                    Text(verbatim: String(row.count))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                }
+            }
+
+            Spacer()
+        }
+        .font(.system(size: 13))
+        .padding(.horizontal, 16)
+        .frame(height: 56)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(row.category.accessibilityIdentifier)
+    }
+}
+
+private extension WebsitePermissionCategory {
+
+    var title: String {
+        switch self {
+        case .notifications:
+            return UserText.permissionNotification
+        case .location:
+            return UserText.permissionGeolocation
+        case .camera:
+            return UserText.permissionCamera
+        case .microphone:
+            return UserText.permissionMicrophone
+        case .externalApps:
+            return UserText.permissionCenterExternalApps
+        case .popups:
+            return UserText.permissionPopups
+        }
+    }
+
+    var icon: NSImage {
+        switch self {
+        case .notifications:
+            return DesignSystemImages.Glyphs.Size16.permissionsNotification
+        case .location:
+            return DesignSystemImages.Glyphs.Size16.permissionsLocation
+        case .camera:
+            return DesignSystemImages.Glyphs.Size16.permissionCamera
+        case .microphone:
+            return DesignSystemImages.Glyphs.Size16.permissionMicrophone
+        case .externalApps:
+            return DesignSystemImages.Glyphs.Size16.openIn
+        case .popups:
+            return DesignSystemImages.Glyphs.Size16.popupBlocked
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        "WebsitePermissions.\(self)"
     }
 }

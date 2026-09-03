@@ -24,11 +24,15 @@ import ConcurrencyExtensions
 import Foundation
 import FoundationExtensions
 
-final class PermissionManagerMock: PermissionManagerProtocol {
+final class PermissionManagerMock: PermissionManagerProtocol, WebsitePermissionManaging {
 
     var permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> {
         permissionSubject.eraseToAnyPublisher()
+    }
+    private let persistedPermissionsSubject = CurrentValueSubject<[WebsitePermissionEntry], Never>([])
+    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
+        persistedPermissionsSubject.eraseToAnyPublisher()
     }
 
     var savedPermissions = [String: [PermissionType: PersistedPermissionDecision]]()
@@ -65,15 +69,18 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
         setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType))
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = decision
+        publishPersistedPermissions()
     }
 
     func removePermission(forDomain domain: String, permissionType: PermissionType) {
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
+        publishPersistedPermissions()
     }
 
     var burnPermissionsCalled = false
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @MainActor @escaping (Result<Void, Error>) -> Void) {
         savedPermissions = savedPermissions.filter { fireproofDomains.isFireproof(fireproofDomain: $0.key) }
+        publishPersistedPermissions()
         burnPermissionsCalled = true
         MainActor.assumeMainThread {
             completion(.success(()))
@@ -104,6 +111,15 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     func respondToLastRequest(with decision: Bool) {
         guard let lastRequest = capturedRequests.last else { return }
         lastRequest.completion(decision)
+    }
+
+    private func publishPersistedPermissions() {
+        let entries = savedPermissions.flatMap { domain, permissions in
+            permissions.map { permissionType, decision in
+                WebsitePermissionEntry(domain: domain, permissionType: permissionType, decision: decision)
+            }
+        }
+        persistedPermissionsSubject.send(entries)
     }
 
 }

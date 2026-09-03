@@ -202,6 +202,42 @@ final class PermissionManagerTests: XCTestCase {
         }
     }
 
+    func testPersistedPermissionsPublisherContainsInitiallyLoadedPermissions() {
+        store.permissions = [.entity1, .entity2]
+        var receivedEntries = [WebsitePermissionEntry]()
+        let cancellable = manager.persistedPermissionsPublisher.sink { entries in
+            receivedEntries = entries
+        }
+
+        XCTAssertEqual(receivedEntries, [
+            WebsitePermissionEntry(
+                domain: PermissionEntity.entity2.domain.droppingWwwPrefix(),
+                permissionType: PermissionEntity.entity2.type,
+                decision: PermissionEntity.entity2.permission.decision
+            ),
+            WebsitePermissionEntry(
+                domain: PermissionEntity.entity1.domain,
+                permissionType: PermissionEntity.entity1.type,
+                decision: PermissionEntity.entity1.permission.decision
+            ),
+        ])
+        withExtendedLifetime(cancellable) {}
+    }
+
+    func testPersistedPermissionsPublisherUpdatesAfterPermissionRemoval() {
+        store.permissions = [.entity1]
+        var receivedEntries = [WebsitePermissionEntry]()
+        let cancellable = manager.persistedPermissionsPublisher.sink { entries in
+            receivedEntries = entries
+        }
+
+        manager.removePermission(forDomain: PermissionEntity.entity1.domain, permissionType: PermissionEntity.entity1.type)
+
+        XCTAssertTrue(receivedEntries.isEmpty)
+        XCTAssertTrue(manager.persistedPermissionTypes.isEmpty)
+        withExtendedLifetime(cancellable) {}
+    }
+
     func testWhenPermissionsBurnedThenTheyAreCleared() {
         store.permissions = [.entity1, .entity2]
 
@@ -216,6 +252,28 @@ final class PermissionManagerTests: XCTestCase {
                        .allow)
         XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity2.domain, permissionType: PermissionEntity.entity2.type),
                      .ask)
+    }
+
+    func testWhenPermissionsBurnedThenPersistedPermissionsPublisherIsUpdated() {
+        store.permissions = [.entity1, .entity2]
+        var receivedEntries = [WebsitePermissionEntry]()
+        let cancellable = manager.persistedPermissionsPublisher.sink { entries in
+            receivedEntries = entries
+        }
+        let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
+        fireproofDomains.add(domain: PermissionEntity.entity1.domain)
+
+        manager.burnPermissions(except: fireproofDomains) { _ in }
+
+        XCTAssertEqual(receivedEntries, [
+            WebsitePermissionEntry(
+                domain: PermissionEntity.entity1.domain,
+                permissionType: PermissionEntity.entity1.type,
+                decision: PermissionEntity.entity1.permission.decision
+            ),
+        ])
+        XCTAssertEqual(manager.persistedPermissionTypes, Set([PermissionEntity.entity1.type]))
+        withExtendedLifetime(cancellable) {}
     }
 
     func testWhenPermissionsForDomainsBurnedThenTheyAreCleared() {

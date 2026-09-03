@@ -1489,6 +1489,7 @@ final class BrowserTabViewController: NSViewController {
                 tabCollectionViewModel: tabCollectionViewModel,
                 privacyConfigurationManager: privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                websitePermissionManager: Application.appDelegate.permissionManager,
                 defaultBrowserPreferences: defaultBrowserPreferences,
                 downloadsPreferences: downloadsPreferences,
                 searchPreferences: searchPreferences,

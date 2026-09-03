@@ -52,6 +52,7 @@ enum Preferences {
 
         @ObservedObject var model: PreferencesSidebarModel
         @ObservedObject var themeManager: ThemeManager
+        @StateObject private var websitePermissionsModel: WebsitePermissionsViewModel
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
@@ -80,6 +81,7 @@ enum Preferences {
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
+            websitePermissionManager: WebsitePermissionManaging,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
@@ -94,6 +96,7 @@ enum Preferences {
             self.themeManager = themeManager
             self.aiChatURLSettings = aiChatURLSettings
             self.wideEvent = wideEvent
+            self._websitePermissionsModel = StateObject(wrappedValue: WebsitePermissionsViewModel(permissionManager: websitePermissionManager))
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
@@ -200,7 +203,7 @@ enum Preferences {
                 case .duckPlayer:
                     DuckPlayerView(model: model.duckPlayerPreferences)
                 case .websitePermissions:
-                    WebsitePermissionsView()
+                    WebsitePermissionsView(model: websitePermissionsModel)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()

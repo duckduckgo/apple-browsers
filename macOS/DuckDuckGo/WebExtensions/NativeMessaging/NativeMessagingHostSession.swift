@@ -50,6 +50,9 @@ final class NativeMessagingHostSession {
     private var errorTask: Task<Void, Never>?
     private var didFinish = false
 
+    /// Set when the process ends. The read loop still has to drain the pipe.
+    private var exitStatus: Int32?
+
     init(hostName: String, executable: URL, callerOrigin: String) {
         self.hostName = hostName
         process.executableURL = executable
@@ -65,26 +68,16 @@ final class NativeMessagingHostSession {
 
     @MainActor
     func start() throws {
-        // Capture the name, because the port may release this session before the handler runs.
-        let name = hostName
-
         process.terminationHandler = { [weak self] process in
             let status = process.terminationStatus
             Task { @MainActor [weak self] in
-                if status == 0 {
-                    Logger.webExtensions.debug("🔗 Host \(name, privacy: .public) ended normally")
-                } else {
-                    // Two causes look the same here. The host may have nothing to talk to,
-                    // as Bitwarden's proxy does without its desktop app. Or it refused us,
-                    // as 1Password's does for a browser it does not know. The refusal comes
-                    // as a message, so the preceding "sent N bytes, type …" line tells which.
-                    Logger.webExtensions.error("""
-                    ❌ Host \(name, privacy: .public) ended with status \(status, privacy: .public). \
-                    Either its companion app is absent, or the host refused us. \
-                    Any message it sent above names the reason.
-                    """)
-                }
-                self?.finish(with: SessionError.hostEnded)
+                guard let self else { return }
+                self.exitStatus = status
+
+                // Do not finish here. A host often writes its last message and exits at once,
+                // and that message explains why it exited. The read loop ends by itself when
+                // the pipe reaches EOF, and only then has it seen everything.
+                self.finishIfDrainStalls()
             }
         }
 
@@ -155,7 +148,10 @@ final class NativeMessagingHostSession {
         let handle = outputPipe.fileHandleForReading
         let name = hostName
 
-        readTask = Task.detached { [weak self] in
+        // A strong reference keeps the session alive until the pipe drains. Otherwise the
+        // port may release it first, and a final message would go unseen. `stop()` cancels
+        // this task, so the reference does not outlive the session's use.
+        readTask = Task.detached { [self] in
             do {
                 while !Task.isCancelled {
                     guard let prefix = try Self.readExactly(NativeMessagingFraming.prefixSize, from: handle) else {
@@ -169,19 +165,52 @@ final class NativeMessagingHostSession {
 
                     Logger.webExtensions.debug("🔗 Host \(name, privacy: .public) sent \(length, privacy: .public) bytes\(Self.kindSummary(of: message), privacy: .public)")
 
-                    await MainActor.run { [weak self] in
-                        self?.messageHandler?(message)
+                    await MainActor.run {
+                        self.messageHandler?(message)
                     }
                 }
-                await MainActor.run { [weak self] in
-                    self?.finish(with: nil)
+                await MainActor.run {
+                    self.finishAfterDrain()
                 }
             } catch {
                 Logger.webExtensions.error("❌ Read from host \(name, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-                await MainActor.run { [weak self] in
-                    self?.finish(with: error)
+                await MainActor.run {
+                    self.finish(with: error)
                 }
             }
+        }
+    }
+
+    /// Finishes once the pipe has no more to give, and reports how the host ended.
+    @MainActor
+    private func finishAfterDrain() {
+        guard !didFinish else { return }
+
+        if let exitStatus, exitStatus != 0 {
+            // Two causes look the same here. The host may have nothing to talk to, as
+            // Bitwarden's proxy does without its desktop app. Or it refused us, as
+            // 1Password's does for a browser it does not know. Any "sent N bytes, type …"
+            // line above names which.
+            Logger.webExtensions.error("""
+            ❌ Host \(self.hostName, privacy: .public) ended with status \(exitStatus, privacy: .public). \
+            Either its companion app is absent, or the host refused us. \
+            Any message it sent above names the reason.
+            """)
+            finish(with: SessionError.hostEnded)
+        } else {
+            Logger.webExtensions.debug("🔗 Host \(self.hostName, privacy: .public) ended normally")
+            finish(with: nil)
+        }
+    }
+
+    /// Backstop for a host that exits but leaves its output pipe open.
+    @MainActor
+    private func finishIfDrainStalls() {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 2 * NSEC_PER_SEC)
+            guard let self, !self.didFinish else { return }
+            Logger.webExtensions.error("❌ Host \(self.hostName, privacy: .public) ended, and its output never closed")
+            self.finishAfterDrain()
         }
     }
 

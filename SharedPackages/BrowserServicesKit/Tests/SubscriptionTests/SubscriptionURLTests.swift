@@ -379,16 +379,19 @@ final class SubscriptionURLTests: XCTestCase {
 
     // MARK: - First paywall, performance-optimized
 
-    // With `performanceOptimizedPaywalls` on, the two entry points this app opens itself become:
+    // With `performanceOptimizedPaywalls` on, the first paywall's three entry points become:
     //
     //     VPN      (no featurePage)      /subscriptions/new/mobile/vpn
     //     Duck.ai  (featurePage=duckai)  /subscriptions/new/mobile/duckai
+    //     PIR      (featurePage=pir)     /subscriptions/new/mobile/pir
     //
     //     trial=true|false   always stated
     //     pir=false          only when the offering excludes Personal Information Removal
-    //     origin             unchanged
+    //     origin             unchanged, along with every other query item
     //
-    // Everything else keeps today's URL: other featurePages, intercepted `/pro` links, desktop.
+    // Any other featurePage — `winback`, or one the frontend adds later — resolves to no entry point,
+    // so the rewrite returns nil and the caller keeps today's client-rendered URL. Intercepted `/pro`
+    // links are held back by the caller, in `SubscriptionContainerViewFactory`; desktop is untouched.
 
     func testFirstPaywallURLsWhenPerformanceOptimizedPaywallsIsOn() throws {
         // Given
@@ -396,7 +399,13 @@ final class SubscriptionURLTests: XCTestCase {
         let duckai = try XCTUnwrap(SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: nil,
                                                                                                 featurePage: "duckai",
                                                                                                 environment: .production)?.url)
+        let pir = try XCTUnwrap(SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: nil,
+                                                                                              featurePage: "pir",
+                                                                                              environment: .production)?.url)
 
+        // `pir` entry point with `pir=false` doesn't arise in practice — a user the offering excludes
+        // Personal Information Removal from never reaches the dashboard that hands us that URL — but the
+        // rule is stated uniformly across the three entry points rather than special-cased.
         let cases: [(url: URL, isTrialEligible: Bool, isPIRAvailable: Bool, expected: String)] = [
             (vpn, false, true, "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false"),
             (vpn, true, true, "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=true"),
@@ -405,7 +414,11 @@ final class SubscriptionURLTests: XCTestCase {
             (duckai, false, true, "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=false"),
             (duckai, true, true, "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=true"),
             (duckai, false, false, "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=false&pir=false"),
-            (duckai, true, false, "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=true&pir=false")
+            (duckai, true, false, "https://duckduckgo.com/subscriptions/new/mobile/duckai?trial=true&pir=false"),
+            (pir, false, true, "https://duckduckgo.com/subscriptions/new/mobile/pir?trial=false"),
+            (pir, true, true, "https://duckduckgo.com/subscriptions/new/mobile/pir?trial=true"),
+            (pir, false, false, "https://duckduckgo.com/subscriptions/new/mobile/pir?trial=false&pir=false"),
+            (pir, true, false, "https://duckduckgo.com/subscriptions/new/mobile/pir?trial=true&pir=false")
         ]
 
         for testCase in cases {
@@ -415,7 +428,7 @@ final class SubscriptionURLTests: XCTestCase {
                                                                      isPersonalInformationRemovalAvailable: testCase.isPIRAvailable)
 
             // Then
-            XCTAssertEqual(url?.absoluteString, testCase.expected)
+            XCTAssertEqual(url?.absoluteString, testCase.expected, "built from \(testCase.url.absoluteString)")
         }
     }
 
@@ -477,17 +490,67 @@ final class SubscriptionURLTests: XCTestCase {
     func testFirstPaywallURLUsesConfiguredPaths() throws {
         // Given
         let paths = SubscriptionURL.PerformanceOptimizedPaywallPaths(vpn: "/subscriptions/v2/vpn",
-                                                                    duckai: "/subscriptions/v2/duckai")
+                                                                    duckai: "/subscriptions/v2/duckai",
+                                                                    pir: "/subscriptions/v2/pir")
         let purchaseURL = SubscriptionURL.purchase.subscriptionURL(environment: .production)
+        let pirPurchaseURL = try XCTUnwrap(SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: nil,
+                                                                                                        featurePage: "pir",
+                                                                                                        environment: .production)?.url)
 
         // When
         let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: purchaseURL,
                                                                  paths: paths,
                                                                  isTrialEligible: false,
                                                                  isPersonalInformationRemovalAvailable: true)
+        let pirURL = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: pirPurchaseURL,
+                                                                    paths: paths,
+                                                                    isTrialEligible: false,
+                                                                    isPersonalInformationRemovalAvailable: true)
 
         // Then
         XCTAssertEqual(url?.absoluteString, "https://duckduckgo.com/subscriptions/v2/vpn?trial=false")
+        XCTAssertEqual(pirURL?.absoluteString, "https://duckduckgo.com/subscriptions/v2/pir?trial=false")
+    }
+
+    /// `featurePage`, `trial` and `pir` are the only names the rewrite owns. Everything the URL arrived
+    /// with — attribution, environment, experiment cohorts, whatever the frontend attached — carries
+    /// over in its original order.
+    func testFirstPaywallURLCarriesOverEveryOtherQueryItem() throws {
+        // Given
+        let purchaseURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions"
+                                            + "?origin=funnel_pir_ios"
+                                            + "&featurePage=pir"
+                                            + "&environment=staging"
+                                            + "&experiment_mobileannualtrials2_ios=treatment"
+                                            + "&using=something"))
+
+        // When
+        let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: purchaseURL,
+                                                                 isTrialEligible: true,
+                                                                 isPersonalInformationRemovalAvailable: true)
+
+        // Then
+        XCTAssertEqual(url?.absoluteString, "https://duckduckgo.com/subscriptions/new/mobile/pir"
+                       + "?origin=funnel_pir_ios"
+                       + "&environment=staging"
+                       + "&experiment_mobileannualtrials2_ios=treatment"
+                       + "&using=something"
+                       + "&trial=true")
+    }
+
+    /// A URL that already states `trial` or `pir` gets the rewrite's answer, not a second copy alongside
+    /// the stale one.
+    func testFirstPaywallURLStatesTrialAndPIROnlyOnce() throws {
+        // Given
+        let purchaseURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions?trial=true&pir=true"))
+
+        // When
+        let url = SubscriptionURL.performanceOptimizedPaywallURL(basedOn: purchaseURL,
+                                                                 isTrialEligible: false,
+                                                                 isPersonalInformationRemovalAvailable: false)
+
+        // Then
+        XCTAssertEqual(url?.absoluteString, "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false&pir=false")
     }
 
     func testFirstPaywallURLIsNotProducedForOtherFeaturePages() throws {

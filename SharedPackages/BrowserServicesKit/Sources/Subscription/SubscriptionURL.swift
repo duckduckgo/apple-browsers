@@ -212,6 +212,10 @@ extension SubscriptionURL {
         static let trial = "trial"
         /// Only ever `false`, and only when the offering excludes Personal Information Removal.
         static let personalInformationRemoval = "pir"
+
+        /// The names a pre-rendered paywall URL states for itself, and so drops from the URL it is
+        /// built from. Every other query item is carried over.
+        static let rewritten = [featurePage, trial, personalInformationRemoval]
     }
 }
 

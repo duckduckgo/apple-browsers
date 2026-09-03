@@ -53,11 +53,13 @@ final class PerformanceOptimizedPaywallsProviderTests: XCTestCase {
 
     func testPathsComeFromSettings() {
         // Given
+        // The shape shipped in `privacyPro.performanceOptimizedPaywalls.settings`.
         privacyConfig.subfeatureSettings = """
         {
             "entryPoints": {
                 "vpn": { "path": "/subscriptions/new/mobile/vpn" },
-                "duckai": { "path": "/subscriptions/new/mobile/duckai" }
+                "duckai": { "path": "/subscriptions/new/mobile/duckai" },
+                "pir": { "path": "/subscriptions/new/mobile/pir" }
             }
         }
         """
@@ -67,7 +69,8 @@ final class PerformanceOptimizedPaywallsProviderTests: XCTestCase {
 
         // Then
         XCTAssertEqual(paths, SubscriptionURL.PerformanceOptimizedPaywallPaths(vpn: "/subscriptions/new/mobile/vpn",
-                                                                              duckai: "/subscriptions/new/mobile/duckai"))
+                                                                              duckai: "/subscriptions/new/mobile/duckai",
+                                                                              pir: "/subscriptions/new/mobile/pir"))
     }
 
     func testPathsFallBackWhenSettingsAreAbsent() {
@@ -93,6 +96,27 @@ final class PerformanceOptimizedPaywallsProviderTests: XCTestCase {
         // Then
         XCTAssertEqual(paths.vpn, SubscriptionURL.PerformanceOptimizedPaywallPaths.default.vpn)
         XCTAssertEqual(paths.duckai, "/subscriptions/v2/duckai")
+        XCTAssertEqual(paths.pir, SubscriptionURL.PerformanceOptimizedPaywallPaths.default.pir)
+    }
+
+    func testPirPathFallsBackWhileTheOthersAreConfigured() {
+        // Given
+        privacyConfig.subfeatureSettings = """
+        {
+            "entryPoints": {
+                "vpn": { "path": "/subscriptions/v2/vpn" },
+                "duckai": { "path": "/subscriptions/v2/duckai" }
+            }
+        }
+        """
+
+        // When
+        let paths = makeProvider().paths
+
+        // Then
+        XCTAssertEqual(paths.vpn, "/subscriptions/v2/vpn")
+        XCTAssertEqual(paths.duckai, "/subscriptions/v2/duckai")
+        XCTAssertEqual(paths.pir, SubscriptionURL.PerformanceOptimizedPaywallPaths.default.pir)
     }
 
     func testPathsFallBackWhenSettingsAreNotValidJSON() {

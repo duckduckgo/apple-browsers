@@ -60,7 +60,8 @@ public struct DefaultPerformanceOptimizedPaywallsProvider: PerformanceOptimizedP
 
         return SubscriptionURL.PerformanceOptimizedPaywallPaths(
             vpn: settings.entryPoints?.vpn?.path ?? fallbackPaths.vpn,
-            duckai: settings.entryPoints?.duckai?.path ?? fallbackPaths.duckai
+            duckai: settings.entryPoints?.duckai?.path ?? fallbackPaths.duckai,
+            pir: settings.entryPoints?.pir?.path ?? fallbackPaths.pir
         )
     }
 
@@ -73,6 +74,7 @@ public struct DefaultPerformanceOptimizedPaywallsProvider: PerformanceOptimizedP
         struct EntryPoints: Decodable {
             let vpn: EntryPoint?
             let duckai: EntryPoint?
+            let pir: EntryPoint?
         }
 
         let entryPoints: EntryPoints?

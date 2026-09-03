@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import AppUpdaterShared
 import AutoconsentStats
 import BrowserServicesKit
@@ -107,7 +108,7 @@ typealias TabExtensionsBuilderArguments = (
     contentPublisher: AnyPublisher<Tab.TabContent, Never>,
     setContent: (Tab.TabContent) -> Void,
     closeTab: () -> Void,
-    reportBrokenSite: () -> Void,
+    reportBrokenSite: (NSWindow?) -> Void,
     titlePublisher: AnyPublisher<String?, Never>,
     errorPublisher: AnyPublisher<WKError?, Never>,
     userScriptsPublisher: AnyPublisher<UserScripts?, Never>,

@@ -286,7 +286,7 @@ extension AppDelegate {
         openReportBrokenSite(entryPoint: .report)
     }
 
-    func openReportBrokenSite(entryPoint: PrivacyDashboardEntryPoint) {
+    func openReportBrokenSite(entryPoint: PrivacyDashboardEntryPoint, in sourceWindow: NSWindow? = nil) {
         let privacyDashboardViewController = PrivacyDashboardViewController(
             privacyInfo: nil,
             entryPoint: entryPoint,
@@ -304,7 +304,9 @@ extension AppDelegate {
         privacyDashboardWindow = window
 
         DispatchQueue.main.async {
-            guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
+            let windowControllersManager = Application.appDelegate.windowControllersManager
+            guard let parentWindowController = windowControllersManager.mainWindowController(for: sourceWindow)
+                    ?? windowControllersManager.lastKeyMainWindowController,
                   let tabModel = parentWindowController.mainViewController.tabCollectionViewModel.selectedTabViewModel else {
                 assertionFailure("AppDelegate: Failed to present PrivacyDashboard")
                 return

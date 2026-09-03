@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKit
 import Combine
 import Common
 import FoundationExtensions
@@ -84,7 +85,7 @@ final class TabCrashRecoveryExtension {
     private let featureFlagger: FeatureFlagger
     private let crashLoopDetector: TabCrashLoopDetecting
     private let firePixel: (PixelKit.Event, [String: String]) -> Void
-    private let reportBrokenSite: () -> Void
+    private let reportBrokenSite: (NSWindow?) -> Void
     private let tabCrashAggregator: TabCrashAggregator
 
     private var cancellables = Set<AnyCancellable>()
@@ -99,7 +100,7 @@ final class TabCrashRecoveryExtension {
         firePixel: @escaping (PixelKit.Event, [String: String]) -> Void = { event, parameters in
             PixelKit.fire(event, frequency: .dailyAndStandard, withAdditionalParameters: parameters)
         },
-        reportBrokenSite: @escaping () -> Void,
+        reportBrokenSite: @escaping (NSWindow?) -> Void,
         tabCrashAggregator: TabCrashAggregator
     ) {
         self.featureFlagger = featureFlagger
@@ -139,7 +140,7 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             return .cancel
         }
 
-        reportBrokenSite()
+        reportBrokenSite(navigationAction.sourceFrame.webView?.window)
         return .cancel
     }
 

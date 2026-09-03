@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import FeatureFlags_macOS
 import Navigation
 import PixelKit
 import PrivacyConfig
+import SharedTestUtilities
 import WebKit
 import XCTest
 
@@ -67,6 +69,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
     var internalUserDeciderStore: MockInternalUserStoring!
     var featureFlagger: MockFeatureFlagger!
     var crashLoopDetector: CapturingTabCrashLoopDetector!
+    var window: MockWindow!
     var webView: ReloadCapturingWebView!
 
     var tabCrashTypes: [TabCrashType] = []
@@ -76,6 +79,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
     var firePixelCallCount: Int = 0
     var firePixelHandler: (PixelKit.Event, [String: String]) -> Void = { _, _ in }
     var reportBrokenSiteCallCount = 0
+    var reportBrokenSiteSourceWindow: NSWindow?
 
     @MainActor
     override func setUp() async throws {
@@ -85,11 +89,14 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
         webViewSubject = PassthroughSubject()
         webViewErrorSubject = PassthroughSubject()
         crashLoopDetector = CapturingTabCrashLoopDetector()
+        window = MockWindow()
         webView = ReloadCapturingWebView()
+        window.contentView = webView
 
         firePixelCallCount = 0
         firePixelHandler = { _, _ in }
         reportBrokenSiteCallCount = 0
+        reportBrokenSiteSourceWindow = nil
 
         tabCrashErrorPayloads = []
         cancellables.forEach { $0.cancel() }
@@ -105,8 +112,9 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
                 self.firePixelCallCount += 1
                 self.firePixelHandler($0, $1)
             },
-            reportBrokenSite: {
+            reportBrokenSite: { sourceWindow in
                 self.reportBrokenSiteCallCount += 1
+                self.reportBrokenSiteSourceWindow = sourceWindow
             },
             tabCrashAggregator: TabCrashAggregator()
         )
@@ -160,6 +168,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
         featureFlagger = nil
         internalUserDeciderStore = nil
         crashLoopDetector = nil
+        window = nil
         webView = nil
         tabCrashRecoveryExtension = nil
         contentSubject = nil
@@ -171,6 +180,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
         firePixelCallCount = 0
         firePixelHandler = { _, _ in }
         reportBrokenSiteCallCount = 0
+        reportBrokenSiteSourceWindow = nil
     }
 
     @MainActor
@@ -183,6 +193,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
 
         XCTAssertEqual(policy.debugDescription, "cancel")
         XCTAssertEqual(reportBrokenSiteCallCount, 1)
+        XCTAssertIdentical(reportBrokenSiteSourceWindow, window)
     }
 
     @MainActor

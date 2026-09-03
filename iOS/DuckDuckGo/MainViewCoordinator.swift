@@ -195,12 +195,14 @@ class MainViewCoordinator {
     }
 
     /// The pose for an omnibar hosted in the nav container. The collection view's alpha belongs to
-    /// this pose: the focus transition zeroes it, so only re-hosting can put it back.
+    /// this pose: the focus transition zeroes it, so only re-hosting can put it back — and only
+    /// while nothing else owns the surface, since a rotation can rebuild this layout mid-focus.
     private func applyOmnibarHostedInNavigationContainerPose() {
         navigationBarContainer.isHidden = false
         navigationBarContainer.alpha = 1
         navigationBarContainer.isUserInteractionEnabled = true
-        navigationBarCollectionView.alpha = isNavigationChromeHidden ? 0 : 1
+        let surfaceOwnedElsewhere = isNavigationChromeHidden || isUnifiedToggleInputVisible
+        navigationBarCollectionView.alpha = surfaceOwnedElsewhere ? 0 : 1
     }
 
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {

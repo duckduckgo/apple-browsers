@@ -1094,9 +1094,11 @@ extension MainViewController {
             && newTabPageViewController?.restingContentIsLogo == true
         let isSearchContentToSearchContent = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsSearchContent == true
-        let usesFlagOffTopPortraitLayout = (isFloatingUIEnabled, coordinator.cardPosition.isBottom, isPhoneLandscape)
-            == (false, false, false)
-        let searchOnlyContentToScroll = usesFlagOffTopPortraitLayout && isSearchContentToSearchContent
+        // Top portrait only: the focused List and the resting NTP share the same content top there
+        // (below the bar, whether the bar is legacy chrome or floating glass), so scrolling both to
+        // the top makes the handoff seamless.
+        let usesTopPortraitLayout = !coordinator.cardPosition.isBottom && !isPhoneLandscape
+        let searchOnlyContentToScroll = usesTopPortraitLayout && isSearchContentToSearchContent
             && !coordinator.isToggleVisible
             ? coordinator.contentViewController
             : nil

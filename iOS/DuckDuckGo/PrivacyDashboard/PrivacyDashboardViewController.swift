@@ -362,7 +362,7 @@ extension PrivacyDashboardViewController {
         return BrokenSiteReport(siteUrl: breakageAdditionalInfo.currentURL,
                                 category: category,
                                 description: description,
-                                osVersion: "\(ProcessInfo().operatingSystemVersion.majorVersion)",
+                                osVersion: AppVersion.shared.osVersionMajorMinorPatch,
                                 manufacturer: "Apple",
                                 upgradedHttps: breakageAdditionalInfo.httpsForced,
                                 tdsETag: ContentBlocking.shared.contentBlockingManager.currentMainRules?.etag ?? "",

@@ -600,7 +600,7 @@ final class AIChatContextualSheetCoordinator {
             if !didTrigger {
                 sessionState.clearProcessingNavigationFlag()
             }
-        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
+        } else if sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)

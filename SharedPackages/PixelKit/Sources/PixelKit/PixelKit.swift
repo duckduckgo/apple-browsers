@@ -693,7 +693,6 @@ public final class PixelKit {
                                            _ retryOnFailure: Bool,
                                            _ onComplete: @escaping CompletionBlock) {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
-        reportErrorIf(pixel: pixelName, endsWith: "_d")
         if !pixelHasBeenFiredDailyToday(pixelName) {
             do {
                 try updatePixelLastFireDate(pixelName: pixelName, frequency: .daily)

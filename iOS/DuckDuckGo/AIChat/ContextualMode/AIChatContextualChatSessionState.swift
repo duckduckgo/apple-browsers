@@ -242,10 +242,6 @@ final class AIChatContextualChatSessionState {
         aiChatSettings.isAutomaticContextAttachmentEnabled
     }
 
-    var supportsMultipleContexts: Bool {
-        featureFlagger.isFeatureOn(.multiplePageContexts)
-    }
-
     var showsSuggestionsStartSurface: Bool {
         featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
     }
@@ -509,11 +505,9 @@ final class AIChatContextualChatSessionState {
     }
 
     /// Sends a null context as a navigation signal.
-    /// Used when auto-collect is OFF but multiple contexts are supported,
-    /// so the FE can show the "Add page content" button for the new page.
+    /// Used when auto-collect is OFF, so the FE can show the "Ask about page"
+    /// button for the new page.
     func notifyFrontendOfMultiContextNavigation() {
-        guard supportsMultipleContexts else { return }
-
         var targets: PageContextDeliveryTargets = []
         if shouldDeliverToFrontendBridge(nil) {
             targets.insert(.frontendBridge)
@@ -693,14 +687,12 @@ final class AIChatContextualChatSessionState {
 
         let shouldDeliver: Bool
         switch frontendState {
-        case .chatWithoutInitialContext, .restoredChat:
+        case .chatWithoutInitialContext, .restoredChat, .chatWithInitialContext:
             shouldDeliver = true
-        case .chatWithInitialContext:
-            shouldDeliver = supportsMultipleContexts
         case .noChat:
             shouldDeliver = false
         }
-        Logger.aiChat.debug("[SessionState] shouldDeliverToFrontendBridge=\(shouldDeliver) (frontendState=\(self.frontendState), multipleContexts=\(self.supportsMultipleContexts), uti=\(self.isUnifiedToggleInputActive))")
+        Logger.aiChat.debug("[SessionState] shouldDeliverToFrontendBridge=\(shouldDeliver) (frontendState=\(self.frontendState), uti=\(self.isUnifiedToggleInputActive))")
         return shouldDeliver
     }
 

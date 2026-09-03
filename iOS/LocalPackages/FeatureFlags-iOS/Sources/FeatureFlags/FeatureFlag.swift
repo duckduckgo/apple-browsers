@@ -286,9 +286,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
     case aiChatAutoAttachContextByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
-    case multiplePageContexts
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217856366373963?focus=true
     case aiChatPdfPageContext
 
@@ -761,8 +758,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PageContextSubfeature.featureEnabled))
         case .aiChatAutoAttachContextByDefault:
             Config(source: .remoteReleasable(AIChatSubfeature.autoAttachContextByDefault))
-        case .multiplePageContexts:
-            Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts))
         case .aiChatPdfPageContext:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
         case .aiChatSync:

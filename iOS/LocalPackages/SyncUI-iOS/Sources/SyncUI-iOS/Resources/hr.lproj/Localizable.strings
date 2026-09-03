@@ -76,12 +76,6 @@
 /* Standard Buttons - Done Button */
 "done.button" = "Gotovo";
 
-/* Edit Device View - Header */
-"edit.device.header" = "Naziv uređaja";
-
-/* Edit Device View - Title */
-"edit.device.title" = "Uredi % @";
-
 /* Fetch Favicons Onboarding - Button Title */
 "fetch.favicons.onboarding.button.title" = "Održavaj ikone oznaka ažuriranima";
 
@@ -97,14 +91,8 @@
 /* No comment provided by engineer. */
 "Keep Development" = "Nastavi razvoj";
 
-/* Manually Enter Code View - Title */
-"manually.enter.code.title" = "Ručno unesi šifru";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Ne sada";
-
-/* Standard Buttons - Paste Button */
-"paste.button" = "Zalijepi";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Upravljanje knjižnim oznakama";
@@ -114,9 +102,6 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Upravljanje kreditnim karticama…";
-
-/* Preparing to sync title */
-"preparing.to.sync.title" = "Priprema za sinkronizaciju";
 
 /* Recover Synced Data Sheet - Button */
 "recover.synced.data.sheet.button" = "Oporavak sinkroniziranih podataka";
@@ -175,21 +160,6 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Oporavak";
 
-/* Sync settings 'Already set up' section header containing useful options */
-"sync.simplified.already.set.up.section.header" = "Je li već postavljena na drugom uređaju?";
-
-/* Prompt body text after enabling sync */
-"sync.simplified.another.device.body" = "Vaše knjižne oznake, podaci o automatskom popunjavanju i Duck.ai čavrljanja sigurnosno su pohranjeni. Sada ih sinkroniziraj s računalom ili tabletom.";
-
-/* Primary button to sync another device when sync is enabled */
-"sync.simplified.another.device.button" = "Sinkroniziraj drugi uređaj";
-
-/* Prompt secondary button */
-"sync.simplified.another.device.notnow" = "Ne sada";
-
-/* Prompt title after enabling sync */
-"sync.simplified.another.device.title" = "Sinkronizirati vaše podatke s drugim uređajem?";
-
 /* Body on the sync-setup prompt explaining the sync-another-device option */
 "sync.simplified.another.device.v2.body" = "Pomoći ćemo ti sinkronizirati uređaje.";
 
@@ -205,9 +175,6 @@
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Koristi iste omiljene oznake na mobilnim uređajima i računalima.";
 
-/* Text shown next to toggle while sync is being set up */
-"sync.simplified.connecting" = "Povezivanje u tijeku...";
-
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Opcija Sync & Backup šifrirana je metodom \"od kraja do kraja\" na svim tvojim uređajima.";
 
@@ -220,7 +187,7 @@
 /* Description on the device-added success screen explaining what the recovery code is for */
 "sync.simplified.device.added.v2.description" = "Upotrijebi ovaj kôd za vraćanje podataka ako izgubiš pristup svojim uređajima. Čuvaj ga na sigurnom.";
 
-/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title. */
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedTitle. */
 "sync.simplified.device.added.v2.fallback.device.name" = "Ovaj uređaj";
 
 /* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
@@ -256,26 +223,14 @@
 /* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.enter.code.steps" = "Idi na **Sync & Backup** › **Sinkroniziraj s drugim uređajem** › **Kopiraj tekstualni kôd**.";
 
-/* Title on the enter-code tab of the V2 scan screen */
+/* Title on the enter-code tab of the scan screen */
 "sync.simplified.enter.code.title" = "Unesi kôd za sinkronizaciju.";
-
-/* Button subtitle to get the DuckDuckGo desktop browser */
-"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo za Mac i Windows";
-
-/* Button title to get the DuckDuckGo desktop browser. */
-"sync.simplified.get.desktop.browser.title" = "Nabavi preglednik za PC";
 
 /* Row label to get the DuckDuckGo desktop browser */
 "sync.simplified.get.our.desktop.browser.title" = "Preuzmi naš preglednik za računalo";
 
 /* Sync setup row label to recover synced data using an existing recovery code */
 "sync.simplified.have.recovery.code.button" = "Imam kôd za oporavak";
-
-/* Description of the Sync & Backup feature (when AI chat sync is available) */
-"sync.simplified.header.message" = "Spremi svoje oznake, podatke automatskog popunjavanja i Duck.ai čavrljanja te ih sinkroniziraj između svojih uređaja pomoću end-to-end enkripcije.";
-
-/* Description of the Sync & Backup feature */
-"sync.simplified.header.message.basic" = "Spremi svoje knjižne oznake i podatke za automatsko popunjavanje te ih sinkroniziraj između uređaja pomoću end-to-end enkripcije.";
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic.v2" = "Sinkroniziraj svoje podatke za automatsko popunjavanje i oznake u svim svojim aplikacijama DuckDuckGo, uz end-to-end enkripciju.";
@@ -319,9 +274,6 @@
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "Aplikacija DuckDuckGo";
 
-/* Floating prompt over QR code scanner preview */
-"sync.simplified.scan-or-view-code.camera.prompt" = "Usmjeri kameru prema QR-u za skeniranje";
-
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Povezivanje u tijeku...";
 
@@ -334,43 +286,19 @@
 /* Title of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.title" = "Zalijepi kôd u aplikaciju svog drugog uređaja";
 
-/* Button to navigate to manual sync code entry */
-"sync.simplified.scan-or-view-code.manually.enter.code" = "Ručno unesi šifru";
-
-/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
-"sync.simplified.scan-or-view-code.paste.code.instructions" = "Idi na **Postavke > Sync & Backup > Sinkroniziraj s drugim uređajem** i odaberi **Prikaži tekstualni kôd** u aplikaciji DuckDuckGo na drugom sinkroniziranom uređaju i zalijepi kod ovdje da bi sinkronizirao ovaj uređaj.";
-
 /* Status text while verifying a pasted sync code */
 "sync.simplified.scan-or-view-code.paste.code.verifying" = "Potvrda šifre u tijeku";
-
-/* First line of QR code scanning instructions */
-"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Otvori aplikaciju DuckDuckGo na svom drugom uređaju.";
-
-/* Second line of QR code scanning instructions */
-"sync.simplified.scan-or-view-code.scan.instructions.line2" = "QR kôd pronađi u Postavke > Sync & Backup > Sinkronizacija s drugim uređajem.";
 
 /* Title of button to share a sync code */
 "sync.simplified.scan-or-view-code.share" = "Podijeli kôd";
 
-/* Button title to show QR code scanner */
-"sync.simplified.scan-or-view-code.tab.scan" = "Skeniraj QR kôd";
-
-/* Button title to view your sync code */
-"sync.simplified.scan-or-view-code.tab.view.code" = "Pogledaj kôd";
-
-/* Navigation title for simplified QR scanning screen */
-"sync.simplified.scan-or-view-code.title" = "Sinkroniziraj svoje uređaje";
-
-/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Skeniraj ili zalijepi ovaj kôd u aplikaciju svog drugog";
-
-/* Close button in the V2 scan screen navigation bar */
+/* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Zatvori";
 
 /* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo za osobno računalo";
 
-/* Heading overlaid on the camera on the scan-QR tab of the V2 scan screen */
+/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
 "sync.simplified.scan.v2.qr.heading" = "Skeniraj QR kôd za sinkronizaciju.";
 
 /* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
@@ -382,10 +310,10 @@
 /* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.scan.v2.qr.steps" = "i idi na **Sync & Backup** › **Sinkroniziraj s drugim uređajem**";
 
-/* V2 segmented control tab title for entering a code */
+/* Segmented control tab title for entering a code */
 "sync.simplified.scan.v2.tab.enter.code" = "Unesi kôd";
 
-/* V2 segmented control tab title for scanning a QR code */
+/* Segmented control tab title for scanning a QR code */
 "sync.simplified.scan.v2.tab.scan.qr" = "Skeniraj QR";
 
 /* Status label shown next to the title when Sync & Backup is disabled */
@@ -409,14 +337,8 @@
 /* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
 "sync.simplified.this.device.only" = "Sinkroniziraj samo ovaj uređaj";
 
-/* Sync & Backup enabled / disabled toggle title */
-"sync.simplified.toggle.title" = "Sinkronizacija i sigurnosno kopiranje";
-
 /* Sync & Backup enabled / disabled toggle title, referring to the current device */
 "sync.simplified.toggle.title.this.device" = "Sinkroniziraj ovaj uređaj";
-
-/* Use Recovery Code sync setup button label */
-"sync.simplified.use.recovery.code.button" = "Upotrijebi kôd za oporavak";
 
 /* Sync With Another Device sync setup button label */
 "sync.simplified.with.another.device.button" = "Sinkronizacija s drugim uređajem";
@@ -432,9 +354,6 @@
 
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "Sinkronizacija i sigurnosno kopiranje nisu dostupni";
-
-/* Synced Devices - Section Header */
-"synced.devices.section.header" = "Sinkronizirani uređaji";
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Ovaj uređaj";

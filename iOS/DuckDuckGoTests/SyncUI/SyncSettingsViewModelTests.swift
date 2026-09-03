@@ -383,7 +383,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.showAutoRestoreReadyCallCount, 0)
     }
 
-    func testWhenShowSyncAnotherDevicePromptFromToggleV2AndNoPreservedAccountThenPromptIsShownWithoutCreatingAccount() async {
+    func testWhenEnablingSyncWithNoPreservedAccountThenPromptIsShownWithoutCreatingAccount() async {
         let delegate = MockSyncSettingsViewModelDelegate()
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
 
@@ -396,7 +396,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
                 }
             }
 
-        sut.showSyncAnotherDevicePromptFromToggleV2()
+        sut.enableSyncToggleTapped()
 
         await fulfillment(of: [promptShownExpectation], timeout: 1.0)
         _ = cancellable
@@ -405,21 +405,21 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(sut.isBusy)
     }
 
-    func testWhenShowSyncAnotherDevicePromptFromToggleV2AndPreservedAccountNeededThenAutoRestorePromptIsShownWithV2Continuation() async {
+    func testWhenEnablingSyncWithPreservedAccountNeededThenAutoRestorePromptIsShown() async {
         let delegate = MockSyncSettingsViewModelDelegate()
         delegate.isPreservedAccountPromptNeededValue = true
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
 
-        let expectation = expectation(description: "Auto-restore ready prompt shown for V2 toggle flow")
+        let expectation = expectation(description: "Auto-restore ready prompt shown for toggle flow")
         delegate.onShowAutoRestoreReady = {
             expectation.fulfill()
         }
 
-        sut.showSyncAnotherDevicePromptFromToggleV2()
+        sut.enableSyncToggleTapped()
 
         await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssertNil(sut.connectingSheetPhase)
-        XCTAssertEqual(delegate.showAutoRestoreReadyContinuations, [.setup(.simplifiedToggleV2)])
+        XCTAssertEqual(delegate.showAutoRestoreReadyContinuations, [.setup(.simplifiedToggle)])
         XCTAssertEqual(delegate.simplifiedCreateAccountAndStartSyncingCallCount, 0)
     }
 

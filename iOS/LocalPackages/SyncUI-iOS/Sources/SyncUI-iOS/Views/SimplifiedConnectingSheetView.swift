@@ -1,5 +1,5 @@
 //
-//  SimplifiedConnectingSheetViewV2.swift
+//  SimplifiedConnectingSheetView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -20,7 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 
-public struct SimplifiedConnectingSheetViewV2: View {
+public struct SimplifiedConnectingSheetView: View {
 
     @ObservedObject public var model: SyncSettingsViewModel
 
@@ -32,15 +32,15 @@ public struct SimplifiedConnectingSheetViewV2: View {
         ZStack {
             switch model.connectingSheetPhase {
             case .syncAnotherDevice:
-                SyncAnotherDevicePromptViewV2(model: model)
+                SyncAnotherDevicePromptView(model: model)
             case .connecting(let isRecovery, let isFinishing):
-                SimplifiedConnectingContentViewV2(
+                SimplifiedConnectingContentView(
                     isRecovery: isRecovery,
                     isFinishing: isFinishing,
                     onAnimationFinished: { model.connectingAnimationDidFinish() }
                 )
             case .success(let isRecovery):
-                SyncSuccessViewV2(model: model, isRecovery: isRecovery)
+                SyncSuccessView(model: model, isRecovery: isRecovery)
             case .none:
                 EmptyView()
             }
@@ -52,36 +52,36 @@ public struct SimplifiedConnectingSheetViewV2: View {
 #if DEBUG
 #Preview("Connecting") {
     RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
     }
 }
 
 #Preview("Connecting – Dark") {
     RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
     }
     .preferredColorScheme(.dark)
 }
 
 #Preview("Sync Another Device") {
     RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .syncAnotherDevice(isConnecting: false)))
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .syncAnotherDevice(isConnecting: false)))
     }
 }
 
 #Preview("Device Connected") {
     RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .success(isRecovery: false)))
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(isRecovery: false)))
     }
 }
 
 
 #Preview("Recovering") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting(isRecovery: true)))
+    SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .connecting(isRecovery: true)))
 }
 
 #Preview("Recovery Completed") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .success(isRecovery: true)))
+    SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(isRecovery: true)))
 }
 
 private extension SyncSettingsViewModel {

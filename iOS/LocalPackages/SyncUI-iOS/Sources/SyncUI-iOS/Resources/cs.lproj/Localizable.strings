@@ -76,12 +76,6 @@
 /* Standard Buttons - Done Button */
 "done.button" = "Hotovo";
 
-/* Edit Device View - Header */
-"edit.device.header" = "Název zařízení";
-
-/* Edit Device View - Title */
-"edit.device.title" = "Upravit %@";
-
 /* Fetch Favicons Onboarding - Button Title */
 "fetch.favicons.onboarding.button.title" = "Nechat ikony záložek aktualizované";
 
@@ -97,14 +91,8 @@
 /* No comment provided by engineer. */
 "Keep Development" = "Nechat vývojovou verzi";
 
-/* Manually Enter Code View - Title */
-"manually.enter.code.title" = "Ruční zadání kódu";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Teď ne";
-
-/* Standard Buttons - Paste Button */
-"paste.button" = "Vložit";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Spravovat záložky";
@@ -114,9 +102,6 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Spravovat platební karty…";
-
-/* Preparing to sync title */
-"preparing.to.sync.title" = "Příprava na synchronizaci";
 
 /* Recover Synced Data Sheet - Button */
 "recover.synced.data.sheet.button" = "Obnovení synchronizovaných dat";
@@ -175,21 +160,6 @@
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Obnova";
 
-/* Sync settings 'Already set up' section header containing useful options */
-"sync.simplified.already.set.up.section.header" = "Už máš nastaveno na jiném zařízení?";
-
-/* Prompt body text after enabling sync */
-"sync.simplified.another.device.body" = "Záložky, data pro automatické vyplnění a chaty Duck.ai jsou bezpečně zálohované. Nyní je můžeš synchronizovat s počítačem nebo tabletem.";
-
-/* Primary button to sync another device when sync is enabled */
-"sync.simplified.another.device.button" = "Synchronizovat s jiným zařízením";
-
-/* Prompt secondary button */
-"sync.simplified.another.device.notnow" = "Teď ne";
-
-/* Prompt title after enabling sync */
-"sync.simplified.another.device.title" = "Synchronizovat data s jiným zařízením?";
-
 /* Body on the sync-setup prompt explaining the sync-another-device option */
 "sync.simplified.another.device.v2.body" = "Pomůžeme ti synchronizovat tvá zařízení.";
 
@@ -205,9 +175,6 @@
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Používej stejné oblíbené záložky na mobilu i počítači.";
 
-/* Text shown next to toggle while sync is being set up */
-"sync.simplified.connecting" = "Připojování...";
-
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Funkce Sync & Backup používá end-to-end šifrování na všech tvých zařízeních.";
 
@@ -220,7 +187,7 @@
 /* Description on the device-added success screen explaining what the recovery code is for */
 "sync.simplified.device.added.v2.description" = "Tenhle kód můžeš použít k obnovení svých dat, pokud ztratíš přístup ke svým zařízením. Bezpečně si ho ulož.";
 
-/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title. */
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedTitle. */
 "sync.simplified.device.added.v2.fallback.device.name" = "Tohle zařízení";
 
 /* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
@@ -256,26 +223,14 @@
 /* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.enter.code.steps" = "Přejdi do **Sync & Backup** › **Synchronizace s jiným zařízením** › **Zkopírovat textový kód**.";
 
-/* Title on the enter-code tab of the V2 scan screen */
+/* Title on the enter-code tab of the scan screen */
 "sync.simplified.enter.code.title" = "Zadej kód Sync.";
-
-/* Button subtitle to get the DuckDuckGo desktop browser */
-"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo pro Mac a Windows";
-
-/* Button title to get the DuckDuckGo desktop browser. */
-"sync.simplified.get.desktop.browser.title" = "Nainstalovat prohlížeč pro počítač";
 
 /* Row label to get the DuckDuckGo desktop browser */
 "sync.simplified.get.our.desktop.browser.title" = "Nainstaluj si náš prohlížeč pro počítač";
 
 /* Sync setup row label to recover synced data using an existing recovery code */
 "sync.simplified.have.recovery.code.button" = "Mám kód pro obnovení";
-
-/* Description of the Sync & Backup feature (when AI chat sync is available) */
-"sync.simplified.header.message" = "Ukládej si záložky, data pro automatické vyplnění a chaty Duck.ai a synchronizuj je mezi svými zařízeními se šifrováním end-to-end.";
-
-/* Description of the Sync & Backup feature */
-"sync.simplified.header.message.basic" = "Ukládej si záložky a data pro automatické vyplnění a synchronizuj je mezi svými zařízeními se šifrováním end-to-end.";
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic.v2" = "Synchronizuj si data pro automatické vyplnění a záložky ve všech svých aplikacích DuckDuckGo se šifrováním end-to-end.";
@@ -319,9 +274,6 @@
 /* Part of instruction prompt referring to the DuckDuckGo app. */
 "sync.simplified.scan-or-view-code.app.name" = "Aplikace DuckDuckGo";
 
-/* Floating prompt over QR code scanner preview */
-"sync.simplified.scan-or-view-code.camera.prompt" = "Namiř fotoaparát na QR kód a naskenuj ho";
-
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Připojování...";
 
@@ -334,43 +286,19 @@
 /* Title of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.title" = "Vlož kód do svého druhého zařízení.";
 
-/* Button to navigate to manual sync code entry */
-"sync.simplified.scan-or-view-code.manually.enter.code" = "Ruční zadání kódu";
-
-/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
-"sync.simplified.scan-or-view-code.paste.code.instructions" = "V aplikaci DuckDuckGo na synchronizovaném zařízení přejdi do **Nastavení > Sync & Backup > Synchronizovat s jiným zařízením** a vyber **Zobrazit textový kód**. Pro synchronizaci tohoto zařízení stačí už jen vložit kód.";
-
 /* Status text while verifying a pasted sync code */
 "sync.simplified.scan-or-view-code.paste.code.verifying" = "Ověřování kódu";
-
-/* First line of QR code scanning instructions */
-"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Otevři aplikaci DuckDuckGo na druhém zařízení.";
-
-/* Second line of QR code scanning instructions */
-"sync.simplified.scan-or-view-code.scan.instructions.line2" = "QR kód najdeš v Nastavení > Sync & Backup > Synchronizace s jiným zařízením.";
 
 /* Title of button to share a sync code */
 "sync.simplified.scan-or-view-code.share" = "Sdílet kód";
 
-/* Button title to show QR code scanner */
-"sync.simplified.scan-or-view-code.tab.scan" = "Skenování QR kódu";
-
-/* Button title to view your sync code */
-"sync.simplified.scan-or-view-code.tab.view.code" = "Zobrazit kód";
-
-/* Navigation title for simplified QR scanning screen */
-"sync.simplified.scan-or-view-code.title" = "Synchronizace tvých zařízení";
-
-/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Naskenuj nebo vlož tento kód na druhém zařízení.";
-
-/* Close button in the V2 scan screen navigation bar */
+/* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Zavřít";
 
 /* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo pro počítač";
 
-/* Heading overlaid on the camera on the scan-QR tab of the V2 scan screen */
+/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
 "sync.simplified.scan.v2.qr.heading" = "Naskenuj QR kód.";
 
 /* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
@@ -382,10 +310,10 @@
 /* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.scan.v2.qr.steps" = "a přejdi do **Sync & Backup** › **Synchronizace s jiným zařízením**";
 
-/* V2 segmented control tab title for entering a code */
+/* Segmented control tab title for entering a code */
 "sync.simplified.scan.v2.tab.enter.code" = "Zadej kód";
 
-/* V2 segmented control tab title for scanning a QR code */
+/* Segmented control tab title for scanning a QR code */
 "sync.simplified.scan.v2.tab.scan.qr" = "Naskenuj QR kód";
 
 /* Status label shown next to the title when Sync & Backup is disabled */
@@ -409,14 +337,8 @@
 /* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
 "sync.simplified.this.device.only" = "Synchronizovat pouze toto zařízení";
 
-/* Sync & Backup enabled / disabled toggle title */
-"sync.simplified.toggle.title" = "Synchronizace a zálohování";
-
 /* Sync & Backup enabled / disabled toggle title, referring to the current device */
 "sync.simplified.toggle.title.this.device" = "Synchronizovat toto zařízení";
-
-/* Use Recovery Code sync setup button label */
-"sync.simplified.use.recovery.code.button" = "Použít kód pro obnovení";
 
 /* Sync With Another Device sync setup button label */
 "sync.simplified.with.another.device.button" = "Synchronizovat s jiným zařízením";
@@ -432,9 +354,6 @@
 
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "Synchronizace a zálohování není k dispozici";
-
-/* Synced Devices - Section Header */
-"synced.devices.section.header" = "Synchronizovaná zařízení";
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Tohle zařízení";

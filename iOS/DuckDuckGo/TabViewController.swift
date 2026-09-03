@@ -4452,16 +4452,19 @@ extension TabViewController: UserContentControllerDelegate {
 
     @objc
     func onReportBrokenSiteFromErrorPage() {
+        let entryPoint: PrivacyDashboardEntryPoint
         switch actionableErrorPage {
         case .tabTermination:
             tabTerminationErrorPageInstrumentation.sendFeedbackSelected()
+            entryPoint = .webKitTerminationErrorPage
         case .safariRedirectLoop:
             SafariRedirectPixel.reportBrokenSiteFromErrorPage.fireDailyAndCount()
+            entryPoint = .errorPage
         case nil:
             return
         }
 
-        delegate?.tabDidRequestReportBrokenSite(tab: self, entryPoint: .errorPage)
+        delegate?.tabDidRequestReportBrokenSite(tab: self, entryPoint: entryPoint)
     }
 
 }

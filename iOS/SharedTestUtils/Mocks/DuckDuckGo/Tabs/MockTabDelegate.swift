@@ -42,6 +42,7 @@ final class MockTabDelegate: TabDelegate {
     private(set) var didRequestFireButtonPulseCalled = false
     private(set) var tabDidRequestPrivacyDashboardButtonPulseCalled = false
     private(set) var privacyDashboardAnimated: Bool?
+    private(set) var reportBrokenSiteEntryPoints: [PrivacyDashboardEntryPoint] = []
     var isAIChatEnabled = false
     var isEmailProtectionSignedIn = false
 
@@ -75,7 +76,9 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didChangePrivacyInfo privacyInfo: PrivacyDashboard.PrivacyInfo?) {}
 
-    func tabDidRequestReportBrokenSite(tab: DuckDuckGo.TabViewController, entryPoint: PrivacyDashboardEntryPoint) {}
+    func tabDidRequestReportBrokenSite(tab: DuckDuckGo.TabViewController, entryPoint: PrivacyDashboardEntryPoint) {
+        reportBrokenSiteEntryPoints.append(entryPoint)
+    }
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestToggleReportWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {}
 

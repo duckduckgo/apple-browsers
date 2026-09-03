@@ -380,7 +380,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                                             setContent: { tabGetter()?.setContent($0) },
                                                                             closeTab: { tabGetter().map { $0.delegate?.closeTab($0) } },
                                                                             reportBrokenSite: { sourceWindow in
-                                                                                Application.appDelegate.openReportBrokenSite(entryPoint: .errorPage, in: sourceWindow)
+                                                                                Application.appDelegate.openReportBrokenSite(entryPoint: .webKitTerminationErrorPage, in: sourceWindow)
                                                                             },
                                                                             titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
                                                                             errorPublisher: _error.projectedValue.eraseToAnyPublisher(),

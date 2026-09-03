@@ -33,7 +33,7 @@ struct PreferencesSection: Hashable, Identifiable {
                                 includingSync: Bool,
                                 includingAIChat: Bool,
                                 includingYouTubeAdBlocking: Bool,
-                                includingWebsitePermissions: Bool = false,
+                                includingWebsitePermissions: Bool,
                                 subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         var privacyPanes: [PreferencePaneIdentifier] = [
             .defaultBrowser, .privateSearch, .webTrackingProtection, .threatProtection, .cookiePopupProtection, .emailProtection

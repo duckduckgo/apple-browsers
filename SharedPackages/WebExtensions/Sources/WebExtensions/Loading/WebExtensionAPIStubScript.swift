@@ -48,6 +48,15 @@ import Foundation
 /// frame succeeds under WebKit is not measured yet; this turns a silent no-op into a real attempt,
 /// and the outcome shows up in the extension's own logs.
 ///
+/// `chrome.permissions` is the mirror image of a missing namespace: WebKit defines it, but it
+/// validates permission names against the set it implements and *throws* for every other name —
+/// `permissions.contains({permissions: ["privacy"]})` fails with "'privacy' is not a valid
+/// permission" where Chrome simply answers `false`. Extensions probe their optional permissions at
+/// startup and do not wrap the probe in a try block: Bitwarden's popup calls
+/// `permissionsGranted(["privacy"])` during Angular bootstrap, and the throw takes the whole popup
+/// down. The script therefore wraps `contains`, `request` and `remove` so they answer the Chrome
+/// way — see makePermissionsMethod below — while leaving `getAll` and the events alone.
+///
 /// Two behaviors of the host are worth calling out, both established by measurement on macOS 26.6.2:
 /// - `chrome.webNavigation`, `chrome.tabs` and friends are native wrapper objects that WebKit
 ///   discards once JavaScript stops referencing them, taking any property we added with them: an
@@ -386,9 +395,140 @@ enum WebExtensionAPIStubScript {
             }
         }
 
+        // WebKit checks every name handed to `chrome.permissions` against the permissions it
+        // implements and rejects the whole call for one it does not recognize, where Chrome answers
+        // `false`. The wrappers below ask the host for the descriptor as given first — so a host that
+        // knows every name behaves exactly as before — and only translate when that call comes back
+        // with the validation error, which they recognize by message since no error code is exposed.
+        var invalidPermissionPattern = /is not a valid permission|invalid.*permission/i;
+        var reportedUnknownPermissions = Object.create(null);
+        var wrappedMarkerName = "__ddgWrapped";
+        var wrappedPermissionsMethods = [
+            { name: "contains", unknownNameFails: true },
+            { name: "request", unknownNameFails: true },
+            { name: "remove", unknownNameFails: false }
+        ];
+
+        function isInvalidPermissionError(error) {
+            if (error === undefined || error === null) {
+                return false;
+            }
+            var message = error.message === undefined || error.message === null ? String(error) : String(error.message);
+            return invalidPermissionPattern.test(message);
+        }
+
+        function reportUnknownPermission(name) {
+            if (reportedUnknownPermissions[name]) {
+                return;
+            }
+            reportedUnknownPermissions[name] = true;
+            console.info("[DuckDuckGo] The host does not implement the '" + name
+                + "' permission; answering the way Chrome would instead of throwing");
+        }
+
+        // Always hands back a promise, so a host that throws synchronously and one that rejects take
+        // the same path through the wrapper.
+        function callPermissionsMethod(method, owner, descriptor) {
+            try {
+                return Promise.resolve(method.call(owner, descriptor));
+            } catch (error) {
+                return Promise.reject(error);
+            }
+        }
+
+        // Asks about a single descriptor, reporting whether the host recognized it rather than
+        // letting one unrecognized name take the surrounding query down. Errors that are not the
+        // validation error are real failures and travel on untouched.
+        function probePermissionsDescriptor(method, owner, descriptor, name) {
+            return callPermissionsMethod(method, owner, descriptor).then(function(result) {
+                return { isKnown: true, isSatisfied: result === true };
+            }, function(error) {
+                if (!isInvalidPermissionError(error)) {
+                    throw error;
+                }
+                if (name !== undefined) {
+                    reportUnknownPermission(name);
+                }
+                return { isKnown: false, isSatisfied: false };
+            });
+        }
+
+        function probePermissionsIndividually(method, owner, descriptor) {
+            var names = descriptor && Array.isArray(descriptor.permissions) ? descriptor.permissions : [];
+            var origins = descriptor && Array.isArray(descriptor.origins) ? descriptor.origins : [];
+            var probes = names.map(function(name) {
+                return probePermissionsDescriptor(method, owner, { permissions: [name] }, name);
+            });
+            if (origins.length > 0) {
+                // Origins are never the reason for the validation error, so they stay one call.
+                probes.push(probePermissionsDescriptor(method, owner, { origins: origins }, undefined));
+            }
+            return Promise.all(probes);
+        }
+
+        // `contains` and `request` cannot honestly answer `true` for a name the host does not know —
+        // it can neither hold nor grant such a permission — so an unknown name makes the whole answer
+        // `false`. `remove` has nothing to remove for one, so it ignores it and reports on the rest.
+        function combinePermissionOutcomes(outcomes, unknownNameFails) {
+            var isSatisfied = true;
+            for (var index = 0; index < outcomes.length; index++) {
+                if (!outcomes[index].isKnown) {
+                    if (unknownNameFails) {
+                        return false;
+                    }
+                } else if (!outcomes[index].isSatisfied) {
+                    isSatisfied = false;
+                }
+            }
+            return isSatisfied;
+        }
+
+        // The wrapper binds its owner, so destructured calls — `const {contains} = chrome.permissions`
+        // — keep working, and it answers both API styles the way the method it replaces did.
+        function makePermissionsMethod(owner, methodName, unknownNameFails) {
+            var original = owner[methodName];
+            if (typeof original !== "function" || original[wrappedMarkerName] === true) {
+                return null;
+            }
+
+            var wrapper = function(descriptor) {
+                var callback = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
+                var promise = callPermissionsMethod(original, owner, descriptor).catch(function(error) {
+                    if (!isInvalidPermissionError(error)) {
+                        throw error;
+                    }
+                    return probePermissionsIndividually(original, owner, descriptor).then(function(outcomes) {
+                        return combinePermissionOutcomes(outcomes, unknownNameFails);
+                    });
+                });
+                if (typeof callback === "function") {
+                    promise.then(function(value) {
+                        invokeCallback(callback, value);
+                    }, function() {
+                        // A real failure is reported through the returned promise; Chrome's callback
+                        // form stays silent for it, so there is nothing to hand the callback here.
+                    });
+                }
+                return promise;
+            };
+
+            try {
+                Object.defineProperty(wrapper, wrappedMarkerName, {
+                    value: true,
+                    writable: false,
+                    enumerable: false,
+                    configurable: true
+                });
+            } catch (error) {
+                console.info("[DuckDuckGo] Could not mark the chrome.permissions." + methodName + " wrapper: " + error);
+            }
+            return wrapper;
+        }
+
         var stubbedNamespaces = [];
         var stubbedMembers = [];
         var stubbedGlobals = [];
+        var wrappedNamespaces = [];
 
         missingNamespaces.forEach(function(namespace) {
             try {
@@ -425,6 +565,26 @@ enum WebExtensionAPIStubScript {
             }
         });
 
+        // `chrome.permissions` exists; only the three methods that validate names are replaced, so
+        // `getAll` and the `onAdded`/`onRemoved` events stay exactly as the host defined them.
+        try {
+            var permissions = api.permissions;
+            if (permissions !== undefined && permissions !== null) {
+                var wrappedMethodNames = [];
+                wrappedPermissionsMethods.forEach(function(method) {
+                    var wrapper = makePermissionsMethod(permissions, method.name, method.unknownNameFails);
+                    if (wrapper !== null && define(permissions, method.name, wrapper)) {
+                        wrappedMethodNames.push(method.name);
+                    }
+                });
+                if (wrappedMethodNames.length > 0) {
+                    wrappedNamespaces.push("permissions");
+                }
+            }
+        } catch (error) {
+            console.info("[DuckDuckGo] Could not wrap chrome.permissions: " + error);
+        }
+
         // An MV3 background page is not a service worker, but extensions that detect MV3 Chromium
         // assume it is and reach for the ServiceWorker `clients` global.
         try {
@@ -451,10 +611,12 @@ enum WebExtensionAPIStubScript {
             console.info("[DuckDuckGo] Could not stub clients: " + error);
         }
 
-        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || stubbedGlobals.length > 0) {
+        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || stubbedGlobals.length > 0
+            || wrappedNamespaces.length > 0) {
             console.info("[DuckDuckGo] Stubbed unavailable extension APIs — namespaces: ["
                 + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ")
-                + "], globals: [" + stubbedGlobals.join(", ") + "]");
+                + "], globals: [" + stubbedGlobals.join(", ") + "], wrapped: ["
+                + wrappedNamespaces.join(", ") + "]");
         }
     })();
 

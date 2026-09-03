@@ -76,6 +76,6 @@ struct SearchTokenExperiment {
 
     /// The assigned cohort, or `nil` when not enrolled.
     var cohort: FeatureFlag.SearchTokenExperimentCohort? {
-        FeatureFlag.SearchTokenExperimentCohort.treatment
+        featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort
     }
 }

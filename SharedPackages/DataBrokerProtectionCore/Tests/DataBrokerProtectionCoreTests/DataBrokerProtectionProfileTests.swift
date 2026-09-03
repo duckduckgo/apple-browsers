@@ -276,7 +276,7 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
         XCTAssertTrue(vault.wasDeleteProfileQueryCalled)
     }
 
-    func testSaveProfileWithMatchingDeprecatedQuery_thenReactivatesQueryAndSchedulesMissingBrokerScans() async throws {
+    func testSaveProfileWithMatchingDeprecatedQuery_thenReactivatesQuery() async throws {
         let vault: DataBrokerProtectionSecureVaultMock = try DataBrokerProtectionSecureVaultMock(providers:
                                                             SecureStorageProviders(
                                                                 crypto: EmptySecureStorageCryptoProviderMock(),
@@ -293,38 +293,18 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
             birthYear: 1980
         )
         let deprecatedProfileQuery = ProfileQuery.mock.with(deprecated: true)
-        let existingScan = ScanJobData(
-            brokerId: 1,
-            profileQueryId: 1,
-            preferredRunDate: .distantFuture,
-            historyEvents: [.mock(type: .matchesFound(count: 1))]
-        )
 
         vault.profile = profile
         vault.profileQueries = [deprecatedProfileQuery]
         vault.brokers = [.mock, .mockWithDefaults(id: 2, name: "Second broker")]
-        vault.fetchScanHandler = { brokerId, profileQueryId in
-            brokerId == existingScan.brokerId && profileQueryId == existingScan.profileQueryId ? existingScan : nil
-        }
+        vault.scanJobData = [.mock]
 
-        let beforeSave = Date()
         try await database.save(profile)
 
         XCTAssertFalse(vault.wasSaveProfileQueryCalled)
-        XCTAssertEqual(vault.updatedProfileQueries.count, 1)
-        XCTAssertEqual(vault.updatedProfileQueries.first?.id, deprecatedProfileQuery.id)
-        XCTAssertEqual(vault.updatedProfileQueries.first?.deprecated, false)
-
-        XCTAssertEqual(vault.updatedScanPreferredRunDates.count, 1)
-        XCTAssertEqual(vault.updatedScanPreferredRunDates.first?.brokerId, 1)
-        XCTAssertEqual(vault.updatedScanPreferredRunDates.first?.profileQueryId, 1)
-        XCTAssertGreaterThanOrEqual(vault.updatedScanPreferredRunDates.first?.date ?? .distantPast, beforeSave)
-
-        XCTAssertEqual(vault.savedScanJobs.count, 1)
-        XCTAssertEqual(vault.savedScanJobs.first?.brokerId, 2)
-        XCTAssertEqual(vault.savedScanJobs.first?.profileQueryId, 1)
-        XCTAssertNil(vault.savedScanJobs.first?.lastRunDate)
-        XCTAssertGreaterThanOrEqual(vault.savedScanJobs.first?.preferredRunDate ?? .distantPast, beforeSave)
+        let updatedProfileQuery = try XCTUnwrap(vault.updatedProfileQueries.first)
+        XCTAssertEqual(updatedProfileQuery.id, deprecatedProfileQuery.id)
+        XCTAssertFalse(updatedProfileQuery.deprecated)
     }
 }
 

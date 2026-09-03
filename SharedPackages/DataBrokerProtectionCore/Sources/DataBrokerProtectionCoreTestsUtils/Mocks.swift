@@ -688,10 +688,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var brokers = [DataBroker]()
     public var scanJobData = [ScanJobData]()
     public var optOutJobData = [OptOutJobData]()
-    public var fetchScanHandler: ((Int64, Int64) -> ScanJobData?)?
     public var updatedProfileQueries = [ProfileQuery]()
-    public var savedScanJobs = [(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?)]()
-    public var updatedScanPreferredRunDates = [(date: Date?, brokerId: Int64, profileQueryId: Int64)]()
     public var lastPreferredRunDateOnScan: Date?
     public var lastPreferredRunDateOnOptOut: Date?
     public var lastSavedBrokerResource: BrokerResource?
@@ -726,10 +723,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         brokers.removeAll()
         scanJobData.removeAll()
         optOutJobData.removeAll()
-        fetchScanHandler = nil
         updatedProfileQueries.removeAll()
-        savedScanJobs.removeAll()
-        updatedScanPreferredRunDates.removeAll()
         lastPreferredRunDateOnScan = nil
         lastPreferredRunDateOnOptOut = nil
         lastSavedBrokerResource = nil
@@ -830,11 +824,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func save(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
         lastPreferredRunDateOnScan = preferredRunDate
-        savedScanJobs.append((brokerId, profileQueryId, lastRunDate, preferredRunDate))
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
-        updatedScanPreferredRunDates.append((date, brokerId, profileQueryId))
     }
 
     public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
@@ -858,10 +850,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 
     public func fetchScan(brokerId: Int64, profileQueryId: Int64) throws -> ScanJobData? {
-        if let fetchScanHandler {
-            return fetchScanHandler(brokerId, profileQueryId)
-        }
-        return scanJobData.first
+        scanJobData.first
     }
 
     public func fetchAllScans() throws -> [ScanJobData] {

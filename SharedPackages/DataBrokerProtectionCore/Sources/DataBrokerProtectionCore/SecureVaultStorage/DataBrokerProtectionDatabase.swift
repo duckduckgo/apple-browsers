@@ -795,13 +795,8 @@ extension DataBrokerProtectionDatabase {
                                                   profileId: profileID)
 
             if !profile.deprecated {
-                let preferredRunDate = Date()
-                for brokerID in brokerIDs {
-                    if try vault.fetchScan(brokerId: brokerID, profileQueryId: profileQueryID) != nil {
-                        try vault.updatePreferredRunDate(preferredRunDate, brokerId: brokerID, profileQueryId: profileQueryID)
-                    } else {
-                        try vault.save(brokerId: brokerID, profileQueryId: profileQueryID, lastRunDate: nil, preferredRunDate: preferredRunDate)
-                    }
+                for brokerID in brokerIDs where !profile.deprecated {
+                    try updatePreferredRunDate(Date(), brokerId: brokerID, profileQueryId: profileQueryID)
                 }
             }
         }

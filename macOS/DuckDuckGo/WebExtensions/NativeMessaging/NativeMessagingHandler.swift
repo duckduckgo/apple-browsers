@@ -31,14 +31,15 @@ import WebKit
 final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
     enum HandlerError: Error, LocalizedError {
-        case noApplicationIdentifier
+        case containingApplicationRoute
         case permissionMissing(host: String)
         case hostUnavailable(host: String, underlying: Error)
 
         var errorDescription: String? {
             switch self {
-            case .noApplicationIdentifier:
-                return "The extension named no native messaging host."
+            case .containingApplicationRoute:
+                return "The extension named no host, so it wants its own containing app. "
+                    + "Safari answers that from the app extension, and we have no such app."
             case .permissionMissing(let host):
                 return "The extension has no nativeMessaging permission, so it cannot reach \(host)."
             case .hostUnavailable(let host, let underlying):
@@ -157,8 +158,17 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
     private func hostName(from applicationIdentifier: String?,
                           for context: WKWebExtensionContext) throws -> String {
+        // An empty identifier means the containing app of a Safari app extension. Safari
+        // answers those from the app extension's own handler class, which is an NSExtension
+        // and not a host process. 1Password's Safari build does this for
+        // `request-os-version` and for its `core` messages, so those calls cannot succeed
+        // here. Its Chrome build names a real host instead.
         guard let applicationIdentifier, !applicationIdentifier.isEmpty else {
-            throw HandlerError.noApplicationIdentifier
+            Logger.webExtensions.error("""
+            ❌ \(context.webExtension.displayName ?? "An extension", privacy: .public) \
+            asks its containing app, not a native messaging host. That route needs Safari.
+            """)
+            throw HandlerError.containingApplicationRoute
         }
 
         // WebKit grants `nativeMessaging` only when the manifest asks for it, so this check

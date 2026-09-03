@@ -57,6 +57,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
     private let storageProvider: WebExtensionStorageProviding
     private let isInspectable: Bool
+    private let backgroundPagePatcher = WebExtensionBackgroundPagePatcher()
     public weak var delegate: WebExtensionLoadingDelegate?
 
     public init(storageProvider: WebExtensionStorageProviding, isInspectable: Bool = false) {
@@ -86,6 +87,11 @@ public final class WebExtensionLoader: WebExtensionLoading {
         guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: identifier) else {
             throw WebExtensionLoaderError.extensionNotFound(identifier: identifier)
         }
+
+        // Every install path (installExtension(from:), installEmbeddedExtension) funnels into this
+        // method, so patching here covers all of them — and does so after the files have landed but
+        // before WKWebExtension reads the manifest.
+        backgroundPagePatcher.patchIfNeeded(installedExtensionURL: extensionURL)
 
         let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
 

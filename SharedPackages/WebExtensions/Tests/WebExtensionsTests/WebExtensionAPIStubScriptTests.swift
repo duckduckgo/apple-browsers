@@ -157,6 +157,45 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.storage.local === originalStorageLocal")
     }
 
+    func testWhenManagedStorageIsStubbed_ThenGetResolvesToAnEmptyObject() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var promiseResult = 'pending';
+        chrome.storage.managed.get('CredentialIntelligence').then(function(result) { promiseResult = result; });
+        var callbackResult = 'pending';
+        chrome.storage.managed.get('CredentialIntelligence', function(result) { callbackResult = result; });
+        var bytesResult = 'pending';
+        chrome.storage.managed.getBytesInUse().then(function(result) { bytesResult = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("promiseResult !== null && typeof promiseResult === 'object'")
+        try assertTrue("Object.keys(promiseResult).length === 0")
+        // The read that used to throw: an absent policy must come back as `undefined`, not an error.
+        try assertTrue("promiseResult['CredentialIntelligence'] === undefined")
+
+        try assertTrue("callbackResult !== null && typeof callbackResult === 'object'")
+        try assertTrue("Object.keys(callbackResult).length === 0")
+
+        try assertTrue("bytesResult === 0")
+        try assertTrue("typeof chrome.storage.managed.onChanged.addListener === 'function'")
+    }
+
+    func testWhenManagedStorageIsQueriedTwice_ThenEachCallResolvesToItsOwnObject() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var firstResult = null;
+        var secondResult = null;
+        chrome.storage.managed.get().then(function(result) { firstResult = result; });
+        chrome.storage.managed.get().then(function(result) { secondResult = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("firstResult !== null && secondResult !== null && firstResult !== secondResult")
+    }
+
     // MARK: - Retention
 
     func testWhenNamespacesAreDecorated_ThenTheyAreRetainedOnTheGlobal() throws {

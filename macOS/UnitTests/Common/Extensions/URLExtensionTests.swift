@@ -961,6 +961,20 @@ extension URLExtensionTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Internal feedback form URL detection", .timeLimit(.minutes(1)), arguments: [
+        ("https://internalapps.duckduckgo.com/internal-feedback/", true),
+        ("https://internalapps.duckduckgo.com/internal-feedback/?bridgeDebug=1", true),
+        ("http://internalapps.duckduckgo.com/internal-feedback/", false),
+        ("https://internalapps.duckduckgo.com/another-app/", false),
+        ("https://example.com/internal-feedback/", false),
+    ])
+    func internalFeedbackFormURLDetection(urlString: String, expectedResult: Bool) throws {
+        let url = try #require(URL(string: urlString))
+
+        #expect(url.isInternalFeedbackForm == expectedResult)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("DuckDuckGo URL detection works correctly", .timeLimit(.minutes(1)))
     func duckDuckGoURLDetectionWorksCorrectly() {
         // URLs that should be detected as DuckDuckGo

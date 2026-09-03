@@ -60,6 +60,8 @@ public class Tab: NSObject, NSCoding {
     private var observersHolder = [WeaklyHeldTabObserver]()
     
     let uid: String
+    /// Set only for decoded tabs and consumed when their first provisional main-frame navigation starts.
+    private(set) var hasPendingSessionRestoration = false
 
     /// The date last time this tab was displayed.
     ///
@@ -213,6 +215,13 @@ public class Tab: NSObject, NSCoding {
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
         self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState, duckAIEntrySource: duckAIEntrySource)
+        hasPendingSessionRestoration = true
+    }
+
+    /// Returns whether the next provisional navigation belongs to session restoration, then clears the marker.
+    func consumePendingSessionRestoration() -> Bool {
+        defer { hasPendingSessionRestoration = false }
+        return hasPendingSessionRestoration
     }
 
     public func encode(with coder: NSCoder) {

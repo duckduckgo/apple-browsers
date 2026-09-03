@@ -331,8 +331,12 @@ extension DebugScreensViewModel {
         }
 
         return .view(title: "Web Extensions") { d in
-            if let manager = d.webExtensionManager {
-                WebExtensionsDebugView(webExtensionManager: manager)
+            if let manager = d.webExtensionManager,
+               let cpmMessagingHealthMonitor = manager.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
+                WebExtensionsDebugView(
+                    webExtensionManager: manager,
+                    cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                )
             } else {
                 Text("Web Extensions not available")
             }

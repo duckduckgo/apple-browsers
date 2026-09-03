@@ -107,6 +107,35 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testWhenRefreshCpmDashboardStateThenForwardsTabIdentifierAndURLToHealthMonitor() async {
+        let monitor = RecordingCPMMessagingHealthMonitor()
+        let handler = AutoconsentWebExtensionMessageHandler(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            autoconsentPreferences: mockAutoconsentPreferences,
+            cpmMessagingHealthMonitor: monitor
+        )
+        let consentStatus: [String: Any] = [
+            "consentManaged": true,
+            "cosmetic": false,
+            "optoutFailed": false,
+            "consentReloadLoop": false,
+            "consentHeuristicEnabled": true,
+            "cpmStage": "popup_found",
+            "cpmQueueSize": 0
+        ]
+        let message = createMessage(method: "refreshCpmDashboardState", params: [
+            "tabId": NSNumber(value: 42),
+            "url": "https://example.com/article",
+            "consentStatus": consentStatus
+        ])
+
+        _ = await handler.handleMessage(message)
+
+        XCTAssertEqual(monitor.extensionTabIdentifier, 42)
+        XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
+    }
+
     // MARK: - showCpmAnimation
 
     func testWhenShowCpmAnimationWithNoParamsThenReturnsMissingParameterError() async {
@@ -791,6 +820,19 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
             context: "test-context",
             extensionIdentifier: "test-extension-id"
         )
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class RecordingCPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
+    private(set) var extensionTabIdentifier: Int?
+    private(set) var url: URL?
+
+    func handle(_ event: CPMMessagingHealthEvent) {
+        guard case .dashboardResponse(let extensionTabIdentifier, let url) = event else { return }
+        self.extensionTabIdentifier = extensionTabIdentifier
+        self.url = url
     }
 }
 

@@ -35,6 +35,8 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
     public lazy var eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
     public var extensionsDirectory = FileManager.default.temporaryDirectory
     public var extensionUpdates = AsyncStream<Void> { $0.finish() }
+    public var lifecycleEvents = AsyncStream<WebExtensionLifecycleEvent> { $0.finish() }
+    public var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring = NoOpCPMMessagingHealthMonitor()
 
     public init() {}
 

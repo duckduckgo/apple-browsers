@@ -9,6 +9,18 @@
         "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
         "examples": ["7.175.1"]
     },
+    "platform": {
+        "key": "platform",
+        "type": "string",
+        "description": "Browser platform.",
+        "enum": ["ios", "macos"]
+    },
+    "form_factor": {
+        "key": "form_factor",
+        "type": "string",
+        "description": "Device form factor.",
+        "enum": ["phone", "tablet", "desktop"]
+    },
     "ui_version": {
         "key": "ui_version",
         "type": "string",

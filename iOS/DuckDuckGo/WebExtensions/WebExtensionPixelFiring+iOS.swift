@@ -19,7 +19,25 @@
 
 import Foundation
 import Core
+import PixelKit
+import UIKit
 import WebExtensions
+
+private struct CPMWebExtensionPixel: PixelKit.Event {
+    let metadata: CPMWebExtensionPixelMetadata
+
+    var name: String { metadata.name }
+
+    var parameters: [String: String]? {
+        var parameters = ["platform": "ios", "form_factor": UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "phone"]
+        parameters.merge(metadata.parameters) { _, metadataValue in metadataValue }
+        return parameters
+    }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    /// The tech design uses one cross-platform series and carries platform dimensions as parameters.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+    var namePrefix: PixelKitNamePrefix { .none }
+}
 
 @available(iOS 18.4, *)
 private extension DuckDuckGoWebExtensionType {
@@ -183,6 +201,26 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                 withAdditionalParameters: ["extension_loaded": extensionLoaded ? "true" : "false"]
             )
+        case .cpmInitializationFailed,
+             .cpmMessagingStuck,
+             .cpmMessagingRecoveredWithoutExtensionReload,
+             .cpmMessagingRecoveredAfterExtensionReload,
+             .cpmMessagingExtensionReloadFailed:
+            fireCPMPixel(event)
+        }
+    }
+
+    private func fireCPMPixel(_ event: WebExtensionPixelEvent) {
+        guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
+        PixelKit.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
+    }
+}
+
+private extension CPMWebExtensionPixelFrequency {
+    var pixelKitFrequency: PixelKit.Frequency {
+        switch self {
+        case .daily: return .daily
+        case .dailyAndCount: return .dailyAndCount
         }
     }
 }

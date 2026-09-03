@@ -36,6 +36,7 @@ import SubscriptionUI
 import SwiftUI
 import Utilities
 import VPN
+import WebExtensions
 import WebKit
 
 // MARK: - LazyBookmarkFolderMenuDelegate
@@ -662,6 +663,7 @@ final class MainMenu: NSMenu {
         alwaysShowFirstTimeQuitSurvey.state = quitSurveyPersistor.alwaysShowQuitSurvey ? .on : .off
     }
 
+    @MainActor
     private func updateWebExtensionsMenuItem() {
         guard let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
               let debugSubmenu = debugMenuItem.submenu else {
@@ -669,10 +671,14 @@ final class MainMenu: NSMenu {
         }
 
         if #available(macOS 15.4, *) {
-            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
+               let cpmMessagingHealthMonitor = webExtensionManager.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
                 if webExtensionsMenuItem == nil {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
-                        .submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
+                        .submenu(WebExtensionsDebugMenu(
+                            webExtensionManager: webExtensionManager,
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                        ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
                     debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))

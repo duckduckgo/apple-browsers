@@ -146,7 +146,7 @@ extension WebExtensionManager {
             Logger.webExtensions.warning("⚠️ Cannot reload extension for type '\(type.rawValue)': not installed")
             return
         }
-        try await reloadExtension(identifier: installed.uniqueIdentifier)
+        try await reloadExtension(identifier: installed.uniqueIdentifier, trigger: .scriptletUpdate)
     }
 
     /// Installs an embedded extension from the given URL.
@@ -174,6 +174,7 @@ extension WebExtensionManager {
             )
 
             installationStore.add(installedExtension)
+            reportLifecycleEvent(.loaded(identifier: identifier, type: type))
             Logger.webExtensions.info("✅ Installed embedded extension \(type.rawValue) v\(loadResult.version ?? "?")")
             notifyUpdate()
 

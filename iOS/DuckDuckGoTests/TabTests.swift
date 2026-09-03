@@ -21,6 +21,7 @@ import XCTest
 import AIChat
 import BrowserServicesKitTestsUtils
 import WebKit
+import WebExtensions
 
 @testable import Core
 @testable import DuckDuckGo
@@ -77,6 +78,33 @@ class TabTests: XCTestCase {
         XCTAssertNotNil(tab?.link)
         XCTAssertFalse(tab?.viewed ?? true)
         XCTAssertTrue(tab?.isDesktop ?? false)
+    }
+
+    func testDecodedTabHasOnePendingSessionRestoration() throws {
+        let freshTab = Tab(link: link())
+        XCTAssertFalse(freshTab.consumePendingSessionRestoration())
+
+        let data = try NSKeyedArchiver.archivedData(withRootObject: freshTab, requiringSecureCoding: false)
+        let restoredTab = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab)
+
+        XCTAssertTrue(restoredTab.consumePendingSessionRestoration())
+        XCTAssertFalse(restoredTab.consumePendingSessionRestoration())
+    }
+
+    @available(iOS 18.4, *)
+    func testCPMNavigationKindPrioritizesSessionRestorationOverBackForward() {
+        XCTAssertEqual(
+            TabViewController.cpmNavigationKind(isSessionRestoration: true, isBackForward: true),
+            .sessionRestoration
+        )
+        XCTAssertEqual(
+            TabViewController.cpmNavigationKind(isSessionRestoration: false, isBackForward: true),
+            .backForward
+        )
+        XCTAssertEqual(
+            TabViewController.cpmNavigationKind(isSessionRestoration: false, isBackForward: false),
+            .other
+        )
     }
 
     /// This test supports the migration scenario where desktop was not a property of tab

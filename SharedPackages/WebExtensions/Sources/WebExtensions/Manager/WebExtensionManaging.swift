@@ -50,6 +50,14 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var extensionUpdates: AsyncStream<Void> { get }
 
+    /// An async stream describing extension load and reload lifecycle changes.
+    @available(macOS 15.4, iOS 18.4, *)
+    var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { get }
+
+    /// Shared CPM health monitor receiving events from every browser tab and the embedded extension.
+    @available(macOS 15.4, iOS 18.4, *)
+    var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { get }
+
     /// Loads all installed extensions.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor

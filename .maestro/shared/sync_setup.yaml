@@ -1,4 +1,3 @@
-# sync_setup.yaml
 # Shared setup for the sync_tests suite.
 appId: com.duckduckgo.mobile.ios
 

@@ -33,6 +33,8 @@ final class NewTabPageViewModel: ObservableObject {
     /// Hides the favorites grid (without removing it) so the UTI defocus handoff can keep the embedded
     /// favorites visible during the collapse and reveal these — aligned — only at completion.
     @Published var isFavoritesHidden: Bool = false
+    /// Bumped to scroll the sections list back to its top (UTI dismiss handoff).
+    @Published private(set) var scrollToTopRequestCount = 0
     private(set) var fireTab: Bool
 
     private(set) var isDragging: Bool = false
@@ -57,6 +59,10 @@ final class NewTabPageViewModel: ObservableObject {
 
     func finishOnboarding() {
         isOnboarding = false
+    }
+
+    func requestScrollToTop() {
+        scrollToTopRequestCount += 1
     }
 
     func beginDragging() {

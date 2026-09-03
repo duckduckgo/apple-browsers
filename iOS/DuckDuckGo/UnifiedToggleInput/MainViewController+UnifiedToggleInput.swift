@@ -1179,6 +1179,11 @@ extension MainViewController {
         // The collapse animator now owns the final inset; start a native scroll that replaces
         // an in-flight drag/deceleration instead of competing with it in the animation block.
         searchOnlyContentToScroll?.scrollToTop(animated: true)
+        // The resting NTP keeps whatever offset it had before focus (SwiftUI re-applies it after UIKit
+        // clamps), so it has to land at the top too before the handoff reveals it.
+        if searchOnlyContentToScroll != nil {
+            newTabPageViewController?.scrollToTop()
+        }
 
         if let omnibarPlaceholderColor {
             coordinator.viewController.animatePlaceholderColorTransition(

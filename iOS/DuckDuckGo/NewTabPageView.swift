@@ -114,39 +114,49 @@ struct NewTabPageLayoutConfiguration {
 
 private extension NewTabPageView {
     // MARK: - Views
+    private static let sectionsContentID = "sectionsContent"
+
     @ViewBuilder
     private var sectionsView: some View {
         GeometryReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: layoutConfiguration.interSectionSpacing) {
-                    escapeHatchSectionView
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    LazyVStack(spacing: layoutConfiguration.interSectionSpacing) {
+                        escapeHatchSectionView
 
-                    messagesSectionView
-                        .padding(.top, sectionTopNudge)
-                        .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
-                        .zIndex(raisesMessageAboveEscapeHatch && viewModel.escapeHatch != nil ? 1 : 0)
+                        messagesSectionView
+                            .padding(.top, sectionTopNudge)
+                            .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                            .zIndex(raisesMessageAboveEscapeHatch && viewModel.escapeHatch != nil ? 1 : 0)
 
-                    if let title = viewModel.sectionTitle, !title.isEmpty {
-                        Text(title)
-                            .daxTitle3()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, Metrics.sectionTitleTopPadding)
-                            .padding(.trailing, Metrics.sectionTitleTrailingPadding)
+                        if let title = viewModel.sectionTitle, !title.isEmpty {
+                            Text(title)
+                                .daxTitle3()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, Metrics.sectionTitleTopPadding)
+                                .padding(.trailing, Metrics.sectionTitleTrailingPadding)
+                        }
+
+                        FavoritesView(model: favoritesViewModel)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .opacity(viewModel.isFavoritesHidden ? 0 : 1)
                     }
-
-                    FavoritesView(model: favoritesViewModel)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .opacity(viewModel.isFavoritesHidden ? 0 : 1)
+                    .padding(.top, contentTopInset(in: proxy))
+                    .padding(.bottom, sectionsViewPadding(in: proxy))
+                    .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
+                    .background(Color(designSystemColor: .background))
+                    .id(Self.sectionsContentID)
                 }
-                .padding(.top, contentTopInset(in: proxy))
-                .padding(.bottom, sectionsViewPadding(in: proxy))
-                .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
-                .background(Color(designSystemColor: .background))
+                .if(dismissKeyboardOnScroll, transform: {
+                    $0.withScrollKeyboardDismiss()
+                })
+                // Scroll through SwiftUI so the ScrollView's own stored offset moves too; a UIKit
+                // setContentOffset on the hosting scroll view gets re-applied on its next layout.
+                .onReceive(viewModel.$scrollToTopRequestCount.dropFirst()) { _ in
+                    scrollProxy.scrollTo(Self.sectionsContentID, anchor: .top)
+                }
             }
-            .if(dismissKeyboardOnScroll, transform: {
-                $0.withScrollKeyboardDismiss()
-            })
         }
         .if(dismissKeyboardOnScroll, transform: {
             // Prevent recreating geometry reader when keyboard is shown/hidden.

@@ -72,6 +72,12 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         newTabPageViewModel.isFavoritesHidden = hidden
     }
 
+    /// Scrolls the sections list to its top so a UTI dismiss handoff reveals the NTP where the
+    /// collapsing focused list landed.
+    func scrollToTop() {
+        newTabPageViewModel.requestScrollToTop()
+    }
+
     private lazy var borderView = StyledTopBottomBorderView()
 
     private let newTabDialogFactory: any NewTabDaxDialogProviding

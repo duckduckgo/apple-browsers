@@ -68,7 +68,7 @@ struct DuckAISessionInstrumentationTests {
 
     // MARK: - Starting
 
-    @Test("When a Duck.ai tab becomes visible then a session starts")
+    @Test("When a Duck.ai tab becomes visible then a session starts", .timeLimit(.minutes(1)))
     func whenDuckAITabBecomesVisibleThenSessionStarts() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -76,7 +76,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completions(wideEvent).isEmpty)
     }
 
-    @Test("When the same snapshot is reported again then nothing happens")
+    @Test("When the same snapshot is reported again then nothing happens", .timeLimit(.minutes(1)))
     func whenSameSnapshotRepeatsThenNothingHappens() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab, chatID: "abc"))
@@ -86,14 +86,14 @@ struct DuckAISessionInstrumentationTests {
         #expect(completions(wideEvent).isEmpty)
     }
 
-    @Test("When a web tab becomes visible with no session then nothing starts")
+    @Test("When a web tab becomes visible with no session then nothing starts", .timeLimit(.minutes(1)))
     func whenWebTabVisibleWithoutSessionThenNothingStarts() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(web(Self.webTab))
         #expect(started(wideEvent).isEmpty)
     }
 
-    @Test("When the feature is disabled then no session starts")
+    @Test("When the feature is disabled then no session starts", .timeLimit(.minutes(1)))
     func whenDisabledThenNothingStarts() {
         let (sut, wideEvent) = makeSUT(isEnabled: false)
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -102,7 +102,7 @@ struct DuckAISessionInstrumentationTests {
 
     // MARK: - Ending
 
-    @Test("When another tab becomes visible with no pending exit then the session ends as other_navigation")
+    @Test("When another tab becomes visible with no pending exit then the session ends as other_navigation", .timeLimit(.minutes(1)))
     func whenAnotherTabVisibleWithoutPendingExitThenOtherNavigation() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -115,7 +115,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completed.first?.0.exitTrigger == .otherNavigation)
     }
 
-    @Test("When a pending exit was recorded then it becomes the exit trigger")
+    @Test("When a pending exit was recorded then it becomes the exit trigger", .timeLimit(.minutes(1)))
     func whenPendingExitRecordedThenItIsUsed() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -124,7 +124,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completions(wideEvent).first?.0.exitTrigger == .tabSwitched)
     }
 
-    @Test("When a pending exit is recorded for another tab then it is ignored")
+    @Test("When a pending exit is recorded for another tab then it is ignored", .timeLimit(.minutes(1)))
     func whenPendingExitForOtherTabThenIgnored() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -133,7 +133,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completions(wideEvent).first?.0.exitTrigger == .otherNavigation)
     }
 
-    @Test("When two pending exits are recorded then the first one wins")
+    @Test("When two pending exits are recorded then the first one wins", .timeLimit(.minutes(1)))
     func whenTwoPendingExitsThenFirstWins() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -143,7 +143,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completions(wideEvent).first?.0.exitTrigger == .searchStarted)
     }
 
-    @Test("When the same tab stays on Duck.ai after a pending exit then the exit is cleared and the session continues")
+    @Test("When the same tab stays on Duck.ai after a pending exit then the exit is cleared and the session continues", .timeLimit(.minutes(1)))
     func whenSameTabStaysOnDuckAIThenPendingExitIsCleared() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab, chatID: "one"))
@@ -155,7 +155,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completions(wideEvent).first?.0.exitTrigger == .otherNavigation)
     }
 
-    @Test("When the same tab navigates to a non-Duck.ai page then the session ends")
+    @Test("When the same tab navigates to a non-Duck.ai page then the session ends", .timeLimit(.minutes(1)))
     func whenSameTabLeavesDuckAIThenSessionEnds() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -168,7 +168,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(started(wideEvent).count == 1)
     }
 
-    @Test("When switching between two Duck.ai tabs then the old session ends and a new one starts")
+    @Test("When switching between two Duck.ai tabs then the old session ends and a new one starts", .timeLimit(.minutes(1)))
     func whenSwitchingBetweenDuckAITabsThenOldEndsAndNewStarts() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -180,7 +180,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(started(wideEvent).count == 2)
     }
 
-    @Test("When no tab is visible then the session ends")
+    @Test("When no tab is visible then the session ends", .timeLimit(.minutes(1)))
     func whenNoTabVisibleThenSessionEnds() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -189,7 +189,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completions(wideEvent).first?.0.exitTrigger == .otherNavigation)
     }
 
-    @Test("When a session ended then a later Duck.ai tab starts a new session")
+    @Test("When a session ended then a later Duck.ai tab starts a new session", .timeLimit(.minutes(1)))
     func whenSessionEndedThenNewSessionCanStart() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -201,7 +201,7 @@ struct DuckAISessionInstrumentationTests {
 
     // MARK: - Background
 
-    @Test("When the app backgrounds with a session then it completes as CANCELLED app_backgrounded")
+    @Test("When the app backgrounds with a session then it completes as CANCELLED app_backgrounded", .timeLimit(.minutes(1)))
     func whenBackgroundedThenCancelledWithAppBackgrounded() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -215,7 +215,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completed.first?.0.exitTrigger == nil)
     }
 
-    @Test("When the app backgrounds then a stale pending exit does not leak into the next session")
+    @Test("When the app backgrounds then a stale pending exit does not leak into the next session", .timeLimit(.minutes(1)))
     func whenBackgroundedThenPendingExitIsCleared() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -227,7 +227,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completions(wideEvent).last?.0.exitTrigger == .otherNavigation)
     }
 
-    @Test("When the app backgrounds with no session then nothing completes")
+    @Test("When the app backgrounds with no session then nothing completes", .timeLimit(.minutes(1)))
     func whenBackgroundedWithoutSessionThenNothingCompletes() {
         let (sut, wideEvent) = makeSUT()
         sut.sessionCancelledByBackground()
@@ -236,7 +236,7 @@ struct DuckAISessionInstrumentationTests {
 
     // MARK: - Orphans
 
-    @Test("When constructed with orphaned flows then they complete as UNKNOWN app_terminated")
+    @Test("When constructed with orphaned flows then they complete as UNKNOWN app_terminated", .timeLimit(.minutes(1)))
     func whenOrphansExistAtInitThenCompletedAsAppTerminated() {
         let orphan = DuckAISessionWideEventData(promptSubmitted: true)
         let (_, wideEvent) = makeSUT(completeOrphanedFlowsOnInit: true, seededFlows: [orphan])
@@ -247,7 +247,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completed.first?.0.promptSubmitted == true)
     }
 
-    @Test("When constructed without the orphan sweep then persisted flows are left alone")
+    @Test("When constructed without the orphan sweep then persisted flows are left alone", .timeLimit(.minutes(1)))
     func whenNoOrphanSweepThenPersistedFlowsUntouched() {
         let (_, wideEvent) = makeSUT(completeOrphanedFlowsOnInit: false, seededFlows: [DuckAISessionWideEventData()])
         #expect(completions(wideEvent).isEmpty)
@@ -255,7 +255,7 @@ struct DuckAISessionInstrumentationTests {
 
     // MARK: - Steps
 
-    @Test("When a prompt is submitted then the step is recorded once")
+    @Test("When a prompt is submitted then the step is recorded once", .timeLimit(.minutes(1)))
     func whenPromptSubmittedThenStepRecordedOnce() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -266,7 +266,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(started(wideEvent).first?.promptSubmitted == true)
     }
 
-    @Test("When a prompt is submitted in another tab then it is ignored")
+    @Test("When a prompt is submitted in another tab then it is ignored", .timeLimit(.minutes(1)))
     func whenPromptSubmittedInOtherTabThenIgnored() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -275,14 +275,14 @@ struct DuckAISessionInstrumentationTests {
         #expect(started(wideEvent).first?.promptSubmitted == false)
     }
 
-    @Test("When a prompt is submitted with no session then nothing is recorded")
+    @Test("When a prompt is submitted with no session then nothing is recorded", .timeLimit(.minutes(1)))
     func whenPromptSubmittedWithoutSessionThenIgnored() {
         let (sut, wideEvent) = makeSUT()
         sut.promptSubmitted(tabUID: Self.chatTab)
         #expect(updates(wideEvent).isEmpty)
     }
 
-    @Test("When a new chat is created then the step is recorded")
+    @Test("When a new chat is created then the step is recorded", .timeLimit(.minutes(1)))
     func whenNewChatCreatedThenStepRecorded() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -291,7 +291,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(updates(wideEvent).count == 1)
     }
 
-    @Test("When the session starts with a chat ID then that baseline is not a change")
+    @Test("When the session starts with a chat ID then that baseline is not a change", .timeLimit(.minutes(1)))
     func whenSessionStartsWithChatIDThenNotCounted() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab, chatID: "abc"))
@@ -299,7 +299,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(updates(wideEvent).isEmpty)
     }
 
-    @Test("When the chat ID goes from missing to present then chat_id_changed is recorded")
+    @Test("When the chat ID goes from missing to present then chat_id_changed is recorded", .timeLimit(.minutes(1)))
     func whenChatIDAppearsThenChangeRecorded() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))
@@ -307,7 +307,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(started(wideEvent).first?.chatIDChanged == true)
     }
 
-    @Test("When the chat ID changes to another value then chat_id_changed is recorded")
+    @Test("When the chat ID changes to another value then chat_id_changed is recorded", .timeLimit(.minutes(1)))
     func whenChatIDChangesThenChangeRecorded() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab, chatID: "abc"))
@@ -316,7 +316,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(completions(wideEvent).isEmpty)
     }
 
-    @Test("When the URL changes but the chat ID does not then no step is recorded")
+    @Test("When the URL changes but the chat ID does not then no step is recorded", .timeLimit(.minutes(1)))
     func whenURLChangesWithoutChatIDChangeThenNoStep() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab, chatID: "abc"))
@@ -325,7 +325,7 @@ struct DuckAISessionInstrumentationTests {
         #expect(updates(wideEvent).isEmpty)
     }
 
-    @Test("When steps were recorded then they are present on the completed flow")
+    @Test("When steps were recorded then they are present on the completed flow", .timeLimit(.minutes(1)))
     func whenStepsRecordedThenPresentOnCompletion() {
         let (sut, wideEvent) = makeSUT()
         sut.visibleTabDidChange(duckAI(Self.chatTab))

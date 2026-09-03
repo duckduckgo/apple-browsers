@@ -25,7 +25,7 @@ import Testing
 @Suite("Duck.ai Session Wide Event Data")
 struct DuckAISessionWideEventDataTests {
 
-    @Test("Metadata exposes the shared names and 1.0.0")
+    @Test("Metadata exposes the shared names and 1.0.0", .timeLimit(.minutes(1)))
     func metadataExposesSharedNames() {
         #expect(DuckAISessionWideEventData.metadata.pixelName == "duckai_session")
         #expect(DuckAISessionWideEventData.metadata.featureName == "duckai_session")
@@ -34,13 +34,13 @@ struct DuckAISessionWideEventDataTests {
         #expect(DuckAISessionWideEventData.appTerminatedReason == "app_terminated")
     }
 
-    @Test("When the flow is new then no optional field is emitted")
+    @Test("When the flow is new then no optional field is emitted", .timeLimit(.minutes(1)))
     func whenFlowIsNewThenNothingIsEmitted() {
         let params = DuckAISessionWideEventData().jsonParameters()
         #expect(params.isEmpty)
     }
 
-    @Test("When Duck.ai was left then status reason and exit trigger are emitted")
+    @Test("When Duck.ai was left then status reason and exit trigger are emitted", .timeLimit(.minutes(1)))
     func whenLeftDuckaiThenReasonAndTriggerAreEmitted() {
         let data = DuckAISessionWideEventData(statusReason: .leftDuckai, exitTrigger: .tabSwitched)
         let params = data.jsonParameters()
@@ -48,7 +48,7 @@ struct DuckAISessionWideEventDataTests {
         #expect(params["feature.data.ext.exit_trigger"] as? String == "tab_switched")
     }
 
-    @Test("When the app was backgrounded then no exit trigger is emitted")
+    @Test("When the app was backgrounded then no exit trigger is emitted", .timeLimit(.minutes(1)))
     func whenBackgroundedThenExitTriggerIsOmitted() {
         let data = DuckAISessionWideEventData(statusReason: .appBackgrounded, exitTrigger: .tabSwitched)
         let params = data.jsonParameters()
@@ -56,7 +56,7 @@ struct DuckAISessionWideEventDataTests {
         #expect(params["feature.data.ext.exit_trigger"] == nil)
     }
 
-    @Test("When steps happened then only those steps are present as true")
+    @Test("When steps happened then only those steps are present as true", .timeLimit(.minutes(1)))
     func whenStepsHappenedThenOnlyThoseArePresent() {
         let data = DuckAISessionWideEventData(promptSubmitted: true, chatIDChanged: true)
         let params = data.jsonParameters()
@@ -65,13 +65,13 @@ struct DuckAISessionWideEventDataTests {
         #expect(params["feature.data.ext.step.chat_id_changed"] as? Bool == true)
     }
 
-    @Test("Every exit trigger raw value matches the shared naming")
+    @Test("Every exit trigger raw value matches the shared naming", .timeLimit(.minutes(1)))
     func exitTriggerRawValuesMatchSharedNaming() {
         let expected: Set<String> = ["back_or_close", "tab_switched", "new_tab_opened", "fire_tab_opened", "search_started", "other_navigation"]
         #expect(Set(DuckAISessionWideEventData.ExitTrigger.allCases.map(\.rawValue)) == expected)
     }
 
-    @Test("When launch cleanup asks then the flow stays pending")
+    @Test("When launch cleanup asks then the flow stays pending", .timeLimit(.minutes(1)))
     func whenLaunchCleanupAsksThenFlowStaysPending() async {
         let decision = await DuckAISessionWideEventData().completionDecision(for: .appLaunch)
         guard case .keepPending = decision else {

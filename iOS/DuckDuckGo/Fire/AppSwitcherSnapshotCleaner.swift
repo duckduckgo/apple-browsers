@@ -49,6 +49,10 @@ actor AppSwitcherSnapshotCleaner {
             snapshotItems = try fileManager.contentsOfDirectory(at: snapshotsDirectory,
                                                                 includingPropertiesForKeys: nil,
                                                                 options: [])
+        } catch CocoaError.fileReadNoSuchFile {
+            // This system-owned directory may be absent. In that case, there are no snapshots at
+            // this path to clear.
+            return
         } catch {
             let errorDescription = error.localizedDescription
             Logger.general.error("Failed to enumerate app switcher snapshots: \(errorDescription, privacy: .public)")
@@ -56,14 +60,23 @@ actor AppSwitcherSnapshotCleaner {
             return
         }
 
+        var firstRemovalError: Error?
         for snapshotItem in snapshotItems {
             do {
                 try fileManager.removeItem(at: snapshotItem)
+            } catch CocoaError.fileNoSuchFile {
+                // The desired state is already reached if the item disappears after enumeration.
+                continue
             } catch {
+                firstRemovalError = firstRemovalError ?? error
                 let itemName = snapshotItem.lastPathComponent
                 let errorDescription = error.localizedDescription
                 Logger.general.error("Failed to remove snapshot \(itemName, privacy: .public): \(errorDescription, privacy: .public)")
             }
+        }
+
+        if let firstRemovalError {
+            pixelFiring?.fire(DataClearingPixels.appSwitcherSnapshotRemovalFailed(firstRemovalError), frequency: .dailyAndCount)
         }
     }
 }

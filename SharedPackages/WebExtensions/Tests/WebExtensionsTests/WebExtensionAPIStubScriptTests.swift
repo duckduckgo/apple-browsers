@@ -24,8 +24,14 @@ import XCTest
 /// `chrome.*` that WebKit actually exposes to a background page.
 final class WebExtensionAPIStubScriptTests: XCTestCase {
 
+    private struct ScheduledTimer {
+        let callback: JSValue
+        let delay: Double
+    }
+
     private var context: JSContext!
     private var exceptions: [String] = []
+    private var scheduledTimers: [ScheduledTimer] = []
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -64,6 +70,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     override func tearDownWithError() throws {
         context = nil
         exceptions = []
+        scheduledTimers = []
         try super.tearDownWithError()
     }
 
@@ -81,7 +88,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     func testWhenNamespaceIsMissing_ThenItsMethodsAndNestedPropertyChainsResolveToFunctions() throws {
         try evaluateStubScript()
 
-        try assertTrue("typeof chrome.offscreen.createDocument === 'function'")
+        try assertTrue("typeof chrome.notifications.create === 'function'")
         try assertTrue("typeof chrome.downloads.download === 'function'")
         try assertTrue("typeof chrome.management.getSelf === 'function'")
         try assertTrue("typeof chrome.privacy.services.passwordSavingEnabled.get === 'function'")
@@ -187,6 +194,128 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertNoExceptions()
 
         try assertTrue("firstResult !== null && secondResult !== null && firstResult !== secondResult")
+    }
+
+    // MARK: - Offscreen Documents
+
+    func testWhenOffscreenIsStubbed_ThenReasonConstantsMatchTheirNames() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        try assertTrue("chrome.offscreen.Reason.CLIPBOARD === 'CLIPBOARD'")
+        try assertTrue("chrome.offscreen.Reason.LOCAL_STORAGE === 'LOCAL_STORAGE'")
+        try assertTrue("chrome.offscreen.Reason.DOM_PARSER === 'DOM_PARSER'")
+        try assertTrue("Object.keys(chrome.offscreen.Reason).length === 15")
+    }
+
+    func testWhenOffscreenDocumentIsCreated_ThenAHiddenIframeIsAppendedAndTheCallResolvesOnLoad() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        try createOffscreenDocument()
+
+        try assertTrue("frame.tagName === 'iframe'")
+        try assertTrue("frame.src === 'chrome-extension://abc/offscreen-document/index.html'")
+        try assertTrue("frame.attributes['hidden'] === 'hidden'")
+        try assertTrue("frame.attributes['aria-hidden'] === 'true'")
+        try assertTrue("frame.style.width === '0' && frame.style.height === '0'")
+        // Nothing resolves until the offscreen page reports itself loaded.
+        try assertTrue("createResult === 'pending'")
+
+        context.evaluateScript("frame.listeners.load();")
+        try assertNoExceptions()
+        try assertTrue("createResult === 'resolved'")
+
+        context.evaluateScript("var hasResult = 'pending'; chrome.offscreen.hasDocument().then(function(r) { hasResult = r; });")
+        try assertNoExceptions()
+        try assertTrue("hasResult === true")
+    }
+
+    func testWhenOffscreenDocumentNeverLoads_ThenTheTimeoutResolvesTheCall() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        try createOffscreenDocument()
+        try assertTrue("createResult === 'pending'")
+
+        XCTAssertEqual(scheduledTimers.count, 1)
+        XCTAssertEqual(scheduledTimers.first?.delay, 5000)
+        fireScheduledTimers()
+
+        try assertTrue("createResult === 'resolved'")
+    }
+
+    func testWhenAnOffscreenDocumentIsAlreadyOpen_ThenCreatingASecondOneIsRejected() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        try createOffscreenDocument()
+
+        context.evaluateScript("""
+        var secondError = 'pending';
+        chrome.offscreen.createDocument({ url: 'offscreen-document/index.html', reasons: ['CLIPBOARD'] })
+            .catch(function(error) { secondError = String(error && error.message); });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("secondError.indexOf('single offscreen document') !== -1")
+        try assertTrue("document.body.children.length === 1")
+    }
+
+    func testWhenOffscreenDocumentIsClosed_ThenTheIframeIsRemovedAndClosingAgainIsRejected() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        try createOffscreenDocument()
+
+        context.evaluateScript("""
+        var closeResult = 'pending';
+        chrome.offscreen.closeDocument().then(function(result) { closeResult = result === undefined ? 'resolved' : 'unexpected'; });
+        var hasResult = 'pending';
+        chrome.offscreen.hasDocument().then(function(result) { hasResult = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("closeResult === 'resolved'")
+        try assertTrue("frame.removed === true")
+        try assertTrue("document.body.children.length === 0")
+        try assertTrue("hasResult === false")
+
+        context.evaluateScript("""
+        var secondCloseError = 'pending';
+        chrome.offscreen.closeDocument().catch(function(error) { secondCloseError = String(error && error.message); });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("secondCloseError.indexOf('No current offscreen document') !== -1")
+    }
+
+    func testWhenHasDocumentIsCalledWithACallback_ThenTheCallbackReceivesTheBoolean() throws {
+        try installFakeDocument()
+        try evaluateStubScript()
+
+        context.evaluateScript("var callbackResult = 'pending'; chrome.offscreen.hasDocument(function(has) { callbackResult = has; });")
+        try assertNoExceptions()
+        try assertTrue("callbackResult === false")
+
+        try createOffscreenDocument()
+
+        context.evaluateScript("callbackResult = 'pending'; chrome.offscreen.hasDocument(function(has) { callbackResult = has; });")
+        try assertNoExceptions()
+        try assertTrue("callbackResult === true")
+    }
+
+    func testWhenOffscreenNamespaceExists_ThenItIsNotReplaced() throws {
+        try installFakeDocument()
+        context.evaluateScript("chrome.offscreen = { createDocument: function() { return 'native'; } };")
+        context.evaluateScript("var originalOffscreen = chrome.offscreen;")
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.offscreen === originalOffscreen")
+        try assertTrue("chrome.offscreen.createDocument() === 'native'")
+        try assertTrue("chrome.offscreen.Reason === undefined")
     }
 
     // MARK: - Retention
@@ -297,6 +426,77 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    /// `JSContext` has neither a DOM nor timers, so the offscreen stub gets the minimum it touches:
+    /// a document that records the elements it hands out, a background page URL to resolve against,
+    /// and a `setTimeout` that parks its callback for the test to fire.
+    private func installFakeDocument() throws {
+        let scheduleTimer: @convention(block) (JSValue, Double) -> Int = { [weak self] callback, delay in
+            self?.scheduledTimers.append(ScheduledTimer(callback: callback, delay: delay))
+            return self?.scheduledTimers.count ?? 0
+        }
+        context.setObject(scheduleTimer, forKeyedSubscript: "setTimeout" as NSString)
+
+        context.evaluateScript("""
+        var location = { href: "chrome-extension://abc/ddg-background-page.html" };
+        var document = {
+            documentElement: { children: [], appendChild: function(element) { this.children.push(element); this.lastAppended = element; } },
+            body: {
+                children: [],
+                lastAppended: null,
+                appendChild: function(element) {
+                    this.children.push(element);
+                    this.lastAppended = element;
+                    element.parentNode = this;
+                }
+            },
+            createElement: function(tagName) {
+                return {
+                    tagName: tagName,
+                    src: "",
+                    style: {},
+                    attributes: {},
+                    listeners: {},
+                    parentNode: null,
+                    removed: false,
+                    setAttribute: function(name, value) { this.attributes[name] = value; },
+                    addEventListener: function(type, listener) { this.listeners[type] = listener; },
+                    remove: function() {
+                        if (this.parentNode) {
+                            var index = this.parentNode.children.indexOf(this);
+                            if (index !== -1) { this.parentNode.children.splice(index, 1); }
+                            if (this.parentNode.lastAppended === this) { this.parentNode.lastAppended = null; }
+                            this.parentNode = null;
+                        }
+                        this.removed = true;
+                    }
+                };
+            }
+        };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// Opens an offscreen document the way Bitwarden does, leaving the pending call in `createResult`
+    /// and the appended iframe in `frame`.
+    private func createOffscreenDocument() throws {
+        context.evaluateScript("""
+        var createResult = 'pending';
+        chrome.offscreen.createDocument({
+            url: 'offscreen-document/index.html',
+            reasons: [chrome.offscreen.Reason.CLIPBOARD],
+            justification: 'Copy a password to the clipboard'
+        }).then(function(result) { createResult = result === undefined ? 'resolved' : 'unexpected'; });
+        var frame = document.body.lastAppended;
+        """)
+        try assertNoExceptions()
+    }
+
+    private func fireScheduledTimers() {
+        let timers = scheduledTimers
+        scheduledTimers = []
+        timers.forEach { $0.callback.call(withArguments: []) }
+    }
 
     private func evaluateStubScript() throws {
         context.evaluateScript(WebExtensionAPIStubScript.source)

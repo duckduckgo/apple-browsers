@@ -148,15 +148,6 @@ class SwitchBarButtonsView: UIView {
     }()
     private let voiceButton = BrowserChromeButton(.primary)
     private let aiChatShortcutButton = BrowserChromeButton(.primary)
-    private let aiChatShortcutBackdrop: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-        view.layer.cornerRadius = Constants.aiChatShortcutChipSize / 2
-        view.clipsToBounds = true
-        view.isUserInteractionEnabled = false
-        return view
-    }()
     private let separatorView = UIView()
 
     init() {
@@ -191,7 +182,6 @@ class SwitchBarButtonsView: UIView {
         stack.addArrangedSubview(stopGeneratingButton)
         stack.addArrangedSubview(voiceButton)
         stack.addArrangedSubview(separatorView)
-        aiChatShortcutButton.insertSubview(aiChatShortcutBackdrop, at: 0)
         stack.addArrangedSubview(aiChatShortcutButton)
     }
 
@@ -218,11 +208,6 @@ class SwitchBarButtonsView: UIView {
 
             aiChatShortcutButton.widthAnchor.constraint(equalToConstant: Constants.aiChatShortcutChipSize),
             aiChatShortcutButton.heightAnchor.constraint(equalToConstant: Constants.aiChatShortcutChipSize),
-
-            aiChatShortcutBackdrop.topAnchor.constraint(equalTo: aiChatShortcutButton.topAnchor),
-            aiChatShortcutBackdrop.leadingAnchor.constraint(equalTo: aiChatShortcutButton.leadingAnchor),
-            aiChatShortcutBackdrop.trailingAnchor.constraint(equalTo: aiChatShortcutButton.trailingAnchor),
-            aiChatShortcutBackdrop.bottomAnchor.constraint(equalTo: aiChatShortcutButton.bottomAnchor),
 
             separatorView.widthAnchor.constraint(equalToConstant: Constants.separatorWidth),
             separatorView.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),

@@ -1667,7 +1667,6 @@ private extension UnifiedToggleInputView {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.chevronLeft, for: .normal)
         button.tintColor = UIColor(designSystemColor: .icons)
-        button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         button.layer.cornerRadius = Constants.inlineDismissSize / 2
         button.translatesAutoresizingMaskIntoConstraints = false
         button.accessibilityLabel = UserText.backButtonTitle

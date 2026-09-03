@@ -19,9 +19,9 @@
 import Testing
 @testable import EventHub
 
-/// What is left of this suite after the telemetry specification cases moved to `TelemetrySpecTests`:
-/// the two behaviours no case covers. Value encoding (T-DAT-3, T-DAT-5), last-value-wins (T-DAT-1) and
-/// the absent-key rule (T-DAT-2) all live there now, asserted against the specification's own fixture.
+/// Component-level data-parameter behaviour that the telemetry specification does not state as a case:
+/// a `null` value, and the guard that stops a pixel firing when none of its data parameters resolve.
+/// The specification's own data-parameter cases, T-DAT-1 to T-DAT-5, live in `TelemetrySpecTests`.
 @Suite("EventHub data parameters")
 struct EventHubDataParameterTests {
     static let immediateDataConfig = """

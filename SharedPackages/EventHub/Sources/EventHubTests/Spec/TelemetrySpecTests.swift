@@ -29,10 +29,10 @@ import Foundation
 /// - Data parameters — T-DAT-1, T-DAT-2, T-DAT-3, T-DAT-4, T-DAT-5
 /// - Immediate pixels — T-IMM-1, T-IMM-2, T-IMM-3, T-IMM-4
 ///
-/// Several of these arrived here from narrower unit tests, which were deleted rather than annotated in
-/// place: keeping every case in one file is what lets the roster above be checked at a glance. Two
-/// component-level tests were deliberately left behind in `EventHubDataParameterTests`, covering a
-/// `null` data value and the "no parameter resolved, so no fire" guard — neither is a case here.
+/// Every case lives here rather than in the narrower unit suites, which is what lets the roster above
+/// be checked against the document at a glance. Two component-level behaviours sit in
+/// `EventHubDataParameterTests` instead — a `null` data value, and the "no parameter resolved, so no
+/// fire" guard — because neither is a case in this document.
 ///
 /// The properties they evidence:
 /// - **T-GEN-P1** — only pixels enabled in the current config may fire, whatever their trigger type
@@ -119,10 +119,9 @@ struct TelemetrySpecTests {
 
     /// The value as it reaches the endpoint: EventHub's output encoded once by the transport.
     ///
-    /// Uses the same allowed set the pixel transports use — `CharacterSet.urlQueryAllowed` minus the
-    /// reserved characters, as `Common`'s `urlQueryParameterAllowed` defines it — so that T-DAT-5 tests
-    /// the real round trip rather than a restatement of the seam value. Spelled out here rather than
-    /// imported so the test states exactly what it assumes of the transport.
+    /// Uses the allowed set both pixel transports use — `CharacterSet.urlQueryAllowed` minus the
+    /// reserved characters, as `Common`'s `urlQueryParameterAllowed` defines it. Spelled out here
+    /// rather than imported so the test states exactly what it assumes of the transport.
     private static func onTheWire(_ value: String) -> String {
         let reserved = CharacterSet(charactersIn: ":/?#[]@!$&'()*+,;=")
         return value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed.subtracting(reserved))!
@@ -254,13 +253,9 @@ struct TelemetrySpecTests {
     @Test("T-DAT-5: a value is encoded once on the wire")
     func aValueIsEncodedOnceOnTheWire() {
         // Evidence for T-DAT-P2, asserted as the two-step round trip the property states. EventHub
-        // emits compact JSON and applies no encoding of its own, so the transport's single encoding is
-        // the only one: percent-decoding what the endpoint receives yields the compact JSON, and
-        // JSON-decoding that yields the payload value exactly.
-        //
-        // This is the case that caught the double encoding: `DataParameter` used to percent-encode as
-        // well, and because `%` is absent from the transports' allowed set the escapes were re-escaped,
-        // so `reason` arrived as `%2522overlay%2522` and one decode did not recover the payload.
+        // emits compact JSON and applies no encoding of its own, so the transport's is the only one:
+        // percent-decoding what the endpoint receives yields the compact JSON, and JSON-decoding that
+        // yields the payload value exactly. Encoding the value twice would break the first step.
         let f = Self.fixture()
         f.send("adwallDetected", reason: "overlay", on: f.openPage())
 

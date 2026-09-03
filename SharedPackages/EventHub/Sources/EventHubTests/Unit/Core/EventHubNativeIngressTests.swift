@@ -107,9 +107,7 @@ struct EventHubNativeIngressTests {
     @Test("handleNativeEvent reaches every handler")
     func handleNativeEventReachesEveryHandler() {
         // The positive statement of D-NAT-P1: a native occurrence is delivered to *every* handler, so
-        // one call both fires the immediate pixel and counts the period counter. This replaces the pair
-        // of tests that used to pin the opposite — that `handleImmediateEvent` skipped counters and
-        // `handleAggregatedEvent` skipped immediate pixels — a split no caller ever used.
+        // one call both fires the immediate pixel and counts the period counter.
         let f = EventHubFixture.active(Self.bothConfig)
         f.manager.handleNativeEvent("test")
         #expect(f.fired.count == 1)

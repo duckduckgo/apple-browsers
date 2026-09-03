@@ -112,7 +112,7 @@ struct DataParameterTests {
 
     @Test("restoreState round trips lastDataValue")
     func restoreStateRoundTrips() {
-        // Compact JSON, the form the parameter now stores and emits — the transport does the encoding.
+        // Compact JSON, the form the parameter stores and emits — the transport does the encoding.
         let parameter = DataParameter(dataKey: "loginState")
         parameter.restoreState(ParamState(value: 0, lastDataValue: #""a""#))
         #expect(parameter.queryValue() == #""a""#)

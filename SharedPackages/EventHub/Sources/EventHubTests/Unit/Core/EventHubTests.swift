@@ -198,10 +198,6 @@ struct EventHubTests {
         #expect(f.fired.isEmpty)
     }
 
-    // "skips firing when no bucket matches" moved to `TelemetrySpecTests` as T-CNT-3, where it is
-    // asserted against the specification's fixture — a pixel with no zero bucket staying silent while
-    // the pixels that have one still fire.
-
     @Test("resets state and starts a new period after firing")
     func resetsStateAndStartsNewPeriodAfterFiring() throws {
         let f = EventHubFixture.active(Self.dayConfig)

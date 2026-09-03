@@ -78,15 +78,13 @@ final class CounterParameter: Parameter {
     func queryValue() -> String? { BucketCounter.bucketCount(value, buckets: buckets) }
 }
 
-/// Carries a value forwarded from an event payload, as compact JSON.
+/// Carries a value forwarded from an event payload, as compact JSON (`overlay` → `"overlay"`,
+/// `{"a": true}` → `{"a":true}`).
 ///
-/// The value is **not** percent-encoded here: it leaves as compact JSON (`overlay` → `"overlay"`,
-/// `{"a": true}` → `{"a":true}`) and the pixel transport applies the single encoding the wire needs.
-/// This parameter used to encode as well, which double-encoded every value — `%` is absent from
-/// `CharacterSet.urlQueryParameterAllowed`, so both transports re-escaped the escapes and `"overlay"`
-/// arrived as `%2522overlay%2522`, which one decode does not recover. Encoding is the transport's job
-/// on both platforms: `URL.appendingParameters` → `URLQueryItem(percentEncodingName:)` on macOS,
-/// `APIRequestV2`'s `URLComponents.queryItems` on iOS.
+/// Percent-encoding belongs to the pixel transport, not here — `URL.appendingParameters` →
+/// `URLQueryItem(percentEncodingName:)` on macOS, `APIRequestV2`'s `URLComponents.queryItems` on iOS.
+/// Both encode with an allowed set that excludes `%`, so any escaping applied to the value here would
+/// be escaped again and the endpoint would need two decodes to reach the payload.
 final class DataParameter: Parameter {
     private let dataKey: String?
     private var lastValue: String?

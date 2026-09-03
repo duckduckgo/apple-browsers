@@ -117,10 +117,9 @@ final class SpecFixture {
     /// case can state its complete expected set and an over-fire fails as loudly as a missing pixel.
     ///
     /// Values appear exactly as EventHub emits them, which for a data parameter is the compact JSON the
-    /// cases quote (`reason="overlay"`). Deliberately no percent-decoding: EventHub no longer encodes —
-    /// the transport applies the wire's single encoding — and decoding here would corrupt a payload
-    /// value that legitimately contains a `%`. The time-derived `attributionPeriod` is excluded, as the
-    /// suites specify.
+    /// cases quote (`reason="overlay"`). Deliberately no percent-decoding: nothing here is encoded, and
+    /// decoding would corrupt a payload value that legitimately contains a `%`. The time-derived
+    /// `attributionPeriod` is excluded, as the suites specify.
     var fired: [String] {
         fixture.fired.map { pixel in
             let parameters = pixel.parameters

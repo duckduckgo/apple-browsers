@@ -66,6 +66,10 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
                 .tabChosen,
                 .tabPickerCanceled,
                 .customizeResponsesOpened,
+                .createImageModelSwitched,
+                .createImageModelSwitchNoticeDismissed,
+                .createImageUnavailable,
+                .createImageSubmittedWithUnsupportedModel,
                 .subscriptionUpsellShown,
                 .subscriptionUpsellTriggered:
             nil

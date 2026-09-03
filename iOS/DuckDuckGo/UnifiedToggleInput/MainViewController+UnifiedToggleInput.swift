@@ -24,7 +24,6 @@ import Core
 import DesignResourcesKit
 import Subscription
 import Suggestions
-import os.log
 import UIKit
 import WebKit
 import FeatureFlags_iOS
@@ -1131,7 +1130,6 @@ extension MainViewController {
             )
         }
 
-        logNewTabPageScrollGeometry(phase: "ntp-before-dismiss")
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
         let finishDismiss: () -> Void = { [weak self] in
             self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
@@ -1139,11 +1137,6 @@ extension MainViewController {
             // native scroll that outlasts the collapse cannot produce a visible final-frame snap.
             DispatchQueue.main.async {
                 searchContentToScroll?.scrollToTop(animated: false)
-                self?.logNewTabPageScrollGeometry(phase: "ntp-after-settle")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self?.logNewTabPageScrollGeometry(phase: "ntp-late")
-                    self?.stopNewTabPageScrollTracing()
-                }
             }
         }
 
@@ -1224,58 +1217,6 @@ extension MainViewController {
         viewCoordinator.unifiedInputContentContainer.alpha = 1
         newTabPageViewController?.setLogoHidden(false)
         newTabPageViewController?.setFavoritesHidden(false)
-    }
-
-    private static var newTabPageScrollTracer: NTPScrollGeometryTracer?
-
-    private static func firstScrollView(in view: UIView) -> UIScrollView? {
-        if let scrollView = view as? UIScrollView { return scrollView }
-        for subview in view.subviews {
-            if let scrollView = firstScrollView(in: subview) { return scrollView }
-        }
-        return nil
-    }
-
-    /// Diagnostics: observe the NTP scroll view for the whole omnibar session so any stray offset,
-    /// inset or frame change is logged with the call stack that caused it.
-    func startNewTabPageScrollTracing() {
-        guard let ntpView = newTabPageViewController?.view,
-              let scrollView = Self.firstScrollView(in: ntpView) else {
-            Self.newTabPageScrollTracer = nil
-            return
-        }
-        Self.newTabPageScrollTracer = NTPScrollGeometryTracer(scrollView: scrollView)
-        logNewTabPageScrollGeometry(phase: "ntp-at-focus")
-    }
-
-    func stopNewTabPageScrollTracing() {
-        Self.newTabPageScrollTracer = nil
-    }
-
-    func logNewTabPageScrollGeometry(phase: String) {
-        guard let ntp = newTabPageViewController else {
-            Logger.unifiedInputState.notice("[UTIScrollToTop] phase=\(phase, privacy: .public) ntp=nil")
-            return
-        }
-        let scrollView = Self.firstScrollView(in: ntp.view)
-        Logger.unifiedInputState.notice("""
-            [UTIScrollToTop] phase=\(phase, privacy: .public)
-            ntpFrame=\(String(describing: ntp.view.frame), privacy: .public)
-            ntpHidden=\(ntp.view.isHidden, privacy: .public) alpha=\(ntp.view.alpha, privacy: .public)
-            ntpSafeArea=\(String(describing: ntp.view.safeAreaInsets), privacy: .public)
-            ntpAdditionalSafeArea=\(String(describing: ntp.additionalSafeAreaInsets), privacy: .public)
-            ntpRestingIsSearch=\(ntp.restingContentIsSearchContent, privacy: .public) ntpShowingSearch=\(ntp.isShowingSearchContent, privacy: .public)
-            navBarFrame=\(String(describing: self.viewCoordinator.navigationBarContainer?.frame), privacy: .public)
-            contentContainerFrame=\(String(describing: self.viewCoordinator.contentContainer?.frame), privacy: .public)
-            utiContentContainerHidden=\(String(describing: self.viewCoordinator.unifiedInputContentContainer?.isHidden), privacy: .public)
-            scrollType=\(String(describing: scrollView.map { type(of: $0) }), privacy: .public)
-            offset=\(String(describing: scrollView?.contentOffset), privacy: .public)
-            inset=\(String(describing: scrollView?.contentInset), privacy: .public)
-            adjustedInset=\(String(describing: scrollView?.adjustedContentInset), privacy: .public)
-            bounds=\(String(describing: scrollView?.bounds), privacy: .public)
-            frameInWindow=\(String(describing: scrollView.map { $0.convert($0.bounds, to: nil) }), privacy: .public)
-            contentSize=\(String(describing: scrollView?.contentSize), privacy: .public)
-            """)
     }
 
     private func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
@@ -1708,39 +1649,4 @@ extension MainViewController: UnifiedToggleInputFloatingReturnKeyDelegate {
         coordinator.insertNewlineFromFloatingReturnKey()
     }
 
-}
-
-/// Diagnostics for the Search content NTP handoff: logs every NTP scroll view geometry change during a
-/// UTI omnibar session together with the call stack that produced it.
-private final class NTPScrollGeometryTracer {
-    private var observations: [NSKeyValueObservation] = []
-
-    init(scrollView: UIScrollView) {
-        observations = [
-            scrollView.observe(\.contentOffset, options: [.old, .new]) { scrollView, change in
-                Self.log("contentOffset", old: change.oldValue, new: change.newValue, scrollView: scrollView)
-            },
-            scrollView.observe(\.contentSize, options: [.old, .new]) { scrollView, change in
-                Self.log("contentSize", old: change.oldValue, new: change.newValue, scrollView: scrollView)
-            },
-            scrollView.observe(\.contentInset, options: [.old, .new]) { scrollView, change in
-                Self.log("contentInset", old: change.oldValue, new: change.newValue, scrollView: scrollView)
-            },
-            scrollView.observe(\.frame, options: [.old, .new]) { scrollView, change in
-                Self.log("frame", old: change.oldValue, new: change.newValue, scrollView: scrollView)
-            }
-        ]
-    }
-
-    private static func log<T: Equatable>(_ key: String, old: T?, new: T?, scrollView: UIScrollView) {
-        guard old != new else { return }
-        let stack = Thread.callStackSymbols.dropFirst(2).prefix(16).joined(separator: "\n")
-        Logger.unifiedInputState.notice("""
-            [UTIScrollToTop] ntp-change \(key, privacy: .public)
-            old=\(String(describing: old), privacy: .public)
-            new=\(String(describing: new), privacy: .public)
-            adjustedInset=\(String(describing: scrollView.adjustedContentInset), privacy: .public)
-            \(stack, privacy: .public)
-            """)
-    }
 }

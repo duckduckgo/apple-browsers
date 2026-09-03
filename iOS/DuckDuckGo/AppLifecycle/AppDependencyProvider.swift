@@ -68,6 +68,7 @@ protocol DependencyProvider {
     var dbpSettings: DataBrokerProtectionSettings { get }
     var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
     var internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProvider { get }
+    var internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -112,6 +113,7 @@ final class AppDependencyProvider: DependencyProvider {
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     let internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+    let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
     private init() {

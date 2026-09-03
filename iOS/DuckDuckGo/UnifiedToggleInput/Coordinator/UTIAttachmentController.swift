@@ -63,6 +63,8 @@ final class UTIAttachmentController {
         let isPageContextAttachable: () -> Bool?
         let pageContextAttachHandler: () -> (() -> Void)?
         let presenterViewController: () -> UIViewController?
+        /// Hack phase: the tabs the user may attach. Empty hides the "Add tabs" entry.
+        let multiTabAttachmentTabs: () -> [MultiTabAttachmentCandidate]
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -386,6 +388,7 @@ final class UTIAttachmentController {
         let canAttachPageContext = environment.isContextualChatState() && (environment.isPageContextAttachable() ?? true)
         let pageContextActionHandler = canAttachPageContext ? environment.pageContextAttachHandler() : nil
         let policy = environment.policy()
+        let attachableTabs = environment.isContextualChatState() ? environment.multiTabAttachmentTabs() : []
         return presenter.makeAttachmentMenu(
             presenterProvider: { [weak self] in
                 self?.environment.presenterViewController()
@@ -394,8 +397,28 @@ final class UTIAttachmentController {
             canAttachFile: canPresentFilePicker,
             allowedFileTypes: allowedFileUTTypes,
             showsPageContextAction: environment.isContextualChatState(),
-            pageContextActionHandler: pageContextActionHandler
+            pageContextActionHandler: pageContextActionHandler,
+            attachableTabs: attachableTabs,
+            attachedTabIds: Set(view.currentAttachments().compactMap { $0.tabAttachment?.tabId }),
+            tabActionHandler: { [weak self] candidate in
+                self?.toggleTabAttachment(candidate)
+            }
         )
+    }
+
+    /// Attaches the tab, or detaches it when it is already attached. The menu is rebuilt afterwards
+    /// so the checkmarks match the chips.
+    func toggleTabAttachment(_ candidate: MultiTabAttachmentCandidate) {
+        if let attached = view.currentAttachments().first(where: { $0.tabAttachment?.tabId == candidate.tabId }) {
+            view.removeAttachment(attached.id)
+        } else {
+            view.addAttachment(.tab(UnifiedToggleInputTabAttachment(tabId: candidate.tabId,
+                                                                    title: candidate.title,
+                                                                    url: candidate.url)))
+        }
+        callbacks.onDraftChanged()
+        callbacks.onExpandIfNeeded()
+        updateAttachButtonPresentation()
     }
 
     /// Opens the system file picker directly for the promo "add file" CTA. No-ops when files can't be
@@ -409,8 +432,9 @@ final class UTIAttachmentController {
     func updateAttachButtonPresentation() {
         let policy = environment.policy()
         let supportsPageContextAttachment = environment.isContextualChatState() && environment.pageContextAttachHandler() != nil && (environment.isPageContextAttachable() ?? true)
-        let supportsAttachments = environment.supportsImageUpload() || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
-        let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
+        let supportsTabAttachment = environment.isContextualChatState() && !environment.multiTabAttachmentTabs().isEmpty
+        let supportsAttachments = environment.supportsImageUpload() || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment || supportsTabAttachment
+        let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment || supportsTabAttachment
         let canAttachMore = hasAvailableAttachmentAction && !view.isGenerating()
         let showsUnavailableAttachmentButton = environment.hasSelectedModel() && environment.keepsUnavailableAttachmentButtonVisible()
         view.setImageButtonHidden(!supportsAttachments && !showsUnavailableAttachmentButton)
@@ -429,7 +453,7 @@ final class UTIAttachmentController {
     var attachmentCount: Int {
         view.currentAttachments().filter {
             switch $0 {
-            case .image, .file: return true
+            case .image, .file, .tab: return true
             case .invalidFile: return false
             }
         }.count

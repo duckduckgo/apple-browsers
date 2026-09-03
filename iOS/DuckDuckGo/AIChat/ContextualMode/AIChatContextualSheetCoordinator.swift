@@ -101,6 +101,12 @@ final class AIChatContextualSheetCoordinator {
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
     private let tabURLPublishers: AIChatTabURLPublishers
+
+    /// Hack phase: the tab list and page-context cache behind multi-tab Duck.ai attachments.
+    private let multiTabAttachmentContext: MultiTabAttachmentContext?
+
+    /// The tab this sheet belongs to. Its own entry carries no `tabId` in the submitted payload.
+    private let currentTabUID: TabUID?
     private var contextUpdateCancellable: AnyCancellable?
     private var sessionEffectCancellable: AnyCancellable?
     private var currentPageURLCancellable: AnyCancellable?
@@ -183,7 +189,11 @@ final class AIChatContextualSheetCoordinator {
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
          selectionJourneyScopeID: String = UUID().uuidString,
-         selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil) {
+         selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil,
+         multiTabAttachmentContext: MultiTabAttachmentContext? = nil,
+         currentTabUID: TabUID? = nil) {
+        self.multiTabAttachmentContext = multiTabAttachmentContext
+        self.currentTabUID = currentTabUID
         self.voiceSearchHelper = voiceSearchHelper
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -776,6 +786,7 @@ private extension AIChatContextualSheetCoordinator {
         host.onAIVoiceChatRequested = { [weak self] in
             self?.requestNewVoiceChatLeavingCurrentSurface()
         }
+        host.setMultiTabAttachmentContext(multiTabAttachmentContext, currentTabUID: currentTabUID)
         host.setVoiceSearchAvailable(voiceSearchHelper.isVoiceSearchEnabled)
         host.onVoiceSearchRequested = { [weak self] in
             self?.presentDictation()

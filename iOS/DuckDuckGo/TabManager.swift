@@ -127,6 +127,13 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         tabsModelProvider.aggregateTabsModel
     }
     
+    /// Hack phase: the page-context cache and the tab list behind multi-tab Duck.ai attachments.
+    /// Handed to every `TabViewController` so each tab writes its own page context into it.
+    @MainActor
+    private(set) lazy var multiTabAttachmentContext = MultiTabAttachmentContext(
+        openTabsProvider: { [weak self] in self?.allTabsModel.tabs ?? [] }
+    )
+
     private var tabControllerCache = [TabViewController]()
 
     weak var cacheDelegate: (any TabControllerCacheDelegate)?
@@ -394,6 +401,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
                                                               eventHub: eventHub)
+        controller.multiTabAttachmentContext = multiTabAttachmentContext
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -524,6 +532,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
                                                               eventHub: eventHub)
+        controller.multiTabAttachmentContext = multiTabAttachmentContext
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,

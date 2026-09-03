@@ -745,6 +745,14 @@ class TabViewController: UIViewController {
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
 
+    /// Hack phase: the shared cache this tab writes its page context into, plus the tab list the
+    /// contextual chat's tab picker reads. Injected by `TabManager` right after construction.
+    var multiTabAttachmentContext: MultiTabAttachmentContext?
+
+    /// Holds this tab's subscription to the page-context script. Separate from the contextual
+    /// sheet's own subscription, which only runs while the sheet collects.
+    var multiTabAttachmentCancellable: AnyCancellable?
+
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let pageContextHandler = AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
@@ -767,7 +775,9 @@ class TabViewController: UIViewController {
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
-            selectionJourneyScopeID: tabModel.uid
+            selectionJourneyScopeID: tabModel.uid,
+            multiTabAttachmentContext: multiTabAttachmentContext,
+            currentTabUID: tabModel.uid
         )
         coordinator.delegate = self
         return coordinator
@@ -2613,6 +2623,8 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
         specialErrorPageNavigationHandler.handleWebView(webView, didFinish: navigation)
+
+        requestPageContextForMultiTabAttachment()
     }
 
     /// Fires product telemetry related to the current URL
@@ -4392,6 +4404,7 @@ extension TabViewController: UserContentControllerDelegate {
         }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
+        startObservingPageContextForMultiTabAttachment()
 
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {

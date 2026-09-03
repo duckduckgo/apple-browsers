@@ -269,7 +269,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
                 currentTabUID: { "tab-1" },
                 isPageContextAttachable: { nil },
                 pageContextAttachHandler: { nil },
-                presenterViewController: { nil }
+                presenterViewController: { nil },
+                multiTabAttachmentTabs: { [] }
             ),
             callbacks: callbackSpy.callbacks
         )

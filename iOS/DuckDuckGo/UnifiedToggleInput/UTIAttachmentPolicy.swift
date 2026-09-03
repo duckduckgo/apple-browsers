@@ -118,6 +118,9 @@ struct UTIAttachmentPolicy {
             return model?.supportedFileTypes.contains(fileAttachment.mimeType) == true
         case .invalidFile(let fileAttachment):
             return model?.supportedFileTypes.contains(fileAttachment.mimeType) == true
+        case .tab:
+            // A tab carries page context, not an upload, so no model capability gates it.
+            return true
         }
     }
 

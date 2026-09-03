@@ -259,6 +259,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "You can only attach %d images at a time.";
 
+/* Top-level attachment menu option that opens a list of the other open browser tabs, so their content can be attached to an AI chat message */
+"aichat.attachment.option.add.tabs" = "Add Tabs";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Ask About Page";
 

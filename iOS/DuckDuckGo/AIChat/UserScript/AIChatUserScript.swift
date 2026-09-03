@@ -117,11 +117,20 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
     var attachedPageContextProvider: (() -> AIChatPageContextData?)?
 
+    /// Page contexts for the other browser tabs attached to the prompt, in the order the user
+    /// attached them. Empty keeps the payload on its single-context shape. Set by the host that
+    /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
+    var attachedTabContextsProvider: (() -> [AIChatPageContextData])?
+
     /// Text selections to send on the prompt's `selections` key, alongside `pageContext` rather than in place of it.
     var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
 
     /// Fired with the IDs of selections that have been dispatched.
     var onAttachedSelectionsConsumed: (([String]) -> Void)?
+
+    /// Fired once the attached tabs have been dispatched, so the host can drop them. Like
+    /// selections, they must survive a queued prompt, so nothing else may clear them.
+    var onAttachedTabContextsConsumed: (() -> Void)?
 
     /// Fires after a prompt is submitted via the multi-modal `submitPrompt(...)` path (used by
     /// the native UTI). Set by the host so the chip can flip to its post-submit silent state.
@@ -353,10 +362,9 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
-        // `AIChatNativePrompt.pageContext` accepts either a single `PageContext` or an array
-        // (omnibar's multi-tab case on macOS). iOS today always sends the single form, which
-        // matches the duck.ai sidebar's existing current-page semantics.
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext.map(AIChatPageContextPayload.single), selections: attachedSelectionsPayload, reasoningEffort: reasoningEffort)
+        // `AIChatNativePrompt.pageContext` accepts either a single `PageContext` or an array.
+        // The array form carries the current page plus every tab the user attached.
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContextPayload(currentPageContext: pageContext), selections: attachedSelectionsPayload, reasoningEffort: reasoningEffort)
         pushPrompt(promptPayload)
     }
 
@@ -371,8 +379,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil) {
-        // `attachedPageContextProvider` returns the single current-page form on iOS; wrap it
-        // in the `.single` variant of the union the schema now accepts.
+        // `attachedPageContextProvider` returns the current page; `attachedTabContextsProvider`
+        // returns the tabs the user attached. Together they decide the shape of the union.
         let promptPayload = AIChatNativePrompt.queryPrompt(
             prompt,
             autoSubmit: true,
@@ -380,12 +388,44 @@ final class AIChatUserScript: NSObject, Subfeature {
             images: images,
             files: files,
             modelId: modelId,
-            pageContext: (pageContext ?? attachedPageContextProvider?()).map(AIChatPageContextPayload.single),
+            pageContext: pageContextPayload(currentPageContext: pageContext ?? attachedPageContextProvider?()),
             selections: attachedSelectionsPayload,
             reasoningEffort: reasoningEffort
         )
         pushPrompt(promptPayload)
         onPromptSubmitted?()
+    }
+
+    /// Chooses the shape of the `pageContext` union.
+    ///
+    /// With no attached tab the payload keeps its single-context shape, which is what the duck.ai
+    /// sidebar has always sent. With one or more attached tabs it becomes an array: the current
+    /// page first, then the tabs in the order the user attached them.
+    ///
+    /// `tabId` is the discriminator the duck.ai web app reads. The current page carries none, so
+    /// any tab entry that lost its own id is dropped rather than sent as a second current page.
+    private func pageContextPayload(currentPageContext: AIChatPageContextData?) -> AIChatPageContextPayload? {
+        let tabContexts = attachedTabContextsProvider?() ?? []
+        guard !tabContexts.isEmpty else {
+            print("🇱🇻 PAYLOAD .single - providerSet=\(attachedTabContextsProvider != nil) tabContexts=0 currentPage=\(currentPageContext != nil)")
+            return currentPageContext.map(AIChatPageContextPayload.single)
+        }
+
+        let entries: [AIChatPageContextData]
+        if let currentPageContext {
+            entries = [currentPageContext.withTabId(nil)] + tabContexts.filter { $0.tabId != nil }
+        } else {
+            entries = tabContexts
+        }
+
+        let withoutTabId = entries.filter { $0.tabId == nil }.count
+        let contentLengths = entries.map { String($0.content.count) }.joined(separator: ",")
+        Logger.aiChat.debug("[MultiTabAttachment] pageContext payload: \(entries.count) entries, \(withoutTabId) without tabId, content lengths: \(contentLengths)")
+        print("🇱🇻 PAYLOAD .multiple - \(entries.count) entries, \(withoutTabId) without tabId, contentLengths=[\(contentLengths)]")
+        for entry in entries {
+            print("🇱🇻   entry tabId=\(entry.tabId ?? "nil") title=\(entry.title) contentLength=\(entry.content.count) url=\(entry.url)")
+        }
+        return .multiple(entries)
     }
 
     /// Nil rather than empty when nothing is attached, so the key is omitted from the payload.
@@ -405,6 +445,12 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// destroy them. Dispatch is not acknowledgement — the frontend can still fail to receive it.
     private func pushPrompt(_ payload: AIChatNativePrompt) {
         guard push(.submitPrompt(payload)) else { return }
+
+        if case .multiple = payload.pageContext {
+            print("🇱🇻 CONSUMED attached tabs after successful push")
+            onAttachedTabContextsConsumed?()
+        }
+
         guard let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty else { return }
 
         onAttachedSelectionsConsumed?(selectionIDs)

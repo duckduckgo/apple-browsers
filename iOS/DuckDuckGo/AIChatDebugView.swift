@@ -40,6 +40,11 @@ struct AIChatDebugView: View {
             AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 #endif
 
+            Section(header: Text("Multi-Tab Attachments"),
+                    footer: Text("Hack phase. Adds an \"Add Tabs\" entry to the contextual chat's attachment menu, and caches every tab's page context in memory. An app restart empties the cache.")) {
+                Toggle("Enable multi-tab attachments", isOn: $viewModel.isMultiTabAttachmentHackPhaseEnabled)
+            }
+
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
                 NavigationLink(destination: AIChatDebugHostnameEntryView(viewModel: viewModel)) {
                     Text("Message policy hostname")
@@ -97,6 +102,13 @@ struct AIChatDebugView: View {
 
 private final class AIChatDebugViewModel: ObservableObject {
     private var debugSettings = AIChatDebugSettings()
+    private let multiTabAttachmentFeature = MultiTabAttachmentHackFeature()
+
+    @Published var isMultiTabAttachmentHackPhaseEnabled: Bool {
+        didSet {
+            multiTabAttachmentFeature.isMultiTabAttachmentHackPhaseEnabled = isMultiTabAttachmentHackPhaseEnabled
+        }
+    }
 
     struct SessionTimerPreset {
         let label: String
@@ -145,6 +157,7 @@ private final class AIChatDebugViewModel: ObservableObject {
         self.enteredHostname = debugSettings.messagePolicyHostname ?? ""
         self.customURL = debugSettings.customURL ?? ""
         self.contextualSessionTimerSeconds = debugSettings.contextualSessionTimerSeconds
+        self.isMultiTabAttachmentHackPhaseEnabled = MultiTabAttachmentHackFeature().isMultiTabAttachmentHackPhaseEnabled
     }
 
     private func formatDuration(_ seconds: Int) -> String {

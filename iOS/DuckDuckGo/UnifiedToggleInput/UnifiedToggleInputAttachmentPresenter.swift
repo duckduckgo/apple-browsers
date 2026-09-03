@@ -72,15 +72,19 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         canAttachFile: Bool,
         allowedFileTypes: [UTType],
         showsPageContextAction: Bool = false,
-        pageContextActionHandler: (() -> Void)? = nil
+        pageContextActionHandler: (() -> Void)? = nil,
+        attachableTabs: [MultiTabAttachmentCandidate] = [],
+        attachedTabIds: Set<TabUID> = [],
+        tabActionHandler: ((MultiTabAttachmentCandidate) -> Void)? = nil
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
         let canTakePhoto = canAttachPhoto && UIImagePickerController.isSourceTypeAvailable(.camera)
         let canAttachAllowedFile = canAttachFile && !allowedFileTypes.isEmpty
         let canAttachPageContext = pageContextActionHandler != nil
-        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || showsPageContextAction else { return nil }
+        let showsTabAction = !attachableTabs.isEmpty && tabActionHandler != nil
+        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || showsPageContextAction || showsTabAction else { return nil }
 
-        var actions = [
+        var actions: [UIMenuElement] = [
             UIAction(
                 title: UserText.aiChatAttachmentOptionTakePhoto,
                 image: DesignSystemImages.Glyphs.Size16.camera,
@@ -123,7 +127,40 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             )
         }
 
+        if showsTabAction, let tabActionHandler {
+            actions.append(
+                Self.makeTabSubmenu(attachableTabs: attachableTabs,
+                                    attachedTabIds: attachedTabIds,
+                                    tabActionHandler: tabActionHandler)
+            )
+        }
+
         return UIMenu(children: actions)
+    }
+
+    /// Hack phase picker: a submenu with one checkmarked entry per open tab.
+    ///
+    /// Each entry keeps the menu open on iOS 16 and later, so several tabs can be picked in one
+    /// pass. The state is flipped on the action itself because the menu is not rebuilt while it
+    /// stays open.
+    private static func makeTabSubmenu(attachableTabs: [MultiTabAttachmentCandidate],
+                                       attachedTabIds: Set<TabUID>,
+                                       tabActionHandler: @escaping (MultiTabAttachmentCandidate) -> Void) -> UIMenu {
+        let tabActions: [UIAction] = attachableTabs.map { candidate in
+            let action = UIAction(title: candidate.title,
+                                  state: attachedTabIds.contains(candidate.tabId) ? .on : .off) { action in
+                action.state = action.state == .on ? .off : .on
+                tabActionHandler(candidate)
+            }
+            if #available(iOS 16.0, *) {
+                action.attributes.insert(.keepsMenuPresented)
+            }
+            return action
+        }
+
+        return UIMenu(title: UserText.aiChatAttachmentOptionAddTabs,
+                      image: DesignSystemImages.Glyphs.Size16.tabContent,
+                      children: tabActions)
     }
 
     /// Opens the system file picker directly (bypassing the attachment menu) for the promo "add file" CTA.

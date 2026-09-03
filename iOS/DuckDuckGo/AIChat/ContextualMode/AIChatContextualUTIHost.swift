@@ -33,6 +33,12 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private weak var currentUserScript: AIChatUserScript?
     private weak var pendingUserScriptToBind: AIChatUserScript?
     private var isBoundToUserScript = false
+
+    /// Hack phase: the tab list and page-context cache behind multi-tab Duck.ai attachments.
+    private var multiTabAttachmentContext: MultiTabAttachmentContext?
+
+    /// The tab this input belongs to. Its own entry carries no `tabId` in the submitted payload.
+    private var multiTabCurrentTabUID: TabUID?
     private var hasDeliveredFirstPrompt = false
 
     /// The input's bottom while it follows the keyboard, and the fixed pin that replaces it once frozen.
@@ -204,6 +210,12 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         currentUserScript = userScript
         userScript.attachedPageContextProvider = { [weak self] in
             self?.chipViewModel.pendingAttachedContextData
+        }
+        userScript.attachedTabContextsProvider = { [weak self] in
+            self?.attachedTabPageContexts() ?? []
+        }
+        userScript.onAttachedTabContextsConsumed = { [weak self] in
+            self?.coordinator.consumeSubmittedTabAttachments()
         }
         userScript.onPromptSubmitted = { [weak self] in
             self?.handlePromptSubmittedFromUserScript()
@@ -408,6 +420,27 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     func setVoiceSearchAvailable(_ available: Bool) {
         coordinator.updateVoiceSearchAvailability(available)
+    }
+
+    /// Hands the input the tabs it can attach. The current tab is excluded: it is already
+    /// attachable through the page chip.
+    func setMultiTabAttachmentContext(_ context: MultiTabAttachmentContext?, currentTabUID: TabUID?) {
+        multiTabAttachmentContext = context
+        multiTabCurrentTabUID = currentTabUID
+        coordinator.setMultiTabAttachmentContext(context, currentTabUID: currentTabUID)
+    }
+
+    /// One page context per attached tab, in the order the user attached them. Empty when the gate
+    /// is off or when the user attached no tab, which keeps the payload on its single-context shape.
+    private func attachedTabPageContexts() -> [AIChatPageContextData] {
+        guard let multiTabAttachmentContext, multiTabAttachmentContext.isEnabled else {
+            print("🇱🇻 PROVIDER called - contextSet=\(multiTabAttachmentContext != nil) gate=\(multiTabAttachmentContext?.isEnabled ?? false) -> []")
+            return []
+        }
+        let attachments = coordinator.attachedTabAttachments()
+        print("🇱🇻 PROVIDER called - \(attachments.count) attached tab(s): \(attachments.map(\.title).joined(separator: " | "))")
+        guard !attachments.isEmpty else { return [] }
+        return multiTabAttachmentContext.pageContexts(for: attachments, currentTabId: multiTabCurrentTabUID)
     }
 
     /// Drops a dictated query into the field for the user to review before sending.

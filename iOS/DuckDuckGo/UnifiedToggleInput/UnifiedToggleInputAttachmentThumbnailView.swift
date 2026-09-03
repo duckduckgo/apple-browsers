@@ -182,8 +182,24 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
             configureFile(fileName: fileAttachment.fileName, validationMessage: nil)
         case .invalidFile(let fileAttachment):
             configureFile(fileName: fileAttachment.fileName, validationMessage: fileAttachment.validationMessage)
+        case .tab(let tabAttachment):
+            configureTab(title: tabAttachment.title)
         }
         applyAppearance()
+    }
+
+    /// Text only for the hack phase: the tab's title next to a generic tab glyph. The final design
+    /// shows the page's favicon.
+    func configureTab(title: String) {
+        imageView.image = nil
+        imageView.isHidden = true
+        fileIconView.image = DesignSystemImages.Glyphs.Size16.tabContent.withRenderingMode(.alwaysTemplate)
+        fileIconView.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        fileNameLabel.text = title
+        fileIconView.isHidden = false
+        fileNameLabel.isHidden = false
+        accessibilityLabel = title
+        accessibilityValue = nil
     }
 
     func configureFile(fileName: String, validationMessage: String?) {

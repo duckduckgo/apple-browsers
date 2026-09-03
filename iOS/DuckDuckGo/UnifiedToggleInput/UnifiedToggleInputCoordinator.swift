@@ -184,6 +184,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
     private var attachmentController: UTIAttachmentController!
+
+    /// Hack phase: the tab list and page-context cache behind multi-tab Duck.ai attachments.
+    private var multiTabAttachmentContext: MultiTabAttachmentContext?
+
+    /// The tab this input belongs to, excluded from the tab picker.
+    private var multiTabCurrentTabUID: TabUID?
+
+    /// The attached tabs held for a delivery in flight.
+    ///
+    /// `deliverAIChatPrompt` clears the chips before it hands the prompt over, and the prompt can
+    /// then sit in the contextual chat's queue until the frontend is ready. The payload is built at
+    /// that later moment, so this survives until the user script reports the push, exactly like the
+    /// attached selections do.
+    private var submittedTabAttachments: [UnifiedToggleInputTabAttachment]?
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
     /// submit or session reset.
@@ -485,7 +499,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 currentTabUID: { [weak self] in self?.currentTabUID },
                 isPageContextAttachable: { [weak self] in self?.isPageContextAttachable?() },
                 pageContextAttachHandler: { [weak self] in self?.onPageContextAttachRequested },
-                presenterViewController: { [weak self] in self?.attachmentPresenterViewController }
+                presenterViewController: { [weak self] in self?.attachmentPresenterViewController },
+                multiTabAttachmentTabs: { [weak self] in self?.multiTabAttachmentCandidates ?? [] }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
@@ -1651,6 +1666,34 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.updateAttachButtonPresentation()
     }
 
+    // MARK: - Multi-tab attachments (hack phase)
+
+    /// Hands the input the tabs it can attach, and the tab it belongs to.
+    func setMultiTabAttachmentContext(_ context: MultiTabAttachmentContext?, currentTabUID: TabUID?) {
+        multiTabAttachmentContext = context
+        multiTabCurrentTabUID = currentTabUID
+        attachmentController.updateAttachButtonPresentation()
+    }
+
+    /// The tabs attached to the current draft, in the order the user attached them. Falls back to
+    /// the delivery in flight, whose chips are already cleared by the time the payload is built.
+    func attachedTabAttachments() -> [UnifiedToggleInputTabAttachment] {
+        let current = viewController.currentAttachments.compactMap(\.tabAttachment)
+        return current.isEmpty ? (submittedTabAttachments ?? []) : current
+    }
+
+    /// Drops the tabs held for a delivery, once the user script reports the payload was pushed.
+    func consumeSubmittedTabAttachments() {
+        submittedTabAttachments = nil
+    }
+
+    /// The tabs the picker offers. Empty when the gate is off, which hides the menu entry.
+    /// The current tab is excluded: the page chip already attaches it.
+    var multiTabAttachmentCandidates: [MultiTabAttachmentCandidate] {
+        guard let multiTabAttachmentContext, multiTabAttachmentContext.isEnabled else { return [] }
+        return multiTabAttachmentContext.attachableTabs(excluding: multiTabCurrentTabUID)
+    }
+
 }
 
 // MARK: - Tools Menu Selection
@@ -1832,6 +1875,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                                      configuration: PromptSubmissionConfiguration,
                                      tools: [AIChatRAGTool]?,
                                      userScript: AIChatUserScript?) {
+        // Held rather than scoped to this call: a queued prompt builds its payload later.
+        let attachedTabs = viewController.currentAttachments.compactMap(\.tabAttachment)
+        if !attachedTabs.isEmpty {
+            submittedTabAttachments = attachedTabs
+        }
+        print("🇱🇻 DELIVER held=\(submittedTabAttachments?.count ?? 0) tab(s), userScriptBound=\(userScript != nil), contextualState=\(isContextualChatState)")
+
         if isContextualChatState, userScript == nil {
             markActiveChatPromptSubmitted()
             delegate?.unifiedToggleInputDidSubmitPrompt(

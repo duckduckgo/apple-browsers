@@ -81,6 +81,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {
                         movedItem = item
+                        didMove = false
                         return metadata.itemProvider
                     } preview: {
                         preview(item)
@@ -89,6 +90,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {
                         movedItem = item
+                        didMove = false
                         return metadata.itemProvider
                     }
             }

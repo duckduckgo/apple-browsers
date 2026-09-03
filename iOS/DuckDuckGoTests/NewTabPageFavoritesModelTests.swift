@@ -23,11 +23,13 @@ import Bookmarks
 import CoreData
 import Common
 import Persistence
+@_spi(Testing) import PixelKit
 @testable import Core
 @testable import DuckDuckGo
 
 final class NewTabPageFavoritesModelTests: XCTestCase {
     private let favoriteDataSource = MockNewTabPageFavoriteDataSource()
+    private let pixelKitMock = PixelKitMock()
 
     override func tearDown() {
         PixelFiringMock.tearDown()
@@ -80,13 +82,23 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
         XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.homeScreenEditFavorite.name)
     }
 
+    func testFiresPixelOnceWhenFavoritesReordered() {
+        let sut = createSUT()
+
+        sut.favoritesReordered()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["new-tab-page_favorites_reorder"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .dailyAndCount)
+    }
+
     private func createSUT(isFocussedState: Bool = false) -> FavoritesViewModel {
         FavoritesViewModel(isFocussedState: isFocussedState,
                            favoriteDataSource: favoriteDataSource,
                            faviconLoader: MockFavoritesFaviconLoading(),
                            faviconsCache: MockFavoritesFaviconCaching(),
                            pixelFiring: PixelFiringMock.self,
-                           dailyPixelFiring: PixelFiringMock.self)
+                           dailyPixelFiring: PixelFiringMock.self,
+                           pixelKitFiring: pixelKitMock)
     }
 
     // MARK: - Reordering (regression for m_d_favorites_list_index_not_matching_bookmark)
@@ -148,7 +160,8 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
                                      faviconLoader: MockFavoritesFaviconLoading(),
                                      faviconsCache: MockFavoritesFaviconCaching(),
                                      pixelFiring: PixelFiringMock.self,
-                                     dailyPixelFiring: PixelFiringMock.self)
+                                     dailyPixelFiring: PixelFiringMock.self,
+                                     pixelKitFiring: pixelKitMock)
         // `adapter` retains `model`, keeping the Core Data stack alive for the test's lifetime.
         return (sut, adapter, db, recorder)
     }

@@ -22,6 +22,7 @@ import Bookmarks
 import Combine
 import SwiftUI
 import Core
+import PixelKit
 import WidgetKit
 
 protocol NewTabPageFavoriteDataSource {
@@ -35,6 +36,22 @@ protocol NewTabPageFavoriteDataSource {
     func bookmarkEntity(for favorite: Favorite) -> BookmarkEntity?
     func favorite(at index: Int) throws -> Favorite?
     func removeFavorite(_ favorite: Favorite)
+}
+
+
+private enum NewTabPageFavoritesPixel: PixelKit.Event {
+    /// A drag gesture that reordered the grid, fired once when the gesture finishes.
+    case reorder
+
+    var name: String {
+        switch self {
+        case .reorder: return "new-tab-page_favorites_reorder"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 protocol FavoritesFaviconCaching {
@@ -57,8 +74,9 @@ class FavoritesViewModel: ObservableObject {
     private let isFocussedState: Bool
     private let favoriteDataSource: NewTabPageFavoriteDataSource
     private let faviconsCache: FavoritesFaviconCaching
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: Core.PixelFiring.Type
     private let dailyPixelFiring: DailyPixelFiring.Type
+    private let pixelKitFiring: (any PixelKitFiring)?
    
     var isEmpty: Bool {
         allFavorites.isEmpty
@@ -68,12 +86,14 @@ class FavoritesViewModel: ObservableObject {
          favoriteDataSource: NewTabPageFavoriteDataSource,
          faviconLoader: FavoritesFaviconLoading,
          faviconsCache: FavoritesFaviconCaching,
-         pixelFiring: PixelFiring.Type = Pixel.self,
-         dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+         pixelFiring: Core.PixelFiring.Type = Pixel.self,
+         dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self,
+         pixelKitFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.isFocussedState = isFocussedState
         self.favoriteDataSource = favoriteDataSource
         self.pixelFiring = pixelFiring
         self.dailyPixelFiring = dailyPixelFiring
+        self.pixelKitFiring = pixelKitFiring
         self.faviconsCache = faviconsCache
 
         self.faviconLoader = MissingFaviconWrapper(loader: faviconLoader, onFaviconMissing: { [weak self] in
@@ -152,6 +172,10 @@ class FavoritesViewModel: ObservableObject {
         favoriteDataSource.moveFavorite(favorite, fromIndex: fromIndex, toIndex: index)
         // Reload from the data source; it already republishes the reordered list, so don't re-apply the move.
         updateData()
+    }
+
+    func favoritesReordered() {
+        pixelKitFiring?.fire(NewTabPageFavoritesPixel.reorder, frequency: .dailyAndCount)
     }
 
     // MARK: -

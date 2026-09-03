@@ -192,6 +192,35 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
         XCTAssertNil(flow)
     }
 
+    func testWhenBuildingPostCheckoutWithOnRequestDuckAIChatThenTheClosureIsForwardedToTheFlow() async throws {
+        subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
+                                              .identityTheftRestoration, .identityTheftRestorationGlobal,
+                                              .paidAIChat]
+        var requestedModelID: String?
+        var didFinish = false
+
+        let result = await SubscriptionOnboardingFlowViewModel.postCheckout(
+            persistor: makePersistor(),
+            isPIRAvailable: true,
+            subscriptionManager: subscriptionManager,
+            onFinish: { didFinish = true },
+            onRequestDuckAIChat: { modelID in
+                requestedModelID = modelID
+                return true
+            },
+            vpnController: vpnController,
+            profileStateManager: profileStateManager,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
+
+        let handled = flow.sectionDidRequestDuckAIChat(modelID: "gpt-test")
+
+        XCTAssertTrue(handled)
+        XCTAssertEqual(requestedModelID, "gpt-test")
+        XCTAssertTrue(didFinish)
+    }
+
     // MARK: - subscriptionSettings
 
     func testWhenBuildingSubscriptionSettingsThenItResumesAtTheFirstUnfinishedGatedSection() async throws {
@@ -222,6 +251,28 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             pirScreen: { EmptyView() })
 
         XCTAssertNil(flow)
+    }
+
+    func testWhenBuildingSubscriptionSettingsWithOnRequestDuckAIChatThenTheClosureIsForwardedToTheFlow() async throws {
+        subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
+                                              .identityTheftRestoration, .identityTheftRestorationGlobal,
+                                              .paidAIChat]
+        var requestedModelID: String?
+
+        let result = await SubscriptionOnboardingFlowViewModel.subscriptionSettings(
+            persistor: makePersistor(),
+            isPIRAvailable: true,
+            subscriptionManager: subscriptionManager,
+            onFinish: {},
+            onRequestDuckAIChat: { modelID in
+                requestedModelID = modelID
+                return true
+            },
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
+
+        XCTAssertTrue(flow.sectionDidRequestDuckAIChat(modelID: "gpt-test"))
+        XCTAssertEqual(requestedModelID, "gpt-test")
     }
 
     // MARK: - Helpers

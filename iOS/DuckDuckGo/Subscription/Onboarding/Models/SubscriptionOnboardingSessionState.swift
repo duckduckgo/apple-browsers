@@ -17,20 +17,31 @@
 //  limitations under the License.
 //
 
-/// Whether the checklist reached 100% during *this* run of the app.
+/// App-scoped onboarding flags that must survive *this* run of the app.
 ///
 /// Held at app scope and injected. `SettingsViewModel` is rebuilt on every Settings presentation, so a flag
-/// owned any lower would reset mid-session and take the card with it.
+/// owned any lower would reset mid-session and take the card (or its backfill checks) with it.
 protocol SubscriptionOnboardingSessionStateManaging: AnyObject {
+    /// Whether the checklist reached 100% during this session.
     var didCompleteDuringThisSession: Bool { get }
     func recordCompletedDuringThisSession()
+
+    /// Whether the VPN-configuration backfill check has already run this session, so it isn't repeated
+    /// (a real IPC round-trip) on every Settings appearance.
+    var didCheckVPNActivationDuringThisSession: Bool { get }
+    func recordVPNActivationCheckedDuringThisSession()
 }
 
 final class SubscriptionOnboardingSessionState: SubscriptionOnboardingSessionStateManaging {
 
     private(set) var didCompleteDuringThisSession = false
+    private(set) var didCheckVPNActivationDuringThisSession = false
 
     func recordCompletedDuringThisSession() {
         didCompleteDuringThisSession = true
+    }
+
+    func recordVPNActivationCheckedDuringThisSession() {
+        didCheckVPNActivationDuringThisSession = true
     }
 }

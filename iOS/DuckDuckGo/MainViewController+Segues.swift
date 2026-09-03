@@ -557,6 +557,7 @@ extension MainViewController {
                 self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
             }
         }
+        settingsViewModel.onRequestOnboardingDuckAIChat = { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
         Pixel.fire(pixel: .settingsPresented)
 
         func doLaunch() {

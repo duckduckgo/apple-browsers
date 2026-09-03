@@ -3896,10 +3896,20 @@ class MainViewController: UIViewController {
             onboardingKeyValueStore: keyValueStore,
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
-            }
+            },
+            onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
         ))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController
+    }
+
+    /// Dismisses whatever's presented, then opens Duck.ai chat from the subscription onboarding flow.
+    /// - Returns: `false` if there's nothing to dismiss into, so a caller can fall back.
+    func requestOnboardingDuckAIChat(modelID: String?) -> Bool {
+        dismiss(animated: true) {
+            self.openAIChat(source: .onboarding, flowType: .mobileAppOnboarding, modelId: modelID)
+        }
+        return true
     }
 
     private func subscribeToSettingsDeeplinkNotifications() {

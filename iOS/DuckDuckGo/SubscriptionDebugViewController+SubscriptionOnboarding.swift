@@ -22,7 +22,6 @@ import SwiftUI
 import Subscription
 import Persistence
 import UIComponents
-import Lottie
 
 extension SubscriptionDebugViewController {
 
@@ -201,12 +200,12 @@ extension SubscriptionDebugViewController {
         case .completedIDTR: toggleMockCompleted(.idtr, at: indexPath)
         case .completedDuckAI: toggleMockCompleted(.duckAI, at: indexPath)
         case .completedPIR: toggleMockCompleted(.pir, at: indexPath)
-        case .entitledVPN: mockNetworkProtection.toggle(); tableView.reloadRows(at: [indexPath], with: .none)
-        case .entitledIDTR: mockIdentityTheftRestoration.toggle(); tableView.reloadRows(at: [indexPath], with: .none)
-        case .entitledIDTRGlobal: mockIdentityTheftRestorationGlobal.toggle(); tableView.reloadRows(at: [indexPath], with: .none)
-        case .entitledDuckAI: mockPaidAIChat.toggle(); tableView.reloadRows(at: [indexPath], with: .none)
-        case .entitledPIR: mockDataBrokerProtection.toggle(); tableView.reloadRows(at: [indexPath], with: .none)
-        case .pirAvailable: mockIsPIRAvailable.toggle(); tableView.reloadRows(at: [indexPath], with: .none)
+        case .entitledVPN: toggleMock(\.mockNetworkProtection, at: indexPath)
+        case .entitledIDTR: toggleMock(\.mockIdentityTheftRestoration, at: indexPath)
+        case .entitledIDTRGlobal: toggleMock(\.mockIdentityTheftRestorationGlobal, at: indexPath)
+        case .entitledDuckAI: toggleMock(\.mockPaidAIChat, at: indexPath)
+        case .entitledPIR: toggleMock(\.mockDataBrokerProtection, at: indexPath)
+        case .pirAvailable: toggleMock(\.mockIsPIRAvailable, at: indexPath)
         case .none: break
         }
     }
@@ -351,6 +350,11 @@ extension SubscriptionDebugViewController {
         present(UIHostingController(rootView: root), animated: true)
     }
 
+    private func toggleMock(_ flag: ReferenceWritableKeyPath<SubscriptionDebugViewController, Bool>, at indexPath: IndexPath) {
+        self[keyPath: flag].toggle()
+        tableView.reloadRows(at: [indexPath], with: .none)
+    }
+
     private func toggleMockCompleted(_ item: SubscriptionOnboardingChecklistItem, at indexPath: IndexPath) {
         if mockCompletedItems.contains(item) {
             mockCompletedItems.remove(item)
@@ -392,6 +396,7 @@ extension SubscriptionDebugViewController {
         store.completedItems = []
         store.cardFirstShownDate = nil
         store.fullyCompletedAt = nil
+        store.completionViewCount = 0
         showAlert(title: "Onboarding progress reset")
     }
 

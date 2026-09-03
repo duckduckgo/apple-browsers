@@ -254,6 +254,7 @@
 		35281034C485F1E15258BFD5 /* OnboardingView+IntroDialogContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9785D25DF2EA27126C8A33B8 /* OnboardingView+IntroDialogContent.swift */; };
 		360EBB6A4A2928CA5646BAE9 /* SubscriptionOnboardingPrefetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93434FDB10CB6359CBB62C37 /* SubscriptionOnboardingPrefetcher.swift */; };
 		361A00CC302F5B4B006C2630 /* SubscriptionOnboardingLauncherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361A00CB302F5B4B006C2630 /* SubscriptionOnboardingLauncherTests.swift */; };
+		366E009A81240FDC681C8F9A /* SubscriptionOnboardingActivationRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 364F9422168A601CEC0031E5 /* SubscriptionOnboardingActivationRecorderTests.swift */; };
 		361A00CE302F71AA006C2630 /* SubscriptionDebugViewController+SubscriptionOnboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361A00CD302F71AA006C2630 /* SubscriptionDebugViewController+SubscriptionOnboarding.swift */; };
 		361A00D0302F7695006C2630 /* SubscriptionOnboardingWelcomeViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361A00CF302F7695006C2630 /* SubscriptionOnboardingWelcomeViewTests.swift */; };
 		36208F753005707600EB6335 /* SubscriptionOnboardingShowcaseCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36208F743005707600EB6335 /* SubscriptionOnboardingShowcaseCard.swift */; };
@@ -2950,6 +2951,7 @@
 		356EEE0F1F79421B8FB3F0DA /* LegacyPixelStateMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyPixelStateMigrationTests.swift; sourceTree = "<group>"; };
 		35C1A1DBBD2771506ED6055C /* SubscriptionOnboardingInfoView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingInfoView.swift; sourceTree = "<group>"; };
 		361A00CB302F5B4B006C2630 /* SubscriptionOnboardingLauncherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingLauncherTests.swift; sourceTree = "<group>"; };
+		364F9422168A601CEC0031E5 /* SubscriptionOnboardingActivationRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingActivationRecorderTests.swift; sourceTree = "<group>"; };
 		361A00CD302F71AA006C2630 /* SubscriptionDebugViewController+SubscriptionOnboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SubscriptionDebugViewController+SubscriptionOnboarding.swift"; sourceTree = "<group>"; };
 		361A00CF302F7695006C2630 /* SubscriptionOnboardingWelcomeViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingWelcomeViewTests.swift; sourceTree = "<group>"; };
 		36208F743005707600EB6335 /* SubscriptionOnboardingShowcaseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingShowcaseCard.swift; sourceTree = "<group>"; };
@@ -6621,6 +6623,7 @@
 				3629EE26303CB1D200F8E296 /* SubscriptionOnboardingExperimentTests.swift */,
 				361A00CF302F7695006C2630 /* SubscriptionOnboardingWelcomeViewTests.swift */,
 				361A00CB302F5B4B006C2630 /* SubscriptionOnboardingLauncherTests.swift */,
+				364F9422168A601CEC0031E5 /* SubscriptionOnboardingActivationRecorderTests.swift */,
 				36DD9FE1302BB9A600D12A6A /* SubscriptionOnboardingProgressTests.swift */,
 				36DD9FDF302BB99D00D12A6A /* SubscriptionOnboardingPostCheckoutTriggerTests.swift */,
 				36DD9FDD302BB99300D12A6A /* SubscriptionOnboardingInstrumentationTests.swift */,
@@ -13904,6 +13907,7 @@
 				6F45B7012F1A677400883A86 /* BrowsingMenuSheetCapabilityTests.swift in Sources */,
 				80E2BDB02FDB693A00441FDF /* DuckAIGridItemTests.swift in Sources */,
 				361A00CC302F5B4B006C2630 /* SubscriptionOnboardingLauncherTests.swift in Sources */,
+				366E009A81240FDC681C8F9A /* SubscriptionOnboardingActivationRecorderTests.swift in Sources */,
 				80E5CA032FE0F17800B8F0A0 /* DuckAIVoiceSessionTrackerTests.swift in Sources */,
 				6F45B7102F1F8A0000883A86 /* BrowsingMenuHeaderStateProviderTests.swift in Sources */,
 				98E564092DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,

@@ -26,10 +26,10 @@ struct SubscriptionOnboardingFlowView: View {
     let factory: SubscriptionOnboardingViewFactory
 
     /// Separate from the flow view model so a PIR toggle cannot rebuild a section host's link.
-    // (TODO|Post-iOS15-Drop): observe the flow view model instead.
+    #warning("Post-iOS15-Drop: observe the flow view model instead.")
     @ObservedObject private var pirLaunch: SubscriptionOnboardingPIRLaunchState
 
-    // (TODO|Post-iOS15-Drop): delete — the `NavigationStack` branch renders `rootScreen`.
+    #warning("Post-iOS15-Drop: delete — the `NavigationStack` branch renders `rootScreen`.")
     private let rootSection: SubscriptionOnboardingSection?
 
     /// Built once and held. `factory.screen(for:)` returns a fresh `AnyView` per call, and this one is the
@@ -51,7 +51,7 @@ struct SubscriptionOnboardingFlowView: View {
             .onFirstAppear { flow.flowDidStart() }
     }
 
-    // (TODO|Post-iOS15-Drop): drop the fork and keep the `NavigationStack` branch.
+    #warning("Post-iOS15-Drop: drop the fork and keep the `NavigationStack` branch.")
     @ViewBuilder
     private var stack: some View {
         if #available(iOS 16.0, *) {
@@ -69,7 +69,7 @@ struct SubscriptionOnboardingFlowView: View {
     }
 }
 
-// (TODO|Post-iOS15-Drop): delete this whole type — `NavigationStack` + `navigationDestination` replace it.
+#warning("Post-iOS15-Drop: delete this whole type — `NavigationStack` + `navigationDestination` replace it.")
 /// Recursive section host: renders its screen and the link to its successor.
 struct SubscriptionOnboardingSectionHost: View {
 

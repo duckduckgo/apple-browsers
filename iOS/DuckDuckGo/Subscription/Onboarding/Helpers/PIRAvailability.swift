@@ -27,3 +27,11 @@ enum PIRAvailability {
         isPIREnabled && meetsLocaleRequirement && provider != nil
     }
 }
+
+/// Shared by `SettingsViewModel` and `SubscriptionOnboardingLauncher`.
+enum PIRActivation {
+    static func isActivated(profileStateManager: DBPProfileStateManaging,
+                            freemiumDBPUserStateManager: FreemiumDBPUserStateManaging) -> Bool {
+        profileStateManager.profileState == .hasProfile || freemiumDBPUserStateManager.didActivate
+    }
+}

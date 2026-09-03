@@ -36,12 +36,6 @@ enum SubscriptionSettingsViewConfiguration {
     case trial
 }
 
-/// Atomic sheet payload to avoid SwiftUI staleness when both flag and content come from one tap.
-private struct OnboardingFlowPayload: Identifiable {
-    let id = UUID()
-    let flow: SubscriptionOnboardingFlowViewModel
-}
-
 struct SubscriptionSettingsViewV2: View {
 
     @State var configuration: SubscriptionSettingsViewConfiguration
@@ -705,6 +699,7 @@ extension SubscriptionSettingsViewV2 {
                 isPIRAvailable: isPIRAvailable,
                 subscriptionManager: settingsViewModel.subscriptionManager,
                 onFinish: { onboardingFlow = nil },
+                onRequestDuckAIChat: settingsViewModel.onRequestOnboardingDuckAIChat,
                 pirScreen: { pirDestination }) else { return }
             onboardingFlow = OnboardingFlowPayload(flow: flow)
         }

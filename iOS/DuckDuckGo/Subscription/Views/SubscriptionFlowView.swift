@@ -25,12 +25,6 @@ import DataBrokerProtection_iOS
 import PrivacyConfig
 import VPN
 
-/// Atomic sheet payload to avoid SwiftUI staleness when both flag and content come from one tap.
-private struct OnboardingFlowPayload: Identifiable {
-    let id = UUID()
-    let flow: SubscriptionOnboardingFlowViewModel
-}
-
 struct SubscriptionFlowView: View {
 
     @Environment(\.dismiss) var dismiss
@@ -72,19 +66,9 @@ struct SubscriptionFlowView: View {
                                                                                                      isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser, featureFlagger: featureFlagger)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
-            NavigationLink(
-                destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
-                    .edgesIgnoringSafeArea(.bottom)
-                    .navigationViewStyle(.stack)),
-                isActive: $isShowingDBP,
-                label: { EmptyView() }
-            )
-        } else {
-            NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView().navigationViewStyle(.stack)),
-                           isActive: $isShowingDBP,
-                           label: { EmptyView() })
-        }
+        NavigationLink(destination: LazyView(pirDestination.navigationViewStyle(.stack)),
+                       isActive: $isShowingDBP,
+                       label: { EmptyView() })
 
         baseView
             .toolbar {
@@ -229,13 +213,14 @@ struct SubscriptionFlowView: View {
                 isPIRAvailable: viewModel.isPIRAvailable,
                 subscriptionManager: viewModel.subscriptionManager,
                 onFinish: { onboardingFlow = nil },
+                onRequestDuckAIChat: viewModel.onRequestDuckAIChat,
                 pirScreen: { pirDestination }) else { return }
             viewModel.didPresentOnboarding()
             onboardingFlow = OnboardingFlowPayload(flow: flow)
         }
     }
 
-    /// Same destination the hidden PIR `NavigationLink` above pushes.
+    /// Shared by the hidden PIR `NavigationLink` above and the onboarding flow's `pirScreen`.
     @ViewBuilder
     private var pirDestination: some View {
         if viewModel.isPIREnabled, let provider = viewModel.dataBrokerProtectionViewControllerProvider {

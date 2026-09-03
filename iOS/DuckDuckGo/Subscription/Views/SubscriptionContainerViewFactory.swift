@@ -68,7 +68,8 @@ enum SubscriptionContainerViewFactory {
                                     wideEvent: WideEventManaging,
                                     featureFlagger: FeatureFlagger,
                                     onboardingKeyValueStore: ThrowingKeyValueStoring?,
-                                    meetsPIRLocaleRequirement: @escaping () -> Bool) -> some View {
+                                    meetsPIRLocaleRequirement: @escaping () -> Bool,
+                                    onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
@@ -117,7 +118,8 @@ enum SubscriptionContainerViewFactory {
                                                                        isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: onboardingKeyValueStore,
-            meetsPIRLocaleRequirement: meetsPIRLocaleRequirement
+            meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+            onRequestDuckAIChat: onRequestDuckAIChat
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
@@ -137,7 +139,8 @@ enum SubscriptionContainerViewFactory {
                                    wideEvent: WideEventManaging,
                                    featureFlagger: FeatureFlagger,
                                    onboardingKeyValueStore: ThrowingKeyValueStoring?,
-                                   meetsPIRLocaleRequirement: @escaping () -> Bool) -> some View {
+                                   meetsPIRLocaleRequirement: @escaping () -> Bool,
+                                   onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
         if let redirectURLComponents,
            SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
             makePlansFlowV2(redirectURLComponents: redirectURLComponents,
@@ -162,7 +165,8 @@ enum SubscriptionContainerViewFactory {
                                 wideEvent: wideEvent,
                                 featureFlagger: featureFlagger,
                                 onboardingKeyValueStore: onboardingKeyValueStore,
-                                meetsPIRLocaleRequirement: meetsPIRLocaleRequirement)
+                                meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+                                onRequestDuckAIChat: onRequestDuckAIChat)
         }
     }
 

@@ -172,6 +172,8 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
     var onRequestOpenDuckAIChat: (() -> Void)?
+    /// `nil` unless a real `MainViewController` is available; the onboarding flow falls back to `SubscriptionOnboardingDuckAIChatLauncher` when unset.
+    var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
@@ -215,7 +217,8 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var isPIRActivated: Bool {
-        profileStateManager.profileState == .hasProfile || freemiumDBPUserStateManager.didActivate
+        PIRActivation.isActivated(profileStateManager: profileStateManager,
+                                  freemiumDBPUserStateManager: freemiumDBPUserStateManager)
     }
 
     var canShowFreemiumPIRSettingsEntryPoint: Bool {
@@ -1456,10 +1459,13 @@ extension SettingsViewModel {
         SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordPIRActivated()
     }
 
-    /// Backfill only:  a config being installed is considered vpn step completed.
+    /// Backfill only:  a config being installed is considered vpn step completed. Checked at most once per
+    /// session — `isVPNConfigured()` is a real IPC round-trip, not worth repeating on every Settings appearance.
     private func recordVPNActivationIfNeeded() async {
         let persistor = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
         guard !persistor.completedItems.contains(.vpn) else { return }
+        guard !subscriptionOnboardingSession.didCheckVPNActivationDuringThisSession else { return }
+        subscriptionOnboardingSession.recordVPNActivationCheckedDuringThisSession()
         guard await vpnController.isVPNConfigured() else { return }
         SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordVPNActivated()
     }

@@ -29,6 +29,12 @@ enum SubscriptionOnboardingEntryPoint {
     case subscriptionSettings
 }
 
+/// Atomic sheet payload to avoid SwiftUI staleness when both flag and content come from one tap.
+struct OnboardingFlowPayload: Identifiable {
+    let id = UUID()
+    let flow: SubscriptionOnboardingFlowViewModel
+}
+
 @MainActor
 enum SubscriptionOnboardingLauncher {
 
@@ -66,24 +72,29 @@ extension SubscriptionOnboardingFlowViewModel {
                                               isPIRAvailable: Bool,
                                               subscriptionManager: any SubscriptionManager,
                                               onFinish: @escaping () -> Void,
+                                              onRequestDuckAIChat: ((String?) -> Bool)? = nil,
                                               vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
                                               profileStateManager: DBPProfileStateManaging = DefaultDBPProfileStateManager(keyValueStore: UserDefaults.dbp),
                                               freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp, isUserAuthenticated: { false }, isFreemiumEnabled: { false }),
                                               @ViewBuilder pirScreen: @escaping () -> PIRScreen) async
     -> SubscriptionOnboardingFlowViewModel? {
+        async let vpnConfigured = vpnController.isVPNConfigured()
+        async let entitlement = subscriptionManager.getAllEntitlementStatus()
+
         var persistor = persistor
-        if await vpnController.isVPNConfigured() {
+        if await vpnConfigured {
             persistor.markComplete(.vpn)
         }
-        if profileStateManager.profileState == .hasProfile || freemiumDBPUserStateManager.didActivate {
+        if PIRActivation.isActivated(profileStateManager: profileStateManager,
+                                     freemiumDBPUserStateManager: freemiumDBPUserStateManager) {
             persistor.markComplete(.pir)
         }
-        return await makeFlow(entryPoint: .postCheckout,
-                              persistor: persistor,
-                              isPIRAvailable: isPIRAvailable,
-                              subscriptionManager: subscriptionManager,
-                              onFinish: onFinish,
-                              pirScreen: pirScreen)
+        let progress = SubscriptionOnboardingProgress(persistor: persistor, isPIRAvailable: isPIRAvailable, entitlement: await entitlement)
+        return makeFlow(entryPoint: .postCheckout,
+                        progress: progress,
+                        onFinish: onFinish,
+                        onRequestDuckAIChat: onRequestDuckAIChat,
+                        pirScreen: pirScreen)
     }
 
     /// Resumes at the first unfinished section, and closes on the summary.
@@ -91,29 +102,28 @@ extension SubscriptionOnboardingFlowViewModel {
                                                       isPIRAvailable: Bool,
                                                       subscriptionManager: any SubscriptionManager,
                                                       onFinish: @escaping () -> Void,
+                                                      onRequestDuckAIChat: ((String?) -> Bool)? = nil,
                                                       @ViewBuilder pirScreen: @escaping () -> PIRScreen) async
     -> SubscriptionOnboardingFlowViewModel? {
-        await makeFlow(entryPoint: .subscriptionSettings,
-                       persistor: persistor,
-                       isPIRAvailable: isPIRAvailable,
-                       subscriptionManager: subscriptionManager,
-                       onFinish: onFinish,
-                       pirScreen: pirScreen)
+        let progress = await SubscriptionOnboardingProgress.make(persistor: persistor,
+                                                                  isPIRAvailable: isPIRAvailable,
+                                                                  subscriptionManager: subscriptionManager)
+        return makeFlow(entryPoint: .subscriptionSettings,
+                        progress: progress,
+                        onFinish: onFinish,
+                        onRequestDuckAIChat: onRequestDuckAIChat,
+                        pirScreen: pirScreen)
     }
 
     /// A checklist that comes back empty means
     /// something is wrong with the entitlement read, not that this customer legitimately has nothing
     /// there's nothing to show, so the flow doesn't launch
     private static func makeFlow<PIRScreen: View>(entryPoint: SubscriptionOnboardingEntryPoint,
-                                                  persistor: SubscriptionOnboardingProgressPersisting,
-                                                  isPIRAvailable: Bool,
-                                                  subscriptionManager: any SubscriptionManager,
+                                                  progress: SubscriptionOnboardingProgress,
                                                   onFinish: @escaping () -> Void,
-                                                  @ViewBuilder pirScreen: @escaping () -> PIRScreen) async
+                                                  onRequestDuckAIChat: ((String?) -> Bool)?,
+                                                  @ViewBuilder pirScreen: @escaping () -> PIRScreen)
     -> SubscriptionOnboardingFlowViewModel? {
-        let progress = await SubscriptionOnboardingProgress.make(persistor: persistor,
-                                                                  isPIRAvailable: isPIRAvailable,
-                                                                  subscriptionManager: subscriptionManager)
         guard !progress.checklist.isEmpty else {
             Logger.subscription.error("Onboarding checklist is empty at launch — refusing to present the flow")
             return nil
@@ -121,6 +131,7 @@ extension SubscriptionOnboardingFlowViewModel {
         return SubscriptionOnboardingFlowViewModel(entryPoint: entryPoint,
                                                    progress: progress,
                                                    onFinish: onFinish,
+                                                   onRequestDuckAIChat: onRequestDuckAIChat,
                                                    pirScreen: pirScreen)
     }
 }

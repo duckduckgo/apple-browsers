@@ -19,7 +19,7 @@
 
 import SwiftUI
 
-// (TODO|Post-iOS15-Drop): fold back into the flow view model
+#warning("Post-iOS15-Drop: fold back into the flow view model")
 /// The PIR launch's presentation
 @MainActor
 final class SubscriptionOnboardingPIRLaunchState: ObservableObject {
@@ -37,13 +37,13 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 
     /// The pushed sections, root excluded. Must stay the *sole* `@Published` member: anything else
     /// republishing rebuilds a section host's `NavigationLink`, which reads as a pop.
-    // (TODO|Post-iOS15-Drop): constraint lifts — other state may share this publisher.
+    #warning("Post-iOS15-Drop: constraint lifts — other state may share this publisher.")
     @Published var path: [SubscriptionOnboardingSection] = []
 
     /// The section on screen.
     var currentSection: SubscriptionOnboardingSection? { path.last ?? sequence.first }
 
-    // (TODO|Post-iOS15-Drop): delete — only `isPastSection(_:)` reads it.
+    #warning("Post-iOS15-Drop: delete — only `isPastSection(_:)` reads it.")
     private var depth: Int { path.count }
 
     // MARK: - PIR
@@ -164,7 +164,7 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject {
         onFinish()
     }
 
-    // (TODO|Post-iOS15-Drop): delete this and its four tests — `NavigationStack` drives itself from `path`.
+    #warning("Post-iOS15-Drop: delete this and its four tests — `NavigationStack` drives itself from `path`.")
     /// Drives the `NavigationLink` that pushes the section after `section`.
     func isPastSection(_ section: SubscriptionOnboardingSection) -> Binding<Bool> {
         Binding(get: { [weak self] in

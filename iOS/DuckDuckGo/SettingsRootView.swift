@@ -163,7 +163,8 @@ struct SettingsRootView: View {
                                                              wideEvent: AppDependencyProvider.shared.wideEvent,
                                                              featureFlagger: viewModel.featureFlagger,
                                                              onboardingKeyValueStore: viewModel.keyValueStore,
-                                                             meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement })
+                                                             meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement },
+                                                             onRequestDuckAIChat: viewModel.onRequestOnboardingDuckAIChat)
     }
 
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {

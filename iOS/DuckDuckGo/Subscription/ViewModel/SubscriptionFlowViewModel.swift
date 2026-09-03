@@ -107,6 +107,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     private let meetsPIRLocaleRequirement: () -> Bool
 
+    /// `nil` unless this flow came from `makePurchaseFlowV2`; falls back to `SubscriptionOnboardingDuckAIChatLauncher`.
+    let onRequestDuckAIChat: ((String?) -> Bool)?
+
     var isPIRAvailable: Bool {
         PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
                                     meetsLocaleRequirement: meetsPIRLocaleRequirement(),
@@ -187,7 +190,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          onboardingKeyValueStore: ThrowingKeyValueStoring?,
-         meetsPIRLocaleRequirement: @escaping () -> Bool) {
+         meetsPIRLocaleRequirement: @escaping () -> Bool,
+         onRequestDuckAIChat: ((String?) -> Bool)? = nil) {
         self.initialURL = initialURL
         self.flowType = flowType
         self.userScript = userScript
@@ -200,6 +204,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
+        self.onRequestDuckAIChat = onRequestDuckAIChat
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 

@@ -19,16 +19,60 @@
 
 import Combine
 import DesignResourcesKit
+import os.log
 import SwiftUI
 import UIKit
 
 private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView> {
 
-    func scrollToTop() {
-        guard let listScrollView = firstScrollView(in: view) else { return }
+    func scrollToTop(animated: Bool) {
+        guard let listScrollView = laidOutScrollView() else {
+            Logger.unifiedInputState.notice("[UTIScrollToTop] missing List scroll view")
+            return
+        }
+        let target = CGPoint(x: listScrollView.contentOffset.x,
+                             y: -listScrollView.adjustedContentInset.top)
+        logScrollGeometry(phase: animated ? "animate" : "settle",
+                          scrollView: listScrollView,
+                          target: target)
+        // Native scrolling replaces any active drag/deceleration; a direct assignment can be
+        // overwritten by the List on its next display-link update.
+        listScrollView.setContentOffset(target, animated: animated)
+    }
+
+    func distanceFromTop() -> CGFloat? {
+        guard let listScrollView = laidOutScrollView() else { return nil }
+        logScrollGeometry(phase: "prepare-before", scrollView: listScrollView)
+        return listScrollView.contentOffset.y + listScrollView.adjustedContentInset.top
+    }
+
+    func restoreDistanceFromTop(_ distance: CGFloat) {
+        guard let listScrollView = laidOutScrollView() else { return }
+        let target = CGPoint(x: listScrollView.contentOffset.x,
+                             y: distance - listScrollView.adjustedContentInset.top)
+        logScrollGeometry(phase: "prepare-after", scrollView: listScrollView, target: target)
+        listScrollView.setContentOffset(target, animated: false)
+    }
+
+    private func laidOutScrollView() -> UIScrollView? {
+        view.superview?.layoutIfNeeded()
         view.layoutIfNeeded()
-        listScrollView.contentOffset = CGPoint(x: listScrollView.contentOffset.x,
-                                               y: -listScrollView.adjustedContentInset.top)
+        return firstScrollView(in: view)
+    }
+
+    private func logScrollGeometry(phase: String, scrollView: UIScrollView, target: CGPoint? = nil) {
+        Logger.unifiedInputState.notice("""
+            [UTIScrollToTop] phase=\(phase, privacy: .public)
+            type=\(String(describing: type(of: scrollView)), privacy: .public)
+            offset=\(String(describing: scrollView.contentOffset), privacy: .public)
+            target=\(String(describing: target), privacy: .public)
+            inset=\(String(describing: scrollView.contentInset), privacy: .public)
+            adjustedInset=\(String(describing: scrollView.adjustedContentInset), privacy: .public)
+            safeArea=\(String(describing: self.view.safeAreaInsets), privacy: .public)
+            bounds=\(String(describing: scrollView.bounds), privacy: .public)
+            presentationBounds=\(String(describing: scrollView.layer.presentation()?.bounds), privacy: .public)
+            contentSize=\(String(describing: scrollView.contentSize), privacy: .public)
+            """)
     }
 
     override func viewDidLayoutSubviews() {
@@ -213,14 +257,18 @@ final class UnifiedSuggestionsHost {
         viewModel.prepareForActivation()
     }
 
-    func prepareForDismissAnimation() {
+    func prepareForDismissAnimation(preservingScrollPosition: Bool) {
         guard #available(iOS 17, *), !viewModel.isFireTab, !usesHostingTopInsetForDismissal else { return }
+        let distanceFromTop = preservingScrollPosition ? hostingController?.distanceFromTop() : nil
         usesHostingTopInsetForDismissal = true
         applyCombinedInsets()
+        if let distanceFromTop {
+            hostingController?.restoreDistanceFromTop(distanceFromTop)
+        }
     }
 
-    func scrollToTop() {
-        hostingController?.scrollToTop()
+    func scrollToTop(animated: Bool) {
+        hostingController?.scrollToTop(animated: animated)
     }
 
     /// Updates the tap-ahead arrow direction to match the UTI's current position.

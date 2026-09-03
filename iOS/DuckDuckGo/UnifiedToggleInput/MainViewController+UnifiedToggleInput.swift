@@ -1093,7 +1093,10 @@ extension MainViewController {
             && newTabPageViewController?.restingContentIsLogo == true
         let isSearchContentToSearchContent = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsSearchContent == true
-        let searchOnlyContentToScroll = isSearchContentToSearchContent && !coordinator.isToggleVisible
+        let usesFlagOffTopPortraitLayout = (isFloatingUIEnabled, coordinator.cardPosition.isBottom, isPhoneLandscape)
+            == (false, false, false)
+        let searchOnlyContentToScroll = usesFlagOffTopPortraitLayout && isSearchContentToSearchContent
+            && !coordinator.isToggleVisible
             ? coordinator.contentViewController
             : nil
         let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
@@ -1119,12 +1122,21 @@ extension MainViewController {
             coordinator.contentViewController.beginDismissFade()
         }
         if coordinator.inputMode == .search {
-            prepareSearchContentForDismiss(coordinator: coordinator, isSearchContentToSearchContent: isSearchContentToSearchContent)
+            prepareSearchContentForDismiss(
+                coordinator: coordinator,
+                isSearchContentToSearchContent: isSearchContentToSearchContent,
+                preservingScrollPosition: searchOnlyContentToScroll != nil
+            )
         }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
         let finishDismiss: () -> Void = { [weak self] in
             self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
+            // Reconcile the stored offset only after the focused host is hidden, so cancelling a
+            // native scroll that outlasts the collapse cannot produce a visible final-frame snap.
+            DispatchQueue.main.async {
+                searchOnlyContentToScroll?.scrollToTop(animated: false)
+            }
         }
 
         viewCoordinator.hideUnifiedToggleInputOmnibar(
@@ -1141,7 +1153,6 @@ extension MainViewController {
                         forInputHeight: self.viewCoordinator.standardNavigationBarContainerHeight
                     )
                 }
-                searchOnlyContentToScroll?.scrollToTop()
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
@@ -1158,6 +1169,10 @@ extension MainViewController {
             completion: finishDismiss
         )
 
+        // The collapse animator now owns the final inset; start a native scroll that replaces
+        // an in-flight drag/deceleration instead of competing with it in the animation block.
+        searchOnlyContentToScroll?.scrollToTop(animated: true)
+
         if let omnibarPlaceholderColor {
             coordinator.viewController.animatePlaceholderColorTransition(
                 from: utiPlaceholderColor,
@@ -1167,12 +1182,14 @@ extension MainViewController {
         }
     }
 
-    private func prepareSearchContentForDismiss(coordinator: UnifiedToggleInputCoordinator, isSearchContentToSearchContent: Bool) {
+    private func prepareSearchContentForDismiss(coordinator: UnifiedToggleInputCoordinator,
+                                                isSearchContentToSearchContent: Bool,
+                                                preservingScrollPosition: Bool) {
         // Render the pixel-aligned NTP favorites behind the opaque focused List before their final handoff.
         if coordinator.cardPosition.isBottom, isSearchContentToSearchContent {
             newTabPageViewController?.setFavoritesHidden(false)
         }
-        coordinator.contentViewController.prepareForDismissAnimation()
+        coordinator.contentViewController.prepareForDismissAnimation(preservingScrollPosition: preservingScrollPosition)
     }
 
     private func makeStationaryFocusedContentSnapshotIfNeeded(keepsFocusedContentStationary: Bool,

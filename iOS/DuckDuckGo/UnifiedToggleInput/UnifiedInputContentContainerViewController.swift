@@ -321,12 +321,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost?.beginDismissFade()
     }
 
-    func prepareForDismissAnimation() {
-        unifiedSuggestionsHost?.prepareForDismissAnimation()
+    func prepareForDismissAnimation(preservingScrollPosition: Bool) {
+        unifiedSuggestionsHost?.prepareForDismissAnimation(preservingScrollPosition: preservingScrollPosition)
     }
 
-    func scrollToTop() {
-        unifiedSuggestionsHost?.scrollToTop()
+    func scrollToTop(animated: Bool) {
+        unifiedSuggestionsHost?.scrollToTop(animated: animated)
     }
 
     /// Logo→logo collapse: morph the focused logo to the Dax mark and keep it visible, so it hands

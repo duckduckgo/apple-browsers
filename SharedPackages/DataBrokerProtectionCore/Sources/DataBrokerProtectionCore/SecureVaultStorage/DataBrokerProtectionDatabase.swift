@@ -703,13 +703,11 @@ extension DataBrokerProtectionDatabase {
 
         let databaseBrokerProfileQueryData = try fetchActiveBrokerProfileQueryData()
         let databaseProfileQueries = databaseBrokerProfileQueryData.map { $0.profileQuery }
-        let activeDatabaseProfileQueries = Set(databaseProfileQueries.filter { !$0.deprecated })
 
         // The queries we need to create are the one that exist on the new ones but not in the database
         let profileQueriesToCreate = Set(newProfileQueries).subtracting(Set(databaseProfileQueries))
 
         let profileQueriesToReactivate = Set(databaseProfileQueries.filter(\.deprecated))
-            .subtracting(activeDatabaseProfileQueries)
             .intersection(Set(newProfileQueries))
             .map { $0.with(deprecated: false) }
 

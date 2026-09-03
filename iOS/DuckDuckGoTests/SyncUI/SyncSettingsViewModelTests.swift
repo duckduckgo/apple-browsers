@@ -383,154 +383,6 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.showAutoRestoreReadyCallCount, 0)
     }
 
-    // MARK: - Sync Another Device Prompt Tests
-
-    func testWhenSyncEnabledAndOneDeviceThenPromptIsVisible() {
-        let delegate = MockSyncSettingsViewModelDelegate()
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
-        sut.isSyncEnabled = true
-        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
-
-        let didShowPrompt = sut.checkAndShowSyncWithAnotherDevicePrompt()
-
-        XCTAssertTrue(didShowPrompt)
-        XCTAssertTrue(sut.isSyncWithAnotherDevicePromptVisible)
-    }
-
-    func testWhenSyncEnabledAndMultipleDevicesThenPromptIsNotVisible() {
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: MockSyncSettingsViewModelDelegate())
-        sut.isSyncEnabled = true
-        sut.devices = [
-            .init(id: "1", name: "iPhone", type: "phone", isThisDevice: true),
-            .init(id: "2", name: "Mac", type: "desktop", isThisDevice: false)
-        ]
-
-        let didShowPrompt = sut.checkAndShowSyncWithAnotherDevicePrompt()
-
-        XCTAssertFalse(didShowPrompt)
-        XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
-    }
-
-    func testWhenSyncDisabledThenPromptIsNotVisible() {
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: MockSyncSettingsViewModelDelegate())
-        sut.isSyncEnabled = false
-        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
-
-        sut.checkAndShowSyncWithAnotherDevicePrompt()
-
-        XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
-    }
-
-    func testWhenBusyThenPromptIsNotVisible() {
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: MockSyncSettingsViewModelDelegate())
-        sut.isSyncEnabled = true
-        sut.isBusy = true
-        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
-
-        sut.checkAndShowSyncWithAnotherDevicePrompt()
-
-        XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
-    }
-
-    func testWhenDevicesEmptyThenPromptIsNotVisible() {
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: MockSyncSettingsViewModelDelegate())
-        sut.isSyncEnabled = true
-        sut.devices = []
-
-        sut.checkAndShowSyncWithAnotherDevicePrompt()
-
-        XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
-    }
-
-    func testWhenPromptDismissedThenVisibilityFlagClears() {
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: MockSyncSettingsViewModelDelegate())
-        sut.isSyncWithAnotherDevicePromptVisible = true
-
-        sut.dismissSyncWithAnotherDevicePrompt()
-
-        XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
-    }
-
-    func testWhenPromptAlreadyShownThenPromptIsNotVisible() {
-        let delegate = MockSyncSettingsViewModelDelegate()
-        delegate.hasShownSimplifiedSyncAnotherDevicePrompt = true
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
-        sut.isSyncEnabled = true
-        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
-
-        sut.checkAndShowSyncWithAnotherDevicePrompt()
-
-        XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
-    }
-
-    func testWhenPromptShownThenHasShownFlagIsPersisted() {
-        let delegate = MockSyncSettingsViewModelDelegate()
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
-        sut.isSyncEnabled = true
-        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
-
-        sut.checkAndShowSyncWithAnotherDevicePrompt()
-
-        XCTAssertTrue(delegate.hasShownSimplifiedSyncAnotherDevicePrompt)
-    }
-
-    func testWhenGuardFailsThenHasShownFlagIsNotSet() {
-        let delegate = MockSyncSettingsViewModelDelegate()
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
-        sut.isSyncEnabled = false
-        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
-
-        sut.checkAndShowSyncWithAnotherDevicePrompt()
-
-        XCTAssertFalse(delegate.hasShownSimplifiedSyncAnotherDevicePrompt)
-    }
-
-    func testWhenPromptDismissedWithPendingToastThenToastIsRequested() {
-        let delegate = MockSyncSettingsViewModelDelegate()
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
-
-        sut.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
-        sut.syncWithAnotherDevicePromptDidDismiss()
-
-        XCTAssertEqual(delegate.showSimplifiedSyncEnabledToastCallCount, 1)
-    }
-
-    func testWhenPromptDismissedTwiceWithPendingToastThenToastIsRequestedOnlyOnce() {
-        let delegate = MockSyncSettingsViewModelDelegate()
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
-
-        sut.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
-
-        sut.syncWithAnotherDevicePromptDidDismiss()
-        sut.syncWithAnotherDevicePromptDidDismiss()
-
-        XCTAssertEqual(delegate.showSimplifiedSyncEnabledToastCallCount, 1)
-    }
-
-    func testWhenPromptDismissedWithoutPendingToastThenToastIsNotRequested() {
-        let delegate = MockSyncSettingsViewModelDelegate()
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
-
-        sut.syncWithAnotherDevicePromptDidDismiss()
-
-        XCTAssertEqual(delegate.showSimplifiedSyncEnabledToastCallCount, 0)
-    }
-
-    func testWhenSyncAnotherDevicePromptPrimaryActionTappedThenPendingToastIsCleared() async {
-        let delegate = MockSyncSettingsViewModelDelegate()
-        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
-        sut.isSyncEnabled = true
-        sut.isSyncWithAnotherDevicePromptVisible = true
-
-        sut.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
-        sut.syncAnotherDeviceFromPromptTapped()
-        await Task.yield()
-        sut.syncWithAnotherDevicePromptDidDismiss()
-
-        XCTAssertFalse(sut.isSyncWithAnotherDevicePromptVisible)
-        XCTAssertEqual(delegate.showSimplifiedSyncEnabledToastCallCount, 0)
-    }
-
     func testWhenShowSyncAnotherDevicePromptFromToggleV2AndNoPreservedAccountThenPromptIsShownWithoutCreatingAccount() async {
         let delegate = MockSyncSettingsViewModelDelegate()
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
@@ -770,13 +622,11 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     var showRecoveringDataAutoRestoreCallCount = 0
     var showRecoveryCodeEntryCallCount = 0
     var showSyncWithAnotherDeviceCallCount = 0
-    var showSimplifiedSyncEnabledToastCallCount = 0
     var simplifiedCreateAccountAndStartSyncingCallCount = 0
     var onShowAutoRestoreReady: (() -> Void)?
     var onShowRecoveringDataAutoRestore: (() -> Void)?
     var onShowRecoveryCodeEntry: (() -> Void)?
     var onAuthenticateUserFinished: (() -> Void)?
-    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool = false
     var firedSyncSetupPixelEvents: [SyncSettingsViewModel.SyncSetupPixelEvent] = []
 
     var syncBookmarksPausedTitle: String?
@@ -820,9 +670,6 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     }
     func showSyncWithAnotherDevice() {
         showSyncWithAnotherDeviceCallCount += 1
-    }
-    func showSimplifiedSyncEnabledToast() {
-        showSimplifiedSyncEnabledToastCallCount += 1
     }
     func shareRecoveryPDF() {}
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {

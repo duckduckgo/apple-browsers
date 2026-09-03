@@ -460,28 +460,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    func showPreparingSync(context: SimplifiedConnectingSheetView.Context = .syncingDevices) async {
-        await withCheckedContinuation { continuation in
-            showPreparingSync(context: context) {
-                continuation.resume()
-            }
-        }
-    }
-
-    func showPreparingSync(context: SimplifiedConnectingSheetView.Context = .syncingDevices, _ completion: (() -> Void)?) {
-        guard let navigationController, navigationController.view.window != nil else {
-            Logger.sync.error("Unable to present preparing sync UI because Sync settings navigation controller is not in the window hierarchy")
-            completion?()
-            return
-        }
-
-        let controller = UIHostingController(rootView: SimplifiedConnectingSheetView(context: context))
-        controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
-        controller.sheetPresentationController?.detents = [.large()]
-        navigationController.present(controller, animated: true, completion: completion)
-    }
-
-
     @MainActor
     func performDeferredPreservedAccountCleanupIfNeeded() async -> Bool {
         guard needsPreservedAccountCleanupBeforeServerOperation else {
@@ -517,8 +495,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         switch entryPoint {
         case .pairing:
             showSyncWithAnotherDevice()
-        case .simplifiedToggle:
-            viewModel.beginSimplifiedSyncSetup()
         case .simplifiedToggleV2:
             viewModel.isBusy = false
             viewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
@@ -591,8 +567,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             presentScanOrPasteCodeView(
                 codeForDisplayOrPasting: pairingInfo.base64Code,
                 stringForQRCode: stringForQRCode,
-                source: source,
-                onPresentPixelInfo: .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion))
+                source: source)
         }
     }
 
@@ -601,12 +576,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Task {
             let stringForQRCode: String
             let codeForDisplayOrPasting: String
-            let onPresentPixelInfo: SyncSetupPixelInfo?
             let source: SyncSetupSource
             if shouldUsePreservedAccountForConnectionFlow {
                 stringForQRCode = recoveryCode
                 codeForDisplayOrPasting = recoveryCode
-                onPresentPixelInfo = nil
                 source = intent == .syncAnotherDevice ? .exchange : .recovery
             } else {
                 do {
@@ -614,7 +587,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                     codeForDisplayOrPasting = pairingInfo.base64Code
                     source = intent == .syncAnotherDevice ? .connect : .recovery
-                    onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion)
                 } catch {
                     sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .connect)
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
@@ -624,15 +596,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             presentScanOrPasteCodeView(
                 codeForDisplayOrPasting: codeForDisplayOrPasting,
                 stringForQRCode: stringForQRCode,
-                source: source,
-                onPresentPixelInfo: onPresentPixelInfo)
+                source: source)
         }
     }
 
     private func presentScanOrPasteCodeView(codeForDisplayOrPasting: String,
                                             stringForQRCode: String,
-                                            source: SyncSetupSource,
-                                            onPresentPixelInfo: SyncSetupPixelInfo?) {
+                                            source: SyncSetupSource) {
         scanSetupSource = source
         let model = ScanOrPasteCodeViewModel(
             codeForDisplayOrPasting: codeForDisplayOrPasting,
@@ -890,7 +860,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             switch entryPoint {
             case .pairing:
                 return .syncPairing
-            case .simplifiedToggle, .simplifiedToggleV2:
+            case .simplifiedToggleV2:
                 return .syncBackup
             }
         case .recover:
@@ -911,26 +881,12 @@ extension SyncSettingsViewController {
         }
     }
 
-    func showSimplifiedSyncEnabledToast() {
-        DispatchQueue.main.async {
-            ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast)
-        }
-    }
-
     func simplifiedCopyRecoveryCode() {
         UIPasteboard.general.string = recoveryCode
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         ActionMessageView.present(message: UserText.simplifiedRecoveryCodeCopiedToast)
     }
 
-    private enum SimplifiedSyncSettingsKey: String {
-        case hasShownSimplifiedSyncAnotherDevicePrompt = "sync.simplified.sync-another-device-prompt.shown"
-    }
-
-    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool {
-        get { syncSettingsStore.object(forKey: SimplifiedSyncSettingsKey.hasShownSimplifiedSyncAnotherDevicePrompt.rawValue) as? Bool ?? false }
-        set { syncSettingsStore.set(newValue, forKey: SimplifiedSyncSettingsKey.hasShownSimplifiedSyncAnotherDevicePrompt.rawValue) }
-    }
 }
 
 // MARK: - DismissibleHostingController
@@ -979,7 +935,7 @@ private extension CodeCollectionSource {
     }
 }
 
-private struct SyncSetupPixelInfo {
+private enum SyncSetupPixelInfo {
     enum Parameter {
         static let flowVersion = "flow_version"
         static let myKind = "my_kind"
@@ -990,10 +946,6 @@ private struct SyncSetupPixelInfo {
         static let v1 = "v1"
         static let v2 = "v2"
     }
-
-    let pixel: Pixel.Event
-    let source: SyncSetupSource
-    let flowVersion: String?
 }
 
 extension SyncSettingsViewController {

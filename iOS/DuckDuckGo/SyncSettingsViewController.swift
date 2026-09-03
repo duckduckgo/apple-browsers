@@ -32,7 +32,7 @@ import FeatureFlags_iOS
 import PixelKit
 
 @MainActor
-class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
+class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsViewV2> {
 
     struct SourceConstants {
         static let startSyncFlow = "sync-start"
@@ -57,7 +57,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     let syncBookmarksAdapter: SyncBookmarksAdapter
     let syncCredentialsAdapter: SyncCredentialsAdapter
     let syncCreditCardsAdapter: SyncCreditCardsAdapter?
-    var connector: RemoteConnecting?
     weak var scanCodeViewModel: ScanOrPasteCodeViewModel?
     var codeCollectionIntent: CodeCollectionIntent?
 
@@ -156,7 +155,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         )
         self.viewModel = viewModel
 
-        let rootView = SyncSettingsRootView(model: viewModel, useSimplifiedLayoutV2: true)
+        let rootView = SimplifiedSyncSettingsViewV2(model: viewModel)
 
         super.init(rootView: rootView)
 
@@ -327,7 +326,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        connector = nil
         refreshAutoRestoreDecisionState()
         syncService.scheduler.requestSyncImmediately()
     }
@@ -506,19 +504,9 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     }
 
     func endConnectMode() {
-        connector?.stopPolling()
-        connector = nil
         Task {
             await connectionController.cancel()
         }
-    }
-
-    func startConnectMode() throws -> String {
-        // Handle local authentication later
-        let connector = try syncService.remoteConnect()
-        self.connector = connector
-        self.startPolling()
-        return connector.code
     }
 
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey) async throws {
@@ -538,23 +526,6 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         viewModel.showSuccess(recoveryCode: recoveryCode, isRecovery: isRecovery)
     }
 
-    func startPolling() {
-        Task { @MainActor in
-            do {
-                if let recoveryKey = try await connector?.pollForRecoveryKey() {
-                    await dismissPresentedViewController()
-                    await showPreparingSync()
-                    try await loginAndShowDeviceConnected(recoveryKey: recoveryKey)
-                } else {
-                    // Likely cancelled elsewhere
-                    return
-                }
-            } catch {
-                await handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
-            }
-        }
-    }
-    
     func syncCodeEntered(code: String, source: CodeEntrySource) async -> Bool {
         let codeSource: SyncCodeSource
         switch source {
@@ -582,7 +553,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     }
 
     func codeCollectionCancelled(source: CodeCollectionSource) {
-        assert(navigationController?.visibleViewController is UIHostingController<AnyView>)
+        assert(navigationController?.visibleViewController is UIHostingController<ScanQRCodeViewV2>)
         needsPreservedAccountCleanupBeforeServerOperation = false
         autoRestorePromptSource = nil
         dismissPresentedViewController()

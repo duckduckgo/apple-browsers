@@ -165,14 +165,6 @@ final class InternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProvid
         self.appVersion = appVersion
     }
 
-    /// Foundation reports "en_GB"; the schema asks for BCP-47. Keyword suffixes (e.g.
-    /// "en_GB@calendar=gregorian") are dropped rather than translated.
-    private static var bcp47Locale: String {
-        let identifier = Locale.current.identifier
-        let base = identifier.split(separator: "@").first.map(String.init) ?? identifier
-        return base.replacingOccurrences(of: "_", with: "-")
-    }
-
     private static var hardwareModel: String? {
         var size = 0
         guard sysctlbyname("hw.model", nil, &size, nil, 0) == 0, size > 0 else { return nil }
@@ -192,7 +184,7 @@ final class InternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProvid
             appBuild: appVersion.buildNumber,
             formFactor: "desktop",
             architecture: Self.machineArchitecture,
-            locale: Self.bcp47Locale,
+            locale: Locale.current.localeIdentifierAsJsonFormat,
             channel: AppVersionModel(appVersion: appVersion).distributionLabel,
             deviceModel: Self.hardwareModel,
             deviceManufacturer: "Apple",

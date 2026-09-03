@@ -48,11 +48,15 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         var chrome = {
             runtime: {},
             webNavigation: { onCommitted: { addListener: function() {} } },
-            tabs: {}
+            tabs: {},
+            storage: { local: {} }
         };
         var originalRuntime = chrome.runtime;
         var originalTabs = chrome.tabs;
+        var originalWebNavigation = chrome.webNavigation;
         var originalOnCommitted = chrome.webNavigation.onCommitted;
+        var originalStorage = chrome.storage;
+        var originalStorageLocal = chrome.storage.local;
         """)
         try assertNoExceptions()
     }
@@ -144,6 +148,81 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.webNavigation.onCommitted === originalOnCommitted")
     }
 
+    func testWhenSubNamespaceIsMissing_ThenItIsStubbedAndSiblingsAreUntouched() throws {
+        try evaluateStubScript()
+
+        try assertTrue("typeof chrome.storage.managed.onChanged.addListener === 'function'")
+        try assertTrue("typeof chrome.storage.managed.get === 'function'")
+        try assertTrue("chrome.storage === originalStorage")
+        try assertTrue("chrome.storage.local === originalStorageLocal")
+    }
+
+    // MARK: - Retention
+
+    func testWhenNamespacesAreDecorated_ThenTheyAreRetainedOnTheGlobal() throws {
+        try evaluateStubScript()
+
+        let retentionProperty = WebExtensionAPIStubScript.retentionPropertyName
+        try assertTrue("Array.isArray(globalThis.\(retentionProperty))")
+        try assertTrue("globalThis.\(retentionProperty).length >= 1")
+        try assertTrue("globalThis.\(retentionProperty).indexOf(originalWebNavigation) !== -1")
+        try assertTrue("globalThis.\(retentionProperty).indexOf(originalStorage) !== -1")
+        try assertTrue("globalThis.\(retentionProperty).indexOf(chrome) !== -1")
+
+        // The retention array itself must not show up in enumeration of the global.
+        try assertTrue("Object.keys(globalThis).indexOf('\(retentionProperty)') === -1")
+    }
+
+    func testWhenScriptIsEvaluatedTwice_ThenTheRetentionArrayIsReused() throws {
+        try evaluateStubScript()
+        context.evaluateScript("var firstRunRetained = globalThis.\(WebExtensionAPIStubScript.retentionPropertyName);")
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("globalThis.\(WebExtensionAPIStubScript.retentionPropertyName) === firstRunRetained")
+    }
+
+    // MARK: - ServiceWorker Clients
+
+    func testWhenClientsGlobalIsMissing_ThenAMinimalStubIsInstalled() throws {
+        try evaluateStubScript()
+
+        try assertTrue("typeof globalThis.clients === 'object'")
+        try assertTrue("typeof clients.matchAll === 'function'")
+
+        context.evaluateScript("""
+        var matchAllResult = 'pending';
+        clients.matchAll().then(function(result) { matchAllResult = result; });
+        var claimResolved = false;
+        clients.claim().then(function() { claimResolved = true; });
+        var openWindowResult = 'pending';
+        clients.openWindow('https://example.com').then(function(result) { openWindowResult = result; });
+        var getResult = 'pending';
+        clients.get('id').then(function(result) { getResult = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("Array.isArray(matchAllResult) && matchAllResult.length === 0")
+        try assertTrue("claimResolved === true")
+        try assertTrue("openWindowResult === null")
+        try assertTrue("getResult === undefined")
+    }
+
+    func testWhenClientsGlobalAlreadyExists_ThenItIsNotReplaced() throws {
+        context.evaluateScript("var clients = { matchAll: function() { return Promise.resolve(['native']); } };")
+        context.evaluateScript("var originalClients = clients;")
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("clients === originalClients")
+
+        context.evaluateScript("var matchAllResult = null; clients.matchAll().then(function(r) { matchAllResult = r; });")
+        try assertNoExceptions()
+        try assertTrue("matchAllResult.length === 1 && matchAllResult[0] === 'native'")
+    }
+
     func testWhenEventIsMissingButNamespaceIsToo_ThenNothingIsAddedToTheStub() throws {
         // `dns` is stubbed wholesale, so its events come from the stub rather than the event list.
         try evaluateStubScript()
@@ -160,6 +239,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("consoleMessages[0].indexOf('[DuckDuckGo]') === 0")
         try assertTrue("consoleMessages[0].indexOf('notifications') !== -1")
         try assertTrue("consoleMessages[0].indexOf('webNavigation.onCreatedNavigationTarget') !== -1")
+        try assertTrue("consoleMessages[0].indexOf('storage.managed') !== -1")
+        try assertTrue("consoleMessages[0].indexOf('clients') !== -1")
     }
 
     func testWhenScriptIsEvaluatedTwice_ThenNothingChangesAndNothingIsLoggedAgain() throws {
@@ -185,6 +266,9 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         try assertNoExceptions()
         XCTAssertTrue(bareContext.evaluateScript("typeof chrome === 'undefined'")?.toBool() == true)
+        XCTAssertTrue(bareContext.evaluateScript("typeof clients === 'undefined'")?.toBool() == true)
+        let retentionProperty = WebExtensionAPIStubScript.retentionPropertyName
+        XCTAssertTrue(bareContext.evaluateScript("globalThis.\(retentionProperty) === undefined")?.toBool() == true)
     }
 
     // MARK: - Helpers

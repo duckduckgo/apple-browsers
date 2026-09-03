@@ -59,6 +59,8 @@ public final class ManagementDialogModel: ObservableObject {
     @Published public var isConnectingThisDeviceOnly: Bool = false
     @Published public var isConnectingAnotherDevice: Bool = false
 
+    public var thisDeviceName: String?
+
     public var isConnecting: Bool {
         isConnectingThisDeviceOnly || isConnectingAnotherDevice
     }

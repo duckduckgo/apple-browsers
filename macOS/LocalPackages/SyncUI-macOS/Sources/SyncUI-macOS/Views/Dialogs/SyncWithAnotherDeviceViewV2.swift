@@ -240,7 +240,7 @@ struct SyncWithAnotherDeviceViewV2: View {
                                                       stateColors: .themedDismissButton))
 
                 Button {
-                    model.delegate?.copyCode()
+                    model.delegate?.copyCode(codeForDisplayOrPasting)
                     showCopyConfirmation = true
                 } label: {
                     HStack(spacing: 6) {

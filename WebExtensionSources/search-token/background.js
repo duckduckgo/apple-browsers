@@ -22,8 +22,9 @@ async function pullAndSet() {
                 priority: 1,
                 action: { type: "modifyHeaders", requestHeaders: [{ header: "x-temp-tablet", operation: "set", value: token }] },
                 // SERP only: ^ matches a separator (? or &), so this requires a q= query param
-                // in any position (isDuckDuckGoSearch), not just any duckduckgo.com page.
-                condition: { urlFilter: "||duckduckgo.com/*^q=", resourceTypes: ["main_frame"] }
+                // in any position (isDuckDuckGoSearch), not just any page on the host.
+                // aaron.duck.co is the dev instance for this ad-hoc test build.
+                condition: { urlFilter: "||aaron.duck.co/*^q=", resourceTypes: ["main_frame"] }
             }]
         });
     } else {

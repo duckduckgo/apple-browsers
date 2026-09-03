@@ -29,12 +29,6 @@ enum SubscriptionOnboardingEntryPoint {
     case subscriptionSettings
 }
 
-/// Atomic sheet payload to avoid SwiftUI staleness when both flag and content come from one tap.
-struct OnboardingFlowPayload: Identifiable {
-    let id = UUID()
-    let flow: SubscriptionOnboardingFlowViewModel
-}
-
 @MainActor
 enum SubscriptionOnboardingLauncher {
 

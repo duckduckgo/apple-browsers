@@ -2313,8 +2313,9 @@ class TabViewController: UIViewController {
     deinit {
         if #available(iOS 18.4, *) {
             let webExtensionManager = webExtensionManagerProvider()
+            let id = tabModel.uid
             DispatchQueue.main.asyncOrNow {
-                webExtensionManager?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: self.tabModel.uid))
+                webExtensionManager?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
             }
         }
         rulesCompilationMonitor.tabWillClose(tabModel.uid)

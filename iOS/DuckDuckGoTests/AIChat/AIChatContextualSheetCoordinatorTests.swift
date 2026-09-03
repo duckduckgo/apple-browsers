@@ -44,8 +44,17 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contextSubject.eraseToAnyPublisher()
         }
 
+        private let documentReadInProgressSubject = CurrentValueSubject<Bool, Never>(false)
+        var documentReadInProgressPublisher: AnyPublisher<Bool, Never> {
+            documentReadInProgressSubject.eraseToAnyPublisher()
+        }
+
         func sendContext(_ context: AIChatPageContext?) {
             contextSubject.send(context)
+        }
+
+        func sendDocumentReadInProgress(_ inProgress: Bool) {
+            documentReadInProgressSubject.send(inProgress)
         }
 
         var isCurrentPageAttachableReturnValue = true

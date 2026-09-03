@@ -123,6 +123,7 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             isFloatingUIEnabled: config.isFloatingUIEnabled,
+            dismissKeyboardOnRestingContentScroll: config.dismissKeyboardOnRestingContentScroll,
             escapeHatch: escapeHatch,
             favoritesViewModel: config.favoritesViewModel,
             messagesModel: config.messagesModel)
@@ -317,6 +318,7 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             isFloatingUIEnabled: config.isFloatingUIEnabled,
+            dismissKeyboardOnRestingContentScroll: config.dismissKeyboardOnRestingContentScroll,
             escapeHatch: escapeHatch,
             favoritesViewModel: config.favoritesViewModel,
             messagesModel: config.messagesModel)

@@ -26,6 +26,7 @@ struct UnifiedSuggestionsHostConfig {
     let inputsPublisher: AnyPublisher<UnifiedSuggestionsInputs, Never>
     let isAddressBarAtBottom: Bool
     let isFloatingUIEnabled: Bool
+    let dismissKeyboardOnRestingContentScroll: Bool
     let favoritesViewModel: FavoritesViewModel
     let messagesModel: NewTabPageMessagesModel
     let onSelectRow: (String) -> Void

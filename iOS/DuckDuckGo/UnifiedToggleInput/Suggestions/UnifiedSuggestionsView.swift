@@ -26,6 +26,7 @@ struct UnifiedSuggestionsView: View {
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
     let isFloatingUIEnabled: Bool
+    let dismissKeyboardOnRestingContentScroll: Bool
     let escapeHatch: EscapeHatchModel?
     @ObservedObject var favoritesViewModel: FavoritesViewModel
     @ObservedObject var messagesModel: NewTabPageMessagesModel
@@ -90,6 +91,7 @@ struct UnifiedSuggestionsView: View {
                             showsRestingContent: !isTypingList,
                             showsFavorites: viewModel.isShowingFavorites,
                             showsSuggestionRows: isShowingList,
+                            dismissKeyboardOnScroll: isShowingList || dismissKeyboardOnRestingContentScroll,
                             usesWholeListDismissFade: usesWholeListDismissFade,
                             animationModel: viewModel.animationModel)
             // Fade complete lists so native cell surfaces and separators cannot outlive their

@@ -585,6 +585,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             inputsPublisher: inputsPublisher,
             isAddressBarAtBottom: !isUsingTopBarPosition,
             isFloatingUIEnabled: isFloatingUIEnabled,
+            dismissKeyboardOnRestingContentScroll: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             favoritesViewModel: favoritesViewModel,
             messagesModel: messagesModel,
             onSelectRow: { [weak self] id in

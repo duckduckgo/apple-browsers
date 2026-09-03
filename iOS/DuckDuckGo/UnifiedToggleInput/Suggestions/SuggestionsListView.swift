@@ -38,6 +38,7 @@ struct SuggestionsListView: View {
     var showsRestingContent = false
     var showsFavorites = false
     var showsSuggestionRows = true
+    var dismissKeyboardOnScroll = true
     var usesWholeListDismissFade = false
     var animationModel: UnifiedSuggestionsAnimationModel
     var isFloatingPopover: Bool = false
@@ -161,7 +162,7 @@ struct SuggestionsListView: View {
             .modifier(ListScrollShadowOverflowModifier(allowsOverflow: showsAmbientMessageShadow && isSearchContentVisible))
             .hideScrollContentBackground()
             .background(Color(designSystemColor: .background))
-            .scrollDismissesKeyboardIfAvailable()
+            .scrollDismissesKeyboardIfAvailable(dismissKeyboardOnScroll)
             // Pointer (trackpad/mouse) leaving the list clears the hover highlight. Touch never fires onHover.
             .onHover { isHovering in
                 if !isHovering { viewModel.selectedRowID = nil }
@@ -490,7 +491,7 @@ private struct SeparatorTrailingToContentModifier: ViewModifier {
 
 private extension View {
     @ViewBuilder
-    func scrollDismissesKeyboardIfAvailable() -> some View {
-        if #available(iOS 16, *) { self.scrollDismissesKeyboard(.immediately) } else { self }
+    func scrollDismissesKeyboardIfAvailable(_ enabled: Bool) -> some View {
+        if #available(iOS 16, *) { self.scrollDismissesKeyboard(enabled ? .immediately : .never) } else { self }
     }
 }

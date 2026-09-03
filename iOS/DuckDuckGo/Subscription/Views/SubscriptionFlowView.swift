@@ -42,7 +42,7 @@ struct SubscriptionFlowView: View {
 
     // MARK: - Onboarding state
 
-    @State private var onboardingFlow: OnboardingFlowPayload?
+    @State private var onboardingFlow: SubscriptionOnboardingFlowViewModel?
 
     enum Constants {
         static let empty = ""
@@ -166,8 +166,8 @@ struct SubscriptionFlowView: View {
             }
         }
 
-        .sheet(item: $onboardingFlow, onDismiss: { viewModel.onboardingFinished() }) { payload in
-            SubscriptionOnboardingLauncher.launch(flow: payload.flow)
+        .sheet(item: $onboardingFlow, onDismiss: { viewModel.onboardingFinished() }) { flow in
+            SubscriptionOnboardingLauncher.launch(flow: flow)
         }
         
         .onFirstAppear {
@@ -216,7 +216,7 @@ struct SubscriptionFlowView: View {
                 onRequestDuckAIChat: viewModel.onRequestDuckAIChat,
                 pirScreen: { pirDestination }) else { return }
             viewModel.didPresentOnboarding()
-            onboardingFlow = OnboardingFlowPayload(flow: flow)
+            onboardingFlow = flow
         }
     }
 

@@ -53,11 +53,19 @@ final class NativeMessagingHostSession {
     /// Set when the process ends. The read loop still has to drain the pipe.
     private var exitStatus: Int32?
 
+    /// Prepares a host process.
+    ///
+    /// - Parameters:
+    ///   - hostName: The name the extension asked for, which is also the manifest's `name`.
+    ///   - executable: The binary the host manifest's `path` names.
+    ///   - callerOrigin: The origin the host sees as its first argument. Chrome passes
+    ///     `chrome-extension://<id>/` there, and a host that has an `allowed_origins` list
+    ///     matches the argument against it and quits when it finds no match. So this is
+    ///     normally the extension's Chrome origin rather than our own `webkit-extension://`
+    ///     base URL. `NativeMessagingHandler` picks the value.
     init(hostName: String, executable: URL, callerOrigin: String) {
         self.hostName = hostName
         process.executableURL = executable
-        // Chrome passes the caller's origin as the first argument, so a host that inspects
-        // its arguments sees what it expects.
         process.arguments = [callerOrigin]
         process.standardInput = inputPipe
         process.standardOutput = outputPipe

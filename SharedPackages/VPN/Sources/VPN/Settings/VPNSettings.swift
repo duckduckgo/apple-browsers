@@ -45,6 +45,7 @@ public final class VPNSettings {
         case setDNSSettings(_ dnsSettings: NetworkProtectionDNSSettings)
         case setShowInMenuBar(_ showInMenuBar: Bool)
         case setDisableRekeying(_ disableRekeying: Bool)
+        case setEndpointPortOverride(_ port: UInt16?)
     }
 
     public enum RegistrationKeyValidity: Codable, Equatable {
@@ -215,6 +216,13 @@ public final class VPNSettings {
                 Change.setDisableRekeying(disableRekeying)
             }.eraseToAnyPublisher()
 
+        let endpointPortOverridePublisher = endpointPortOverridePublisher
+            .dropFirst()
+            .removeDuplicates()
+            .map { endpointPortOverride in
+                Change.setEndpointPortOverride(endpointPortOverride)
+            }.eraseToAnyPublisher()
+
         return Publishers.MergeMany(
             connectOnLoginPublisher,
             includeAllNetworksPublisher,
@@ -230,7 +238,8 @@ public final class VPNSettings {
             environmentChangePublisher,
             dnsSettingsChangePublisher,
             showInMenuBarPublisher,
-            disableRekeyingPublisher).eraseToAnyPublisher()
+            disableRekeyingPublisher,
+            endpointPortOverridePublisher).eraseToAnyPublisher()
     }()
 
     public init(defaults: UserDefaults) {
@@ -253,6 +262,7 @@ public final class VPNSettings {
         defaults.resetDNSSettings()
         defaults.resetNetworkProtectionSettingShowInMenuBar()
         defaults.resetVPNSettingEnforceRoutes()
+        defaults.resetNetworkProtectionSettingEndpointPortOverride()
     }
 
     public func resetTunnelFlagsToDefaults() {
@@ -301,6 +311,8 @@ public final class VPNSettings {
             self.showInMenuBar = showInMenuBar
         case .setDisableRekeying(let disableRekeying):
             self.disableRekeying = disableRekeying
+        case .setEndpointPortOverride(let port):
+            self.endpointPortOverride = port
         }
     }
 
@@ -580,6 +592,22 @@ public final class VPNSettings {
 
         set {
             defaults.networkProtectionSettingDisableRekeying = newValue
+        }
+    }
+
+    // MARK: - Endpoint Port Override
+
+    public var endpointPortOverridePublisher: AnyPublisher<UInt16?, Never> {
+        defaults.networkProtectionSettingEndpointPortOverridePublisher
+    }
+
+    public var endpointPortOverride: UInt16? {
+        get {
+            defaults.networkProtectionSettingEndpointPortOverride
+        }
+
+        set {
+            defaults.networkProtectionSettingEndpointPortOverride = newValue
         }
     }
 

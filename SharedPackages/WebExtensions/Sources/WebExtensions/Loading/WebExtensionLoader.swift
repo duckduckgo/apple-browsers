@@ -170,6 +170,14 @@ public final class WebExtensionLoader: WebExtensionLoading {
             context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
         }
 
+        // Optional API permissions are granted up front too. The manager's `promptForPermissions` delegate already approves every
+        // runtime request, so this only removes the need for the extension to ask, and it keeps behavior consistent for extensions
+        // that check `permissions.contains` before asking (and bail out when it returns false).
+        // Optional host permissions are deliberately left ungranted — host access is unchanged.
+        for permission in webExtension.optionalPermissions {
+            context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
+        }
+
         context.isInspectable = isInspectable
         context.hasAccessToPrivateData = true
         return context

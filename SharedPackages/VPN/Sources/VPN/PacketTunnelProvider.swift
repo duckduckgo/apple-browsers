@@ -1222,7 +1222,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 excludeLocalNetworks: settings.excludeLocalNetworks,
                 excludeCGNAT: settings.excludeCGNAT,
                 dnsSettings: dnsSettings,
-                endpointPortOverride: settings.endpointPortOverride,
+                endpointPortOverride: settings.endpointPortOverride ?? VPNSettings.defaultEndpointPortOverride,
                 regenerateKey: regenerateKey
             )
         } catch {

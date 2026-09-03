@@ -597,6 +597,9 @@ public final class VPNSettings {
 
     // MARK: - Endpoint Port Override
 
+    /// PoC: the endpoint port used when no override has been chosen. Replaces the server-provided port.
+    public static let defaultEndpointPortOverride: UInt16 = 51820
+
     public var endpointPortOverridePublisher: AnyPublisher<UInt16?, Never> {
         defaults.networkProtectionSettingEndpointPortOverridePublisher
     }

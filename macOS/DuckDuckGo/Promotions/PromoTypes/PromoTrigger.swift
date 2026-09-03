@@ -29,6 +29,8 @@ enum PromoTrigger {
     case windowBecameKey
     case newTabPageAppeared
     case autoplayDiscoverability
+    case bookmarkAdded
+    case bookmarksImported
     case missingBookmarkFaviconEncountered
     case testTriggered
 
@@ -43,6 +45,10 @@ enum PromoTrigger {
                 .map { _ in PromoTrigger.windowBecameKey },
             NotificationCenter.default.publisher(for: .autoplayPolicyDisplayed)
                 .map { _ in PromoTrigger.autoplayDiscoverability },
+            NotificationCenter.default.publisher(for: .bookmarkAdded)
+                .map { _ in PromoTrigger.bookmarkAdded },
+            NotificationCenter.default.publisher(for: .bookmarksImported)
+                .map { _ in PromoTrigger.bookmarksImported },
             NotificationCenter.default.publisher(for: .missingBookmarkFaviconEncountered)
                 .map { _ in PromoTrigger.missingBookmarkFaviconEncountered }
         ).eraseToAnyPublisher()
@@ -62,5 +68,7 @@ extension Notification.Name {
     static let promoServiceAppLaunched = Notification.Name("com.duckduckgo.app.promoService.appLaunched")
     static let promoDebugTestTrigger = Notification.Name("com.duckduckgo.app.promoService.debugTestTrigger")
     static let autoplayPolicyDisplayed = Notification.Name("com.duckduckgo.app.autoplayPolicyDisplayed")
+    static let bookmarkAdded = Notification.Name("com.duckduckgo.app.bookmarkAdded")
+    static let bookmarksImported = Notification.Name("com.duckduckgo.app.bookmarksImported")
     static let missingBookmarkFaviconEncountered = Notification.Name("com.duckduckgo.app.missingBookmarkFaviconEncountered")
 }

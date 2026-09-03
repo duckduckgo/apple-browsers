@@ -73,6 +73,12 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         sections.append(BrowsingMenuModel.Section(items: items))
     }
 
+    private func appendInternalFeedbackSection(from entryBuilder: BrowsingMenuEntryBuilding,
+                                               to sections: inout [BrowsingMenuModel.Section]) {
+        let items = [BrowsingMenuModel.Entry(entryBuilder.makeSendInternalFeedbackEntry())].compactMap { $0 }
+        appendSection(items, to: &sections)
+    }
+
     // MARK: - New Tab Page
 
     private func buildNewTabPageMenu(mobileCustomization: MobileCustomization,
@@ -112,10 +118,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         sections.append(BrowsingMenuModel.Section(items: privacyItems))
 
-        let feedbackItems: [BrowsingMenuModel.Entry] = [
-            .init(entryBuilder.makeSendInternalFeedbackEntry())
-        ].compactMap { $0 }
-        appendSection(feedbackItems, to: &sections)
+        appendInternalFeedbackSection(from: entryBuilder, to: &sections)
 
         return BrowsingMenuModel(
             headerItems: headerItems,
@@ -222,10 +225,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             sections.append(BrowsingMenuModel.Section(items: otherItems))
         }
 
-        let feedbackItems: [BrowsingMenuModel.Entry] = [
-            .init(entryBuilder.makeSendInternalFeedbackEntry())
-        ].compactMap { $0 }
-        appendSection(feedbackItems, to: &sections)
+        appendInternalFeedbackSection(from: entryBuilder, to: &sections)
 
         // Show enough items to reveal "Open Bookmarks" (7th item in both layouts):
         // Non-merged: 3 (Bookmark, Favorite, Share) + 3 (Find in Page, Zoom, Desktop Site) + 1 (Open Bookmarks)

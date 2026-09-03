@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrokenSitePrompt
 import BrowserServicesKit
 import DDGSync
 import Foundation
@@ -40,4 +41,5 @@ struct PromoDependencies {
     let syncService: DDGSyncing?
     let syncBookmarksAdapter: SyncBookmarksAdapter?
     let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
+    let brokenSitePromptLimiter: BrokenSitePromptLimiter
 }

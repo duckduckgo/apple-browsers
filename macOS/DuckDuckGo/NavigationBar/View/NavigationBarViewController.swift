@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
 import Combine
@@ -29,7 +28,6 @@ import History
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import os.log
-import PageRefreshMonitor
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -165,7 +163,6 @@ final class NavigationBarViewController: NSViewController {
     private var downloadsCancellables = Set<AnyCancellable>()
     private var cancellables = Set<AnyCancellable>()
 
-    private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let searchPreferences: SearchPreferences
@@ -196,10 +193,6 @@ final class NavigationBarViewController: NSViewController {
     static private let homeButtonLeftPosition = 0
 
     private let networkProtectionButtonModel: NetworkProtectionNavBarButtonModel
-
-    private var isOnboardingFinished: Bool {
-        OnboardingActionsManager.isOnboardingFinished && Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
-    }
 
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
     private let memoryUsageDisplayer: MemoryUsageDisplayer
@@ -235,7 +228,6 @@ final class NavigationBarViewController: NSViewController {
                        networkProtectionPopoverManager: NetPPopoverManager,
                        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
                        autofillPopoverPresenter: AutofillPopoverPresenter,
-                       brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
                        adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
                        searchPreferences: SearchPreferences,
@@ -273,7 +265,6 @@ final class NavigationBarViewController: NSViewController {
                 networkProtectionPopoverManager: networkProtectionPopoverManager,
                 networkProtectionStatusReporter: networkProtectionStatusReporter,
                 autofillPopoverPresenter: autofillPopoverPresenter,
-                brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
                 adBlockingAvailability: adBlockingAvailability,
                 searchPreferences: searchPreferences,
@@ -309,7 +300,6 @@ final class NavigationBarViewController: NSViewController {
         networkProtectionPopoverManager: NetPPopoverManager,
         networkProtectionStatusReporter: NetworkProtectionStatusReporter,
         autofillPopoverPresenter: AutofillPopoverPresenter,
-        brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
         adBlockingAvailability: AdBlockingAvailabilityProviding,
         searchPreferences: SearchPreferences,
@@ -366,7 +356,6 @@ final class NavigationBarViewController: NSViewController {
         self.contentBlocking = contentBlocking
         self.permissionManager = permissionManager
         self.fireproofDomains = fireproofDomains
-        self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
         self.searchPreferences = searchPreferences
@@ -978,11 +967,6 @@ final class NavigationBarViewController: NSViewController {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(showAutoconsentFeedback(_:)),
                                                name: AutoconsentUserScript.newSitePopupHiddenNotification,
-                                               object: nil)
-
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(attemptToShowBrokenSitePrompt(_:)),
-                                               name: .pageRefreshMonitorDidDetectRefreshPattern,
                                                object: nil)
 
         UserDefaults.netP
@@ -1606,35 +1590,6 @@ final class NavigationBarViewController: NSViewController {
             let animationType: NavigationBarBadgeAnimationView.AnimationType = isCosmetic ? .cookiePopupHidden : .cookiePopupManaged
             self.addressBarViewController?.addressBarButtonsViewController?.showBadgeNotification(animationType)
         }
-    }
-
-    @objc private func attemptToShowBrokenSitePrompt(_ sender: Notification) {
-        guard brokenSitePromptLimiter.shouldShowToast(),
-              let url = tabCollectionViewModel.selectedTabViewModel?.tab.url, !url.isDuckDuckGo,
-              isOnboardingFinished
-        else { return }
-        showBrokenSitePrompt()
-    }
-
-    private func showBrokenSitePrompt() {
-        guard view.window?.isKeyWindow == true,
-              let privacyButton = addressBarViewController?.addressBarButtonsViewController?.privacyDashboardButton else { return }
-        brokenSitePromptLimiter.didShowToast()
-        PixelKit.fire(GeneralPixel.siteNotWorkingShown)
-        let popoverMessage = PopoverMessageViewController(message: UserText.BrokenSitePrompt.title,
-                                                          autoDismissDuration: nil,
-                                                          shouldShowCloseButton: true,
-                                                          buttonText: UserText.BrokenSitePrompt.buttonTitle,
-                                                          buttonAction: {
-            self.brokenSitePromptLimiter.didOpenReport()
-            self.addressBarViewController?.addressBarButtonsViewController?.openPrivacyDashboardPopover(entryPoint: .prompt)
-            PixelKit.fire(GeneralPixel.siteNotWorkingWebsiteIsBroken)
-        },
-                                                          onDismiss: {
-            self.brokenSitePromptLimiter.didDismissToast()
-        }
-        )
-        popoverMessage.show(onParent: self, relativeTo: privacyButton, behavior: .semitransient)
     }
 
     func toggleDownloadsPopover(keepButtonVisible: Bool) {

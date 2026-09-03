@@ -96,11 +96,8 @@ public final class BrokenSitePromptLimiter {
         toastDismissStreakCounter = 0
     }
 
-    /// How long the prompt stays suppressed after each show, from the remote config's `coolDownDays`.
-    /// Exposed so a caller coordinating the prompt elsewhere records the same interval this limiter enforces,
-    /// rather than hardcoding a value that could drift from the config.
     public var coolDownInterval: TimeInterval {
-        TimeInterval(getSettingsFromConfig().coolDownDays) * 24 * 60 * 60
+        TimeInterval.days(getSettingsFromConfig().coolDownDays)
     }
 
     /// Clears all limiter state so the prompt behaves as it would for a new user.
@@ -108,6 +105,13 @@ public final class BrokenSitePromptLimiter {
     public func reset() {
         lastToastShownDate = .distantPast
         toastDismissStreakCounter = 0
+    }
+
+    /// Simulates time advancing for the toast eligibility.
+    /// Debug/QA only.
+    public func debugAdvanceDate(by interval: TimeInterval) {
+        let advancedLastToastShownDate = lastToastShownDate.addingTimeInterval(-interval)
+        lastToastShownDate = advancedLastToastShownDate
     }
 
 }

@@ -79,7 +79,7 @@ final class BrokenSitePromptLimiterTests: XCTestCase {
     }
 
     func testCoolDownIntervalMatchesConfigDefaultOfSevenDays() throws {
-        XCTAssertEqual(brokenSiteLimiter.coolDownInterval, 7 * 24 * 60 * 60)
+        XCTAssertEqual(brokenSiteLimiter.coolDownInterval, .days(7))
     }
 
     func testResetClearsShownDateAndDismissStreak() throws {

@@ -21,8 +21,6 @@ import Foundation
 import Persistence
 
 struct BrokenSitePromptSettings: StoringKeys {
-    /// `migrateLegacyKey` carries the shipped values across the rename. The legacy keys contain dots,
-    /// which `StorageKey` rejects because they break UserDefaults KVO observation.
     let lastToastShownDate = StorageKey<Date>(UserDefaultsKeys.brokenSitePromptLastToastShownDate,
                                               migrateLegacyKey: "brokenSitePrompt.last-broken-site-toast-shown-date")
     let toastDismissStreakCounter = StorageKey<Int>(UserDefaultsKeys.brokenSitePromptToastDismissStreakCounter,

@@ -416,8 +416,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
     case promoQueueCookiePopupsBlockedPromo
 
-    /// Kill switch for the Broken Site promo ("Site not working?") now that it is coordinated by the Promo Queue.
-    /// Separate from `.promoQueue` so this one promo can be switched off without disabling every other promo.
+    /// Kill switch for the Broken Site promo ("Site not working?") now.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218158809458623?focus=true
     case promoQueueBrokenSitePromo
 
     /// Enables showing browsing history domains in the first-time quit survey

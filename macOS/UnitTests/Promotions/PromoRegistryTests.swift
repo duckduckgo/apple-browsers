@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrokenSitePrompt
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import RemoteMessaging
@@ -72,7 +73,9 @@ final class PromoRegistryTests: XCTestCase {
                 ),
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
-            ))
+            ),
+            brokenSitePromptLimiter: BrokenSitePromptLimiter(privacyConfigManager: MockPrivacyConfigurationManaging(),
+                                                             store: MockBrokenSitePromptLimiterStore()))
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

@@ -198,20 +198,9 @@ struct EventHubTests {
         #expect(f.fired.isEmpty)
     }
 
-    @Test("skips firing when no bucket matches")
-    func skipsFiringWhenNoBucketMatches() {
-        // Buckets start at 5, so a zero count matches nothing and no pixel is fired.
-        let config = """
-        { "telemetry": { "p": {
-            "state": "enabled",
-            "trigger": { "period": { "seconds": 60 } },
-            "parameters": { "count": { "template": "counter", "source": "test", "buckets": {"5-9": {"gte": 5, "lt": 10}} } }
-        } } }
-        """
-        let f = EventHubFixture.active(config)
-        f.advance(by: 60)
-        #expect(f.fired.isEmpty)
-    }
+    // "skips firing when no bucket matches" moved to `TelemetrySpecTests` as T-CNT-3, where it is
+    // asserted against the specification's fixture — a pixel with no zero bucket staying silent while
+    // the pixels that have one still fire.
 
     @Test("resets state and starts a new period after firing")
     func resetsStateAndStartsNewPeriodAfterFiring() throws {

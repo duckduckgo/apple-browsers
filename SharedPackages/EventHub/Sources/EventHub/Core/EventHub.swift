@@ -31,15 +31,13 @@ public protocol EventHubManaging: AnyObject {
     /// repeat reaches no handler, a first occurrence reaches every handler. See `DedupStore`.
     func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID)
 
-    /// Fires any enabled immediate-trigger telemetry whose `trigger.source` equals `type`. For
-    /// browser-native events (not content-scope-scripts): there is no tab context, so no page to
-    /// de-duplicate against, and every call is a genuine occurrence.
-    func handleImmediateEvent(_ type: String, data: Encodable?)
-
-    /// Counts a browser-native event toward any enabled period/aggregated telemetry whose parameter
-    /// `source` equals `type`. Like `handleImmediateEvent`, and unlike web events, this never passes
-    /// through de-duplication: each call is a genuine occurrence.
-    func handleAggregatedEvent(_ type: String, data: Encodable?)
+    /// Processes a browser-native event (not content-scope-scripts): fires matching immediate
+    /// telemetry, counts it toward matching period telemetry, and reports any experiment metrics bound
+    /// to it — the same fan-out a web event gets.
+    ///
+    /// There is no tab context, so no page to de-duplicate against, and every call is a genuine
+    /// occurrence delivered to every handler. See `DedupStore`.
+    func handleNativeEvent(_ type: String, data: Encodable?)
 
     /// Signals that the given tab has navigated to `url` (clears per-tab dedup on URL change).
     func onNavigationStarted(tabID: EventHubTabID, url: String)
@@ -58,8 +56,7 @@ public protocol EventHubManaging: AnyObject {
 }
 
 public extension EventHubManaging {
-    func handleImmediateEvent(_ type: String) { handleImmediateEvent(type, data: nil) }
-    func handleAggregatedEvent(_ type: String) { handleAggregatedEvent(type, data: nil) }
+    func handleNativeEvent(_ type: String) { handleNativeEvent(type, data: nil) }
 }
 
 /// Real `EventHubManaging` implementation. All mutable state is confined to one serial `DispatchQueue`
@@ -71,8 +68,8 @@ public extension EventHubManaging {
 /// back into EventHub merely enqueues instead of deadlocking.
 ///
 /// Because the body runs later, anything that must be sampled at the moment of the *call* is captured
-/// before dispatching — see `nowMillis` in `handleWebEvent`/`handleAggregatedEvent`, and the payload
-/// encoding in `handleImmediateEvent`.
+/// before dispatching — see `nowMillis` in `handleWebEvent`/`handleNativeEvent`, and the payload
+/// encoding in `handleNativeEvent`.
 ///
 /// The four remaining uses of `queue.sync` are deliberate. None can deadlock: none is reachable from
 /// inside the queue, and a serial queue is FIFO, so a `sync` enqueued after the caller's own `async`
@@ -90,6 +87,7 @@ public final class EventHub: EventHubManaging {
     private let parser: EventHubConfigParser
     private let scheduler: EventHubScheduler
     private let pixelFiring: EventHubPixelFiring
+    private let conversionReporting: EventHubConversionReporting?
     private let queue: DispatchQueue
 
     private var telemetries: [String: Telemetry] = [:]
@@ -99,6 +97,10 @@ public final class EventHub: EventHubManaging {
     /// and hub-lifetime, so it outlives the `Telemetry` objects a period rollover replaces — dedup is
     /// page-scoped, not period-scoped. See `DedupStore`.
     private let dedupStore = DedupStore()
+    /// Every conversion request every experiment currently declares, flat and already multiplied out.
+    /// Rebuilt wholesale from config, like `latestConfigs`, and deliberately never persisted: it is a
+    /// derived view of remote config, so storing it would only duplicate what config already holds.
+    private var metricRequests: [MetricRequest] = []
     private var latestConfigs: [TelemetryPixelConfig] = []
     private var latestEnabled = false
     private var isForeground = false
@@ -131,12 +133,15 @@ public final class EventHub: EventHubManaging {
         settings: EventHubSettingsProviding,
         scheduler: EventHubScheduler,
         pixelFiring: EventHubPixelFiring,
+        conversionReporting: EventHubConversionReporting? = nil,
+        experimentSettings: AnyPublisher<[String: String], Never> = Just([:]).eraseToAnyPublisher(),
         queue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.eventhub")
     ) {
         self.store = store
         self.parser = parser
         self.scheduler = scheduler
         self.pixelFiring = pixelFiring
+        self.conversionReporting = conversionReporting
         self.queue = queue
 
         // Both subscriptions re-apply the config themselves, so any change in enablement *or* in the
@@ -160,6 +165,26 @@ public final class EventHub: EventHubManaging {
                     self.latestConfigs = settings.map { self.parser.parseTelemetry($0) } ?? []
                     Logger.eventHub.info("parsed \(self.latestConfigs.count, privacy: .public) telemetry config(s) from settings")
                     if self.hasConsumedInitialSettings { self.applyConfigLocked() }
+                }
+            }
+            .store(in: &subscriptions)
+        // Deliberately its own parameter rather than a third member of `EventHubSettingsProviding`:
+        // that protocol means "feature enablement plus the telemetry settings, consent-stripped", and
+        // metrics are neither. They live in the settings of the CSS and TDS experiment subfeatures, and
+        // a conversion request carries no event payload — only experiment, metric, window and
+        // threshold — so there is nothing in one for a consent gate to strip.
+        //
+        // Unlike the two above this needs no `hasConsumedInitialSettings` gate: the registry is
+        // in-memory and derived, so a transient empty value during launch costs nothing and cannot wipe
+        // persisted state the way a transient `enabled == false` could.
+        experimentSettings
+            .sink { [weak self] settingsByExperiment in
+                guard let self else { return }
+                queue.async {
+                    self.metricRequests = settingsByExperiment.flatMap { experiment, json in
+                        self.parser.parseMetrics(experiment: experiment, settingsJSON: json)
+                    }
+                    Logger.eventHub.info("parsed \(self.metricRequests.count, privacy: .public) metric conversion request(s) from \(settingsByExperiment.count, privacy: .public) experiment(s)")
                 }
             }
             .store(in: &subscriptions)
@@ -195,39 +220,38 @@ public final class EventHub: EventHubManaging {
                 Logger.eventHub.debug("[EventHub] \(type, privacy: .private) dropped, already seen on this tab's current page")
                 return
             }
-            fireImmediateLocked(source: type, data: data)
-            countPeriodLocked(source: type, data: data, nowMillis: nowMillis)
+            deliverLocked(type: type, data: data, nowMillis: nowMillis)
         }
     }
 
-    public func handleImmediateEvent(_ type: String, data: Encodable?) {
+    /// The single delivery point: one event reaches every handler, exactly once. Web events get here
+    /// only after the de-duplication gate in `handleWebEvent`; native events, having no page to
+    /// de-duplicate against, get here directly. That gate is the *only* difference between the two
+    /// paths, which is precisely what the specification says it is — so the handler list lives here
+    /// once rather than being repeated per entry point.
+    private func deliverLocked(type: String, data: [String: Any]?, nowMillis: Int64) {
+        fireImmediateLocked(source: type, data: data)
+        countPeriodLocked(source: type, data: data, nowMillis: nowMillis)
+        reportMetricsLocked(source: type)
+    }
+
+    public func handleNativeEvent(_ type: String, data: Encodable?) {
         guard !type.isEmpty else { return }
+        Logger.eventHub.debug("[EventHub] native event received: \(type, privacy: .public)")
         // Encoded here, not in the block: `data` is a caller-owned `Encodable` that may be a reference
         // type, and the caller is free to mutate it the moment this returns. The cost is encoding a
-        // payload that a disabled feature then discards — native immediate events are rare enough that
-        // this is cheaper than the alternatives for reading `latestEnabled` off-queue.
-        Logger.eventHub.debug("[EventHub] native immediate event received: \(type, privacy: .public)")
+        // payload that a disabled feature then discards — native events are rare enough that this is
+        // cheaper than the alternatives for reading `latestEnabled` off-queue.
         let encoded = Self.encode(data)
-        queue.async { [self] in
-            guard latestEnabled else {
-                Logger.eventHub.debug("[EventHub] \(type, privacy: .public) dropped, the eventHub feature is disabled")
-                return
-            }
-            fireImmediateLocked(source: type, data: encoded)
-        }
-    }
-
-    public func handleAggregatedEvent(_ type: String, data: Encodable?) {
-        guard !type.isEmpty else { return }
-        Logger.eventHub.debug("[EventHub] native aggregated event received: \(type, privacy: .public)")
-        let encoded = Self.encode(data)
+        // Sampled here for the same reason as in `handleWebEvent`: `now` decides whether the event
+        // still belongs to the running period, so it has to be the arrival time.
         let nowMillis = scheduler.nowMillis()
         queue.async { [self] in
             guard latestEnabled else {
                 Logger.eventHub.debug("[EventHub] \(type, privacy: .public) dropped, the eventHub feature is disabled")
                 return
             }
-            countPeriodLocked(source: type, data: encoded, nowMillis: nowMillis)
+            deliverLocked(type: type, data: encoded, nowMillis: nowMillis)
         }
     }
 
@@ -291,6 +315,33 @@ public final class EventHub: EventHubManaging {
             : outcomes.joined(separator: "; ")
         Logger.eventHub.debug("[EventHub] period routing for \(source, privacy: .private) → \(summary, privacy: .public)")
         rearmSchedulerLocked()
+    }
+
+    /// Reports one conversion request per (experiment, metric, window, threshold) that names this event
+    /// type. Stateless by design: no counting, no window arithmetic, no enrollment check, nothing
+    /// persisted — the experiment framework owns all of that, and no-ops a request for an experiment
+    /// the user is not enrolled in.
+    ///
+    /// A linear scan because `metricRequests` is already flat and tiny (the whole cross-platform
+    /// reference fixture, ten experiments, is fifteen requests). If that ever stops holding, grouping
+    /// it by event type is a one-line change.
+    private func reportMetricsLocked(source: String) {
+        guard let conversionReporting else { return }
+        var reported: [String] = []
+        for request in metricRequests where request.event == source {
+            conversionReporting.reportConversion(experiment: request.experiment,
+                                                 metric: request.metric,
+                                                 windowDays: request.windowDays,
+                                                 threshold: request.threshold)
+            reported.append("\(request.experiment)/\(request.metric) \(request.windowDays.lowerBound)-\(request.windowDays.upperBound)×\(request.threshold)")
+        }
+        // One line per event, as with the period routing above, so "the metric never converted" can be
+        // answered from a single entry: whether anything was declared for this event, and what was
+        // handed to the framework if so.
+        let summary = reported.isEmpty
+            ? "no metric is declared for it (\(metricRequests.count) request(s) loaded)"
+            : reported.joined(separator: "; ")
+        Logger.eventHub.debug("[EventHub] metric routing for \(source, privacy: .private) → \(summary, privacy: .public)")
     }
 
     public func onConfigChanged() {

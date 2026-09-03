@@ -109,6 +109,13 @@ public protocol PrivacyConfiguration {
     /// Returns settings for a specified subfeature.
     func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings?
 
+    /// Returns the raw `settings` JSON of every subfeature of `feature`, keyed by subfeature ID.
+    ///
+    /// Unlike `settings(for: any PrivacySubfeature)` this needs no compile-time subfeature enum, so it
+    /// reaches subfeatures whose IDs only exist in remote config — experiment subfeatures such as
+    /// `contentScopeExperiment1` or `tdsNextExperiment007`. Subfeatures with no `settings` are omitted.
+    func subfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings]
+
     /// Removes given domain from locally unprotected list.
     func userEnabledProtection(forDomain: String)
     /// Adds given domain to locally unprotected list.
@@ -142,5 +149,10 @@ public extension PrivacyConfiguration {
     func stateFor(subfeatureID: SubfeatureID, parentFeatureID: ParentFeatureID, randomizer: (Range<Double>) -> Double = Double.random(in:)) -> PrivacyConfigurationFeatureState {
         return stateFor(subfeatureID: subfeatureID, parentFeatureID: parentFeatureID, versionProvider: AppVersionProvider(), randomizer: randomizer)
     }
+
+    /// Defaulted so the many test doubles conforming to this protocol need not each implement it. It is
+    /// still a protocol requirement, so `AppPrivacyConfiguration`'s real implementation is reached
+    /// through the witness table rather than shadowed by this.
+    func subfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] { [:] }
 
 }

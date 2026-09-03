@@ -55,6 +55,60 @@ public final class EventHubConfigParser {
         }
     }
 
+    /// Parses the `metrics` map out of one experiment subfeature's raw `settings` JSON, returning the
+    /// flattened conversion requests it declares. Malformed or invalid input yields an empty list and
+    /// never throws, as with `parseTelemetry`.
+    ///
+    /// Metrics live in the settings of CSS and TDS experiment subfeatures rather than in the `eventHub`
+    /// feature, so — unlike `parseTelemetry`, which is handed the dictionary remote config already
+    /// holds — this takes the raw JSON string, which is how `PrivacyConfigurationData` carries
+    /// subfeature settings.
+    ///
+    /// One bad metric is isolated rather than fatal: its siblings in the same experiment still parse.
+    public func parseMetrics(experiment: String, settingsJSON: String) -> [MetricRequest] {
+        guard let data = settingsJSON.data(using: .utf8) else { return [] }
+        let settings: SubfeatureSettingsDTO
+        do {
+            settings = try JSONDecoder().decode(SubfeatureSettingsDTO.self, from: data)
+        } catch {
+            Logger.eventHub.error("config: experiment \(experiment, privacy: .public) settings could not be decoded, no metrics configured: \(error.localizedDescription, privacy: .public)")
+            return []
+        }
+        // An absent `metrics` key is the normal case — the key is optional and most experiments declare
+        // none — so it must stay distinguishable from the decode failure above.
+        guard let metrics = settings.metrics else { return [] }
+        return metrics.flatMap { name, dto in
+            Self.toRequests(experiment: experiment, metric: name, dto)
+        }
+    }
+
+    private static func toRequests(experiment: String, metric: String, _ dto: MetricDTO) -> [MetricRequest] {
+        guard let event = dto.event, !event.isEmpty else {
+            Logger.eventHub.error("config: metric \(experiment, privacy: .public)/\(metric, privacy: .public) skipped, missing event")
+            return []
+        }
+        var requests: [MetricRequest] = []
+        for conversion in dto.conversions ?? [] {
+            for window in conversion.windows ?? [] {
+                // The one guard that has to exist: `ClosedRange` traps on an inverted range. Negative
+                // day bounds are meaningless, and a threshold below 1 would have the framework convert
+                // on every occurrence — a config typo would become pixel spam. Config validation
+                // rejects all three upstream (remote-config repo tests, so out of specification
+                // scope); this is defence, and it drops only the offending window or threshold.
+                guard window.count == 2, let low = window.first, let high = window.last,
+                      low >= 0, low <= high else {
+                    Logger.eventHub.error("config: metric \(experiment, privacy: .public)/\(metric, privacy: .public) dropped a conversion window that was not an ordered, non-negative pair")
+                    continue
+                }
+                for threshold in conversion.thresholds ?? [] where threshold >= 1 {
+                    requests.append(MetricRequest(experiment: experiment, event: event, metric: metric,
+                                                  windowDays: low...high, threshold: threshold))
+                }
+            }
+        }
+        return requests
+    }
+
     /// Parses a single serialised pixel config (as produced by `serializePixelConfig`), returning `nil`
     /// if it is malformed or invalid.
     public func parseSinglePixelConfig(name: String, json: String) -> TelemetryPixelConfig? {
@@ -165,6 +219,25 @@ public final class EventHubConfigParser {
         let state: String?
         let trigger: TriggerDTO?
         let parameters: [String: ParameterDTO]?
+    }
+
+    /// An experiment subfeature's `settings`, of which only the optional `metrics` map concerns us —
+    /// TDS experiments also carry `controlUrl`/`treatmentUrl` there, which decode away harmlessly.
+    private struct SubfeatureSettingsDTO: Codable {
+        let metrics: [String: MetricDTO]?
+    }
+
+    /// Every field optional so one malformed metric is skipped with its siblings intact; a
+    /// non-optional field would fail the whole `settings` decode instead.
+    private struct MetricDTO: Codable {
+        let event: String?
+        let conversions: [ConversionDTO]?
+    }
+
+    private struct ConversionDTO: Codable {
+        /// `[[low, high], …]` — inclusive day bounds, which may freely overlap.
+        let windows: [[Int]]?
+        let thresholds: [Int]?
     }
 
     private struct TriggerDTO: Codable {

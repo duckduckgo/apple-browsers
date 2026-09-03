@@ -45,6 +45,7 @@ let package = Package(
                 .product(name: "Common", package: "Common"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ]),
         .testTarget(
             name: "EventHubTests",

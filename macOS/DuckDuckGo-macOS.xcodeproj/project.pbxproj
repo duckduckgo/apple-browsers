@@ -958,6 +958,8 @@
 		3706FE1A293F661700E42796 /* BrowserProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B3F641D27A8D3BD00E0C118 /* BrowserProfileTests.swift */; };
 		3706FE1B293F661700E42796 /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106B9F26A7BE0B0013B453 /* PermissionManagerTests.swift */; };
 		3706FE1C293F661700E42796 /* ConnectBitwardenViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B59CC8B290083240058F2F6 /* ConnectBitwardenViewModelTests.swift */; };
+		7BD5A0062F0A0C0100000006 /* NativeMessagingHostManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */; };
+		7BD5A0072F0A0C0100000007 /* NativeMessagingHostSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */; };
 		3706FE1E293F661700E42796 /* GeolocationProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BB426A809E60013B453 /* GeolocationProviderTests.swift */; };
 		3706FE20293F661700E42796 /* CLLocationManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63ED0E226B3E7FA00A9DAD1 /* CLLocationManagerMock.swift */; };
 		3706FE21293F661700E42796 /* DownloadsPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CD54BA27F25A4000F1F7B9 /* DownloadsPreferencesTests.swift */; };
@@ -2448,6 +2450,8 @@
 		7BE33DE12DC12C4E00A96502 /* NativeMessagingHostManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DE02DC12C0300A96502 /* NativeMessagingHostManifest.swift */; };
 		7BE33DE32DC12C4E00A96502 /* NativeMessagingHostSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DE22DC12C0300A96502 /* NativeMessagingHostSession.swift */; };
 		7BE33DE52DC12C4E00A96502 /* NativeMessagingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DE42DC12C0300A96502 /* NativeMessagingHandler.swift */; };
+		7BD5A0022F0A0C0100000002 /* NativeMessagingHostManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */; };
+		7BD5A0042F0A0C0100000004 /* NativeMessagingHostSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */; };
 		7BE33DD12DC12C4E00A96502 /* WebExtensionPopupPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DD02DC12C0300A96502 /* WebExtensionPopupPresenter.swift */; };
 		7BEC182F2AD5D8DC00D30536 /* SystemExtensionManager in Frameworks */ = {isa = PBXBuildFile; productRef = 7BEC182E2AD5D8DC00D30536 /* SystemExtensionManager */; };
 		7BEC20422B0F505F00243D3E /* AddBookmarkPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */; };
@@ -6121,6 +6125,8 @@
 		7BE33DE02DC12C0300A96502 /* NativeMessagingHostManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostManifest.swift; sourceTree = "<group>"; };
 		7BE33DE22DC12C0300A96502 /* NativeMessagingHostSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostSession.swift; sourceTree = "<group>"; };
 		7BE33DE42DC12C0300A96502 /* NativeMessagingHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHandler.swift; sourceTree = "<group>"; };
+		7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostManifestTests.swift; sourceTree = "<group>"; };
+		7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostSessionTests.swift; sourceTree = "<group>"; };
 		7BEC182D2AD5D89C00D30536 /* SystemExtensionManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemExtensionManager; sourceTree = "<group>"; };
 		7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddBookmarkPopoverView.swift; sourceTree = "<group>"; };
 		7BEC20412B0F505F00243D3E /* AddBookmarkFolderPopoverView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddBookmarkFolderPopoverView.swift; sourceTree = "<group>"; };
@@ -11382,6 +11388,15 @@
 			path = DuckDuckGo;
 			sourceTree = "<group>";
 		};
+		7BD5A0052F0A0C0100000005 /* WebExtensions */ = {
+			isa = PBXGroup;
+			children = (
+				7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */,
+				7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */,
+			);
+			path = WebExtensions;
+			sourceTree = "<group>";
+		};
 		AA585D93248FD31400E9A3E2 /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -11456,6 +11471,7 @@
 				7B0C7F1A2EDF1D0800A338FD /* UserNotifications */,
 				B5E197EA2E8C645500C447CC /* VisualRefresh */,
 				8434D9562F23713000B4796F /* WarnBeforeQuit */,
+				7BD5A0052F0A0C0100000005 /* WebExtensions */,
 				3776582B27F7163B009A6B35 /* WebsiteBreakageReport */,
 				BB77F8CC2EB3990800D035A7 /* WinBackOffer */,
 				376718FE28E58504003A2A15 /* YoutubePlayer */,
@@ -17185,6 +17201,8 @@
 				1D7694002BE3A1AA0016A22B /* DockCustomizerMock.swift in Sources */,
 				3706FE1B293F661700E42796 /* PermissionManagerTests.swift in Sources */,
 				3706FE1C293F661700E42796 /* ConnectBitwardenViewModelTests.swift in Sources */,
+				7BD5A0062F0A0C0100000006 /* NativeMessagingHostManifestTests.swift in Sources */,
+				7BD5A0072F0A0C0100000007 /* NativeMessagingHostSessionTests.swift in Sources */,
 				1D9FDEC72B9B64DB0040B78C /* PrivacyProtectionStatusTests.swift in Sources */,
 				BBE497DD2EDF9AE6000C3DB5 /* QuitSurveyDeciderTests.swift in Sources */,
 				BBE497E02EDF9AE6000C3DB5 /* QuitSurveyViewModelTests.swift in Sources */,
@@ -19642,6 +19660,8 @@
 				1D69B71A2E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */,
 				B6106BA026A7BE0B0013B453 /* PermissionManagerTests.swift in Sources */,
 				4B59CC8C290083240058F2F6 /* ConnectBitwardenViewModelTests.swift in Sources */,
+				7BD5A0022F0A0C0100000002 /* NativeMessagingHostManifestTests.swift in Sources */,
+				7BD5A0042F0A0C0100000004 /* NativeMessagingHostSessionTests.swift in Sources */,
 				B68412202B6A30680092F66A /* StringExtensionTests.swift in Sources */,
 				B6106BB526A809E60013B453 /* GeolocationProviderTests.swift in Sources */,
 				BDA764912BC4E57200D0400C /* MockVPNLocationFormatter.swift in Sources */,

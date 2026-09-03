@@ -414,6 +414,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
+    var isAIChatModelPickerReadOnly: Bool = false {
+        didSet {
+            modelPickerButton.configuration?.image = isAIChatModelPickerReadOnly
+                ? nil
+                : UIImage(systemName: "chevron.down")?.withConfiguration(
+                    UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+                )
+            modelPickerButton.showsMenuAsPrimaryAction = !isAIChatModelPickerReadOnly && modelPickerButton.menu != nil
+        }
+    }
+
     private var canShowModelPicker: Bool {
         isModelPickerEnabled && !(aiChatModelName?.isEmpty ?? true)
     }
@@ -502,6 +513,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     /// Fired when the badge's clear (✕) button is tapped, so the host can deselect the tool.
     var onSelectedToolClearTapped: (() -> Void)?
+    var onCreateImageModelSwitchNoticeDismissed: (() -> Void)?
 
     private var canShowToolPicker: Bool {
         isToolPickerEnabled && toolPickerButton.menu != nil
@@ -603,8 +615,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         didSet { refreshAttachButtonVisibility() }
     }
 
-    /// The menu offering photo / camera / file pickers. Setting it enables the button's primary
-    /// action; setting it nil hides the button — i.e. when the selected model accepts no attachments.
+    /// Whether the attach button should occupy its toolbar slot. Kept separate from the menu so an
+    /// unavailable button can remain visible but disabled.
+    var isAIChatAttachmentButtonVisible: Bool = false {
+        didSet { refreshAttachButtonVisibility() }
+    }
+
+    /// The menu offering photo / camera / file pickers. A nil menu disables the visible button.
     var aiChatAttachmentMenu: UIMenu? {
         get { attachButton.menu }
         set {
@@ -615,7 +632,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private var canShowAttachButton: Bool {
-        isAttachButtonEnabled && attachButton.menu != nil
+        isAttachButtonEnabled && isAIChatAttachmentButtonVisible
     }
 
     /// The strip of pending attachments shown above the toolbar row when attachments are present.
@@ -624,6 +641,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         strip.translatesAutoresizingMaskIntoConstraints = false
         strip.isHidden = true
         return strip
+    }()
+
+    private let createImageModelSwitchCard: UTIFooterCardView = {
+        let card = UTIFooterCardView()
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.alpha = 0
+        card.isHidden = true
+        return card
     }()
 
     let aiChatTextView: ResignSuppressingTextView = {
@@ -1019,6 +1044,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         leadingButtonsContainer.addArrangedSubview(leadingBookmarksButtonView)
         leadingButtonsContainer.addArrangedSubview(passwordsButtonView)
 
+        searchAreaAlignmentView.addSubview(createImageModelSwitchCard)
         searchAreaAlignmentView.addSubview(searchAreaContainerView)
 
         if isFloatingUIEnabled {
@@ -1044,6 +1070,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(selectedToolChipView)
         chromeContentContainerView.addSubview(attachButton)
         chromeContentContainerView.addSubview(attachmentsStripView)
+        createImageModelSwitchCard.onDismissTap = { [weak self] in
+            self?.onCreateImageModelSwitchNoticeDismissed?()
+        }
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
     }
@@ -1118,6 +1147,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             // Grow the field as wide as possible; the leading/trailing bounds above plus the
             // centerX constraint below keep it centered within the available width.
             searchAreaContainerView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
+
+            createImageModelSwitchCard.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+            createImageModelSwitchCard.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            createImageModelSwitchCard.topAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor,
+                                                            constant: -UTIFooterCardView.overlap),
 
             fieldContainerLayoutGuide.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
             fieldContainerLayoutGuide.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
@@ -1458,11 +1492,21 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func overflowTarget(at point: CGPoint, with event: UIEvent?) -> UIView? {
         guard isSearchAreaExpanded else { return nil }
-        // The strip and attach button sit above the text view (which is brought to front for typing),
-        // so route taps to them before falling back to the text view.
-        let candidates: [UIView] = [aiChatSendButton, modelPickerButton, reasoningPickerButton, toolPickerButton, selectedToolChipView, attachButton, attachmentsStripView, aiChatTextView]
+        // Expanded controls sit above the text view, and the footer extends below the view's bounds,
+        // so route taps to them before falling back to the normal hierarchy.
+        let candidates: [UIView] = [
+            aiChatSendButton,
+            modelPickerButton,
+            reasoningPickerButton,
+            toolPickerButton,
+            selectedToolChipView,
+            attachButton,
+            attachmentsStripView,
+            aiChatTextView,
+            createImageModelSwitchCard
+        ]
         return candidates.first { candidate in
-            guard !candidate.isHidden else { return false }
+            guard !candidate.isHidden, candidate.alpha > 0 else { return false }
             let localPoint = candidate.convert(point, from: self)
             return candidate.point(inside: localPoint, with: event)
         }
@@ -1852,6 +1896,58 @@ extension DefaultOmniBarView {
 
 extension DefaultOmniBarView {
 
+    func setCreateImageModelSwitchFooterMessage(_ message: UTIFooterMessage?, animated: Bool) {
+        guard let message, isSearchAreaExpanded else {
+            hideCreateImageModelSwitchCard(animated: animated)
+            return
+        }
+
+        createImageModelSwitchCard.configure(with: message, animateIcon: false)
+        createImageModelSwitchCard.isHidden = false
+        searchAreaAlignmentView.sendSubviewToBack(createImageModelSwitchCard)
+
+        guard animated else {
+            createImageModelSwitchCard.alpha = 1
+            layoutIfNeeded()
+            return
+        }
+
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration,
+                       delay: 0,
+                       options: [.curveEaseInOut, .beginFromCurrentState]) {
+            self.createImageModelSwitchCard.alpha = 1
+            self.layoutIfNeeded()
+        }
+    }
+
+    func expandedContentMaxY(in view: UIView) -> CGFloat {
+        let isCardVisible = !createImageModelSwitchCard.isHidden && createImageModelSwitchCard.alpha > 0
+        let bottomView = isCardVisible ? createImageModelSwitchCard : searchAreaContainerView
+        return bottomView.convert(bottomView.bounds, to: view).maxY
+    }
+
+    private func hideCreateImageModelSwitchCard(animated: Bool) {
+        guard !createImageModelSwitchCard.isHidden else { return }
+
+        let completion: () -> Void = {
+            self.createImageModelSwitchCard.isHidden = true
+        }
+        guard animated else {
+            createImageModelSwitchCard.alpha = 0
+            completion()
+            return
+        }
+
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration,
+                       delay: 0,
+                       options: [.curveEaseInOut, .beginFromCurrentState]) {
+            self.createImageModelSwitchCard.alpha = 0
+        } completion: { finished in
+            guard finished else { return }
+            completion()
+        }
+    }
+
     func setSearchAreaExpanded(_ expanded: Bool, animated: Bool) {
         guard expanded != isSearchAreaExpanded else { return }
         suppressExpansionUpdate = true
@@ -2181,6 +2277,7 @@ extension DefaultOmniBarView {
     }
 
     private func refreshAttachButtonVisibility() {
+        attachButton.isEnabled = isAttachButtonEnabled && attachButton.menu != nil
         // Attach availability drives where the tool picker anchors, so re-evaluate it on every call
         // (including the early-return paths below).
         updateToolPickerLeadingConstraint()

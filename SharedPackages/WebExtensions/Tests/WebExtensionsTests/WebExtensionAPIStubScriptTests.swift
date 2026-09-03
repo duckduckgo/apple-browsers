@@ -318,6 +318,168 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.offscreen.Reason === undefined")
     }
 
+    // MARK: - Permissions
+
+    func testWhenPermissionIsUnknownToTheHost_ThenContainsResolvesFalseInsteadOfThrowing() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+
+        try assertTrue("permissionsResult === false")
+    }
+
+    func testWhenPermissionIsKnownAndGranted_ThenContainsResolvesTrue() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging'] })")
+
+        try assertTrue("permissionsResult === true")
+        // A host that recognizes every name is asked exactly once, as if the wrapper were not there.
+        try assertTrue("permissionsLog.contains.length === 1")
+    }
+
+    func testWhenOneOfSeveralPermissionsIsUnknown_ThenContainsResolvesFalse() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging', 'privacy'] })")
+
+        try assertTrue("permissionsResult === false")
+    }
+
+    func testWhenPermissionIsKnownButNotGranted_ThenContainsResolvesFalse() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['tabs'] })")
+
+        try assertTrue("permissionsResult === false")
+    }
+
+    func testWhenContainsIsCalledWithACallback_ThenTheCallbackReceivesTheBoolean() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var unknownCallbackResult = 'pending';
+        var grantedCallbackResult = 'pending';
+        chrome.permissions.contains({ permissions: ['privacy'] }, function(result) { unknownCallbackResult = result; });
+        chrome.permissions.contains({ permissions: ['nativeMessaging'] }, function(result) { grantedCallbackResult = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("unknownCallbackResult === false")
+        try assertTrue("grantedCallbackResult === true")
+    }
+
+    func testWhenContainsIsCalledWithoutItsOwner_ThenItStillAnswers() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("(function() { var contains = chrome.permissions.contains; return contains({ permissions: ['privacy'] }); })()")
+
+        try assertTrue("permissionsResult === false")
+    }
+
+    func testWhenPermissionIsUnknown_ThenRequestResolvesFalseAndAKnownOneIsRequested() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === false")
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['nativeMessaging'] })")
+        try assertTrue("permissionsResult === true")
+    }
+
+    func testWhenRemoveIncludesAnUnknownPermission_ThenOnlyTheKnownNamesAreRemoved() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['privacy', 'nativeMessaging'] })")
+
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.removed.length === 1 && permissionsLog.removed[0] === 'nativeMessaging'")
+    }
+
+    func testWhenTheHostFailsForAnotherReason_ThenTheErrorIsPassedThrough() throws {
+        try installFakePermissions()
+        context.evaluateScript("""
+        chrome.permissions.contains = function() { return Promise.reject(new Error('Network unreachable')); };
+        """)
+        try assertNoExceptions()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var permissionsError = 'pending';
+        chrome.permissions.contains({ permissions: ['privacy'] }).then(function() {
+            permissionsError = 'unexpectedly resolved';
+        }, function(error) {
+            permissionsError = String(error && error.message);
+        });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("permissionsError === 'Network unreachable'")
+    }
+
+    func testWhenTheHostThrowsSynchronously_ThenContainsStillResolvesFalse() throws {
+        try installFakePermissions()
+        context.evaluateScript("""
+        chrome.permissions.contains = function(descriptor) {
+            permissionsLog.contains.push(descriptor);
+            throw invalidPermissionError('contains', 'privacy');
+        };
+        """)
+        try assertNoExceptions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+
+        try assertTrue("permissionsResult === false")
+    }
+
+    func testWhenAPermissionIsUnknown_ThenItIsLoggedOnceHoweverOftenItIsAsked() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy'] })")
+
+        try assertTrue("consoleMessages.filter(function(message) { return message.indexOf(\"'privacy' permission\") !== -1; }).length === 1")
+    }
+
+    func testWhenPermissionsIsWrapped_ThenTheNamespaceEventsAndGetAllAreUntouched() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try assertTrue("chrome.permissions === originalPermissions")
+        try assertTrue("chrome.permissions.onAdded === originalPermissionsOnAdded")
+        try assertTrue("chrome.permissions.onRemoved === originalPermissionsOnRemoved")
+        try assertTrue("chrome.permissions.getAll === originalPermissionsGetAll")
+        try assertTrue("globalThis.\(WebExtensionAPIStubScript.retentionPropertyName).indexOf(originalPermissions) !== -1")
+        try assertTrue("consoleMessages[0].indexOf('wrapped: [permissions]') !== -1")
+    }
+
+    func testWhenScriptIsEvaluatedTwice_ThenPermissionsMethodsAreNotWrappedTwice() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+        context.evaluateScript("var firstRunContains = chrome.permissions.contains;")
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.permissions.contains === firstRunContains")
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging'] })")
+
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.contains.length === 1")
+    }
+
     // MARK: - Retention
 
     func testWhenNamespacesAreDecorated_ThenTheyAreRetainedOnTheGlobal() throws {
@@ -490,6 +652,95 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         var frame = document.body.lastAppended;
         """)
         try assertNoExceptions()
+    }
+
+    /// Mirrors WebKit's `chrome.permissions`: it answers for the permissions it implements and
+    /// rejects the whole call with its validation error as soon as one name is not among them.
+    /// `nativeMessaging` is granted, `tabs` is implemented but not granted, `privacy` is unknown.
+    private func installFakePermissions() throws {
+        context.evaluateScript("""
+        var unknownPermissions = ['privacy', 'idle', 'offscreen'];
+        var grantedPermissions = ['nativeMessaging'];
+        var permissionsLog = { contains: [], request: [], remove: [], removed: [] };
+
+        function requestedNames(descriptor) {
+            return descriptor && descriptor.permissions ? descriptor.permissions : [];
+        }
+        function firstUnknownName(descriptor) {
+            var names = requestedNames(descriptor);
+            for (var index = 0; index < names.length; index++) {
+                if (unknownPermissions.indexOf(names[index]) !== -1) {
+                    return names[index];
+                }
+            }
+            return null;
+        }
+        function invalidPermissionError(methodName, name) {
+            return new Error("Invalid call to permissions." + methodName + "(). The 'permissions' value is invalid, because '"
+                + name + "' is not a valid permission.");
+        }
+
+        chrome.permissions = {
+            onAdded: { addListener: function() {} },
+            onRemoved: { addListener: function() {} },
+            getAll: function() {
+                return Promise.resolve({ permissions: grantedPermissions.slice(), origins: [] });
+            },
+            contains: function(descriptor) {
+                permissionsLog.contains.push(descriptor);
+                var unknown = firstUnknownName(descriptor);
+                if (unknown !== null) {
+                    return Promise.reject(invalidPermissionError('contains', unknown));
+                }
+                return Promise.resolve(requestedNames(descriptor).every(function(name) {
+                    return grantedPermissions.indexOf(name) !== -1;
+                }));
+            },
+            request: function(descriptor) {
+                permissionsLog.request.push(descriptor);
+                var unknown = firstUnknownName(descriptor);
+                if (unknown !== null) {
+                    return Promise.reject(invalidPermissionError('request', unknown));
+                }
+                requestedNames(descriptor).forEach(function(name) {
+                    if (grantedPermissions.indexOf(name) === -1) {
+                        grantedPermissions.push(name);
+                    }
+                });
+                return Promise.resolve(true);
+            },
+            remove: function(descriptor) {
+                permissionsLog.remove.push(descriptor);
+                var unknown = firstUnknownName(descriptor);
+                if (unknown !== null) {
+                    return Promise.reject(invalidPermissionError('remove', unknown));
+                }
+                requestedNames(descriptor).forEach(function(name) {
+                    var index = grantedPermissions.indexOf(name);
+                    if (index !== -1) {
+                        grantedPermissions.splice(index, 1);
+                    }
+                    permissionsLog.removed.push(name);
+                });
+                return Promise.resolve(true);
+            }
+        };
+
+        var originalPermissions = chrome.permissions;
+        var originalPermissionsOnAdded = chrome.permissions.onAdded;
+        var originalPermissionsOnRemoved = chrome.permissions.onRemoved;
+        var originalPermissionsGetAll = chrome.permissions.getAll;
+        """)
+        try assertNoExceptions()
+    }
+
+    /// Runs a `chrome.permissions` call and leaves its settled value in `permissionsResult`.
+    private func evaluatePermissionsCall(_ script: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        context.evaluateScript("""
+        var permissionsResult = 'pending';
+        (\(script)).then(function(result) { permissionsResult = result; });
+        """)
+        try assertNoExceptions(file: file, line: line)
     }
 
     private func fireScheduledTimers() {

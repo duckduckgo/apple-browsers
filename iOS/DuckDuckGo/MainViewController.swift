@@ -324,6 +324,10 @@ class MainViewController: UIViewController {
     private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool, topInset: CGFloat) = (false, false, -1)
     private lazy var isWindowControlsRowEnabled = WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
     private var lastForegroundEntryDate = Date.distantPast
+
+    /// Current tab whose web process died while backgrounded; its reload is deferred to `onForeground()`.
+    /// Weak so a tab closed while backgrounded is simply dropped.
+    private weak var tabPendingReloadOnForeground: TabViewController?
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
     private var hasCompletedInitialLoad = false
@@ -2454,6 +2458,8 @@ class MainViewController: UIViewController {
     func onForeground() {
         lastForegroundEntryDate = Date()
 
+        reloadCurrentTabTerminatedWhileBackgrounded()
+
         fireExperimentalAddressBarPixel()
         fireIPadToggleStateOnAppOpenPixel()
         fireContextualAutoAttachPixel()
@@ -2479,6 +2485,15 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse && !daxDialogsManager.shouldShowPrivacyButtonPulse {
             showFireButtonPulse()
         }
+    }
+
+    /// Completes the reload that `tabContentProcessDidTerminate` deferred while backgrounded, reusing the
+    /// same recovery as an active termination: reloads if the tab is still current, otherwise evicts it so
+    /// it rebuilds on reselect (a launch action may have switched tabs before this runs).
+    private func reloadCurrentTabTerminatedWhileBackgrounded() {
+        guard let tab = tabPendingReloadOnForeground else { return }
+        tabPendingReloadOnForeground = nil
+        tabManager.invalidateCache(forController: tab, reloadCurrent: true)
     }
 
     /// Forces a viewport-size IPC to the WebContent process after foreground. Works around a
@@ -6965,6 +6980,12 @@ extension MainViewController: TabDelegate {
         //  in inactive state in case we're coming to the foreground
         let shouldReload = UIApplication.shared.applicationState != .background
         tabManager.invalidateCache(forController: tab, reloadCurrent: shouldReload)
+
+        // #6148 intentionally skips reloading the current tab while backgrounded, but never reloaded it
+        // on return either - leaving it blank until the app is force-quit. Defer the reload to foreground.
+        if !shouldReload, tabManager.current() === tab {
+            tabPendingReloadOnForeground = tab
+        }
     }
 
     func showBars() {

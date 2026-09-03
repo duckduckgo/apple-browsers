@@ -463,6 +463,21 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         }
     }
 
+    func testWhenNonFloatingIPadSearchAreaExpandsThenModeToggleDoesNotOverlapBottomControls() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        barView.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)
+        barView.setLayoutMode(.expandedPad)
+        barView.isModeToggleHidden = false
+        barView.setSearchAreaExpanded(true, animated: false)
+        barView.layoutIfNeeded()
+
+        let modeToggle = try XCTUnwrap(firstSubview(of: PadOmnibarToggleView.self, in: barView))
+        let modeToggleFrame = barView.convert(modeToggle.bounds, from: modeToggle)
+        let sendButtonFrame = barView.convert(barView.aiChatSendButton.bounds, from: barView.aiChatSendButton)
+
+        XCTAssertLessThanOrEqual(modeToggleFrame.maxY, sendButtonFrame.minY)
+    }
+
     func testWhenFieldIsEmbeddedAtBottomThenItFillsTheFullSlotHeight() throws {
         let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true

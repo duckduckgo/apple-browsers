@@ -325,6 +325,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the image generation mode toggle in the Duck.ai omnibar
     case aiChatOmnibarImageGeneration
 
+    /// Enables updated Create Image behavior, including switching unsupported models.
+    case updatedCreateImage
+
     /// Enables the web search tool in the Duck.ai omnibar
     case aiChatOmnibarWebSearch
 
@@ -734,6 +737,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
         case .aiChatOmnibarImageGeneration:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarImageGeneration), category: .duckAI)
+        case .updatedCreateImage:
+            Config(source: .remoteReleasable(AIChatSubfeature.updatedCreateImage), category: .duckAI)
         case .aiChatOmnibarWebSearch:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarWebSearch), category: .duckAI)
         case .aiChatOmnibarReasoningEffort:

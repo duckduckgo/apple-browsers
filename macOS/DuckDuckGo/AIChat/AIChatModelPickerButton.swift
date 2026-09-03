@@ -421,23 +421,6 @@ final class AIChatModelPickerButton: NSView {
         resetTransientFillState()
     }
 
-    private func trackMouseInteraction() {
-        while let event = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
-            switch event.type {
-            case .leftMouseDragged:
-                mouseDragged(with: event)
-            case .leftMouseUp:
-                mouseUp(with: event)
-                return
-            default:
-                assertionFailure("Unexpected mouse tracking event")
-                resetTransientFillState()
-                return
-            }
-        }
-        resetTransientFillState()
-    }
-
     override func keyDown(with event: NSEvent) {
         guard !isReadOnly else {
             if event.keyCode == 48 {

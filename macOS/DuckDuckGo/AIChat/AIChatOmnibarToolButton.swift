@@ -64,6 +64,22 @@ extension FocusRingControlling {
     }
 }
 
+extension FocusRingControlling where Self: NSView {
+
+    /// Tracks the full pointer sequence so NSWindow cannot redispatch drag events to every custom view under the cursor.
+    func trackMouseInteraction() {
+        while let event = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            if event.type == .leftMouseDragged {
+                mouseDragged(with: event)
+                continue
+            }
+            mouseUp(with: event)
+            return
+        }
+        resetTransientFillState()
+    }
+}
+
 /// A reusable toolbar button for the AI Chat omnibar with circular hover background effect.
 final class AIChatOmnibarToolButton: NSView {
 
@@ -191,7 +207,6 @@ final class AIChatOmnibarToolButton: NSView {
 
     var isEnabled: Bool = true {
         didSet {
-            guard isEnabled != oldValue else { return }
             if !isEnabled {
                 isMouseDown = false
                 isHovered = false
@@ -535,6 +550,7 @@ final class AIChatOmnibarToolButton: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
         wantsFocusRing = false
         isMouseDown = true
         trackMouseInteraction()
@@ -555,23 +571,6 @@ final class AIChatOmnibarToolButton: NSView {
                 sendMenuOpeningAction {
                     NSApp.sendAction(action, to: target, from: self)
                 }
-                return
-            }
-        }
-        resetTransientFillState()
-    }
-
-    private func trackMouseInteraction() {
-        while let event = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
-            switch event.type {
-            case .leftMouseDragged:
-                mouseDragged(with: event)
-            case .leftMouseUp:
-                mouseUp(with: event)
-                return
-            default:
-                assertionFailure("Unexpected mouse tracking event")
-                resetTransientFillState()
                 return
             }
         }

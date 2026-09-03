@@ -35,7 +35,9 @@ import Foundation
 /// Defining inert stubs for the missing pieces lets that top-level code run to completion, so the
 /// listeners for the APIs WebKit *does* implement get registered and the extension comes up. The
 /// stubbed calls themselves do nothing; the feature behind them stays unavailable either way, the
-/// difference is whether the rest of the extension works.
+/// difference is whether the rest of the extension works. Most stubs are generic and resolve to
+/// `undefined`; where callers read straight off the result — `storage.managed.get()` — the stub is
+/// shaped to answer with the empty value Chrome would return.
 ///
 /// Two behaviors of the host are worth calling out, both established by measurement on macOS 26.6.2:
 /// - `chrome.webNavigation`, `chrome.tabs` and friends are native wrapper objects that WebKit
@@ -85,9 +87,10 @@ enum WebExtensionAPIStubScript {
         ];
 
         // Members missing from namespaces that WebKit does implement, addressed by dotted path.
-        // A "namespace" member becomes a nestable stub, an "event" member an addListener object.
+        // A "namespace" member becomes a nestable stub, an "event" member an addListener object,
+        // and "managedStorage" a purpose-shaped stub (see makeManagedStorage below).
         var missingMembers = [
-            { path: "storage.managed", kind: "namespace" },
+            { path: "storage.managed", kind: "managedStorage" },
             { path: "webNavigation.onCreatedNavigationTarget", kind: "event" },
             { path: "webNavigation.onHistoryStateUpdated", kind: "event" },
             { path: "webNavigation.onReferenceFragmentUpdated", kind: "event" },
@@ -129,6 +132,30 @@ enum WebExtensionAPIStubScript {
         }
 
         retain(api);
+
+        // Hands a trailing Chrome-style callback its value once, out of band, so a throwing
+        // callback cannot take down the caller.
+        function invokeCallback(callback, value) {
+            Promise.resolve().then(function() {
+                try {
+                    callback(value);
+                } catch (error) {
+                    console.info("[DuckDuckGo] Stubbed API callback threw: " + error);
+                }
+            });
+        }
+
+        // A stubbed API method that answers with `makeValue()`, promise-style and callback-style.
+        function makeResolver(makeValue) {
+            return function() {
+                var value = makeValue();
+                var callback = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
+                if (typeof callback === "function") {
+                    invokeCallback(callback, value);
+                }
+                return Promise.resolve(value);
+            };
+        }
 
         function makeEvent() {
             return {
@@ -177,17 +204,37 @@ enum WebExtensionAPIStubScript {
                     // promise for callers that await instead.
                     var callback = argumentsList.length > 0 ? argumentsList[argumentsList.length - 1] : undefined;
                     if (typeof callback === "function") {
-                        Promise.resolve().then(function() {
-                            try {
-                                callback(undefined);
-                            } catch (error) {
-                                console.info("[DuckDuckGo] Stubbed API callback threw: " + error);
-                            }
-                        });
+                        invokeCallback(callback, undefined);
                     }
                     return Promise.resolve(undefined);
                 }
             });
+        }
+
+        // `storage.managed` needs more than the generic stub: Chrome resolves `get()` to an object
+        // (empty when no policy is set) and extensions read a key straight off the result, so
+        // resolving to `undefined` would throw at their call site rather than ours. Every call gets
+        // a fresh object, so a caller mutating one result cannot leak into the next.
+        function makeManagedStorage() {
+            return {
+                get: makeResolver(function() {
+                    return {};
+                }),
+                getBytesInUse: makeResolver(function() {
+                    return 0;
+                }),
+                onChanged: makeEvent()
+            };
+        }
+
+        function makeMember(kind) {
+            if (kind === "event") {
+                return makeEvent();
+            }
+            if (kind === "managedStorage") {
+                return makeManagedStorage();
+            }
+            return makeStub();
         }
 
         function define(owner, key, value) {
@@ -248,7 +295,7 @@ enum WebExtensionAPIStubScript {
                 if (owner === undefined || owner === null || owner[key] !== undefined) {
                     return;
                 }
-                if (define(owner, key, member.kind === "event" ? makeEvent() : makeStub())) {
+                if (define(owner, key, makeMember(member.kind))) {
                     stubbedMembers.push(member.path);
                 }
             } catch (error) {

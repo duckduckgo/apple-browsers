@@ -114,7 +114,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
             Logger.webExtensions.debug("""
             🧩 Navigation bar: \(context.webExtension.displayName ?? "unnamed", privacy: .public) \
             \(context.uniqueIdentifier, privacy: .public) \
-            manifestVersion=\(context.webExtension.manifestVersion, privacy: .public) \
+            manifestVersion=\(Int(context.webExtension.manifestVersion), privacy: .public) \
             declaresToolbarAction=\(context.declaresToolbarAction, privacy: .public) \
             button=\(hasButton, privacy: .public)
             """)

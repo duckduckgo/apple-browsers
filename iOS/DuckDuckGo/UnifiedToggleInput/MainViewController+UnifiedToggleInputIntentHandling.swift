@@ -280,6 +280,7 @@ private extension MainViewController {
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
+        startNewTabPageScrollTracing()
         let duration = Constants.omnibarTransitionDuration(isBottom: isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
             coordinator.viewController.prepareForOmnibarMaterialTransition(duration: duration)

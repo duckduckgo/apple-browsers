@@ -54,6 +54,11 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
         listScrollView.setContentOffset(target, animated: false)
     }
 
+    func logGeometry(phase: String) {
+        guard let listScrollView = laidOutScrollView() else { return }
+        logScrollGeometry(phase: phase, scrollView: listScrollView)
+    }
+
     private func laidOutScrollView() -> UIScrollView? {
         view.superview?.layoutIfNeeded()
         view.layoutIfNeeded()
@@ -250,11 +255,13 @@ final class UnifiedSuggestionsHost {
 
     /// Resets the dismiss/morph state on each focus.
     func prepareForActivation() {
+        hostingController?.logGeometry(phase: "activate-before")
         if usesHostingTopInsetForDismissal {
             usesHostingTopInsetForDismissal = false
             applyCombinedInsets()
         }
         viewModel.prepareForActivation()
+        hostingController?.logGeometry(phase: "activate-after")
     }
 
     func prepareForDismissAnimation(preservingScrollPosition: Bool) {

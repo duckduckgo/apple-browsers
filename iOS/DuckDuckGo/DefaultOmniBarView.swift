@@ -61,6 +61,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var fireButton: UIButton! { fireButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
     var customizableButton: UIButton! { searchAreaView.customizableButton }
+    var urlSeparatorView: UIView { searchAreaView.separatorView }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
     var expectedHeight: CGFloat {

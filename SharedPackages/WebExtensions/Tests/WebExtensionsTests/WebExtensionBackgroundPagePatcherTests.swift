@@ -74,7 +74,6 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         let backgroundPage = try loadBackgroundPage(in: extensionDirectory)
         XCTAssertTrue(backgroundPage.contains("type=\"module\""), backgroundPage)
         XCTAssertTrue(backgroundPage.contains("src=\"/background/background.js\""), backgroundPage)
-        assertStubScriptIsLoadedFirst(in: backgroundPage, beforeScriptAt: "/background/background.js")
     }
 
     func testWhenManifestDeclaresServiceWorkerWithoutType_ThenBackgroundPageUsesClassicScript() throws {
@@ -96,34 +95,6 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         let backgroundPage = try loadBackgroundPage(in: extensionDirectory)
         XCTAssertFalse(backgroundPage.contains("type="), backgroundPage)
         XCTAssertTrue(backgroundPage.contains("src=\"/worker.js\""), backgroundPage)
-        assertStubScriptIsLoadedFirst(in: backgroundPage, beforeScriptAt: "/worker.js")
-    }
-
-    func testWhenManifestIsInWrappedSubfolder_ThenManifestIsFoundAndPatched() throws {
-        let installedDirectory = temporaryDirectory.appendingPathComponent("installed")
-        let wrappedDirectory = installedDirectory.appendingPathComponent("1password-extension")
-        try FileManager.default.createDirectory(at: wrappedDirectory, withIntermediateDirectories: true)
-        try write(manifest: """
-        {
-            "manifest_version": 3,
-            "background": {
-                "service_worker": "background/background.js",
-                "type": "module"
-            }
-        }
-        """, to: wrappedDirectory)
-
-        XCTAssertTrue(patcher.patchIfNeeded(installedExtensionURL: installedDirectory))
-
-        let background = try backgroundSection(in: wrappedDirectory)
-        XCTAssertEqual(background["page"] as? String, WebExtensionBackgroundPagePatcher.backgroundPageFilename)
-        XCTAssertNil(background["service_worker"])
-
-        let backgroundPage = try loadBackgroundPage(in: wrappedDirectory)
-        XCTAssertTrue(backgroundPage.contains("src=\"/background/background.js\""), backgroundPage)
-        assertStubScriptIsLoadedFirst(in: backgroundPage, beforeScriptAt: "/background/background.js")
-
-        XCTAssertEqual(try loadStubScript(in: wrappedDirectory), WebExtensionAPIStubScript.source)
     }
 
     func testWhenManifestIsPatchedTwice_ThenSecondRunChangesNothing() throws {
@@ -142,66 +113,10 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         let patchedManifest = try Data(contentsOf: manifestURL(in: extensionDirectory))
         let patchedPage = try Data(contentsOf: backgroundPageURL(in: extensionDirectory))
 
-        // A rewritten stub script would be overwritten with identical bytes, so also check that the
-        // patcher does not touch the file at all on a second run.
-        let stubScriptModificationDate = try modificationDate(of: stubScriptURL(in: extensionDirectory))
-
         XCTAssertFalse(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
 
         XCTAssertEqual(try Data(contentsOf: manifestURL(in: extensionDirectory)), patchedManifest)
         XCTAssertEqual(try Data(contentsOf: backgroundPageURL(in: extensionDirectory)), patchedPage)
-        XCTAssertEqual(try modificationDate(of: stubScriptURL(in: extensionDirectory)), stubScriptModificationDate)
-    }
-
-    // MARK: - API Stub Script
-
-    func testWhenManifestIsPatched_ThenStubScriptIsWrittenNextToManifest() throws {
-        let extensionDirectory = try makeExtensionDirectory(manifest: """
-        {
-            "manifest_version": 3,
-            "background": {
-                "service_worker": "background/background.js",
-                "type": "module"
-            }
-        }
-        """)
-
-        XCTAssertTrue(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-
-        XCTAssertEqual(try loadStubScript(in: extensionDirectory), WebExtensionAPIStubScript.source)
-    }
-
-    func testWhenManifestIsPatched_ThenStubScriptIsReferencedBeforeTheWorkerScript() throws {
-        let extensionDirectory = try makeExtensionDirectory(manifest: """
-        {
-            "manifest_version": 3,
-            "background": {
-                "service_worker": "background/background.js",
-                "type": "module"
-            }
-        }
-        """)
-
-        XCTAssertTrue(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-
-        let backgroundPage = try loadBackgroundPage(in: extensionDirectory)
-        XCTAssertTrue(backgroundPage.contains("<script src=\"/ddg-api-stubs.js\"></script>"), backgroundPage)
-        assertStubScriptIsLoadedFirst(in: backgroundPage, beforeScriptAt: "/background/background.js")
-    }
-
-    func testWhenManifestIsNotPatched_ThenStubScriptIsNotWritten() throws {
-        let extensionDirectory = try makeExtensionDirectory(manifest: """
-        {
-            "manifest_version": 3,
-            "background": {
-                "page": "background/index.html"
-            }
-        }
-        """)
-
-        XCTAssertFalse(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-
-        XCTAssertFalse(FileManager.default.fileExists(atPath: stubScriptURL(in: extensionDirectory).path))
     }
 
     // MARK: - Manifests Left Untouched
@@ -257,21 +172,6 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: backgroundPageURL(in: extensionDirectory).path),
                        file: file,
                        line: line)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: stubScriptURL(in: extensionDirectory).path),
-                       file: file,
-                       line: line)
-    }
-
-    private func assertStubScriptIsLoadedFirst(in backgroundPage: String,
-                                               beforeScriptAt scriptPath: String,
-                                               file: StaticString = #filePath,
-                                               line: UInt = #line) {
-        guard let stubRange = backgroundPage.range(of: "src=\"/\(WebExtensionAPIStubScript.filename)\""),
-              let scriptRange = backgroundPage.range(of: "src=\"\(scriptPath)\"") else {
-            XCTFail("Expected both script tags in:\n\(backgroundPage)", file: file, line: line)
-            return
-        }
-        XCTAssertTrue(stubRange.lowerBound < scriptRange.lowerBound, backgroundPage, file: file, line: line)
     }
 
     private func makeExtensionDirectory(manifest: String) throws -> URL {
@@ -302,19 +202,7 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         try XCTUnwrap(try loadManifest(in: directory)["background"] as? [String: Any])
     }
 
-    private func stubScriptURL(in directory: URL) -> URL {
-        directory.appendingPathComponent(WebExtensionAPIStubScript.filename)
-    }
-
     private func loadBackgroundPage(in directory: URL) throws -> String {
         try String(contentsOf: backgroundPageURL(in: directory), encoding: .utf8)
-    }
-
-    private func loadStubScript(in directory: URL) throws -> String {
-        try String(contentsOf: stubScriptURL(in: directory), encoding: .utf8)
-    }
-
-    private func modificationDate(of url: URL) throws -> Date {
-        try XCTUnwrap(try FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date)
     }
 }

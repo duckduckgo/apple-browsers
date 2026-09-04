@@ -81,7 +81,7 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
     }
 
     func testWhenFeatureDisabledThenNotEligible() {
-        configManager.mockConfig.isFeatureEnabledCheck = { _,_ in false }
+        configManager.mockConfig.isFeatureEnabledCheck = { _, _ in false }
 
         XCTAssertFalse(sut.isEligible)
     }
@@ -117,7 +117,7 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
         var received: [Bool] = []
         let cancellable = sut.isEligiblePublisher.sink { received.append($0) }
 
-        configManager.mockConfig.isFeatureEnabledCheck = { _,_ in false }
+        configManager.mockConfig.isFeatureEnabledCheck = { _, _ in false }
         configManager.updatesSubject.send(())
 
         XCTAssertEqual(received.last, false)

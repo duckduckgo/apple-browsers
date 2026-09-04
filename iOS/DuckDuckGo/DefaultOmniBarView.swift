@@ -391,7 +391,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the model picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the model picker chip.
     var isModelPickerEnabled: Bool = false {
         didSet { refreshModelPickerVisibility() }
     }
@@ -442,7 +442,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the reasoning picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the reasoning picker chip.
     var isReasoningPickerEnabled: Bool = false {
         didSet { refreshReasoningPickerVisibility() }
     }
@@ -485,7 +485,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the tool picker chip (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the tool picker chip.
     var isToolPickerEnabled: Bool = false {
         didSet { refreshToolPickerVisibility() }
     }
@@ -609,7 +609,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return button
     }()
 
-    /// Enables the attach button (driven by the `iPadDuckAIBarControls` flag).
+    /// Enables the attach button.
     var isAttachButtonEnabled: Bool = false {
         didSet { refreshAttachButtonVisibility() }
     }

@@ -118,7 +118,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(titleLabel.frame.width, titleLabel.intrinsicContentSize.width)
     }
 
-    func testWhenEditingThenBottomBarHasCloseTabsFireAndDone() {
+    func testWhenEditingThenBottomBarHasCloseTabsAndDone() {
         let chrome = makeInstalledChrome()
         chrome.actions.onMultiSelectMenuRequested = { UIMenu(children: []) }
 
@@ -132,20 +132,21 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         let fireIndex = items.firstIndex { $0.accessibilityIdentifier == "Browser.Toolbar.Button.Fire" }
         let doneIndex = items.firstIndex { $0.accessibilityLabel == UserText.navigationTitleDone }
 
-        guard let closeTabsIndex, let fireIndex, let doneIndex else {
+        guard let closeTabsIndex, let doneIndex else {
             XCTFail("Missing selection toolbar items")
             return
         }
-        XCTAssertLessThan(closeTabsIndex, fireIndex)
-        XCTAssertLessThan(fireIndex, doneIndex)
+        // Single-tab burn is not implemented, so select mode must not offer the Fire button.
+        XCTAssertNil(fireIndex)
+        XCTAssertLessThan(closeTabsIndex, doneIndex)
         XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.first?.menu)
 
         if #available(iOS 26.0, *) {
             // On iOS 26 Done is a title-less glyph; earlier versions still use the system Done item.
             XCTAssertNil(items[doneIndex].title)
             XCTAssertNotNil(items[doneIndex].image)
-            XCTAssertEqual(items.count, 4)
-            XCTAssertEqual([items[closeTabsIndex], items[fireIndex], items[doneIndex]].map(\.sharesBackground), [false, false, false])
+            XCTAssertEqual(items.count, 3)
+            XCTAssertEqual([items[closeTabsIndex], items[doneIndex]].map(\.sharesBackground), [false, false])
         }
     }
 

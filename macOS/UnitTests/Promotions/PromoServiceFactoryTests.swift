@@ -83,6 +83,20 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNil(promo.delegate)
     }
 
+    func testFactoryCreatesBookmarkToolbarPromoWithCorrectConfiguration() async {
+        let promo = await PromoServiceFactory.bookmarkToolbar(dependencies: dependencies)
+
+        XCTAssertEqual(promo.id, "bookmark-toolbar")
+        XCTAssertEqual(promo.triggers, [.bookmarkAdded, .bookmarksImported])
+        XCTAssertEqual(promo.initiated, .user)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertNil(promo.promoType.timeoutInterval)
+        XCTAssertEqual(promo.context, .global)
+        XCTAssertTrue(promo.respectsGlobalCooldown)
+        XCTAssertTrue(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
+    }
+
     func testFactoryCreatesDefaultBrowserAndDockPromosWithCorrectConfiguration() async {
         let popoverPromo = await PromoServiceFactory.defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService)
         let bannerPromo = await PromoServiceFactory.defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService)
@@ -164,7 +178,9 @@ extension PromoServiceFactoryTests {
             subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
             featureFlagger: MockFeatureFlagger(),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
-            windowControllersManager: WindowControllersManagerMock()
+            windowControllersManager: WindowControllersManagerMock(),
+            syncService: nil,
+            syncBookmarksAdapter: nil
         )
     }
 }

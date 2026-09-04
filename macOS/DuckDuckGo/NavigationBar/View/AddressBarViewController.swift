@@ -1022,7 +1022,6 @@ final class AddressBarViewController: NSViewController {
         bottomSeparatorView.isHidden = !themeManager.isAppRebranded
 
         let colorsProvider = theme.colorsProvider
-        let navigationBarBackgroundColor = colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
             // Keep selected appearance when AI chat is active (OR) isBurner, even if window loses key status
@@ -1038,7 +1037,7 @@ final class AddressBarViewController: NSViewController {
                     activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
                 }
                 activeBackgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)
-                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
+                switchToTabBox.backgroundColor = colorsProvider.activeSwitchToTabBackgroundColor
 
                 /// Important: `activeOuterBorderView` is hidden when `isAppRedesign` evaluates as true
                 activeOuterBorderView.isHidden = isToggleFocused || !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) || selectionState == .activeWithAIChat
@@ -1053,7 +1052,7 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.borderColor = nil
                 activeBackgroundView.backgroundColor = colorsProvider.inactiveAddressBarBackgroundColor(isBurner: isBurner)
 
-                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
+                switchToTabBox.backgroundColor = colorsProvider.inactiveSwitchToTabBackgroundColor
 
                 activeOuterBorderView.isHidden = true
 

@@ -575,13 +575,6 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         bookmarkManager.remove(objectsWithUUIDs: entityUUIDs, undoManager: undoManager)
     }
 
-    private(set) lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {
-        guard let syncService = NSApp.delegateTyped.syncService, let syncBookmarksAdapter = NSApp.delegateTyped.syncDataProviders?.bookmarksAdapter else {
-            assertionFailure("SyncService and/or SyncBookmarksAdapter is nil")
-            return nil
-        }
-        return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
-    }()
 }
 
 // MARK: - ThemeUpdateListening
@@ -633,7 +626,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
             cell.update(from: bookmark)
 
             if bookmark.favicon(.small) == nil {
-                faviconsFetcherOnboarding?.presentOnboardingIfNeeded()
+                NotificationCenter.default.post(name: .missingBookmarkFaviconEncountered, object: nil)
             }
         } else if let folder = entity as? BookmarkFolder {
             cell.update(from: folder)

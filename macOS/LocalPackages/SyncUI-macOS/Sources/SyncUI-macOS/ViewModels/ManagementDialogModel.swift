@@ -24,6 +24,8 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func turnOffSync()
     func updateDeviceName(_ name: String)
     func removeDevice(_ device: SyncDevice)
+    func presentRemoveDeviceConfirmation(_ device: SyncDevice)
+    func removeDeviceConfirmed(_ device: SyncDevice)
     func deleteAccount()
     func recoveryCodePasted(_ code: String, fromRecoveryScreen: Bool)
     func saveRecoveryPDF()
@@ -53,6 +55,7 @@ public final class ManagementDialogModel: ObservableObject {
     @Published public var shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen: Bool = false
     @Published public var shouldShowSwitchAccountsMessage: Bool = false
     @Published public var isAppRebranded: Bool = false
+    @Published public var isSimplifiedSyncSetupV2Enabled: Bool = false
     @Published public var isConnectingThisDeviceOnly: Bool = false
     @Published public var isConnectingAnotherDevice: Bool = false
 

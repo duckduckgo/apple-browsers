@@ -69,6 +69,8 @@ struct PromoServiceFactory {
             defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockInactiveModal(service: dependencies.defaultBrowserAndDockPromptService),
             cookiePopupProtectionOptIn(dependencies: dependencies),
+            syncFavicons(dependencies: dependencies),
+            bookmarkToolbar(dependencies: dependencies),
             autoplayDiscoverability(dependencies: dependencies)
         ]
 

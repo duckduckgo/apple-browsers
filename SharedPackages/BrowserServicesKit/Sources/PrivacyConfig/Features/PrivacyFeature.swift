@@ -347,7 +347,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the default omnibar toggle position setting for AI Chat
     case omnibarDefaultPosition
 
+    /// Enables updated model picker with BE-driven sorting and sublines for models.
     case updatedModelPicker
+
+    /// Enables updated `Create image` tool behavior.
+    case updatedCreateImage
 
     /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
@@ -479,12 +483,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
     case nativeStoragePathMigration
-
-    /// Once the native-storage path migration is complete (or not needed), opens
-    /// the store on locked / background launches instead of deferring on the
-    /// protected-data gate. Off keeps the legacy behavior where any locked launch
-    /// nils the handler — which makes the Duck.ai front-end re-prompt T&C.
-    case nativeStorageMigrationLockedLaunchFix
 
     /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
     /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
@@ -823,6 +821,12 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
     case featureEnabled
+
+    /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
+    case bookmarkToolbarPromo
+
+    /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
+    case syncFaviconsPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

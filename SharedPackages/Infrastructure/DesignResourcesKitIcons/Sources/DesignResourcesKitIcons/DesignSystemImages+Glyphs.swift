@@ -212,6 +212,7 @@ public extension DesignSystemImages {
             public static var clock: DesignSystemImage { .init(resource: .clock16) }
             public static var close: DesignSystemImage { .init(resource: .close16) }
             public static var closeOutline: DesignSystemImage { .init(resource: .closeOutline16) }
+            public static var closeSmall: DesignSystemImage { .init(resource: .closeSmall16) }
             public static var closeSolidAlt: DesignSystemImage { .init(resource: .closeSolidAlt16) }
             public static var cookie: DesignSystemImage { .init(resource: .cookie16) }
             public static var cookieWhole: DesignSystemImage { .init(resource: .cookieWhole16) }
@@ -283,6 +284,7 @@ public extension DesignSystemImages {
             public static var images: DesignSystemImage { .init(resource: .images16) }
             public static var imageLink: DesignSystemImage { .init(resource: .imageLink16) }
             public static var `import`: DesignSystemImage { .init(resource: .import16) }
+            public static var importExport: DesignSystemImage { .init(resource: .importExport16) }
             public static var importLeft: DesignSystemImage { .init(resource: .importLeft16) }
             public static var info: DesignSystemImage { .init(resource: .info16) }
             public static var infoRecolorable: DesignSystemImage { .init(resource: .infoRecolorable16) }

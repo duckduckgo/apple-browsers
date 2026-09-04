@@ -286,9 +286,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
     case aiChatAutoAttachContextByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
-    case multiplePageContexts
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217856366373963?focus=true
     case aiChatPdfPageContext
 
@@ -315,6 +312,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217271232291839
     case updatedModelPicker
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217899627532631
+    case updatedCreateImage
 
     /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
     /// default; ship a privacy-config entry to roll back. See
@@ -445,9 +445,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215106459483563?focus=true
     case duckAINativeStoragePathMigration
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215920422347500?focus=true
-    case duckAINativeStorageMigrationLockedLaunchFix
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
 
@@ -519,12 +516,6 @@ public enum FeatureFlag: String {
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
     case onboardingFlowByDownloadReasonExperiment
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216782867888622?focus=true
-    case blankSnapshotCaching
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
-    case systemFindInPage
 
     /// Experiment for removing monthly free trials — second run, enrolling only free-trial eligible users.
     /// https://app.asana.com/1/137249556945/task/1217334233390728
@@ -767,8 +758,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PageContextSubfeature.featureEnabled))
         case .aiChatAutoAttachContextByDefault:
             Config(source: .remoteReleasable(AIChatSubfeature.autoAttachContextByDefault))
-        case .multiplePageContexts:
-            Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts))
         case .aiChatPdfPageContext:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
         case .aiChatSync:
@@ -787,6 +776,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .updatedModelPicker:
             Config(source: .remoteReleasable(AIChatSubfeature.updatedModelPicker))
+        case .updatedCreateImage:
+            Config(source: .remoteReleasable(AIChatSubfeature.updatedCreateImage))
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .aiChatContextualUnifiedToggleInput:
@@ -871,8 +862,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage))
         case .duckAINativeStoragePathMigration:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeStoragePathMigration))
-        case .duckAINativeStorageMigrationLockedLaunchFix:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeStorageMigrationLockedLaunchFix))
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess))
         case .omniBarLongPressMenu:
@@ -909,10 +898,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
         case .simplifiedSyncSetupV2:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
-        case .blankSnapshotCaching:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.blankSnapshotCaching))
-        case .systemFindInPage:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.systemFindInPage))
         case .iPadTabsBarInWindowControlsRow:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         case .nativeAIPromptEditing:

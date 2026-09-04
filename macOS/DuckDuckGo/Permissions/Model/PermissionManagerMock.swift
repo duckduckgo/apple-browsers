@@ -34,6 +34,14 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     var savedPermissions = [String: [PermissionType: PersistedPermissionDecision]]()
     var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType)] = []
 
+    /// Stands in for `PermissionDecisionOverriding`: when it returns a decision, that decision is the
+    /// effective one and `savedPermissions` is left alone. Nil (the default) means no override.
+    var decisionOverride: ((String, PermissionType) -> PersistedPermissionDecision?)?
+
+    // MARK: - PermissionManagerDebugging test storage
+
+    var removeAllPermissionsCalled = false
+
     var persistedPermissionTypes: Set<PermissionType> {
         savedPermissions.reduce(into: Set<PermissionType>()) { partialResult, permissions in
             partialResult.formUnion(permissions.value.keys)
@@ -55,7 +63,11 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
-        savedPermissions[domain.droppingWwwPrefix()]?[permissionType] ?? .ask
+        let domain = domain.droppingWwwPrefix()
+        if let override = decisionOverride?(domain, permissionType) {
+            return override
+        }
+        return savedPermissions[domain]?[permissionType] ?? .ask
     }
 
     func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
@@ -104,6 +116,42 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     func respondToLastRequest(with decision: Bool) {
         guard let lastRequest = capturedRequests.last else { return }
         lastRequest.completion(decision)
+    }
+
+}
+
+extension PermissionManagerMock: PermissionManagerDebugging {
+
+    func allPermissionsDebugEntries() -> [PermissionDebugEntry] {
+        savedPermissions.flatMap { domain, permissionsByType in
+            permissionsByType.map { type, decision in
+                // Encodes the decision the way `PermissionManagedObject.decision` writes it.
+                PermissionDebugEntry(storageIdentifier: domain + "|" + type.rawValue,
+                                     domain: domain,
+                                     permissionType: type.rawValue,
+                                     allow: decision == .allow,
+                                     isRemoved: decision == .ask,
+                                     effectiveDecision: permission(forDomain: domain, permissionType: type))
+            }
+        }
+    }
+
+    func removePermissionsDebugEntries(withIdentifiers identifiers: Set<String>) -> Int {
+        let entries = savedPermissions.flatMap { domain, permissionsByType in
+            permissionsByType.keys.map { (identifier: domain + "|" + $0.rawValue, domain: domain, type: $0) }
+        }.filter { identifiers.contains($0.identifier) }
+
+        for entry in entries {
+            removePermission(forDomain: entry.domain, permissionType: entry.type)
+        }
+        return entries.count
+    }
+
+    func removeAllPermissions() -> Int {
+        removeAllPermissionsCalled = true
+        let count = savedPermissions.values.reduce(0) { $0 + $1.count }
+        savedPermissions = [:]
+        return count
     }
 
 }

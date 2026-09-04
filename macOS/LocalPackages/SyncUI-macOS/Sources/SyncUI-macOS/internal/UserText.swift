@@ -57,6 +57,25 @@ enum UserText {
     static let syncThisDeviceOnlyButtonV2 = NotLocalizedString("preferences.sync.another-device-prompt-v2.this-device-only-button", value: "Sync This Device Only", comment: "Button to enable Sync & Backup on the current device only, without pairing another device (V2)")
     static let syncWithAnotherDeviceButtonV2 = NotLocalizedString("preferences.sync.another-device-prompt-v2.another-device-button", value: "Sync With Another Device", comment: "Button to continue to the pairing screen to sync with another device (V2)")
 
+    // Sync with another device dialog (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let syncWithAnotherDeviceScanTitleV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.scan-title", value: "Scan QR code to sync", comment: "Title of the Sync with another device dialog when showing the QR code (V2)")
+    static let syncWithAnotherDeviceEnterTitleV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.enter-title", value: "Enter the Sync Code", comment: "Title of the Sync with another device dialog when entering a sync code (V2)")
+    static let syncWithAnotherDeviceScanTabV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.scan-tab", value: "Scan Code", comment: "Tab that displays a QR code to scan from another device (V2)")
+    static let syncWithAnotherDeviceEnterTabV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.enter-tab", value: "Enter Code", comment: "Tab that lets the user paste a sync code from another device (V2)")
+    static let syncWithAnotherDeviceScanStep1PrefixV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.scan-step-1-prefix", value: "On your phone, open", comment: "First part of the first QR scanning instruction, before the DuckDuckGo product name (V2)")
+    static let syncWithAnotherDeviceScanStep1DetailV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.scan-step-1-detail", value: "DuckDuckGo", comment: "Emphasized DuckDuckGo product name in the first QR scanning instruction (V2)")
+    static let syncWithAnotherDeviceEnterStep1PrefixV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.enter-step-1-prefix", value: "Open another", comment: "First part of the first code entry instruction, before the DuckDuckGo product name (V2)")
+    static let syncWithAnotherDeviceEnterStep1DetailV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.enter-step-1-detail", value: "DuckDuckGo App", comment: "Emphasized DuckDuckGo product name in the first code entry instruction (V2)")
+    static let syncWithAnotherDeviceStep2PrefixV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.step-2-prefix", value: "Go to", comment: "First part of the second pairing instruction, before the Settings path (V2)")
+    static let syncWithAnotherDeviceStep2DetailV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.step-2-detail", value: "Settings › Sync & Backup › Sync With Another Device", comment: "Emphasized Settings path in the second pairing instruction (V2)")
+    static let syncWithAnotherDeviceScanStep3V2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.scan-step-3", value: "Scan this QR code from your phone", comment: "Third pairing instruction when showing the QR code (V2)")
+    static let syncWithAnotherDeviceEnterStep3V2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.enter-step-3", value: "Copy the QR Text Code and click ‘Paste Code’ below:", comment: "Third pairing instruction when entering a code from another device (V2)")
+    static let syncWithAnotherDeviceExampleCodeV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.example-code", value: "Example Code:", comment: "Label above the example sync code in the code entry tab (V2)")
+    static let syncWithAnotherDevicePasteCodeV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.paste-code", value: "Paste Code", comment: "Button that pastes a sync code from the clipboard (V2)")
+    static let syncWithAnotherDeviceCopiedV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.copied", value: "Copied", comment: "Confirmation shown after copying the sync code (V2)")
+    static let syncWithAnotherDeviceCopyConfirmationTitleV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.copy-confirmation-title", value: "Don’t close this page", comment: "Title of the reminder shown after copying the sync code (V2)")
+    static let syncWithAnotherDeviceCopyConfirmationMessageV2 = NotLocalizedString("preferences.sync.sync-with-another-device-v2.copy-confirmation-message", value: "Open DuckDuckGo on your other device and paste the code.", comment: "Message of the reminder shown after copying the sync code (V2)")
+
     // Alert shown when the user cancels the device authentication prompt while setting up Sync (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
     static let syncAuthenticationCancelledTitleV2 = NotLocalizedString("preferences.sync.authentication-cancelled-v2.title", value: "Authenticate to enable Sync & Backup", comment: "Title of the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)")
     static let syncAuthenticationCancelledSubtitleV2 = NotLocalizedString("preferences.sync.authentication-cancelled-v2.subtitle", value: "Sync & Backup is end-to-end encrypted. macOS will ask for an authentication method.", comment: "Subtitle of the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)")
@@ -77,6 +96,29 @@ enum UserText {
     static let downloadRecoveryCodeButtonV2 = NotLocalizedString("preferences.sync.download-recovery-code-v2", value: "Download Recovery Code", comment: "Button to download the recovery code in sync settings (V2)")
     static let recoveryInstructionsFooterV2 = NotLocalizedString("preferences.sync.recovery-instructions-footer-v2", value: "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Footer on the recovery code section in sync settings (V2). The [text](url) markdown is a link and must be preserved.")
     static let turnOffAndDeleteServerDataV2 = NotLocalizedString("preferences.sync.turn-off-and-delete-data-v2", bundle: Bundle.module, value: "Turn Off and Delete Server Data", comment: "Disable and delete data sync button caption")
+
+    // Device details dialogs (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let deviceDetailsSyncedStatusV2 = NotLocalizedString("preferences.sync.device-details-v2.synced-status", value: "Synced", comment: "Status shown under the device name on the device details dialog (V2)")
+    static let deviceDetailsNameLabelV2 = NotLocalizedString("preferences.sync.device-details-v2.name-label", value: "Name", comment: "Label of the editable device name field on the device details dialog (V2)")
+    static let deviceDetailsDoneButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.done-button", value: "Done", comment: "Button that saves the device name and dismisses the device details dialog (V2)")
+    static let deviceDetailsCloseButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.close-button", value: "Close", comment: "Button that dismisses the details dialog of another synced device (V2)")
+    static let deviceDetailsTurnOffSyncButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.turn-off-sync-button", value: "Turn Off Sync & Backup", comment: "Button that turns Sync & Backup off for the current device, on the device details dialog (V2)")
+    static let deviceDetailsRemoveDeviceButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.remove-device-button", value: "Remove Device", comment: "Button that removes another synced device, on the device details dialog (V2)")
+
+    // Remove device confirmation dialog (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let removeDeviceConfirmTitleV2 = NotLocalizedString("preferences.sync.remove-device-v2.title", value: "Remove Device?", comment: "Title of the confirmation shown before removing a synced device (V2)")
+    static let removeDeviceConfirmButtonV2 = NotLocalizedString("preferences.sync.remove-device-v2.button", value: "Remove Device", comment: "Button that confirms removing a synced device (V2)")
+    static func removeDeviceConfirmMessageV2(_ deviceName: String) -> String {
+        let notLocalized = NotLocalizedString("preferences.sync.remove-device-v2.message",
+                                              value: "**%@** will no longer be able to access your synced data.\n\nYour autofill data, bookmarks, and duck.ai chats won’t sync across your other devices with DuckDuckGo.",
+                                              comment: "Message of the confirmation shown before removing a synced device (V2). The device name is inserted in place of %@ and the ** markers around it indicate bold styling, which should be preserved.")
+        return String(format: notLocalized, deviceName)
+    }
+
+    // Turn off and delete server data confirmation dialog (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let deleteAccountConfirmTitleV2 = NotLocalizedString("preferences.sync.delete-account-v2.title", value: "Stop Sync & Backup and Delete Server Data?", comment: "Title of the confirmation shown before turning Sync off and deleting the server data (V2)")
+    static let deleteAccountConfirmMessageV2 = NotLocalizedString("preferences.sync.delete-account-v2.message", value: "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server.", comment: "Message of the confirmation shown before turning Sync off and deleting the server data (V2)")
+    static let deleteAccountConfirmButtonV2 = NotLocalizedString("preferences.sync.delete-account-v2.button", value: "Delete Server Data", comment: "Button that confirms turning Sync off and deleting the server data (V2)")
 
     // Options
     static let otherOptionsSectionTitle = NSLocalizedString("preferences.other-options.section-title", bundle: Bundle.module, value: "Other Options", comment: "Sync settings. Other Options section title")

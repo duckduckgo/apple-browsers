@@ -332,6 +332,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             }
         }
         .store(in: &cancellables)
+
+        omnibarController.$isInputBlockedByUsageLimit
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] blocked in
+                // Editable, not focusable, is the distinction: the panel expands off this view
+                // becoming first responder, and that expansion is what reveals the card explaining
+                // the block. Refusing focus outright would leave an inert prompt and no reason why.
+                self?.textView.isEditable = !blocked
+            }
+            .store(in: &cancellables)
     }
 
     @objc func textDidChange(_ notification: Notification) {

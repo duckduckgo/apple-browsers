@@ -124,6 +124,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217396600005661
     case dbpExtractedProfileRefresh
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218160728553684
+    case dbpSchedulerDeferralHandling
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
@@ -627,6 +630,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.performanceMetrics), category: .dbp)
         case .dbpExtractedProfileRefresh:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.extractedProfileRefresh), supportsLocalOverriding: true, category: .dbp)
+        case .dbpSchedulerDeferralHandling:
+            Config(source: .remoteReleasable(DBPSubfeature.schedulerDeferralHandling), supportsLocalOverriding: true, category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased), category: .sync)
         case .allowSingleDeviceOnConnectScreen:

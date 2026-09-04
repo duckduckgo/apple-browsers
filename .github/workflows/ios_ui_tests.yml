@@ -1,0 +1,72 @@
+name: iOS - UI Tests
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: iOS
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/workflows/ios_ui_tests.yml'
+      - '.xcode-version'
+      - 'SharedPackages/UITestingSupport/**'
+      - 'iOS/UITests/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should_run_pr_checks.yml
+
+  ui-tests:
+    name: Native UI Tests
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+    runs-on: ['image:osx-tahoe-26', 'size:large']
+    timeout-minutes: 45
+
+    steps:
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.10.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+    - name: Check out the code
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "26.5"
+
+    - name: Run UI test
+      run: |
+        echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
+        echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
+
+        set -o pipefail && xcodebuild test \
+          -workspace "../DuckDuckGo.xcworkspace" \
+          -scheme "iOS UI Tests" \
+          -destination "${{ steps.select-simulator.outputs.destination }}" \
+          -derivedDataPath "DerivedData" \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          | xcbeautify

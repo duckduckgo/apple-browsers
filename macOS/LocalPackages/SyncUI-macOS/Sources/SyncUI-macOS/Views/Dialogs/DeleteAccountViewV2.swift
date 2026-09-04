@@ -32,6 +32,7 @@ struct DeleteAccountViewV2: View {
         SyncDialogV2(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncWarnFeature128)
+                    .accessibilityHidden(true)
                 SyncUIViews.TextHeader(text: UserText.deleteAccountConfirmTitleV2)
                 SyncUIViewsV2.TextDetailMultiline(text: UserText.deleteAccountConfirmMessageV2)
 

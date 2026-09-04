@@ -32,9 +32,6 @@ struct ResolvePageSuggestionsInput {
     let url: String?
     let uiLocale: String
     let scope: Scope
-
-    /// The attached page is a document (a PDF) rather than a web page, which only changes the copy
-    /// the suggestions are worded with — never which ones are offered.
     let isDocument: Bool
 
     init(pageTypeSignals: AIChatPageTypeSignals?, url: String?, uiLocale: String, scope: Scope = .page, isDocument: Bool = false) {

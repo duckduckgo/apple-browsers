@@ -29,6 +29,14 @@ protocol ModalPromptCoordinationManaging {
         with lease: PromoQueueModalLease
     )
     func reconcilePresentedModal()
+
+    /// Redeems a held deferred slot: starts the shared cooldown, notifies the provider, and frees
+    /// the slot.
+    /// - Returns: `true` when a deferred slot was held and has now been redeemed, `false` otherwise.
+    func redeemDeferredModal() -> Bool
+
+    /// Frees a held deferred slot without starting any cooldown, because nothing was shown.
+    func releaseDeferredModal()
 }
 
 enum ModalPromptAttemptPhase: Equatable {
@@ -40,6 +48,9 @@ enum ModalPromptAttemptPhase: Equatable {
     case committed(PromoQueueModalOwnershipIdentity)
     /// The modal root was handed to UIKit; carries this lease acquisition's identity.
     case presentationActive(PromoQueueModalOwnershipIdentity)
+    /// A deferred promo holds the slot pending an external event; carries this lease
+    /// acquisition's identity.
+    case deferred(PromoQueueModalOwnershipIdentity)
 }
 
 /// Manages the coordination and presentation of modal prompts based on priority and cooldown rules.
@@ -52,14 +63,15 @@ enum ModalPromptAttemptPhase: Equatable {
 /// App-lifecycle concerns, such as launch source checks, belong to `PromoCoordinationService`.
 @MainActor
 final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
-    private struct SelectedPrompt {
-        let configuration: ModalPromptConfiguration
-        let provider: any ModalPromptProvider
+    private enum SelectedPrompt {
+        case modal(configuration: ModalPromptConfiguration, provider: any ModalPromptProvider)
+        case deferred(provider: any ModalPromptProvider)
     }
 
     private struct CommittedAttempt {
         let lease: PromoQueueModalLease
-        let selectedPrompt: SelectedPrompt
+        let configuration: ModalPromptConfiguration
+        let provider: any ModalPromptProvider
     }
 
     /// Weak holder for a presented modal root, since an enum payload cannot itself be `weak`.
@@ -84,6 +96,9 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         case committed(CommittedAttempt)
         /// Holds the lease and exact presented root until reconciliation observes its dismissal.
         case presentationActive(PromoQueueModalLease, exactRoot: PresentedModalRoot)
+        /// Holds the lease for a deferred promo until it is redeemed or released. There is no root
+        /// to observe, so reconciliation deliberately leaves this state alone.
+        case deferred(PromoQueueModalLease, provider: any ModalPromptProvider)
     }
 
     private let providers: [any ModalPromptProvider]
@@ -101,8 +116,16 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         didActuallyPresentModalPromptThisSession || hasActiveOrPendingModalAttempt
     }
 
+    /// Whether a modal is on its way to the screen.
+    ///
+    /// A held deferred slot is deliberately excluded: it means a promo owns the slot, not that the
+    /// user has been shown anything. This property feeds `didPresentModalPromptThisSession`, which
+    /// callers read to mean "the user has recently seen a prompt".
     var hasActiveOrPendingModalAttempt: Bool {
-        !legacyActiveAttemptIDs.isEmpty || modalAttemptPhase != .idle
+        if case .deferred = attemptState {
+            return !legacyActiveAttemptIDs.isEmpty
+        }
+        return !legacyActiveAttemptIDs.isEmpty || modalAttemptPhase != .idle
     }
 
     var modalAttemptPhase: ModalPromptAttemptPhase {
@@ -115,6 +138,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             return .committed(committedAttempt.lease.ownershipIdentity)
         case .presentationActive(let lease, _):
             return .presentationActive(lease.ownershipIdentity)
+        case .deferred(let lease, _):
+            return .deferred(lease.ownershipIdentity)
         }
     }
 
@@ -143,20 +168,23 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     ///
     /// - Parameter presenter: The view controller to present from.
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
-        guard let selectedPrompt = selectModalPrompt() else { return }
+        // Deferred promos need the coordinated route, which owns the lease that holding a slot
+        // requires. A deferred provider must therefore report itself ineligible in legacy mode —
+        // see `AppRatingCoordinationCapability` for how the rating prompt does it.
+        guard case .modal(let configuration, let provider) = selectModalPrompt() else { return }
 
         let scheduledAttemptID = UUID()
         legacyActiveAttemptIDs.insert(scheduledAttemptID)
-        Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: selectedPrompt.provider))")
+        Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: provider))")
         presentLegacyModalPrompt(
-            modalPromptConfiguration: selectedPrompt.configuration,
+            modalPromptConfiguration: configuration,
             from: presenter,
             scheduledAttemptID: scheduledAttemptID
         ) { [weak self] in
             self?.legacyActiveAttemptIDs.remove(scheduledAttemptID)
             self?.didActuallyPresentModalPromptThisSession = true
             self?.saveModalPromptLastPresentationDate()
-            selectedPrompt.provider.didPresentModal()
+            provider.didPresentModal()
         }
     }
 
@@ -177,13 +205,23 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             return
         }
 
-        let committedAttempt = CommittedAttempt(
-            lease: lease,
-            selectedPrompt: selectedPrompt
-        )
-        attemptState = .committed(committedAttempt)
-        Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: selectedPrompt.provider))")
-        presentCoordinatedModal(committedAttempt, from: presenter)
+        switch selectedPrompt {
+        case .deferred(let provider):
+            attemptState = .deferred(lease, provider: provider)
+            Logger.modalPrompt.debug(
+                "[Modal Prompt Coordination] - Holding the slot for \(type(of: provider)) until it is redeemed."
+            )
+
+        case .modal(let configuration, let provider):
+            let committedAttempt = CommittedAttempt(
+                lease: lease,
+                configuration: configuration,
+                provider: provider
+            )
+            attemptState = .committed(committedAttempt)
+            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: provider))")
+            presentCoordinatedModal(committedAttempt, from: presenter)
+        }
     }
 
     /// Releases a coordinated modal only after the exact selected root is no longer attached.
@@ -200,6 +238,27 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
         attemptState = .idle
         lease.release()
+    }
+
+    func redeemDeferredModal() -> Bool {
+        guard case .deferred(let lease, let provider) = attemptState else { return false }
+
+        attemptState = .idle
+        didActuallyPresentModalPromptThisSession = true
+        saveModalPromptLastPresentationDate()
+        provider.didPresentModal()
+        lease.release()
+        Logger.modalPrompt.debug("[Modal Prompt Coordination] - Redeemed the slot held by \(type(of: provider)).")
+        return true
+    }
+
+    func releaseDeferredModal() {
+        guard case .deferred(let lease, let provider) = attemptState else { return }
+
+        attemptState = .idle
+        lease.release()
+        provider.didReleaseDeferredSlot()
+        Logger.modalPrompt.debug("[Modal Prompt Coordination] - Released the unredeemed slot held by \(type(of: provider)).")
     }
 }
 
@@ -231,9 +290,14 @@ private extension ModalPromptCoordinationManager {
                 )
                 continue
             }
+
+            if provider.presentationKind == .deferred {
+                return .deferred(provider: provider)
+            }
+
             guard let configuration = provider.provideModalPrompt() else { continue }
 
-            return SelectedPrompt(configuration: configuration, provider: provider)
+            return .modal(configuration: configuration, provider: provider)
         }
 
         Logger.modalPrompt.debug("[Modal Prompt Coordination] - No provider is eligible to present a modal.")
@@ -250,15 +314,15 @@ private extension ModalPromptCoordinationManager {
 
             self.attemptState = .presentationActive(
                 committedAttempt.lease,
-                exactRoot: PresentedModalRoot(committedAttempt.selectedPrompt.configuration.viewController)
+                exactRoot: PresentedModalRoot(committedAttempt.configuration.viewController)
             )
             self.performPresentation(
-                modalPromptConfiguration: committedAttempt.selectedPrompt.configuration,
+                modalPromptConfiguration: committedAttempt.configuration,
                 from: presenter
             ) { [weak self] in
                 self?.didActuallyPresentModalPromptThisSession = true
                 self?.saveModalPromptLastPresentationDate()
-                committedAttempt.selectedPrompt.provider.didPresentModal()
+                committedAttempt.provider.didPresentModal()
             }
         }
     }
@@ -301,6 +365,9 @@ private extension ModalPromptCoordinationManager {
         case .committed(let committedAttempt):
             attemptState = .idle
             committedAttempt.lease.release()
+        case .deferred(let lease, _):
+            attemptState = .idle
+            lease.release()
         }
     }
 

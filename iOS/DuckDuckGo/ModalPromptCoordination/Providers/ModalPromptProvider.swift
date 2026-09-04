@@ -37,10 +37,31 @@ struct ModalPromptConfiguration {
     }
 }
 
+/// How the coordination manager should treat a selected provider.
+enum ModalPromptPresentationKind {
+    /// The provider supplies a view controller to present. The manager starts the shared
+    /// cooldown once it appears, and frees the promo slot when it is dismissed.
+    case modal
+
+    /// The provider holds the promo slot until an external event redeems or releases it.
+    /// The manager presents nothing and starts no cooldown until redemption.
+    ///
+    /// Use this for a promo whose UI the app does not own, or whose trigger arrives later than
+    /// the foreground checkpoint where providers are evaluated. A deferred provider expresses
+    /// its whole eligibility in `isEligibleToPresent(isOnboardingComplete:)`, because
+    /// `provideModalPrompt()` is never called for it.
+    case deferred
+}
+
 /// A type that can provide a prompt to be presented to the centralised modal prompts coordination system.
 /// Providers act as lightweight adapters between feature-specific modal prompt logic and the centralised `ModalPromptCoordinationManager`.
 @MainActor
 protocol ModalPromptProvider {
+    /// Whether this provider presents a modal or holds the slot for a later event.
+    ///
+    /// Default: `.modal`.
+    var presentationKind: ModalPromptPresentationKind { get }
+
     /// Per-provider onboarding gate. The manager calls this before evaluating `provideModalPrompt()`.
     ///
     /// Default: returns `isOnboardingComplete` — providers that need standard gating get it for free.
@@ -53,10 +74,22 @@ protocol ModalPromptProvider {
 
     /// Called after the modal has been successfully presented.
     /// Use this to update any feature-specific tracking or state.
+    ///
+    /// For a `.deferred` provider this is called at redemption, not when the slot is taken, so an
+    /// attempt that is never redeemed does not consume the promo's eligibility.
     func didPresentModal()
+
+    /// Called when a held `.deferred` slot is released without having been redeemed.
+    ///
+    /// Default: no-op.
+    func didReleaseDeferredSlot()
 }
 
 extension ModalPromptProvider {
+
+    var presentationKind: ModalPromptPresentationKind {
+        .modal
+    }
 
     /// Default implementation returns `isOnboardingComplete` — providers that need standard gating get it for free.
     /// Override to apply a softer or stricter check.
@@ -65,6 +98,8 @@ extension ModalPromptProvider {
     }
 
     func didPresentModal() {}
+
+    func didReleaseDeferredSlot() {}
 
 }
 

@@ -46,10 +46,6 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var extensionsDirectory: URL { get }
 
-    /// An async stream that yields when extensions are updated.
-    @available(macOS 15.4, iOS 18.4, *)
-    var extensionUpdates: AsyncStream<Void> { get }
-
     /// Loads all installed extensions.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor

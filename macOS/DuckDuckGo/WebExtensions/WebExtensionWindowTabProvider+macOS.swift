@@ -99,14 +99,14 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         _ action: WKWebExtension.Action,
         for context: WKWebExtensionContext
     ) async throws {
-        guard let button = buttonForContext(context) else {
-            Logger.webExtensions.error("❌ No navigation bar button for \(context.uniqueIdentifier), popup not shown")
-            return
-        }
-
         guard action.presentsPopup else {
             // The extension declares an action without a popup, so the click is its own event.
             Logger.webExtensions.debug("🧩 Action of \(context.uniqueIdentifier) presents no popup")
+            return
+        }
+
+        guard let button = buttonForContext(context) else {
+            Logger.webExtensions.error("❌ No navigation bar button for \(context.uniqueIdentifier), popup not shown")
             return
         }
 
@@ -120,8 +120,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         // `action.popupPopover` is never shown. Its rounded chrome cannot be clipped from
         // outside on macOS 26, and extension popups such as Dark Reader paint a square page
         // over it, which leaves the frame corners showing. `WebExtensionPopupPresenter` hosts
-        // the same web view in a square panel instead, and reads the popover only for the size
-        // WebKit computes for the page.
+        // the same web view in a square panel instead.
         popupPresenter.present(action, for: context, from: button)
     }
 

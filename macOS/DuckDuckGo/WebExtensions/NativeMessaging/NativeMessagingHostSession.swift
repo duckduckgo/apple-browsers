@@ -167,8 +167,6 @@ final class NativeMessagingHostSession {
                     guard let payload = try Self.readExactly(length, from: handle) else { break }
                     let message = try NativeMessagingFraming.decodePayload(payload)
 
-                    Logger.webExtensions.debug("🔗 Host \(name, privacy: .public) sent \(length, privacy: .public) bytes\(Self.kindSummary(of: message), privacy: .public)")
-
                     await MainActor.run {
                         self.messageHandler?(message)
                     }
@@ -193,12 +191,11 @@ final class NativeMessagingHostSession {
         if let exitStatus, exitStatus != 0 {
             // Two causes look the same here. The host may have nothing to talk to, as
             // Bitwarden's proxy does without its desktop app. Or it refused us, as
-            // 1Password's does for a browser it does not know. Any "sent N bytes, type …"
-            // line above names which.
+            // 1Password's does for a browser it does not know. A host that refuses usually
+            // says so in its last message or on standard error.
             Logger.webExtensions.error("""
             ❌ Host \(self.hostName, privacy: .public) ended with status \(exitStatus, privacy: .public). \
-            Either its companion app is absent, or the host refused us. \
-            Any message it sent above names the reason.
+            Either its companion app is absent, or the host refused us.
             """)
             finish(with: SessionError.hostEnded)
         } else {
@@ -237,31 +234,6 @@ final class NativeMessagingHostSession {
 
     /// Describes a host message by its `type` fields only.
     ///
-    /// A host refusal arrives as an ordinary message, not on standard error. 1Password, for
-    /// one, answers `BrowserVerificationFailed` and then quits, and without this the log shows
-    /// only the exit status. The payload can carry vault data, so this reads the `type` keys
-    /// of the top two levels and nothing else.
-    private static func kindSummary(of message: Any) -> String {
-        var kinds: [String] = []
-        var node: Any? = message
-
-        // Hosts nest a tagged enum under `content`, so follow that chain and read the tags.
-        for _ in 0..<4 {
-            guard let dictionary = node as? [String: Any] else {
-                if let tag = node as? String { kinds.append(tag) }
-                break
-            }
-            if let type = dictionary["type"] as? String {
-                kinds.append(type)
-            }
-            guard let content = dictionary["content"] else { break }
-            node = content
-        }
-
-        guard !kinds.isEmpty else { return "" }
-        return ", type " + kinds.joined(separator: "/").prefix(120)
-    }
-
     /// Reads exactly `count` bytes, or returns `nil` once the host closes its output.
     private static func readExactly(_ count: Int, from handle: FileHandle) throws -> Data? {
         var data = Data()

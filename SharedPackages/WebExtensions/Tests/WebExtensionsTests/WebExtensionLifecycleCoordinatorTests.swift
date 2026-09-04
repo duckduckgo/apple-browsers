@@ -308,7 +308,6 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     var controller: WKWebExtensionController { WKWebExtensionController() }
     var eventsListener: WebExtensionEventsListening { RecordingEventsListener() }
     var extensionsDirectory: URL { URL(fileURLWithPath: "/tmp") }
-    var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
     func installExtension(from sourceURL: URL) async throws {}
     @MainActor func uninstallExtension(identifier: String) throws {}
     @MainActor @discardableResult func uninstallAllExtensions() -> [Result<Void, Error>] { [] }

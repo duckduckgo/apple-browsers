@@ -359,19 +359,14 @@ extension TabSwitcherViewController {
             totalCount: tabsModel.count,
             pressedContainsWebPages: containsWebPages,
             isEditing: isEditing,
-            title: title,
-            shouldShowDeleteTabAndData: floatingUIManager.isFloatingTabSwitcherEnabled && tabs.count == 1 && containsWebPages
+            title: title
         )
         return menuBuilder.longPressMenu(state: state, actions: TabSwitcherLongPressMenuActions(
             onShare: { [weak self] in self?.longPressMenuShareLinks(tabs: tabs) },
             onBookmark: { [weak self] in self?.longPressMenuBookmarkTabs(indexPaths: indexPaths) },
             onSelect: { [weak self] in self?.longPressMenuSelectTabs(indexPaths: indexPaths) },
             onClose: { [weak self] in self?.longPressMenuCloseTabs(indexPaths: indexPaths) },
-            onCloseOther: { [weak self] in self?.longPressMenuCloseOtherTabs(retainingIndexPaths: indexPaths) },
-            onDeleteTabAndData: { [weak self] in
-                guard let tab = tabs.first, let indexPath = indexPaths.first else { return }
-                self?.longPressMenuDeleteTabAndData(tab: tab, at: indexPath)
-            }
+            onCloseOther: { [weak self] in self?.longPressMenuCloseOtherTabs(retainingIndexPaths: indexPaths) }
         ))
     }
 
@@ -518,24 +513,6 @@ extension TabSwitcherViewController {
         closeOtherTabs(retainingIndexPaths: indexPaths,
                        pixel: .tabSwitcherLongPressCloseOtherTabs,
                        dailyPixel: .tabSwitcherLongPressCloseOtherTabsDaily)
-    }
-
-    func longPressMenuDeleteTabAndData(tab: Tab, at indexPath: IndexPath) {
-        guard tabsModel.tabs.contains(where: { $0 === tab }) else { return }
-
-        guard let sourceView = collectionView.cellForItem(at: indexPath) ?? view else { return }
-        let presenter = FireConfirmationPresenter()
-        presenter.presentFireConfirmation(
-            on: self,
-            attachPopoverTo: sourceView,
-            tabViewModel: tabManager.viewModel(for: tab),
-            pixelSource: .tabSwitcher,
-            fireContext: .singleTab,
-            browsingMode: tab.mode,
-            onConfirm: { [weak self] fireRequest in
-                self?.forgetAll(fireRequest)
-            },
-            onCancel: {})
     }
 
 }

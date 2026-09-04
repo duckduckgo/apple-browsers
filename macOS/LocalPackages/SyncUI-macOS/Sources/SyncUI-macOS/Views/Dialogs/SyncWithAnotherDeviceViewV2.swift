@@ -83,7 +83,9 @@ struct SyncWithAnotherDeviceViewV2: View {
         } buttons: {
             Spacer()
             Button(UserText.cancel) {
-                model.cancelPressed()
+                Task {
+                    await model.cancelPressedWithConfirmation()
+                }
             }
             .buttonStyle(DismissActionButtonStyle())
         }
@@ -240,7 +242,7 @@ struct SyncWithAnotherDeviceViewV2: View {
                                                       stateColors: .themedDismissButton))
 
                 Button {
-                    model.delegate?.copyCode()
+                    model.delegate?.copyCode(codeForDisplayOrPasting)
                     showCopyConfirmation = true
                 } label: {
                     HStack(spacing: 6) {

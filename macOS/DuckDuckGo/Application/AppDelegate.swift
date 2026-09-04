@@ -1477,6 +1477,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 windowControllersManager: windowControllersManager,
                 syncService: syncService,
                 syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
+                pinningManager: pinningManager,
                 cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)

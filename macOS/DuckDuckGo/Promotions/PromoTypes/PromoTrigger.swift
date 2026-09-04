@@ -33,6 +33,7 @@ enum PromoTrigger {
     case bookmarkAdded
     case bookmarksImported
     case missingBookmarkFaviconEncountered
+    case firstPasswordSaved
     case testTriggered
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
@@ -52,6 +53,8 @@ enum PromoTrigger {
                 .map { _ in PromoTrigger.bookmarksImported },
             NotificationCenter.default.publisher(for: .missingBookmarkFaviconEncountered)
                 .map { _ in PromoTrigger.missingBookmarkFaviconEncountered },
+            NotificationCenter.default.publisher(for: .firstPasswordSaved)
+                .map { _ in PromoTrigger.firstPasswordSaved },
             NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
                 .map { _ in PromoTrigger.appBecameActive }
         ).eraseToAnyPublisher()
@@ -74,4 +77,5 @@ extension Notification.Name {
     static let bookmarkAdded = Notification.Name("com.duckduckgo.app.bookmarkAdded")
     static let bookmarksImported = Notification.Name("com.duckduckgo.app.bookmarksImported")
     static let missingBookmarkFaviconEncountered = Notification.Name("com.duckduckgo.app.missingBookmarkFaviconEncountered")
+    static let firstPasswordSaved = Notification.Name("com.duckduckgo.app.firstPasswordSaved")
 }

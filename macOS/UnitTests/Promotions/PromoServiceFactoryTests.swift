@@ -182,6 +182,7 @@ extension PromoServiceFactoryTests {
             windowControllersManager: WindowControllersManagerMock(),
             syncService: nil,
             syncBookmarksAdapter: nil,
+            pinningManager: MockPinningManager(),
             cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
                 featureFlagger: MockFeatureFlagger(),
                 keyValueStore: InMemoryThrowingKeyValueStore(),

@@ -1,5 +1,5 @@
 //
-//  PromoServiceFactory+NextSteps.swift
+//  MockAutofillToolbarPinningPromoPresenter.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,18 +17,22 @@
 //
 
 import Foundation
+@testable import DuckDuckGo_Privacy_Browser
 
-extension PromoServiceFactory {
+@MainActor
+final class MockAutofillToolbarPinningPromoPresenter: AutofillToolbarPinningPromoPresenting {
+    private(set) var presentCallCount = 0
+    private(set) var retractCallCount = 0
+    var result: PromoResult?
 
-    /// Next Steps promo on the New Tab Page. Delegate is set when NTP is built.
-    static let nextSteps = ExternalPromo(
-        id: "next-steps-cards",
-        initiated: .app,
-        promoType: PromoType(.nextSteps),
-        context: .newTabPage,
-        coexistingPromoIDs: [PromoServiceFactory.bookmarkToolbarPromoID,
-                             PromoServiceFactory.syncFaviconsPromoID,
-                             PromoServiceFactory.autofillToolbarPinningPromoID],
-        delegate: nil
-    )
+    func presentAutofillToolbarPinningPromo(completion: @escaping (PromoResult) -> Void) {
+        presentCallCount += 1
+        if let result {
+            completion(result)
+        }
+    }
+
+    func retractAutofillToolbarPinningPromo() {
+        retractCallCount += 1
+    }
 }

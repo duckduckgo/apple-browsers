@@ -117,20 +117,18 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
     var attachedPageContextProvider: (() -> AIChatPageContextData?)?
 
-    /// Page contexts for the other browser tabs attached to the prompt, in the order the user
-    /// attached them. Empty keeps the payload on its single-context shape. Set by the host that
-    /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
-    var attachedTabContextsProvider: (() -> [AIChatPageContextData])?
+    /// Snapshots the attached tabs and provides their asynchronous collection and consumption.
+    /// A nil request keeps the payload on its single-context shape.
+    var attachedTabContextsProvider: (() -> MultiTabAttachmentRequest?)?
+    private var pendingTabContextSubmission: Task<Void, Never>?
+    private var tabContextSubmissionGeneration = 0
+    private var latestTabContextSubmissionID: UUID?
 
     /// Text selections to send on the prompt's `selections` key, alongside `pageContext` rather than in place of it.
     var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
 
     /// Fired with the IDs of selections that have been dispatched.
     var onAttachedSelectionsConsumed: (([String]) -> Void)?
-
-    /// Fired once the attached tabs have been dispatched, so the host can drop them. Like
-    /// selections, they must survive a queued prompt, so nothing else may clear them.
-    var onAttachedTabContextsConsumed: (() -> Void)?
 
     /// Fires after a prompt is submitted via the multi-modal `submitPrompt(...)` path (used by
     /// the native UTI). Set by the host so the chip can flip to its post-submit silent state.
@@ -364,8 +362,11 @@ final class AIChatUserScript: NSObject, Subfeature {
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
         // `AIChatNativePrompt.pageContext` accepts either a single `PageContext` or an array.
         // The array form carries the current page plus every tab the user attached.
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContextPayload(currentPageContext: pageContext), selections: attachedSelectionsPayload, reasoningEffort: reasoningEffort)
-        pushPrompt(promptPayload)
+        let selections = attachedSelectionsPayload
+        submitWithTabContexts(currentPageContext: pageContext) { context in
+            AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId,
+                                           pageContext: context, selections: selections, reasoningEffort: reasoningEffort)
+        }
     }
 
     func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
@@ -381,19 +382,55 @@ final class AIChatUserScript: NSObject, Subfeature {
                       reasoningEffort: AIChatReasoningEffort? = nil) {
         // `attachedPageContextProvider` returns the current page; `attachedTabContextsProvider`
         // returns the tabs the user attached. Together they decide the shape of the union.
-        let promptPayload = AIChatNativePrompt.queryPrompt(
-            prompt,
-            autoSubmit: true,
-            toolChoice: tools?.map(\.rawValue),
-            images: images,
-            files: files,
-            modelId: modelId,
-            pageContext: pageContextPayload(currentPageContext: pageContext ?? attachedPageContextProvider?()),
-            selections: attachedSelectionsPayload,
-            reasoningEffort: reasoningEffort
-        )
-        pushPrompt(promptPayload)
-        onPromptSubmitted?()
+        let currentPageContext = pageContext ?? attachedPageContextProvider?()
+        let selections = attachedSelectionsPayload
+        submitWithTabContexts(currentPageContext: currentPageContext, didSubmit: onPromptSubmitted) { context in
+            AIChatNativePrompt.queryPrompt(
+                prompt,
+                autoSubmit: true,
+                toolChoice: tools?.map(\.rawValue),
+                images: images,
+                files: files,
+                modelId: modelId,
+                pageContext: context,
+                selections: selections,
+                reasoningEffort: reasoningEffort)
+        }
+    }
+
+    /// Snapshot attachment ownership synchronously, then wait for fresh tab contents before push.
+    /// Serialize submissions so a later prompt cannot overtake a sleeping tab's prompt.
+    private func submitWithTabContexts(currentPageContext: AIChatPageContextData?,
+                                       didSubmit: (() -> Void)? = nil,
+                                       makePayload: @escaping (AIChatPageContextPayload?) -> AIChatNativePrompt) {
+        let request = attachedTabContextsProvider?()
+        guard request != nil || pendingTabContextSubmission != nil else {
+            if pushPrompt(makePayload(currentPageContext.map(AIChatPageContextPayload.single))) { didSubmit?() }
+            return
+        }
+        let previous = pendingTabContextSubmission
+        let generation = tabContextSubmissionGeneration
+        let submissionID = UUID()
+        latestTabContextSubmissionID = submissionID
+        let sourceWebView = webView
+        pendingTabContextSubmission = Task { @MainActor [weak self] in
+            await previous?.value
+            guard !Task.isCancelled, self?.tabContextSubmissionGeneration == generation else { return }
+            let contexts = await request?.collect() ?? []
+            guard let self else { return }
+            defer {
+                if self.latestTabContextSubmissionID == submissionID { self.pendingTabContextSubmission = nil }
+            }
+            guard !Task.isCancelled, self.tabContextSubmissionGeneration == generation,
+                  self.webView === sourceWebView else { return }
+            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: contexts)
+            guard self.pushPrompt(makePayload(context)) else { return }
+            request?.didConsume()
+            if request != nil {
+                print("🇱🇻🟢 CONSUMED attached tabs after successful push")
+            }
+            didSubmit?()
+        }
     }
 
     /// Chooses the shape of the `pageContext` union.
@@ -404,10 +441,10 @@ final class AIChatUserScript: NSObject, Subfeature {
     ///
     /// `tabId` is the discriminator the duck.ai web app reads. The current page carries none, so
     /// any tab entry that lost its own id is dropped rather than sent as a second current page.
-    private func pageContextPayload(currentPageContext: AIChatPageContextData?) -> AIChatPageContextPayload? {
-        let tabContexts = attachedTabContextsProvider?() ?? []
+    private func pageContextPayload(currentPageContext: AIChatPageContextData?,
+                                    tabContexts: [AIChatPageContextData]) -> AIChatPageContextPayload? {
         guard !tabContexts.isEmpty else {
-            print("🇱🇻 PAYLOAD .single - providerSet=\(attachedTabContextsProvider != nil) tabContexts=0 currentPage=\(currentPageContext != nil)")
+            print("🇱🇻🟢 PAYLOAD .single - providerSet=\(attachedTabContextsProvider != nil) tabContexts=0 currentPage=\(currentPageContext != nil)")
             return currentPageContext.map(AIChatPageContextPayload.single)
         }
 
@@ -420,10 +457,9 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         let withoutTabId = entries.filter { $0.tabId == nil }.count
         let contentLengths = entries.map { String($0.content.count) }.joined(separator: ",")
-        Logger.aiChat.debug("[MultiTabAttachment] pageContext payload: \(entries.count) entries, \(withoutTabId) without tabId, content lengths: \(contentLengths)")
-        print("🇱🇻 PAYLOAD .multiple - \(entries.count) entries, \(withoutTabId) without tabId, contentLengths=[\(contentLengths)]")
+        print("🇱🇻🟢 PAYLOAD .multiple - \(entries.count) entries, \(withoutTabId) without tabId, contentLengths=[\(contentLengths)]")
         for entry in entries {
-            print("🇱🇻   entry tabId=\(entry.tabId ?? "nil") title=\(entry.title) contentLength=\(entry.content.count) url=\(entry.url)")
+            print("🇱🇻🟢   entry tabId=\(entry.tabId ?? "nil") title=\(entry.title) contentLength=\(entry.content.count) url=\(entry.url)")
         }
         return .multiple(entries)
     }
@@ -443,17 +479,13 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     /// Consumes the payload's selections only once it has been dispatched, so a dropped push does not
     /// destroy them. Dispatch is not acknowledgement — the frontend can still fail to receive it.
-    private func pushPrompt(_ payload: AIChatNativePrompt) {
-        guard push(.submitPrompt(payload)) else { return }
-
-        if case .multiple = payload.pageContext {
-            print("🇱🇻 CONSUMED attached tabs after successful push")
-            onAttachedTabContextsConsumed?()
+    @discardableResult
+    private func pushPrompt(_ payload: AIChatNativePrompt) -> Bool {
+        guard push(.submitPrompt(payload)) else { return false }
+        if let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty {
+            onAttachedSelectionsConsumed?(selectionIDs)
         }
-
-        guard let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty else { return }
-
-        onAttachedSelectionsConsumed?(selectionIDs)
+        return true
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
@@ -505,6 +537,11 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// - Returns: whether the message was dispatched. It is dropped when the web view or broker has gone.
     @discardableResult
     private func push(_ message: AIChatPushMessage) -> Bool {
+        if case .newChatAction = message {
+            tabContextSubmissionGeneration += 1
+            pendingTabContextSubmission?.cancel()
+            pendingTabContextSubmission = nil
+        }
         guard let webView = webView else {
             return false
         }

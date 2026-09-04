@@ -20,15 +20,51 @@
 import AIChat
 import Combine
 import Foundation
-import os.log
+import WebKit
 
-/// Fills the multi-tab attachment cache from every tab, not only from the tab whose contextual
-/// sheet is open.
-///
-/// The page only pushes a result after the first `collect()` call, and only the contextual sheet
-/// makes that call today. This extension makes the call once per page load, for every tab, so a
-/// background tab still has content the user can attach.
+/// Collects live attachment content and keeps the hack-phase cache updated between submissions.
 extension TabViewController {
+
+    /// Materialization starts loading; a restored background web view may still need a reload.
+    func collectPageContextForMultiTabAttachment(navigationTimeout: TimeInterval = 5,
+                                                 collectTimeout: TimeInterval = 5) async -> AIChatPageContextData? {
+        guard let webView, !Task.isCancelled else { return nil }
+        let loadedPage = didFinishURLPublisher
+            .combineLatest(webView.publisher(for: \.isLoading))
+            .compactMap { [weak self] finishedURL, isLoading -> URL? in
+                guard let self, let finishedURL, !isLoading, !self.isError,
+                      webView.url == finishedURL else { return nil }
+                return finishedURL
+            }
+            .eraseToAnyPublisher()
+
+        Swift.print("🇱🇻🟢 waiting for background tab navigation tab=\(tabModel.uid)")
+        let loadedURL = await MultiTabAttachmentWaiter.firstValue(from: loadedPage, timeout: navigationTimeout) {
+            // A URL restored from interactionState is not proof that its document has loaded.
+            // No URL means attachWebView is still preparing its initial request; do not restart it.
+            if webView.url != nil, !webView.isLoading {
+                var alreadyFinished = false
+                let observation = loadedPage.sink { _ in alreadyFinished = true }
+                if !alreadyFinished { webView.reload() }
+                observation.cancel()
+            }
+        }
+        guard let loadedURL, !Task.isCancelled, webView.url == loadedURL else {
+            Swift.print("🇱🇻🟢 navigation unavailable after waiting tab=\(tabModel.uid) - timed out, cancelled or URL changed")
+            return nil
+        }
+
+        // Reuse the current-page policy, document handling and favicon enrichment without
+        // changing the source tab's contextual chat attachment state.
+        let handler = makePageContextHandler()
+        let updates = handler.contextPublisher.dropFirst().eraseToAnyPublisher()
+        let context = await MultiTabAttachmentWaiter.firstValue(from: updates, timeout: collectTimeout) {
+            handler.triggerContextCollection(trigger: .userRequest)
+        }
+        guard !Task.isCancelled, webView.url == loadedURL, !webView.isLoading, !isError,
+              let context = context ?? nil, context.contextData.url == loadedURL.absoluteString else { return nil }
+        return context.contextData
+    }
 
     /// Subscribes to this tab's page-context script. Call again after the user scripts are
     /// reinstalled, because the subscription points at the previous script instance.
@@ -39,8 +75,7 @@ extension TabViewController {
 
         guard let context = multiTabAttachmentContext, context.isEnabled else { return }
         guard let script = userScripts?.pageContextUserScript else {
-            Logger.aiChat.debug("[MultiTabAttachment] no page context script - cache stays empty for this tab")
-            Swift.print("🇱🇻 observe skipped - no page context script for tab \(tabModel.uid)")
+            Swift.print("🇱🇻🟢 observe skipped - no page context script for tab \(tabModel.uid) no page context script - cache stays empty for this tab")
             return
         }
 
@@ -51,12 +86,11 @@ extension TabViewController {
                 guard let self else { return }
                 guard case .collected(let pageContext) = result else { return }
                 guard let url = URL(string: pageContext.url) else {
-                    Logger.aiChat.debug("[MultiTabAttachment] collected context has no usable URL - not cached")
+                    Swift.print("🇱🇻🟢 collected context has no usable URL tab=\(tabId) - not cached")
                     return
                 }
                 context.cache.store(context: pageContext, url: url, forTabId: tabId)
-                Logger.aiChat.debug("[MultiTabAttachment] cached context for tab \(tabId) - content length: \(pageContext.content.count)")
-                Swift.print("🇱🇻 CACHED tab=\(tabId) contentLength=\(pageContext.content.count) url=\(url.absoluteString)")
+                Swift.print("🇱🇻🟢 CACHED tab=\(tabId) contentLength=\(pageContext.content.count) url=\(url.absoluteString)")
             }
     }
 
@@ -64,18 +98,16 @@ extension TabViewController {
     /// navigation, so one call per load is enough.
     func requestPageContextForMultiTabAttachment() {
         guard let context = multiTabAttachmentContext, context.isEnabled else {
-            Swift.print("🇱🇻 collect skipped - gate off or no context for tab \(tabModel.uid)")
+            Swift.print("🇱🇻🟢 collect skipped - gate off or no context for tab \(tabModel.uid)")
             return
         }
 
         guard let script = userScripts?.pageContextUserScript else {
-            Logger.aiChat.debug("[MultiTabAttachment] collect skipped - no page context script")
-            Swift.print("🇱🇻 collect skipped - no page context script for tab \(tabModel.uid)")
+            Swift.print("🇱🇻🟢 collect skipped - no page context script for tab \(tabModel.uid)")
             return
         }
         guard let webView else {
-            Logger.aiChat.debug("[MultiTabAttachment] collect skipped - no web view")
-            Swift.print("🇱🇻 collect skipped - no web view for tab \(tabModel.uid)")
+            Swift.print("🇱🇻🟢 collect skipped - no web view for tab \(tabModel.uid)")
             return
         }
         guard let url = webView.url, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return }
@@ -87,14 +119,13 @@ extension TabViewController {
         // The contextual sheet clears this reference when it stops collecting, so set it every time.
         script.webView = webView
         script.collect()
-        Swift.print("🇱🇻 COLLECT sent tab=\(tabModel.uid) url=\(url.absoluteString)")
+        Swift.print("🇱🇻🟢 COLLECT sent tab=\(tabModel.uid) url=\(url.absoluteString)")
         reportMissingPageContextIfNeeded(for: url, context: context)
     }
 
     /// Reports a collect that produced nothing.
     ///
-    /// The page drops a `collect` that arrives before its own handler is registered. The result is
-    /// a silent miss, which the user only sees as a tab that attaches URL and title alone.
+    /// The page drops a `collect` that arrives before its own handler is registered.
     private func reportMissingPageContextIfNeeded(for url: URL, context: MultiTabAttachmentContext) {
         let tabId = tabModel.uid
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.multiTabAttachmentCollectTimeout) { [weak self] in
@@ -102,8 +133,7 @@ extension TabViewController {
             // so this check would otherwise compare the cache against a URL the tab already left.
             guard self?.webView?.url == url else { return }
             guard context.cache.context(forTabId: tabId)?.url != url else { return }
-            Logger.aiChat.error("[MultiTabAttachment] no context arrived for tab \(tabId) - the collect was probably dropped by the page")
-            Swift.print("🇱🇻 COLLECT LOST tab=\(tabId) - nothing arrived within the timeout")
+            Swift.print("🇱🇻🟢 COLLECT LOST tab=\(tabId) - nothing arrived within the timeout [MultiTabAttachment] no context arrived for tab \(tabId) - the collect was probably dropped by the page")
         }
     }
 

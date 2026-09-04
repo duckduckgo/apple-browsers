@@ -754,14 +754,7 @@ class TabViewController: UIViewController {
     var multiTabAttachmentCancellable: AnyCancellable?
 
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
-        let pageContextHandler = AIChatPageContextHandler(
-            webViewProvider: { [weak self] in self?.webView },
-            userScriptProvider: { [weak self] in self?.userScripts?.pageContextUserScript },
-            faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) },
-            attachabilityPolicyProvider: { [weak self] in self?.currentPageContextAttachabilityPolicy() },
-            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) },
-            isDocumentContextEnabled: { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatPdfPageContext) ?? false }
-        )
+        let pageContextHandler = makePageContextHandler()
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
             aiChatSettings: aiChatSettings,
@@ -782,6 +775,17 @@ class TabViewController: UIViewController {
         coordinator.delegate = self
         return coordinator
     }()
+
+    func makePageContextHandler() -> AIChatPageContextHandler {
+        AIChatPageContextHandler(
+            webViewProvider: { [weak self] in self?.webView },
+            userScriptProvider: { [weak self] in self?.userScripts?.pageContextUserScript },
+            faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) },
+            attachabilityPolicyProvider: { [weak self] in self?.currentPageContextAttachabilityPolicy() },
+            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) },
+            isDocumentContextEnabled: { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatPdfPageContext) ?? false }
+        )
+    }
     let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     init(tabModel: Tab,
@@ -1380,6 +1384,8 @@ class TabViewController: UIViewController {
         }
 
         let didRestoreWebViewState = restoreInteractionStateToWebView(interactionStateData)
+        Swift.print("🇱🇻🚩 TabViewController: restoration result, tab=\(tabModel.uid), " +
+                    "url=\(webView.url?.absoluteString ?? request?.url?.absoluteString ?? "nil"), restored=\(didRestoreWebViewState)")
 
         instrumentation.didPrepareWebView()
 
@@ -1389,8 +1395,12 @@ class TabViewController: UIViewController {
         }
 
         if consumeCookies {
+            Swift.print("🇱🇻🚩 TabViewController: consuming cookies before loading request, tab=\(tabModel.uid), " +
+                        "url=\(request?.url?.absoluteString ?? "nil")")
             consumeCookiesThenLoadRequest(request)
         } else if !didRestoreWebViewState, let urlRequest = request {
+            Swift.print("🇱🇻🚩 TabViewController: loading request without restored state, tab=\(tabModel.uid), " +
+                        "url=\(urlRequest.url?.absoluteString ?? "nil")")
             var loadingStopped = false
             linkProtection.getCleanURLRequest(from: urlRequest, onStartExtracting: { [weak self] in
                 if loadingInitiatedByParentTab {
@@ -2574,6 +2584,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        didFinishURLSubject.send(nil)
         navigationPixelResponder.didStart(navigation)
         lastError = nil
         lastRenderedURL = webView.url
@@ -5470,13 +5481,19 @@ private extension TabViewController {
         if let interactionStateData {
             let startTime = CFAbsoluteTimeGetCurrent()
             webView.interactionState = interactionStateData
+            Swift.print("🇱🇻🚩 TabViewController: applied saved webView state, tab=\(tabModel.uid), " +
+                        "url=\(webView.url?.absoluteString ?? "nil")")
             if webView.url != nil {
                 self.url = tabModel.link?.url
                 didRestoreWebViewState = true
+                Swift.print("🇱🇻🚩 TabViewController: saved webView state restored successfully, tab=\(tabModel.uid), " +
+                            "url=\(webView.url?.absoluteString ?? "nil")")
                 preventUniversalLinksOnce = true
                 tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
             } else {
                 pixelFiring?.fire(TabTerminationTelemetryPixel.interactionStateFailedToRestore, frequency: .standard)
+                Swift.print("🇱🇻🚩 TabViewController: saved webView state restoration failed, tab=\(tabModel.uid), " +
+                            "url=\(tabModel.link?.url.absoluteString ?? "nil")")
                 pixelFiring?.fire(TabTerminationTelemetryPixel.interactionStateFailedToRestoreDaily, frequency: .legacyDailyNoSuffix)
             }
 

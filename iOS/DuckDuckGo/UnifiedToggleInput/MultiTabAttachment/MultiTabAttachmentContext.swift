@@ -19,7 +19,6 @@
 
 import AIChat
 import Foundation
-import os.log
 
 /// One open browser tab the user can attach to a Duck.ai prompt.
 struct MultiTabAttachmentCandidate: Equatable {
@@ -28,27 +27,29 @@ struct MultiTabAttachmentCandidate: Equatable {
     let url: URL
 }
 
-/// The seam between the browser's tabs and the Duck.ai input.
-///
-/// `TabManager` owns one instance and hands it to every `TabViewController`, which writes each
-/// tab's page context into the cache. The contextual chat input reads the tab list and the cached
-/// contexts back through the same instance.
+/// A frozen attachment selection, collected before its prompt is dispatched.
+struct MultiTabAttachmentRequest {
+    let collect: @MainActor () async -> [AIChatPageContextData]
+    let didConsume: @MainActor () -> Void
+}
+
+/// Resolves browser tabs and collects fresh context for the Duck.ai input.
 @MainActor
 final class MultiTabAttachmentContext {
 
     let cache: AIChatTabContextCache
     private let feature: MultiTabAttachmentHackFeature
     private let openTabsProvider: () -> [Tab]
+    private let contentProvider: (Tab) async -> AIChatPageContextData?
 
-    /// `cache` defaults to nil rather than to a new instance, because a default argument is
-    /// evaluated outside the main actor and `AIChatTabContextCache` is main-actor isolated. The
-    /// initializer body is isolated, so the instance is built there instead.
     init(cache: AIChatTabContextCache? = nil,
          feature: MultiTabAttachmentHackFeature = MultiTabAttachmentHackFeature(),
-         openTabsProvider: @escaping () -> [Tab]) {
+         openTabsProvider: @escaping () -> [Tab],
+         contentProvider: @escaping (Tab) async -> AIChatPageContextData?) {
         self.cache = cache ?? AIChatTabContextCache()
         self.feature = feature
         self.openTabsProvider = openTabsProvider
+        self.contentProvider = contentProvider
     }
 
     var isEnabled: Bool {
@@ -68,42 +69,35 @@ final class MultiTabAttachmentContext {
         }
     }
 
-    /// Builds one page context per attached tab, in the order the user attached them.
-    ///
-    /// A tab whose cache holds nothing, or holds a context from a URL the tab has since left, falls
-    /// back to URL and title. The submit is never blocked.
-    ///
-    /// `tabId` marks "another tab": it is stamped on every entry except the one that matches the
-    /// current tab, which the duck.ai web app reads as the current page.
+    /// Like macOS, unavailable contexts are omitted rather than sent as empty attachments.
+    /// Collect sequentially to bound the number of web views awakened on iOS.
     func pageContexts(for attachments: [UnifiedToggleInputTabAttachment],
-                      currentTabId: TabUID?) -> [AIChatPageContextData] {
-        print("🇱🇻 building contexts for \(attachments.count) attached tab(s), currentTabId=\(currentTabId ?? "nil")")
-        return attachments.map { attachment in
-            let tabId: String? = attachment.tabId == currentTabId ? nil : attachment.tabId
-            guard let entry = cache.context(forTabId: attachment.tabId) else {
-                Logger.aiChat.debug("[MultiTabAttachment] cache miss for tab \(attachment.tabId) - sending URL and title only")
-                print("🇱🇻 CACHE MISS tab=\(attachment.tabId) title=\(attachment.title) - sending URL and title only")
-                return Self.metadataOnlyContext(for: attachment).withTabId(tabId)
-            }
-            guard entry.url == attachment.url else {
-                Logger.aiChat.debug("[MultiTabAttachment] stale cache for tab \(attachment.tabId) - sending URL and title only")
-                print("🇱🇻 CACHE STALE tab=\(attachment.tabId) cachedURL=\(entry.url.absoluteString) attachedURL=\(attachment.url.absoluteString)")
-                return Self.metadataOnlyContext(for: attachment).withTabId(tabId)
-            }
-            print("🇱🇻 CACHE HIT tab=\(attachment.tabId) contentLength=\(entry.context.content.count) stampedTabId=\(tabId ?? "nil")")
-            return entry.context.withTabId(tabId)
-        }
-    }
+                      currentTabId: TabUID?) async -> [AIChatPageContextData] {
+        guard isEnabled else { return [] }
+        print("🇱🇻🟢 building contexts for \(attachments.count) attached tab(s), currentTabId=\(currentTabId ?? "nil")")
+        var contexts: [AIChatPageContextData] = []
+        let originMode = openTabsProvider().first { $0.uid == currentTabId }?.mode
+        guard currentTabId == nil || originMode != nil else { return [] }
+        for attachment in attachments {
+            guard !Task.isCancelled, isEnabled else { return [] }
+            guard let tab = openTabsProvider().first(where: { $0.uid == attachment.tabId }),
+                  tab.link?.url == attachment.url,
+                  originMode == nil || tab.mode == originMode,
+                  !AIChatTabMetadata.shouldExcludeFromTabPicker(attachment.url) else { continue }
 
-    private static func metadataOnlyContext(for attachment: UnifiedToggleInputTabAttachment) -> AIChatPageContextData {
-        AIChatPageContextData(
-            title: attachment.title,
-            favicon: [],
-            url: attachment.url.absoluteString,
-            content: "",
-            truncated: false,
-            fullContentLength: 0,
-            attached: false
-        )
+            guard let context = await contentProvider(tab),
+                  !Task.isCancelled, isEnabled,
+                  openTabsProvider().contains(where: { $0 === tab }),
+                  context.hasAttachedPage,
+                  let collectedURL = URL(string: context.url),
+                  tab.link?.url == collectedURL else {
+                print("🇱🇻🟢 context unavailable after loading and collection tab=\(tab.uid) title=\(attachment.title) - skipping attachment")
+                continue
+            }
+            cache.store(context: context, url: collectedURL, forTabId: tab.uid)
+            print("🇱🇻🟢 COLLECTED tab=\(tab.uid) title=\(context.title) contentLength=\(context.content.count)")
+            contexts.append(context.withTabId(attachment.tabId == currentTabId ? nil : attachment.tabId))
+        }
+        return contexts
     }
 }

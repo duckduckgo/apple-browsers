@@ -131,10 +131,28 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     /// Handed to every `TabViewController` so each tab writes its own page context into it.
     @MainActor
     private(set) lazy var multiTabAttachmentContext = MultiTabAttachmentContext(
-        openTabsProvider: { [weak self] in self?.allTabsModel.tabs ?? [] }
+        openTabsProvider: { [weak self] in self?.allTabsModel.tabs ?? [] },
+        contentProvider: { [weak self] tab in
+            guard let self else { return nil }
+            // Keep the controller in the browser cache while collection is in flight.
+            self.pageContextCollectionCounts[tab.uid, default: 0] += 1
+            defer {
+                if self.pageContextCollectionCounts[tab.uid] == 1 {
+                    self.pageContextCollectionCounts[tab.uid] = nil
+                } else {
+                    self.pageContextCollectionCounts[tab.uid, default: 1] -= 1
+                }
+                self.enforceCacheCapacityIfNeeded()
+            }
+            guard let controller = self.controller(for: tab, createIfNeeded: true) else { return nil }
+            let context = await controller.collectPageContextForMultiTabAttachment()
+            guard self.controller(for: tab) === controller else { return nil }
+            return context
+        }
     )
 
     private var tabControllerCache = [TabViewController]()
+    private var pageContextCollectionCounts: [TabUID: Int] = [:]
 
     weak var cacheDelegate: (any TabControllerCacheDelegate)?
 
@@ -346,12 +364,15 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                  inheritedAttribution: AdClickAttributionLogic.State?,
                                  interactionState: Data?) -> TabViewController {
         let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
+        print("🇱🇻🚩 TabManager: creating controller, tab=\(tab.uid), " +
+              "url=\(url?.absoluteString ?? "nil"), hasSavedState=\(interactionState != nil)")
         configuration.mediaTypesRequiringUserActionForPlayback = autoplaySettings.currentAutoplayBlockingMode.mediaTypesRequiringUserAction
 
         // iPad tabs only: iPhone's mobile YouTube enters fullscreen via `webkitEnterFullscreen()`
         // regardless, so it gains nothing and would only lose the native player on other sites.
         // iOS 16 is the floor because the layout restore observes `fullscreenState`, which is iOS 16+.
         if #available(iOS 16.0, *), isPad, featureFlagger.isFeatureOn(.elementFullscreen) {
+            print("🇱🇻🚩 TabManager: elementFullscreen enabled for new webView, url=\(url?.absoluteString ?? "nil")")
             configuration.preferences.isElementFullscreenEnabled = true
         }
 
@@ -418,8 +439,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         guard let tab = currentTabsModel.currentTab else { return nil }
 
         if let controller = controller(for: tab) {
+            print("🇱🇻🚩 TabManager.current: reusing controller from cache, tab=\(tab.uid), " +
+                  "url=\(controller.webView.url?.absoluteString ?? "nil")")
             return controller
         } else if createIfNeeded {
+            print("🇱🇻🚩 TabManager.current: cache miss, reading saved state, tab=\(tab.uid), url=\(tab.link?.url.absoluteString ?? "nil")")
             Logger.general.debug("Tab not in cache, creating")
             let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
             let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
@@ -437,10 +461,13 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     func controller(for tab: Tab, createIfNeeded: Bool) -> TabViewController? {
         if let controller = controller(for: tab) {
+            print("🇱🇻🚩 TabManager.controller: reusing controller from cache, tab=\(tab.uid), " +
+                  "url=\(controller.webView.url?.absoluteString ?? "nil")")
             return controller
         }
         guard createIfNeeded, tab.link != nil else { return nil }
 
+        print("🇱🇻🚩 TabManager.controller: cache miss, reading saved state, tab=\(tab.uid), url=\(tab.link?.url.absoluteString ?? "nil")")
         let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
         let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
         addToCache(controller)
@@ -690,6 +717,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     private func addToCache(_ controller: TabViewController) {
+        print("🇱🇻🚩 TabManager: caching controller, tab=\(controller.tabModel.uid), url=\(controller.webView.url?.absoluteString ?? "nil")")
         tabControllerCache.append(controller)
         cacheDelegate?.tabManager(self, didCreateController: controller)
         enforceCacheCapacityIfNeeded()
@@ -708,13 +736,17 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     private func enforceCacheCapacityIfNeeded() {
+        print("🇱🇻🚩 TabManager: checking tabLRUEviction flag")
         guard featureFlagger.isFeatureOn(.tabLRUEviction) else { return }
+        print("🇱🇻🚩 TabManager: tabLRUEviction enabled")
         let maximumCapacity = tabEvictionSettings.maximumCapacity(isPad: isPad)
         let currentController = current()
         let currentControllerIsNewTabPage = currentController.map { $0.tabModel.link == nil } ?? false
         let effectiveMaximumCapacity = maximumCapacity + (currentControllerIsNewTabPage ? 1 : 0)
         while tabControllerCache.count > effectiveMaximumCapacity {
-            let evictionCandidates = tabControllerCache.filter { $0 !== currentController }
+            let evictionCandidates = tabControllerCache.filter {
+                $0 !== currentController && pageContextCollectionCounts[$0.tabModel.uid] == nil
+            }
             guard let controller = evictionCandidates.first(where: { $0.tabModel.link == nil }) ?? evictionCandidates.first else { return }
             evictFromCache(controller, reason: .lruCapacity)
         }
@@ -722,6 +754,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     private func evictFromCache(_ controller: TabViewController, reason: TabControllerCacheEvictionReason) {
+        print("🇱🇻🚩 TabManager: evicting controller, tab=\(controller.tabModel.uid), " +
+              "url=\(controller.webView.url?.absoluteString ?? "nil"), reason=\(reason)")
         if reason != .webContentProcessTermination {
             interactionStateSource?.saveState(controller.webView.interactionState, for: controller.tabModel)
         }
@@ -1059,7 +1093,9 @@ extension TabManager {
     @objc
     private func onMemoryWarning(_ notification: NSNotification) {
         tabTerminationTelemetry.didReceiveMemoryWarning(activeTabCount: tabControllerCache.count)
+        print("🇱🇻🚩 TabManager: checking tabEvictionOnMemoryWarning flag and background state")
         if featureFlagger.isFeatureOn(.tabEvictionOnMemoryWarning), applicationState() == .background {
+            print("🇱🇻🚩 TabManager: tabEvictionOnMemoryWarning enabled, evicting background tabs")
             let currentController = current()
             tabControllerCache
                 .filter { $0 !== currentController }

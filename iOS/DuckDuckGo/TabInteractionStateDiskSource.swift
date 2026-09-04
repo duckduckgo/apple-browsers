@@ -95,14 +95,19 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
     }
 
     func popLastStateForTab(_ tab: Tab) -> Data? {
+        print("🇱🇻🚩 TabInteractionStateDiskSource: reading saved webView state, tab=\(tab.uid), url=\(tab.link?.url.absoluteString ?? "nil")")
         let tabCacheLocation = cacheLocationForTab(tab)
 
         guard let stateData = try? Data(contentsOf: tabCacheLocation) else {
+            print("🇱🇻🚩 TabInteractionStateDiskSource: saved state missing or unreadable, tab=\(tab.uid), " +
+                  "url=\(tab.link?.url.absoluteString ?? "nil")")
             Logger.tabInteractionStateSource.debug("No interaction state found for tab \(tab.uid)")
             return nil
         }
 
         Logger.tabInteractionStateSource.debug("Interaction state found for tab \(tab.uid)")
+        print("🇱🇻🚩 TabInteractionStateDiskSource: loaded saved state, tab=\(tab.uid), " +
+              "url=\(tab.link?.url.absoluteString ?? "nil"), bytes=\(stateData.count)")
 
         removeStateForTab(tab)
 

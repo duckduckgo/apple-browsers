@@ -108,6 +108,7 @@ class TabsModelPersistence: TabsModelPersisting {
             let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
             unarchiver.requiresSecureCoding = false
             let model = unarchiver.decodeObject(of: TabsModel.self, forKey: NSKeyedArchiveRootObjectKey)
+            print("🇱🇻🚩 TabsModelPersistence: decoded saved tabs, urls=\(model?.tabs.compactMap { $0.link?.url.absoluteString } ?? [])")
             if let error = unarchiver.error {
                 throw error
             }
@@ -122,16 +123,20 @@ class TabsModelPersistence: TabsModelPersisting {
     }
 
     public func getTabsModel(for key: TabsModelStorageKey) throws -> TabsModel? {
+        print("🇱🇻🚩 TabsModelPersistence: reading tabs from disk, mode=\(key)")
         let targetStore = store(for: key)
         let data = try targetStore.object(forKey: Constants.storageKey) as? Data
         if let data {
+            print("🇱🇻🚩 TabsModelPersistence: decoding saved tabs, mode=\(key), bytes=\(data.count)")
             return unarchive(data: data)
         }
 
+        print("🇱🇻🚩 TabsModelPersistence: no saved tabs in file store, mode=\(key)")
         guard key == .normal else { return nil }
 
         if let legacyData = legacyStore.object(forKey: Constants.legacyUDKey) as? Data,
            let model = unarchive(data: legacyData) {
+            print("🇱🇻🚩 TabsModelPersistence: loaded tabs from legacy storage")
             do {
                 try targetStore.set(legacyData, forKey: Constants.storageKey)
                 legacyStore.removeObject(forKey: Constants.legacyUDKey)

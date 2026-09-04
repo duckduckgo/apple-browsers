@@ -212,10 +212,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             self?.chipViewModel.pendingAttachedContextData
         }
         userScript.attachedTabContextsProvider = { [weak self] in
-            self?.attachedTabPageContexts() ?? []
-        }
-        userScript.onAttachedTabContextsConsumed = { [weak self] in
-            self?.coordinator.consumeSubmittedTabAttachments()
+            self?.attachedTabContextRequest()
         }
         userScript.onPromptSubmitted = { [weak self] in
             self?.handlePromptSubmittedFromUserScript()
@@ -430,17 +427,21 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.setMultiTabAttachmentContext(context, currentTabUID: currentTabUID)
     }
 
-    /// One page context per attached tab, in the order the user attached them. Empty when the gate
-    /// is off or when the user attached no tab, which keeps the payload on its single-context shape.
-    private func attachedTabPageContexts() -> [AIChatPageContextData] {
+    /// Captures attachment ownership before collection can suspend or the draft can change.
+    private func attachedTabContextRequest() -> MultiTabAttachmentRequest? {
         guard let multiTabAttachmentContext, multiTabAttachmentContext.isEnabled else {
-            print("🇱🇻 PROVIDER called - contextSet=\(multiTabAttachmentContext != nil) gate=\(multiTabAttachmentContext?.isEnabled ?? false) -> []")
-            return []
+            print("🇱🇻🟢 PROVIDER called - contextSet=\(multiTabAttachmentContext != nil) gate=\(multiTabAttachmentContext?.isEnabled ?? false) -> []")
+            return nil
         }
         let attachments = coordinator.attachedTabAttachments()
-        print("🇱🇻 PROVIDER called - \(attachments.count) attached tab(s): \(attachments.map(\.title).joined(separator: " | "))")
-        guard !attachments.isEmpty else { return [] }
-        return multiTabAttachmentContext.pageContexts(for: attachments, currentTabId: multiTabCurrentTabUID)
+        print("🇱🇻🟢 PROVIDER called - \(attachments.count) attached tab(s): \(attachments.map(\.title).joined(separator: " | "))")
+        guard !attachments.isEmpty else { return nil }
+        let currentTabID = multiTabCurrentTabUID
+        return MultiTabAttachmentRequest(collect: {
+            await multiTabAttachmentContext.pageContexts(for: attachments, currentTabId: currentTabID)
+        }, didConsume: { [weak self] in
+            self?.coordinator.consumeSubmittedTabAttachments(ids: attachments.map(\.id))
+        })
     }
 
     /// Drops a dictated query into the field for the user to review before sending.

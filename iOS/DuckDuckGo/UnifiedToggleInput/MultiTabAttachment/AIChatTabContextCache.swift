@@ -22,12 +22,8 @@ import Foundation
 
 /// In-memory page context per browser tab, keyed on the tab `uid`.
 ///
-/// iOS destroys the web view of a background tab, so a tab the user attaches cannot be asked for
-/// its content at submit time. The content is therefore cached when the page pushes it, and read
-/// back at submit time.
-///
-/// Hack phase only: the store is one dictionary that an app restart empties, and nothing evicts an
-/// entry when a tab closes. Production moves this to disk and adds eviction.
+/// Retains page updates during the hack phase. Submission collects fresh context from the tab,
+/// waking its web view when needed, so this cache is not required to survive an app restart.
 // @MainActor
 final class AIChatTabContextCache {
 

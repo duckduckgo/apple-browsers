@@ -1683,8 +1683,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     /// Drops the tabs held for a delivery, once the user script reports the payload was pushed.
-    func consumeSubmittedTabAttachments() {
-        submittedTabAttachments = nil
+    func consumeSubmittedTabAttachments(ids: [UUID]) {
+        submittedTabAttachments?.removeAll { ids.contains($0.id) }
+        if submittedTabAttachments?.isEmpty == true { submittedTabAttachments = nil }
     }
 
     /// The tabs the picker offers. Empty when the gate is off, which hides the menu entry.
@@ -1877,10 +1878,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                                      userScript: AIChatUserScript?) {
         // Held rather than scoped to this call: a queued prompt builds its payload later.
         let attachedTabs = viewController.currentAttachments.compactMap(\.tabAttachment)
-        if !attachedTabs.isEmpty {
-            submittedTabAttachments = attachedTabs
-        }
-        print("🇱🇻 DELIVER held=\(submittedTabAttachments?.count ?? 0) tab(s), userScriptBound=\(userScript != nil), contextualState=\(isContextualChatState)")
+        submittedTabAttachments = attachedTabs
+        print("🇱🇻🟢 DELIVER held=\(submittedTabAttachments?.count ?? 0) tab(s), userScriptBound=\(userScript != nil), contextualState=\(isContextualChatState)")
 
         if isContextualChatState, userScript == nil {
             markActiveChatPromptSubmitted()

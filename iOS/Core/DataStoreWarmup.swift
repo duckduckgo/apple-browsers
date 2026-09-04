@@ -35,9 +35,11 @@ public class DataStoreWarmup {
 
     @MainActor
     public func ensureReady(applicationState: ApplicationState, fireMode: Bool) async {
+        print("🇱🇻🚩 DataStoreWarmup: prewarm started, url=about:blank, appState=\(applicationState.rawValue), fireMode=\(fireMode)")
         Pixel.fire(pixel: .webkitWarmupStart(appState: applicationState.rawValue))
         await BlockingNavigationDelegate(fireMode: fireMode).loadInBackgroundWebView(url: URL(string: "about:blank")!)
         Pixel.fire(pixel: .webkitWarmupFinished(appState: applicationState.rawValue))
+        print("🇱🇻🚩 DataStoreWarmup: prewarm finished, url=about:blank, fireMode=\(fireMode)")
     }
 
 }
@@ -57,6 +59,7 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
     }
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        print("🇱🇻🚩 DataStoreWarmup: prewarm navigation finished, url=\(webView.url?.absoluteString ?? "nil")")
         if let finished {
             finished.send()
             self.finished = nil
@@ -66,6 +69,7 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
     }
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        print("🇱🇻🚩 DataStoreWarmup: web content process terminated during prewarm, url=\(webView.url?.absoluteString ?? "nil")")
         Pixel.fire(pixel: .webKitDidTerminateDuringWarmup)
 
         if let finished {
@@ -87,6 +91,7 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
 
     @MainActor
     public func prepareWebView() -> WKWebView {
+        print("🇱🇻🚩 DataStoreWarmup: creating prewarm webView, fireMode=\(fireMode)")
         let config = WKWebViewConfiguration.persistent(fireMode: fireMode)
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
@@ -98,6 +103,7 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
         let webView = prepareWebView()
         let request = URLRequest(url: url)
         webView.load(request)
+        print("🇱🇻🚩 DataStoreWarmup: prewarm request started, url=\(url.absoluteString)")
         await waitForLoad()
     }
 

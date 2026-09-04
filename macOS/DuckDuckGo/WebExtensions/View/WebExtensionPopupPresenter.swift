@@ -247,6 +247,13 @@ final class WebExtensionPopupPresenter {
         close()
     }
 
+    /// Closes the panel when it hosts `webView`, which is how a popup page's own `window.close()`
+    /// reaches the presenter. A close from any other extension page is ignored.
+    func close(ifShowing webView: WKWebView) {
+        guard popupWebView === webView else { return }
+        close()
+    }
+
     func close() {
         guard let panel else { return }
 

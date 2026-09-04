@@ -399,13 +399,22 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         sut.sitePermissionsPromptHandlerOverride = { _, completion in
             completion(.allowOnce)
         }
-        let origin = MockWKSecurityOrigin.new(host: "requesting-frame.example")
+        let frameURL = URL(string: "https://example.com/frame")!
+        let origin = MockWKSecurityOrigin.new(url: frameURL)
         let frame = WKFrameInfo.mock(
             isMainFrame: false,
             securityOrigin: origin,
             webView: sut.webView,
-            request: URLRequest(url: URL(string: "https://requesting-frame.example/frame")!)
+            request: URLRequest(url: frameURL)
         )
+        let bridgeDecision = await sut.mediaCaptureUserScript(
+            MediaCaptureUserScript(),
+            requestPermissionFor: [.camera],
+            requestID: UUID().uuidString.replacingOccurrences(of: "-", with: "") + ":1",
+            in: frame,
+            webView: sut.webView
+        )
+        XCTAssertEqual(bridgeDecision, .allow, file: file, line: line)
 
         sut.webView(sut.webView,
                     requestMediaCapturePermissionFor: origin,

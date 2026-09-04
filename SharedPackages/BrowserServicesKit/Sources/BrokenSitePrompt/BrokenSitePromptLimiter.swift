@@ -96,6 +96,9 @@ public final class BrokenSitePromptLimiter {
         toastDismissStreakCounter = 0
     }
 
+#if os(macOS)
+    // MARK: - macOS Promo Queue helpers
+
     public var coolDownInterval: TimeInterval {
         TimeInterval.days(getSettingsFromConfig().coolDownDays)
     }
@@ -107,11 +110,12 @@ public final class BrokenSitePromptLimiter {
         toastDismissStreakCounter = 0
     }
 
-    /// Simulates time advancing for the toast eligibility.
+    /// Simulates time advancing for the toast eligibility by moving the last shown date to the past.
     /// Debug/QA only.
     public func debugAdvanceDate(by interval: TimeInterval) {
-        let advancedLastToastShownDate = lastToastShownDate.addingTimeInterval(-interval)
-        lastToastShownDate = advancedLastToastShownDate
+        let simulatedLastToastShownDate = Date(timeInterval: -interval, since: lastToastShownDate)
+        lastToastShownDate = simulatedLastToastShownDate
     }
+#endif
 
 }

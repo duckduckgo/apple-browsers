@@ -78,6 +78,7 @@ final class BrokenSitePromptLimiterTests: XCTestCase {
         XCTAssert(mockStore.toastDismissStreakCounter == 0, "Dismiss count should be reset to 0 after 30 days")
     }
 
+#if os(macOS)
     func testCoolDownIntervalMatchesConfigDefaultOfSevenDays() throws {
         XCTAssertEqual(brokenSiteLimiter.coolDownInterval, .days(7))
     }
@@ -92,5 +93,6 @@ final class BrokenSitePromptLimiterTests: XCTestCase {
         XCTAssertEqual(mockStore.lastToastShownDate, .distantPast)
         XCTAssertEqual(mockStore.toastDismissStreakCounter, 0)
     }
+#endif
 
 }

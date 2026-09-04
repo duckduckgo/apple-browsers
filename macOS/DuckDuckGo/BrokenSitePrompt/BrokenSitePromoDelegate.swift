@@ -18,7 +18,6 @@
 
 import BrokenSitePrompt
 import Combine
-import FeatureFlags_macOS
 import Foundation
 import PixelKit
 import PrivacyConfig
@@ -58,6 +57,8 @@ final class BrokenSitePromoDelegate: InternalPromoDelegate {
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
         privacyConfigManager.updatesPublisher
+            .map { [weak self] in self?.privacyConfigManager.privacyConfig.isEnabled(featureKey: .brokenSitePrompt) }
+            .removeDuplicates()
             .map { [weak self] _ in self?.isEligible ?? false }
             .prepend(isEligible)
             .removeDuplicates()

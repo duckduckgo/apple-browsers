@@ -18,7 +18,6 @@
 
 import BrokenSitePrompt
 import Combine
-import FeatureFlags_macOS
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 import SharedTestUtilities
@@ -95,10 +94,13 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
     }
 
     func testWhenLimiterDismissStreakExceededThenNotEligible() {
+        limiter.didShowToast()
         limiter.didDismissToast()
         limiter.didDismissToast()
         limiter.didDismissToast()
-        limiterStore.lastToastShownDate = Date().addingTimeInterval(.days(8))
+
+        // Advance date beyond regular cooldown interval
+        limiter.debugAdvanceDate(by: limiter.coolDownInterval + .day)
 
         XCTAssertFalse(sut.isEligible)
     }
@@ -108,6 +110,17 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
         let cancellable = sut.isEligiblePublisher.sink { received.append($0) }
 
         XCTAssertEqual(received, [true])
+        cancellable.cancel()
+    }
+
+    func testWhenFeatureDisabledEligibilityPublisherEmitsFalse() {
+        var received: [Bool] = []
+        let cancellable = sut.isEligiblePublisher.sink { received.append($0) }
+
+        configManager.mockConfig.isFeatureEnabledCheck = { _,_ in false }
+        configManager.updatesSubject.send(())
+
+        XCTAssertEqual(received.last, false)
         cancellable.cancel()
     }
 

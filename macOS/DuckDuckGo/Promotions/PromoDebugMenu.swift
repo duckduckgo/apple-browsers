@@ -264,6 +264,8 @@ final class PromoDebugMenu: NSMenu {
 
     @objc private func resetSimulatedDate() {
         debugSimulatedDateStore.reset()
+        /// Limiter has no date to restore; resets state instead.
+        resetBrokenSitePromptState()
     }
 
     @objc private func resetAllPromoState() {

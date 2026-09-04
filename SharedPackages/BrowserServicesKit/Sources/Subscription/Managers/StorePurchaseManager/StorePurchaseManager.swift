@@ -285,15 +285,6 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     public func updateAvailableProducts() async {
         Logger.subscriptionStorePurchaseManager.log("Update available products")
 
-        if let subscriptionFeatureFlagger, subscriptionFeatureFlagger.isFeatureOn(.useSubscriptionNoProductsOverride) {
-            if !availableProducts.isEmpty {
-                availableProducts = []
-                NotificationCenter.default.post(name: .availableAppStoreProductsDidChange, object: self, userInfo: nil)
-            }
-            Logger.subscriptionStorePurchaseManager.log("No-products debug override enabled; loaded an empty product list")
-            return
-        }
-
         do {
             let storefrontCountryCode: String?
             let storefrontRegion: SubscriptionRegion
@@ -312,9 +303,11 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
             let applicableProductIdentifiers = storeSubscriptionConfiguration.subscriptionIdentifiers(for: storefrontRegion)
             let storeKitProducts = try await productFetcher.products(for: applicableProductIdentifiers)
             var availableProducts: [AppStoreSubscriptionProduct] = []
-            for product in storeKitProducts {
-                let product = await AppStoreSubscriptionProduct.create(product: product)
-                availableProducts.append(product)
+            if subscriptionFeatureFlagger?.isFeatureOn(.useSubscriptionNoProductsOverride) != true {
+                for product in storeKitProducts {
+                    let product = await AppStoreSubscriptionProduct.create(product: product)
+                    availableProducts.append(product)
+                }
             }
             Logger.subscriptionStorePurchaseManager.log("updateAvailableProducts fetched \(availableProducts.count) products for \(storefrontCountryCode ?? "<nil>", privacy: .public)")
 

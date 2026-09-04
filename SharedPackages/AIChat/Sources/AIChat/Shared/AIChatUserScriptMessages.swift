@@ -111,6 +111,10 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Pushed to the duck.ai page to open the Duck.ai Settings modal.
     case submitOpenSettingsAction
 
+    /// Pushed to the duck.ai page when the user opts to spend their weekly allowance after the
+    /// daily one is gone. Web owns what that means; native only reports the choice.
+    case submitStartUsingWeeklyLimitAction
+
     /// Posted by the Customize Responses card placement when the user dismisses it.
     case customizeResponsesModalClosed
 }

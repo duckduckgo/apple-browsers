@@ -340,6 +340,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// A manual `settings.endpointPortOverride` always takes precedence.
     @MainActor var automaticEndpointPort: UInt16?
 
+    /// Port that the probe last found reachable. Tried first on the next connection when the server advertises it.
+    @MainActor var rememberedEndpointPort: UInt16?
+
+    private let endpointPortProber: EndpointPortProbing = EndpointPortProber()
+
     /// The port to use for the WireGuard endpoint, or nil to use the server-provided port.
     @MainActor var effectiveEndpointPort: UInt16? {
         settings.endpointPortOverride ?? automaticEndpointPort
@@ -1251,7 +1256,44 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         Logger.networkProtection.log("⚪️ Generated tunnel configuration for server at location: \(newSelectedServer.serverInfo.serverLocation, privacy: .public) (preferred server is \(newSelectedServer.serverInfo.name, privacy: .public))")
 
-        return configurationResult.tunnelConfiguration
+        return await selectEndpointPort(for: newSelectedServer.serverInfo, in: configurationResult.tunnelConfiguration)
+    }
+
+    // MARK: - Endpoint Port Selection
+
+    /// Probes the server's advertised ports and moves the endpoint to the first candidate that answers.
+    /// A manual port override or a single advertised port leaves the configuration untouched.
+    @MainActor
+    private func selectEndpointPort(for serverInfo: NetworkProtectionServerInfo, in configuration: TunnelConfiguration) async -> TunnelConfiguration {
+        guard settings.endpointPortOverride == nil else { return configuration }
+        guard let currentPort = configuration.peers.first?.endpoint?.port.rawValue else { return configuration }
+
+        let candidates = serverInfo.endpointPortCandidates(preferring: rememberedEndpointPort)
+
+        let responding: Set<UInt16>
+        if candidates.count > 1 {
+            // Prefer the IP literal: the probe must not depend on name resolution through a possibly dead tunnel.
+            guard let host = serverInfo.ips.first?.host ?? serverInfo.endpoint?.host else { return configuration }
+            responding = await endpointPortProber.respondingPorts(host: host, ports: candidates)
+        } else {
+            responding = []
+        }
+
+        let decision = EndpointPortSelection.decide(
+            candidates: candidates,
+            currentPort: currentPort,
+            serverDefaultPort: serverInfo.port,
+            responding: responding
+        )
+
+        automaticEndpointPort = decision.automaticPort
+        if let remembered = decision.rememberedPort {
+            rememberedEndpointPort = remembered
+        }
+
+        Logger.networkProtection.log("🔵 Port probe: candidates \(candidates, privacy: .public), \(responding.sorted(), privacy: .public) answered, using port \(decision.port, privacy: .public)")
+
+        return decision.port == currentPort ? configuration : configuration.replacingEndpointPort(with: decision.port)
     }
 
     @available(iOS 17.0, *)
@@ -1466,7 +1508,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     private func handleFailureRecoveryConfigUpdate(result: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws {
         self.lastSelectedServer = result.server
-        try await updateTunnelConfiguration(updateMethod: .useConfiguration(result.tunnelConfiguration), reassert: true, attemptSource: .failureRecovery)
+        let tunnelConfiguration = await selectEndpointPort(for: result.server.serverInfo, in: result.tunnelConfiguration)
+        try await updateTunnelConfiguration(updateMethod: .useConfiguration(tunnelConfiguration), reassert: true, attemptSource: .failureRecovery)
     }
 
     @MainActor

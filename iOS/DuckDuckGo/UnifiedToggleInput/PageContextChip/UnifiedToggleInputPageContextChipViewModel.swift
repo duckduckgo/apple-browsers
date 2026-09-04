@@ -59,6 +59,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     /// Presentation-only pending/delivered flag; set solely by `setAttached`, never decided by the chip.
     private var attachmentDeliveryState: PageContextAttachmentDeliveryState = .pendingSubmit
     private var isShowingAttachAffordance = false
+    private var isLoading = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -85,6 +86,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     func setAttached(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
         isShowingAttachAffordance = false
+        isLoading = false
         updateAttachment(context, deliveryState: deliveryState)
         Logger.contextualUTI.debug("PageContextChip attached")
         recompute()
@@ -92,8 +94,22 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     func clearAttached() {
         isShowingAttachAffordance = false
+        isLoading = false
         clearAttachmentState()
         Logger.contextualUTI.debug("PageContextChip detached")
+        recompute()
+    }
+
+    func beginLoading() {
+        guard !isLoading else { return }
+        isLoading = true
+        Logger.contextualUTI.debug("PageContextChip loading")
+        recompute()
+    }
+
+    func endLoading() {
+        guard isLoading else { return }
+        isLoading = false
         recompute()
     }
 
@@ -147,7 +163,11 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         let isMatching = attachedURL != nil && attachedURL == originatingURL
         let branch: String
 
-        if isShowingAttachAffordance {
+        if isLoading {
+            state = .loading
+            isVisible = true
+            branch = "loading"
+        } else if isShowingAttachAffordance {
             state = .placeholder
             isVisible = false
             branch = "attachAffordance"
@@ -165,6 +185,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
             switch state {
             case .placeholder: return "placeholder"
             case .attached(let title, _): return "attached(\(title))"
+            case .loading: return "loading"
             }
         }()
         Logger.contextualUTI.debug("ChipViewModel recompute → \(branch, privacy: .public) state=\(stateDesc, privacy: .public) isVisible=\(self.isVisible, privacy: .public) auto=\(self.isAutoAttachEnabled(), privacy: .public) attached=\(self.attachedContext != nil, privacy: .public) attachedURL=\(self.attachedURL?.shortDescription ?? "nil", privacy: .private) originatingURL=\(self.originatingURL?.shortDescription ?? "nil", privacy: .private)")

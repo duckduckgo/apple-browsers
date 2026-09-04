@@ -40,7 +40,7 @@ public enum EventHubExperimentSettings {
     /// from once it is parsed, since a conversion request names only the subfeature.
     public static func current(_ config: PrivacyConfiguration) -> [String: String] {
         parentFeatures.reduce(into: [:]) { result, feature in
-            result.merge(config.subfeatureSettings(for: feature)) { existing, _ in existing }
+            result.merge(config.allSubfeatureSettings(for: feature)) { existing, _ in existing }
         }
     }
 }

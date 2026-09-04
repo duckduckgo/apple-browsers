@@ -336,7 +336,7 @@ public struct AppPrivacyConfiguration: PrivacyConfiguration {
         return subfeatureData.settings
     }
 
-    public func subfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
+    public func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
         subfeatures(for: feature).compactMapValues(\.settings)
     }
 

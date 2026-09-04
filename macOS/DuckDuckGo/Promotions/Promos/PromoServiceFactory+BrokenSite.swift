@@ -25,6 +25,7 @@ extension PromoServiceFactory {
     static func brokenSite(dependencies: PromoDependencies) -> Promo {
         let delegate = BrokenSitePromoDelegate(privacyConfigManager: dependencies.privacyConfigManager,
                                                limiter: dependencies.brokenSitePromptLimiter,
+                                               onboardingStateUpdater: dependencies.onboardingStateUpdater,
                                                windowControllersManager: dependencies.windowControllersManager)
 
         return InternalPromo(id: "broken-site",

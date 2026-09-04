@@ -33,6 +33,7 @@ final class BrokenSitePromoDelegate: InternalPromoDelegate {
 
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let limiter: BrokenSitePromptLimiter
+    private let onboardingStateUpdater: ContextualOnboardingStateUpdater
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pixelFiring: PixelFiring?
 
@@ -41,16 +42,18 @@ final class BrokenSitePromoDelegate: InternalPromoDelegate {
 
     init(privacyConfigManager: PrivacyConfigurationManaging,
          limiter: BrokenSitePromptLimiter,
+         onboardingStateUpdater: ContextualOnboardingStateUpdater,
          windowControllersManager: WindowControllersManagerProtocol,
          pixelFiring: PixelFiring? = PixelKit.shared) {
         self.privacyConfigManager = privacyConfigManager
         self.limiter = limiter
+        self.onboardingStateUpdater = onboardingStateUpdater
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
     }
 
     var isEligible: Bool {
-        limiter.shouldShowToast()
+        onboardingStateUpdater.state == .onboardingCompleted && limiter.shouldShowToast()
     }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {

@@ -43,4 +43,5 @@ struct PromoDependencies {
     let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let privacyConfigManager: PrivacyConfigurationManaging
+    let onboardingStateUpdater: ContextualOnboardingStateUpdater
 }

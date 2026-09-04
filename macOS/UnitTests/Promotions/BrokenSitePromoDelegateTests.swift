@@ -33,6 +33,7 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
     private var configManager: MockPrivacyConfigurationManaging!
     private var limiterStore: MockBrokenSitePromptLimiterStore!
     private var limiter: BrokenSitePromptLimiter!
+    private var onboardingStateUpdater: MockOnboardingStateUpdater!
     private var windowControllersManager: WindowControllersManagerMock!
     private var pixelFiring: PixelKitMock!
     private var sut: BrokenSitePromoDelegate!
@@ -43,10 +44,13 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
         configManager.mockConfig.isFeatureEnabledCheck = { feature, _ in feature == .brokenSitePrompt }
         limiterStore = MockBrokenSitePromptLimiterStore()
         limiter = BrokenSitePromptLimiter(privacyConfigManager: configManager, store: limiterStore)
+        onboardingStateUpdater = MockOnboardingStateUpdater()
+        onboardingStateUpdater.state = .onboardingCompleted
         windowControllersManager = WindowControllersManagerMock()
         pixelFiring = PixelKitMock()
         sut = BrokenSitePromoDelegate(privacyConfigManager: configManager,
                                       limiter: limiter,
+                                      onboardingStateUpdater: onboardingStateUpdater,
                                       windowControllersManager: windowControllersManager,
                                       pixelFiring: pixelFiring)
     }
@@ -55,6 +59,7 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
         sut = nil
         pixelFiring = nil
         windowControllersManager = nil
+        onboardingStateUpdater = nil
         limiter = nil
         limiterStore = nil
         configManager = nil
@@ -65,9 +70,15 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
 
     // MARK: - Eligibility
 
-    func testWhenFeatureEnabledAndLimiterAllowsThenEligible() {
+    func testWhenOnboardingCompleteAndLimiterAllowsThenEligible() {
         XCTAssertTrue(limiter.shouldShowToast())
         XCTAssertTrue(sut.isEligible)
+    }
+
+    func testWhenOnboardingNotCompletedThenNotEligible() {
+        onboardingStateUpdater.state = .ongoing
+
+        XCTAssertFalse(sut.isEligible)
     }
 
     func testWhenFeatureDisabledThenNotEligible() {
@@ -76,7 +87,7 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
         XCTAssertFalse(sut.isEligible)
     }
 
-    func testWhenLimiterShouldNotShowToastThenNotEligible() {
+    func testWhenLimiterDoesNotAllowThenNotEligible() {
         limiter.didShowToast()
 
         XCTAssertFalse(limiter.shouldShowToast())

@@ -1475,7 +1475,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
                 cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
-                privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager
+                privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+                onboardingStateUpdater: onboardingContextualDialogsManager
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

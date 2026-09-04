@@ -42,7 +42,7 @@ public struct ConfettiPlaygroundView: View {
             ConfettiView(configuration: configuration)
                 .id(runID)
         }
-        .navigationTitle("Confetti")
+        .navigationTitle(Text(verbatim: "Confetti"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -92,7 +92,7 @@ private extension ConfettiPlaygroundView {
     var controls: some View {
         Form {
             Section {
-                Button("Replay") { runID = UUID() }
+                Button(action: { runID = UUID() }) { Text(verbatim: "Replay") }
             }
 
             Section {
@@ -109,7 +109,7 @@ private extension ConfettiPlaygroundView {
 
             Section {
                 ForEach(ShapeOption.allCases) { option in
-                    Toggle(option.rawValue.capitalized, isOn: binding(for: option))
+                    Toggle(isOn: binding(for: option)) { Text(verbatim: option.rawValue.capitalized) }
                 }
             } header: {
                 Text(verbatim: "Shapes")

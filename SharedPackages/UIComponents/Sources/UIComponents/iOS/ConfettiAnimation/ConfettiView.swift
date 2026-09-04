@@ -383,7 +383,7 @@ private struct ConfettiViewPreview: View {
         ZStack {
             Color(designSystemColor: .surfaceTertiary).ignoresSafeArea()
 
-            Button("Replay") { runID = UUID() }
+            Button(action: { runID = UUID() }) { Text(verbatim: "Replay") }
 
             ConfettiView()
                 .id(runID)

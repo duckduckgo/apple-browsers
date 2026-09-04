@@ -41,7 +41,7 @@ final class ModalPromptCoordinationRealUIKitTests {
 
     @available(iOS 16, *)
     @Test("Presented Root Is Attached", .timeLimit(.minutes(1)))
-    func whenRootIsPresentedThenAttachmentCheckPasses() {
+    func whenRootIsPresentedThenAttachmentCheckPasses() async {
         // GIVEN
         let attachmentChecker = ModalPromptRootAttachmentChecker()
         let presenter = UIViewController()
@@ -133,7 +133,7 @@ final class ModalPromptCoordinationRealUIKitTests {
 
     @available(iOS 16, *)
     @Test("Nested Child Does Not Release Exact Selected Root", .timeLimit(.minutes(1)))
-    func whenSelectedRootPresentsNestedChildThenReconciliationRetainsLease() throws {
+    func whenSelectedRootPresentsNestedChildThenReconciliationRetainsLease() async throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
         let exactRoot = UIViewController()
@@ -147,7 +147,7 @@ final class ModalPromptCoordinationRealUIKitTests {
             rootAttachmentChecker: attachmentChecker
         )
         let lease = try acquireModalLease()
-        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        await sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
         schedulerMock.executeScheduledBlock()
 
         // Give the selected root a real child presentation. The window exists only so UIKit accepts the nesting:
@@ -205,9 +205,9 @@ final class ModalPromptCoordinationRealUIKitTests {
         // the same runloop turn. `isBeingDismissed` is only raised once the presentation transition has finished; a
         // dismissal requested while that transition is still in flight is coalesced into it, so the flag never rises
         // and UIKit detaches the root straight away — leaving nothing mid-animation for this test to observe.
+        await sut.presentModalPromptIfNeeded(from: presentationHost, with: lease)
         await withCheckedContinuation { continuation in
             presentationHost.onPresentationCompleted = { continuation.resume() }
-            sut.presentModalPromptIfNeeded(from: presentationHost, with: lease)
             schedulerMock.executeScheduledBlock()
         }
         #expect(exactRoot.presentingViewController === presentationHost)

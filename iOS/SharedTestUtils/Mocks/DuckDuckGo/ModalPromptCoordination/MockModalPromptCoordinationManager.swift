@@ -31,7 +31,7 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     var onPresentCoordinated: (@MainActor () -> Void)?
     var onReconcilePresentedModal: (@MainActor () -> Void)?
 
-    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
+    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) async {
         didCallPresentModalPromptIfNeeded = true
         capturedPresenter = presenter
         callCount += 1
@@ -40,7 +40,7 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease
-    ) {
+    ) async {
         didCallPresentModalPromptIfNeeded = true
         capturedPresenter = presenter
         capturedModalLease = lease

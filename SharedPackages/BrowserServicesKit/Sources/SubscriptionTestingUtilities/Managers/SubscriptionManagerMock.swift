@@ -66,6 +66,14 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         }
     }
 
+    public var onHasAppStoreProductsAvailableAfterInitialLoad: (() async -> Bool)?
+    public func hasAppStoreProductsAvailableAfterInitialLoad() async -> Bool {
+        if let onHasAppStoreProductsAvailableAfterInitialLoad {
+            return await onHasAppStoreProductsAvailableAfterInitialLoad()
+        }
+        return hasAppStoreProductsAvailable
+    }
+
     public var resultStorePurchaseManager: (any StorePurchaseManager)?
     public func storePurchaseManager() -> any StorePurchaseManager {
         return resultStorePurchaseManager!

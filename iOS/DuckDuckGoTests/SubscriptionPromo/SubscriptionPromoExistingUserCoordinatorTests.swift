@@ -56,84 +56,114 @@ final class SubscriptionPromoExistingUserCoordinatorTests: XCTestCase {
 
     // MARK: - Eligibility
 
-    func testShouldPresentWhenAllConditionsMet() {
+    func testShouldPresentWhenAllConditionsMet() async {
         // Given
         configureEligible()
 
         // Then
-        XCTAssertTrue(sut.shouldPresentLaunchPrompt())
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertTrue(shouldPresent)
     }
 
-    func testShouldNotPresentWhenUserHasSubscription() {
+    func testShouldNotPresentWhenUserHasSubscription() async {
         // Given
         configureEligible()
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
 
         // Then
-        XCTAssertFalse(sut.shouldPresentLaunchPrompt())
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertFalse(shouldPresent)
     }
 
-    func testShouldNotPresentWhenAlreadyShown() {
+    func testShouldNotPresentWhenAppStoreProductsUnavailable() async {
+        // Given
+        configureEligible()
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+
+        // Then
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertFalse(shouldPresent)
+    }
+
+    func testShouldWaitForInitialAppStoreProductLoad() async {
+        // Given
+        configureEligible()
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        mockSubscriptionManager.onHasAppStoreProductsAvailableAfterInitialLoad = { true }
+
+        // Then
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertTrue(shouldPresent)
+    }
+
+    func testShouldNotPresentWhenAlreadyShown() async {
         // Given
         configureEligible()
         mockDaxDialogs.subscriptionPromotionDialogSeen = true
 
         // Then
-        XCTAssertFalse(sut.shouldPresentLaunchPrompt())
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertFalse(shouldPresent)
     }
 
-    func testShouldNotPresentWhenExistingUsersFlagDisabled() {
+    func testShouldNotPresentWhenExistingUsersFlagDisabled() async {
         // Given
         configureEligible()
         mockFeatureFlagger.enabledFeatureFlags = [.privacyProOnboardingPromotion]
 
         // Then
-        XCTAssertFalse(sut.shouldPresentLaunchPrompt())
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertFalse(shouldPresent)
     }
 
-    func testShouldNotPresentWhenPromoFlagDisabled() {
+    func testShouldNotPresentWhenPromoFlagDisabled() async {
         // Given
         configureEligible()
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPromoForExistingUsers]
 
         // Then
-        XCTAssertFalse(sut.shouldPresentLaunchPrompt())
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertFalse(shouldPresent)
     }
 
-    func testShouldNotPresentWhenCooldownNotPassed() {
+    func testShouldNotPresentWhenCooldownNotPassed() async {
         // Given
         configureEligible()
         mockStatisticsStore.installDate = Calendar.current.date(byAdding: .day, value: -6, to: Date())
 
         // Then
-        XCTAssertFalse(sut.shouldPresentLaunchPrompt())
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertFalse(shouldPresent)
     }
 
-    func testShouldNotPresentWhenInstallDateNil() {
+    func testShouldNotPresentWhenInstallDateNil() async {
         // Given
         configureEligible()
         mockStatisticsStore.installDate = nil
 
         // Then
-        XCTAssertFalse(sut.shouldPresentLaunchPrompt())
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertFalse(shouldPresent)
     }
 
-    func testShouldPresentWhenCooldownExactly7Days() {
+    func testShouldPresentWhenCooldownExactly7Days() async {
         // Given
         configureEligible()
         mockStatisticsStore.installDate = Calendar.current.date(byAdding: .day, value: -7, to: Date())
 
         // Then
-        XCTAssertTrue(sut.shouldPresentLaunchPrompt())
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertTrue(shouldPresent)
     }
 
-    func testShouldPresentRegardlessOfOnboardingSkipState() {
+    func testShouldPresentRegardlessOfOnboardingSkipState() async {
         // Given
         configureEligible()
         mockStatisticsStore.variant = nil
 
         // Then
-        XCTAssertTrue(sut.shouldPresentLaunchPrompt())
+        let shouldPresent = await sut.shouldPresentLaunchPrompt()
+        XCTAssertTrue(shouldPresent)
     }
 
     // MARK: - Onboarding gating (per-coordinator gate via isEligibleToPresent)

@@ -97,7 +97,7 @@ final class PromoCoordinationService {
         self.promoQueueCooldownPolicy = promoQueueCooldownPolicy
     }
 
-    func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
+    func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) async {
         if mode == .coordinated {
             modalPromptCoordinationManager.reconcilePresentedModal()
         }
@@ -123,7 +123,7 @@ final class PromoCoordinationService {
         Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ \(presentationStatusMessage, privacy: .public)")
 
         guard mode == .coordinated else {
-            modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController)
+            await modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController)
             return
         }
 
@@ -135,7 +135,7 @@ final class PromoCoordinationService {
                 return
             }
 
-            modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController, with: lease)
+            await modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController, with: lease)
         case .blockedByModal:
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - A coordinated modal attempt already owns the slot.")
         case .blockedByRemoteMessage:

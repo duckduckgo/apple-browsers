@@ -49,7 +49,7 @@ protocol ModalPromptProvider {
 
     /// Provides a `ModalPromptConfiguration` if the provider has a prompt that is eligible to present.
     /// - Returns: A configured `ModalPromptConfiguration` ready for presentation if it is eligible to present the modal. `nil` otherwise.
-    func provideModalPrompt() -> ModalPromptConfiguration?
+    func provideModalPrompt() async -> ModalPromptConfiguration?
 
     /// Called after the modal has been successfully presented.
     /// Use this to update any feature-specific tracking or state.
@@ -75,4 +75,7 @@ protocol OnDemandModalPromptProvider {
     /// Indicates whether the prompt can be shown on-demand.
     /// - Returns: `true` if the prompt can be shown on-demand; `false` otherwise.
     var canShowPromptOnDemand: Bool { get }
+
+    /// Provides the prompt synchronously for an explicit user action.
+    func provideModalPrompt() -> ModalPromptConfiguration?
 }

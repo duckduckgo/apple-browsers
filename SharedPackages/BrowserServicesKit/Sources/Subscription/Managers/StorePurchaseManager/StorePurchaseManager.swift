@@ -285,6 +285,15 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     public func updateAvailableProducts() async {
         Logger.subscriptionStorePurchaseManager.log("Update available products")
 
+        if let subscriptionFeatureFlagger, subscriptionFeatureFlagger.isFeatureOn(.useSubscriptionNoProductsOverride) {
+            if !availableProducts.isEmpty {
+                availableProducts = []
+                NotificationCenter.default.post(name: .availableAppStoreProductsDidChange, object: self, userInfo: nil)
+            }
+            Logger.subscriptionStorePurchaseManager.log("No-products debug override enabled; loaded an empty product list")
+            return
+        }
+
         do {
             let storefrontCountryCode: String?
             let storefrontRegion: SubscriptionRegion
@@ -650,6 +659,7 @@ public extension UserDefaults {
 
     enum Constants {
         static let storefrontRegionOverrideKey = "Subscription.debug.storefrontRegionOverride"
+        static let noSubscriptionProductsOverrideKey = "Subscription.debug.noProductsOverride"
         static let usaValue = "usa"
         static let rowValue = "row"
         static let hasPurchasePendingTransactionKey = "Subscription.hasPurchasePendingTransaction"
@@ -677,6 +687,11 @@ public extension UserDefaults {
                 removeObject(forKey: Constants.storefrontRegionOverrideKey)
             }
         }
+    }
+
+    dynamic var noSubscriptionProductsOverride: Bool {
+        get { bool(forKey: Constants.noSubscriptionProductsOverrideKey) }
+        set { set(newValue, forKey: Constants.noSubscriptionProductsOverrideKey) }
     }
 
     /// Indicates that a subscription purchase entered the pending state (e.g., Ask to Buy, payment issues).

@@ -50,7 +50,7 @@ final class PromoCoordinationServiceTests {
             .URL,
         ]
     )
-    func whenDifferentNonStandardLaunchSourcesThenModalIsNotPresented(launchSource: LaunchSource) {
+    func whenDifferentNonStandardLaunchSourcesThenModalIsNotPresented(launchSource: LaunchSource) async {
         // GIVEN
         launchSourceManagerMock.source = launchSource
         presenterMock.presentedViewController = nil
@@ -63,14 +63,14 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        await sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
     }
 
     @Test("Check Modal Is Presented When Launch Source Is Standard")
-    func whenLaunchSourceIsStandardThenModalIsPresented() {
+    func whenLaunchSourceIsStandardThenModalIsPresented() async {
         // GIVEN
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
@@ -83,7 +83,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        await sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
@@ -93,7 +93,7 @@ final class PromoCoordinationServiceTests {
     // MARK: - Presented View Controller Checks
 
     @Test("Check Modal Is Not Presented When Another Modal Is Already Presented")
-    func whenAnotherModalIsPresentedThenModalIsNotPresented() {
+    func whenAnotherModalIsPresentedThenModalIsNotPresented() async {
         // GIVEN
         launchSourceManagerMock.source = .standard
         let alreadyPresentedVC = UIViewController()
@@ -107,14 +107,14 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        await sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
     }
 
     @Test("Check Modal Is Presented When No Modal Is Currently Presented")
-    func whenNoModalIsPresentedThenModalIsPresented() {
+    func whenNoModalIsPresentedThenModalIsPresented() async {
         // GIVEN
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
@@ -127,14 +127,14 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        await sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
     }
 
     @Test("Check Modal Is Presented When Presented Modal Is Being Dismissed")
-    func whenPresentedModalIsBeingDismissedThenModalIsPresented() {
+    func whenPresentedModalIsBeingDismissedThenModalIsPresented() async {
         // GIVEN
         launchSourceManagerMock.source = .standard
         let dismissingVC = MockDismissingViewController()
@@ -149,14 +149,14 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        await sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
     }
 
     @Test("Check Modal Is Not Presented When Multiple Conditions Fail")
-    func whenMultipleConditionsFailThenModalIsNotPresented() {
+    func whenMultipleConditionsFailThenModalIsNotPresented() async {
         // GIVEN
         launchSourceManagerMock.source = .URL
         presenterMock.presentedViewController = UIViewController()
@@ -169,7 +169,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        await sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
@@ -187,7 +187,7 @@ final class PromoCoordinationServiceTests {
             .cookiePopupProtectionOptIn
         ]
     )
-    func whenHigherPriorityProvidersReturnNilThenCorrectProviderIsUsed(priority: ProviderPriority) throws {
+    func whenHigherPriorityProvidersReturnNilThenCorrectProviderIsUsed(priority: ProviderPriority) async throws {
         // GIVEN
         let providers = ModalPromptProviders(
             newAddressBarPicker: MockModalPromptProvider(shouldReturnPrompt: priority == .newAddressBarPicker),
@@ -216,7 +216,7 @@ final class PromoCoordinationServiceTests {
         )
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
+        await sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN All providers up to and including the target should be checked
         for providerPriority in ProviderPriority.allCases {

@@ -673,7 +673,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionExpirationReminderNotification:
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionExpirationReminderNotification))
         case .subscriptionPromoForExistingUsers:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
+            Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:

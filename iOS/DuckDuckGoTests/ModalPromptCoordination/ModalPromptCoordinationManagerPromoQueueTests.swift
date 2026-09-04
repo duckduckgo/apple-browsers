@@ -42,7 +42,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
     @available(iOS 16, *)
     @Test("Coordinated Cooldown Releases Lease Without Querying Providers", .timeLimit(.minutes(1)))
-    func whenCoordinatedAttemptIsInCooldownThenLeaseIsReleasedSynchronously() throws {
+    func whenCoordinatedAttemptIsInCooldownThenLeaseIsReleasedSynchronously() async throws {
         cooldownManagerMock.cooldownInfoToReturn = .inCoolDown
         let provider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
@@ -53,7 +53,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         )
         let lease = try acquireModalLease()
 
-        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        await sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(sut.modalAttemptPhase == .idle)
@@ -62,7 +62,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
     @available(iOS 16, *)
     @Test("Coordinated No Provider Releases Lease", .timeLimit(.minutes(1)))
-    func whenNoCoordinatedProviderReturnsPromptThenLeaseIsReleasedSynchronously() throws {
+    func whenNoCoordinatedProviderReturnsPromptThenLeaseIsReleasedSynchronously() async throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider(shouldReturnPrompt: false)
         sut = ModalPromptCoordinationManager(
@@ -73,7 +73,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         )
         let lease = try acquireModalLease()
 
-        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        await sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(provider.didCallProvideModalPrompt)
@@ -82,7 +82,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
     @available(iOS 16, *)
     @Test("Coordinated Selection Respects Provider Eligibility And Order", .timeLimit(.minutes(1)))
-    func whenCoordinatedProvidersHaveDifferentEligibilityThenFirstEligiblePromptIsSelected() throws {
+    func whenCoordinatedProvidersHaveDifferentEligibilityThenFirstEligiblePromptIsSelected() async throws {
         // Every provider here forces its own answer, so this covers the eligibility gate and provider order only. The
         // onboarding gate itself is covered separately, by a provider that uses the protocol's default implementation.
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
@@ -100,7 +100,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         )
         let lease = try acquireModalLease()
 
-        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        await sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
         #expect(ineligibleProvider.capturedIsOnboardingComplete == false)
         #expect(!ineligibleProvider.didCallProvideModalPrompt)
@@ -118,7 +118,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
     @available(iOS 16, *)
     @Test("Coordinated Selection Gates A Default-Gated Provider On Incomplete Onboarding", .timeLimit(.minutes(1)))
-    func whenOnboardingIsIncompleteThenDefaultGatedCoordinatedProviderIsNotAsked() throws {
+    func whenOnboardingIsIncompleteThenDefaultGatedCoordinatedProviderIsNotAsked() async throws {
         // GIVEN a provider that leaves `isEligibleToPresent(isOnboardingComplete:)` to the protocol's default
         // implementation, which is what every real provider does.
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
@@ -132,7 +132,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         let lease = try acquireModalLease()
 
         // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        await sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
         // THEN — incomplete onboarding gates the provider out before it is ever asked for a prompt, and the lease goes
         // straight back so a waiting promo is not blocked by an attempt that can never present.
@@ -146,7 +146,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
     @available(iOS 16, *)
     @Test("Same Lease Attempt Moves From Committed To Presentation Active", .timeLimit(.minutes(1)))
-    func whenCoordinatedPromptIsSelectedThenSameOwnershipIdentityMovesThroughPhases() throws {
+    func whenCoordinatedPromptIsSelectedThenSameOwnershipIdentityMovesThroughPhases() async throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
@@ -157,7 +157,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         )
         let lease = try acquireModalLease()
 
-        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        await sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
         #expect(sut.modalAttemptPhase == .committed(lease.ownershipIdentity))
         #expect(!sut.didActuallyPresentModalPromptThisSession)
@@ -172,7 +172,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
 
     @available(iOS 16, *)
     @Test("Deallocated Presented Root Releases The Modal Lease", .timeLimit(.minutes(1)))
-    func whenPresentedRootIsDeallocatedThenReconciliationReleasesLease() throws {
+    func whenPresentedRootIsDeallocatedThenReconciliationReleasesLease() async throws {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -188,13 +188,13 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         let lease = try acquireModalLease()
         weak var weakExactRoot: UIViewController?
 
-        autoreleasepool {
-            var exactRoot: UIViewController! = UIViewController()
-            weakExactRoot = exactRoot
-            provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
-            attachmentChecker.markAttached(exactRoot)
+        var exactRoot: UIViewController! = autoreleasepool { UIViewController() }
+        weakExactRoot = exactRoot
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        attachmentChecker.markAttached(exactRoot)
 
-            sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        await sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        autoreleasepool {
             scheduler.executeAndReleaseScheduledBlock()
 
             #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))

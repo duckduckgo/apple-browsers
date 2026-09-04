@@ -32,8 +32,10 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     private let content: ContentBuilder
     private let preview: PreviewBuilder?
     private let onMove: (_ from: IndexSet, _ to: Int) -> Void
+    private let onMoveFinished: () -> Void
 
     @State private var movedItem: Data?
+    @State private var didMove = false
 
     init(_ data: [Data],
          id: KeyPath<Data, ID>,
@@ -45,6 +47,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         self.content = content
         self.preview = nil
         self.onMove = onMove
+        self.onMoveFinished = {}
     }
 
     init(_ data: [Data],
@@ -52,13 +55,15 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
          isReorderingEnabled: Bool = true,
          @ViewBuilder content: @escaping ContentBuilder,
          @ViewBuilder preview: @escaping (Data) -> Preview,
-         onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void) {
+         onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void,
+         onMoveFinished: @escaping () -> Void) {
         self.data = data
         self.id = id
         self.isReorderingEnabled = isReorderingEnabled
         self.content = content
         self.preview = preview
         self.onMove = onMove
+        self.onMoveFinished = onMoveFinished
     }
 
     var body: some View {
@@ -76,6 +81,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {
                         movedItem = item
+                        didMove = false
                         return metadata.itemProvider
                     } preview: {
                         preview(item)
@@ -84,6 +90,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {
                         movedItem = item
+                        didMove = false
                         return metadata.itemProvider
                     }
             }
@@ -101,7 +108,9 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
                 data: data,
                 item: item,
                 onMove: onMove,
-                movedItem: $movedItem))
+                onMoveFinished: onMoveFinished,
+                movedItem: $movedItem,
+                didMove: $didMove))
     }
 }
 
@@ -110,8 +119,10 @@ private struct ReorderDropDelegate<Data: Reorderable>: DropDelegate {
     let data: [Data]
     let item: Data
     let onMove: (_ from: IndexSet, _ to: Int) -> Void
+    let onMoveFinished: () -> Void
 
     @Binding var movedItem: Data?
+    @Binding var didMove: Bool
 
     func dropEntered(info: DropInfo) {
         guard item != movedItem,
@@ -124,6 +135,7 @@ private struct ReorderDropDelegate<Data: Reorderable>: DropDelegate {
             let fromIndices = IndexSet(integer: from)
             let toIndex = to > from ? to + 1 : to
             onMove(fromIndices, toIndex)
+            didMove = true
         }
     }
 
@@ -133,6 +145,12 @@ private struct ReorderDropDelegate<Data: Reorderable>: DropDelegate {
 
     func performDrop(info: DropInfo) -> Bool {
         movedItem = nil
+
+        if didMove {
+            didMove = false
+            onMoveFinished()
+        }
+
         return true
     }
 }
@@ -147,18 +165,21 @@ extension ReorderableForEach where Data: Identifiable, ID == Data.ID {
         self.content = content
         self.preview = nil
         self.onMove = onMove
+        self.onMoveFinished = {}
     }
 
     init(_ data: [Data],
          @ViewBuilder content: @escaping ContentBuilder,
          @ViewBuilder preview: @escaping PreviewBuilder,
-         onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void) {
+         onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void,
+         onMoveFinished: @escaping () -> Void) {
         self.data = data
         self.id = \Data.id
         self.isReorderingEnabled = true
         self.content = content
         self.preview = preview
         self.onMove = onMove
+        self.onMoveFinished = onMoveFinished
     }
 }
 

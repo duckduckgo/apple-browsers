@@ -63,6 +63,14 @@ protocol TabDelegate: AnyObject {
              didRequestNewDuckAITabForUrl url: URL,
              entrySource: AIChatEntryPointSource)
 
+    /// A navigation the page started into Duck.ai from a page native attributes, today the DuckDuckGo homepage.
+    /// Opens a page-owned tab when `opensNewTab`; either way the tab hosting the chat is stamped with `entrySource`.
+    func tab(_ tab: TabViewController,
+             didStartDuckAINavigationTo url: URL,
+             entrySource: AIChatEntryPointSource,
+             opensNewTab: Bool,
+             inheritingAttribution: AdClickAttributionLogic.State?)
+
     /// Called on navigate forward on a tab that had just closed a link-opened tab via back.
     /// Re-open that tab at `url` as a child of `tab` again.
     func tab(_ tab: TabViewController, didRequestReopenClosedTabAt url: URL)

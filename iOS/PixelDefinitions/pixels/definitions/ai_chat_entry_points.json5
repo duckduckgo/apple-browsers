@@ -9,7 +9,7 @@
             "appVersion",
             {
                 "key": "source",
-                "description": "The entry path into Duck.ai, one value per case of the AIChatEntryPointSource Swift enum. serp is any Duck.ai open the search results page asks native for, e.g. Search Assist, and covers every such SERP affordance because the request does not say which one it was. direct_url is a duck.ai navigation TabURLInterceptor saw with no other attribution, so it mixes a typed address with an in-page link. Returning to an already-open Duck.ai tab fires only from the tab switcher (tab_switcher_existing_chat, distinct from the switcher's Duck.ai button, which creates a new chat and reports tab_switcher) and from the new tab page's return-to-tab card (return_to_chat_card); restoring a Duck.ai tab at launch is not an entry and does not fire.",
+                "description": "The entry path into Duck.ai, one value per case of the AIChatEntryPointSource Swift enum. serp is any Duck.ai open the search results page asks native for, e.g. Search Assist, and covers every such SERP affordance because the request does not say which one it was. direct_url is a duck.ai address typed into the address bar. ddg_homepage is a navigation into Duck.ai that the duckduckgo.com homepage started itself, whether by link, form, script or by asking native to open Duck.ai; navigations other pages start into Duck.ai are not attributed. Returning to an already-open Duck.ai tab fires only from the tab switcher (tab_switcher_existing_chat, distinct from the switcher's Duck.ai button, which creates a new chat and reports tab_switcher) and from the new tab page's return-to-tab card (return_to_chat_card); restoring a Duck.ai tab at launch is not an entry and does not fire.",
                 "type": "string",
                 "enum": [
                     "address_bar_prompt",
@@ -38,7 +38,8 @@
                     "siri",
                     "deep_link_other",
                     "return_to_chat_card",
-                    "tab_switcher_existing_chat"
+                    "tab_switcher_existing_chat",
+                    "ddg_homepage"
                 ]
             },
             {

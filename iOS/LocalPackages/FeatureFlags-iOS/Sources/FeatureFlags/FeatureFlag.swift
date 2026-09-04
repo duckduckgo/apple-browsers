@@ -464,6 +464,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603
     case newTabPageSessionInstrumentation
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1218145365492985
+    case duckAISessionWideEvent
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
     case newTabPageRedesign
 
@@ -527,6 +530,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217671927314542
     case nativePromoCards
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217880888140745
+    case sitePermissions
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -664,7 +670,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionExpirationReminderNotification:
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionExpirationReminderNotification))
         case .subscriptionPromoForExistingUsers:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
+            Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -871,6 +877,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customizeNTPIcons))
         case .newTabPageSessionInstrumentation:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageSessionInstrumentation))
+        case .duckAISessionWideEvent:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAISessionWideEvent))
         case .newTabPageRedesign:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageRedesign))
         case .walletPassDownload:
@@ -899,6 +907,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .nativePromoCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromoCards))
+        case .sitePermissions:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.sitePermissions))
         }
     }
 

@@ -40,6 +40,7 @@ struct PromoDependencies {
     let windowControllersManager: WindowControllersManagerProtocol
     let syncService: DDGSyncing?
     let syncBookmarksAdapter: SyncBookmarksAdapter?
+    let pinningManager: PinningManager
     let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let privacyConfigManager: PrivacyConfigurationManaging

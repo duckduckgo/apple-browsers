@@ -35,40 +35,37 @@ enum PromoTrigger {
     case bookmarksImported
     case missingBookmarkFaviconEncountered
     case pageRefreshPatternDetected
+    case firstPasswordSaved
     case testTriggered
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
     static let triggerPublisher: AnyPublisher<PromoTrigger, Never> = {
-        let triggers = Publishers.MergeMany(
-            NotificationCenter.default.publisher(for: .promoServiceAppLaunched)
-                .map { _ in PromoTrigger.appLaunched },
-            NotificationCenter.default.publisher(for: .newTabPageWebViewDidAppear)
-                .map { _ in PromoTrigger.newTabPageAppeared },
-            NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
-                .map { _ in PromoTrigger.windowBecameKey },
-            NotificationCenter.default.publisher(for: .autoplayPolicyDisplayed)
-                .map { _ in PromoTrigger.autoplayDiscoverability },
-            NotificationCenter.default.publisher(for: .bookmarkAdded)
-                .map { _ in PromoTrigger.bookmarkAdded },
-            NotificationCenter.default.publisher(for: .bookmarksImported)
-                .map { _ in PromoTrigger.bookmarksImported },
-            NotificationCenter.default.publisher(for: .missingBookmarkFaviconEncountered)
-                .map { _ in PromoTrigger.missingBookmarkFaviconEncountered },
-            NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
-                .map { _ in PromoTrigger.appBecameActive },
-            NotificationCenter.default.publisher(for: .pageRefreshMonitorDidDetectRefreshPattern)
-                .map { _ in PromoTrigger.pageRefreshPatternDetected }
-        ).eraseToAnyPublisher()
+        var triggers: [AnyPublisher<PromoTrigger, Never>] = [
+            publisher(for: .promoServiceAppLaunched, trigger: .appLaunched),
+            publisher(for: .newTabPageWebViewDidAppear, trigger: .newTabPageAppeared),
+            publisher(for: NSWindow.didBecomeKeyNotification, trigger: .windowBecameKey),
+            publisher(for: .autoplayPolicyDisplayed, trigger: .autoplayDiscoverability),
+            publisher(for: .bookmarkAdded, trigger: .bookmarkAdded),
+            publisher(for: .bookmarksImported, trigger: .bookmarksImported),
+            publisher(for: .missingBookmarkFaviconEncountered, trigger: .missingBookmarkFaviconEncountered),
+            publisher(for: .firstPasswordSaved, trigger: .firstPasswordSaved),
+            publisher(for: NSApplication.didBecomeActiveNotification, trigger: .appBecameActive),
+            publisher(for: .pageRefreshMonitorDidDetectRefreshPattern, trigger: .pageRefreshPatternDetected)
+        ]
 
-        if PromoServiceFactory.includeTestPromos{
-            return Publishers.Merge(triggers,
-                                    NotificationCenter.default.publisher(for: .promoDebugTestTrigger)
-                .map { _ in PromoTrigger.testTriggered }
-            ).eraseToAnyPublisher()
-        } else {
-            return triggers
+        if PromoServiceFactory.includeTestPromos {
+            triggers.append(publisher(for: .promoDebugTestTrigger, trigger: .testTriggered))
         }
+
+        return Publishers.MergeMany(triggers).eraseToAnyPublisher()
     }()
+
+    private static func publisher(for name: Notification.Name,
+                                  trigger: PromoTrigger) -> AnyPublisher<PromoTrigger, Never> {
+        NotificationCenter.default.publisher(for: name)
+            .map { _ in trigger }
+            .eraseToAnyPublisher()
+    }
 }
 
 extension Notification.Name {
@@ -78,4 +75,5 @@ extension Notification.Name {
     static let bookmarkAdded = Notification.Name("com.duckduckgo.app.bookmarkAdded")
     static let bookmarksImported = Notification.Name("com.duckduckgo.app.bookmarksImported")
     static let missingBookmarkFaviconEncountered = Notification.Name("com.duckduckgo.app.missingBookmarkFaviconEncountered")
+    static let firstPasswordSaved = Notification.Name("com.duckduckgo.app.firstPasswordSaved")
 }

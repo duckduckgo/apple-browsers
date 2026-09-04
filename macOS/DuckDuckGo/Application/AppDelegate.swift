@@ -787,6 +787,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         subscriptionEnvironment.serviceEnvironment == .staging &&
                         subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
+            case .useSubscriptionNoProductsOverride:
+                return (featureFlagger.internalUserDecider.isInternalUser &&
+                        subscriptionEnvironment.serviceEnvironment == .staging &&
+                        subscriptionUserDefaults.noSubscriptionProductsOverride)
             }
         }
 
@@ -1473,7 +1477,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 windowControllersManager: windowControllersManager,
                 syncService: syncService,
                 syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
-                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
+                pinningManager: pinningManager, cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 privacyConfigManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 onboardingStateUpdater: onboardingContextualDialogsManager

@@ -226,6 +226,7 @@ class MainViewController: UIViewController {
     /// there can be told apart from a reconnect that happened on its own.
     var vpnConnectedWhenLeavingNewTabPage: Bool?
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
+    let duckAISessionInstrumentation: DuckAISessionInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
@@ -662,6 +663,11 @@ class MainViewController: UIViewController {
         )
         self.duckAIWideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
+            completeOrphanedFlowsOnInit: true
+        )
+        self.duckAISessionInstrumentation = DefaultDuckAISessionInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            isEnabled: { featureFlagger.isFeatureOn(.duckAISessionWideEvent) },
             completeOrphanedFlowsOnInit: true
         )
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
@@ -1576,6 +1582,7 @@ class MainViewController: UIViewController {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionCancelledByBackground()
+        duckAISessionInstrumentation.sessionCancelledByBackground()
         recordNewTabPageSessionVPNChangeIfNeeded()
         newTabPageSessionInstrumentation.visitBackgrounded()
 
@@ -2141,6 +2148,7 @@ class MainViewController: UIViewController {
                                       previousTab: TabViewController? = nil,
                                       openedAfterIdle: Bool = false,
                                       startsNewTabPageSessionVisit: Bool = true) {
+        reportDuckAISessionCurrentTab()
         guard !autoClearInProgress else { return }
 
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
@@ -2436,6 +2444,7 @@ class MainViewController: UIViewController {
         performCancel()
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
+        recordDuckAISessionPendingExit(.backOrClose)
         currentTab?.goBack()
     }
 
@@ -2449,6 +2458,7 @@ class MainViewController: UIViewController {
     
     func onForeground() {
         lastForegroundEntryDate = Date()
+        reportDuckAISessionCurrentTab()
 
         fireExperimentalAddressBarPixel()
         fireIPadToggleStateOnAppOpenPixel()
@@ -2789,6 +2799,7 @@ class MainViewController: UIViewController {
     }
 
     private func attachTab(tab: TabViewController) {
+        reportDuckAISessionVisibleTab(tab.tabModel)
         // The user moved on to an existing tab, so whatever New Tab Page they reach later is not the
         // page a burn landed them on.
         isAttachingNewTabPageAfterFire = false
@@ -3654,6 +3665,7 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
 
+        recordDuckAISessionPendingExit(.newTabOpened)
         let previousTab = tabManager.current()
         dismissSystemFindNavigator(for: previousTab)
         currentTab?.dismiss()
@@ -3832,7 +3844,8 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 let payload = notification.object as? AIChatPayload
                 let requestHost = notification.userInfo?[TabURLInterceptorParameter.aiChatRequestHost] as? String
-                let source = AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: requestHost)
+                let requestURL = notification.userInfo?[TabURLInterceptorParameter.aiChatRequestURL] as? URL
+                let source = AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: requestHost, pageURL: requestURL)
                     ?? .directURL
                 self?.openAIChat(source: source, payload: payload)
             }
@@ -5042,6 +5055,7 @@ extension MainViewController: BrowserChromeDelegate {
         switch suggestion {
         case .phrase(phrase: let phrase):
             if let url = URL.makeSearchURL(query: phrase, useUnifiedLogic: isUnifiedURLPredictionEnabled, forceSearchQuery: true) {
+                recordDuckAISessionPendingExit(.searchStarted)
                 loadUrlRespectingAIBoundary(url)
             } else {
                 Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
@@ -5237,6 +5251,9 @@ extension MainViewController: OmniBarDelegate {
         }
         postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
         recordNewTabPageSessionAction { $0.hitSubmit() }
+        if postIdleSubmissionReason(for: query) == .searchSubmitted {
+            recordDuckAISessionPendingExit(.searchStarted)
+        }
         loadQuery(query)
         hideNotificationBarIfBrokenSitePromptShown()
         showHomeRowReminder()
@@ -5697,12 +5714,14 @@ extension MainViewController: OmniBarDelegate {
 
     private func newFireTabLongPressMenuAction() {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
+        recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         newTab()
     }
 
     private func newNormalTabLongPressMenuAction() {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
+        recordDuckAISessionPendingExit(.newTabOpened)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
     }
@@ -6656,6 +6675,7 @@ extension MainViewController: TabDelegate {
         }
 
         guard currentTab == tab else { return }
+        reportDuckAISessionVisibleTab(tab.tabModel)
         refreshControls()
         themeColorManager.updateThemeColor()
         tabManager.save()
@@ -6723,6 +6743,7 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestNewFireTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
+        recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: .longPressLink)
         loadUrlInNewTab(url, inheritedAttribution: attribution)
     }
@@ -6752,11 +6773,30 @@ extension MainViewController: TabDelegate {
         }
     }
 
+    func tab(_ tab: TabViewController,
+             didStartDuckAINavigationTo url: URL,
+             entrySource: AIChatEntryPointSource,
+             opensNewTab: Bool,
+             inheritingAttribution attribution: AdClickAttributionLogic.State?) {
+        let hasPrompt = url.getParameter(named: AIChatURLParameters.promptQueryName)?.isEmpty == false
+        fireAIChatEntryPointPixel(source: entrySource, opensNewTab: opensNewTab, hasPrompt: hasPrompt)
+        guard opensNewTab else {
+            tab.tabModel.duckAIEntrySource = entrySource
+            return
+        }
+        openNewTab(from: tab, url: url, openedByPage: true, inheritedAttribution: attribution) {
+            $0.duckAIEntrySource = entrySource
+        }
+    }
+
     private func openNewTab(from tab: TabViewController,
                             url: URL,
                             openedByPage: Bool,
                             inheritedAttribution attribution: AdClickAttributionLogic.State?,
                             completion: ((Tab) -> Void)? = nil) {
+        if !openedByPage {
+            recordDuckAISessionPendingExit(.newTabOpened)
+        }
         _ = findInPageView?.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
         tab.aiChatContextualSheetCoordinator.dismissSheet()
@@ -7086,6 +7126,9 @@ extension MainViewController: TabDelegate {
     }
 
     func selectTab(_ tab: Tab) {
+        if tab.uid != tabManager.currentTabsModel.currentTab?.uid {
+            recordDuckAISessionPendingExit(.tabSwitched)
+        }
         viewCoordinator.navigationBarContainer.alpha = 1
         allowContentUnderflow = false
 
@@ -7141,6 +7184,7 @@ extension MainViewController: TabSwitcherDelegate {
             if tab.isAITab {
                 fireAIChatEntryPointPixel(source: .tabSwitcherExistingChat, opensNewTab: false, hasPrompt: false)
             }
+            recordDuckAISessionPendingExit(.tabSwitched)
             tabManager.select(tab, dismissCurrent: false)
         }
 
@@ -7172,11 +7216,13 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestNewFireTab(tabSwitcher: TabSwitcherViewController, source: FireModeSwitchSource) {
+        recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: source)
         tabSwitcherNewTabWithAnimation()
     }
 
     func tabSwitcherDidRequestNewNormalTab(tabSwitcher: TabSwitcherViewController) {
+        recordDuckAISessionPendingExit(.newTabOpened)
         tabManager.setBrowsingMode(.normal, source: .tabSwitcherLongPress)
         tabSwitcherNewTabWithAnimation()
     }
@@ -7199,6 +7245,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     /// Per-tab close side effects `bulkRemoveTabs` skips: Duck.ai generation instrumentation + (18.4+) web-extension close events.
     func notifyTabsWillClose(_ tabs: [Tab]) {
+        recordDuckAISessionCloseIfNeeded(closingTabs: tabs)
         discardNewTabPageSessionIfHostingTabClosed(tabs)
 
         for tab in tabs {
@@ -7216,7 +7263,8 @@ extension MainViewController: TabSwitcherDelegate {
                   behavior: TabClosingBehavior = .onlyClose,
                   clearTabHistory: Bool = true,
                   refreshInPlace: Bool = false) {
-        
+        recordDuckAISessionCloseIfNeeded(closingTabs: [tab])
+
         func replaceTabWith(newTab: Tab) {
             tabManager.replace(tab: tab, withNewTab: newTab, clearTabHistory: clearTabHistory)
             tabManager.select(newTab, dismissCurrent: false)
@@ -7274,6 +7322,7 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
+        recordDuckAISessionCloseIfNeeded(closingTabs: tabSwitcher.tabsModel.tabs)
         for tab in tabSwitcher.tabsModel.tabs {
             reportDuckAITabClosedIfNeeded(tab)
         }
@@ -8112,10 +8161,12 @@ extension MainViewController: AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         let origin = currentTab?.aiChatContentHandler === handler ? currentTab?.tabModel.duckAIEntrySource : nil
         postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: origin)
+        recordDuckAISessionPromptSubmitted(for: handler)
         reportDuckAIFrontendSubmissionAcknowledged()
     }
 
     func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {
+        recordDuckAISessionNewChatCreated(for: handler)
         DispatchQueue.main.async { [weak self] in
             self?.unifiedToggleInputCoordinator?.startNewChat()
             self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)

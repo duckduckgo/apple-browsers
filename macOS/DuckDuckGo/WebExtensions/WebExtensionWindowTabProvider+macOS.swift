@@ -124,6 +124,10 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         popupPresenter.present(action, for: context, from: button)
     }
 
+    func dismissPopup(for popupWebView: WKWebView) {
+        popupPresenter.close(ifShowing: popupWebView)
+    }
+
     // MARK: - Private Helpers
 
     private func moveExistingTabs(_ existingTabs: [any WKWebExtensionTab], to targetViewModel: TabCollectionViewModel) throws {

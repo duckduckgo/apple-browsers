@@ -80,6 +80,14 @@ final class PixelEventPixelKitTests: XCTestCase {
         XCTAssertEqual(firedNames(for: event, frequency: .legacyDailyNoSuffix), ["\(pixelName)_ios_phone"])
     }
 
+    func testLegacyDailyByErrorMatchesDailyPixelFireWithAnError() {
+        // `DailyPixel.fire(pixel:error:)` appended no suffix either - the error went into the
+        // throttling key, never the name.
+        XCTAssertEqual(firedNames(for: event.withError(NSError(domain: "TestDomain", code: 1)),
+                                  frequency: .legacyDailyByError),
+                       ["\(pixelName)_ios_phone"])
+    }
+
     func testDailyAndCountMatchesTheDefaultDailyPixelSuffixes() {
         // DailyPixel.Constant.dailyPixelSuffixes == ("_daily", "_count")
         XCTAssertEqual(firedNames(for: event, frequency: .dailyAndCount),

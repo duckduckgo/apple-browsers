@@ -20,6 +20,7 @@
 import SwiftUI
 import AppIntents
 import Core
+import PixelKit
 
 @available(iOS 17.0, *)
 struct AIChatIntent: AppIntent {
@@ -35,7 +36,7 @@ struct AIChatIntent: AppIntent {
     
     @MainActor
     public func perform() async throws -> some IntentResult & OpensIntent {
-        Pixel.fire(pixel: .appIntentPerformed, withAdditionalParameters: ["type": "duckai"])
+        PixelKit.fire(Pixel.Event.appIntentPerformed, options: .parameters(["type": "duckai"]))
         await UIApplication.shared.open(AppDeepLinkSchemes.openAIChat.url)
         return .result()
     }

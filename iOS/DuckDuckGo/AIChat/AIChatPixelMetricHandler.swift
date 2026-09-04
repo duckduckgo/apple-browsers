@@ -21,6 +21,7 @@ import Foundation
 import AIChat
 import BrowserServicesKit
 import Core
+import PixelKit
 import Subscription
 
 // MARK: - Protocol
@@ -37,7 +38,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
     // MARK: - Private Properties
 
     private let timeElapsedInMinutes: Int?
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private let featureDiscovery: FeatureDiscovery
     private let timestampParameterKey = "delta-timestamp-minutes"
 
@@ -94,7 +95,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
     // MARK: - Initialization
 
     init(timeElapsedInMinutes: Int? = nil,
-         pixelFiring: PixelFiring.Type = Pixel.self,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.timeElapsedInMinutes = timeElapsedInMinutes
         self.pixelFiring = pixelFiring
@@ -105,7 +106,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
     func fireOpenAIChat() {
         let parameters = timestampParameters ?? [:]
-        pixelFiring.fire(.aiChatOpen, withAdditionalParameters: parameters)
+        pixelFiring?.fire(Pixel.Event.aiChatOpen, options: .parameters(parameters))
     }
 
     func firePixelWithMetric(_ metric: AIChatMetric) {
@@ -122,7 +123,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
                 parameters[PixelParameters.aiChatFirstPromptNewInstall] = "true"
             }
 
-            pixelFiring.fire(event, withAdditionalParameters: parameters)
+            pixelFiring?.fire(event, options: .parameters(parameters))
 
             if isPromptSubmission {
                 featureDiscovery.markDuckAIPromptSubmitted()
@@ -131,8 +132,8 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
         }
 
         if let funnelPixel = Self.funnelMetricToPixelMap[metric.metricName] {
-            pixelFiring.fire(funnelPixel.event,
-                             withAdditionalParameters: [AttributionParameter.origin: funnelPixel.origin.rawValue])
+            pixelFiring?.fire(funnelPixel.event,
+                              options: .parameters([AttributionParameter.origin: funnelPixel.origin.rawValue]))
             return
         }
     }

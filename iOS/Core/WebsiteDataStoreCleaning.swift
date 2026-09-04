@@ -19,6 +19,7 @@
 
 import ConcurrencyExtensions
 import WebKit
+import PixelKit
 
 public protocol WebsiteDataStoreCleaning {
 
@@ -65,9 +66,9 @@ public class DefaultWebsiteDataStoreCleaner: WebsiteDataStoreCleaning {
             await checkForLeftBehindDataStores(previousLeftOversCount: previousCount)
 
             if let error = encounteredError {
-                Pixel.fire(pixel: .fireRemoveAllContainersAfterDelayFailure, error: error)
+                PixelKit.fire(Pixel.Event.fireRemoveAllContainersAfterDelayFailure.withError(error))
             } else {
-                Pixel.fire(pixel: .fireRemoveAllContainersAfterDelaySuccess)
+                PixelKit.fire(Pixel.Event.fireRemoveAllContainersAfterDelaySuccess)
             }
         }
 
@@ -84,11 +85,11 @@ public class DefaultWebsiteDataStoreCleaner: WebsiteDataStoreCleaning {
 
         let ids = await WKWebsiteDataStore.allDataStoreIdentifiers
         if ids.count > 1 {
-            Pixel.fire(pixel: .debugWebsiteDataStoresNotClearedMultiple, withAdditionalParameters: params)
+            PixelKit.fire(Pixel.Event.debugWebsiteDataStoresNotClearedMultiple, options: .parameters(params))
         } else if ids.count > 0 {
-            Pixel.fire(pixel: .debugWebsiteDataStoresNotClearedOne, withAdditionalParameters: params)
+            PixelKit.fire(Pixel.Event.debugWebsiteDataStoresNotClearedOne, options: .parameters(params))
         } else if previousLeftOversCount > 0 {
-            Pixel.fire(pixel: .debugWebsiteDataStoresCleared, withAdditionalParameters: params)
+            PixelKit.fire(Pixel.Event.debugWebsiteDataStoresCleared, options: .parameters(params))
         }
     }
 

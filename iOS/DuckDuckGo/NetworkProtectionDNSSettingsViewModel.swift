@@ -24,6 +24,7 @@ import Core
 import Foundation
 import PrivacyConfig
 import VPN
+import PixelKit
 
 final class NetworkProtectionDNSSettingsViewModel: ObservableObject {
     private let settings: VPNSettings
@@ -80,9 +81,9 @@ final class NetworkProtectionDNSSettingsViewModel: ObservableObject {
         /// Updating `dnsSettings` does an IPv4 conversion before actually commiting the change,
         /// so we do a final check to see which outcome the user ends up with
         if settings.dnsSettings.usesCustomDNS {
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionDNSUpdateCustom, pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.networkProtectionDNSUpdateCustom, frequency: .legacyDailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionDNSUpdateDefault, pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.networkProtectionDNSUpdateDefault, frequency: .legacyDailyAndCount)
         }
     }
 

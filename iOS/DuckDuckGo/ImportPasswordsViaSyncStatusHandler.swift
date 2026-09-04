@@ -21,6 +21,7 @@ import Foundation
 import FoundationExtensions
 import Core
 import DDGSync
+import PixelKit
 
 class ImportPasswordsViaSyncStatusHandler {
 
@@ -71,7 +72,7 @@ class ImportPasswordsViaSyncStatusHandler {
     }
 
     func clearSettingAndFirePixel(_ type: Pixel.Event) {
-        Pixel.fire(pixel: type)
+        PixelKit.fire(type)
         appSettings.clearAutofillImportViaSyncStart()
     }
 

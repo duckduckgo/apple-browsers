@@ -18,19 +18,17 @@
 //
 
 import Core
+import PixelKit
 import Suggestions
 
 /// Fires the `m_autocomplete_display_*` / `m_autocomplete_click_*` telemetry for the UTI search
 /// suggestions, reusing the pixel names the legacy tray fired so the dashboard stays continuous.
 struct AutocompleteSuggestionsPixels {
 
-    private let pixelFiring: PixelFiring.Type
-    private let dailyPixelFiring: DailyPixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
-    init(pixelFiring: PixelFiring.Type = Pixel.self,
-         dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.pixelFiring = pixelFiring
-        self.dailyPixelFiring = dailyPixelFiring
     }
 
     /// Fires one pixel per local suggestion category present. Call once when a suggestions session
@@ -54,10 +52,10 @@ struct AutocompleteSuggestionsPixels {
             }
         }
 
-        if bookmark { pixelFiring.fire(.autocompleteDisplayedLocalBookmark, withAdditionalParameters: [:]) }
-        if favorite { pixelFiring.fire(.autocompleteDisplayedLocalFavorite, withAdditionalParameters: [:]) }
-        if history { pixelFiring.fire(.autocompleteDisplayedLocalHistory, withAdditionalParameters: [:]) }
-        if openTab { pixelFiring.fire(.autocompleteDisplayedOpenedTab, withAdditionalParameters: [:]) }
+        if bookmark { pixelFiring?.fire(Pixel.Event.autocompleteDisplayedLocalBookmark) }
+        if favorite { pixelFiring?.fire(Pixel.Event.autocompleteDisplayedLocalFavorite) }
+        if history { pixelFiring?.fire(Pixel.Event.autocompleteDisplayedLocalHistory) }
+        if openTab { pixelFiring?.fire(Pixel.Event.autocompleteDisplayedOpenedTab) }
     }
 
     /// Fires the click pixel matching a tapped suggestion. `.askAIChat` is a daily pixel with
@@ -65,15 +63,15 @@ struct AutocompleteSuggestionsPixels {
     func fireClickPixel(for suggestion: Suggestion) {
         switch suggestion {
         case .bookmark(_, _, let isFavorite, _):
-            pixelFiring.fire(isFavorite ? .autocompleteClickFavorite : .autocompleteClickBookmark, withAdditionalParameters: [:])
+            pixelFiring?.fire(isFavorite ? Pixel.Event.autocompleteClickFavorite : .autocompleteClickBookmark)
         case .historyEntry(_, let url, _):
-            pixelFiring.fire(url.isDuckDuckGoSearch ? .autocompleteClickSearchHistory : .autocompleteClickSiteHistory, withAdditionalParameters: [:])
+            pixelFiring?.fire(url.isDuckDuckGoSearch ? Pixel.Event.autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
         case .phrase:
-            pixelFiring.fire(.autocompleteClickPhrase, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.autocompleteClickPhrase)
         case .website:
-            pixelFiring.fire(.autocompleteClickWebsite, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.autocompleteClickWebsite)
         case .openTab:
-            pixelFiring.fire(.autocompleteClickOpenTab, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.autocompleteClickOpenTab)
         default:
             break
         }
@@ -83,6 +81,6 @@ struct AutocompleteSuggestionsPixels {
     /// owns those dependencies.
     func fireAskAIChatClickPixel(isExperimentalExperience: Bool, additionalParameters params: [String: String]) {
         let pixel: Pixel.Event = isExperimentalExperience ? .autocompleteAskAIChatExperimentalExperience : .autocompleteAskAIChatLegacyExperience
-        dailyPixelFiring.fireDailyAndCount(pixel, error: nil, withAdditionalParameters: params)
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount, options: .parameters(params))
     }
 }

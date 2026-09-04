@@ -26,6 +26,7 @@ import Combine
 import DDGSync
 import WidgetKit
 import DesignResourcesKit
+import PixelKit
 
 protocol AddOrEditBookmarkViewControllerDelegate: AnyObject {
 
@@ -144,9 +145,9 @@ class AddOrEditBookmarkViewController: UIViewController {
         let changes = viewModel.bookmark.changedValues()
         if changes.contains(where: { $0.key == #keyPath(BookmarkEntity.favoriteFolders) }) {
             if viewModel.bookmark.isFavorite(on: viewModel.favoritesDisplayMode.displayedFolder) {
-                Pixel.fire(pixel: .bookmarkAddFavoriteFromBookmark)
+                PixelKit.fire(Pixel.Event.bookmarkAddFavoriteFromBookmark)
             } else {
-                Pixel.fire(pixel: .bookmarkRemoveFavoriteFromBookmark)
+                PixelKit.fire(Pixel.Event.bookmarkRemoveFavoriteFromBookmark)
             }
         }
 

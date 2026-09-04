@@ -20,18 +20,13 @@
 import Core
 import Testing
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @MainActor
 @Suite("AI Chat Sync Promo View Model Tests", .serialized)
 final class AIChatSyncPromoViewModelTests {
 
-    init() {
-        PixelFiringMock.tearDown()
-    }
-
-    deinit {
-        PixelFiringMock.tearDown()
-    }
+    private let pixelKitMock = PixelKitMock()
 
     @available(iOS 16, *)
     @Test(.timeLimit(.minutes(1)))
@@ -88,55 +83,55 @@ final class AIChatSyncPromoViewModelTests {
     @Test(.timeLimit(.minutes(1)))
     func recordImpressionIfNeeded_whenVisibleAndPromoVisible_firesDisplayedPixelAndRecordsImpression() {
         let manager = MockSyncPromoManager()
-        let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: PixelFiringMock.self)
+        let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: pixelKitMock)
 
         #expect(viewModel.recordImpressionIfNeeded(isVisibleContent: true, isPromoVisible: true))
 
         #expect(manager.recordedImpressions == [.aiChat])
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.syncPromoDisplayed.name)
-        #expect(PixelFiringMock.lastParams == ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.syncPromoDisplayed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters == ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
     }
 
     @available(iOS 16, *)
     @Test(.timeLimit(.minutes(1)))
     func recordImpressionIfNeeded_recordsOnlyOnce() {
         let manager = MockSyncPromoManager()
-        let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: PixelFiringMock.self)
+        let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: pixelKitMock)
 
         #expect(viewModel.recordImpressionIfNeeded(isVisibleContent: true, isPromoVisible: true))
         #expect(!viewModel.recordImpressionIfNeeded(isVisibleContent: true, isPromoVisible: true))
 
         #expect(manager.recordedImpressions == [.aiChat])
-        #expect(PixelFiringMock.allPixelsFired.compactMap(\.pixelName) == [Pixel.Event.syncPromoDisplayed.name])
+        #expect(pixelKitMock.actualFireCalls.map(\.pixel.name) == [Pixel.Event.syncPromoDisplayed.name])
     }
 
     @available(iOS 16, *)
     @Test(.timeLimit(.minutes(1)))
     func recordImpressionIfNeeded_whenNotVisibleOrPromoHidden_doesNothing() {
         let manager = MockSyncPromoManager()
-        let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: PixelFiringMock.self)
+        let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: pixelKitMock)
 
         #expect(!viewModel.recordImpressionIfNeeded(isVisibleContent: false, isPromoVisible: true))
         #expect(!viewModel.recordImpressionIfNeeded(isVisibleContent: true, isPromoVisible: false))
 
         #expect(manager.recordedImpressions.isEmpty)
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     @available(iOS 16, *)
     @Test(.timeLimit(.minutes(1)))
     func handleCTATap_firesConfirmedPixelMarksPromoHandledAndRequestsSyncSetup() {
         let manager = MockSyncPromoManager()
-        let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: PixelFiringMock.self)
+        let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: pixelKitMock)
 
         let action = viewModel.handleCTATap()
 
         #expect(action == .requestSyncSetup)
         #expect(manager.handledTouchpoints == [.aiChat])
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.syncPromoConfirmed.name)
-        #expect(PixelFiringMock.lastParams == ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.syncPromoConfirmed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters == ["source": SyncPromoManager.Touchpoint.aiChat.rawValue])
     }
 
     @available(iOS 16, *)

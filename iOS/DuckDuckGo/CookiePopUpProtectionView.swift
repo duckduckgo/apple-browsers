@@ -21,6 +21,7 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import WebExtensions
+import PixelKit
 
 struct CookiePopUpProtectionView: View {
 
@@ -42,7 +43,7 @@ struct CookiePopUpProtectionView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onForwardNavigationAppear {
-            Pixel.fire(pixel: .autoconsentSettingsShown)
+            PixelKit.fire(Pixel.Event.autoconsentSettingsShown)
         }
     }
 }

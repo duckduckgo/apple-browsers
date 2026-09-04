@@ -22,6 +22,7 @@ import Subscription
 import UIKit
 import NotificationCenter
 import Core
+import PixelKit
 
 final class VPNService: NSObject {
 
@@ -90,11 +91,11 @@ final class VPNService: NSObject {
     @MainActor
     private func presentExpiredEntitlementAlert() {
         let alertController = CriticalAlerts.makeExpiredEntitlementAlert {
-            Pixel.fire(pixel: .vpnAccessRevokedAlertSubscribeButtonClicked)
+            PixelKit.fire(Pixel.Event.vpnAccessRevokedAlertSubscribeButtonClicked)
             self.mainCoordinator.segueToDuckDuckGoSubscription(origin: SubscriptionFunnelOrigin.vpnAccessRevokedAlert.rawValue)
         }
         guard let rootViewController = application.firstKeyWindow?.rootViewController else { return }
-        Pixel.fire(pixel: .vpnAccessRevokedAlertShown)
+        PixelKit.fire(Pixel.Event.vpnAccessRevokedAlertShown)
         rootViewController.present(alertController, animated: true) {
             self.tunnelDefaults.showEntitlementAlert = false
         }

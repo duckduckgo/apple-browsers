@@ -21,25 +21,26 @@ import XCTest
 import Core
 import Suggestions
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 final class AutocompleteSuggestionsPixelsTests: XCTestCase {
 
     private var pixels: AutocompleteSuggestionsPixels!
+    private var pixelKitMock: PixelKitMock!
 
     override func setUp() {
         super.setUp()
-        PixelFiringMock.tearDown()
-        pixels = AutocompleteSuggestionsPixels(pixelFiring: PixelFiringMock.self,
-                                               dailyPixelFiring: PixelFiringMock.self)
+        pixelKitMock = PixelKitMock()
+        pixels = AutocompleteSuggestionsPixels(pixelFiring: pixelKitMock)
     }
 
     override func tearDown() {
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
         pixels = nil
         super.tearDown()
     }
 
-    private var firedNames: [String] { PixelFiringMock.allPixelsFired.compactMap { $0.pixelName } }
+    private var firedNames: [String] { pixelKitMock.actualFireCalls.map { $0.pixel.name } }
 
     private func url(_ string: String) -> URL { URL(string: string)! }
 
@@ -134,13 +135,13 @@ final class AutocompleteSuggestionsPixelsTests: XCTestCase {
 
     func testAskAIChatExperimentalDailyPixel() {
         pixels.fireAskAIChatClickPixel(isExperimentalExperience: true, additionalParameters: [:])
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName,
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name,
                        Pixel.Event.autocompleteAskAIChatExperimentalExperience.name)
     }
 
     func testAskAIChatLegacyDailyPixel() {
         pixels.fireAskAIChatClickPixel(isExperimentalExperience: false, additionalParameters: [:])
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName,
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name,
                        Pixel.Event.autocompleteAskAIChatLegacyExperience.name)
     }
 }

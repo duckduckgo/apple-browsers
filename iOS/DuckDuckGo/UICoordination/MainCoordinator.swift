@@ -720,13 +720,12 @@ final class MainCoordinator {
         let isEnabled = controller.adBlockingAvailability.isEnabled
         let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
         let analyticsEnabled = isEnabled && ((try? storage.value(for: \.youTubeAnalyticsEnabled)) ?? false)
-        DailyPixel.fire(
-            pixel: .webExtensionDailyAdBlockingState,
-            withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.webExtensionDailyAdBlockingState,
+                      frequency: .legacyDailyNoSuffix,
+                      options: .parameters([
                 "is_enabled": isEnabled ? "true" : "false",
                 "analytics_enabled": analyticsEnabled ? "true" : "false"
-            ]
-        )
+            ]))
     }
 
 }
@@ -812,10 +811,10 @@ extension MainCoordinator: URLHandling {
         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
            let queryItems = components.queryItems,
            queryItems.contains(where: { $0.name == "ls" }) {
-            Pixel.fire(pixel: .autofillLoginsLaunchWidgetLock)
+            PixelKit.fire(Pixel.Event.autofillLoginsLaunchWidgetLock)
             source = .lockScreenWidget
         } else {
-            Pixel.fire(pixel: .autofillLoginsLaunchWidgetHome)
+            PixelKit.fire(Pixel.Event.autofillLoginsLaunchWidgetHome)
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -831,10 +830,9 @@ extension MainCoordinator: URLHandling {
               let shortcut = queryItems.first(where: { $0.name == WidgetSourceType.shortcutKey })?.value
         else { return }
 
-        DailyPixel.fireDailyAndCount(
-            pixel: .widgetMediumLaunch,
-            withAdditionalParameters: [PixelParameters.shortcut: shortcut]
-        )
+        PixelKit.fire(Pixel.Event.widgetMediumLaunch,
+                      frequency: .dailyAndCount,
+                      options: .parameters([PixelParameters.shortcut: shortcut]))
     }
 
     func handleAIChatAppIconShortuct() {
@@ -843,7 +841,7 @@ extension MainCoordinator: URLHandling {
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
               self.controller.openAIChat(source: .iconShortcut)
           }
-          Pixel.fire(pixel: .openAIChatFromIconShortcut)
+          PixelKit.fire(Pixel.Event.openAIChatFromIconShortcut)
       }
 }
 
@@ -874,7 +872,7 @@ extension MainCoordinator: ShortcutItemHandling {
         DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
             self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
         }
-        Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
+        PixelKit.fire(Pixel.Event.autofillLoginsLaunchAppShortcut)
     }
 
 }

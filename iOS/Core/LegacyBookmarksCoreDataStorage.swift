@@ -20,6 +20,7 @@
 import Foundation
 import CoreData
 import Bookmarks
+import PixelKit
 
 public enum BookmarksDatabaseError: Error {
     // Legacy storage errors
@@ -143,8 +144,7 @@ public class LegacyBookmarksCoreDataStorage {
                 }
             }
         } catch {
-            Pixel.fire(pixel: .bookmarksMigrationCouldNotRemoveOldStore,
-                       error: error)
+            PixelKit.fire(Pixel.Event.bookmarksMigrationCouldNotRemoveOldStore.withError(error))
         }
 
         try? FileManager.default.removeItem(atPath: storeURL.path)
@@ -392,7 +392,7 @@ extension LegacyBookmarksCoreDataStorage {
                 do {
                     try privateContext.save()
                 } catch {
-                    DailyPixel.fireDailyAndCount(pixel: .debugBookmarksTopFolderSaveFailed)
+                    PixelKit.fire(Pixel.Event.debugBookmarksTopFolderSaveFailed, frequency: .dailyAndCount)
                     assertionFailure("Failure saving bookmark top folder fix")
                 }
             } catch {

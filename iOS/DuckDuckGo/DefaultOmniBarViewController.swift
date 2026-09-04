@@ -23,6 +23,7 @@ import PrivacyDashboard
 import AIChat
 import Core
 import FeatureFlags_iOS
+import PixelKit
 
 final class DefaultOmniBarViewController: OmniBarViewController {
 
@@ -405,13 +406,13 @@ extension DefaultOmniBarViewController {
             omniBarView.updateAIChatSendButton(hasText: false)
 
             if URL.isValidAddressBarURLInput(query) {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadToggleURLSubmitted)
+                PixelKit.fire(Pixel.Event.aiChatIPadToggleURLSubmitted, frequency: .dailyAndCount)
                 dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 let isFirstPromptNewInstall = featureDiscovery.isFirstDuckAIPromptNewInstall
                 let firstPromptParameters: [String: String] = isFirstPromptNewInstall ? [PixelParameters.aiChatFirstPromptNewInstall: "true"] : [:]
-                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted, withAdditionalParameters: firstPromptParameters)
+                PixelKit.fire(Pixel.Event.aiChatIPadTogglePromptSubmitted, frequency: .dailyAndCount, options: .parameters(firstPromptParameters))
                 fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty, isFirstPromptNewInstall: isFirstPromptNewInstall)
                 featureDiscovery.markDuckAIPromptSubmitted()
                 /// Collapse and resign instantly so a quick re-tap doesn't race the post-submit

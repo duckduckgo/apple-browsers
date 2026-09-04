@@ -188,6 +188,8 @@ extension XCTestCase {
             expectedPixelNames.append(originalName.appending("_c"))
         case .legacyDailyNoSuffix:
             expectedPixelNames.append(originalName)
+        case .legacyDailyByError:
+            expectedPixelNames.append(originalName)
         case .sample(let percentage):
             expectedPixelNames.append(originalName.appending("_sample\(percentage)"))
         case .debounce:

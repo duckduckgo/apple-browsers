@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Core
 import PrivacyConfig
 import UIKit
+import PixelKit
 
 struct FilePreviewHelper {
 
@@ -37,11 +38,11 @@ struct FilePreviewHelper {
             return ContactPreviewHelper(filePath, viewController: viewController)
         default:
             if filePath.pathExtension.lowercased() == "ics" {
-                Pixel.fire(pixel: .icsCalendarRoutedByExtension)
+                PixelKit.fire(Pixel.Event.icsCalendarRoutedByExtension)
                 return CalendarEventPreviewHelper(filePath, viewController: viewController)
             }
             if hasVCardFileExtension(url: filePath, filename: nil) {
-                Pixel.fire(pixel: .vcardContactRoutedByExtension)
+                PixelKit.fire(Pixel.Event.vcardContactRoutedByExtension)
                 return ContactPreviewHelper(filePath, viewController: viewController)
             }
             return QuickLookPreviewHelper(filePath, viewController: viewController)

@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import PixelKit
+@_spi(Testing) import PixelKit
 import os.log
 
 final class PixelKitTests: XCTestCase {
@@ -954,37 +955,104 @@ final class PixelKitTests: XCTestCase {
     }
 
     /// `.dailyAndCount` fires two requests (`_daily` and `_count`), completing once per request:
-    /// `fireAsync` must resume with the first result and not trap on the second completion.
-    func testAsyncFireWithDailyAndCountFrequencyResumesOnlyOnce() async throws {
-        // The second (`_count`) request can complete after `fireAsync` has already resumed,
-        // so the names are gathered behind a lock and awaited via an expectation.
+    /// `fireAsync` waits for both before returning, so both have fired by the time it resumes and
+    /// no expectation is needed to observe them.
+    func testAsyncFireWithDailyAndCountWaitsForBothLegs() async throws {
         let namesLock = NSLock()
         var firedPixelNames = [String]()
-        let bothRequestsFired = expectation(description: "fires the _daily and _count requests")
-        bothRequestsFired.expectedFulfillmentCount = 2
 
         let pixelKit = makePixelKit { pixelName, _, _, _, _, completion in
             namesLock.lock()
             firedPixelNames.append(pixelName)
             namesLock.unlock()
             completion(true, nil)
-            bothRequestsFired.fulfill()
         }
 
         let result = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
-        await fulfillment(of: [bothRequestsFired], timeout: 1)
 
         XCTAssertEqual(result, .sent)
         namesLock.lock()
         let names = firedPixelNames
         namesLock.unlock()
-        XCTAssertTrue(names.contains { $0.hasSuffix("_daily") })
-        XCTAssertTrue(names.contains { $0.hasSuffix("_count") })
+        XCTAssertTrue(names.contains { $0.hasSuffix("_daily") },
+                      "the _daily leg must have fired before fireAsync resumed")
+        XCTAssertTrue(names.contains { $0.hasSuffix("_count") },
+                      "the _count leg must have fired before fireAsync resumed")
     }
 
-    /// Even if the underlying completion is somehow invoked multiple times with mixed results,
-    /// `fireAsync` resolves with the first one and ignores the rest.
-    func testAsyncFireIgnoresCompletionsAfterTheFirst() async throws {
+    /// The second fire of the day suppresses the `_daily` leg and sends only `_count`. The
+    /// suppressed leg still completes, so waiting for every leg must not hang.
+    func testAsyncFireWithDailyAndCountResolvesWhenTheDailyLegIsThrottled() async throws {
+        let pixelKit = makePixelKit()
+
+        let firstFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+        let secondFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+
+        XCTAssertEqual(firstFire, .sent)
+        XCTAssertEqual(secondFire, .sent, "the _count leg still sends once the _daily leg is throttled")
+    }
+
+    /// `.suppressed` only when every leg was suppressed.
+    func testAsyncFireWithTwoLegsReturnsSuppressedOnlyWhenEveryLegIsSuppressed() async throws {
+        let allSuppressed = StubPixelFiring(completions: [(fired: false, error: nil),
+                                                          (fired: false, error: nil)])
+        let oneSent = StubPixelFiring(completions: [(fired: false, error: nil),
+                                                    (fired: true, error: nil)])
+
+        let suppressedResult = try await allSuppressed.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+        let sentResult = try await oneSent.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+
+        XCTAssertEqual(suppressedResult, .suppressed)
+        XCTAssertEqual(sentResult, .sent)
+    }
+
+    /// An error on any leg surfaces, and only once every leg has finished.
+    func testAsyncFireWithTwoLegsThrowsTheFirstLegErrorAfterAllLegsFinish() async {
+        let expectedError = AsyncFireSampleError()
+        // The error arrives on the second leg, so resolving on the first completion would have
+        // returned `.sent` and swallowed it.
+        let pixelFiring = StubPixelFiring(completions: [(fired: true, error: nil),
+                                                        (fired: false, error: expectedError)])
+
+        do {
+            _ = try await pixelFiring.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+            XCTFail("Expected fireAsync to throw the error reported by the second leg")
+        } catch let error as AsyncFireSampleError {
+            XCTAssertEqual(error, expectedError)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    /// `PixelKitMock` has to complete once per leg, like the real thing, otherwise `fireAsync`
+    /// waits for a leg that never reports and an awaiting caller stays suspended forever.
+    func testPixelKitMockCompletesOncePerLeg() {
+        for frequency in [PixelKit.Frequency.standard, .daily, .legacyDailyAndCount, .dailyAndCount, .dailyAndStandard] {
+            let pixelKitMock = PixelKitMock()
+            var completionCount = 0
+
+            pixelKitMock.fire(event: TestEventV2.dailyEvent, frequency: frequency, options: .default) { _, _ in
+                completionCount += 1
+            }
+
+            XCTAssertEqual(completionCount, frequency.legCount, "\(frequency) completed \(completionCount) times")
+            XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1,
+                           "the mock records the fire call once, however many legs it completes")
+        }
+    }
+
+    /// The async path over the mock, which would suspend forever if the mock under-completed.
+    func testAsyncFireThroughPixelKitMockResolvesForATwoLegFrequency() async throws {
+        let pixelKitMock = PixelKitMock()
+
+        let result = try await pixelKitMock.fireAsync(TestEventV2.dailyEvent, frequency: .legacyDailyAndCount)
+
+        XCTAssertEqual(result, .sent)
+    }
+
+    /// A single-leg frequency expects one completion. If the handler somehow over-completes,
+    /// `fireAsync` resolves on the first and ignores the rest rather than trapping.
+    func testAsyncFireIgnoresCompletionsBeyondTheExpectedLegCount() async throws {
         let pixelFiring = StubPixelFiring(completions: [(fired: true, error: nil),
                                                         (fired: false, error: AsyncFireSampleError())])
 
@@ -1131,6 +1199,53 @@ final class PixelKitTests: XCTestCase {
         lock.lock()
         defer { lock.unlock() }
         return captured
+    }
+
+    /// An event that opts in fires a dotted name without tripping the naming assertion.
+    /// Several legacy iOS pixel names interpolate a bucketed value such as `0.5`.
+    func testDottedNameFiresWhenTheEventAllowsIt() {
+        let userDefaults = UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)")!
+        var firedNames: [String] = []
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                source: PixelKit.Source.iOS.rawValue,
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                defaults: userDefaults) { name, _, _, _, _, _ in
+            firedNames.append(name)
+        }
+
+        pixelKit.fire(DottedNameTestEvent())
+
+        XCTAssertEqual(firedNames, ["m_debug_app-did-finish-launching-time-0.5_ios_phone"])
+    }
+
+    /// `Options.userAgent` reaches the fire request under `Header.userAgent`, which is the key a
+    /// host reads in preference to its own pixel user agent.
+    func testUserAgentOptionIsDeliveredUnderTheUserAgentHeaderKey() {
+        let headers = firedHeaders(defaultHeaders: [:]) {
+            $0.fire(TestEventV2.testEventWithoutParameters, options: .userAgent("Custom/1.0"))
+        }
+        XCTAssertEqual(headers[PixelKit.Header.userAgent], "Custom/1.0")
+    }
+
+    /// Without the option the key is absent, so the host falls back to its own pixel user agent.
+    func testNoUserAgentHeaderWhenTheOptionIsUnset() {
+        let headers = firedHeaders(defaultHeaders: [:]) {
+            $0.fire(TestEventV2.testEventWithoutParameters)
+        }
+        XCTAssertNil(headers[PixelKit.Header.userAgent])
+    }
+
+    /// `Options.userAgent` wins over a `User-Agent` in `Options.headers`, so the dedicated option is
+    /// always the one that decides.
+    func testUserAgentOptionOverridesAUserAgentInHeaders() {
+        var options = PixelKit.Options.userAgent("Custom/1.0")
+        options.headers = [PixelKit.Header.userAgent: "FromHeaders/9.9"]
+        let headers = firedHeaders(defaultHeaders: [:]) {
+            $0.fire(TestEventV2.testEventWithoutParameters, options: options)
+        }
+        XCTAssertEqual(headers[PixelKit.Header.userAgent], "Custom/1.0")
     }
 
     /// Omitting headers sends the instance's `defaultHeaders`.
@@ -1363,6 +1478,98 @@ final class PixelKitTests: XCTestCase {
         XCTAssertEqual(firedNames, ["m_netp_daily_active_d_ios_phone"])
     }
 
+    // MARK: - Legacy daily by-error frequency
+
+    private struct LegacyDailyByErrorTestEvent: PixelKit.Event {
+        let namePrefix: PixelKitNamePrefix = .none
+        let name = "m_secure_vault_init_failed_error"
+        let parameters: [String: String]? = nil
+        let standardParameters: [PixelKitStandardParameter]? = nil
+        /// Stored rather than reflected, so the test controls exactly which error is attached.
+        let error: NSError?
+    }
+
+    private func makeLegacyDailyByErrorPixelKit(_ onFire: @escaping (String) -> Void) -> PixelKit {
+        PixelKit(dryRun: false,
+                 appVersion: "1.0.0",
+                 source: PixelKit.Source.iOS.rawValue,
+                 defaultHeaders: [:],
+                 pixelCalendar: nil,
+                 defaults: UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)")!) { name, _, _, _, _, _ in
+            onFire(name)
+        }
+    }
+
+    /// Legacy `DailyPixel.fire(pixel:error:)` folded the error into its once-per-day key, so a second,
+    /// different failure of the same pixel still reported that day.
+    func testLegacyDailyByErrorFiresOncePerDistinctError() {
+        var firedNames: [String] = []
+        let pixelKit = makeLegacyDailyByErrorPixelKit { firedNames.append($0) }
+
+        let first = NSError(domain: "TestDomain", code: 1)
+        let second = NSError(domain: "TestDomain", code: 2)
+        let thirdInAnotherDomain = NSError(domain: "OtherDomain", code: 1)
+
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: first), frequency: .legacyDailyByError)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: second), frequency: .legacyDailyByError)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: thirdInAnotherDomain), frequency: .legacyDailyByError)
+
+        XCTAssertEqual(firedNames.count, 3, "Each distinct error should report once, as it did under DailyPixel")
+        XCTAssertEqual(Set(firedNames), ["m_secure_vault_init_failed_error_ios_phone"],
+                       "Only the throttling key carries the error - the wire name must stay unsuffixed")
+    }
+
+    func testLegacyDailyByErrorThrottlesRepeatsOfTheSameError() {
+        var firedNames: [String] = []
+        let pixelKit = makeLegacyDailyByErrorPixelKit { firedNames.append($0) }
+
+        let error = NSError(domain: "TestDomain", code: 1)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: error), frequency: .legacyDailyByError)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: NSError(domain: "TestDomain", code: 1)),
+                      frequency: .legacyDailyByError)
+
+        XCTAssertEqual(firedNames.count, 1, "The same domain and code is the same throttling key, even across NSError instances")
+    }
+
+    /// Distinguishes this frequency from `.legacyDailyNoSuffix` only by the error, so with no error
+    /// attached it has to throttle on the name alone.
+    func testLegacyDailyByErrorWithoutAnErrorThrottlesOnTheNameAlone() {
+        var firedNames: [String] = []
+        let pixelKit = makeLegacyDailyByErrorPixelKit { firedNames.append($0) }
+
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: nil), frequency: .legacyDailyByError)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: nil), frequency: .legacyDailyByError)
+
+        XCTAssertEqual(firedNames, ["m_secure_vault_init_failed_error_ios_phone"])
+    }
+
+    /// The by-error keys share the `daily` map with the plain daily frequencies, which is where
+    /// `LegacyPixelStateMigration` copies the legacy daily store's keys - composite ones included.
+    func testLegacyDailyByErrorHonoursAMigratedLegacyThrottlingKey() {
+        let userDefaults = UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)")!
+        var firedNames: [String] = []
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                source: PixelKit.Source.iOS.rawValue,
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                defaults: userDefaults) { name, _, _, _, _, _ in
+            firedNames.append(name)
+        }
+
+        // What legacy `DailyPixel` wrote for `NSError(domain: "TestDomain", code: 1)`: the error
+        // parameter values (`d` then `e`) joined with `;`, appended to the name after a `:`.
+        let migratedKey = "com.duckduckgo.network-protection.pixel.m_secure_vault_init_failed_error:TestDomain;1"
+        userDefaults.set(["daily": Date()], forKey: migratedKey)
+
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: NSError(domain: "TestDomain", code: 1)),
+                      frequency: .legacyDailyByError)
+        pixelKit.fire(LegacyDailyByErrorTestEvent(error: NSError(domain: "TestDomain", code: 2)),
+                      frequency: .legacyDailyByError)
+
+        XCTAssertEqual(firedNames.count, 1, "The migrated key should suppress its own error but not a different one")
+    }
+
     // MARK: - Static async entry point
 
     func testStaticFireAsyncThrowsWhenPixelKitNotConfigured() async {
@@ -1419,4 +1626,13 @@ private class TimeMachine {
     func now() -> Date {
         date
     }
+}
+
+/// See `testDottedNameFiresWhenTheEventAllowsIt`.
+private struct DottedNameTestEvent: PixelKit.Event {
+    let namePrefix: PixelKitNamePrefix = .none
+    let name = "m_debug_app-did-finish-launching-time-0.5"
+    let allowsDotInName = true
+    let parameters: [String: String]? = nil
+    let standardParameters: [PixelKitStandardParameter]? = nil
 }

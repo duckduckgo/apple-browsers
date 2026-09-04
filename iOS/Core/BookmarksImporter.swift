@@ -25,6 +25,7 @@ import Persistence
 import SwiftSoup
 import os.log
 import BrowserServicesKit
+import PixelKit
 
 public enum BookmarksImportError: Error {
     case invalidHtmlNoDLTag
@@ -62,23 +63,23 @@ final public class BookmarksImporter {
             return .success(summary)
         } catch BookmarksImportError.invalidHtmlNoDLTag {
             NotificationCenter.default.post(name: Notifications.importDidEnd, object: nil)
-            Pixel.fire(pixel: .bookmarkImportFailureParsingDL)
+            PixelKit.fire(Pixel.Event.bookmarkImportFailureParsingDL)
             return .failure(.invalidHtmlNoDLTag)
         } catch BookmarksImportError.invalidHtmlNoBodyTag {
             NotificationCenter.default.post(name: Notifications.importDidEnd, object: nil)
-            Pixel.fire(pixel: .bookmarkImportFailureParsingBody)
+            PixelKit.fire(Pixel.Event.bookmarkImportFailureParsingBody)
             return .failure(.invalidHtmlNoBodyTag)
         } catch BookmarksImportError.safariTransformFailure {
             NotificationCenter.default.post(name: Notifications.importDidEnd, object: nil)
-            Pixel.fire(pixel: .bookmarkImportFailureTransformingSafari)
+            PixelKit.fire(Pixel.Event.bookmarkImportFailureTransformingSafari)
             return .failure(.safariTransformFailure)
         } catch BookmarksImportError.saveFailure {
             NotificationCenter.default.post(name: Notifications.importDidEnd, object: nil)
-            Pixel.fire(pixel: .bookmarkImportFailureSaving)
+            PixelKit.fire(Pixel.Event.bookmarkImportFailureSaving)
             return .failure(.saveFailure)
         } catch {
             NotificationCenter.default.post(name: Notifications.importDidEnd, object: nil)
-            Pixel.fire(pixel: .bookmarkImportFailureUnknown)
+            PixelKit.fire(Pixel.Event.bookmarkImportFailureUnknown)
             return .failure(.unknown)
         }
     }

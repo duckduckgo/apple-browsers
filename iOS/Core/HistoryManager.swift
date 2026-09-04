@@ -274,37 +274,37 @@ class HistoryStoreEventMapper: EventMapping<History.HistoryDatabaseError> {
         super.init { event, error, _, _ in
             switch event {
             case .removeFailed:
-                Pixel.fire(pixel: .historyRemoveFailed, error: error)
+                PixelKit.fire(Pixel.Event.historyRemoveFailed.withError(error))
 
             case .reloadFailed:
-                Pixel.fire(pixel: .historyReloadFailed, error: error)
+                PixelKit.fire(Pixel.Event.historyReloadFailed.withError(error))
 
             case .cleanEntriesFailed:
-                Pixel.fire(pixel: .historyCleanEntriesFailed, error: error)
+                PixelKit.fire(Pixel.Event.historyCleanEntriesFailed.withError(error))
 
             case .cleanVisitsFailed:
-                Pixel.fire(pixel: .historyCleanVisitsFailed, error: error)
+                PixelKit.fire(Pixel.Event.historyCleanVisitsFailed.withError(error))
 
             case .saveFailed:
-                Pixel.fire(pixel: .historySaveFailed, error: error)
+                PixelKit.fire(Pixel.Event.historySaveFailed.withError(error))
 
             case .insertVisitFailed:
-                Pixel.fire(pixel: .historyInsertVisitFailed, error: error)
+                PixelKit.fire(Pixel.Event.historyInsertVisitFailed.withError(error))
 
             case .removeVisitsFailed:
-                Pixel.fire(pixel: .historyRemoveVisitsFailed, error: error)
+                PixelKit.fire(Pixel.Event.historyRemoveVisitsFailed.withError(error))
 
             case .loadTabHistoryFailed:
-                Pixel.fire(pixel: .historyLoadTabHistoryFailed, error: error)
+                PixelKit.fire(Pixel.Event.historyLoadTabHistoryFailed.withError(error))
 
             case .insertTabHistoryFailed:
-                Pixel.fire(pixel: .historyInsertTabHistoryFailed, error: error)
+                PixelKit.fire(Pixel.Event.historyInsertTabHistoryFailed.withError(error))
 
             case .removeTabHistoryFailed:
-                Pixel.fire(pixel: .historyRemoveTabHistoryFailed, error: error)
+                PixelKit.fire(Pixel.Event.historyRemoveTabHistoryFailed.withError(error))
 
             case .cleanOrphanedTabHistoryFailed:
-                Pixel.fire(pixel: .historyCleanOrphanedTabHistoryFailed, error: error)
+                PixelKit.fire(Pixel.Event.historyCleanOrphanedTabHistoryFailed.withError(error))
             }
 
         }

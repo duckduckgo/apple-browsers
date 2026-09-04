@@ -23,6 +23,7 @@ import Core
 import Crashes
 import PrivacyConfig
 import FeatureFlags_iOS
+import PixelKit
 
 final class CrashCollectionService {
 
@@ -57,16 +58,23 @@ final class CrashCollectionService {
                 }
 
                 let additionalParameters = Dictionary(uniqueKeysWithValues: params.map { ($0.key.rawValue, $0.value) })
-                Pixel.fire(pixel: .dbCrashDetected(appIdentifier: appIdentifier), withAdditionalParameters: additionalParameters, includedParameters: [])
+                PixelKit.fire(Pixel.Event.dbCrashDetected(appIdentifier: appIdentifier),
+                              options: PixelKit.Options(additionalParameters: additionalParameters, includeAppVersionParameter: false))
 
                 // Each crash comes with an `appVersion` parameter representing the version that the crash occurred on.
                 // This is to disambiguate the situation where a crash occurs, but isn't sent until the next update.
                 // If for some reason the parameter can't be found, fall back to the current version.
                 if let crashAppVersion = params[.appVersion] {
                     let dailyParameters = [PixelParameters.appVersion: crashAppVersion]
-                    DailyPixel.fireDaily(.dbCrashDetectedDaily(appIdentifier: appIdentifier), withAdditionalParameters: dailyParameters)
+                    // `includeAppVersionParameter: false` so PixelKit does not overwrite the crash's
+                    // own `appVersion` with the current one. Legacy `Pixel.fire` only filled the
+                    // parameter in when the caller had not already set it.
+                    PixelKit.fire(Pixel.Event.dbCrashDetectedDaily(appIdentifier: appIdentifier),
+                                  frequency: .legacyDailyNoSuffix,
+                                  options: PixelKit.Options(additionalParameters: dailyParameters,
+                                                            includeAppVersionParameter: false))
                 } else {
-                    DailyPixel.fireDaily(.dbCrashDetectedDaily(appIdentifier: appIdentifier))
+                    PixelKit.fire(Pixel.Event.dbCrashDetectedDaily(appIdentifier: appIdentifier), frequency: .legacyDailyNoSuffix)
                 }
             }
 

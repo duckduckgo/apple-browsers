@@ -36,6 +36,7 @@ import AIChat
 import TipKit
 import UIComponents
 import FeatureFlags_iOS
+import PixelKit
 
 class TabSwitcherViewController: UIViewController {
 
@@ -268,10 +269,10 @@ class TabSwitcherViewController: UIViewController {
         let source = modeChangeFromSwipe ? "swipe" : "tap"
         modeChangeFromSwipe = false
         selectedBrowsingMode = newMode
-        Pixel.fire(pixel: .tabSwitcherModeToggled, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.tabSwitcherModeToggled, options: .parameters([
             PixelParameters.browsingMode: newMode.pixelParamValue,
             PixelParameters.source: source
-        ])
+        ]))
         syncPagingScrollViewToCurrentMode(animated: true)
         scrollToInitialTab()
         updateUIForSelectionMode()
@@ -586,9 +587,9 @@ class TabSwitcherViewController: UIViewController {
         // Will be dismissed, so no need to process incoming updates
         canUpdateCollection = false
 
-        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.tabSwitcherNewTab, options: .parameters([
             PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue
-        ])
+        ]))
         dismissIfPossible(forceDismissOnEmpty: true)
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
@@ -597,9 +598,9 @@ class TabSwitcherViewController: UIViewController {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
 
-        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.tabSwitcherNewTab, options: .parameters([
             PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
-        ])
+        ]))
         dismissIfPossible(forceDismissOnEmpty: true)
         delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self, source: source)
     }
@@ -608,9 +609,9 @@ class TabSwitcherViewController: UIViewController {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
 
-        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.tabSwitcherNewTab, options: .parameters([
             PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
-        ])
+        ]))
         dismissIfPossible(forceDismissOnEmpty: true)
         delegate.tabSwitcherDidRequestNewNormalTab(tabSwitcher: self)
     }

@@ -177,16 +177,16 @@ final class SubscriptionFlowViewModel: ObservableObject {
              DispatchQueue.main.async {
                  switch feature {
                  case .networkProtection:
-                     UniquePixel.fire(pixel: .subscriptionWelcomeVPN)
+                     PixelKit.fire(Pixel.Event.subscriptionWelcomeVPN, frequency: .uniqueByName)
                      self.state.selectedFeature = .netP
                  case .dataBrokerProtection:
-                     UniquePixel.fire(pixel: .subscriptionWelcomePersonalInformationRemoval)
+                     PixelKit.fire(Pixel.Event.subscriptionWelcomePersonalInformationRemoval, frequency: .uniqueByName)
                      self.state.selectedFeature = .dbp
                  case .identityTheftRestoration, .identityTheftRestorationGlobal:
-                     UniquePixel.fire(pixel: .subscriptionWelcomeIdentityRestoration)
+                     PixelKit.fire(Pixel.Event.subscriptionWelcomeIdentityRestoration, frequency: .uniqueByName)
                      self.state.selectedFeature = .itr
                  case .paidAIChat:
-                     UniquePixel.fire(pixel: .subscriptionWelcomeAIChat)
+                     PixelKit.fire(Pixel.Event.subscriptionWelcomeAIChat, frequency: .uniqueByName)
                      self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                  case .unknown:
                      break
@@ -215,16 +215,16 @@ final class SubscriptionFlowViewModel: ObservableObject {
         
         switch error {
         case .purchaseFailed:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureStoreError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureStoreError,
+                          frequency: .legacyDailyAndCount)
             state.transactionError = .purchaseFailed
         case .purchasePendingTransaction:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureStoreError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureStoreError,
+                          frequency: .legacyDailyAndCount)
             state.transactionError = .purchasePendingTransaction
         case .missingEntitlements:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureBackendError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureBackendError,
+                          frequency: .legacyDailyAndCount)
             state.transactionError = .missingEntitlements
         case .failedToGetSubscriptionOptions:
             state.transactionError = .failedToGetSubscriptionOptions
@@ -233,8 +233,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
         case .cancelledByUser:
             state.transactionError = .cancelledByUser
         case .accountCreationFailed:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureAccountNotCreated,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureAccountNotCreated,
+                          frequency: .legacyDailyAndCount)
             state.transactionError = .generalError
         case .activeSubscriptionAlreadyPresent:
             state.transactionError = .hasActiveSubscription
@@ -248,8 +248,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
             // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
             state.transactionError = .failedToRestorePastPurchase
         case .generalError:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureOther,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureOther,
+                          frequency: .legacyDailyAndCount)
             state.transactionError = .generalError
         }
     }
@@ -395,10 +395,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 .queryItems?
                 .first(where: { $0.name == AttributionParameter.origin })?
                 .value
-            Pixel.fire(
-                pixel: pixel,
-                withAdditionalParameters: origin.map { [AttributionParameter.origin: $0] } ?? [:]
-            )
+            PixelKit.fire(pixel,
+                          options: .parameters(origin.map { [AttributionParameter.origin: $0] } ?? [:]))
         }
     }
 

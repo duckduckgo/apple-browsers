@@ -539,9 +539,14 @@ class TabViewController: UIViewController {
         case .ampBlockingRulesCompilationFailed:
             domainEvent = .ampBlockingRulesCompilationFailed
         }
-        Pixel.fire(pixel: domainEvent,
-                   withAdditionalParameters: params ?? [:],
-                   onComplete: onComplete)
+        Task {
+            do {
+                try await PixelKit.fireAsync(domainEvent, options: .parameters(params ?? [:]))
+                onComplete(nil)
+            } catch let fireError {
+                onComplete(fireError)
+            }
+        }
     }
     
     private lazy var linkProtection: LinkProtection = {
@@ -1258,7 +1263,7 @@ class TabViewController: UIViewController {
 
     private func checkWebViewVisibilityConsistency() {
         if webView.isHidden && error.isHidden {
-            DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
+            PixelKit.fire(Pixel.Event.debugWebViewInVisibleTabHidden, frequency: .dailyAndCount)
             
             // Fix inconsistent state - if webView is hidden but no error shown, show webView
             // https://app.asana.com/1/137249556945/project/414709148257752/task/1210155968610460?focus=true
@@ -1632,7 +1637,7 @@ class TabViewController: UIViewController {
     func enableFireproofingForDomain(_ domain: String) {
         let displayDomain = fireproofing.displayDomain(for: domain)
         FireproofingAlert.showConfirmFireproofWebsite(usingController: self, forDomain: displayDomain) { [weak self] in
-            Pixel.fire(pixel: .browsingMenuFireproof)
+            PixelKit.fire(Pixel.Event.browsingMenuFireproof)
             self?.fireproofingWorker?.handleUserEnablingFireproofing(forDomain: domain)
         }
     }
@@ -1712,7 +1717,7 @@ class TabViewController: UIViewController {
     private func handlePullToRefresh() {
         reload()
         delegate?.tabDidRequestRefresh(tab: self)
-        Pixel.fire(pixel: .pullToRefresh)
+        PixelKit.fire(Pixel.Event.pullToRefresh)
         if let url = webView.url {
             AppDependencyProvider.shared.pageRefreshMonitor.register(for: url)
         }
@@ -1953,7 +1958,7 @@ class TabViewController: UIViewController {
     }
 
     func showPrivacyDashboard() {
-        Pixel.fire(pixel: .privacyDashboardOpened, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .privacyDashboard))
+        PixelKit.fire(Pixel.Event.privacyDashboardOpened, options: .parameters(featureDiscovery.addToParams([:], forFeature: .privacyDashboard)))
         let webExtManager = (delegate as? MainViewController)?.webExtensionManager
         let controller = PrivacyDashboardViewController(
             privacyInfo: privacyInfo,
@@ -2438,7 +2443,7 @@ extension TabViewController: WKNavigationDelegate {
         let httpResponse = navigationResponse.response as? HTTPURLResponse
         let didMarkAsInternal = internalUserDecider.markUserAsInternalIfNeeded(forUrl: webView.url, response: httpResponse)
         if didMarkAsInternal {
-            Pixel.fire(pixel: .featureFlaggingInternalUserAuthenticated)
+            PixelKit.fire(Pixel.Event.featureFlaggingInternalUserAuthenticated)
             NotificationCenter.default.post(Notification(name: AppUserDefaults.Notifications.didVerifyInternalUser))
         }
 
@@ -2611,8 +2616,8 @@ extension TabViewController: WKNavigationDelegate {
         urlProvidedBasicAuthCredential = nil
 
         if webView.url?.isDuckDuckGoSearch == true, case .connected = netPConnectionStatus {
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnabledOnSearch,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            PixelKit.fire(Pixel.Event.networkProtectionEnabledOnSearch,
+                          frequency: .legacyDailyAndCount)
         }
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
@@ -3645,7 +3650,7 @@ extension TabViewController: WKNavigationDelegate {
         if !(error.failedUrl?.isCustomURLScheme() ?? false) {
             url = error.failedUrl
             showError(message: error.localizedDescription)
-            Pixel.fire(pixel: .webViewErrorPageShown)
+            PixelKit.fire(Pixel.Event.webViewErrorPageShown)
         }
 
         webpageDidFailToLoad()
@@ -3726,7 +3731,7 @@ extension TabViewController: WKNavigationDelegate {
             "never_prompt": autofillNeverPromptWebsitesManager.hasNeverPromptWebsitesFor(domain: url.host ?? url.absoluteString) ? "true" : "false"
         ]
 
-        Pixel.fire(pixel: .autofillLoginsReportFailure, withAdditionalParameters: parameters)
+        PixelKit.fire(Pixel.Event.autofillLoginsReportFailure, options: .parameters(parameters))
 
         ActionMessageView.present(message: UserText.autofillSettingsReportNotWorkingSentConfirmation)
     }
@@ -3920,13 +3925,13 @@ extension TabViewController {
                                              saveToDownloadsHandler: @escaping () -> Void,
                                              cancelHandler: @escaping (() -> Void)) {
         let alert = SaveToDownloadsAlert.makeAlert(downloadMetadata: downloadMetadata) {
-            Pixel.fire(pixel: .downloadStarted,
-                       withAdditionalParameters: [PixelParameters.canAutoPreviewMIMEType: "0"])
+            PixelKit.fire(Pixel.Event.downloadStarted,
+                          options: .parameters([PixelParameters.canAutoPreviewMIMEType: "0"]))
 
             if downloadMetadata.mimeType != .octetStream {
                 let mimeType = downloadMetadata.mimeTypeSource
-                Pixel.fire(pixel: .downloadStartedDueToUnhandledMIMEType,
-                           withAdditionalParameters: [PixelParameters.mimeType: mimeType])
+                PixelKit.fire(Pixel.Event.downloadStartedDueToUnhandledMIMEType,
+                              options: .parameters([PixelParameters.mimeType: mimeType]))
             }
 
             saveToDownloadsHandler()
@@ -3981,8 +3986,8 @@ extension TabViewController {
             ActionMessageView.present(message: attributedMessage, numberOfLines: 2, actionTitle: UserText.actionGenericShow,
                                       presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom),
                                       onAction: {
-                Pixel.fire(pixel: .downloadsListOpened,
-                           withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
+                PixelKit.fire(Pixel.Event.downloadsListOpened,
+                              options: .parameters([PixelParameters.originatedFromMenu: "0"]))
                 self.delegate?.tabDidRequestDownloads(tab: self)
             })
         }
@@ -4014,8 +4019,8 @@ extension TabViewController {
                 ActionMessageView.present(message: attributedMessage, numberOfLines: 2, actionTitle: UserText.actionGenericShow,
                                           presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
                                           onAction: {
-                    Pixel.fire(pixel: .downloadsListOpened,
-                               withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
+                    PixelKit.fire(Pixel.Event.downloadsListOpened,
+                                  options: .parameters([PixelParameters.originatedFromMenu: "0"]))
                     self.delegate?.tabDidRequestDownloads(tab: self)
                 })
             } else {
@@ -4041,7 +4046,7 @@ extension TabViewController {
         } else {
             let pixelParameters = [PixelParameters.mimeType: download.mimeType.rawValue,
                                    PixelParameters.downloadListCount: "\(AppDependencyProvider.shared.downloadManager.downloadList.count)"]
-            Pixel.fire(pixel: .downloadTriedToPresentPreviewWithoutTab, withAdditionalParameters: pixelParameters)
+            PixelKit.fire(Pixel.Event.downloadTriedToPresentPreviewWithoutTab, options: .parameters(pixelParameters))
         }
     }
 
@@ -4107,8 +4112,8 @@ extension TabViewController {
     }
 
     private func openDownloadsFromToast() {
-        Pixel.fire(pixel: .downloadsListOpened,
-                   withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
+        PixelKit.fire(Pixel.Event.downloadsListOpened,
+                      options: .parameters([PixelParameters.originatedFromMenu: "0"]))
         let openDownloads = { [weak self] in
             guard let self else { return }
             self.delegate?.tabDidRequestDownloads(tab: self)
@@ -4171,14 +4176,14 @@ extension TabViewController: WKUIDelegate {
 
         let isDuckAITab = webView.url?.isDuckAIURL == true
         if isDuckAITab {
-            DailyPixel.fireDailyAndCount(.aiChatTabDidTerminate, error: nil, withAdditionalParameters: [:])
+            PixelKit.fire(Pixel.Event.aiChatTabDidTerminate, frequency: .dailyAndCount, options: .parameters([:]))
         }
-        DailyPixel.fireDailyAndCount(pixel: .webKitDidTerminate, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+        PixelKit.fire(Pixel.Event.webKitDidTerminate, frequency: .dailyAndStandard)
 
         if let reasonName {
-            DailyPixel.fireDailyAndCount(pixel: .webContentProcessTerminated(reason: reasonName))
+            PixelKit.fire(Pixel.Event.webContentProcessTerminated(reason: reasonName), frequency: .dailyAndCount)
             if isDuckAITab {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatWebContentProcessTerminated(reason: reasonName))
+                PixelKit.fire(Pixel.Event.aiChatWebContentProcessTerminated(reason: reasonName), frequency: .dailyAndCount)
             }
         }
 
@@ -4565,7 +4570,7 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
 
         if tracker.isBlocked && fireWoFollowUp {
             fireWoFollowUp = false
-            Pixel.fire(pixel: .daxDialogsWithoutTrackersFollowUp)
+            PixelKit.fire(Pixel.Event.daxDialogsWithoutTrackersFollowUp)
         }
 
         privacyInfo?.trackerInfo.addDetectedTracker(tracker, onPageWithURL: url)
@@ -4797,8 +4802,9 @@ extension TabViewController: SecureVaultManagerDelegate {
 
         let isDataProtected = !UIApplication.shared.isProtectedDataAvailable
         if (isCredentialsEnabled || isCreditCardsEnabled) && isDataProtected {
-            DailyPixel.fire(pixel: .secureVaultIsEnabledCheckedWhenEnabledAndDataProtected,
-                       withAdditionalParameters: [PixelParameters.isDataProtected: "true"])
+            PixelKit.fire(Pixel.Event.secureVaultIsEnabledCheckedWhenEnabledAndDataProtected,
+                          frequency: .legacyDailyNoSuffix,
+                          options: .parameters([PixelParameters.isDataProtected: "true"]))
         }
         return isCredentialsEnabled || isCreditCardsEnabled
     }
@@ -5121,19 +5127,19 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
 
             self.delegate?.tab(self, didRequestDataImport: .inBrowserPromo, onFinished: { [weak self] in
-                Pixel.fire(pixel: .importCredentialsFlowEnded)
+                PixelKit.fire(Pixel.Event.importCredentialsFlowEnded)
                 completionHandler(true)
 
                 if let domainPasswordImportLastShownOn = self?.credentialsImportManager.domainPasswordImportLastShownOn,
                     let autofillUserScript = self?.autofillUserScript {
                     self?.vaultManager.autofillUserScript(autofillUserScript, didRequestAccountsForDomain: domainPasswordImportLastShownOn) { accounts, _ in
                         if !accounts.isEmpty {
-                            Pixel.fire(pixel: .importCredentialsFlowHadCredentials)
+                            PixelKit.fire(Pixel.Event.importCredentialsFlowHadCredentials)
                         }
                     }
                 }
             }, onCancelled: {
-                Pixel.fire(pixel: .importCredentialsFlowCancelled)
+                PixelKit.fire(Pixel.Event.importCredentialsFlowCancelled)
                 completionHandler(false)
             })
         }
@@ -5252,7 +5258,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        Pixel.fire(pixel: .autofillJSPixelFired(pixel))
+        PixelKit.fire(Pixel.Event.autofillJSPixelFired(pixel))
     }
     
 }
@@ -5327,7 +5333,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
     }
     
     func saveLoginViewControllerConfirmKeepUsing(_ viewController: SaveLoginViewController) {
-        Pixel.fire(pixel: .autofillLoginsFillLoginInlineDisableSnackbarShown)
+        PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineDisableSnackbarShown)
         DispatchQueue.main.async {
             let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
             ActionMessageView.present(message: UserText.autofillDisablePromptMessage,
@@ -5335,11 +5341,11 @@ extension TabViewController: SaveLoginViewControllerDelegate {
                                       presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
                                       duration: 4.0,
                                       onAction: { [weak self] in
-                Pixel.fire(pixel: .autofillLoginsFillLoginInlineDisableSnackbarOpenSettings)
+                PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineDisableSnackbarOpenSettings)
                 guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
                 mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveLoginDisablePrompt)
             })
-            Pixel.fire(pixel: .autofillCardsSaveDisableSnackbarShown)
+            PixelKit.fire(Pixel.Event.autofillCardsSaveDisableSnackbarShown)
         }
     }
 }
@@ -5368,7 +5374,7 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
                 
                 guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
                 mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveCreditCardDisablePrompt)
-                Pixel.fire(pixel: .autofillCardsSaveDisableSnackbarOpenSettings)
+                PixelKit.fire(Pixel.Event.autofillCardsSaveDisableSnackbarOpenSettings)
             })
         }
     }
@@ -5493,7 +5499,7 @@ private extension TabViewController {
             }
 
             let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
-            Pixel.fire(pixel: .tabInteractionStateRestorationTime(Pixel.Event.BucketAggregation(number: timeElapsed)))
+            PixelKit.fire(Pixel.Event.tabInteractionStateRestorationTime(Pixel.Event.BucketAggregation(number: timeElapsed)))
         }
 
         return didRestoreWebViewState

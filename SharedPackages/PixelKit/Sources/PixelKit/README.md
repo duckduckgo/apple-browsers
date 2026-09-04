@@ -176,6 +176,7 @@ the surrounding code.
 | `.legacyDailyAndCount` | Once per day, plus every time | `_d` + `_c` |
 | `.legacyInitial` | Once per install, no `_u` requirement | none |
 | `.legacyDailyNoSuffix` | Once per day | none |
+| `.legacyDailyByError` | Once per day per distinct error | none |
 
 `.dailyAndCount` is the usual choice for anything that can spike: the `_daily` leg counts affected
 users, the `_count` leg counts occurrences. The `legacy` cases exist for pixels that already ship

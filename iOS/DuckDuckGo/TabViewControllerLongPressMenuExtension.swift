@@ -26,13 +26,14 @@ import Common
 import FoundationExtensions
 import Combine
 import DesignResourcesKitIcons
+import PixelKit
 
 extension TabViewController {
 
     func buildLinkPreviewMenu(for url: URL, withProvided providedElements: [UIMenuElement]) -> UIMenu {
         let isFireTab = tabModel.fireTab
         let browsingModeParam = [PixelParameters.browsingMode: tabModel.pixelParamValue]
-        Pixel.fire(pixel: .linkLongPressMenuShown, withAdditionalParameters: browsingModeParam)
+        PixelKit.fire(Pixel.Event.linkLongPressMenuShown, options: .parameters(browsingModeParam))
 
         var sections = [UIMenuElement]()
         var tabActions = [UIMenuElement]()

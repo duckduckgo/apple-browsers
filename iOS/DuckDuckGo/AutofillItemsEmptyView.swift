@@ -23,6 +23,7 @@ import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 import Core
+import PixelKit
 
 struct AutofillItemsEmptyView: View {
 
@@ -62,9 +63,9 @@ struct AutofillItemsEmptyView: View {
                     .buttonStyle(PrimaryButtonStyle())
                     .onFirstAppear {
                         if case .hub = DataImportEntryPointHandler().destination(for: .passwords) {
-                            Pixel.fire(pixel: .importHubEntryShown, withAdditionalParameters: DataImportViewModel.ImportScreen.passwords.importHubEntryPointParameters)
+                            PixelKit.fire(Pixel.Event.importHubEntryShown, options: .parameters(DataImportViewModel.ImportScreen.passwords.importHubEntryPointParameters))
                         } else {
-                            Pixel.fire(pixel: .autofillImportPasswordsImportButtonShown)
+                            PixelKit.fire(Pixel.Event.autofillImportPasswordsImportButtonShown)
                         }
                     }
 

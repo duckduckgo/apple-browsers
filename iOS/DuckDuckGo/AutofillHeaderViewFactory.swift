@@ -21,6 +21,7 @@ import Foundation
 import UIKit
 import SwiftUI
 import Core
+import PixelKit
 
 protocol AutofillHeaderViewDelegate: AnyObject {
     func handlePrimaryAction(for headerType: AutofillHeaderViewFactory.ViewType)
@@ -72,7 +73,7 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
             }
         ))
         
-        Pixel.fire(.syncPromoDisplayed, withAdditionalParameters: ["source": touchpointType.rawValue])
+        PixelKit.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(["source": touchpointType.rawValue]))
         
         let hostingController = UIHostingController(rootView: headerView)
         hostingController.view.backgroundColor = .clear
@@ -89,7 +90,7 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
             }
         )
         
-        Pixel.fire(pixel: .autofillManagementScreenVisitSurveyAvailable)
+        PixelKit.fire(Pixel.Event.autofillManagementScreenVisitSurveyAvailable)
         
         let hostingController = UIHostingController(rootView: headerView)
         hostingController.view.backgroundColor = .clear
@@ -121,7 +122,7 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
             }
         )
 
-        Pixel.fire(pixel: .autofillExtensionPasswordsPromoDisplayed)
+        PixelKit.fire(Pixel.Event.autofillExtensionPasswordsPromoDisplayed)
 
         let hostingController = UIHostingController(rootView: headerView)
         hostingController.view.backgroundColor = .clear

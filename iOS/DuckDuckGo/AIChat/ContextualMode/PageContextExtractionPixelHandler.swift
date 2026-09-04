@@ -20,6 +20,7 @@
 import AIChat
 import Core
 import Foundation
+import PixelKit
 
 /// Maps a `PageContextExtractionOutcome` to the iOS extraction-measurement pixels.
 protocol PageContextExtractionPixelFiring {
@@ -32,7 +33,7 @@ final class PageContextExtractionPixelHandler: PageContextExtractionPixelFiring 
 
     private let firePixel: (Pixel.Event, [String: String]) -> Void
 
-    init(firePixel: @escaping (Pixel.Event, [String: String]) -> Void = { DailyPixel.fireDailyAndCount(pixel: $0, withAdditionalParameters: $1) }) {
+    init(firePixel: @escaping (Pixel.Event, [String: String]) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, options: .parameters($1)) }) {
         self.firePixel = firePixel
     }
 

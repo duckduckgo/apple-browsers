@@ -21,6 +21,7 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 struct SettingsAppearanceView: View {
 
@@ -134,7 +135,7 @@ struct SettingsAppearanceView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsAppearanceOpen)
+            PixelKit.fire(Pixel.Event.settingsAppearanceOpen)
         }
     }
 

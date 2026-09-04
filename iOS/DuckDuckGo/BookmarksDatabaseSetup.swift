@@ -24,6 +24,7 @@ import Bookmarks
 import Persistence
 import Common
 import FoundationExtensions
+import PixelKit
 
 public extension BoolFileMarker.Name {
     static let hasSuccessfullySetupBookmarksDatabaseBefore = BoolFileMarker.Name(rawValue: "bookmarks-db-setup-successfully-3")
@@ -59,18 +60,20 @@ struct BookmarksDatabaseSetup {
                     enhancedParams["is-bookmarks-db-file-present-2"] = String(isBookmarksDBFilePresent)
                 }
 
-                DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLost,
-                                withAdditionalParameters: enhancedParams)
+                PixelKit.fire(Pixel.Event.debugBookmarksStructureLost,
+                              frequency: .dailyAndCount,
+                              options: .parameters(enhancedParams))
             case .bookmarksStructureNotRecovered:
-                DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureNotRecovered)
+                PixelKit.fire(Pixel.Event.debugBookmarksStructureNotRecovered, frequency: .dailyAndCount)
             case .bookmarksStructureBroken:
-                DailyPixel.fireDailyAndCount(pixel: .debugBookmarksInvalidRoots,
-                                withAdditionalParameters: additionalParams ?? [:])
+                PixelKit.fire(Pixel.Event.debugBookmarksInvalidRoots,
+                              frequency: .dailyAndCount,
+                              options: .parameters(additionalParams ?? [:]))
             case .validatorError(let underlyingError):
                 let processedErrors = CoreDataErrorsParser.parse(error: underlyingError as NSError)
-                DailyPixel.fireDailyAndCount(pixel: .debugBookmarksValidationFailed,
-                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             withAdditionalParameters: processedErrors.errorPixelParameters)
+                PixelKit.fire(Pixel.Event.debugBookmarksValidationFailed,
+                              frequency: .legacyDailyAndCount,
+                              options: .parameters(processedErrors.errorPixelParameters))
             }
         }
     }
@@ -139,9 +142,8 @@ struct BookmarksDatabaseSetup {
             do {
                 try migrationAssertion.assert(migrationVersion: 1)
             } catch {
-                DailyPixel.fireDailyAndCount(pixel: .bookmarksCouldNotMigrateDatabase,
-                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                             error: error)
+                PixelKit.fire(Pixel.Event.bookmarksCouldNotMigrateDatabase.withError(error),
+                              frequency: .dailyAndStandard)
                 assertionFailure(error.localizedDescription)
             }
         }
@@ -154,14 +156,13 @@ struct BookmarksDatabaseSetup {
         case .alreadyPerformed, .noBrokenData:
             break
         case .dataRepaired:
-            Pixel.fire(pixel: .debugBookmarksPendingDeletionFixed)
+            PixelKit.fire(Pixel.Event.debugBookmarksPendingDeletionFixed)
         case .repairError(let underlyingError):
             let processedErrors = CoreDataErrorsParser.parse(error: underlyingError as NSError)
 
-            DailyPixel.fireDailyAndCount(pixel: .debugBookmarksPendingDeletionRepairError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         withAdditionalParameters: processedErrors.errorPixelParameters,
-                                         includedParameters: [.appVersion])
+            PixelKit.fire(Pixel.Event.debugBookmarksPendingDeletionRepairError,
+                          frequency: .legacyDailyAndCount,
+                          options: .parameters(processedErrors.errorPixelParameters))
         }
     }
 
@@ -227,9 +228,9 @@ class BookmarksMigrationAssertion {
             return
         }
         
-        Pixel.fire(pixel: .debugBookmarksMigratedMoreThanOnce, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.debugBookmarksMigratedMoreThanOnce, options: .parameters([
             PixelParameters.bookmarksLastGoodVersion: lastGoodVersion ?? ""
-        ])
+        ]))
         
         throw Error.unexpectedMigration
     }

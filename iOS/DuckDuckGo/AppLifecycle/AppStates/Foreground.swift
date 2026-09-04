@@ -21,6 +21,7 @@ import UIKit
 import Core
 import Persistence
 import SERPSettings
+import PixelKit
 
 private extension BoolFileMarker.Name {
     static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
@@ -195,12 +196,12 @@ struct Foreground: ForegroundHandling {
         let hideAIImages = serpSettings.hideAIGeneratedImages
         let noAI = !duckAIEnabled && searchAssist == .never && hideAIImages
 
-        DailyPixel.fire(pixel: .aiFeaturesStateDaily, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.aiFeaturesStateDaily, frequency: .legacyDailyNoSuffix, options: .parameters([
             "duck_ai": duckAIEnabled ? "true" : "false",
             "search_assist": searchAssist.rawValue,
             "hide_ai_images": hideAIImages ? "on" : "off",
             "no_ai": noAI ? "true" : "false"
-        ])
+        ]))
     }
 
     private func configureAppearance() {

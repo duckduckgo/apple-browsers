@@ -22,6 +22,7 @@ import SwiftUI
 import Combine
 import DesignResourcesKitIcons
 import Core
+import PixelKit
 
 class SwitchBarTextEntryView: UIView {
 
@@ -1218,15 +1219,15 @@ extension SwitchBarTextEntryView: UITextFieldDelegate {
 private extension SwitchBarTextEntryView {
     func fireTextAreaFocusedPixel() {
         let parameters = ["orientation": UIDevice.current.orientation.orientationDescription]
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarTextAreaFocused, withAdditionalParameters: parameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarTextAreaFocused, options: .parameters(parameters))
     }
     
     func fireClearButtonPressedPixel() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarClearButtonPressed, withAdditionalParameters: handler.modeParameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarClearButtonPressed, options: .parameters(handler.modeParameters))
     }
     
     func fireKeyboardGoPressedPixel() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarKeyboardGoPressed, withAdditionalParameters: handler.modeParameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarKeyboardGoPressed, options: .parameters(handler.modeParameters))
     }
 }
 

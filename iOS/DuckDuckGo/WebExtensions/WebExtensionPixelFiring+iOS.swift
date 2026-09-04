@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import WebExtensions
+import PixelKit
 
 @available(iOS 18.4, *)
 private extension DuckDuckGoWebExtensionType {
@@ -67,54 +68,32 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
         case .installed:
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionInstalled,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            PixelKit.fire(Pixel.Event.webExtensionInstalled,
+                          frequency: .dailyAndStandard)
         case .installError(let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionInstallError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error
-            )
+            PixelKit.fire(Pixel.Event.webExtensionInstallError.withError(error),
+                          frequency: .dailyAndStandard)
         case .uninstalled:
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionUninstalled,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            PixelKit.fire(Pixel.Event.webExtensionUninstalled,
+                          frequency: .dailyAndStandard)
         case .uninstallError(let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionUninstallError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error
-            )
+            PixelKit.fire(Pixel.Event.webExtensionUninstallError.withError(error),
+                          frequency: .dailyAndStandard)
         case .uninstalledAll:
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionUninstalledAll,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            PixelKit.fire(Pixel.Event.webExtensionUninstalledAll,
+                          frequency: .dailyAndStandard)
         case .uninstallAllError(let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionUninstallAllError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error
-            )
+            PixelKit.fire(Pixel.Event.webExtensionUninstallAllError.withError(error),
+                          frequency: .dailyAndStandard)
         case .loaded:
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionLoaded,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            PixelKit.fire(Pixel.Event.webExtensionLoaded,
+                          frequency: .dailyAndStandard)
         case .loadError(let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionLoadError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error
-            )
+            PixelKit.fire(Pixel.Event.webExtensionLoadError.withError(error),
+                          frequency: .dailyAndStandard)
         case .embeddedInstalled(let type):
-            DailyPixel.fireDailyAndCount(
-                pixel: type.installedPixel,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            PixelKit.fire(type.installedPixel,
+                          frequency: .dailyAndStandard)
         case .embeddedUpgraded(let type, let fromVersion, let toVersion):
             var params: [String: String] = [:]
             if let fromVersion {
@@ -123,66 +102,42 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             if let toVersion {
                 params["to_version"] = toVersion
             }
-            DailyPixel.fireDailyAndCount(
-                pixel: type.upgradedPixel,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                withAdditionalParameters: params
-            )
+            PixelKit.fire(type.upgradedPixel,
+                          frequency: .dailyAndStandard,
+                          options: .parameters(params))
         case .embeddedInstallError(let type, let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: type.installErrorPixel,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error
-            )
+            PixelKit.fire(type.installErrorPixel.withError(error),
+                          frequency: .dailyAndStandard)
         case .scriptletFetchSuccess(let type, let version, let count):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionScriptletFetchSuccess,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                withAdditionalParameters: ["extension_type": type.rawValue, "version": version, "count": "\(count)"]
-            )
+            PixelKit.fire(Pixel.Event.webExtensionScriptletFetchSuccess,
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_type": type.rawValue, "version": version, "count": "\(count)"]))
         case .scriptletFetchError(let type, let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionScriptletFetchError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error,
-                withAdditionalParameters: ["extension_type": type.rawValue]
-            )
+            PixelKit.fire(Pixel.Event.webExtensionScriptletFetchError.withError(error),
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_type": type.rawValue]))
         case .scriptletValidationError(let type, let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionScriptletValidationError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error,
-                withAdditionalParameters: ["extension_type": type.rawValue]
-            )
+            PixelKit.fire(Pixel.Event.webExtensionScriptletValidationError.withError(error),
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_type": type.rawValue]))
         case .scriptletInstalled(let type, let version):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionScriptletInstalled,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                withAdditionalParameters: ["extension_type": type.rawValue, "version": version]
-            )
+            PixelKit.fire(Pixel.Event.webExtensionScriptletInstalled,
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_type": type.rawValue, "version": version]))
         case .scriptletInstallError(let type, let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionScriptletInstallError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error,
-                withAdditionalParameters: ["extension_type": type.rawValue]
-            )
+            PixelKit.fire(Pixel.Event.webExtensionScriptletInstallError.withError(error),
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_type": type.rawValue]))
         case .stateChecked:
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionStateChecked,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            PixelKit.fire(Pixel.Event.webExtensionStateChecked,
+                          frequency: .dailyAndStandard)
         case .expectedExtensionNotLoaded(let type):
-            DailyPixel.fireDailyAndCount(
-                pixel: type.notLoadedPixel,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            PixelKit.fire(type.notLoadedPixel,
+                          frequency: .dailyAndStandard)
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionAdBlockingScriptletsNotFetched,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                withAdditionalParameters: ["extension_loaded": extensionLoaded ? "true" : "false"]
-            )
+            PixelKit.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
         }
     }
 }

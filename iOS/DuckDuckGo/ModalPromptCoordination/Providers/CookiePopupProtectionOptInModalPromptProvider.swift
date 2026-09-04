@@ -25,6 +25,7 @@ import UIKit
 import WebExtensions
 import PrivacyConfig
 import FeatureFlags_iOS
+import PixelKit
 
 /// Persisted state for the Cookie Pop-up Protection opt-in dialog (for telemetry + showing conditions + debug reset).
 struct CookiePopupProtectionOptInPromptStore {
@@ -133,7 +134,7 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
             if let timeSinceShown = store.bucketedTimeSinceFirstShown() {
                 parameters[PixelParameters.timeSinceShown] = timeSinceShown
             }
-            Pixel.fire(pixel: .cookiePopupOptInOptionConfirmed, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.cookiePopupOptInOptionConfirmed, options: .parameters(parameters))
         }))
     }
 
@@ -141,9 +142,9 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
         let parameters = [PixelParameters.autoconsentEnabled: AppUserDefaults().autoconsentEnabled ? "true" : "false"]
         if store.shownCount == 0 {
             store.firstShownDate = Date()
-            Pixel.fire(pixel: .cookiePopupOptInShownFirst, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.cookiePopupOptInShownFirst, options: .parameters(parameters))
         } else {
-            Pixel.fire(pixel: .cookiePopupOptInShownRepeat, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.cookiePopupOptInShownRepeat, options: .parameters(parameters))
         }
         store.shownCount += 1
     }

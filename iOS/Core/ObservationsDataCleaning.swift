@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import GRDB
 import os.log
+import PixelKit
 
 public enum ObservationsDataCleaningError: Error {
     case noDatabasePoolFound
@@ -82,7 +83,7 @@ public class DefaultObservationsDataCleaner: ObservationsDataCleaning {
             }
             return .success(())
         } catch {
-            Pixel.fire(pixel: .debugCannotClearObservationsDatabase, error: error)
+            PixelKit.fire(Pixel.Event.debugCannotClearObservationsDatabase.withError(error))
             return .failure(error)
         }
     }

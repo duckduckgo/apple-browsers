@@ -32,6 +32,7 @@ import AIChat
 import Subscription
 import Onboarding
 import FeatureFlags_iOS
+import PixelKit
 
 /// Which suggestions surface the iPad popover currently shows.
 enum PopoverSuggestionsMode {
@@ -690,16 +691,16 @@ class SuggestionTrayViewController: UIViewController {
     private func handlePopoverDuckAIChatDelete(rowID id: String, sourceRect: CGRect) {
         guard let source = popoverDuckAISource,
               case .chat(let chat) = source.selection(forRowID: id) else { return }
-        DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteButtonTapped)
+        PixelKit.fire(Pixel.Event.aiChatRecentChatDeleteButtonTapped, frequency: .dailyAndCount)
         duckAINavigationDelegate?.suggestionTrayRequestsDuckAIChatDeletionConfirmation(
             for: chat,
             sourceRect: sourceRect,
             onConfirm: { [weak source] in
                 source?.deleteChat(chat)
-                DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteConfirmed)
+                PixelKit.fire(Pixel.Event.aiChatRecentChatDeleteConfirmed, frequency: .dailyAndCount)
             },
             onCancel: {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteCancelled)
+                PixelKit.fire(Pixel.Event.aiChatRecentChatDeleteCancelled, frequency: .dailyAndCount)
             })
     }
 

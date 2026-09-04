@@ -26,24 +26,21 @@ import PixelKit
 @Suite("AI Chat Contextual Mode Pixel Handler Tests", .serialized)
 final class AIChatContextualModePixelHandlerTests {
 
-    deinit {
-        PixelFiringMock.tearDown()
-    }
-
     // MARK: - Sheet Lifecycle Pixels
 
     @Test("Sheet opened pixel fires correctly")
     func testSheetOpenedPixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.fireSheetOpened()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualSheetOpened.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualSheetOpened.name)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -88,15 +85,16 @@ final class AIChatContextualModePixelHandlerTests {
     @Test("Session restored pixel fires correctly")
     func testSessionRestoredPixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.fireSessionRestored()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualSessionRestored.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualSessionRestored.name)
     }
 
     // MARK: - Sheet Action Pixels
@@ -104,43 +102,46 @@ final class AIChatContextualModePixelHandlerTests {
     @Test("Expand button tapped pixel fires correctly")
     func testExpandButtonTappedPixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.fireExpandButtonTapped()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualExpandButtonTapped.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualExpandButtonTapped.name)
     }
 
     @Test("New chat button tapped pixel fires correctly")
     func testNewChatButtonTappedPixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.fireNewChatButtonTapped()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualNewChatButtonTapped.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualNewChatButtonTapped.name)
     }
 
     @Test("Quick action summarize selected pixel fires correctly")
     func testQuickActionSummarizeSelectedPixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.fireQuickActionSummarizeSelected()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualQuickActionSummarizeSelected.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualQuickActionSummarizeSelected.name)
     }
 
     // MARK: - Suggested Prompt Pixels
@@ -209,43 +210,46 @@ final class AIChatContextualModePixelHandlerTests {
     @Test("Page context auto attached pixel fires correctly")
     func testPageContextAutoAttachedPixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.firePageContextAutoAttached()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPageContextAutoAttached.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualPageContextAutoAttached.name)
     }
 
     @Test("Page context manually attached native pixel fires correctly")
     func testPageContextManuallyAttachedNativePixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.firePageContextManuallyAttachedNative()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPageContextManuallyAttachedNative.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualPageContextManuallyAttachedNative.name)
     }
 
     @Test("Page context manually attached frontend pixel fires correctly")
     func testPageContextManuallyAttachedFrontendPixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.firePageContextManuallyAttachedFrontend()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPageContextManuallyAttachedFrontend.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualPageContextManuallyAttachedFrontend.name)
     }
 
     // MARK: - Navigation Pixel with Deduplication
@@ -253,15 +257,16 @@ final class AIChatContextualModePixelHandlerTests {
     @Test("Page context updated on navigation fires for new URL")
     func testPageContextUpdatedOnNavigationFirstTime() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.firePageContextUpdatedOnNavigation(url: "https://example.com")
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPageContextUpdatedOnNavigation.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualPageContextUpdatedOnNavigation.name)
     }
 
     @Test("Page context updated on navigation fires for different URL")
@@ -285,29 +290,31 @@ final class AIChatContextualModePixelHandlerTests {
     @Test("Page context removed native pixel fires correctly")
     func testPageContextRemovedNativePixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.firePageContextRemovedNative()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPageContextRemovedNative.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualPageContextRemovedNative.name)
     }
 
     @Test("Page context removed frontend pixel fires correctly")
     func testPageContextRemovedFrontendPixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         })
 
         // WHEN
         sut.firePageContextRemovedFrontend()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPageContextRemovedFrontend.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualPageContextRemovedFrontend.name)
     }
 
     // MARK: - Prompt Submission Pixels
@@ -321,29 +328,31 @@ final class AIChatContextualModePixelHandlerTests {
     @Test("Prompt submitted with context pixel fires correctly")
     func testPromptSubmittedWithContextPixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         }, featureDiscovery: Self.returningUserFeatureDiscovery())
 
         // WHEN
         sut.firePromptSubmittedWithContext()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPromptSubmittedWithContextNative.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualPromptSubmittedWithContextNative.name)
     }
 
     @Test("Prompt submitted without context pixel fires correctly")
     func testPromptSubmittedWithoutContextPixel() {
         // GIVEN
+        var firedEvent: Pixel.Event?
         let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+            firedEvent = event
         }, featureDiscovery: Self.returningUserFeatureDiscovery())
 
         // WHEN
         sut.firePromptSubmittedWithoutContext()
 
         // THEN
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPromptSubmittedWithoutContextNative.name)
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualPromptSubmittedWithoutContextNative.name)
     }
 
     @available(iOS 16, macOS 13, *)

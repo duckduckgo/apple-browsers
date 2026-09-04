@@ -78,15 +78,15 @@ struct OnboardingNonBlockingExperiment {
     }
 
     /// Tags a pixel that isn't one of this experiment's own metrics — the quit survey's, for
-    /// instance — so its responses can be broken down by cohort. Unenrolled users send `none`
-    /// rather than nothing, so an absent parameter always means a client too old to send it, never
-    /// an unenrolled user.
+    /// instance — so its responses can be broken down by cohort. Empty for anyone who was never
+    /// enrolled, which leaves their pixel exactly as it is today, and matches how the other
+    /// cohort-tagged pixels here behave.
     var cohortParameters: [String: String] {
-        [Self.cohortParameterKey: cohort?.rawValue ?? Self.unenrolledCohortValue]
+        guard let cohort else { return [:] }
+        return [Self.cohortParameterKey: cohort.rawValue]
     }
 
     private static let cohortParameterKey = "onboardingNonBlockingCohort"
-    private static let unenrolledCohortValue = "none"
 
     func fireMetric(_ metric: Metric) {
         guard cohort != nil else { return }

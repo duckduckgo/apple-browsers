@@ -569,13 +569,14 @@ final class QuitSurveyViewModelTests: XCTestCase {
         XCTAssertEqual(fired?.additionalParameters?["onboardingNonBlockingCohort"], "treatment")
     }
 
-    func testThumbsDownPixelCarriesNoneWhenNotEnrolled() {
+    func testThumbsDownPixelOmitsTheCohortWhenNotEnrolled() {
         let pixelMock = PixelKitMock(expecting: [])
         let vm = makeViewModel(pixelFiring: pixelMock)
 
         vm.selectNegativeResponse()
 
         let fired = pixelMock.actualFireCalls.first { $0.pixel.name == QuitSurveyPixelName.quitSurveyThumbsDown.rawValue }
-        XCTAssertEqual(fired?.additionalParameters?["onboardingNonBlockingCohort"], "none")
+        XCTAssertNotNil(fired)
+        XCTAssertNil(fired?.additionalParameters?["onboardingNonBlockingCohort"])
     }
 }

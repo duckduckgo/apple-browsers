@@ -119,7 +119,7 @@ final class QuitSurveyReturnUserHandlerTests: XCTestCase {
         XCTAssertEqual(fired?.additionalParameters?["onboardingNonBlockingCohort"], "treatment")
     }
 
-    func testWhenNotEnrolledReturnPixelCarriesNoneRatherThanOmittingTheCohort() {
+    func testWhenNotEnrolledReturnPixelOmitsTheCohort() {
         persistor.pendingReturnUserReasons = "reason=1"
         let handler = makeHandler()
         advanceDays(10)
@@ -127,7 +127,8 @@ final class QuitSurveyReturnUserHandlerTests: XCTestCase {
         handler.fireReturnUserPixelIfNeeded()
 
         let fired = pixelMock.actualFireCalls.first { $0.pixel.name == QuitSurveyPixelName.quitSurveyReturnUser.rawValue }
-        XCTAssertEqual(fired?.additionalParameters?["onboardingNonBlockingCohort"], "none")
+        XCTAssertNotNil(fired)
+        XCTAssertNil(fired?.additionalParameters?["onboardingNonBlockingCohort"])
     }
 
     func testWhenEnrolledThumbsUpReturnPixelCarriesTheCohort() {

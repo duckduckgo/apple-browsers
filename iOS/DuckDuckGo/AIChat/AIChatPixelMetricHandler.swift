@@ -30,6 +30,19 @@ protocol AIChatPixelMetricHandling {
     func firePixelWithMetric(_ metric: AIChatMetric)
 }
 
+enum AIChatSessionDeltaBucket {
+    static func bucket(forMinutes minutes: Int) -> String {
+        switch minutes {
+        case ..<5: return "lt_5m"
+        case ..<30: return "5_30m"
+        case ..<60: return "30_60m"
+        case ..<240: return "1_4h"
+        case ..<1440: return "4_24h"
+        default: return "gt_24h"
+        }
+    }
+}
+
 // MARK: - Implementation
 
 final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
@@ -141,7 +154,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
     private var timestampParameters: [String: String]? {
         guard let timeElapsed = timeElapsedInMinutes else { return nil }
-        return [timestampParameterKey: "\(timeElapsed)"]
+        return [timestampParameterKey: AIChatSessionDeltaBucket.bucket(forMinutes: timeElapsed)]
     }
 }
 

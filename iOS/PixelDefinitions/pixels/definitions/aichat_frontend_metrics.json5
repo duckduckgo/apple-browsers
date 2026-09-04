@@ -12,8 +12,9 @@
             "aichat_first_prompt_new_install",
             {
                 "key": "delta-timestamp-minutes",
-                "type": "integer",
-                "description": "Minutes elapsed since the Duck.ai session started. Absent when no session timer is available."
+                "description": "Bucketed minutes since the Duck.ai session started. Absent when no session timer is available.",
+                "type": "string",
+                "enum": ["lt_5m", "5_30m", "30_60m", "1_4h", "4_24h", "gt_24h"]
             }
         ]
     },
@@ -27,8 +28,9 @@
             "aichat_first_prompt_new_install",
             {
                 "key": "delta-timestamp-minutes",
-                "type": "integer",
-                "description": "Minutes elapsed since the Duck.ai session started. Absent when no session timer is available."
+                "description": "Bucketed minutes since the Duck.ai session started. Absent when no session timer is available.",
+                "type": "string",
+                "enum": ["lt_5m", "5_30m", "30_60m", "1_4h", "4_24h", "gt_24h"]
             }
         ]
     }

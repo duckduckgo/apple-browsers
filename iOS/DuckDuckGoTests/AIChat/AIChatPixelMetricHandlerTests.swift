@@ -87,7 +87,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
         XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatOpen.name)
-        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "10")
+        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "5_30m")
     }
 
     func testFireOpenAIChatWithZeroTimeElapsed() {
@@ -100,7 +100,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
         XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatOpen.name)
-        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "0")
+        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "lt_5m")
     }
 
     // MARK: - firePixelWithMetric Tests
@@ -135,7 +135,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         // Then
         XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
         XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatMetricStartNewConversation.name)
-        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "15")
+        XCTAssertEqual(PixelFiringMock.lastParams?["delta-timestamp-minutes"], "5_30m")
     }
 
     func testFirePixelWithMetricForAllKnownMetrics() {
@@ -318,7 +318,33 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
 
         // All pixels should have the same timestamp parameter
         for capturedPixel in PixelFiringMock.allPixelsFired {
-            XCTAssertEqual(capturedPixel.params?["delta-timestamp-minutes"], "20")
+            XCTAssertEqual(capturedPixel.params?["delta-timestamp-minutes"], "5_30m")
+        }
+    }
+
+    // MARK: - Session Delta Bucketing
+
+    func testWhenElapsedMinutesAreBucketedThenBoundaryValuesMapToExpectedLabels() {
+        let expectations: [(minutes: Int, label: String)] = [
+            (-1, "lt_5m"),
+            (0, "lt_5m"),
+            (4, "lt_5m"),
+            (5, "5_30m"),
+            (29, "5_30m"),
+            (30, "30_60m"),
+            (59, "30_60m"),
+            (60, "1_4h"),
+            (239, "1_4h"),
+            (240, "4_24h"),
+            (1439, "4_24h"),
+            (1440, "gt_24h"),
+            (Int.max, "gt_24h")
+        ]
+
+        for expectation in expectations {
+            XCTAssertEqual(AIChatSessionDeltaBucket.bucket(forMinutes: expectation.minutes),
+                           expectation.label,
+                           "\(expectation.minutes) minutes")
         }
     }
 }

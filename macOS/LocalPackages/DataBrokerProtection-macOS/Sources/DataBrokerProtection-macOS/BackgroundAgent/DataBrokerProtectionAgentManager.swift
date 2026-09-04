@@ -347,11 +347,6 @@ private extension DataBrokerProtectionAgentManager {
                                                         completion: (() -> Void)?) {
         Task {
             let isAuthenticated = await refreshIsAuthenticatedState()
-            guard !activityScheduler.shouldDefer else {
-                completion?()
-                return
-            }
-
             if isAuthenticated {
                 queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView,
                                                                     isAuthenticatedUser: true,
@@ -372,8 +367,6 @@ private extension DataBrokerProtectionAgentManager {
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivitySchedulerDelegate {
 
     public func dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(_ activityScheduler: any DataBrokerProtectionBackgroundActivityScheduler) async {
-        guard !activityScheduler.shouldDefer else { return }
-
         do {
             let emailConfirmationDataService = activityScheduler.dataSource?.emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(activityScheduler)
             try await emailConfirmationDataService?.checkForEmailConfirmationData()
@@ -381,7 +374,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
             Logger.dataBrokerProtection.error("Email confirmation data check failed: \(error, privacy: .public)")
         }
 
-        guard !activityScheduler.shouldDefer else { return }
         await startScheduledOperations()
     }
 
@@ -426,10 +418,6 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
     }
 
     public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging, identifier: CompletedJobIdentifier?) {
-        if activityScheduler.shouldDefer {
-            queueManager.stopScheduledOperationsOnly()
-        }
-
         // Figure out if we've just finished initial scans, and send the appropriate pixel if necessary
 
         let database = jobDependencies.database

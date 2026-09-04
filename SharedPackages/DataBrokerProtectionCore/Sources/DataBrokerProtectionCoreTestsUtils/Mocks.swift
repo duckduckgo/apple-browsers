@@ -1919,7 +1919,6 @@ public final class MockJobQueueManager: JobQueueManaging {
     public private(set) var didCallStartScheduledAllOperationsIfPermitted = false
     public private(set) var didCallStartScheduledScanOperationsIfPermitted = false
     public private(set) var didCallStop = false
-    public private(set) var didCallStopScheduledOperationsOnly = false
 
     public var startImmediateScanOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
     public var startImmediateOptOutOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
@@ -1996,7 +1995,6 @@ public final class MockJobQueueManager: JobQueueManaging {
     }
 
     public func stopScheduledOperationsOnly() {
-        didCallStopScheduledOperationsOnly = true
     }
 
     public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
@@ -2008,7 +2006,6 @@ public final class MockJobQueueManager: JobQueueManaging {
         didCallStartScheduledAllOperationsIfPermitted = false
         didCallStartScheduledScanOperationsIfPermitted = false
         didCallStop = false
-        didCallStopScheduledOperationsOnly = false
 
         startImmediateScanOperationsIfPermittedCompletionError = nil
         startImmediateOptOutOperationsIfPermittedCompletionError = nil

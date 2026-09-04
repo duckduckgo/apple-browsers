@@ -359,75 +359,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         XCTAssertTrue(startScheduledScansCalled)
     }
 
-    func testWhenActivitySchedulerDefersAfterEmailConfirmation_thenScheduledWorkDoesNotStart() async throws {
-        // Given
-        sut = DataBrokerProtectionAgentManager(
-            eventsHandler: mockEventsHandler,
-            activityScheduler: mockActivityScheduler,
-            ipcServer: mockIPCServer,
-            queueManager: mockQueueManager,
-            dataManager: mockDataManager,
-            emailConfirmationDataService: mockEmailConfirmationDataService,
-            jobDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
-            pixelHandler: mockPixelHandler,
-            engagementPixelRepository: mockEngagementPixelRepository,
-            eventPixelRepository: mockEventPixelRepository,
-            statsPixelRepository: mockStatsPixelRepository,
-            agentStopper: mockAgentStopper,
-            configurationManager: mockConfigurationManager,
-            brokerUpdater: mockBrokerUpdater,
-            privacyConfigurationManager: mockPrivacyConfigurationManager,
-            authenticationManager: mockAuthenticationManager,
-            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
-        mockEmailConfirmationDataService.checkForEmailConfirmationDataCompletion = { [weak mockActivityScheduler] in
-            mockActivityScheduler?.shouldDefer = true
-        }
-
-        // When
-        await mockActivityScheduler.triggerDelegateCall()
-
-        // Then
-        XCTAssertEqual(mockEmailConfirmationDataService.checkForEmailConfirmationDataCallCount, 1)
-        XCTAssertFalse(mockQueueManager.didCallStartScheduledAllOperationsIfPermitted)
-        XCTAssertFalse(mockQueueManager.didCallStartScheduledScanOperationsIfPermitted)
-    }
-
-    func testWhenIndividualJobCompletesAndActivitySchedulerDefers_thenRemainingScheduledWorkStops() {
-        // Given
-        sut = DataBrokerProtectionAgentManager(
-            eventsHandler: mockEventsHandler,
-            activityScheduler: mockActivityScheduler,
-            ipcServer: mockIPCServer,
-            queueManager: mockQueueManager,
-            dataManager: mockDataManager,
-            emailConfirmationDataService: mockEmailConfirmationDataService,
-            jobDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
-            pixelHandler: mockPixelHandler,
-            engagementPixelRepository: mockEngagementPixelRepository,
-            eventPixelRepository: mockEventPixelRepository,
-            statsPixelRepository: mockStatsPixelRepository,
-            agentStopper: mockAgentStopper,
-            configurationManager: mockConfigurationManager,
-            brokerUpdater: mockBrokerUpdater,
-            privacyConfigurationManager: mockPrivacyConfigurationManager,
-            authenticationManager: mockAuthenticationManager,
-            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
-        mockActivityScheduler.shouldDefer = true
-
-        // When
-        sut.queueManagerDidCompleteIndividualJob(mockQueueManager, identifier: nil)
-
-        // Then
-        XCTAssertTrue(mockQueueManager.didCallStopScheduledOperationsOnly)
-    }
-
-    func testSchedulingTolerance() {
-        XCTAssertEqual(DataBrokerMacOSSchedulingConfig(mode: .normal).activitySchedulerIntervalTolerance, 15 * 60)
-        XCTAssertEqual(DataBrokerMacOSSchedulingConfig(mode: .fastForIntegrationTests).activitySchedulerIntervalTolerance, 30)
-    }
-
     func testWhenActivitySchedulerTriggers_andUserIsFreemium_thenScheduledScanOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
@@ -888,9 +819,6 @@ final class MockConfigurationManager: DefaultConfigurationManager {
 }
 
 final class MockEmailConfirmationDataService: EmailConfirmationDataServiceProvider {
-    private(set) var checkForEmailConfirmationDataCallCount = 0
-    var checkForEmailConfirmationDataCompletion: (() -> Void)?
-
     func getConfirmationLink(from email: String,
                              numberOfRetries: Int,
                              pollingInterval: TimeInterval,
@@ -912,8 +840,6 @@ final class MockEmailConfirmationDataService: EmailConfirmationDataServiceProvid
     }
 
     func checkForEmailConfirmationData() async throws {
-        checkForEmailConfirmationDataCallCount += 1
-        checkForEmailConfirmationDataCompletion?()
     }
 
     func getEmailData(email: String,

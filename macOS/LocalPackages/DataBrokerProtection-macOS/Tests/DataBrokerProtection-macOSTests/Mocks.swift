@@ -116,7 +116,6 @@ final class MockDataBrokerProtectionBackgroundActivityScheduler: DataBrokerProte
     var dataSource: (any DataBrokerProtection_macOS.DataBrokerProtectionBackgroundActivitySchedulerDataSource)?
     var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate?
     var lastTriggerTimestamp: Date?
-    var shouldDefer = false
 
     var startSchedulerCompletion: (() -> Void)?
 

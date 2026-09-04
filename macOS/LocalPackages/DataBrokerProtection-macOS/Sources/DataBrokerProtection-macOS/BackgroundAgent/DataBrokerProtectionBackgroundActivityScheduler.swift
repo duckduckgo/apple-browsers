@@ -36,7 +36,6 @@ public protocol DataBrokerProtectionBackgroundActivityScheduler {
     var dataSource: DataBrokerProtectionBackgroundActivitySchedulerDataSource? { get set }
 
     var lastTriggerTimestamp: Date? { get }
-    var shouldDefer: Bool { get }
 }
 
 public protocol DataBrokerProtectionBackgroundActivitySchedulerDelegate: AnyObject {
@@ -56,7 +55,7 @@ public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataB
     public weak var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate?
     public weak var dataSource: DataBrokerProtectionBackgroundActivitySchedulerDataSource?
     public private(set) var lastTriggerTimestamp: Date?
-    public var shouldDefer: Bool {
+    private var shouldDefer: Bool {
         isDeferralHandlingEnabled && activity.shouldDefer
     }
 
@@ -86,7 +85,7 @@ public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataB
                     await self.delegate?.dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(self)
 
                     Logger.dataBrokerProtection.log("Scheduler finished...")
-                    completion(self.shouldDefer ? .deferred : .finished)
+                    completion(.finished)
                 }
             }
             continuation.resume()

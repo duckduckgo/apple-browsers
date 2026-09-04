@@ -213,7 +213,7 @@ struct SubscriptionOnboardingProgress {
 extension SubscriptionOnboardingProgress {
 
     /// Fixed progress with no storage behind it, for previews and debug rows.
-    init(completedItems: Set<SubscriptionOnboardingChecklistItem>, isPIRAvailable: Bool = true, entitlement: EntitlementStatus = .allEnabled) {
+    init(completedItems: Set<SubscriptionOnboardingChecklistItem>, isPIRAvailable: Bool = true, entitlement: EntitlementStatus = .mockAllEnabled) {
         self.init(persistor: FixedPersistor(completedItems: completedItems), isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }
 
@@ -223,6 +223,18 @@ extension SubscriptionOnboardingProgress {
         var fullyCompletedAt: Date?
         var completionViewCount: Int = 0
         var postCheckoutFlowStartedAt: Date?
+    }
+}
+
+extension EntitlementStatus {
+
+    /// Every entitlement enabled, for previews and debug rows
+    static var mockAllEnabled: EntitlementStatus {
+        EntitlementStatus(networkProtection: true,
+                          dataBrokerProtection: true,
+                          identityTheftRestoration: true,
+                          identityTheftRestorationGlobal: true,
+                          paidAIChat: true)
     }
 }
 

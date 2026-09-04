@@ -39,6 +39,7 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockMetricHandler: MockAIChatPixelMetricHandler!
     var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
     var mockFreeTrialConversionService: MockFreeTrialConversionInstrumentationService!
+    var mockOnboardingActivationRecorder: MockSubscriptionOnboardingActivationRecorder!
     var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
     var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
     var mockSubscriptionManager: SubscriptionManagerMock!
@@ -53,6 +54,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         mockMetricHandler = MockAIChatPixelMetricHandler()
         mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
         mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
+        mockOnboardingActivationRecorder = MockSubscriptionOnboardingActivationRecorder()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
         mockIPadDuckAIControlsFeature = MockIPadDuckAIControlsFeatureProvider()
         mockSubscriptionManager = SubscriptionManagerMock()
@@ -65,6 +67,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
             subscriptionManager: mockSubscriptionManager,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
@@ -488,6 +491,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in pageContext }
         )
@@ -516,6 +520,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
             getPageContext: { _ in nil }
         )
@@ -729,6 +734,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertTrue(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 
     func testWhenPlusModelTierFirstPromptSubmitted_ThenMarkDuckAIActivatedIsCalled() throws {
@@ -740,6 +746,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertTrue(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 
     func testWhenFreeModelTierPromptSubmitted_ThenMarkDuckAIActivatedIsNotCalled() throws {
@@ -751,6 +758,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertFalse(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertFalse(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 
     func testWhenNoModelTierPromptSubmitted_ThenMarkDuckAIActivatedIsNotCalled() throws {
@@ -762,6 +770,7 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertFalse(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+        XCTAssertFalse(mockOnboardingActivationRecorder.recordDuckAIActivatedCalled)
     }
 }
 

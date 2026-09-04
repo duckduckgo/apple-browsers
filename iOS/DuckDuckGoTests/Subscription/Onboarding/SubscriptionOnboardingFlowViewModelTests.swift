@@ -548,12 +548,33 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertEqual(spy.shown, [.vpnWidget])
     }
 
+    // MARK: - Flow start
+
+    /// `.vpn`/`.duckAI` complete so the sequence excludes them, keeping `flowDidStart()`'s prefetch a no-op.
+    func testWhenFlowStartsFromPostCheckoutThenThePostCheckoutMarkerIsRecorded() {
+        let store = MockProgressStore()
+        let sut = makeSUT(entryPoint: .postCheckout, completed: [.vpn, .duckAI], store: store)
+
+        sut.flowDidStart()
+
+        XCTAssertNotNil(store.postCheckoutFlowStartedAt)
+    }
+
+    func testWhenFlowStartsFromSubscriptionSettingsThenThePostCheckoutMarkerIsNotRecorded() {
+        let store = MockProgressStore()
+        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .duckAI], store: store)
+
+        sut.flowDidStart()
+
+        XCTAssertNil(store.postCheckoutFlowStartedAt)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(entryPoint: SubscriptionOnboardingEntryPoint,
                          completed: Set<SubscriptionOnboardingChecklistItem> = [],
                          isPIRAvailable: Bool = true,
-                         entitlement: EntitlementStatus = .allEnabled,
+                         entitlement: EntitlementStatus = .mockAllEnabled,
                          store: MockProgressStore? = nil,
                          instrumentation: SubscriptionOnboardingInstrumenting? = nil,
                          onFinish: @escaping () -> Void = {},

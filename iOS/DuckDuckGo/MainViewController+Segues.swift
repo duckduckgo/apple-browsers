@@ -534,7 +534,6 @@ extension MainViewController {
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
                                                   privacyConfigurationManager: privacyConfigurationManager,
                                                   keyValueStore: keyValueStore,
-                                                  subscriptionOnboardingSession: AppDependencyProvider.shared.subscriptionOnboardingSession,
                                                   contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                   idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                   afterInactivityOptionAdapter: afterInactivityOptionAdapter,

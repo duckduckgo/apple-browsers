@@ -112,7 +112,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
-            userAgentManager: stubUserAgent
+            userAgentManager: stubUserAgent,
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
         )
 
         sut.loadViewIfNeeded()
@@ -134,7 +135,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
-            pixelHandler: StubContextualModePixelHandler()
+            pixelHandler: StubContextualModePixelHandler(),
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
         )
 
         sut.loadViewIfNeeded()
@@ -156,7 +158,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
-            pixelHandler: StubContextualModePixelHandler()
+            pixelHandler: StubContextualModePixelHandler(),
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
         )
         let restoreURL = URL(string: "https://duck.ai/chat?native-input=true")!
 
@@ -176,7 +179,8 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
-            pixelHandler: StubContextualModePixelHandler()
+            pixelHandler: StubContextualModePixelHandler(),
+            onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder()
         )
         let url = URL(string: "https://example.com/path")!
 

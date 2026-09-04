@@ -169,7 +169,7 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
 
     /// `isPIRAvailable` and PIR's own entitlement are ANDed: either alone excludes it.
     func testWhenPIRIsUnavailableButEverythingElseIsEntitledThenPIRStillDrops() {
-        XCTAssertEqual(makeProgress(isPIRAvailable: false, entitlement: .allEnabled).checklist,
+        XCTAssertEqual(makeProgress(isPIRAvailable: false, entitlement: .mockAllEnabled).checklist,
                        [.vpn, .vpnWidget, .idtr, .duckAI])
     }
 
@@ -377,7 +377,7 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
 
     private func makeProgress(isPIRAvailable: Bool,
                               completed: Set<SubscriptionOnboardingChecklistItem> = [],
-                              entitlement: EntitlementStatus = .allEnabled) -> SubscriptionOnboardingProgress {
+                              entitlement: EntitlementStatus = .mockAllEnabled) -> SubscriptionOnboardingProgress {
         sut.completedItems = completed
         return SubscriptionOnboardingProgress(persistor: sut, isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }

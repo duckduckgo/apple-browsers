@@ -244,7 +244,7 @@ final class AIChatContextualSheetCoordinator {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording = NullSubscriptionOnboardingActivationRecorder(),
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
          selectionJourneyScopeID: String = UUID().uuidString,
          selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil) {

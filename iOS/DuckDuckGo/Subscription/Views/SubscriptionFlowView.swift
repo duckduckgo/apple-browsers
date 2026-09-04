@@ -160,14 +160,13 @@ struct SubscriptionFlowView: View {
             dismiss()
         }
 
-        .onChange(of: viewModel.state.shouldPresentOnboarding) { shouldPresent in
-            if shouldPresent {
-                startOnboarding()
-            }
+        .task(id: viewModel.state.shouldPresentOnboarding) {
+            await startOnboarding()
         }
 
         .sheet(item: $onboardingFlow, onDismiss: { viewModel.onboardingFinished() }) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
+                .onFirstAppear { viewModel.didPresentOnboarding() }
         }
         
         .onFirstAppear {
@@ -205,19 +204,18 @@ struct SubscriptionFlowView: View {
 
     // MARK: - Onboarding
 
-    private func startOnboarding() {
+    @MainActor
+    private func startOnboarding() async {
+        guard viewModel.state.shouldPresentOnboarding, onboardingFlow == nil else { return }
         guard let persistor = viewModel.onboardingPersistor else { return }
-        Task { @MainActor in
-            guard let flow = await SubscriptionOnboardingFlowViewModel.postCheckout(
-                persistor: persistor,
-                isPIRAvailable: viewModel.isPIRAvailable,
-                subscriptionManager: viewModel.subscriptionManager,
-                onFinish: { onboardingFlow = nil },
-                onRequestDuckAIChat: viewModel.onRequestDuckAIChat,
-                pirScreen: { pirDestination }) else { return }
-            viewModel.didPresentOnboarding()
-            onboardingFlow = flow
-        }
+        guard let flow = await SubscriptionOnboardingFlowViewModel.postCheckout(
+            persistor: persistor,
+            isPIRAvailable: viewModel.isPIRAvailable,
+            subscriptionManager: viewModel.subscriptionManager,
+            onFinish: { onboardingFlow = nil },
+            onRequestDuckAIChat: viewModel.onRequestDuckAIChat,
+            pirScreen: { pirDestination }) else { return }
+        onboardingFlow = flow
     }
 
     /// Shared by the hidden PIR `NavigationLink` above and the onboarding flow's `pirScreen`.

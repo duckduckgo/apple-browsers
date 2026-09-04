@@ -1463,19 +1463,19 @@ extension SettingsViewModel {
         SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordPIRActivated()
     }
 
-    /// Backfill only:  a config being installed is considered vpn step completed. Checked at most once per
-    /// session — `isVPNConfigured()` is a real IPC round-trip, not worth repeating on every Settings appearance.
+    /// Backfill only: a config being installed is considered vpn step completed. Already-complete customers
+    /// are filtered out above, so this only repeats the IPC round-trip for customers still incomplete.
     private func recordVPNActivationIfNeeded() async {
         let persistor = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
         guard !persistor.completedItems.contains(.vpn) else { return }
-        guard !subscriptionOnboardingSession.didCheckVPNActivationDuringThisSession else { return }
-        subscriptionOnboardingSession.recordVPNActivationCheckedDuringThisSession()
         guard await vpnController.isVPNConfigured() else { return }
         SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordVPNActivated()
     }
 
+    /// Reads the live connection status rather than `state.networkProtectionConnected`, which isn't loaded
+    /// yet the first time this runs on `onFirstAppear`.
     private func reportVPNActivatedExperimentMetricIfNeeded() {
-        guard state.networkProtectionConnected else { return }
+        guard case .connected = AppDependencyProvider.shared.connectionObserver.recentValue else { return }
         SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: state.subscription.hasActiveSubscription)
     }
 

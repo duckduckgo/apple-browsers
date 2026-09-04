@@ -1763,7 +1763,7 @@ class MainViewController: UIViewController {
             // In floating top mode the NTP spans behind the glass omnibar; inset its content so it
             // rests below the bar while still being able to underflow it on scroll.
             let topInset = isFloatingTopContentBehindBar ? viewCoordinator.omniBar.barView.expectedHeight * currentBarsVisibility : 0
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: topInset, left: 0, bottom: 0, right: 0)
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: topInset, left: 0, bottom: newTabPageBottomInset * currentBarsVisibility, right: 0)
         case .bottom:
             newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: newTabPageBottomInset, right: 0)
         }
@@ -1772,6 +1772,8 @@ class MainViewController: UIViewController {
     var newTabPageBottomInset: CGFloat {
         FloatingUILayoutPolicy.newTabPageBottomInset(
             isFloatingUIEnabled: isFloatingUIEnabled,
+            addressBarPosition: appSettings.currentAddressBarPosition,
+            isToolbarVisible: !viewCoordinator.toolbar.isHidden && !isInMinimalChromeLayout,
             isOmnibarInToolbar: viewCoordinator.isOmnibarInToolbar,
             omnibarHeight: viewCoordinator.omniBar.barView.expectedHeight,
             toolbarHeight: toolbarHeight)
@@ -1782,6 +1784,7 @@ class MainViewController: UIViewController {
     private func updateFloatingNewTabPageInsets(for barsVisibilityPercent: CGFloat) {
         if isFloatingTopContentBehindBar {
             newTabPageViewController?.additionalSafeAreaInsets.top = viewCoordinator.omniBar.barView.expectedHeight * barsVisibilityPercent
+            newTabPageViewController?.additionalSafeAreaInsets.bottom = newTabPageBottomInset * barsVisibilityPercent
         } else if isFloatingUIEnabled, appSettings.currentAddressBarPosition.isBottom, !viewCoordinator.isUnifiedToggleInputVisible {
             newTabPageViewController?.additionalSafeAreaInsets.bottom = newTabPageBottomInset
         }

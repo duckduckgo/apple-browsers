@@ -176,7 +176,7 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
             (false, true, false, 0),
             (false, true, true, 0),
             (true, false, false, 0),
-            (true, false, true, 24),
+            (true, false, true, 12),
             (true, true, false, 0),
             (true, true, true, 0)
         ]
@@ -198,6 +198,8 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         for toolbarHeight in toolbarHeights {
             let inset = FloatingUILayoutPolicy.newTabPageBottomInset(
                 isFloatingUIEnabled: true,
+                addressBarPosition: .bottom,
+                isToolbarVisible: true,
                 isOmnibarInToolbar: true,
                 omnibarHeight: 48,
                 toolbarHeight: toolbarHeight)
@@ -211,12 +213,38 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
             for isOmnibarInToolbar in [false, true] where !isFloatingUIEnabled || !isOmnibarInToolbar {
                 let inset = FloatingUILayoutPolicy.newTabPageBottomInset(
                     isFloatingUIEnabled: isFloatingUIEnabled,
+                    addressBarPosition: .bottom,
+                    isToolbarVisible: true,
                     isOmnibarInToolbar: isOmnibarInToolbar,
                     omnibarHeight: 48,
                     toolbarHeight: 136)
 
                 XCTAssertEqual(inset, 48)
             }
+        }
+    }
+
+    func testWhenAddressBarIsAtTopThenNewTabPageReservesOnlyVisibleFloatingToolbar() {
+        let cases: [(floating: Bool, toolbarVisible: Bool, toolbarHeight: CGFloat, expected: CGFloat)] = [
+            (true, true, 62, 62),
+            (true, true, 80, 80),
+            (true, false, 62, 0),
+            (true, false, 80, 0),
+            (false, true, 62, 0),
+            (false, true, 80, 0),
+            (false, false, 62, 0),
+            (false, false, 80, 0)
+        ]
+        for testCase in cases {
+            let inset = FloatingUILayoutPolicy.newTabPageBottomInset(
+                isFloatingUIEnabled: testCase.floating,
+                addressBarPosition: .top,
+                isToolbarVisible: testCase.toolbarVisible,
+                isOmnibarInToolbar: false,
+                omnibarHeight: 48,
+                toolbarHeight: testCase.toolbarHeight)
+
+            XCTAssertEqual(inset, testCase.expected, "\(testCase)")
         }
     }
 

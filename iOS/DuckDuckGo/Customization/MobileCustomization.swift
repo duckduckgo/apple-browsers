@@ -218,7 +218,6 @@ class MobileCustomization {
     private let isPad: Bool
     private let postChangeNotification: (State) -> Void
     private let pixelFiring: (any PixelKitFiring)?
-    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     private let connectionStatusObserver: ConnectionStatusObserver?
     private let isDuckAIEnabled: () -> Bool
 
@@ -241,7 +240,6 @@ class MobileCustomization {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
          },
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
          connectionStatusObserver: ConnectionStatusObserver? = nil,
          isDuckAIEnabled: @escaping () -> Bool = { true }) {
         self.keyValueStore = keyValueStore

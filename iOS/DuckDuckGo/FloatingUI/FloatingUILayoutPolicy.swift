@@ -29,10 +29,10 @@ enum FloatingUILayoutPolicy {
     }
 
     static func newTabPageBottomAdditionalSafeAreaInset(isFloatingUIEnabled: Bool,
-                                                         addressBarPosition: AddressBarPosition,
-                                                         floatingBottomObscuredHeight: CGFloat,
-                                                         safeAreaBottom: CGFloat,
-                                                         omnibarHeight: CGFloat) -> CGFloat {
+                                                        addressBarPosition: AddressBarPosition,
+                                                        floatingBottomObscuredHeight: CGFloat,
+                                                        safeAreaBottom: CGFloat,
+                                                        omnibarHeight: CGFloat) -> CGFloat {
         if isFloatingUIEnabled {
             return max(0, floatingBottomObscuredHeight - safeAreaBottom)
         }

@@ -19,10 +19,8 @@
 
 import Foundation
 
-/// Namespace kept for `Pixel.Event` (see `PixelEvent.swift`) and `Pixel.BuildTarget`, and for
-/// `PixelParameters` below - the legacy pixel name/parameter catalogue every PixelKit-migrated
-/// pixel still reads from. The firing implementation itself has moved to PixelKit; see
-/// `PixelEvent+PixelKit.swift`.
+/// Namespace for the pixel name and parameter catalogue: `Pixel.Event` (`PixelEvent.swift`),
+/// `Pixel.BuildTarget` and `PixelParameters`. Firing lives in PixelKit, see `PixelEvent+PixelKit.swift`.
 public enum Pixel {
     public enum BuildTarget: String {
         case app

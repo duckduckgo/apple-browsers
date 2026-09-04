@@ -165,9 +165,8 @@ final class OnboardingPixelReporter {
     }
 
     private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:]) {
-        // `.legacyInitial`: fires once ever, like legacy UniquePixel.fire, but without UniquePixel's
-        // `_u`/`_unique` name-suffix requirement (every onboarding "unique" case ends in `Unique`,
-        // whose name ends in `_unique` - `.uniqueByName` would assert-fail and drop these).
+        // `.uniqueByName` requires an `_u` suffix and drops anything else, and these names end in
+        // `_unique`, so use `.legacyInitial` for the same fires-once-ever behaviour.
         pixelFiring?.fire(event, frequency: unique ? .legacyInitial : .standard, options: .parameters(additionalParameters))
     }
 

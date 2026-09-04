@@ -80,7 +80,7 @@ final class StorePurchaseManagerTests: XCTestCase {
 
         // Then
         XCTAssertTrue(sut.availableProducts.isEmpty)
-        XCTAssertEqual(mockProductFetcher.fetchCount, 1)
+        XCTAssertEqual(mockProductFetcher.fetchCount, 2)
     }
 
     func testUpdateAvailableProductsWithDifferentRegions() async {

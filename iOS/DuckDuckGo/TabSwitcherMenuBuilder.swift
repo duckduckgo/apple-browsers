@@ -52,7 +52,6 @@ struct TabSwitcherLongPressMenuState {
     let pressedContainsWebPages: Bool
     let isEditing: Bool
     let title: String
-    var shouldShowDeleteTabAndData = false
 
     var canShare: Bool { pressedContainsWebPages }
     var canAddBookmarks: Bool { pressedContainsWebPages }
@@ -84,7 +83,6 @@ struct TabSwitcherLongPressMenuActions {
     var onSelect: () -> Void
     var onClose: () -> Void
     var onCloseOther: () -> Void
-    var onDeleteTabAndData: () -> Void = {}
 }
 
 struct TabSwitcherEditMenuActions {
@@ -215,12 +213,6 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
                 state.canCloseOthers ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2),
                                                    imageForCloseTabs(2),
                                                    actions.onCloseOther) : nil,
-            ].compactMap { $0 }),
-
-            UIMenu(title: "", options: .displayInline, children: [
-                state.shouldShowDeleteTabAndData ? destructive(UserText.tabSwitcherDeleteTabAndData,
-                                                               DesignSystemImages.Glyphs.Size16.fireSolid,
-                                                               actions.onDeleteTabAndData) : nil,
             ].compactMap { $0 }),
         ].compactMap { $0 }
     }

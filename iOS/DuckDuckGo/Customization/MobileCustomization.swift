@@ -181,7 +181,7 @@ class MobileCustomization {
 
     var toolbarButtonOptions: [Button] {
         var buttons = Self.toolbarButtons
-        if voiceShortcutFeature.isAvailable && isDuckAIEnabled() {
+        if isDuckAIEnabled() {
             buttons.append(.duckAIVoice)
         }
         return buttons
@@ -189,7 +189,7 @@ class MobileCustomization {
 
     var addressBarButtonOptions: [Button] {
         var buttons = Self.addressBarButtons
-        if voiceShortcutFeature.isAvailable && isDuckAIEnabled() {
+        if isDuckAIEnabled() {
             buttons.append(.duckAIVoice)
         }
         return buttons
@@ -248,7 +248,6 @@ class MobileCustomization {
         self.isPad = isPad
         self.postChangeNotification = postChangeNotification
         self.pixelFiring = pixelFiring
-        self.voiceShortcutFeature = voiceShortcutFeature
         self.connectionStatusObserver = connectionStatusObserver
         self.isDuckAIEnabled = isDuckAIEnabled
     }

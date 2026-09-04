@@ -687,7 +687,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateVoiceButtonStyle() {
         handler.hidesVoiceButton = voiceButtonAppearance == .hidden
-        let showsAIVoiceChatButton = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        let showsAIVoiceChatButton = handler.currentToggleState == .aiChat
         switch voiceButtonAppearance {
         case .automatic:
             buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoiceAccent : .microphone

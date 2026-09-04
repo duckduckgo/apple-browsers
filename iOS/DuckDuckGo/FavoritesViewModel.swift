@@ -38,6 +38,22 @@ protocol NewTabPageFavoriteDataSource {
     func removeFavorite(_ favorite: Favorite)
 }
 
+
+private enum NewTabPageFavoritesPixel: PixelKit.Event {
+    /// A drag gesture that reordered the grid, fired once when the gesture finishes.
+    case reorder
+
+    var name: String {
+        switch self {
+        case .reorder: return "new-tab-page_favorites_reorder"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
+}
+
 protocol FavoritesFaviconCaching {
     func populateFavicon(for domain: String, intoCache: FaviconsCacheType, fromCache: FaviconsCacheType?)
 }
@@ -150,6 +166,10 @@ class FavoritesViewModel: ObservableObject {
         favoriteDataSource.moveFavorite(favorite, fromIndex: fromIndex, toIndex: index)
         // Reload from the data source; it already republishes the reordered list, so don't re-apply the move.
         updateData()
+    }
+
+    func favoritesReordered() {
+        pixelFiring?.fire(NewTabPageFavoritesPixel.reorder, frequency: .dailyAndCount)
     }
 
     // MARK: -

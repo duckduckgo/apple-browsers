@@ -87,6 +87,15 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
         XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.homeScreenEditFavorite.name })
     }
 
+    func testFiresPixelOnceWhenFavoritesReordered() {
+        let sut = createSUT()
+
+        sut.favoritesReordered()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["new-tab-page_favorites_reorder"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .dailyAndCount)
+    }
+
     private func createSUT(isFocussedState: Bool = false) -> FavoritesViewModel {
         FavoritesViewModel(isFocussedState: isFocussedState,
                            favoriteDataSource: favoriteDataSource,

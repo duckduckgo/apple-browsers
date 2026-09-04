@@ -824,6 +824,9 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
     case syncFaviconsPromo
+
+    /// Kill switch for the Cookie Pop-ups Blocked promo.
+    case cookiePopupsBlockedPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

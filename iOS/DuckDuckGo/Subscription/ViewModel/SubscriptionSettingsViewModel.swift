@@ -27,6 +27,7 @@ import PrivacyConfig
 import Networking
 import Persistence
 import FeatureFlags_iOS
+import AIChat
 
 /// Status for the cancel-downgrade overlay
 enum CancelDowngradeOverlayStatus {
@@ -231,7 +232,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     /// Refreshes `onboardingSetupState`. Call on first appear, and again once the onboarding flow finishes —
     /// a step completed there can change what the card shows.
     @MainActor
-    func refreshOnboardingState(hasActiveSubscription: Bool, isPIRAvailable: Bool) async {
+    func refreshOnboardingState(hasActiveSubscription: Bool, isPIRAvailable: Bool, aiChatSettings: AIChatSettingsProvider = AIChatSettings()) async {
         let isEnabled = SubscriptionOnboardingExperiment.isSettingsReEntryEnabled(
             using: featureFlagger,
             hasStartedFlow: onboardingPersistor.postCheckoutFlowStartedAt != nil,
@@ -241,7 +242,14 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             return
         }
         let entitlement = await subscriptionManager.getAllEntitlementStatus()
-        let progress = SubscriptionOnboardingProgress(persistor: onboardingPersistor, isPIRAvailable: isPIRAvailable, entitlement: entitlement)
+        // Once fully done, a Duck.ai toggle flip in Settings shouldn't resurrect or alter the checklist.
+        let checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
+        let currentPercentage = SubscriptionOnboardingChecklistItem.completionPercentage(completed: onboardingPersistor.completedItems, checklist: checklist)
+        let isAIChatEnabled: Bool? = currentPercentage < 100 ? aiChatSettings.isAIChatEnabled : nil
+        let progress = SubscriptionOnboardingProgress(persistor: onboardingPersistor,
+                                                      isPIRAvailable: isPIRAvailable,
+                                                      entitlement: entitlement,
+                                                      isAIChatEnabled: isAIChatEnabled)
         onboardingSetupState = progress.checklist.isEmpty ? .hidden : .setup(progress)
     }
 

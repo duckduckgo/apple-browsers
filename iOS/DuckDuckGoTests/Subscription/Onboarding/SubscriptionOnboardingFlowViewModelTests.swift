@@ -608,6 +608,7 @@ private struct NullInstrumentation: SubscriptionOnboardingInstrumenting {
 /// A reference-typed persistor so a test can observe writes the flow makes through its own copy.
 private final class MockProgressStore: SubscriptionOnboardingProgressPersisting {
     var completedItems: Set<SubscriptionOnboardingChecklistItem> = []
+    var reversibleCompletedItems: Set<SubscriptionOnboardingChecklistItem> = []
     var cardFirstShownDate: Date?
     var fullyCompletedAt: Date?
     var completionViewCount: Int = 0

@@ -29,6 +29,8 @@ private let progressLock = NSLock()
 /// Storage for onboarding progress. Reads and writes only — no rules about what the values mean.
 protocol SubscriptionOnboardingProgressPersisting {
     var completedItems: Set<SubscriptionOnboardingChecklistItem> { get set }
+    /// Items auto-completed rather than completed for real — e.g. `.duckAI` while Duck.ai is disabled locally.
+    var reversibleCompletedItems: Set<SubscriptionOnboardingChecklistItem> { get set }
     /// When the Subscription Settings card was first shown, which starts its 14-day window.
     var cardFirstShownDate: Date? { get set }
     /// When the checklist first reached 100%.
@@ -44,8 +46,30 @@ extension SubscriptionOnboardingProgressPersisting {
     mutating func markComplete(_ item: SubscriptionOnboardingChecklistItem) {
         progressLock.lock()
         defer { progressLock.unlock() }
+        // A real completion always wins over a fake one, however it arrived.
+        reversibleCompletedItems.remove(item)
         guard !completedItems.contains(item) else { return }
         completedItems.insert(item)
+    }
+
+    /// Fake-completes `.duckAI` while disabled; undoes it once re-enabled, unless it later completed for real.
+    /// `nil` means Duck.ai's enabled state isn't relevant right now — leave everything as-is.
+    mutating func reconcileDuckAICompletion(isAIChatEnabled: Bool?) {
+        guard let isAIChatEnabled else { return }
+        progressLock.lock()
+        defer { progressLock.unlock() }
+        if !isAIChatEnabled {
+            var items = completedItems
+            guard !items.contains(.duckAI) else { return }
+            items.insert(.duckAI)
+            completedItems = items
+            reversibleCompletedItems.insert(.duckAI)
+        } else if reversibleCompletedItems.contains(.duckAI) {
+            var items = completedItems
+            items.remove(.duckAI)
+            completedItems = items
+            reversibleCompletedItems.remove(.duckAI)
+        }
     }
 
     /// First write wins, so a later display cannot extend the 14-day window.
@@ -76,6 +100,18 @@ extension SubscriptionOnboardingProgressPersisting {
         guard postCheckoutFlowStartedAt == nil else { return }
         postCheckoutFlowStartedAt = now
     }
+
+    /// Wipes everything, as if this customer had never used onboarding before.
+    mutating func reset() {
+        progressLock.lock()
+        defer { progressLock.unlock() }
+        completedItems = []
+        reversibleCompletedItems = []
+        cardFirstShownDate = nil
+        fullyCompletedAt = nil
+        completionViewCount = 0
+        postCheckoutFlowStartedAt = nil
+    }
 }
 
 struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPersisting {
@@ -86,6 +122,7 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
         case fullyCompletedAt = "subscription.onboarding.fully-completed-at"
         case completionViewCount = "subscription.onboarding.completion-view-count"
         case postCheckoutFlowStartedAt = "subscription.onboarding.post-checkout-flow-started-at"
+        case reversibleCompletedItems = "subscription.onboarding.reversible-completed-items"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -122,6 +159,14 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
         get { read(.postCheckoutFlowStartedAt) }
         set { write(newValue, for: .postCheckoutFlowStartedAt) }
     }
+
+    var reversibleCompletedItems: Set<SubscriptionOnboardingChecklistItem> {
+        get {
+            let stored: [String] = read(.reversibleCompletedItems) ?? []
+            return Set(stored.compactMap(SubscriptionOnboardingChecklistItem.init(rawValue:)))
+        }
+        set { write(newValue.map(\.rawValue).sorted(), for: .reversibleCompletedItems) }
+    }
 }
 
 // MARK: - Progress
@@ -140,7 +185,9 @@ struct SubscriptionOnboardingProgress {
 
     private var persistor: SubscriptionOnboardingProgressPersisting
 
-    init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool, entitlement: EntitlementStatus) {
+    init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool, entitlement: EntitlementStatus, isAIChatEnabled: Bool? = nil) {
+        var persistor = persistor
+        persistor.reconcileDuckAICompletion(isAIChatEnabled: isAIChatEnabled)
         self.persistor = persistor
         self.checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }
@@ -148,9 +195,10 @@ struct SubscriptionOnboardingProgress {
     /// Awaits the customer's real subscription entitlement, then builds `Progress` from it
     static func make(persistor: SubscriptionOnboardingProgressPersisting,
                      isPIRAvailable: Bool,
-                     subscriptionManager: any SubscriptionManager) async -> SubscriptionOnboardingProgress {
+                     subscriptionManager: any SubscriptionManager,
+                     isAIChatEnabled: Bool? = nil) async -> SubscriptionOnboardingProgress {
         let entitlement = await subscriptionManager.getAllEntitlementStatus()
-        return SubscriptionOnboardingProgress(persistor: persistor, isPIRAvailable: isPIRAvailable, entitlement: entitlement)
+        return SubscriptionOnboardingProgress(persistor: persistor, isPIRAvailable: isPIRAvailable, entitlement: entitlement, isAIChatEnabled: isAIChatEnabled)
     }
 
     /// Read on demand, since items complete outside whatever screen is asking.
@@ -219,6 +267,7 @@ extension SubscriptionOnboardingProgress {
 
     private struct FixedPersistor: SubscriptionOnboardingProgressPersisting {
         var completedItems: Set<SubscriptionOnboardingChecklistItem>
+        var reversibleCompletedItems: Set<SubscriptionOnboardingChecklistItem> = []
         var cardFirstShownDate: Date?
         var fullyCompletedAt: Date?
         var completionViewCount: Int = 0

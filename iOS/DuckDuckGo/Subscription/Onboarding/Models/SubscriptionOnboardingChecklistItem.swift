@@ -19,9 +19,7 @@
 
 import Subscription
 
-/// Steps the completion checklist tracks. `vpnWidget` has no subscription entitlement of its own — it
-/// shares VPN's. `vpnTips` is excluded from the checklist entirely; it piggybacks on `vpnWidget`'s
-/// gating and step number instead of being tracked.
+/// Steps the completion checklist tracks.
 enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     case vpn
     case idtr

@@ -21,6 +21,8 @@ import Subscription
 import SwiftUI
 import DataBrokerProtection_iOS
 import UIKit
+import AIChat
+import Common
 import os.log
 
 enum SubscriptionOnboardingEntryPoint {
@@ -60,7 +62,7 @@ extension View {
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping (Item) -> Content
     ) -> some View {
-        if UIDevice.current.userInterfaceIdiom == .pad {
+        if DevicePlatform.isIpad {
             fullScreenCover(item: item, onDismiss: onDismiss, content: content)
         } else {
             sheet(item: item, onDismiss: onDismiss, content: content)
@@ -122,12 +124,14 @@ extension SubscriptionOnboardingFlowViewModel {
                                               vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
                                               profileStateManager: DBPProfileStateManaging = DefaultDBPProfileStateManager(keyValueStore: UserDefaults.dbp),
                                               freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp, isUserAuthenticated: { false }, isFreemiumEnabled: { false }),
+                                              aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
                                               @ViewBuilder pirScreen: @escaping () -> PIRScreen) async
     -> SubscriptionOnboardingFlowViewModel? {
         async let vpnConfigured = vpnController.isVPNConfigured()
         async let entitlement = subscriptionManager.getAllEntitlementStatus()
 
         var persistor = persistor
+        persistor.reset()
         if await vpnConfigured {
             persistor.markComplete(.vpn)
         }
@@ -135,7 +139,10 @@ extension SubscriptionOnboardingFlowViewModel {
                                      freemiumDBPUserStateManager: freemiumDBPUserStateManager) {
             persistor.markComplete(.pir)
         }
-        let progress = SubscriptionOnboardingProgress(persistor: persistor, isPIRAvailable: isPIRAvailable, entitlement: await entitlement)
+        let progress = SubscriptionOnboardingProgress(persistor: persistor,
+                                                      isPIRAvailable: isPIRAvailable,
+                                                      entitlement: await entitlement,
+                                                      isAIChatEnabled: aiChatSettings.isAIChatEnabled)
         return makeFlow(entryPoint: .postCheckout,
                         progress: progress,
                         onFinish: onFinish,
@@ -149,11 +156,13 @@ extension SubscriptionOnboardingFlowViewModel {
                                                       subscriptionManager: any SubscriptionManager,
                                                       onFinish: @escaping () -> Void,
                                                       onRequestDuckAIChat: ((String?) -> Bool)? = nil,
+                                                      aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
                                                       @ViewBuilder pirScreen: @escaping () -> PIRScreen) async
     -> SubscriptionOnboardingFlowViewModel? {
         let progress = await SubscriptionOnboardingProgress.make(persistor: persistor,
                                                                   isPIRAvailable: isPIRAvailable,
-                                                                  subscriptionManager: subscriptionManager)
+                                                                  subscriptionManager: subscriptionManager,
+                                                                  isAIChatEnabled: aiChatSettings.isAIChatEnabled)
         return makeFlow(entryPoint: .subscriptionSettings,
                         progress: progress,
                         onFinish: onFinish,

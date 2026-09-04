@@ -393,15 +393,14 @@ struct SubscriptionOnboardingPlatformGrid: View {
         static let rowSpacing: CGFloat = 12
         static let iconSpacing: CGFloat = 6
         static let topPadding: CGFloat = 8
-        static let firstColumnMaxWidth: CGFloat = 80
-        static let secondColumnMaxWidth: CGFloat = 121
+        static let columnMaxWidth: CGFloat = 121
     }
 
     private let platforms: [Platform]
 
     private let columns = [
-        GridItem(.flexible(maximum: Metrics.firstColumnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading),
-        GridItem(.flexible(maximum: Metrics.secondColumnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading)
+        GridItem(.flexible(maximum: Metrics.columnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading),
+        GridItem(.flexible(maximum: Metrics.columnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading)
     ]
 
     init(platforms: [Platform] = Platform.allCases) {

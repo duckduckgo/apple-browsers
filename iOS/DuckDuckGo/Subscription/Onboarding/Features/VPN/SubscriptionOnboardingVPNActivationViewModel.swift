@@ -415,7 +415,8 @@ extension SubscriptionOnboardingVPNActivationViewModel {
                         vpnConnectionInfo: SubscriptionOnboardingConnectionInfo? = nil,
                         isNearestSelected: Bool = false,
                         didDenyVPNPermission: Bool = false,
-                        didFailToStartVPN: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
+                        didFailToStartVPN: Bool = false,
+                        isActivating: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
         let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpnConnectionInfo)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
             prefetcher: .preview(connectionInfo: originalConnectionInfo.map(ConnectionInfoState.loaded) ?? .loading),
@@ -428,6 +429,7 @@ extension SubscriptionOnboardingVPNActivationViewModel {
         viewModel.vpnServerInfo = serverInfo
         viewModel.didDenyVPNPermission = didDenyVPNPermission
         viewModel.didFailToStartVPN = didFailToStartVPN
+        viewModel.isActivating = isActivating
         return viewModel
     }
 

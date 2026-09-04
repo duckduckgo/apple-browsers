@@ -396,10 +396,7 @@ extension SubscriptionDebugViewController {
             return
         }
         var store = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
-        store.completedItems = []
-        store.cardFirstShownDate = nil
-        store.fullyCompletedAt = nil
-        store.completionViewCount = 0
+        store.reset()
         showAlert(title: "Onboarding progress reset")
     }
 

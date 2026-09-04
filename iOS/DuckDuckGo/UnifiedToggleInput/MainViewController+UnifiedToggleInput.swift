@@ -150,7 +150,7 @@ extension MainViewController {
     /// native chrome syncs to the web surface on both transitions. Persisted per tab in `TabInputState`.
     var isVoiceSurfaceVisibleForCurrentTab: Bool {
         guard currentTab?.isAITab == true else { return false }
-        return unifiedToggleInputCoordinator?.isVoiceSessionActive == true
+        return unifiedToggleInputCoordinator?.isVoiceSurfaceVisible == true
     }
 
     /// Hides the bottom UTI input bar when FE asks to hide the chat input. Idempotent.
@@ -583,7 +583,7 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        unifiedToggleInputCoordinator?.isVoiceSessionActivePublisher
+        unifiedToggleInputCoordinator?.isVoiceSurfaceVisiblePublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -610,7 +610,7 @@ private extension MainViewController {
             .sink { [weak self] notification in
                 guard let webView = notification.object as? WKWebView else { return }
                 let backgroundColorHex = notification.userInfo?[AIChatNotificationUserInfoKey.voiceModeBackgroundColor] as? String
-                self?.updateVoiceSessionActive(true, backgroundColorHex: backgroundColorHex, for: webView)
+                self?.updateVoiceSurfaceVisible(true, backgroundColorHex: backgroundColorHex, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -618,7 +618,7 @@ private extension MainViewController {
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] webView in
-                self?.updateVoiceSessionActive(false, backgroundColorHex: nil, for: webView)
+                self?.updateVoiceSurfaceVisible(false, backgroundColorHex: nil, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -671,17 +671,17 @@ private extension MainViewController {
         }
     }
 
-    private func updateVoiceSessionActive(_ active: Bool, backgroundColorHex: String?, for webView: WKWebView) {
+    private func updateVoiceSurfaceVisible(_ active: Bool, backgroundColorHex: String?, for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView) else { return }
         if controller === currentTab, let coordinator = unifiedToggleInputCoordinator {
             coordinator.voiceModeBackgroundColorHex = backgroundColorHex
-            coordinator.isVoiceSessionActive = active
+            coordinator.isVoiceSurfaceVisible = active
             return
         }
         guard let stateStore = unifiedInputStateStore else { return }
         let current = stateStore.state(for: controller.tabModel.uid)
         var updated = current
-        updated.isVoiceSessionActive = active
+        updated.isVoiceSurfaceVisible = active
         if updated != current {
             stateStore.update(updated, for: controller.tabModel.uid)
         }
@@ -1444,12 +1444,11 @@ private extension UIColor {
     convenience init?(voiceModeHex hex: String) {
         var string = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if string.hasPrefix("#") { string.removeFirst() }
-        guard string.count == 6 || string.count == 8, let value = UInt64(string, radix: 16) else { return nil }
-        let hasAlpha = string.count == 8
-        let red = CGFloat((value >> (hasAlpha ? 24 : 16)) & 0xFF) / 255
-        let green = CGFloat((value >> (hasAlpha ? 16 : 8)) & 0xFF) / 255
-        let blue = CGFloat((value >> (hasAlpha ? 8 : 0)) & 0xFF) / 255
-        let alpha = hasAlpha ? CGFloat(value & 0xFF) / 255 : 1
-        self.init(red: red, green: green, blue: blue, alpha: alpha)
+        guard string.count == 6 || string.count == 8, var value = UInt64(string, radix: 16) else { return nil }
+        if string.count == 6 { value = (value << 8) | 0xFF }   // canonicalise to RRGGBBAA (opaque)
+        self.init(red: CGFloat((value >> 24) & 0xFF) / 255,
+                  green: CGFloat((value >> 16) & 0xFF) / 255,
+                  blue: CGFloat((value >> 8) & 0xFF) / 255,
+                  alpha: CGFloat(value & 0xFF) / 255)
     }
 }

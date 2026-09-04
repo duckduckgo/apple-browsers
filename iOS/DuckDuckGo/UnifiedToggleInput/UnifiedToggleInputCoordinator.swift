@@ -190,7 +190,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
-    var isVoiceSessionActivePublisher: Published<Bool>.Publisher { $isVoiceSessionActive }
+    var isVoiceSurfaceVisiblePublisher: Published<Bool>.Publisher { $isVoiceSurfaceVisible }
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
     var persistedReasoningEffort: AIChatReasoningEffort? {
         modelStore.submissionReasoningEffort
@@ -215,9 +215,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             persistDraftToStore()
         }
     }
-    @Published var isVoiceSessionActive: Bool = false {
+    @Published var isVoiceSurfaceVisible: Bool = false {
         didSet {
-            guard oldValue != isVoiceSessionActive else { return }
+            guard oldValue != isVoiceSurfaceVisible else { return }
             persistDraftToStore()
         }
     }
@@ -644,7 +644,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.unifiedInputState.debug("applyState for tab [\(self.currentTabUID ?? "nil")]: \(state.summary)")
 
         aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
-        isVoiceSessionActive = state.isVoiceSessionActive
+        isVoiceSurfaceVisible = state.isVoiceSurfaceVisible
         isModelPickerForcedVisible = state.isModelPickerForcedVisible
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
@@ -685,7 +685,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             selectedReasoningMode: modelStore.selectedReasoningMode,
             selectedTool: toolsController.selectedTool,
             aiChatInputBoxVisibility: aiChatInputBoxVisibility,
-            isVoiceSessionActive: isVoiceSessionActive,
+            isVoiceSurfaceVisible: isVoiceSurfaceVisible,
             isModelPickerForcedVisible: isModelPickerForcedVisible
         )
     }
@@ -1405,7 +1405,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         setText("")
         attachmentUsage = nil
         aiChatInputBoxVisibility = .visible
-        isVoiceSessionActive = false
+        isVoiceSurfaceVisible = false
     }
 
     func updateSelectedModel(_ modelId: String) {

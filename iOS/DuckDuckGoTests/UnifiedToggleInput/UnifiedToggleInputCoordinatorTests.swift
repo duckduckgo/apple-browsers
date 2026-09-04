@@ -415,9 +415,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_unbind_preservesVoiceSessionActive() {
-        sut.isVoiceSessionActive = true
+        sut.isVoiceSurfaceVisible = true
         sut.unbind()
-        XCTAssertTrue(sut.isVoiceSessionActive)
+        XCTAssertTrue(sut.isVoiceSurfaceVisible)
     }
 
     // MARK: - VC Delegate: Collapsed Tap
@@ -2210,9 +2210,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_startNewChat_resetsVoiceSessionActive() {
         sut.showExpanded()
-        sut.isVoiceSessionActive = true
+        sut.isVoiceSurfaceVisible = true
         sut.startNewChat()
-        XCTAssertFalse(sut.isVoiceSessionActive)
+        XCTAssertFalse(sut.isVoiceSurfaceVisible)
     }
 
     // MARK: - Toggle State Persistence
@@ -2908,11 +2908,11 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)
         sut.activateForTab("tab-A")
-        sut.isVoiceSessionActive = true
+        sut.isVoiceSurfaceVisible = true
         sut.activateForTab("tab-B")
-        XCTAssertFalse(sut.isVoiceSessionActive)
+        XCTAssertFalse(sut.isVoiceSurfaceVisible)
         sut.activateForTab("tab-A")
-        XCTAssertTrue(sut.isVoiceSessionActive)
+        XCTAssertTrue(sut.isVoiceSurfaceVisible)
     }
 
     func test_activateForTab_roundTripsModelPickerForcedVisible() {

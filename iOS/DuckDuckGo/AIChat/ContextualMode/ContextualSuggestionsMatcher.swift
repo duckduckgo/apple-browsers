@@ -84,7 +84,7 @@ struct ContextualSuggestionsMatcher {
 
             guard let entry = catalog.catalog[id], conditionPasses(entry.condition, input: input) else { continue }
 
-            let copy = localizedCopy(for: id, entry: entry)
+            let copy = localizedCopy(for: id, entry: entry, input: input)
             resolved.append(ContextualSuggestedPrompt(
                 id: id,
                 label: copy.label,
@@ -241,9 +241,17 @@ struct ContextualSuggestionsMatcher {
 
     // MARK: Localization
 
-    private static func localizedCopy(for id: String, entry: SuggestionCatalog.Entry) -> (label: String, prompt: String) {
-        localizedCopyByID[id] ?? (entry.label, entry.prompt)
+    private static func localizedCopy(for id: String, entry: SuggestionCatalog.Entry, input: ResolvePageSuggestionsInput) -> (label: String, prompt: String) {
+        if input.isDocument, let documentCopy = localizedCopyForDocumentsByID[id] {
+            return documentCopy
+        }
+        return localizedCopyByID[id] ?? (entry.label, entry.prompt)
     }
+
+    /// Maps each catalog id to its native `UserText` copy for document pages
+    private static let localizedCopyForDocumentsByID: [String: (label: String, prompt: String)] = [
+        "summarize-page": (UserText.aiChatSuggestionSummarizeDocumentLabel, UserText.aiChatSuggestionSummarizeDocumentPrompt)
+    ]
 
     /// Maps each catalog id to its native `UserText` copy. The `UserText` extension holds the strings
     /// (idiomatic for the codebase); this map is the id → strings glue the matcher needs.
@@ -361,14 +369,14 @@ struct DefaultContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProv
     }
 
     /// Last-resort floor if the bundled catalog cannot be decoded: a single unconditional
-    /// "Summarize this page" so the start surface is never empty. The page type is still
-    /// classified — it does not depend on the catalog.
+    /// summarize so the start surface is never empty. The page type is still classified — it does
+    /// not depend on the catalog.
     private static func decodeFailureFallback(for input: ResolvePageSuggestionsInput) -> ResolvedPageSuggestions {
         ResolvedPageSuggestions(
             suggestions: [ContextualSuggestedPrompt(
                 id: "summarize-page",
-                label: UserText.aiChatSuggestionSummarizePageLabel,
-                prompt: UserText.aiChatSuggestionSummarizePagePrompt,
+                label: input.isDocument ? UserText.aiChatSuggestionSummarizeDocumentLabel : UserText.aiChatSuggestionSummarizePageLabel,
+                prompt: input.isDocument ? UserText.aiChatSuggestionSummarizeDocumentPrompt : UserText.aiChatSuggestionSummarizePagePrompt,
                 icon: "summary"
             )],
             isSmart: false,

@@ -97,6 +97,29 @@ enum UserText {
     static let recoveryInstructionsFooterV2 = NotLocalizedString("preferences.sync.recovery-instructions-footer-v2", value: "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Footer on the recovery code section in sync settings (V2). The [text](url) markdown is a link and must be preserved.")
     static let turnOffAndDeleteServerDataV2 = NotLocalizedString("preferences.sync.turn-off-and-delete-data-v2", bundle: Bundle.module, value: "Turn Off and Delete Server Data", comment: "Disable and delete data sync button caption")
 
+    // Device details dialogs (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let deviceDetailsSyncedStatusV2 = NotLocalizedString("preferences.sync.device-details-v2.synced-status", value: "Synced", comment: "Status shown under the device name on the device details dialog (V2)")
+    static let deviceDetailsNameLabelV2 = NotLocalizedString("preferences.sync.device-details-v2.name-label", value: "Name", comment: "Label of the editable device name field on the device details dialog (V2)")
+    static let deviceDetailsDoneButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.done-button", value: "Done", comment: "Button that saves the device name and dismisses the device details dialog (V2)")
+    static let deviceDetailsCloseButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.close-button", value: "Close", comment: "Button that dismisses the details dialog of another synced device (V2)")
+    static let deviceDetailsTurnOffSyncButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.turn-off-sync-button", value: "Turn Off Sync & Backup", comment: "Button that turns Sync & Backup off for the current device, on the device details dialog (V2)")
+    static let deviceDetailsRemoveDeviceButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.remove-device-button", value: "Remove Device", comment: "Button that removes another synced device, on the device details dialog (V2)")
+
+    // Remove device confirmation dialog (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let removeDeviceConfirmTitleV2 = NotLocalizedString("preferences.sync.remove-device-v2.title", value: "Remove Device?", comment: "Title of the confirmation shown before removing a synced device (V2)")
+    static let removeDeviceConfirmButtonV2 = NotLocalizedString("preferences.sync.remove-device-v2.button", value: "Remove Device", comment: "Button that confirms removing a synced device (V2)")
+    static func removeDeviceConfirmMessageV2(_ deviceName: String) -> String {
+        let notLocalized = NotLocalizedString("preferences.sync.remove-device-v2.message",
+                                              value: "**%@** will no longer be able to access your synced data.\n\nYour autofill data, bookmarks, and duck.ai chats won’t sync across your other devices with DuckDuckGo.",
+                                              comment: "Message of the confirmation shown before removing a synced device (V2). The device name is inserted in place of %@ and the ** markers around it indicate bold styling, which should be preserved.")
+        return String(format: notLocalized, deviceName)
+    }
+
+    // Turn off and delete server data confirmation dialog (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let deleteAccountConfirmTitleV2 = NotLocalizedString("preferences.sync.delete-account-v2.title", value: "Stop Sync & Backup and Delete Server Data?", comment: "Title of the confirmation shown before turning Sync off and deleting the server data (V2)")
+    static let deleteAccountConfirmMessageV2 = NotLocalizedString("preferences.sync.delete-account-v2.message", value: "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server.", comment: "Message of the confirmation shown before turning Sync off and deleting the server data (V2)")
+    static let deleteAccountConfirmButtonV2 = NotLocalizedString("preferences.sync.delete-account-v2.button", value: "Delete Server Data", comment: "Button that confirms turning Sync off and deleting the server data (V2)")
+
     // Options
     static let otherOptionsSectionTitle = NSLocalizedString("preferences.other-options.section-title", bundle: Bundle.module, value: "Other Options", comment: "Sync settings. Other Options section title")
     static let syncThisDeviceLink = NSLocalizedString("preferences.sync-this-device.link-title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Sync settings. Title of a link to start setting up sync and backup the device")

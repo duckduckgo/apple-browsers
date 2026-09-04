@@ -6018,6 +6018,9 @@ extension MainViewController: OmniBarDelegate {
             return 0
         }
         let spacing: CGFloat = 12
+        if let omniBarView = viewCoordinator.omniBar.barView as? DefaultOmniBarView {
+            return max(0, omniBarView.expandedContentMaxY(in: viewCoordinator.contentContainer)) + spacing
+        }
         let containerFrame = searchContainer.convert(searchContainer.bounds, to: viewCoordinator.contentContainer)
         return max(0, containerFrame.maxY) + spacing
     }

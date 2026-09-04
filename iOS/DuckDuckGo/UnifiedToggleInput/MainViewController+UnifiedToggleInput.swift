@@ -1216,6 +1216,9 @@ extension MainViewController {
         }
         postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
         recordNewTabPageSessionAction { $0.hitSubmit() }
+        if postIdleSubmissionReason(for: query) == .searchSubmitted {
+            recordDuckAISessionPendingExit(.searchStarted)
+        }
         loadQuery(query) { tab in
             if let duckAIEntrySource {
                 tab.duckAIEntrySource = duckAIEntrySource
@@ -1302,6 +1305,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
         postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: origin)
+        recordDuckAISessionPromptSubmittedOnCurrentTab()
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
@@ -1520,6 +1524,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {
+        recordDuckAISessionNewChatCreatedOnCurrentTab()
         unifiedToggleInputCoordinator?.startNewChat()
         unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
         currentTab?.submitStartChatAction()
@@ -1531,6 +1536,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapNewImage() {
         DailyPixel.fireDailyAndCount(pixel: .aiChatNewImageTapped)
+        recordDuckAISessionNewChatCreatedOnCurrentTab()
         unifiedToggleInputCoordinator?.startNewChat()
         unifiedToggleInputCoordinator?.selectTool(.imageGeneration)
         unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
@@ -1543,11 +1549,13 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     /// Force-search NTP. Override mode without committing — preserved toggle preference must survive.
     func aiChatTabChatHeaderDidTapNewSearch() {
+        recordDuckAISessionPendingExit(.searchStarted)
         newTab(reuseExisting: false, allowingKeyboard: true)
         unifiedToggleInputCoordinator?.syncInputModeFromExternalSource(.search)
     }
 
     func aiChatTabChatHeaderDidTapNewFireTab() {
+        recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: .aiChatHeaderPlusMenu)
         newTab(reuseExisting: false, allowingKeyboard: true)
     }

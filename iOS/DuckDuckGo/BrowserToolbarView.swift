@@ -124,19 +124,13 @@ final class BrowserToolbarView: UIView {
     private static let floatingUICornerRadius: CGFloat = 40
 
     static let floatingEmbeddedHorizontalInset: CGFloat = 16
-    /// Fallback physical inset for floating chrome on iOS 26, used only until the host's concentric
-    /// safe-area guide has resolved (it reports an empty frame outside a window). Once resolved,
-    /// the guide's own inset is used so the pill follows the system's concentric geometry.
+    /// Fallback inset before the concentric safe-area guide resolves.
     static let floatingEmbeddedConcentricInset: CGFloat = 20
-    /// Pulls floating chrome in from the system's corner-adapted guide. The guide alone leaves the
-    /// pill reading a touch too close to the display corners, so every edge tucks in by this much
-    /// on top of the device-specific guide inset.
+    /// Extra inset on top of the concentric guide, so the pill isn't flush with the display corner.
     static let floatingConcentricTuck: CGFloat = 4
     /// Outer side inset of the standalone top-address-bar toolbar.
     static let floatingStandaloneHorizontalInset: CGFloat = 24
-    /// Physical inset of every floating pill on iOS 26. Both the combined bottom chrome and the
-    /// standalone (split, top-address-bar) pill sit this far from the screen edges, so their glass
-    /// and outer buttons line up when the layout switches between them.
+    /// Legacy inset kept for pre-iOS-26 callers; superseded by `floatingEmbeddedConcentricInset`.
     static let floatingConcentricGlassInset: CGFloat = 20
     private static let floatingEmbeddedBarOuterInsets = UIEdgeInsets(top: 0, left: floatingEmbeddedHorizontalInset, bottom: 0, right: floatingEmbeddedHorizontalInset)
     private static let floatingStandaloneBarOuterInsets = UIEdgeInsets(top: 0, left: floatingStandaloneHorizontalInset, bottom: 0, right: floatingStandaloneHorizontalInset)
@@ -155,18 +149,13 @@ final class BrowserToolbarView: UIView {
         return addressBarPosition.isBottom ? floatingEmbeddedHorizontalInset : floatingStandaloneHorizontalInset
     }
 
-    /// Physical inset floating chrome keeps from the screen edges: the system's concentric
-    /// safe-area inset plus `floatingConcentricTuck` where the guide has resolved, otherwise
-    /// `floatingEmbeddedConcentricInset`. In landscape the Dynamic Island widens one guide, so the
-    /// narrower side sets the inset and the wider side simply stays at its guide.
+    /// Physical edge inset: the guide's own inset plus a tuck, or the fallback if unresolved.
     static func floatingPhysicalInset(guideInsets: (left: CGFloat, right: CGFloat)) -> CGFloat {
         let resolved = min(max(0, guideInsets.left), max(0, guideInsets.right))
         return resolved > 0 ? resolved + floatingConcentricTuck : floatingEmbeddedConcentricInset
     }
 
-    /// Extra inset inside the corner-adapted guide so floating chrome sits `physicalInset` from the
-    /// physical screen edge. Zero when the guide is already at or beyond that inset (the resolved
-    /// portrait guide, or a landscape Dynamic Island) so the glass never leaves the toolbar.
+    /// Extra inset needed inside the guide to reach `physicalInset`; zero once the guide covers it.
     static func embeddedRestStateInnerInset(guideInset: CGFloat, physicalInset: CGFloat = floatingEmbeddedConcentricInset) -> CGFloat {
         max(0, physicalInset - max(0, guideInset))
     }
@@ -324,11 +313,7 @@ final class BrowserToolbarView: UIView {
         return usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBarOuterInsets : Self.floatingStandaloneBarOuterInsets
     }
 
-    /// Horizontal compensation for floating chrome. Its host is pinned to the corner-adapted
-    /// guide, so this keeps the glass at the same physical inset on every edge unless the guide
-    /// already exceeds that inset. Each edge is compensated from its own guide: in landscape the
-    /// Dynamic Island only enlarges the guide on one side. Shared by the combined bottom chrome
-    /// and the standalone pill so the two are laid out identically.
+    /// Compensates the corner-adapted guide so the glass sits at the same physical inset every edge.
     @available(iOS 26.0, *)
     private var floatingRestStateOuterInsets: UIEdgeInsets {
         guard let host = superview, host.bounds.width > 0 else {
@@ -347,8 +332,7 @@ final class BrowserToolbarView: UIView {
             right: Self.embeddedRestStateInnerInset(guideInset: guideInsets.right, physicalInset: physicalInset))
     }
 
-    /// Distance from the physical bottom edge of `view` to its corner-adapted safe area guide.
-    /// Reports zero for an unresolved guide, for the same reason as `horizontalGuideInsets(in:)`.
+    /// Distance from the physical bottom edge to the corner-adapted safe area guide.
     @available(iOS 26.0, *)
     static func verticalGuideBottomInset(in view: UIView) -> CGFloat {
         let layoutFrame = view.layoutGuide(for: .safeArea(cornerAdaptation: .vertical)).layoutFrame
@@ -356,25 +340,19 @@ final class BrowserToolbarView: UIView {
         return max(0, view.bounds.maxY - layoutFrame.maxY)
     }
 
-    /// Shift that puts floating chrome `physicalInset` from the physical bottom, matching its side
-    /// insets. The layout slot's bottom sits on the guide, so a guide gap wider than the inset
-    /// shifts the glass down and a narrower one shifts it up; it is not clamped to a downward
-    /// shift, or the glass would sit flush on devices whose guide already reaches the bottom.
+    /// Shift that puts the bottom `physicalInset` from the physical edge, matching the sides.
     static func embeddedRestStateBottomOffset(guideBottomGap: CGFloat, physicalInset: CGFloat = floatingEmbeddedConcentricInset) -> CGFloat {
         guideBottomGap - physicalInset
     }
 
-    /// Physical inset the glass keeps from every screen edge, from the host's resolved guides.
+    /// Physical inset the glass keeps from every screen edge.
     @available(iOS 26.0, *)
     private var floatingPhysicalInset: CGFloat {
         guard let host = superview, host.bounds.width > 0 else { return Self.floatingEmbeddedConcentricInset }
         return Self.floatingPhysicalInset(guideInsets: Self.horizontalGuideInsets(in: host))
     }
 
-    /// Distance from each physical edge of `view` to its corner-adapted safe area guide.
-    /// The guide only resolves once the view is in a window; until then its layout frame is
-    /// empty, which carries no inset information. Reporting zero keeps callers from reading an
-    /// unresolved guide as "the whole width is unsafe".
+    /// Distance from each physical edge to the corner-adapted safe area guide; zero if unresolved.
     @available(iOS 26.0, *)
     static func horizontalGuideInsets(in view: UIView) -> (left: CGFloat, right: CGFloat) {
         let layoutFrame = view.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal)).layoutFrame
@@ -965,10 +943,8 @@ final class BrowserToolbarView: UIView {
         chromeContainer.transform = CGAffineTransform(translationX: 0, y: floatingBottomOffset + standaloneHideTranslation)
     }
 
-    /// On iOS 26 the host pins this bar to the concentric vertical guide and the glass is shifted
-    /// so it keeps the same physical inset on every edge, for both the combined bottom chrome and
-    /// the standalone pill. Below iOS 26 the layout slot sits on the safe area and the glass is
-    /// shifted down toward the device bottom, leaving `floatingBottomMargin`.
+    /// Shifts the glass so it keeps the same physical inset as the sides (iOS 26), or leaves
+    /// `floatingBottomMargin` above the safe area (pre-iOS 26).
     private func updateFloatingBottomOffset() {
         let target: CGFloat
         if #available(iOS 26.0, *), isFloatingStyleEnabled {

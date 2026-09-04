@@ -768,8 +768,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         UITraitCollection(userInterfaceStyle: configuration.interfaceStyle).performAsCurrent {
             if #available(iOS 26.0, *) {
                 if configuration.kind == .embedded {
-                    // The embedded field already sits on the chrome's glass, so it takes a flat fill
-                    // rather than a second layer of glass with its own highlights.
+                    // Flat fill: the chrome underneath is already glass.
                     view = UIVisualEffectView(effect: nil)
                     view.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
                 } else {

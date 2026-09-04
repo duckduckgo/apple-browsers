@@ -209,8 +209,7 @@ final class BrowserToolbarViewTests: XCTestCase {
         let frame = sut.restingCapsuleFrame(in: container)
 
         if #available(iOS 26.0, *) {
-            // The standalone pill shares the combined bottom chrome's physical inset on every edge,
-            // so the two line up when the layout switches between them.
+            // Standalone shares the combined chrome's physical inset, so the two line up.
             XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
             XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
             XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
@@ -231,8 +230,7 @@ final class BrowserToolbarViewTests: XCTestCase {
         let frame = sut.restingCapsuleFrame(in: container)
 
         if #available(iOS 26.0, *) {
-            // Every edge follows the system's concentric guide (plus the tuck), so the inset is
-            // device-specific but equal all round.
+            // Device-specific inset (guide + tuck), equal on every edge.
             let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: BrowserToolbarView.horizontalGuideInsets(in: container))
             XCTAssertEqual(frame.minX, physical, accuracy: 0.01)
             XCTAssertEqual(container.bounds.width - frame.maxX, physical, accuracy: 0.01)
@@ -280,8 +278,7 @@ final class BrowserToolbarViewTests: XCTestCase {
     }
 
     func testWhenConcentricGuideHasResolvedThenThePillTucksInFromTheGuide() {
-        // The system's concentric inset wins over the fallback once the guide reports a value on
-        // both sides; the narrower side sets the inset when a Dynamic Island widens the other.
+        // Resolved guide wins over the fallback; the narrower side wins under a Dynamic Island.
         let tuck = BrowserToolbarView.floatingConcentricTuck
         XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 18, right: 18)), 18 + tuck, accuracy: 0.01)
         XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 57, right: 18)), 18 + tuck, accuracy: 0.01)
@@ -348,8 +345,7 @@ final class BrowserToolbarViewTests: XCTestCase {
         let frame = sut.restingCapsuleFrame(in: container)
 
         if #available(iOS 26.0, *) {
-            // Every edge follows the system's concentric guide (plus the tuck), so the inset is
-            // device-specific but equal all round.
+            // Device-specific inset (guide + tuck), equal on every edge.
             let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: BrowserToolbarView.horizontalGuideInsets(in: container))
             XCTAssertEqual(frame.minX, physical, accuracy: 0.01)
             XCTAssertEqual(container.bounds.width - frame.maxX, physical, accuracy: 0.01)
@@ -452,8 +448,7 @@ final class BrowserToolbarViewTests: XCTestCase {
         let last = try XCTUnwrap(centers.last)
         let capsule = sut.restingCapsuleFrame(in: window)
 
-        // The split pill's outer buttons land exactly where the combined bottom chrome's icons do,
-        // so switching address bar position doesn't move them.
+        // Outer buttons land where the combined chrome's icons do.
         let expectedInset = BrowserToolbarView.floatingEmbeddedAddressBarIconInset
         XCTAssertEqual(first - capsule.minX, expectedInset, accuracy: 0.5)
         XCTAssertEqual(capsule.maxX - last, expectedInset, accuracy: 0.5)

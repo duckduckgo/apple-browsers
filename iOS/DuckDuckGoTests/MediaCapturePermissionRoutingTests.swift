@@ -1327,10 +1327,10 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     private func makeSUT(featureEnabled: Bool = true,
                          featureFlagger providedFeatureFlagger: MockFeatureFlagger? = nil,
                          hasCommittedMainFrame: Bool = true,
-                         committedURL: URL = URL(string: "https://top-level.example/path")!,
                          systemAuthorizationStatus: AVAuthorizationStatus = .authorized,
                          systemPermissionClient: SystemPermissionClient? = nil,
                          store: SitePermissionsStore? = nil,
+                         committedURL: URL = URL(string: "https://top-level.example/path")!,
                          avAuthorizationStatus: ((AVMediaType) -> AVAuthorizationStatus)? = nil,
                          avRequestAccess: ((AVMediaType, @escaping @Sendable (Bool) -> Void) -> Void)? = nil,
                          eventHandler: @escaping (SitePermissionsEvent) -> Void = { _ in }) -> TabViewController {

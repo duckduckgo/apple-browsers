@@ -32,8 +32,8 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
 
     func testWhenSectionIsAnActivationThenKindCarriesItsChecklistItem() {
         XCTAssertEqual(SubscriptionOnboardingSection.vpnActivation.kind, .activation(.vpn))
-        XCTAssertEqual(SubscriptionOnboardingSection.vpnWidget.kind, .activation(.vpnWidget))
-        XCTAssertEqual(SubscriptionOnboardingSection.vpnTips.kind, .activation(.vpnTips))
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnWidget.kind, .activation(.vpn))
+        XCTAssertEqual(SubscriptionOnboardingSection.vpnTips.kind, .activation(.vpn))
         XCTAssertEqual(SubscriptionOnboardingSection.idtr.kind, .activation(.idtr))
         XCTAssertEqual(SubscriptionOnboardingSection.duckAI.kind, .activation(.duckAI))
         XCTAssertEqual(SubscriptionOnboardingSection.pir.kind, .activation(.pir))

@@ -133,7 +133,7 @@ extension UserText {
     // MARK: - VPN widget education screen
 
     public static let subscriptionOnboardingVPNWidgetEducationTitle = NotLocalizedString("subscription.onboarding.vpn.widget-education.title", value: "Add the VPN Widget to Your Home Screen", comment: "Title of the VPN widget education screen shown after the VPN is on")
-    public static let subscriptionOnboardingVPNWidgetEducationGotItButton = NotLocalizedString("subscription.onboarding.vpn.widget-education.got-it.button", value: "Got it", comment: "VPN widget education screen button that advances to the VPN tips carousel")
+    public static let subscriptionOnboardingVPNWidgetEducationGotItButton = NotLocalizedString("subscription.onboarding.vpn.widget-education.got-it.button", value: "Got It", comment: "VPN widget education screen button that advances to the VPN tips carousel")
 
     // MARK: - VPN tips screen
 
@@ -189,12 +189,12 @@ extension UserText {
     // MARK: - PIR info sheet
 
     public static let subscriptionOnboardingPIRInfoTitle = NotLocalizedString("subscription.onboarding.pir.info.title", value: "Personal Information Removal", comment: "Title of the PIR 'Learn More' info sheet")
-    public static let subscriptionOnboardingPIRInfoExplanation = NotLocalizedString("subscription.onboarding.pir.info.explanation", value: "DuckDuckGo finds and removes your personal info from data broker sites, fighting identity theft and spam.", comment: "Explanation under the title on the PIR info sheet")
+    public static let subscriptionOnboardingPIRInfoExplanation = NotLocalizedString("subscription.onboarding.pir.info.explanation", value: "DuckDuckGo finds and removes your personal info from data broker sites, helping to combat identity theft and spam.", comment: "Explanation under the title on the PIR info sheet")
 
     public static let subscriptionOnboardingPIRInfoPlatformsTitle = NotLocalizedString("subscription.onboarding.pir.info.platforms.title", value: "Platforms", comment: "PIR info sheet feature card title: platforms")
-    public static let subscriptionOnboardingPIRInfoPlatformsBody = NotLocalizedString("subscription.onboarding.pir.info.platforms.body", value: "Personal Information Removal is only available on Mac and Windows", comment: "PIR info sheet feature card body: platforms")
-    public static let subscriptionOnboardingPIRInfoScansTitle = NotLocalizedString("subscription.onboarding.pir.info.scans.title", value: "Repeatedly scans over 50 sites that sell your information", comment: "PIR info sheet feature card title: repeated scans")
-    public static let subscriptionOnboardingPIRInfoScansBody = NotLocalizedString("subscription.onboarding.pir.info.scans.body", value: "Find and remove your personal information from over 50 data broker sites around the web. DuckDuckGo re-scans regularly to minimize the risk of your info reappearing.", comment: "PIR info sheet feature card body: repeated scans")
+    public static let subscriptionOnboardingPIRInfoPlatformsBody = NotLocalizedString("subscription.onboarding.pir.info.platforms.body", value: "Personal Information Removal is only available on iOS, Mac and Windows", comment: "PIR info sheet feature card body: platforms")
+    public static let subscriptionOnboardingPIRInfoScansTitle = NotLocalizedString("subscription.onboarding.pir.info.scans.title", value: "Repeatedly scans data broker sites for your personal info", comment: "PIR info sheet feature card title: repeated scans")
+    public static let subscriptionOnboardingPIRInfoScansBody = NotLocalizedString("subscription.onboarding.pir.info.scans.body", value: "Find and remove your personal information from data broker sites around the web. DuckDuckGo re-scans regularly to minimize the risk of your info reappearing.", comment: "PIR info sheet feature card body: repeated scans")
     public static let subscriptionOnboardingPIRInfoOnDeviceTitle = NotLocalizedString("subscription.onboarding.pir.info.on-device.title", value: "Your info stays on your device, not our servers", comment: "PIR info sheet feature card title: info stays on device")
     public static let subscriptionOnboardingPIRInfoOnDeviceBody = NotLocalizedString("subscription.onboarding.pir.info.on-device.body", value: "Unlike other services, the removal process happens entirely on your device, not remote servers — your device stores the personal information you provide during setup and initiates removal requests.", comment: "PIR info sheet feature card body: info stays on device")
     public static let subscriptionOnboardingPIRInfoAutomatedTitle = NotLocalizedString("subscription.onboarding.pir.info.automated.title", value: "Totally automated", comment: "PIR info sheet feature card title: totally automated")
@@ -204,7 +204,7 @@ extension UserText {
 
     // MARK: - Order confirmation screen
 
-    public static let subscriptionOnboardingOrderConfirmationTitle = NotLocalizedString("subscription.onboarding.order-confirmation.title", value: "Protections unlocked!", comment: "Order confirmation screen title, shown right after checkout completes")
+    public static let subscriptionOnboardingOrderConfirmationTitle = NotLocalizedString("subscription.onboarding.order-confirmation.title", value: "Protections unlocked", comment: "Order confirmation screen title, shown right after checkout completes")
     public static let subscriptionOnboardingOrderConfirmationExplanation = NotLocalizedString("subscription.onboarding.order-confirmation.explanation", value: "Start using your premium protections today!", comment: "Order confirmation screen subtitle, shown right after checkout completes")
     public static let subscriptionOnboardingOrderConfirmationNextButton = NotLocalizedString("subscription.onboarding.order-confirmation.next.button", value: "Let's go!", comment: "Order confirmation screen primary button that starts the onboarding flow")
 

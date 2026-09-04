@@ -165,7 +165,7 @@ struct SubscriptionFlowView: View {
             await startOnboarding()
         }
 
-        .sheet(item: $onboardingFlow) { flow in
+        .subscriptionOnboardingSheet(item: $onboardingFlow) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
                 .onFirstAppear { viewModel.didPresentOnboarding() }
         }

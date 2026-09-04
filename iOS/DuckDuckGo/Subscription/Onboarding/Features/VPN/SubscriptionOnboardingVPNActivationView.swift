@@ -32,6 +32,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
         static let onInfoCardsSpacing: CGFloat = 12
         static let featureRowSpacing: CGFloat = 10
         static let newIPCardSlideOffset: CGFloat = -16
+        static let featureRowsSlideOffset: CGFloat = -16
     }
 
     @StateObject private var viewModel: SubscriptionOnboardingVPNActivationViewModel
@@ -44,6 +45,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
 
     @State private var isShowingInfoSheet = false
     @State private var tapAllowHintWindow = TapAllowHintOverlayWindow()
+    @State private var featureRowsOffset: CGFloat = 0
 
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
          title: String? = nil,
@@ -166,22 +168,20 @@ private extension SubscriptionOnboardingVPNActivationView {
         }
     }
 
-    @ViewBuilder
     var featureRows: some View {
-        if viewModel.connectionState == .on {
-            VStack(spacing: Metrics.featureRowSpacing) {
-                ForEach(VPNProtection.allCases, id: \.self) { protection in
-                    SubscriptionOnboardingListItemView(text: protection.text, status: .active)
-                }
+        VStack(spacing: Metrics.featureRowSpacing) {
+            ForEach(VPNProtection.allCases, id: \.self) { protection in
+                SubscriptionOnboardingListItemView(text: protection.text,
+                                                   status: viewModel.connectionState == .on ? .active : .inactive)
             }
-            .transition(.move(edge: .trailing).combined(with: .opacity))
-        } else {
-            VStack(spacing: Metrics.featureRowSpacing) {
-                ForEach(VPNProtection.allCases, id: \.self) { protection in
-                    SubscriptionOnboardingListItemView(text: protection.text, status: .inactive)
-                }
+        }
+        .offset(y: featureRowsOffset)
+        .onChange(of: viewModel.connectionState) { newValue in
+            guard newValue == .on, !reduceMotion else { return }
+            featureRowsOffset = Metrics.featureRowsSlideOffset
+            withAnimation(.easeOut(duration: 0.4)) {
+                featureRowsOffset = 0
             }
-            .transition(.move(edge: .leading).combined(with: .opacity))
         }
     }
 
@@ -197,18 +197,22 @@ private extension SubscriptionOnboardingVPNActivationView {
 // MARK: - Footer
 
 private extension SubscriptionOnboardingVPNActivationView {
+    func startVPN() {
+        tapAllowHint.startTapped()
+        Task {
+            await viewModel.turnOnVPN()
+            tapAllowHint.turnOnFinished()
+        }
+    }
+
     var footer: SubscriptionOnboardingFooter {
         switch viewModel.connectionState {
         case .off:
-            let startVPN: () -> Void = {
-                tapAllowHint.startTapped()
-                Task {
-                    await viewModel.turnOnVPN()
-                    tapAllowHint.turnOnFinished()
-                }
-            }
             guard viewModel.didFailActivation else {
-                return .single(.init(UserText.subscriptionOnboardingVPNActivationTurnOnButton, action: startVPN))
+                guard viewModel.isActivating else {
+                    return .single(.init(UserText.subscriptionOnboardingVPNActivationTurnOnButton, action: startVPN))
+                }
+                return .single(.init(content: SwiftUI.ProgressView(), isDisabled: true, action: startVPN))
             }
             return .double(primary: .init(UserText.subscriptionOnboardingVPNActivationTryAgainButton, action: startVPN),
                            secondary: .init(UserText.subscriptionOnboardingVPNActivationSkipButton) { viewModel.advance() })

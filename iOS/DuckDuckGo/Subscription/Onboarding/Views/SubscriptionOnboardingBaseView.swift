@@ -161,11 +161,6 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
         }
     }
 
-    /// Overlays the footer
-    private var usesBlurredFooter: Bool {
-        footerBlur
-    }
-
     @ViewBuilder
     private var pageWithFooter: some View {
         let page = pageContent
@@ -173,7 +168,7 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
             .background { pageBackground }
             .background(pageBackgroundColor.ignoresSafeArea())
 
-        if usesBlurredFooter {
+        if footerBlur {
             page
                 .overlay(alignment: .bottom) { blurredFooterView }
                 .onPreferenceChange(FooterBlockHeightKey.self) { footerBlockHeight = $0 }
@@ -214,7 +209,7 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
         }
         .padding(.top, Metrics.contentVerticalPadding)
         .padding(.horizontal, Metrics.horizontalPadding)
-        .padding(.bottom, usesBlurredFooter ? footerBlockHeight : Metrics.contentVerticalPadding)
+        .padding(.bottom, footerBlur ? footerBlockHeight : Metrics.contentVerticalPadding)
     }
 }
 
@@ -308,6 +303,7 @@ private extension SubscriptionOnboardingBaseView {
                 .disabled(button.isDisabled)
         case .push(let destination):
             NavigationLink(destination: destination) { button.content }
+                .disabled(button.isDisabled)
         }
     }
 

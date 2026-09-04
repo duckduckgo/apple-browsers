@@ -267,6 +267,40 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.vpnLocationNearestIndicator)
     }
 
+    // MARK: - Activating spinner
+
+    func testWhenTurnOnVPNSucceedsThenIsActivatingBecomesTrue() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+
+        await viewModel.turnOnVPN()
+
+        XCTAssertTrue(viewModel.isActivating)
+    }
+
+    func testWhenConfigurationIsDeniedAfterTurningOnThenIsActivatingBecomesFalse() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+        await viewModel.turnOnVPN()
+
+        await waitFor(viewModel.$isActivating, toEqual: false) {
+            controller.simulateConfigurationDenied()
+        }
+
+        XCTAssertFalse(viewModel.isActivating)
+    }
+
+    func testWhenRetryingAfterDenialAndTheRetrySucceedsThenIsActivatingBecomesTrue() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+        controller.simulateConfigurationDenied()
+
+        await viewModel.turnOnVPN()
+
+        XCTAssertTrue(viewModel.isActivating)
+        XCTAssertTrue(viewModel.didDenyVPNPermission)
+    }
+
     // MARK: - Permission denial (observed)
 
     func testWhenConfigurationIsDeniedThenDidDenyVPNPermissionBecomesTrue() async {

@@ -23,6 +23,12 @@ import BrowserServicesKit
 import os.log
 import DataBrokerProtectionCore
 
+public protocol SchedulerDeferralFeatureFlagging {
+    var isSchedulerDeferralHandlingEnabled: Bool { get }
+}
+
+public typealias DBPMacOSFeatureFlagging = DBPFeatureFlagging & SchedulerDeferralFeatureFlagging
+
 public protocol DataBrokerProtectionBackgroundActivityScheduler {
     func startScheduler() async
 
@@ -44,13 +50,19 @@ public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataB
 
     private let activity: NSBackgroundActivityScheduler
     private let schedulerIdentifier = "com.duckduckgo.macos.browser.databroker-protection-scheduler"
+    private let isDeferralHandlingEnabled: Bool
 
     public weak var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate?
     public weak var dataSource: DataBrokerProtectionBackgroundActivitySchedulerDataSource?
     public private(set) var lastTriggerTimestamp: Date?
+    private var shouldDefer: Bool {
+        isDeferralHandlingEnabled && activity.shouldDefer
+    }
 
-    public init(config: DataBrokerMacOSSchedulingConfig) {
+    public init(config: DataBrokerMacOSSchedulingConfig,
+                isDeferralHandlingEnabled: Bool) {
         activity = NSBackgroundActivityScheduler(identifier: schedulerIdentifier)
+        self.isDeferralHandlingEnabled = isDeferralHandlingEnabled
         activity.repeats = true
         activity.interval = config.activitySchedulerTriggerInterval
         activity.tolerance = config.activitySchedulerIntervalTolerance
@@ -63,6 +75,12 @@ public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataB
                 Task {
                     self.lastTriggerTimestamp = Date()
                     Logger.dataBrokerProtection.log("Scheduler running...")
+
+                    guard !self.shouldDefer else {
+                        Logger.dataBrokerProtection.log("Scheduler deferred before work started")
+                        completion(.deferred)
+                        return
+                    }
 
                     await self.delegate?.dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(self)
 

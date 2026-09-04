@@ -22,6 +22,7 @@ import Bookmarks
 import Combine
 import SwiftUI
 import Core
+import PixelKit
 import WidgetKit
 
 protocol NewTabPageFavoriteDataSource {
@@ -35,6 +36,22 @@ protocol NewTabPageFavoriteDataSource {
     func bookmarkEntity(for favorite: Favorite) -> BookmarkEntity?
     func favorite(at index: Int) throws -> Favorite?
     func removeFavorite(_ favorite: Favorite)
+}
+
+
+private enum NewTabPageFavoritesPixel: PixelKit.Event {
+    /// A drag gesture that reordered the grid, fired once when the gesture finishes.
+    case reorder
+
+    var name: String {
+        switch self {
+        case .reorder: return "new-tab-page_favorites_reorder"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 protocol FavoritesFaviconCaching {
@@ -57,9 +74,8 @@ class FavoritesViewModel: ObservableObject {
     private let isFocussedState: Bool
     private let favoriteDataSource: NewTabPageFavoriteDataSource
     private let faviconsCache: FavoritesFaviconCaching
-    private let pixelFiring: PixelFiring.Type
-    private let dailyPixelFiring: DailyPixelFiring.Type
-   
+    private let pixelFiring: (any PixelKitFiring)?
+
     var isEmpty: Bool {
         allFavorites.isEmpty
     }
@@ -68,12 +84,10 @@ class FavoritesViewModel: ObservableObject {
          favoriteDataSource: NewTabPageFavoriteDataSource,
          faviconLoader: FavoritesFaviconLoading,
          faviconsCache: FavoritesFaviconCaching,
-         pixelFiring: PixelFiring.Type = Pixel.self,
-         dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.isFocussedState = isFocussedState
         self.favoriteDataSource = favoriteDataSource
         self.pixelFiring = pixelFiring
-        self.dailyPixelFiring = dailyPixelFiring
         self.faviconsCache = faviconsCache
 
         self.faviconLoader = MissingFaviconWrapper(loader: faviconLoader, onFaviconMissing: { [weak self] in
@@ -104,10 +118,10 @@ class FavoritesViewModel: ObservableObject {
         guard let url = favorite.urlObject else { return }
 
         if isFocussedState {
-            pixelFiring.fire(.favoriteLaunchedWebsite, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.favoriteLaunchedWebsite)
         } else {
-            pixelFiring.fire(.favoriteLaunchedNTP, withAdditionalParameters: [:])
-            dailyPixelFiring.fireDaily(.favoriteLaunchedNTPDaily)
+            pixelFiring?.fire(Pixel.Event.favoriteLaunchedNTP)
+            pixelFiring?.fire(Pixel.Event.favoriteLaunchedNTPDaily, frequency: .legacyDailyNoSuffix)
         }
         if let host = url.host {
             faviconsCache.populateFavicon(for: host, intoCache: .fireproof, fromCache: .tabs)
@@ -124,7 +138,7 @@ class FavoritesViewModel: ObservableObject {
     func deleteFavorite(_ favorite: Favorite) {
         guard let entity = favoriteDataSource.bookmarkEntity(for: favorite) else { return }
 
-        pixelFiring.fire(.homeScreenDeleteFavorite, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.homeScreenDeleteFavorite)
 
         favoriteDataSource.removeFavorite(favorite)
 
@@ -138,7 +152,7 @@ class FavoritesViewModel: ObservableObject {
     func editFavorite(_ favorite: Favorite) {
         guard let entity = favoriteDataSource.bookmarkEntity(for: favorite) else { return }
 
-        pixelFiring.fire(.homeScreenEditFavorite, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.homeScreenEditFavorite)
 
         onFavoriteEdit?(entity)
     }
@@ -152,6 +166,10 @@ class FavoritesViewModel: ObservableObject {
         favoriteDataSource.moveFavorite(favorite, fromIndex: fromIndex, toIndex: index)
         // Reload from the data source; it already republishes the reordered list, so don't re-apply the move.
         updateData()
+    }
+
+    func favoritesReordered() {
+        pixelFiring?.fire(NewTabPageFavoritesPixel.reorder, frequency: .dailyAndCount)
     }
 
     // MARK: -

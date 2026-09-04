@@ -642,7 +642,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case monthlyFreeTrialExperiment2
     case onboardingSubscriptionUpsellExperiment
 
-    /// Gates the server-rendered first paywall. Wired only — nothing reads it yet.
+    /// Gates the server-rendered first paywall.
     case performanceOptimizedPaywalls
 }
 

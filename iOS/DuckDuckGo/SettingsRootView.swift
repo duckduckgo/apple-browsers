@@ -19,6 +19,7 @@
 
 import SwiftUI
 import UIKit
+import BrowserServicesKit
 import DataBrokerProtection_iOS
 import DesignResourcesKit
 import Subscription
@@ -150,6 +151,11 @@ struct SettingsRootView: View {
 
     @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?,
                                                             landingURL: URL? = nil) -> some View {
+        let featureFlagger = viewModel.featureFlagger
+        let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
+            privacyConfigurationManager: viewModel.userScriptsDependencies.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
         SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
                                                              landingURL: landingURL,
                                                              navigationCoordinator: subscriptionNavigationCoordinator,
@@ -161,7 +167,8 @@ struct SettingsRootView: View {
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                              wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                             featureFlagger: viewModel.featureFlagger)
+                                                             featureFlagger: featureFlagger,
+                                                             performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider)
     }
 
     @ViewBuilder func subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {

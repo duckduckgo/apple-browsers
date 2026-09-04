@@ -145,6 +145,14 @@ final class PerformanceOptimizedPaywallsProviderTests: XCTestCase {
 
     private func makeProvider(isFeatureEnabled: Bool = true) -> DefaultPerformanceOptimizedPaywallsProvider {
         DefaultPerformanceOptimizedPaywallsProvider(privacyConfigurationManager: privacyConfigurationManager,
-                                                    isFeatureEnabled: { isFeatureEnabled })
+                                                    featureFlagger: MockPerformanceOptimizedPaywallsFeatureFlagger(isEnabled: isFeatureEnabled))
+    }
+}
+
+private struct MockPerformanceOptimizedPaywallsFeatureFlagger: PerformanceOptimizedPaywallsFeatureFlagging {
+    let isPerformanceOptimizedPaywallsEnabled: Bool
+
+    init(isEnabled: Bool) {
+        isPerformanceOptimizedPaywallsEnabled = isEnabled
     }
 }

@@ -20,7 +20,6 @@
 import SwiftUI
 import Subscription
 import Common
-import Core
 import FoundationExtensions
 import BrowserServicesKit
 import PrivacyConfig
@@ -65,7 +64,8 @@ enum SubscriptionContainerViewFactory {
                                     internalUserDecider: InternalUserDecider,
                                     dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
                                     wideEvent: WideEventManaging,
-                                    featureFlagger: FeatureFlagger) -> some View {
+                                    featureFlagger: FeatureFlagger,
+                                    performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
@@ -83,41 +83,13 @@ enum SubscriptionContainerViewFactory {
                                                                    wideEvent: wideEvent,
                                                                    pendingTransactionHandler: pendingTransactionHandler)
 
-        let redirectPurchaseURL: URL? = {
-            guard let redirectURLComponents else { return nil }
-            return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
-        }()
-
-        let initialURL: URL = {
-            // A landing URL is an explicit destination, like the post-purchase welcome page, never a paywall.
-            if let landingURL { return landingURL }
-
-            // Falls back to the default purchase URL so the rewrite below sees the URL the flow will
-            // actually open — `SubscriptionContainerViewModel` applies that same default otherwise.
-            let purchaseURL = redirectPurchaseURL ?? subscriptionManager.url(for: .purchase)
-
-            // An intercepted `/pro` link keeps today's paywall: it isn't one this app chose to open.
-            // `urlForPurchaseFromRedirect` has already rebuilt it onto `/subscriptions`, so the redirect's
-            // own path is all that still tells the two apart — and nothing in the app produces `/pro`,
-            // only `TabURLInterceptor`, which copies the intercepted URL verbatim.
-            if redirectURLComponents?.path == SubscriptionPurchaseFlowPath.pro.rawValue { return purchaseURL }
-
-            let paywalls = DefaultPerformanceOptimizedPaywallsProvider(
-                privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
-                isFeatureEnabled: { featureFlagger.isFeatureOn(.performanceOptimizedPaywalls) }
-            )
-            guard paywalls.isEnabled else { return purchaseURL }
-
-            return SubscriptionURL.performanceOptimizedPaywallURL(
-                basedOn: purchaseURL,
-                paths: paywalls.paths,
-                isTrialEligible: subscriptionManager.isUserEligibleForFreeTrial(),
-                isPersonalInformationRemovalAvailable: subscriptionManager.currentStorefrontRegion == .usa
-            ) ?? purchaseURL
-        }()
+        let initialURL = makeSubscribeFlowInitialURL(redirectURLComponents: redirectURLComponents,
+                                                     landingURL: landingURL,
+                                                     subscriptionManager: subscriptionManager,
+                                                     tld: tld,
+                                                     performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider)
 
         let origin = redirectURLComponents?.queryItems?.first(where: { $0.name == AttributionParameter.origin })?.value
-
 
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
@@ -145,6 +117,31 @@ enum SubscriptionContainerViewFactory {
             .environmentObject(navigationCoordinator)
     }
 
+    private static func makeSubscribeFlowInitialURL(redirectURLComponents: URLComponents?,
+                                                    landingURL: URL?,
+                                                    subscriptionManager: SubscriptionManager,
+                                                    tld: TLD,
+                                                    performanceOptimizedPaywalls: any PerformanceOptimizedPaywallsProviding) -> URL {
+        // A landing URL is an explicit destination, like the post-purchase welcome page, never a paywall.
+        if let landingURL { return landingURL }
+
+        let purchaseURL = redirectURLComponents.map {
+            subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: $0, tld: tld)
+        } ?? subscriptionManager.url(for: .purchase)
+
+        // Intercepted `/pro` URLs are excluded from performance-optimized paywalls.
+        guard performanceOptimizedPaywalls.isEnabled,
+              redirectURLComponents?.path != SubscriptionPurchaseFlowPath.pro.rawValue else { return purchaseURL }
+
+        let performanceOptimizedPaywallURL = SubscriptionURL.performanceOptimizedPaywallURL(
+            basedOn: purchaseURL,
+            paths: performanceOptimizedPaywalls.paths,
+            isTrialEligible: subscriptionManager.isUserEligibleForFreeTrial(),
+            isPersonalInformationRemovalAvailable: subscriptionManager.currentStorefrontRegion == .usa
+        )
+        return performanceOptimizedPaywallURL ?? purchaseURL
+    }
+
     @ViewBuilder
     static func makePurchaseFlowV2(redirectURLComponents: URLComponents?,
                                    navigationCoordinator: SubscriptionNavigationCoordinator,
@@ -156,7 +153,8 @@ enum SubscriptionContainerViewFactory {
                                    internalUserDecider: InternalUserDecider,
                                    dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
                                    wideEvent: WideEventManaging,
-                                   featureFlagger: FeatureFlagger) -> some View {
+                                   featureFlagger: FeatureFlagger,
+                                   performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding) -> some View {
         if let redirectURLComponents,
            SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
             makePlansFlowV2(redirectURLComponents: redirectURLComponents,
@@ -179,7 +177,8 @@ enum SubscriptionContainerViewFactory {
                                 internalUserDecider: internalUserDecider,
                                 dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
                                 wideEvent: wideEvent,
-                                featureFlagger: featureFlagger)
+                                featureFlagger: featureFlagger,
+                                performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider)
         }
     }
 

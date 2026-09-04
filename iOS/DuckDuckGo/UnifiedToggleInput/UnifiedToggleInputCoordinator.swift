@@ -178,7 +178,22 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Window-space X of the resting omnibar placeholder text, captured at focus time (before the
     /// bottom floating omnibar is detached from the toolbar). Reused on dismiss to slide the UTI
     /// text back onto the omnibar's text leading edge — the omnibar can't be measured live then.
-    var cachedOmnibarPlaceholderWindowX: CGFloat?
+    /// Absolute window coordinate, so it only holds while the window keeps the size it was taken at.
+    private var omnibarPlaceholderHandoff: (windowX: CGFloat, windowSize: CGSize)?
+
+    func cacheOmnibarPlaceholderWindowX(_ windowX: CGFloat?, windowSize: CGSize?) {
+        guard let windowX, let windowSize else {
+            omnibarPlaceholderHandoff = nil
+            return
+        }
+        omnibarPlaceholderHandoff = (windowX, windowSize)
+    }
+
+    func omnibarPlaceholderWindowX(validFor windowSize: CGSize?) -> CGFloat? {
+        guard let handoff = omnibarPlaceholderHandoff, handoff.windowSize == windowSize else { return nil }
+        return handoff.windowX
+    }
+
     private var keyboardMonitor: UTIKeyboardMonitor!
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!

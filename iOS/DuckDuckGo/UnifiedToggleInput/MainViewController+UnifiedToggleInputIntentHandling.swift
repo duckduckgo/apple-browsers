@@ -66,6 +66,13 @@ extension MainViewController {
         return pill.convert(pill.bounds, to: nil)
     }
 
+    /// Live measurement where the omnibar is still in the toolbar, else the value captured at focus —
+    /// which only holds if the window hasn't resized since (rotation makes it meaningless).
+    func omnibarPlaceholderWindowXForHandoff(_ coordinator: UnifiedToggleInputCoordinator?) -> CGFloat? {
+        currentOmnibarPlaceholderWindowX()
+            ?? coordinator?.omnibarPlaceholderWindowX(validFor: view.window?.bounds.size)
+    }
+
     /// Off-screen omnibar (e.g. new-tab focus before swipe-tabs reparents it) is unmeasurable, so the hand-off falls back to resting margins.
     private func omnibarChromeIsOnScreenForHandoff(_ view: UIView) -> Bool {
         guard let window = view.window else { return false }
@@ -253,7 +260,7 @@ private extension MainViewController {
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
         // Cached so the symmetric dismiss can slide the text back onto the omnibar even though the
         // omnibar is no longer in the toolbar by then.
-        coordinator.cachedOmnibarPlaceholderWindowX = omnibarPlaceholderWindowX
+        coordinator.cacheOmnibarPlaceholderWindowX(omnibarPlaceholderWindowX, windowSize: view.window?.bounds.size)
 
         if isFloatingUIEnabled, coordinator.cardPosition.isBottom {
             viewCoordinator.returnOmnibarToNavigationContainerIfNeeded(applyingToolbarHeightImmediately: false)
@@ -359,7 +366,7 @@ private extension MainViewController {
         if animated {
             // Bottom floating: the omnibar is detached from the toolbar by now, so fall back to the
             // placeholder X captured at focus (live read is nil).
-            let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator?.cachedOmnibarPlaceholderWindowX
+            let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
             let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)

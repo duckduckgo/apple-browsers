@@ -124,7 +124,11 @@ public struct ManagementDialog: View {
                     PreparingToSyncView(mode: .twoDevicePairing)
                 }
             case .saveRecoveryCode(let code):
-                SaveRecoveryPDFView(code: code)
+                if model.isSimplifiedSyncSetupV2Enabled {
+                    SyncSuccessViewV2(code: code)
+                } else {
+                    SaveRecoveryPDFView(code: code)
+                }
             case .nowSyncing:
                 DeviceSyncedView()
             case .syncWithServer:

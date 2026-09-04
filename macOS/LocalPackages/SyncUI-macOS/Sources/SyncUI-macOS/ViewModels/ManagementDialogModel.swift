@@ -32,7 +32,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func recoveryCodeNextPressed()
     func turnOnSync()
     func enterRecoveryCodePressed()
-    func copyCode()
+    func copyCode(_ code: String)
     func syncAnotherDevicePromptDidAppear()
     func syncThisDeviceOnlyFromPrompt() async
     func syncWithAnotherDeviceFromPrompt()
@@ -58,6 +58,8 @@ public final class ManagementDialogModel: ObservableObject {
     @Published public var isSimplifiedSyncSetupV2Enabled: Bool = false
     @Published public var isConnectingThisDeviceOnly: Bool = false
     @Published public var isConnectingAnotherDevice: Bool = false
+
+    public var thisDeviceName: String?
 
     public var isConnecting: Bool {
         isConnectingThisDeviceOnly || isConnectingAnotherDevice

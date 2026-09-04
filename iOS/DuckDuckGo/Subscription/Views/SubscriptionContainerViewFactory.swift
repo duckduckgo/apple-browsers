@@ -65,6 +65,7 @@ enum SubscriptionContainerViewFactory {
                                     dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
                                     wideEvent: WideEventManaging,
                                     featureFlagger: FeatureFlagger,
+                                    isDebugOverlayEnabled: Bool,
                                     performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
@@ -83,11 +84,14 @@ enum SubscriptionContainerViewFactory {
                                                                    wideEvent: wideEvent,
                                                                    pendingTransactionHandler: pendingTransactionHandler)
 
-        let initialURL = makeSubscribeFlowInitialURL(redirectURLComponents: redirectURLComponents,
+        var initialURL = makeSubscribeFlowInitialURL(redirectURLComponents: redirectURLComponents,
                                                      landingURL: landingURL,
                                                      subscriptionManager: subscriptionManager,
                                                      tld: tld,
                                                      performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider)
+        if isDebugOverlayEnabled {
+            initialURL = initialURL.appendingParameter(name: "debug", value: "1")
+        }
 
         let origin = redirectURLComponents?.queryItems?.first(where: { $0.name == AttributionParameter.origin })?.value
 
@@ -154,6 +158,7 @@ enum SubscriptionContainerViewFactory {
                                    dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
                                    wideEvent: WideEventManaging,
                                    featureFlagger: FeatureFlagger,
+                                   isDebugOverlayEnabled: Bool,
                                    performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding) -> some View {
         if let redirectURLComponents,
            SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
@@ -178,6 +183,7 @@ enum SubscriptionContainerViewFactory {
                                 dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
                                 wideEvent: wideEvent,
                                 featureFlagger: featureFlagger,
+                                isDebugOverlayEnabled: isDebugOverlayEnabled,
                                 performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider)
         }
     }

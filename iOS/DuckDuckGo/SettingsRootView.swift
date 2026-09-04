@@ -156,6 +156,7 @@ struct SettingsRootView: View {
             privacyConfigurationManager: viewModel.userScriptsDependencies.privacyConfigurationManager,
             featureFlagger: featureFlagger
         )
+        let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: viewModel.keyValueStore)
         SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
                                                              landingURL: landingURL,
                                                              navigationCoordinator: subscriptionNavigationCoordinator,
@@ -168,6 +169,7 @@ struct SettingsRootView: View {
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                              wideEvent: AppDependencyProvider.shared.wideEvent,
                                                              featureFlagger: featureFlagger,
+                                                             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
                                                              performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider)
     }
 

@@ -17,6 +17,8 @@
 //
 
 import XCTest
+import AppKit
+import Common
 import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -138,4 +140,131 @@ extension SecureVaultModels.WebsiteAccount {
         self.id = id
     }
 
+}
+
+@MainActor
+final class PasswordManagementClipboardTests: XCTestCase {
+
+    private var pasteboard: NSPasteboard!
+    private var notifications: NotificationCenter!
+    private var workspaceNotifications: NotificationCenter!
+    private var scheduledClears: [() -> Void] = []
+    private var scheduledIntervals: [TimeInterval] = []
+
+    override func setUp() {
+        super.setUp()
+        pasteboard = NSPasteboard.withUniqueName()
+        notifications = NotificationCenter()
+        workspaceNotifications = NotificationCenter()
+    }
+
+    override func tearDown() {
+        scheduledClears.forEach { $0() }
+        scheduledClears.removeAll()
+        scheduledIntervals.removeAll()
+        pasteboard.releaseGlobally()
+        pasteboard = nil
+        notifications = nil
+        workspaceNotifications = nil
+        super.tearDown()
+    }
+
+    func testPasswordIsClearedAtScheduledDeadline() {
+        let model = makeModel()
+        model.copy("test-password", fieldType: .password)
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "test-password")
+        XCTAssertEqual(scheduledIntervals, [60])
+        scheduledClears.first?()
+        XCTAssertNil(pasteboard.string(forType: .string))
+    }
+
+    func testExpirationPreservesNewerClipboardContentsEvenWhenTextMatches() {
+        let model = makeModel()
+        model.copy("test-password", fieldType: .password)
+        pasteboard.copy("test-password")
+
+        scheduledClears.first?()
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "test-password")
+    }
+
+    func testCopyingAnotherPasswordStartsANewExpiration() {
+        let model = makeModel()
+        model.copy("first-password", fieldType: .password)
+        model.copy("second-password", fieldType: .password)
+        XCTAssertEqual(scheduledClears.count, 2)
+
+        scheduledClears.first?()
+        XCTAssertEqual(pasteboard.string(forType: .string), "second-password")
+        scheduledClears.last?()
+        XCTAssertNil(pasteboard.string(forType: .string))
+    }
+
+    func testExpirationStillRunsAfterModelIsReleased() {
+        var model: PasswordManagementLoginModel? = makeModel()
+        let isModelReleased = { [weak model] in model == nil }
+        model?.copy("test-password", fieldType: .password)
+        model = nil
+
+        XCTAssertTrue(isModelReleased())
+        scheduledClears.first?()
+        XCTAssertNil(pasteboard.string(forType: .string))
+    }
+
+    func testOtherFieldsDoNotScheduleExpiration() {
+        let model = makeModel()
+        model.copy("test-user", fieldType: .username)
+        XCTAssertEqual(pasteboard.string(forType: .string), "test-user")
+        model.copy("test-note")
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "test-note")
+        XCTAssertTrue(scheduledClears.isEmpty)
+    }
+
+    func testQuitClearsPassword() {
+        let model = makeModel()
+        model.copy("test-password", fieldType: .password)
+
+        notifications.post(name: NSApplication.willTerminateNotification, object: nil)
+
+        XCTAssertNil(pasteboard.string(forType: .string))
+    }
+
+    func testSleepClearsPassword() {
+        let model = makeModel()
+        model.copy("test-password", fieldType: .password)
+
+        workspaceNotifications.post(name: NSWorkspace.willSleepNotification, object: nil)
+
+        XCTAssertNil(pasteboard.string(forType: .string))
+    }
+
+    func testQuitAndSleepPreserveNewerClipboardContents() {
+        let model = makeModel()
+        model.copy("test-password", fieldType: .password)
+        pasteboard.copy("newer-text")
+
+        notifications.post(name: NSApplication.willTerminateNotification, object: nil)
+        workspaceNotifications.post(name: NSWorkspace.willSleepNotification, object: nil)
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "newer-text")
+    }
+
+    private func makeModel() -> PasswordManagementLoginModel {
+        PasswordManagementLoginModel(
+            onSaveRequested: { _ in },
+            onDeleteRequested: { _ in },
+            urlMatcher: AutofillDomainNameUrlMatcher(),
+            emailManager: EmailManager(),
+            tld: TLD(),
+            urlSort: AutofillDomainNameUrlSort(),
+            pasteboard: pasteboard,
+            notificationCenter: notifications,
+            workspaceNotificationCenter: workspaceNotifications,
+            scheduleClipboardClear: { [weak self] interval, clear in
+                self?.scheduledIntervals.append(interval)
+                self?.scheduledClears.append(clear)
+            })
+    }
 }

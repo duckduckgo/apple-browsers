@@ -26,6 +26,7 @@ import DesignResourcesKit
 import Foundation
 import SecureStorage
 import SwiftUI
+import UniformTypeIdentifiers
 
 protocol AutofillLoginDetailsViewModelDelegate: AnyObject {
     func autofillLoginDetailsViewModelDidSave()
@@ -63,6 +64,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
     var account: SecureVaultModels.WebsiteAccount?
     var emailManager: EmailManager
     private let syncService: DDGSyncing
+    private let pasteboard: UIPasteboard
 
     private let tld: TLD
     private let autofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher()
@@ -180,9 +182,11 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
     internal init(account: SecureVaultModels.WebsiteAccount? = nil,
                   syncService: DDGSyncing,
                   tld: TLD,
-                  emailManager: EmailManager = EmailManager()) {
+                  emailManager: EmailManager = EmailManager(),
+                  pasteboard: UIPasteboard = .general) {
         self.account = account
         self.syncService = syncService
+        self.pasteboard = pasteboard
         self.tld = tld
         self.headerViewModel = AutofillLoginDetailsHeaderViewModel()
         self.emailManager = emailManager
@@ -244,18 +248,19 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
         switch action {
         case .username:
             message = UserText.autofillCopyToastUsernameCopied
-            UIPasteboard.general.string = username
+            pasteboard.string = username
             Pixel.fire(pixel: .autofillManagementCopyUsername)
         case .password:
             message = UserText.autofillCopyToastPasswordCopied
-            UIPasteboard.general.string = password
+            pasteboard.setItems([[UTType.utf8PlainText.identifier: password]],
+                                options: [.expirationDate: Date().addingTimeInterval(60)])
             Pixel.fire(pixel: .autofillManagementCopyPassword)
         case .address:
             message = UserText.autofillCopyToastAddressCopied
-            UIPasteboard.general.string = address
+            pasteboard.string = address
         case .notes:
             message = UserText.autofillCopyToastNotesCopied
-            UIPasteboard.general.string = notes
+            pasteboard.string = notes
         }
         
         presentCopyConfirmation(message: message)

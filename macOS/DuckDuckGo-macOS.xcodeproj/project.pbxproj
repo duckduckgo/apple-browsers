@@ -248,8 +248,6 @@
 		1DEF3BAE2BD145A9004A2FBA /* AutoClearHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */; };
 		1DF78E102CE6197B00AB898E /* Tab+WKWebExtensionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF78E0E2CE6197200AB898E /* Tab+WKWebExtensionTab.swift */; };
 		1DF78E132CE61DB700AB898E /* MainWindowController+WKWebExtensionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF78E112CE61DB000AB898E /* MainWindowController+WKWebExtensionWindow.swift */; };
-		1DF7989A2DBA2A23003148F3 /* AboutPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF798992DBA2A20003148F3 /* AboutPanel.swift */; };
-		1DF7989B2DBA2A23003148F3 /* AboutPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF798992DBA2A20003148F3 /* AboutPanel.swift */; };
 		1DFAB51D2A8982A600A0F7F6 /* SetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DFAB51C2A8982A600A0F7F6 /* SetExtension.swift */; };
 		1DFAB51E2A8982A600A0F7F6 /* SetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DFAB51C2A8982A600A0F7F6 /* SetExtension.swift */; };
 		1DFAB5222A8983DE00A0F7F6 /* SetExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DFAB51F2A89830D00A0F7F6 /* SetExtensionTests.swift */; };
@@ -5208,7 +5206,6 @@
 		1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoClearHandler.swift; sourceTree = "<group>"; };
 		1DF78E0E2CE6197200AB898E /* Tab+WKWebExtensionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+WKWebExtensionTab.swift"; sourceTree = "<group>"; };
 		1DF78E112CE61DB000AB898E /* MainWindowController+WKWebExtensionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainWindowController+WKWebExtensionWindow.swift"; sourceTree = "<group>"; };
-		1DF798992DBA2A20003148F3 /* AboutPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutPanel.swift; sourceTree = "<group>"; };
 		1DFAB51C2A8982A600A0F7F6 /* SetExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetExtension.swift; sourceTree = "<group>"; };
 		1DFAB51F2A89830D00A0F7F6 /* SetExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetExtensionTests.swift; sourceTree = "<group>"; };
 		1E0C72052ABC63BD00802009 /* SubscriptionPagesUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUserScript.swift; sourceTree = "<group>"; };
@@ -11173,7 +11170,6 @@
 		AA4D700525545EDE00C3411E /* Application */ = {
 			isa = PBXGroup;
 			children = (
-				1DF798992DBA2A20003148F3 /* AboutPanel.swift */,
 				CB24F70B29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift */,
 				AA585D81248FD31100E9A3E2 /* AppDelegate.swift */,
 				1D36E65A298ACD2900AA485D /* AppIconChanger.swift */,
@@ -15849,7 +15845,6 @@
 				3E0E39E83C61253107410595 /* DarkReaderFeatureSettings.swift in Sources */,
 				379858112D730EDA008773F6 /* HistoryViewDeleteDialogModel.swift in Sources */,
 				3706FAE0293F65D500E42796 /* BookmarkSidebarTreeController.swift in Sources */,
-				1DF7989A2DBA2A23003148F3 /* AboutPanel.swift in Sources */,
 				7B4D8A222BDA857300852966 /* VPNOperationErrorRecorder.swift in Sources */,
 				560419452DD49BB600818414 /* PreferencesThreatProtectionView.swift in Sources */,
 				3706FAE3293F65D500E42796 /* ChromiumDataImporter.swift in Sources */,
@@ -18556,7 +18551,6 @@
 				37F636FF3004F5F4007AC9F7 /* FireDialogResult.swift in Sources */,
 				B677FC542B064A9C0099EB04 /* DataImportViewModel.swift in Sources */,
 				CC82ABB62F5206BE00AD9807 /* PromoHistoryProviding.swift in Sources */,
-				1DF7989B2DBA2A23003148F3 /* AboutPanel.swift in Sources */,
 				4B980E212817604000282EE1 /* NSNotificationName+Debug.swift in Sources */,
 				C10529432C9CC18B0041E502 /* AutofillCredentialsDebugView.swift in Sources */,
 				CC19E9EE2E82CFC20043F931 /* AIChatHistoryCleaner.swift in Sources */,

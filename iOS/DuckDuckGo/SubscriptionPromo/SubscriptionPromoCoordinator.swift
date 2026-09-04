@@ -88,7 +88,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
             Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: false")
             return false
         }
-        guard subscriptionManager.hasAppStoreProductsAvailable else {
+        guard subscriptionManager.isSubscriptionPurchaseEligible else {
             Logger.subscription.debug("[Subscription Promo] App Store products unavailable, skipping.")
             return false
         }

@@ -57,6 +57,15 @@ import Foundation
 /// down. The script therefore wraps `contains`, `request` and `remove` so they answer the Chrome
 /// way — see makePermissionsMethod below — while leaving `getAll` and the events alone.
 ///
+/// Chrome also exposes enum-like constant objects on its namespaces — `scripting.ExecutionWorld`,
+/// `tabs.TAB_ID_NONE`, `runtime.OnInstalledReason` and friends — and extension code dereferences
+/// them right where it passes them, as call arguments. WebKit implements the calls but not the
+/// constants, so the dereference throws before the call is ever made: Bitwarden injects its autofill
+/// scripts with `world: chrome.scripting.ExecutionWorld.ISOLATED`, which WebKit would have accepted
+/// as the string `"ISOLATED"`, and instead of injecting anything the statement fails with a
+/// `TypeError`. Defining the missing constants with Chrome's documented values makes those call
+/// sites work as written.
+///
 /// Two behaviors of the host are worth calling out, both established by measurement on macOS 26.6.2:
 /// - `chrome.webNavigation`, `chrome.tabs` and friends are native wrapper objects that WebKit
 ///   discards once JavaScript stops referencing them, taking any property we added with them: an
@@ -104,12 +113,62 @@ enum WebExtensionAPIStubScript {
 
         // Members missing from namespaces that WebKit does implement, addressed by dotted path.
         // A "namespace" member becomes a nestable stub, an "event" member an addListener object,
-        // and "managedStorage" a purpose-shaped stub (see makeManagedStorage below).
+        // "managedStorage" a purpose-shaped stub (see makeManagedStorage below), and "constants" the
+        // literal value carried by the entry.
         var missingMembers = [
             { path: "storage.managed", kind: "managedStorage" },
             { path: "webNavigation.onCreatedNavigationTarget", kind: "event" },
             { path: "runtime.onSuspend", kind: "event" }
         ];
+
+        // The enum-like constants Chrome hangs off its namespaces, with Chrome's documented values.
+        // Extension code dereferences these as call arguments — Bitwarden passes
+        // `world: chrome.scripting.ExecutionWorld.ISOLATED` to `scripting.executeScript` — and WebKit
+        // implements the call but not the constant, so the argument throws before the call happens.
+        var missingConstants = [
+            { path: "scripting.ExecutionWorld", value: { ISOLATED: "ISOLATED", MAIN: "MAIN" } },
+            { path: "runtime.OnInstalledReason", value: {
+                INSTALL: "install", UPDATE: "update", CHROME_UPDATE: "chrome_update",
+                SHARED_MODULE_UPDATE: "shared_module_update"
+            } },
+            { path: "runtime.OnRestartRequiredReason", value: { APP_UPDATE: "app_update", OS_UPDATE: "os_update", PERIODIC: "periodic" } },
+            { path: "runtime.PlatformOs", value: {
+                MAC: "mac", WIN: "win", ANDROID: "android", CROS: "cros", LINUX: "linux",
+                OPENBSD: "openbsd", FUCHSIA: "fuchsia"
+            } },
+            { path: "runtime.PlatformArch", value: {
+                ARM: "arm", ARM64: "arm64", X86_32: "x86-32", X86_64: "x86-64", MIPS: "mips", MIPS64: "mips64"
+            } },
+            { path: "runtime.ContextType", value: {
+                TAB: "TAB", POPUP: "POPUP", BACKGROUND: "BACKGROUND", OFFSCREEN_DOCUMENT: "OFFSCREEN_DOCUMENT",
+                SIDE_PANEL: "SIDE_PANEL", DEVELOPER_TOOLS: "DEVELOPER_TOOLS"
+            } },
+            { path: "tabs.TAB_ID_NONE", value: -1 },
+            { path: "tabs.WindowType", value: { NORMAL: "normal", POPUP: "popup", PANEL: "panel", APP: "app", DEVTOOLS: "devtools" } },
+            { path: "tabs.TabStatus", value: { UNLOADED: "unloaded", LOADING: "loading", COMPLETE: "complete" } },
+            { path: "windows.WINDOW_ID_NONE", value: -1 },
+            { path: "windows.WINDOW_ID_CURRENT", value: -2 },
+            { path: "windows.WindowType", value: { NORMAL: "normal", POPUP: "popup", PANEL: "panel", APP: "app", DEVTOOLS: "devtools" } },
+            { path: "windows.WindowState", value: {
+                NORMAL: "normal", MINIMIZED: "minimized", MAXIMIZED: "maximized", FULLSCREEN: "fullscreen",
+                LOCKED_FULLSCREEN: "locked-fullscreen"
+            } },
+            { path: "contextMenus.ContextType", value: {
+                ALL: "all", PAGE: "page", FRAME: "frame", SELECTION: "selection", LINK: "link", EDITABLE: "editable",
+                IMAGE: "image", VIDEO: "video", AUDIO: "audio", LAUNCHER: "launcher", BROWSER_ACTION: "browser_action",
+                PAGE_ACTION: "page_action", ACTION: "action"
+            } },
+            { path: "contextMenus.ItemType", value: { NORMAL: "normal", CHECKBOX: "checkbox", RADIO: "radio", SEPARATOR: "separator" } },
+            { path: "storage.AccessLevel", value: {
+                TRUSTED_CONTEXTS: "TRUSTED_CONTEXTS", TRUSTED_AND_UNTRUSTED_CONTEXTS: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
+            } }
+        ];
+
+        // Constants are installed exactly like the members above — same "is it missing?" check, same
+        // `define` — so they join that list rather than getting a loop of their own.
+        missingConstants.forEach(function(constant) {
+            missingMembers.push({ path: constant.path, kind: "constants", value: constant.value });
+        });
 
         var retentionPropertyName = "__ddgRetainedExtensionAPINamespaces";
         var eventNamePattern = /^on[A-Z]/;
@@ -355,15 +414,24 @@ enum WebExtensionAPIStubScript {
             return offscreen;
         }
 
-        function makeMember(kind) {
-            if (kind === "event") {
+        // Constants are handed out frozen, so an extension that walks one cannot reshape what the
+        // next reader sees. Primitives — `tabs.TAB_ID_NONE` is just `-1` — pass straight through.
+        function makeConstants(value) {
+            return value !== null && typeof value === "object" ? Object.freeze(value) : value;
+        }
+
+        function makeMember(entry) {
+            if (entry.kind === "event") {
                 return makeEvent();
             }
-            if (kind === "managedStorage") {
+            if (entry.kind === "managedStorage") {
                 return makeManagedStorage();
             }
-            if (kind === "offscreen") {
+            if (entry.kind === "offscreen") {
                 return makeOffscreen();
+            }
+            if (entry.kind === "constants") {
+                return makeConstants(entry.value);
             }
             return makeStub();
         }
@@ -535,7 +603,7 @@ enum WebExtensionAPIStubScript {
                 if (api[namespace.name] !== undefined) {
                     return;
                 }
-                if (define(api, namespace.name, makeMember(namespace.kind))) {
+                if (define(api, namespace.name, makeMember(namespace))) {
                     stubbedNamespaces.push(namespace.name);
                 }
             } catch (error) {
@@ -557,7 +625,7 @@ enum WebExtensionAPIStubScript {
                 if (owner === undefined || owner === null || owner[key] !== undefined) {
                     return;
                 }
-                if (define(owner, key, makeMember(member.kind))) {
+                if (define(owner, key, makeMember(member))) {
                     stubbedMembers.push(member.path);
                 }
             } catch (error) {

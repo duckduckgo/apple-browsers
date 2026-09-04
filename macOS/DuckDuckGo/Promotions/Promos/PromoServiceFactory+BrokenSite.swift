@@ -23,10 +23,12 @@ extension PromoServiceFactory {
     /// Builds the Broken Site ("Site not working?") Promo.
     @MainActor
     static func brokenSite(dependencies: PromoDependencies) -> Promo {
+        let presenter = DefaultBrokenSitePromoPresenter(windowControllersManager: dependencies.windowControllersManager)
         let delegate = BrokenSitePromoDelegate(privacyConfigManager: dependencies.privacyConfigManager,
                                                limiter: dependencies.brokenSitePromptLimiter,
                                                onboardingStateUpdater: dependencies.onboardingStateUpdater,
-                                               windowControllersManager: dependencies.windowControllersManager)
+                                               windowControllersManager: dependencies.windowControllersManager,
+                                               presenter: presenter)
 
         return InternalPromo(id: "broken-site",
                              triggers: [.pageRefreshPatternDetected],

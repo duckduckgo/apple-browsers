@@ -34,6 +34,7 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
     private var limiter: BrokenSitePromptLimiter!
     private var onboardingStateUpdater: MockOnboardingStateUpdater!
     private var windowControllersManager: WindowControllersManagerMock!
+    private var presenter: MockBrokenSitePromoPresenter!
     private var pixelFiring: PixelKitMock!
     private var sut: BrokenSitePromoDelegate!
 
@@ -46,17 +47,20 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
         onboardingStateUpdater = MockOnboardingStateUpdater()
         onboardingStateUpdater.state = .onboardingCompleted
         windowControllersManager = WindowControllersManagerMock()
+        presenter = MockBrokenSitePromoPresenter()
         pixelFiring = PixelKitMock()
         sut = BrokenSitePromoDelegate(privacyConfigManager: configManager,
                                       limiter: limiter,
                                       onboardingStateUpdater: onboardingStateUpdater,
                                       windowControllersManager: windowControllersManager,
+                                      presenter: presenter,
                                       pixelFiring: pixelFiring)
     }
 
     override func tearDown() {
         sut = nil
         pixelFiring = nil
+        presenter = nil
         windowControllersManager = nil
         onboardingStateUpdater = nil
         limiter = nil
@@ -66,6 +70,35 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
     }
 
     private var history: PromoHistoryRecord { PromoHistoryRecord(id: Self.promoId) }
+
+    private var dismissStreak: Int { limiterStore.toastDismissStreakCounter }
+
+    /// The result `show()` resolves with for a regular (non-forced) show.
+    private var cooldownResult: PromoResult { .ignored(cooldown: limiter.coolDownInterval) }
+
+    private func selectTab(with url: URL) {
+        let tabCollectionViewModel = TabCollectionViewModel(
+            tabCollection: TabCollection(),
+            pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(),
+                                             windowControllersManager: WindowControllersManagerMock())
+        )
+        tabCollectionViewModel.append(tab: Tab(content: .url(url, source: .ui)))
+        windowControllersManager.customAllTabCollectionViewModels = [tabCollectionViewModel]
+    }
+
+    private func showPromo(force: Bool = false) async -> Task<PromoResult, Never> {
+        let task = Task { await sut.show(history: history, force: force) }
+
+        var yields = 0
+        while presenter.presentCallCount == 0, yields < 100 {
+            await Task.yield()
+            yields += 1
+        }
+
+        XCTAssertEqual(presenter.presentCallCount, 1, "show() never reached the presenter")
+        return task
+    }
 
     // MARK: - Eligibility
 
@@ -124,15 +157,74 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testWhenLimiterEntersCooldownThenEligibilityPublisherDoesNotEmitFalse() {
+        var received: [Bool] = []
+        let cancellable = sut.isEligiblePublisher.sink { received.append($0) }
+
+        // Showing the promo puts the limiter into its cooldown, so `isEligible` is false from here on.
+        limiter.didShowToast()
+        XCTAssertFalse(sut.isEligible)
+        configManager.updatesSubject.send(())
+
+        // Retraction is driven by the feature flag alone: a promo must not retract itself the
+        // moment it appears just because the limiter has recorded the show.
+        XCTAssertEqual(received, [true])
+        cancellable.cancel()
+    }
+
     // MARK: - Presentation failure
 
-    func testWhenNoKeyWindowThenResolvesWithNoChangeAndDoesNotTouchLimiter() async {
+    func testWhenSelectedTabIsDuckDuckGoThenResolvesWithNoChangeAndDoesNotPresent() async {
+        selectTab(with: .duckDuckGo)
+
+        let result = await sut.show(history: history, force: false)
+
+        XCTAssertEqual(result, .noChange)
+        XCTAssertEqual(presenter.presentCallCount, 0)
+        XCTAssertEqual(limiterStore.lastToastShownDate, .distantPast)
+        XCTAssertEqual(dismissStreak, 0)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenPresenterCannotPresentThenResolvesWithNoChangeAndDoesNotTouchLimiter() async {
+        selectTab(with: URL(string: "https://example.com")!)
+        presenter.canPresent = false
+
         let result = await sut.show(history: history, force: false)
 
         XCTAssertEqual(result, .noChange)
         XCTAssertEqual(limiterStore.lastToastShownDate, .distantPast)
-        XCTAssertEqual(limiterStore.toastDismissStreakCounter, 0)
+        XCTAssertEqual(dismissStreak, 0)
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    // MARK: - User dismissal
+
+    func testWhenUserDismissesPromoThenDismissIsRecorded() async {
+        selectTab(with: URL(string: "https://example.com")!)
+        let showTask = await showPromo()
+
+        presenter.simulatePopoverDidDisappear()
+
+        let result = await showTask.value
+        XCTAssertEqual(result, cooldownResult)
+        XCTAssertEqual(dismissStreak, 1)
+    }
+
+    // MARK: - Opening the report
+
+    func testWhenUserOpensReportThenDismissStreakIsResetAndNotRecordedAsDismiss() async {
+        limiterStore.toastDismissStreakCounter = 2
+        selectTab(with: URL(string: "https://example.com")!)
+        let showTask = await showPromo()
+
+        presenter.simulateUserTappingReportButton()
+
+        let result = await showTask.value
+        XCTAssertEqual(result, cooldownResult)
+        XCTAssertEqual(presenter.openPrivacyDashboardReportCallCount, 1)
+        // The popover disappears as part of opening the report; that must not undo the reset.
+        XCTAssertEqual(dismissStreak, 0)
     }
 
     // MARK: - hide()
@@ -141,6 +233,82 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
         sut.hide()
         sut.hide()
 
-        XCTAssertEqual(limiterStore.toastDismissStreakCounter, 0)
+        XCTAssertEqual(dismissStreak, 0)
+    }
+
+    func testWhenPromoIsRetractedThenDismissIsNotRecorded() async {
+        selectTab(with: URL(string: "https://example.com")!)
+        let showTask = await showPromo()
+
+        sut.hide()
+        presenter.simulatePopoverDidDisappear()
+
+        let result = await showTask.value
+        XCTAssertEqual(result, .noChange)
+        XCTAssertEqual(presenter.dismissCallCount, 1)
+        // The queue retracted the promo. The user never closed it, so the streak must not move.
+        XCTAssertEqual(dismissStreak, 0)
+    }
+
+    func testWhenPromoIsRetractedAndPopoverDisappearsSynchronouslyThenDismissIsNotRecorded() async {
+        selectTab(with: URL(string: "https://example.com")!)
+        presenter.deliversDisappearanceSynchronouslyOnDismiss = true
+        let showTask = await showPromo()
+
+        sut.hide()
+
+        let result = await showTask.value
+        XCTAssertEqual(result, .noChange)
+        XCTAssertEqual(dismissStreak, 0)
+    }
+}
+
+// MARK: - Mocks
+
+@MainActor
+private final class MockBrokenSitePromoPresenter: BrokenSitePromoPresenting {
+
+    var canPresent = true
+    /// Mirrors an AppKit dismissal that tears the popover down before `dismiss()` returns.
+    var deliversDisappearanceSynchronouslyOnDismiss = false
+
+    private(set) var presentCallCount = 0
+    private(set) var dismissCallCount = 0
+    private(set) var openPrivacyDashboardReportCallCount = 0
+
+    private var buttonAction: (() -> Void)?
+    private var onDismiss: (() -> Void)?
+
+    func present(buttonAction: @escaping () -> Void, onDismiss: @escaping () -> Void) -> Bool {
+        presentCallCount += 1
+        guard canPresent else { return false }
+        self.buttonAction = buttonAction
+        self.onDismiss = onDismiss
+        return true
+    }
+
+    func dismiss() {
+        dismissCallCount += 1
+        if deliversDisappearanceSynchronouslyOnDismiss {
+            simulatePopoverDidDisappear()
+        }
+    }
+
+    func openPrivacyDashboardReport() {
+        openPrivacyDashboardReportCallCount += 1
+    }
+
+    /// Mirrors `PopoverMessageView`, whose button runs its action and then dismisses the popover.
+    func simulateUserTappingReportButton() {
+        buttonAction?()
+        simulatePopoverDidDisappear()
+    }
+
+    /// Mirrors `PopoverMessageViewController.viewDidDisappear()`, which runs for every dismissal —
+    /// user-initiated or not — and only ever runs once.
+    func simulatePopoverDidDisappear() {
+        let onDismiss = self.onDismiss
+        self.onDismiss = nil
+        onDismiss?()
     }
 }

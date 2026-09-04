@@ -22,6 +22,17 @@ import Foundation
 import PixelKit
 import PrivacyConfig
 
+/// Presents the "Site not working?" popover and reports back how it was closed.
+@MainActor
+protocol BrokenSitePromoPresenting {
+
+    /// Presents the prompt from the privacy dashboard button.
+    /// - Returns: `false` when there is nowhere to present from, in which case neither callback runs.
+    func present(buttonAction: @escaping () -> Void, onDismiss: @escaping () -> Void) -> Bool
+    func dismiss()
+    func openPrivacyDashboardReport()
+}
+
 /// Presents the "Site not working?" popover from the privacy dashboard button after the user refreshes
 /// a page three times within 20 seconds, offering to open the Privacy Dashboard's breakage report.
 ///
@@ -34,20 +45,22 @@ final class BrokenSitePromoDelegate: InternalPromoDelegate {
     private let limiter: BrokenSitePromptLimiter
     private let onboardingStateUpdater: ContextualOnboardingStateUpdater
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let presenter: BrokenSitePromoPresenting
     private let pixelFiring: PixelFiring?
 
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
-    private weak var popover: PopoverMessageViewController?
 
     init(privacyConfigManager: PrivacyConfigurationManaging,
          limiter: BrokenSitePromptLimiter,
          onboardingStateUpdater: ContextualOnboardingStateUpdater,
          windowControllersManager: WindowControllersManagerProtocol,
+         presenter: BrokenSitePromoPresenting,
          pixelFiring: PixelFiring? = PixelKit.shared) {
         self.privacyConfigManager = privacyConfigManager
         self.limiter = limiter
         self.onboardingStateUpdater = onboardingStateUpdater
         self.windowControllersManager = windowControllersManager
+        self.presenter = presenter
         self.pixelFiring = pixelFiring
     }
 
@@ -55,24 +68,19 @@ final class BrokenSitePromoDelegate: InternalPromoDelegate {
         onboardingStateUpdater.state == .onboardingCompleted && limiter.shouldShowToast()
     }
 
+    /// Reflects the feature flag alone, unlike `isEligible`, which also consults the limiter.
+    /// Only the feature flag can retract the promo once it is shown; the limiter is only consulted
+    /// to check eligibility synchronously before `show()`.
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
         privacyConfigManager.updatesPublisher
-            .map { [weak self] in self?.privacyConfigManager.privacyConfig.isEnabled(featureKey: .brokenSitePrompt) }
-            .removeDuplicates()
-            .map { [weak self] _ in self?.isEligible ?? false }
-            .prepend(isEligible)
+            .map { [weak self] _ in self?.isFeatureEnabled ?? false }
+            .prepend(isFeatureEnabled)
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        guard let navigationBarViewController,
-              let addressBarButtonsViewController,
-              navigationBarViewController.view.window?.isKeyWindow == true else {
-            return .noChange
-        }
-
         if !force {
             guard let url = windowControllersManager.selectedTab?.url, !url.isDuckDuckGo else {
                 return .noChange
@@ -86,22 +94,19 @@ final class BrokenSitePromoDelegate: InternalPromoDelegate {
             // Instead, a cooldown is applied for any dismissal (actioned or ignored), except a force show.
             let result: PromoResult = force ? .noChange : .ignored(cooldown: limiter.coolDownInterval)
 
-            let popover = PopoverMessageViewController(
-                message: UserText.BrokenSitePrompt.title,
-                autoDismissDuration: nil,
-                shouldShowCloseButton: true,
-                buttonText: UserText.BrokenSitePrompt.buttonTitle,
+            let presented = presenter.present(
                 buttonAction: { [weak self] in
                     guard let self else { return }
                     if !force {
                         limiter.didOpenReport()
                         pixelFiring?.fire(GeneralPixel.siteNotWorkingWebsiteIsBroken)
                     }
-                    addressBarButtonsViewController.openPrivacyDashboardPopover(entryPoint: .prompt)
+                    presenter.openPrivacyDashboardReport()
                     resolve(with: result)
                 },
                 onDismiss: { [weak self] in
                     guard let self else { return }
+                    guard showContinuation != nil else { return }
                     if !force {
                         limiter.didDismissToast()
                     }
@@ -109,10 +114,10 @@ final class BrokenSitePromoDelegate: InternalPromoDelegate {
                 }
             )
 
-            self.popover = popover
-            popover.show(onParent: navigationBarViewController,
-                         relativeTo: addressBarButtonsViewController.privacyDashboardButton,
-                         behavior: .semitransient)
+            guard presented else {
+                resolve(with: .noChange)
+                return
+            }
 
             if !force {
                 limiter.didShowToast()
@@ -123,29 +128,15 @@ final class BrokenSitePromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func hide() {
-        if let popover {
-            self.popover = nil
-            popover.presentingViewController?.dismiss(popover)
-        }
         resolve(with: .noChange)
+        presenter.dismiss()
     }
 }
 
 private extension BrokenSitePromoDelegate {
 
-    @MainActor
-    var navigationBarViewController: NavigationBarViewController? {
-        windowControllersManager
-            .lastKeyMainWindowController?
-            .mainViewController
-            .navigationBarViewController
-    }
-
-    @MainActor
-    var addressBarButtonsViewController: AddressBarButtonsViewController? {
-        navigationBarViewController?
-            .addressBarViewController?
-            .addressBarButtonsViewController
+    var isFeatureEnabled: Bool {
+        privacyConfigManager.privacyConfig.isEnabled(featureKey: .brokenSitePrompt)
     }
 
     @MainActor
@@ -153,5 +144,66 @@ private extension BrokenSitePromoDelegate {
         guard let continuation = showContinuation else { return }
         showContinuation = nil
         continuation.resume(returning: result)
+    }
+}
+
+/// Presents the prompt as a popover anchored to the privacy dashboard button of the key window.
+@MainActor
+final class DefaultBrokenSitePromoPresenter: BrokenSitePromoPresenting {
+
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private weak var popover: PopoverMessageViewController?
+
+    init(windowControllersManager: WindowControllersManagerProtocol) {
+        self.windowControllersManager = windowControllersManager
+    }
+
+    func present(buttonAction: @escaping () -> Void, onDismiss: @escaping () -> Void) -> Bool {
+        guard let navigationBarViewController,
+              let addressBarButtonsViewController,
+              navigationBarViewController.view.window?.isKeyWindow == true else {
+            return false
+        }
+
+        let popover = PopoverMessageViewController(
+            message: UserText.BrokenSitePrompt.title,
+            autoDismissDuration: nil,
+            shouldShowCloseButton: true,
+            buttonText: UserText.BrokenSitePrompt.buttonTitle,
+            buttonAction: buttonAction,
+            onDismiss: onDismiss
+        )
+
+        self.popover = popover
+        popover.show(onParent: navigationBarViewController,
+                     relativeTo: addressBarButtonsViewController.privacyDashboardButton,
+                     behavior: .semitransient)
+        return true
+    }
+
+    func dismiss() {
+        guard let popover else { return }
+        self.popover = nil
+        popover.presentingViewController?.dismiss(popover)
+    }
+
+    func openPrivacyDashboardReport() {
+        addressBarButtonsViewController?.openPrivacyDashboardPopover(entryPoint: .prompt)
+    }
+}
+
+private extension DefaultBrokenSitePromoPresenter {
+
+    var navigationBarViewController: NavigationBarViewController? {
+        windowControllersManager
+            .lastKeyMainWindowController?
+            .mainViewController
+            .navigationBarViewController
+    }
+
+    var addressBarButtonsViewController: AddressBarButtonsViewController? {
+        navigationBarViewController?
+            .addressBarViewController?
+            .addressBarButtonsViewController
     }
 }

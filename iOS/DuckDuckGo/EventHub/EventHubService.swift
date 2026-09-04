@@ -52,6 +52,11 @@ final class EventHubService {
             privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .eventHub))
         let settingsSubject = CurrentValueSubject<[String: Any]?, Never>(
             privacyConfigurationManager.privacyConfig.settings(for: PrivacyFeature.eventHub))
+        // Experiment metrics live in the CSS/TDS experiment subfeatures rather than in the `eventHub`
+        // feature, so they arrive on their own publisher rather than through `EventHubSettings` — which
+        // exists to strip consent-gated telemetry, and a conversion request carries nothing gated.
+        let experimentSettingsSubject = CurrentValueSubject<[String: String], Never>(
+            EventHubExperimentSettings.current(privacyConfigurationManager.privacyConfig))
 
         let settings = EventHubSettings(
             featureEnabledPublisher: enabledSubject.eraseToAnyPublisher(),
@@ -67,7 +72,9 @@ final class EventHubService {
             parser: parser,
             settings: settings,
             scheduler: DispatchQueueEventHubScheduler(queue: DispatchQueue(label: "com.duckduckgo.eventhub.scheduler")),
-            pixelFiring: IOSEventHubPixelFiring()
+            pixelFiring: IOSEventHubPixelFiring(),
+            conversionReporting: IOSEventHubConversionReporting(),
+            experimentSettings: experimentSettingsSubject.eraseToAnyPublisher()
         )
 
         // Pushing the new values is all that is needed: `EventHub` subscribes to both publishers and
@@ -81,6 +88,7 @@ final class EventHubService {
                 Logger.eventHub.debug("Remote config updated — pushing to EventHub (enabled=\(enabled, privacy: .public))")
                 enabledSubject.send(enabled)
                 settingsSubject.send(privacyConfigurationManager.privacyConfig.settings(for: PrivacyFeature.eventHub))
+                experimentSettingsSubject.send(EventHubExperimentSettings.current(privacyConfigurationManager.privacyConfig))
             }
             .store(in: &cancellables)
     }

@@ -78,15 +78,14 @@ final class CounterParameter: Parameter {
     func queryValue() -> String? { BucketCounter.bucketCount(value, buckets: buckets) }
 }
 
+/// Carries a value forwarded from an event payload, as compact JSON (`overlay` → `"overlay"`,
+/// `{"a": true}` → `{"a":true}`).
+///
+/// Percent-encoding belongs to the pixel transport, not here — `URL.appendingParameters` →
+/// `URLQueryItem(percentEncodingName:)` on macOS, `APIRequestV2`'s `URLComponents.queryItems` on iOS.
+/// Both encode with an allowed set that excludes `%`, so any escaping applied to the value here would
+/// be escaped again and the endpoint would need two decodes to reach the payload.
 final class DataParameter: Parameter {
-    /// RFC 3986 "unreserved" characters (alphanumerics plus `-._~`) are left unescaped; everything
-    /// else — including `"`, `{`, `}`, `:`, and space — is percent-encoded. This matches the
-    /// compact-JSON-then-percent-encode format the ported `EventHubDataParameterTests` expect once
-    /// `DataParameter` is wired into `EventHub` (e.g. `"logged-in"` → `%22logged-in%22`,
-    /// `{"a": true}` → `%7B%22a%22%3Atrue%7D`). `CharacterSet.alphanumerics` alone is not enough: it
-    /// excludes `-`, which would wrongly turn `logged-in` into `logged%2Din`.
-    private static let unreservedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
-
     private let dataKey: String?
     private var lastValue: String?
 
@@ -107,9 +106,8 @@ final class DataParameter: Parameter {
             Logger.eventHub.error("data parameter for key \(dataKey, privacy: .public) is not JSON-serialisable, value dropped")
             return clear()
         }
-        let encodedValue = compact.addingPercentEncoding(withAllowedCharacters: Self.unreservedCharacters)
-        guard lastValue != encodedValue else { return false }
-        lastValue = encodedValue
+        guard lastValue != compact else { return false }
+        lastValue = compact
         return true
     }
 

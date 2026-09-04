@@ -24,6 +24,13 @@ import Foundation
 /// (`docs/event-hub/tests/deduplication.md` in `duckduckgo/ddg-workflow`). Each case ID from that
 /// document leads the test name so coverage is greppable and a failure names the spec case.
 ///
+/// **Complete case roster.** Every ID the document defines appears below, so this file can be diffed
+/// against the document in one place:
+///
+/// - One decision before fan-out — D-DEL-1, D-DEL-2, D-DEL-3, D-DEL-4, D-DEL-5, D-DEL-6
+/// - Navigation resets the page — D-NAV-1, D-NAV-2, D-NAV-3, D-NAV-4
+/// - Native events are exempt — D-NAT-1
+///
 /// The properties the cases evidence:
 /// - **D-DEL-P1** — for every web event the hub makes exactly one de-duplication decision at
 ///   ingestion, keyed `(event type, event data, tab)` against the tab's current page, before any

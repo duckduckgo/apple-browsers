@@ -308,4 +308,95 @@ struct EventHubConfigParserTests {
 
         #expect(parser.serializePixelConfig(config) != nil)
     }
+
+    // MARK: parseMetrics
+
+    /// A flattened request rendered as `metric/event/window/threshold`, so expectations read compactly.
+    private func requests(_ json: String, experiment: String = "exp1") -> [String] {
+        parser.parseMetrics(experiment: experiment, settingsJSON: json)
+            .map { "\($0.metric)/\($0.event)/\($0.windowDays.lowerBound)-\($0.windowDays.upperBound)/\($0.threshold)" }
+            .sorted()
+    }
+
+    @Test("parseMetrics multiplies windows by thresholds within a group and unions groups")
+    func parseMetricsMultipliesWindowsByThresholds() {
+        let json = """
+        { "metrics": { "searchLike": { "event": "searchPerformed", "conversions": [
+            { "windows": [[0, 0], [1, 1]], "thresholds": [1] },
+            { "windows": [[0, 7]], "thresholds": [2, 3] } ] } } }
+        """
+        #expect(requests(json) == [
+            "searchLike/searchPerformed/0-0/1",
+            "searchLike/searchPerformed/0-7/2",
+            "searchLike/searchPerformed/0-7/3",
+            "searchLike/searchPerformed/1-1/1",
+        ])
+    }
+
+    @Test("parseMetrics carries the declaring experiment on every request")
+    func parseMetricsCarriesDeclaringExperiment() {
+        let json = """
+        { "metrics": { "m": { "event": "e", "conversions": [ { "windows": [[0, 7]], "thresholds": [1] } ] } } }
+        """
+        let parsed = parser.parseMetrics(experiment: "contentScopeExperiment1", settingsJSON: json)
+        #expect(parsed == [MetricRequest(experiment: "contentScopeExperiment1", event: "e", metric: "m",
+                                         windowDays: 0...7, threshold: 1)])
+    }
+
+    @Test("parseMetrics returns nothing when the settings declare no metrics")
+    func parseMetricsReturnsNothingWithoutMetricsKey() {
+        // The normal case: `metrics` is optional and most experiments declare none.
+        #expect(requests("{}").isEmpty)
+        #expect(requests(#"{ "controlUrl": "a.json", "treatmentUrl": "b.json" }"#).isEmpty)
+    }
+
+    @Test("parseMetrics ignores the other settings a TDS experiment carries")
+    func parseMetricsIgnoresOtherSettings() {
+        let json = """
+        { "controlUrl": "a.json", "treatmentUrl": "b.json",
+          "metrics": { "m": { "event": "e", "conversions": [ { "windows": [[0, 7]], "thresholds": [1] } ] } } }
+        """
+        #expect(requests(json) == ["m/e/0-7/1"])
+    }
+
+    @Test("parseMetrics returns nothing for settings that are not JSON")
+    func parseMetricsReturnsNothingForMalformedJSON() {
+        #expect(requests("not json at all").isEmpty)
+    }
+
+    @Test("parseMetrics skips a metric with no event and keeps its siblings")
+    func parseMetricsSkipsMetricWithNoEvent() {
+        let json = """
+        { "metrics": {
+            "broken": { "conversions": [ { "windows": [[0, 7]], "thresholds": [1] } ] },
+            "fine": { "event": "e", "conversions": [ { "windows": [[0, 7]], "thresholds": [1] } ] }
+        } }
+        """
+        #expect(requests(json) == ["fine/e/0-7/1"])
+    }
+
+    @Test("parseMetrics drops an unusable window and keeps the rest", arguments: [
+        "[7, 0]",       // inverted: `ClosedRange` would trap
+        "[-1, 7]",      // negative day bound
+        "[0]",          // not a pair
+        "[0, 1, 2]",    // not a pair
+    ])
+    func parseMetricsDropsUnusableWindow(window: String) {
+        let json = """
+        { "metrics": { "m": { "event": "e", "conversions": [
+            { "windows": [\(window), [0, 7]], "thresholds": [1] } ] } } }
+        """
+        #expect(requests(json) == ["m/e/0-7/1"])
+    }
+
+    @Test("parseMetrics drops a threshold below one", arguments: [0, -1])
+    func parseMetricsDropsThresholdBelowOne(threshold: Int) {
+        // A threshold below 1 would have the framework convert on every occurrence, so a config typo
+        // would become pixel spam.
+        let json = """
+        { "metrics": { "m": { "event": "e", "conversions": [
+            { "windows": [[0, 7]], "thresholds": [\(threshold), 2] } ] } } }
+        """
+        #expect(requests(json) == ["m/e/0-7/2"])
+    }
 }

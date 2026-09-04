@@ -24,11 +24,20 @@ import Foundation
 /// pages, events, payloads, period end — so a spec case reads as the document writes it.
 final class SpecFixture {
     private let fixture: EventHubFixture
-    private let periodSeconds: TimeInterval
+    private let longestPeriodSeconds: TimeInterval
 
-    init(_ settingsJSON: String, periodSeconds: TimeInterval = 86400) {
-        self.fixture = EventHubFixture.active(settingsJSON)
-        self.periodSeconds = periodSeconds
+    /// - Parameters:
+    ///   - settingsJSON: the `eventHub` feature settings, i.e. the telemetry configuration. `"{}"` for
+    ///     the metrics suite, which configures no telemetry at all.
+    ///   - experiments: the raw `settings` JSON of each experiment subfeature, keyed by subfeature ID —
+    ///     where `metrics` is declared.
+    ///   - enrolled: the experiments the framework considers active.
+    ///   - longestPeriodSeconds: how far `endPeriod()` advances the clock — the longest period the
+    ///     config declares, so that every running period ends.
+    init(_ settingsJSON: String, longestPeriodSeconds: TimeInterval = 86400,
+         experiments: [String: String] = [:], enrolled: Set<String> = []) {
+        self.fixture = EventHubFixture.active(settingsJSON, experimentSettings: experiments, enrolled: enrolled)
+        self.longestPeriodSeconds = longestPeriodSeconds
     }
 
     var manager: EventHub { fixture.manager }
@@ -71,33 +80,60 @@ final class SpecFixture {
 
     /// A browser-native event: no tab, no URL, and so never de-duplicated.
     func sendNative(_ type: String, payload: [String: String]) {
-        fixture.manager.handleImmediateEvent(type, data: payload)
+        fixture.manager.handleNativeEvent(type, data: payload)
+    }
+
+    // MARK: Configuration lifecycle
+
+    /// Enrols the user in `experiments`, replacing any previous enrollment.
+    func enroll(in experiments: Set<String>) {
+        fixture.setEnrolled(experiments)
+    }
+
+    /// Applies a new remote config for the experiment subfeatures, replacing the previous one.
+    func setExperiments(_ experiments: [String: String]) {
+        fixture.setExperimentSettings(experiments)
+    }
+
+    /// Turns the `eventHub` feature itself on or off, as its remote `state` would (M-LIF-6, T-GEN-P1).
+    func setFeatureEnabled(_ enabled: Bool) {
+        fixture.setEnabled(enabled)
     }
 
     // MARK: Observation
 
-    /// Ends each running period once, per the suites' model: events are delivered, then the current
-    /// period ends.
+    /// Ends each running period exactly once, per the suites' model: events are delivered, then each
+    /// period pixel's current period ends.
+    ///
+    /// One clock jump suffices however many period lengths are configured, and however far apart they
+    /// are. A rollover starts the replacement period at `now` rather than at the boundary just passed,
+    /// so a pixel whose period elapsed during the jump fires once and its new period is then still
+    /// running — a 1-day and a 7-day pixel both end once here, and neither ends twice.
     func endPeriod() {
-        fixture.advance(by: periodSeconds)
+        fixture.advance(by: longestPeriodSeconds)
     }
 
     /// Every pixel fired, written as the specifications write them — `name?param=value`, sorted so a
     /// case can state its complete expected set and an over-fire fails as loudly as a missing pixel.
     ///
-    /// Data values are percent-decoded back to the compact JSON the cases quote (`reason="overlay"`
-    /// rather than `reason=%22overlay%22`); the encoding itself is pinned separately, by
-    /// `EventHubDataParameterTests`. The time-derived `attributionPeriod` is excluded, as the suites
-    /// specify.
+    /// Values appear exactly as EventHub emits them, which for a data parameter is the compact JSON the
+    /// cases quote (`reason="overlay"`). Deliberately no percent-decoding: nothing here is encoded, and
+    /// decoding would corrupt a payload value that legitimately contains a `%`. The time-derived
+    /// `attributionPeriod` is excluded, as the suites specify.
     var fired: [String] {
         fixture.fired.map { pixel in
             let parameters = pixel.parameters
                 .filter { $0.key != "attributionPeriod" }
                 .sorted { $0.key < $1.key }
-                .map { "\($0.key)=\($0.value.removingPercentEncoding ?? $0.value)" }
+                .map { "\($0.key)=\($0.value)" }
                 .joined(separator: "&")
             return parameters.isEmpty ? pixel.name : "\(pixel.name)?\(parameters)"
         }
         .sorted()
     }
+
+    /// Every conversion request handed to the experiment framework and accepted by it, written as
+    /// `experiment/metric/window/threshold` and sorted — the shape of the metrics specification's
+    /// derived-request table, so a case can state its complete expected set.
+    var requested: [String] { fixture.requested }
 }

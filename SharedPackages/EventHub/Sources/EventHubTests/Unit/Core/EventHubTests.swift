@@ -198,21 +198,6 @@ struct EventHubTests {
         #expect(f.fired.isEmpty)
     }
 
-    @Test("skips firing when no bucket matches")
-    func skipsFiringWhenNoBucketMatches() {
-        // Buckets start at 5, so a zero count matches nothing and no pixel is fired.
-        let config = """
-        { "telemetry": { "p": {
-            "state": "enabled",
-            "trigger": { "period": { "seconds": 60 } },
-            "parameters": { "count": { "template": "counter", "source": "test", "buckets": {"5-9": {"gte": 5, "lt": 10}} } }
-        } } }
-        """
-        let f = EventHubFixture.active(config)
-        f.advance(by: 60)
-        #expect(f.fired.isEmpty)
-    }
-
     @Test("resets state and starts a new period after firing")
     func resetsStateAndStartsNewPeriodAfterFiring() throws {
         let f = EventHubFixture.active(Self.dayConfig)

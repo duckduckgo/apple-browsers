@@ -56,8 +56,8 @@ struct EventHubNativeIngressTests {
     } } }
     """
 
-    // One immediate pixel and one period counter sharing the same source ("test"), so each native
-    // method can be shown to drive only its own trigger type.
+    // One immediate pixel and one period counter sharing the same source ("test"), so a single native
+    // event can be shown to reach both trigger types.
     static let bothConfig = """
     { "telemetry": {
         "imm": { "state": "enabled", "trigger": { "type": "immediate_v2", "source": "test" }, "parameters": {} },
@@ -77,6 +77,9 @@ struct EventHubNativeIngressTests {
     } } }
     """
 
+    /// A native event payload, for the cases that check one reaches `data`-template parameters.
+    private struct LoginPayload: Encodable { let loginState: String }
+
     /// A payload whose encoding throws, to exercise the serialisation fail-safe.
     private struct ThrowingData: Encodable {
         func encode(to encoder: Encoder) throws {
@@ -84,118 +87,92 @@ struct EventHubNativeIngressTests {
         }
     }
 
-    // MARK: handleImmediateEvent
-
-    @Test("handleImmediateEvent fires the matching immediate pixel")
-    func handleImmediateEventFiresMatchingImmediatePixel() {
+    @Test("handleNativeEvent fires the matching immediate pixel")
+    func handleNativeEventFiresMatchingImmediatePixel() {
         let f = EventHubFixture.active(Self.immediateConfig)
-        f.manager.handleImmediateEvent("impression")
+        f.manager.handleNativeEvent("impression")
         #expect(f.fired.count == 1)
         #expect(f.fired.first?.name == "webEvent_impression")
     }
 
-    @Test("handleImmediateEvent forwards the data object to data-template params")
-    func handleImmediateEventForwardsDataObject() {
-        struct LoginPayload: Encodable { let loginState: String }
+    @Test("handleNativeEvent forwards the data object to data-template params")
+    func handleNativeEventForwardsDataObject() {
         let f = EventHubFixture.active(Self.immediateDataConfig)
-        f.manager.handleImmediateEvent("login", data: LoginPayload(loginState: "logged-in"))
+        f.manager.handleNativeEvent("login", data: LoginPayload(loginState: "logged-in"))
         #expect(f.fired.count == 1)
-        #expect(f.fired.first?.parameters["loginState"] == "%22logged-in%22")
+        // Compact JSON, unencoded: the transport applies the wire's single encoding, not EventHub.
+        #expect(f.fired.first?.parameters["loginState"] == #""logged-in""#)
     }
 
-    @Test("handleImmediateEvent does not count toward a period counter of the same source")
-    func handleImmediateEventDoesNotCountPeriodCounter() {
+    @Test("handleNativeEvent reaches every handler")
+    func handleNativeEventReachesEveryHandler() {
+        // The positive statement of D-NAT-P1: a native occurrence is delivered to *every* handler, so
+        // one call both fires the immediate pixel and counts the period counter.
         let f = EventHubFixture.active(Self.bothConfig)
-        f.manager.handleImmediateEvent("test")
+        f.manager.handleNativeEvent("test")
         #expect(f.fired.count == 1)
         #expect(f.fired.first?.name == "imm")
-        #expect(f.count(of: "per") == 0)
-    }
-
-    @Test("handleImmediateEvent fires nothing when the feature is disabled")
-    func handleImmediateEventFiresNothingWhenDisabled() {
-        let f = EventHubFixture.active(Self.immediateConfig, enabled: false)
-        f.manager.handleImmediateEvent("impression")
-        #expect(f.fired.isEmpty)
-    }
-
-    @Test("handleImmediateEvent fires nothing for an unknown or empty type", arguments: ["unknown", ""])
-    func handleImmediateEventFiresNothingForUnknownOrEmptyType(type: String) {
-        let f = EventHubFixture.active(Self.immediateConfig)
-        f.manager.handleImmediateEvent(type)
-        #expect(f.fired.isEmpty)
-    }
-
-    @Test("handleImmediateEvent ignores unserialisable data and still fires")
-    func handleImmediateEventIgnoresUnserialisableDataAndStillFires() {
-        let f = EventHubFixture.active(Self.immediateConfig)
-        // The payload's encode(to:) throws; the fail-safe path drops the data and a parameter-less
-        // immediate pixel still fires rather than the whole call aborting.
-        f.manager.handleImmediateEvent("impression", data: ThrowingData())
-        #expect(f.fired.count == 1)
-    }
-
-    // MARK: handleAggregatedEvent
-
-    @Test("handleAggregatedEvent increments the matching counter")
-    func handleAggregatedEventIncrementsMatchingCounter() {
-        let f = EventHubFixture.active(Self.periodConfig)
-        f.manager.handleAggregatedEvent("test")
-        #expect(f.count(of: Self.pixel1) == 1)
-    }
-
-    @Test("handleAggregatedEvent counts every call with no per-tab dedup")
-    func handleAggregatedEventCountsEveryCallNoDedup() {
-        let f = EventHubFixture.active(Self.periodConfig)
-        // The differentiator from the web path: three identical native events (no tab) count three
-        // times, whereas three same-tab web events on one page would dedup to one.
-        f.manager.handleAggregatedEvent("test")
-        f.manager.handleAggregatedEvent("test")
-        f.manager.handleAggregatedEvent("test")
-        #expect(f.count(of: Self.pixel1) == 3)
-    }
-
-    @Test("handleAggregatedEvent stops at the open-ended bucket")
-    func handleAggregatedEventStopsAtOpenEndedBucket() throws {
-        let f = EventHubFixture.active(Self.periodConfig)
-        for _ in 0..<41 {
-            f.manager.handleAggregatedEvent("test")
-        }
-        let state = try #require(f.state(of: Self.pixel1))
-        #expect(state.params["count"]?.stopCounting == true)
-        #expect(state.params["count"]?.value == 40)
-    }
-
-    @Test("handleAggregatedEvent records the last data value from a matching source")
-    func handleAggregatedEventRecordsLastDataValue() {
-        struct LoginPayload: Encodable { let loginState: String }
-        let f = EventHubFixture.active(Self.periodDataConfig)
-        f.manager.handleAggregatedEvent("yt", data: LoginPayload(loginState: "a"))
-        f.manager.handleAggregatedEvent("yt", data: LoginPayload(loginState: "b"))
-        f.advance(by: 60)
-        #expect(f.fired.count == 1)
-        #expect(f.fired.first?.parameters["loginState"] == "%22b%22")
-    }
-
-    @Test("handleAggregatedEvent does not fire an immediate pixel of the same source")
-    func handleAggregatedEventDoesNotFireImmediatePixel() {
-        let f = EventHubFixture.active(Self.bothConfig)
-        f.manager.handleAggregatedEvent("test")
-        #expect(f.fired.isEmpty)
         #expect(f.count(of: "per") == 1)
     }
 
-    @Test("handleAggregatedEvent counts nothing when the feature is disabled")
-    func handleAggregatedEventCountsNothingWhenDisabled() {
-        let f = EventHubFixture.active(Self.periodConfig, enabled: false)
-        f.manager.handleAggregatedEvent("test")
-        #expect(f.state(of: Self.pixel1) == nil)
+    @Test("handleNativeEvent increments the matching counter")
+    func handleNativeEventIncrementsMatchingCounter() {
+        let f = EventHubFixture.active(Self.periodConfig)
+        f.manager.handleNativeEvent("test")
+        #expect(f.count(of: Self.pixel1) == 1)
     }
 
-    @Test("handleAggregatedEvent counts nothing for an unknown or empty type", arguments: ["unknown", ""])
-    func handleAggregatedEventCountsNothingForUnknownOrEmptyType(type: String) {
+    @Test("handleNativeEvent counts every call with no per-tab dedup")
+    func handleNativeEventCountsEveryCallNoDedup() {
+        // No tab context means no page to de-duplicate against, so every occurrence counts (D-NAT-P1).
         let f = EventHubFixture.active(Self.periodConfig)
-        f.manager.handleAggregatedEvent(type)
-        #expect(f.count(of: Self.pixel1) == 0)
+        f.manager.handleNativeEvent("test")
+        f.manager.handleNativeEvent("test")
+        f.manager.handleNativeEvent("test")
+        #expect(f.count(of: Self.pixel1) == 3)
+    }
+
+    @Test("handleNativeEvent stops at the open-ended bucket")
+    func handleNativeEventStopsAtOpenEndedBucket() throws {
+        let f = EventHubFixture.active(Self.periodConfig)
+        for _ in 0..<45 {
+            f.manager.handleNativeEvent("test")
+        }
+        let state = try #require(f.state(of: Self.pixel1))
+        #expect(state.params["count"]?.value == 40)
+        #expect(state.params["count"]?.stopCounting == true)
+    }
+
+    @Test("handleNativeEvent records the last data value from a matching source")
+    func handleNativeEventRecordsLastDataValue() {
+        let f = EventHubFixture.active(Self.periodDataConfig)
+        f.manager.handleNativeEvent("yt", data: LoginPayload(loginState: "a"))
+        f.manager.handleNativeEvent("yt", data: LoginPayload(loginState: "b"))
+        f.advance(by: 60)
+        #expect(f.fired.count == 1)
+        #expect(f.fired.first?.parameters["loginState"] == #""b""#)
+    }
+
+    @Test("handleNativeEvent does nothing when the feature is disabled")
+    func handleNativeEventDoesNothingWhenDisabled() {
+        let f = EventHubFixture.active(Self.bothConfig, enabled: false)
+        f.manager.handleNativeEvent("test")
+        #expect(f.fired.isEmpty)
+        #expect(f.state(of: "per") == nil)
+    }
+
+    @Test("handleNativeEvent does nothing for an unknown or empty type", arguments: ["unknown", ""])
+    func handleNativeEventDoesNothingForUnknownOrEmptyType(type: String) {
+        let f = EventHubFixture.active(Self.bothConfig)
+        f.manager.handleNativeEvent(type)
+        #expect(f.fired.isEmpty)
+        #expect(f.count(of: "per") == 0)
+    }
+
+    @Test("handleNativeEvent ignores unserialisable data and still fires")
+    func handleNativeEventIgnoresUnserialisableDataAndStillFires() {
+        let f = EventHubFixture.active(Self.immediateConfig)
+        f.manager.handleNativeEvent("impression", data: ThrowingData())
+        #expect(f.fired.count == 1)
     }
 }

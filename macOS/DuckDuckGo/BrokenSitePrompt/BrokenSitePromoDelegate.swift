@@ -101,8 +101,10 @@ final class BrokenSitePromoDelegate: InternalPromoDelegate {
                         limiter.didOpenReport()
                         pixelFiring?.fire(GeneralPixel.siteNotWorkingWebsiteIsBroken)
                     }
-                    presenter.openPrivacyDashboardReport()
+                    // Resolve before opening the privacy dashboard report; otherwise, it calls
+                    // the popover's onDismiss and can be recorded as a dismiss in the limiter.
                     resolve(with: result)
+                    presenter.openPrivacyDashboardReport()
                 },
                 onDismiss: { [weak self] in
                     guard let self else { return }

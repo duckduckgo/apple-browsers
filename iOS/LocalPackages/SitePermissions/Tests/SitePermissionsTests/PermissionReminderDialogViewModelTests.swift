@@ -52,7 +52,7 @@ final class PermissionReminderDialogViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.title, "DuckDuckGo needs to access your location")
         XCTAssertEqual(viewModel.body, "Location permissions are needed if you want to use location features on this site.")
         XCTAssertEqual(viewModel.actions.map(\.action), [.changePermissions, .cancel])
-        XCTAssertEqual(viewModel.actions.map(\.style), [.secondary, .secondary])
+        XCTAssertEqual(viewModel.actions.map(\.style), [.primary, .secondary])
     }
 
     func testVoiceSearchReminderUsesPrimarySettingsActionAndHideAction() {

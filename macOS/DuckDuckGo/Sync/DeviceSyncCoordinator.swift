@@ -146,9 +146,9 @@ extension DeviceSyncCoordinator: SyncSettingsViewHandling {
         dialogController.presentRemoveDevice(device)
     }
 
-    func presentDeleteAccount() {
+    func presentDeleteAccount() async {
         presentDialog()
-        dialogController.presentDeleteAccount()
+        await dialogController.presentDeleteAccount()
     }
 
     func syncWithAnotherDevicePressed(source: SyncDeviceButtonTouchpoint?) async {

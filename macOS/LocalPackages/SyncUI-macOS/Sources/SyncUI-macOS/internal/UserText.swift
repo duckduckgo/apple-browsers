@@ -115,6 +115,11 @@ enum UserText {
         return String(format: notLocalized, deviceName)
     }
 
+    // Turn off and delete server data confirmation dialog (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let deleteAccountConfirmTitleV2 = NotLocalizedString("preferences.sync.delete-account-v2.title", value: "Stop Sync & Backup and Delete Server Data?", comment: "Title of the confirmation shown before turning Sync off and deleting the server data (V2)")
+    static let deleteAccountConfirmMessageV2 = NotLocalizedString("preferences.sync.delete-account-v2.message", value: "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server.", comment: "Message of the confirmation shown before turning Sync off and deleting the server data (V2)")
+    static let deleteAccountConfirmButtonV2 = NotLocalizedString("preferences.sync.delete-account-v2.button", value: "Delete Server Data", comment: "Button that confirms turning Sync off and deleting the server data (V2)")
+
     // Options
     static let otherOptionsSectionTitle = NSLocalizedString("preferences.other-options.section-title", bundle: Bundle.module, value: "Other Options", comment: "Sync settings. Other Options section title")
     static let syncThisDeviceLink = NSLocalizedString("preferences.sync-this-device.link-title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Sync settings. Title of a link to start setting up sync and backup the device")

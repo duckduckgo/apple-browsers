@@ -899,17 +899,58 @@ final class SyncDialogControllerTests: XCTestCase {
 
     // MARK: - Dialog Flow Management
 
-    func testPresentDeleteAccount_presentsCorrectDialog() {
+    func testPresentDeleteAccount_whenSimplifiedSyncSetupV2Disabled_presentsCorrectDialogWithoutAuthenticating() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = false
+        authenticator.stubAuthenticateUser = .failure
         let testDevices = [SyncDevice(kind: .desktop, name: "Test", id: "test")]
         syncDialogController.devices = testDevices
 
-        syncDialogController.presentDeleteAccount()
+        await syncDialogController.presentDeleteAccount()
 
         if case .deleteAccount(let devices) = managementDialogModel.currentDialog {
             XCTAssertEqual(devices.count, testDevices.count)
         } else {
             XCTFail("Expected deleteAccount dialog")
         }
+    }
+
+    func testPresentDeleteAccount_whenSimplifiedSyncSetupV2EnabledAndAuthenticated_presentsDeleteAccountV2WithDevices() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        let testDevices = [
+            SyncDevice(kind: .current, name: "Work Laptop", id: "current"),
+            SyncDevice(kind: .mobile, name: "Androidz", id: "mobile")
+        ]
+        syncDialogController.devices = testDevices
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deleteAccountV2(testDevices))
+    }
+
+    func testPresentDeleteAccount_whenSimplifiedSyncSetupV2EnabledAndAuthenticationCancelled_doesNotPresentDialogAndEndsFlow() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        authenticator.stubAuthenticateUser = .failure
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        var didEndFlowCalled = false
+        coordinationDelegate.didEndFlowCalled = { didEndFlowCalled = true }
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        syncDialogController.devices = [SyncDevice(kind: .desktop, name: "Test", id: "test")]
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertTrue(didEndFlowCalled)
+    }
+
+    func testPresentDeleteAccount_whenSimplifiedSyncSetupV2EnabledAndNoAuthAvailable_showsUnableToAuthenticateError() async {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+        syncDialogController.devices = [SyncDevice(kind: .desktop, name: "Test", id: "test")]
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .empty)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
     }
 
     func testRecoveryCodeNextPressed_showsNowSyncing() {

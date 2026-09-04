@@ -80,16 +80,13 @@ final class DuckPlayerNativeUIPresenter {
         static let fadeAnimationDuration: TimeInterval = 0.2
         static let visibleDuration: TimeInterval = 3.0
 
-        // Fallback clearance for the floating toolbar if the host hasn't reported a bar height yet.
-        static let floatingToolbarClearance: CGFloat = BrowserToolbarView.floatingButtonsHeight + 21
+        // Fallback clearance for the floating toolbar if the host hasn't reported its obscured height yet.
+        static let floatingToolbarObscuredHeight: CGFloat = BrowserToolbarView.floatingButtonsHeight + 21
+        static let floatingChromeClearance: CGFloat = 4
 
         // Max time to wait for the floating pill thumbnail before sliding in anyway.
         static let thumbnailReadyTimeout: TimeInterval = 1.0
 
-        // persistentBottomBarHeight is the full safe-area-anchored bar region, but the visible floating
-        // capsule floats lower than that region's top. Trim this much so the pill sits just above the
-        // capsule rather than the (taller) logical bar region. Tuned against device runtime numbers.
-        static let floatingCapsuleInset: CGFloat = 20
     }
 
     /// The container view model for the entry pill
@@ -223,8 +220,9 @@ final class DuckPlayerNativeUIPresenter {
     /// the address bar when it's at the bottom, at screen bottom when it's at the top.
     private var pillBottomConstraintConstant: CGFloat {
         if floatingUIManager.isFloatingUIEnabled {
-            let barHeight = hostView?.persistentBottomBarHeight ?? Constants.floatingToolbarClearance
-            return -(barHeight - Constants.floatingCapsuleInset)
+            let obscuredHeight = hostView?.floatingBottomChromeObscuredHeight ?? 0
+            let chromeHeight = max(obscuredHeight, Constants.floatingToolbarObscuredHeight)
+            return -(chromeHeight + DuckPlayerContainer.Constants.presentedOffset + Constants.floatingChromeClearance)
         }
         return appSettings.currentAddressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
     }
@@ -922,6 +920,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     /// Shows the bottom sheet when browser chrome is visible
     @MainActor
     func showBottomSheetForVisibleChrome() {
+        updatePillBottomConstraint()
         containerViewModel?.show()
         containerViewController?.view.isUserInteractionEnabled = true
         postPillVisibilityNotification(isVisible: true)

@@ -5535,8 +5535,9 @@ extension TabViewController: DuckPlayerHosting {
         return webViewBottomAnchorConstraint
     }
     
-    var persistentBottomBarHeight: CGFloat {
-        return chromeDelegate?.barsMaxHeight ?? 0.0
+    var floatingBottomChromeObscuredHeight: CGFloat {
+        guard let chromeDelegate else { return 0 }
+        return chromeDelegate.floatingWebViewBottomObscuredHeight(for: 1)
     }
 
     func showChrome() {

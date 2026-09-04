@@ -1758,15 +1758,26 @@ class MainViewController: UIViewController {
     }
 
     private func adjustNewTabPageSafeAreaInsets(for addressBarPosition: AddressBarPosition) {
+        let bottomInset = newTabPageBottomAdditionalSafeAreaInset(for: addressBarPosition)
         switch addressBarPosition {
         case .top:
             // In floating top mode the NTP spans behind the glass omnibar; inset its content so it
             // rests below the bar while still being able to underflow it on scroll.
             let topInset = isFloatingTopContentBehindBar ? viewCoordinator.omniBar.barView.expectedHeight * currentBarsVisibility : 0
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: topInset, left: 0, bottom: 0, right: 0)
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: topInset, left: 0, bottom: bottomInset, right: 0)
         case .bottom:
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: viewCoordinator.omniBar.barView.expectedHeight, right: 0)
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomInset, right: 0)
         }
+    }
+
+    private func newTabPageBottomAdditionalSafeAreaInset(for addressBarPosition: AddressBarPosition) -> CGFloat {
+        FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            addressBarPosition: addressBarPosition,
+            floatingBottomObscuredHeight: floatingWebViewBottomObscuredHeight(for: 1),
+            safeAreaBottom: view.safeAreaInsets.bottom,
+            omnibarHeight: viewCoordinator.omniBar.barView.expectedHeight
+        )
     }
 
     /// Scales the floating-top NTP content inset with chrome visibility so it collapses to zero in
@@ -1902,7 +1913,8 @@ class MainViewController: UIViewController {
         if appSettings.currentAddressBarPosition.isBottom,
            let ntp = self.newTabPageViewController,
            !ntp.isShowingLogo {
-            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+            let restingBottomInset = newTabPageBottomAdditionalSafeAreaInset(for: .bottom)
+            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(restingBottomInset, containerHeight)
         }
 
         UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
@@ -1912,7 +1924,8 @@ class MainViewController: UIViewController {
                !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                let ntp = self.newTabPageViewController,
                ntp.isShowingLogo {
-                self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+                let restingBottomInset = self.newTabPageBottomAdditionalSafeAreaInset(for: .bottom)
+                self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(restingBottomInset, containerHeight)
             } else {
                 self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
             }

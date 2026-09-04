@@ -169,6 +169,47 @@ final class FloatingGlassAppearancePolicyTests: XCTestCase {
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
+    func testWhenFloatingTopBarThenNewTabPageBottomInsetClearsTheToolbar() {
+        let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .top,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52
+        )
+
+        XCTAssertEqual(inset, 62)
+    }
+
+    func testWhenFloatingBottomBarThenNewTabPageBottomInsetClearsTheCombinedChrome() {
+        let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .bottom,
+            floatingBottomObscuredHeight: 170,
+            safeAreaBottom: 34,
+            omnibarHeight: 48
+        )
+
+        XCTAssertEqual(inset, 136)
+    }
+
+    func testWhenFloatingUIIsDisabledThenNewTabPageKeepsLegacyBottomInsets() {
+        XCTAssertEqual(FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: false,
+            addressBarPosition: .top,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52
+        ), 0)
+        XCTAssertEqual(FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: false,
+            addressBarPosition: .bottom,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52
+        ), 52)
+    }
+
     func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
         let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
             barsVisibilityPercent: 1,

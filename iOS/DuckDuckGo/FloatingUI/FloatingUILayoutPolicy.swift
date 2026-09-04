@@ -28,6 +28,17 @@ enum FloatingUILayoutPolicy {
         isFloatingUIEnabled && addressBarPosition == .top && !isUnifiedToggleInputAffectingLayout
     }
 
+    static func newTabPageBottomAdditionalSafeAreaInset(isFloatingUIEnabled: Bool,
+                                                         addressBarPosition: AddressBarPosition,
+                                                         floatingBottomObscuredHeight: CGFloat,
+                                                         safeAreaBottom: CGFloat,
+                                                         omnibarHeight: CGFloat) -> CGFloat {
+        if isFloatingUIEnabled {
+            return max(0, floatingBottomObscuredHeight - safeAreaBottom)
+        }
+        return addressBarPosition.isBottom ? omnibarHeight : 0
+    }
+
     /// Fraction of a bar's slide travel that is still on screen while the domain capsule morph owns the
     /// transition. The pill morphs out of the bar's *resting* frame, so the bar has to hold that frame
     /// until the cross-fade has finished — sliding during the fade separates the two and the bar

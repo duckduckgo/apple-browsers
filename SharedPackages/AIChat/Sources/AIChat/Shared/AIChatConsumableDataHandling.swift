@@ -112,6 +112,10 @@ public enum AIChatConversationSource: String, CaseIterable {
 
     case settings = "settings"
 
+    /// Inferred rather than stamped: no native code opens this one, so it is deduced from the tab
+    /// having loaded on the bare homepage with nothing else claiming the chat.
+    case duckduckgoHomepage = "duckduckgo-homepage"
+
     /// Named for the attribution gap it measures, not "direct": the app cannot tell deliberate
     /// direct navigation from an entry point nobody has instrumented yet.
     case unattributed = "unattributed"

@@ -26,6 +26,7 @@ import FoundationExtensions
 import PrivacyConfig
 @_spi(Testing) import SharedTestUtilities
 import Subscription
+import SubscriptionTestingUtilities
 import Testing
 import UserScript
 import WebKit
@@ -543,7 +544,8 @@ struct AIChatUserScriptHandlerTests {
     /// value — these read the fired parameters directly.
     @MainActor
     private func firedConversationParameters(source: AIChatConversationSource?,
-                                             metric: AIChatMetricName) async -> [String: String]? {
+                                             metric: AIChatMetricName,
+                                             webView: WKWebView? = nil) async -> [String: String]? {
         let sourceHandler = AIChatConversationSourceHandler()
         if let source {
             sourceHandler.setData(source)
@@ -564,7 +566,7 @@ struct AIChatUserScriptHandlerTests {
         )
 
         // The first native-config fetch is what consumes the pending source.
-        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: webView))
 
         await withCheckedContinuation { continuation in
             testHandler.didReportMetric(.init(metricName: metric)) {
@@ -582,6 +584,103 @@ struct AIChatUserScriptHandlerTests {
         let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt)
         #expect(parameters?["source"] == "unattributed")
         #expect(parameters?["isOpenedFromAskDuckAiButton"] == "false")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A chat with no recorded surface loaded on the bare duckduckgo.com homepage is attributed to it", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelAttributesUnstampedChatToDuckDuckGoHomepage() async {
+        let webView = mockWebView(url: "https://duckduckgo.com/")
+        let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt, webView: webView)
+        #expect(parameters?["source"] == "duckduckgo-homepage")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A chat with no recorded surface loaded on a non-homepage duckduckgo.com URL stays unattributed", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelDoesNotAttributeNonHomepageURLToDuckDuckGoHomepage() async {
+        let webView = mockWebView(url: "https://duckduckgo.com/?q=test")
+        let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt, webView: webView)
+        #expect(parameters?["source"] == "unattributed")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A recorded surface wins over the homepage fallback", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelPrefersRecordedSourceOverDuckDuckGoHomepageFallback() async {
+        let webView = mockWebView(url: "https://duckduckgo.com/")
+        let parameters = await firedConversationParameters(source: .serp, metric: .userDidSubmitFirstPrompt, webView: webView)
+        #expect(parameters?["source"] == "serp")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A source staged after an earlier, empty config fetch is still picked up when the prompt is submitted", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelPicksUpSourceStagedAfterAnEarlierEmptyConfigFetch() async {
+        // Mirrors the omnibar reusing a tab already on duckduckgo.com: the homepage's config fetch
+        // drains the mailbox first, and only then does the omnibar stamp the real source.
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let homepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: homepageWebView))
+
+        sourceHandler.setData(.omnibar)
+
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "omnibar")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A chat served from a homepage-shaped duckduckgo.com URL is not attributed to the homepage", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAChatServedFromAHomepageShapedURLIsNotAttributedToTheHomepage() async {
+        // `?ia=chat` carries no `q=`, so it is homepage-shaped while actually being the chat itself.
+        let webView = mockWebView(url: "https://duckduckgo.com/?ia=chat")
+        let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt, webView: webView)
+        #expect(parameters?["source"] == "unattributed")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An ongoing chat keeps the source its first prompt resolved and leaves a later stamp alone", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatOngoingChatKeepsItsSourceAndLeavesALaterStampAlone() async {
+        // The mailbox is app-wide, so a stamp can land mid-conversation for a different chat: this
+        // one must neither re-attribute itself to it nor consume it out from under its owner.
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let homepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: homepageWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        sourceHandler.setData(.omnibar)
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["source"] == "duckduckgo-homepage")
+        #expect(sourceHandler.consumeData() == .omnibar)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The homepage fallback still applies once the page has moved on to a chat URL by prompt time", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelAttributesToHomepageEvenAfterTheURLMovesOnByPromptTime() async {
+        // Guards against re-regressing to sniffing the live URL at prompt time, which reads the
+        // in-place navigation the homepage toggle performs as "not the homepage".
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let homepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: homepageWebView))
+
+        let chatWebView = mockWebView(url: "https://duckduckgo.com/?q=test&ia=chat")
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock(webView: chatWebView))
+
+        #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "duckduckgo-homepage")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -1129,6 +1228,30 @@ struct AIChatUserScriptHandlerTests {
         )
     }
 
+    /// For tests that stage the mailbox mid-flight, so they hold it and the pixel mock themselves.
+    @MainActor
+    private func makeHandler(sourceHandler: AIChatConversationSourceHandler,
+                             pixelFiring: PixelKitMock) -> AIChatUserScriptHandler {
+        AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: MockFeatureFlagger(),
+            notificationCenter: notificationCenter,
+            conversationSourceHandler: sourceHandler
+        )
+    }
+
+    /// Module-qualified because this test target has its own unrelated `MockWKWebView`. Bind the
+    /// result to a local — `WKScriptMessage.mock` holds the web view weakly.
+    private func mockWebView(url: String) -> WKWebView {
+        SubscriptionTestingUtilities.MockWKWebView(url: URL(string: url)!)
+    }
+
     // MARK: - Free Trial Conversion Tracking
 
     @available(iOS 16, macOS 13, *)
@@ -1522,6 +1645,7 @@ struct AIChatConversationSourcePixelTests {
         "serp",
         "sidebar-handoff",
         "settings",
+        "duckduckgo-homepage",
         "unattributed"
     ]
 

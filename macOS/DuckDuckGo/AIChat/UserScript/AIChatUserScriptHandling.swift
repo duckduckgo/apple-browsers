@@ -200,6 +200,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var didConsumeConversationSource = false
     private let conversationSourceHandler: AIChatConversationSourceHandler
 
+    /// Captured at load rather than read at prompt time: by then the page may have navigated off the
+    /// homepage (`?q=…&ia=chat`) as part of starting the very conversation being described.
+    private var loadedOnDuckDuckGoHomepage = false
+
     /// Whether page context with content is currently attached to this chat — set by the native
     /// auto-attach push and updated by the frontend's add/remove toggle. Read at prompt submit for
     /// the conversation pixels' `hasPageContext`. Best-effort, mirroring Windows: only sidebar chats
@@ -268,15 +272,28 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
+        // Read up front so no suspension splits the commit below. `!isDuckAIURL` because the chat
+        // itself can be served from a homepage-shaped URL (`?ia=chat`).
+        let isHomepage = await message.messageWebView?.url.map { $0.isDuckDuckGoHomepage && !$0.isDuckAIURL } == true
+
         // Consume exactly once, at load, before the user can submit a prompt. Guarded by a flag (not
         // by `conversationSource == nil`) so a chat that loaded with an empty mailbox can't later
         // steal a different chat's pending source on a subsequent config fetch.
         if !didConsumeConversationSource {
             didConsumeConversationSource = true
-            conversationSource = conversationSourceHandler.consumeData()
+            // `??` so a first prompt racing ahead of this fetch keeps the source it already settled.
+            conversationSource = conversationSourceHandler.consumeData() ?? conversationSource
+            loadedOnDuckDuckGoHomepage = isHomepage
         }
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+    }
+
+    /// duckduckgo.com fetches the config on every visit, so a homepage load drains the mailbox before
+    /// any chat starts; scoped to that case and the first prompt so no chat drains another's stamp.
+    private func resolveHomepageConversationSourceIfNeeded() {
+        guard conversationSource == nil, loadedOnDuckDuckGoHomepage else { return }
+        conversationSource = conversationSourceHandler.consumeData() ?? .duckduckgoHomepage
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -1094,6 +1111,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
+            resolveHomepageConversationSourceIfNeeded()
             pixelFiring?.fire(
                 AIChatPixel.aiChatMetricStartNewConversation(source: pixelConversationSource,
                                                              hasPageContext: hasAttachedPageContext),

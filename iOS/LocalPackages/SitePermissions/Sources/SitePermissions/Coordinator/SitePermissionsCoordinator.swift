@@ -448,7 +448,8 @@ public final class SitePermissionsCoordinator {
         if case .deny(let systemBlocks) = resolution,
            let recovery = recovery(for: systemBlocks) {
             pendingRequest.completion(resolution)
-            guard isActiveAndValid(pendingRequest) else { return }
+            // Completion releases the bridge context; page resets invalidate the active request.
+            guard activeRequest === pendingRequest else { return }
 
             recoveryHandler(recovery) { [weak self, weak pendingRequest] in
                 guard let self, let pendingRequest else { return }

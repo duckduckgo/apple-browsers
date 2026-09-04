@@ -789,6 +789,60 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(secondPrompt, SitePermissionPrompt(site: harness.site, permissionTypes: [.microphone]))
     }
 
+    func testWhenCompletionReleasesRequestContextThenRecoveryRetainsFIFOUnlessPageResets() throws {
+        for resetsPage in [false, true] {
+            let harness = try Harness()
+            harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+            var currentContext: SitePermissionRequestContext? = harness.context
+            var events = [String]()
+            var finishRecovery: (() -> Void)?
+            let coordinator = SitePermissionsCoordinator(
+                store: harness.store,
+                isFireMode: false,
+                currentContext: { _, _ in currentContext },
+                authorizationState: { _ in .denied },
+                requestAuthorization: { _ in
+                    XCTFail("Stored Allow must not request system authorization")
+                    return .denied
+                },
+                recoveryHandler: { recovery, completion in
+                    XCTAssertEqual(recovery, .reminder(permissionTypes: [.camera]))
+                    events.append("recovery")
+                    finishRecovery = completion
+                }
+            )
+
+            coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
+                XCTFail("Stored Allow must not show a site prompt")
+            }, completion: { resolution in
+                XCTAssertEqual(resolution, .deny(systemBlocks: [
+                    SitePermissionSystemBlock(permissionType: .camera, state: .denied, timing: .preexisting)
+                ]))
+                events.append("resolution")
+                // App bridge completion removes its pending request and therefore its context.
+                currentContext = nil
+                if resetsPage {
+                    coordinator.pageDidChange(.navigation)
+                }
+            })
+
+            XCTAssertEqual(events, resetsPage ? ["resolution"] : ["resolution", "recovery"])
+            currentContext = harness.context
+            coordinator.request(harness.request([.microphone]), promptHandler: { _, _ in
+                events.append("nextPrompt")
+            }, completion: { _ in })
+
+            if resetsPage {
+                XCTAssertNil(finishRecovery)
+                XCTAssertEqual(events, ["resolution", "nextPrompt"])
+            } else {
+                XCTAssertEqual(events, ["resolution", "recovery"])
+                try XCTUnwrap(finishRecovery)()
+                XCTAssertEqual(events, ["resolution", "recovery", "nextPrompt"])
+            }
+        }
+    }
+
     func testWhenIndividualSystemPromptCompletesThenExactlyOneResultEventIsEmitted() async throws {
         let scenarios: [(SitePermissionType, SystemPermissionAuthorizationState, SitePermissionsEvent.SystemPromptResult)] = [
             (.camera, .authorized, .granted),

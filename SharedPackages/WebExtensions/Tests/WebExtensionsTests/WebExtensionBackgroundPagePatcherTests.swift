@@ -216,50 +216,21 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
 
     // MARK: - Known Public Keys
 
-    func testWhenKnownExtensionHasNoKey_ThenLocalizedNameResolvesTheKey() throws {
-        // No `short_name`, so only the localized name can match.
+    func testWhenNameIsALocalizationPlaceholder_ThenShortNameResolvesTheKey() throws {
+        // Bitwarden's own shape: `name` is a placeholder for the store listing title, `short_name`
+        // is the product name.
         let extensionDirectory = try makeExtensionDirectory(manifest: """
         {
             "manifest_version": 3,
             "name": "__MSG_extName__",
-            "default_locale": "en",
-            "background": {
-                "page": "background/index.html"
-            }
+            "short_name": "Bitwarden"
         }
         """)
-        try writeMessages("""
-        {
-            "extName": { "message": "Bitwarden", "description": "Extension name" }
-        }
-        """, locale: "en", in: extensionDirectory)
 
         XCTAssertTrue(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
 
         let manifest = try loadManifest(in: extensionDirectory)
-        XCTAssertEqual(manifest["key"] as? String, WebExtensionKnownPublicKeys.publicKey(forDisplayName: "Bitwarden"))
-    }
-
-    func testWhenLocalizedNameIsTheStoreListingTitle_ThenShortNameStillResolvesTheKey() throws {
-        // Bitwarden's own shape: `extName` is the store listing, `short_name` the product name.
-        let extensionDirectory = try makeExtensionDirectory(manifest: """
-        {
-            "manifest_version": 3,
-            "name": "__MSG_extName__",
-            "short_name": "Bitwarden",
-            "default_locale": "en"
-        }
-        """)
-        try writeMessages("""
-        {
-            "extName": { "message": "Bitwarden Password Manager" }
-        }
-        """, locale: "en", in: extensionDirectory)
-
-        XCTAssertTrue(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-
-        let manifest = try loadManifest(in: extensionDirectory)
-        XCTAssertEqual(manifest["key"] as? String, WebExtensionKnownPublicKeys.publicKey(forDisplayName: "Bitwarden"))
+        XCTAssertEqual(manifest["key"] as? String, WebExtensionManifestKeyPatcher.knownPublicKeys["Bitwarden"])
     }
 
     func testWhenNoCandidateNameIsKnown_ThenNoKeyIsInserted() throws {
@@ -267,15 +238,9 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         {
             "manifest_version": 3,
             "name": "__MSG_extName__",
-            "short_name": "Bitwarden Password Manager",
-            "default_locale": "en"
+            "short_name": "Bitwarden Password Manager"
         }
         """)
-        try writeMessages("""
-        {
-            "extName": { "message": "Bitwarden Password Manager" }
-        }
-        """, locale: "en", in: extensionDirectory)
         let originalManifest = try Data(contentsOf: manifestURL(in: extensionDirectory))
 
         XCTAssertFalse(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
@@ -283,7 +248,7 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: manifestURL(in: extensionDirectory)), originalManifest)
     }
 
-    func testWhenKnownExtensionHasNoKeyAndNoLocales_ThenShortNameResolvesTheKey() throws {
+    func testWhenShortNameIsAnotherKnownExtension_ThenItsKeyResolves() throws {
         let extensionDirectory = try makeExtensionDirectory(manifest: """
         {
             "manifest_version": 3,
@@ -295,23 +260,17 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         XCTAssertTrue(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
 
         let manifest = try loadManifest(in: extensionDirectory)
-        XCTAssertEqual(manifest["key"] as? String, WebExtensionKnownPublicKeys.publicKey(forDisplayName: "1Password"))
+        XCTAssertEqual(manifest["key"] as? String, WebExtensionManifestKeyPatcher.knownPublicKeys["1Password"])
     }
 
     func testWhenKnownExtensionAlreadyHasKey_ThenManifestIsUntouched() throws {
         let extensionDirectory = try makeExtensionDirectory(manifest: """
         {
             "manifest_version": 3,
-            "name": "__MSG_extName__",
-            "default_locale": "en",
+            "name": "Bitwarden",
             "key": "AN-EXISTING-KEY"
         }
         """)
-        try writeMessages("""
-        {
-            "extName": { "message": "Bitwarden" }
-        }
-        """, locale: "en", in: extensionDirectory)
         let originalManifest = try Data(contentsOf: manifestURL(in: extensionDirectory))
 
         XCTAssertFalse(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
@@ -438,14 +397,6 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
 
     private func writeFile(named filename: String, in directory: URL) throws {
         try "// \(filename)".write(to: directory.appendingPathComponent(filename), atomically: true, encoding: .utf8)
-    }
-
-    private func writeMessages(_ messages: String, locale: String, in directory: URL) throws {
-        let localeDirectory = directory
-            .appendingPathComponent("_locales")
-            .appendingPathComponent(locale)
-        try FileManager.default.createDirectory(at: localeDirectory, withIntermediateDirectories: true)
-        try messages.write(to: localeDirectory.appendingPathComponent("messages.json"), atomically: true, encoding: .utf8)
     }
 
     private func manifestURL(in directory: URL) -> URL {

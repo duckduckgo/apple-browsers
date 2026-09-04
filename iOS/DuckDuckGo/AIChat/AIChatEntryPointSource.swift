@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import AIChat
 import Core
 import PixelKit
 
@@ -80,6 +81,7 @@ public enum AIChatEntryPointSource: String {
     case siri
     case deepLinkOther = "deep_link_other"
     case returnToChatCard = "return_to_chat_card"
+    case ddgHomepage = "ddg_homepage"
 }
 
 extension AIChatEntryPointSource {
@@ -97,9 +99,19 @@ extension AIChatEntryPointSource {
 
     /// Names the page behind an `openAIChat` user-script request so it is not reported as a typed
     /// address. `nil` for duck.ai and debug hosts, which have no entry of their own.
-    static func forFrontEndOpenRequest(messageHost: String?) -> AIChatEntryPointSource? {
+    static func forFrontEndOpenRequest(messageHost: String?, pageURL: URL?) -> AIChatEntryPointSource? {
+        if pageURL?.isDuckDuckGoHomepage == true { return .ddgHomepage }
         guard let messageHost, messageHost == URL.ddg.host else { return nil }
         return .serp
+    }
+
+    /// Attributes a navigation the page itself started into Duck.ai. Only the DuckDuckGo homepage
+    /// is named; links from other pages stay unattributed rather than being lumped into a catch-all.
+    static func forInPageNavigation(from currentURL: URL?, to targetURL: URL) -> AIChatEntryPointSource? {
+        guard let currentURL, currentURL.isDuckDuckGoHomepage, !currentURL.isDuckAIURL, targetURL.isDuckAIURL else {
+            return nil
+        }
+        return .ddgHomepage
     }
 }
 

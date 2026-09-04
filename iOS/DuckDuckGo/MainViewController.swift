@@ -3849,7 +3849,8 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 let payload = notification.object as? AIChatPayload
                 let requestHost = notification.userInfo?[TabURLInterceptorParameter.aiChatRequestHost] as? String
-                let source = AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: requestHost)
+                let requestURL = notification.userInfo?[TabURLInterceptorParameter.aiChatRequestURL] as? URL
+                let source = AIChatEntryPointSource.forFrontEndOpenRequest(messageHost: requestHost, pageURL: requestURL)
                     ?? .directURL
                 self?.openAIChat(source: source, payload: payload)
             }
@@ -6751,6 +6752,22 @@ extension MainViewController: TabDelegate {
              didRequestNewDuckAITabForUrl url: URL,
              entrySource: AIChatEntryPointSource) {
         openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
+            $0.duckAIEntrySource = entrySource
+        }
+    }
+
+    func tab(_ tab: TabViewController,
+             didStartDuckAINavigationTo url: URL,
+             entrySource: AIChatEntryPointSource,
+             opensNewTab: Bool,
+             inheritingAttribution attribution: AdClickAttributionLogic.State?) {
+        let hasPrompt = url.getParameter(named: AIChatURLParameters.promptQueryName)?.isEmpty == false
+        fireAIChatEntryPointPixel(source: entrySource, opensNewTab: opensNewTab, hasPrompt: hasPrompt)
+        guard opensNewTab else {
+            tab.tabModel.duckAIEntrySource = entrySource
+            return
+        }
+        openNewTab(from: tab, url: url, openedByPage: true, inheritedAttribution: attribution) {
             $0.duckAIEntrySource = entrySource
         }
     }

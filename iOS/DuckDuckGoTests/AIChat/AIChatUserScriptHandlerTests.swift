@@ -131,6 +131,26 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.installAge, 0)
     }
 
+    @MainActor
+    func testWhenOpenAIChatIsRequestedThenNotificationCarriesTheRequestingPageURL() async {
+        let homepage = URL(string: "https://duckduckgo.com/")!
+        let webView = StubURLWebView(frame: .zero)
+        webView.stubbedURL = homepage
+        let message = MockUserScriptMessage(messageName: "openAIChat",
+                                            messageBody: [:],
+                                            messageHost: "duckduckgo.com",
+                                            isMainFrame: true,
+                                            messageWebView: webView)
+        let notificationPosted = expectation(forNotification: .urlInterceptAIChat, object: nil) { notification in
+            notification.userInfo?[TabURLInterceptorParameter.aiChatRequestURL] as? URL == homepage
+                && notification.userInfo?[TabURLInterceptorParameter.aiChatRequestHost] as? String == "duckduckgo.com"
+        }
+
+        _ = await aiChatUserScriptHandler.openAIChat(params: [:], message: message)
+
+        await fulfillment(of: [notificationPosted], timeout: 1)
+    }
+
     func testGetAIChatNativeConfigValues() {
         // Given
         // MockFeatureFlagger is already initialized with .aiChatDeepLink enabled
@@ -990,6 +1010,11 @@ struct MockUserScriptMessage: UserScriptMessage {
     }
 }
 // swiftlint: enable inclusive_language
+
+private final class StubURLWebView: WKWebView {
+    var stubbedURL: URL?
+    override var url: URL? { stubbedURL }
+}
 
 private final class MockDevicePlatform: DevicePlatformProviding {
     static var isIphone = false

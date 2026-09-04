@@ -55,6 +55,7 @@ struct DeviceDetailsViewV2: View {
         SyncDialogV2(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 illustration
+                    .accessibilityHidden(true)
                 VStack(alignment: .center, spacing: 8) {
                     SyncUIViews.TextHeader(text: title)
                     SyncUIViewsV2.TextCaption(text: UserText.deviceDetailsSyncedStatusV2)

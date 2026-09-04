@@ -134,5 +134,6 @@ struct SyncedDeviceIconV2: View {
     var body: some View {
         Image(nsImage: image)
             .accessibilityIdentifier(accessibilityIdentifier)
+            .padding(.leading, 8)
     }
 }

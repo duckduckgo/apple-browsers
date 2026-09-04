@@ -48,7 +48,12 @@ public final class PixelKitMock: PixelFiring {
                                         additionalParameters: options.additionalParameters,
                                         includeAppVersionParameter: options.includeAppVersionParameter)
         actualFireCalls.append(fireCall)
-        onComplete(expectedFireError == nil, expectedFireError)
+
+        // A multi-request frequency completes once per leg and `fireAsync` waits for all of them,
+        // so completing once here would leave an awaiting caller suspended forever.
+        for _ in 0..<frequency.legCount {
+            onComplete(expectedFireError == nil, expectedFireError)
+        }
     }
 }
 

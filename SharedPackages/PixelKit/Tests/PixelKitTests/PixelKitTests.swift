@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import PixelKit
+@_spi(Testing) import PixelKit
 import os.log
 
 final class PixelKitTests: XCTestCase {
@@ -1021,6 +1022,32 @@ final class PixelKitTests: XCTestCase {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+    }
+
+    /// `PixelKitMock` has to complete once per leg, like the real thing, otherwise `fireAsync`
+    /// waits for a leg that never reports and an awaiting caller stays suspended forever.
+    func testPixelKitMockCompletesOncePerLeg() {
+        for frequency in [PixelKit.Frequency.standard, .daily, .legacyDailyAndCount, .dailyAndCount, .dailyAndStandard] {
+            let pixelKitMock = PixelKitMock()
+            var completionCount = 0
+
+            pixelKitMock.fire(event: TestEventV2.dailyEvent, frequency: frequency, options: .default) { _, _ in
+                completionCount += 1
+            }
+
+            XCTAssertEqual(completionCount, frequency.legCount, "\(frequency) completed \(completionCount) times")
+            XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1,
+                           "the mock records the fire call once, however many legs it completes")
+        }
+    }
+
+    /// The async path over the mock, which would suspend forever if the mock under-completed.
+    func testAsyncFireThroughPixelKitMockResolvesForATwoLegFrequency() async throws {
+        let pixelKitMock = PixelKitMock()
+
+        let result = try await pixelKitMock.fireAsync(TestEventV2.dailyEvent, frequency: .legacyDailyAndCount)
+
+        XCTAssertEqual(result, .sent)
     }
 
     /// A single-leg frequency expects one completion. If the handler somehow over-completes,

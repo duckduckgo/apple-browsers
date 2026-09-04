@@ -466,11 +466,6 @@ extension AppDelegate {
         }
     }
 
-    @MainActor
-    @objc func openAbout(_ sender: Any?) {
-        AboutPanelController.show(internalUserDecider: internalUserDecider)
-    }
-
     @objc func openImportBookmarksWindow(_ sender: Any?) {
         DispatchQueue.main.async {
             DataImportFlowLauncher(pinningManager: self.pinningManager).launchDataImport(isDataTypePickerExpanded: true)

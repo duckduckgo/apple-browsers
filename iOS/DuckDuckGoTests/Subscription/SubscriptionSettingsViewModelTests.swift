@@ -34,6 +34,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
     var cancellables = Set<AnyCancellable>()
     var isProTierPurchaseEnabled: Bool = false
     var mockFeatureFlagger: MockFeatureFlagger!
+    fileprivate var onboardingKeyValueStore: InMemoryThrowingStore!
 
     override func setUp() {
         super.setUp()
@@ -41,6 +42,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         mockSubscriptionManager.resultURL = URL(string: "https://example.com")!
         mockSubscriptionManager.resultStorePurchaseManager = StorePurchaseManagerMock()
         mockFeatureFlagger = MockFeatureFlagger()
+        onboardingKeyValueStore = InMemoryThrowingStore()
         cancellables = Set<AnyCancellable>()
     }
 
@@ -749,6 +751,30 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertNil(sut.state.cancelDowngradeError)
     }
 
+    // MARK: - Onboarding State
+
+    func testRefreshOnboardingState_BeforeCalled_DefaultsToHidden() {
+        sut = makeSUT()
+
+        guard case .hidden = sut.onboardingSetupState else {
+            return XCTFail("Expected .hidden, got \(sut.onboardingSetupState)")
+        }
+    }
+
+    /// `MockFeatureFlagger.assignedCohort` always returns `nil` here, so this only covers the enrollment branch;
+    /// the other branches are covered in `SubscriptionOnboardingExperimentTests`.
+    func testRefreshOnboardingState_WhenNotEnrolledInExperiment_ResolvesToHidden() async {
+        sut = makeSUT()
+        var persistor = SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore)
+        persistor.recordPostCheckoutFlowStartedIfNeeded(now: Date())
+
+        await sut.refreshOnboardingState(hasActiveSubscription: true, isPIRAvailable: true)
+
+        guard case .hidden = sut.onboardingSetupState else {
+            return XCTFail("Expected .hidden, got \(sut.onboardingSetupState)")
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil) -> SubscriptionSettingsViewModel {
@@ -756,6 +782,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             keyValueStorage: MockKeyValueStorage(),
+            onboardingKeyValueStore: onboardingKeyValueStore,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter
         )
@@ -816,5 +843,21 @@ private final class MockKeyValueStorage: KeyValueStoring {
 
     func removeObject(forKey defaultName: String) {
         storage.removeValue(forKey: defaultName)
+    }
+}
+
+private final class InMemoryThrowingStore: ThrowingKeyValueStoring {
+    private var values: [String: Any] = [:]
+
+    func object(forKey key: String) throws -> Any? {
+        values[key]
+    }
+
+    func set(_ value: Any?, forKey key: String) throws {
+        values[key] = value
+    }
+
+    func removeObject(forKey key: String) throws {
+        values.removeValue(forKey: key)
     }
 }

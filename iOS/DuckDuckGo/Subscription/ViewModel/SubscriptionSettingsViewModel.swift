@@ -42,6 +42,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private var subscriptionChangeObserver: Any?
     private let featureFlagger: FeatureFlagger
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
+    private let onboardingKeyValueStore: ThrowingKeyValueStoring
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -91,6 +92,18 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     /// Cancel-downgrade error; use this for alert binding so SwiftUI reliably updates when set from callbacks.
     @Published private(set) var cancelDowngradeError: SubscriptionPurchaseError?
+
+    enum OnboardingSetupState {
+        case hidden
+        case setup(SubscriptionOnboardingProgress)
+    }
+
+    /// Whether the "Continue Setup" card and re-entry flow are available, and the checklist to show if so. See `refreshOnboardingState(hasActiveSubscription:isPIRAvailable:)`.
+    @Published private(set) var onboardingSetupState: OnboardingSetupState = .hidden
+
+    var onboardingPersistor: SubscriptionOnboardingProgressPersistor {
+        SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore)
+    }
 
     public let usesUnifiedFeedbackForm: Bool
 
@@ -186,11 +199,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     init(subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
+         onboardingKeyValueStore: ThrowingKeyValueStoring,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
+        self.onboardingKeyValueStore = onboardingKeyValueStore
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
             wideEvent: AppDependencyProvider.shared.wideEvent)
@@ -212,6 +227,23 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 #endif
         return dateFormatter
     }()
+
+    /// Refreshes `onboardingSetupState`. Call on first appear, and again once the onboarding flow finishes —
+    /// a step completed there can change what the card shows.
+    @MainActor
+    func refreshOnboardingState(hasActiveSubscription: Bool, isPIRAvailable: Bool) async {
+        let isEnabled = SubscriptionOnboardingExperiment.isSettingsReEntryEnabled(
+            using: featureFlagger,
+            hasStartedFlow: onboardingPersistor.postCheckoutFlowStartedAt != nil,
+            hasActiveSubscription: hasActiveSubscription)
+        guard isEnabled else {
+            onboardingSetupState = .hidden
+            return
+        }
+        let entitlement = await subscriptionManager.getAllEntitlementStatus()
+        let progress = SubscriptionOnboardingProgress(persistor: onboardingPersistor, isPIRAvailable: isPIRAvailable, entitlement: entitlement)
+        onboardingSetupState = progress.checklist.isEmpty ? .hidden : .setup(progress)
+    }
 
     func onFirstAppear() {
         Task {

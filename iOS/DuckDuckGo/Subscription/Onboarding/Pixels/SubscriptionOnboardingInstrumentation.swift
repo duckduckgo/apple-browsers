@@ -60,7 +60,6 @@ extension SubscriptionOnboardingEntryPoint {
 
 // MARK: - Implementation
 
-@MainActor
 struct SubscriptionOnboardingInstrumentation: SubscriptionOnboardingInstrumenting {
 
     private let entryPoint: SubscriptionOnboardingEntryPoint
@@ -100,12 +99,4 @@ struct SubscriptionOnboardingInstrumentation: SubscriptionOnboardingInstrumentin
     private func fire(_ pixel: SubscriptionPixel) {
         pixelFiring?.fire(pixel)
     }
-}
-
-/// Reports nothing, for previews and tests.
-struct NullSubscriptionOnboardingInstrumentation: SubscriptionOnboardingInstrumenting {
-    func flowStarted() {}
-    func stepShown(_ section: SubscriptionOnboardingSection) {}
-    func stepCompleted(_ section: SubscriptionOnboardingSection) {}
-    func stepSkipped(_ section: SubscriptionOnboardingSection) {}
 }

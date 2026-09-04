@@ -68,8 +68,6 @@ struct SubscriptionSettingsViewV2: View {
     @State private var onboardingFlow: SubscriptionOnboardingFlowViewModel?
     /// Guards against a double-tap starting a second entitlement fetch before the first resolves.
     @State private var isStartingOnboarding = false
-    /// Refetched each time `onboardingSetupSection` appears
-    @State private var cardEntitlement: EntitlementStatus?
 
     var body: some View {
         optionsView
@@ -77,8 +75,7 @@ struct SubscriptionSettingsViewV2: View {
                 Pixel.fire(pixel: .ddgSubscriptionSettings, debounce: 1)
             }
             .task {
-                guard isOnboardingEnabled else { return }
-                cardEntitlement = await settingsViewModel.subscriptionManager.getAllEntitlementStatus()
+                await viewModel.refreshOnboardingState(hasActiveSubscription: hasActiveSubscription, isPIRAvailable: isPIRAvailable)
             }
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: settingsViewModel.state.subscription.shouldDisplayRestoreSubscriptionError) { value in
@@ -466,7 +463,7 @@ struct SubscriptionSettingsViewV2: View {
                 downgradeBanner
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
-            if isOnboardingEnabled, let onboardingProgress {
+            if case .setup(let onboardingProgress) = viewModel.onboardingSetupState {
                 onboardingSetupSection(progress: onboardingProgress)
             }
             if viewModel.shouldShowUpgrade {
@@ -482,7 +479,9 @@ struct SubscriptionSettingsViewV2: View {
         .padding(.top, -20)
         .navigationTitle(UserText.settingsPProManageSubscription)
         .applyInsetGroupedListStyle()
-        .sheet(item: $onboardingFlow) { flow in
+        .sheet(item: $onboardingFlow, onDismiss: {
+            Task { await viewModel.refreshOnboardingState(hasActiveSubscription: hasActiveSubscription, isPIRAvailable: isPIRAvailable) }
+        }) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
         }
         .onChange(of: viewModel.state.shouldDismissView) { value in
@@ -693,7 +692,7 @@ extension SubscriptionSettingsViewV2 {
         Task { @MainActor in
             defer { isStartingOnboarding = false }
             guard let flow = await SubscriptionOnboardingFlowViewModel.subscriptionSettings(
-                persistor: onboardingPersistor,
+                persistor: viewModel.onboardingPersistor,
                 isPIRAvailable: isPIRAvailable,
                 subscriptionManager: settingsViewModel.subscriptionManager,
                 onFinish: { onboardingFlow = nil },
@@ -701,23 +700,6 @@ extension SubscriptionSettingsViewV2 {
                 pirScreen: { pirDestination }) else { return }
             onboardingFlow = flow
         }
-    }
-
-    private var onboardingProgress: SubscriptionOnboardingProgress? {
-        guard let cardEntitlement else { return nil }
-        let progress = SubscriptionOnboardingProgress(persistor: onboardingPersistor, isPIRAvailable: isPIRAvailable, entitlement: cardEntitlement)
-        return progress.checklist.isEmpty ? nil : progress
-    }
-
-    private var onboardingPersistor: SubscriptionOnboardingProgressPersistor {
-        SubscriptionOnboardingProgressPersistor(keyValueStore: settingsViewModel.keyValueStore)
-    }
-
-    /// Checked here rather than inside the card so the check (and subscription state) also covers `startOnboarding()`.
-    private var isOnboardingEnabled: Bool {
-        SubscriptionOnboardingExperiment.isSettingsReEntryEnabled(using: settingsViewModel.featureFlagger,
-                                                                  hasStartedFlow: onboardingPersistor.postCheckoutFlowStartedAt != nil,
-                                                                  hasActiveSubscription: hasActiveSubscription)
     }
 
     /// An expired or still-activating subscription has nothing left to set up.

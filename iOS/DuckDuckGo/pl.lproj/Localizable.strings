@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -63,6 +66,9 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Dodaj";
+
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Zapytaj Duck.ai";
 
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Skrót do ukrycia dolnego panelu";
@@ -201,6 +207,9 @@
 
 /* Add to Favorites action */
 "action.title.save.favorite" = "Dodaj do Ulubionych";
+
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Szukaj";
 
 /* Settings action */
 "action.title.settings" = "Ustawienia";
@@ -474,6 +483,42 @@
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Wyszukiwanie w sieci";
+
+/* Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent */
+"aichat.usageWarnings.action.startUsingWeeklyLimit" = "Zacznij korzystać z limitu tygodniowego";
+
+/* Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow */
+"aichat.usageWarnings.action.subscribe" = "Subskrybuj";
+
+/* Button in the Duck.ai input footer warning that moves the user onto the suggested model */
+"aichat.usageWarnings.action.switch" = "Zmień model";
+
+/* Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow */
+"aichat.usageWarnings.action.tryForFree" = "Wypróbuj subskrypcję bezpłatnie";
+
+/* Title of the Duck.ai input footer warning shown once the allowance for advanced AI models specifically is used up, while free models remain available */
+"aichat.usageWarnings.advancedModelsLimitReached.title" = "Osiągnięto limit zaawansowanych modeli AI";
+
+/* Title of the Duck.ai input footer warning shown once the user's daily message limit is used up */
+"aichat.usageWarnings.dailyLimitReached.title" = "Osiągnięto dzienny limit";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage */
+"aichat.usageWarnings.dailyUsage.title" = "%d%% limitu dziennego";
+
+/* Accessibility label for the button that dismisses the Duck.ai input footer warning */
+"aichat.usageWarnings.dismiss.a11y" = "Odrzuć";
+
+/* Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8' */
+"aichat.usageWarnings.highUsageModel" = "%@ zużywa limity nawet 2–5 razy szybciej niż podstawowe modele.";
+
+/* Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days' */
+"aichat.usageWarnings.resetsIn" = "Resetuje się za %@";
+
+/* Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up */
+"aichat.usageWarnings.weeklyLimitReached.title" = "Osiągnięto tygodniowy limit użycia";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage */
+"aichat.usageWarnings.weeklyUsage.title" = "%d%% limitu tygodniowego";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Istniejące zakładki nie zostaną zduplikowane.";
@@ -1909,6 +1954,9 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Ostatnie zmiany w serwisie YouTube miały wpływ na działanie Duck Player. Pracujemy nad rozwiązaniem tych problemów i dziękujemy za zrozumienie.";
 
+/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
+"duckai.address.bar.menu.new.chat" = "Nowy czat";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Stuknij widżet, aby go edytować, a następnie ustaw skróty **Duck.ai** i **Duck.ai Voice**";
 
@@ -2221,6 +2269,12 @@
 /* Suggested prompt submitted text: summarize the current page */
 "duckai.suggestion.summarize-page.prompt" = "Podsumuj tę stronę.";
 
+/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
+"duckai.suggestion.summarize-selection.label" = "Podsumuj to zaznaczenie";
+
+/* Suggested prompt submitted text: summarize the attached text selection */
+"duckai.suggestion.summarize-selection.prompt" = "Podsumuj to zaznaczenie.";
+
 /* Suggested prompt chip: summarize a discussion thread */
 "duckai.suggestion.summarize-thread.label" = "Podsumuj tę dyskusję";
 
@@ -2245,6 +2299,12 @@
 /* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
 "duckai.suggestion.translate-page.prompt" = "Przetłumacz tę stronę na język %@.";
 
+/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
+"duckai.suggestion.translate-selection.label" = "Przetłumacz to zaznaczenie";
+
+/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-selection.prompt" = "Przetłumacz to zaznaczenie na %@.";
+
 /* Suggested prompt chip: video key points */
 "duckai.suggestion.video-key-points.label" = "Jakie są najważniejsze punkty?";
 
@@ -2262,6 +2322,12 @@
 
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Warto to obejrzeć? Opowiedz o tym bez zdradzania fabuły.";
+
+/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Zaznaczenie tekstu";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "Możesz dodać do %d zaznaczonych tekstów. Usuń jeden z nich, aby dodać kolejny.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Wszystkie czaty są %@ prywatne";
@@ -4424,25 +4490,25 @@
 "settings.complete.setup" = "Dokończ swoją konfigurację";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Postaramy się wybrać dla Ciebie tylko najbardziej prywatne dostępne opcje plików cookie, a następnie zamknąć te wyskakujące okienka.";
+"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Automatycznie zarządzaj okienkami z prośbą o zgodę";
+"settings.cookie.auto-manage.title" = "Reject optional cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Ochrona przed wyskakującymi okienkami dotyczącymi plików cookie";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo może automatycznie zarządzać preferencjami dotyczącymi plików cookie, aby zmaksymalizować prywatność, zminimalizować liczbę plików cookie i zamknąć te wyskakujące okienka.\n[Więcej informacji](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Zarządzaj okienkami z prośbą o zgodę";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Pozwól też DuckDuckGo zaoszczędzić ci kliknięcie, akceptując w Twoim imieniu pliki cookie, aby zamknąć wyskakujące okienka, z których nie możesz zrezygnować.";
+"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Wyskakujące okienka bez możliwości rezygnacji";
+"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Usuń karty i dane";
@@ -4551,8 +4617,6 @@
 
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Dowiedz się więcej";
-
-/* Switch button label. */
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Hasła i autouzupełnianie";
@@ -5772,26 +5836,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chcesz importować?";
 
-/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
-"action.title.aiChat.askDuckAI" = "Zapytaj Duck.ai";
-
-/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
-"action.title.searchWithDuckDuckGo" = "Szukaj";
-
-/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
-"duckai.suggestion.summarize-selection.label" = "Podsumuj to zaznaczenie";
-
-/* Suggested prompt submitted text: summarize the attached text selection */
-"duckai.suggestion.summarize-selection.prompt" = "Podsumuj to zaznaczenie.";
-
-/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
-"duckai.suggestion.translate-selection.label" = "Przetłumacz to zaznaczenie";
-
-/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
-"duckai.suggestion.translate-selection.prompt" = "Przetłumacz to zaznaczenie na %@.";
-
-/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
-"duckai.text-selection.context-title" = "Zaznaczenie tekstu";
-
-/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
-"duckai.text-selection.limit-reached" = "Możesz dodać do %d zaznaczonych tekstów. Usuń jeden z nich, aby dodać kolejny.";

@@ -20,6 +20,9 @@
 "%@ items" = "%@ items";
 
 /* No comment provided by engineer. */
+"%@: %@" = "%1$@: %2$@";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
 
 /* No comment provided by engineer. */
@@ -63,6 +66,9 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Lägg till";
+
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Fråga Duck.ai";
 
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Dölj genväg för nedre panel";
@@ -201,6 +207,9 @@
 
 /* Add to Favorites action */
 "action.title.save.favorite" = "Lägg till favorit";
+
+/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
+"action.title.searchWithDuckDuckGo" = "Sök";
 
 /* Settings action */
 "action.title.settings" = "Inställningar";
@@ -474,6 +483,42 @@
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Webbsökning";
+
+/* Button in the Duck.ai input footer letting a paid user keep chatting on their weekly allowance after the daily one is spent */
+"aichat.usageWarnings.action.startUsingWeeklyLimit" = "Börja använda veckogränsen";
+
+/* Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow */
+"aichat.usageWarnings.action.subscribe" = "Prenumerera";
+
+/* Button in the Duck.ai input footer warning that moves the user onto the suggested model */
+"aichat.usageWarnings.action.switch" = "Byt modell";
+
+/* Button in the Duck.ai input footer warning taking a user who is still eligible for a free trial to the subscription flow */
+"aichat.usageWarnings.action.tryForFree" = "Prova abonnemang gratis";
+
+/* Title of the Duck.ai input footer warning shown once the allowance for advanced AI models specifically is used up, while free models remain available */
+"aichat.usageWarnings.advancedModelsLimitReached.title" = "Gränsen för avancerade AI-modeller har nåtts";
+
+/* Title of the Duck.ai input footer warning shown once the user's daily message limit is used up */
+"aichat.usageWarnings.dailyLimitReached.title" = "Daglig gräns uppnådd";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their daily message limit is used. %d is a percentage */
+"aichat.usageWarnings.dailyUsage.title" = "%d%% av den dagliga gränsen";
+
+/* Accessibility label for the button that dismisses the Duck.ai input footer warning */
+"aichat.usageWarnings.dismiss.a11y" = "Avvisa";
+
+/* Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8' */
+"aichat.usageWarnings.highUsageModel" = "%@ förbrukar gränserna upp till 2–5 gånger snabbare än basmodeller.";
+
+/* Subtitle of the Duck.ai input footer warning saying how long until the usage limit resets. %@ is a duration such as '2 days' */
+"aichat.usageWarnings.resetsIn" = "Återställs om %@";
+
+/* Title of the Duck.ai input footer warning shown once the user's weekly message limit is used up */
+"aichat.usageWarnings.weeklyLimitReached.title" = "Veckogränsen för användning har nåtts";
+
+/* Title of the Duck.ai input footer warning, telling the user what share of their weekly message limit is used. %d is a percentage */
+"aichat.usageWarnings.weeklyUsage.title" = "%d %% av veckogränsen";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Befintliga bokmärken kommer inte att kopieras.";
@@ -1909,6 +1954,9 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "De senaste ändringarna på YouTube har påverkat funktionaliteten hos Duck Player. Vi arbetar för att åtgärda problemen och tackar för din förståelse.";
 
+/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
+"duckai.address.bar.menu.new.chat" = "Ny chatt";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Tryck på widgeten för att redigera den och ställ sedan in **Duck.ai** och **Duck.ai Voice** som genvägar";
 
@@ -2221,6 +2269,12 @@
 /* Suggested prompt submitted text: summarize the current page */
 "duckai.suggestion.summarize-page.prompt" = "Sammanfatta denna sida.";
 
+/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
+"duckai.suggestion.summarize-selection.label" = "Sammanfatta detta urval";
+
+/* Suggested prompt submitted text: summarize the attached text selection */
+"duckai.suggestion.summarize-selection.prompt" = "Sammanfatta detta urval.";
+
 /* Suggested prompt chip: summarize a discussion thread */
 "duckai.suggestion.summarize-thread.label" = "Sammanfatta denna diskussion";
 
@@ -2245,6 +2299,12 @@
 /* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
 "duckai.suggestion.translate-page.prompt" = "Översätt den här sidan till %@.";
 
+/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
+"duckai.suggestion.translate-selection.label" = "Översätt detta urval";
+
+/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-selection.prompt" = "Översätt detta urval till %@.";
+
 /* Suggested prompt chip: video key points */
 "duckai.suggestion.video-key-points.label" = "Vilka är de viktigaste punkterna?";
 
@@ -2262,6 +2322,12 @@
 
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Är det värt att titta på? Ge mig en spoilerfri bedömning.";
+
+/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Texturval";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "Du kan lägga till upp till %d textmarkeringar. Ta bort en för att lägga till en annan.";
 
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Alla chattar är %@ privata";
@@ -4424,25 +4490,25 @@
 "settings.complete.setup" = "Slutför din inställning";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Vi strävar efter att endast välja de mest privata cookiealternativen som finns tillgängliga för dig, och sedan stänga dessa popup-fönster.";
+"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Hantera popup-fönster för cookies automatiskt";
+"settings.cookie.auto-manage.title" = "Reject optional cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Skydd mot popup-fönster för cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan automatiskt hantera cookieinställningar för att maximera din integritet, minimera antalet cookies och stänga dessa popup-fönster.\n[Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Hantera popup-fönster för cookies";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Låt även DuckDuckGo spara ett klick för dig genom att acceptera cookies i popup-fönster där det inte går att välja bort dessa.";
+"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Popup-fönster där det inte går att välja bort cookies";
+"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Ta bort flikar och data";
@@ -4551,8 +4617,6 @@
 
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Läs mer";
-
-/* Switch button label. */
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Lösenord och automatisk ifyllning";
@@ -5772,26 +5836,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
-/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
-"action.title.aiChat.askDuckAI" = "Fråga Duck.ai";
-
-/* Edit-menu action shown on text selected in the browser; opens a DuckDuckGo search for the selected text in a new tab */
-"action.title.searchWithDuckDuckGo" = "Sök";
-
-/* Suggested prompt chip shown when the user has attached a text selection: summarize that selection */
-"duckai.suggestion.summarize-selection.label" = "Sammanfatta detta urval";
-
-/* Suggested prompt submitted text: summarize the attached text selection */
-"duckai.suggestion.summarize-selection.prompt" = "Sammanfatta detta urval.";
-
-/* Suggested prompt chip shown when the user has attached a text selection: translate that selection */
-"duckai.suggestion.translate-selection.label" = "Översätt detta urval";
-
-/* Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language. */
-"duckai.suggestion.translate-selection.prompt" = "Översätt detta urval till %@.";
-
-/* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
-"duckai.text-selection.context-title" = "Texturval";
-
-/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
-"duckai.text-selection.limit-reached" = "Du kan lägga till upp till %d textmarkeringar. Ta bort en för att lägga till en annan.";

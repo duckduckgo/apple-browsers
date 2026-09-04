@@ -429,9 +429,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
 
-    /// Enables voice chat shortcut in the focused address bar
-    case voiceShortcut
-
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
 
@@ -483,12 +480,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.
     case nativeStoragePathMigration
-
-    /// Once the native-storage path migration is complete (or not needed), opens
-    /// the store on locked / background launches instead of deferring on the
-    /// protected-data gate. Off keeps the legacy behavior where any locked launch
-    /// nils the handler — which makes the Duck.ai front-end re-prompt T&C.
-    case nativeStorageMigrationLockedLaunchFix
 
     /// Enables the rich Duck.ai tab grid card in the iOS tab switcher (rendered from
     /// native-storage chat data). When off, Duck.ai tabs fall back to the standard
@@ -828,11 +819,17 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     case featureEnabled
 
+    /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
+    case bookmarkToolbarPromo
+
     /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
     case syncFaviconsPromo
 
     /// Kill switch for the Autofill Toolbar Pinning ("Add passwords shortcut?") promo.
     case autofillToolbarPinningPromo
+
+    /// Kill switch for the Cookie Pop-ups Blocked promo.
+    case cookiePopupsBlockedPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

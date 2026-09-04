@@ -415,6 +415,123 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         }
     }
 
+    func testWhenShieldAndLoupeShareTheIconSlotThenTheyShareACentre() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+
+        let shield = try XCTUnwrap(barView.privacyInfoContainer)
+        let slot = try XCTUnwrap(barView.leftIconContainerView)
+
+        func assertCentred(_ context: String, file: StaticString = #filePath, line: UInt = #line) {
+            let shieldCentre = barView.convert(shield.center, from: shield.superview)
+            let slotCentre = barView.convert(slot.center, from: slot.superview)
+            XCTAssertEqual(shieldCentre.x, slotCentre.x, accuracy: 0.5, context, file: file, line: line)
+            XCTAssertEqual(shieldCentre.y, slotCentre.y, accuracy: 0.5, context, file: file, line: line)
+        }
+
+        // The shield and the loupe swap in and out of the same slot, so a shared centre keeps the
+        // icon from shifting when the state changes.
+        assertCentred("at rest")
+
+        barView.textField.becomeFirstResponder()
+        barView.layoutIfNeeded()
+        assertCentred("while focused")
+    }
+
+    func testWhenEmbeddedFieldIsTallerThanItsControlsThenTheRowStaysCentred() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+
+        let field = try XCTUnwrap(barView.searchContainer)
+        let fieldMidY = barView.convert(field.bounds, from: field).midY
+
+        // The 44pt controls are shorter than the 48pt field, so the slack has to split evenly
+        // rather than settling the row against one edge.
+        for item in [barView.leftIconContainerView, barView.refreshButton, barView.textField] {
+            let view = try XCTUnwrap(item)
+            XCTAssertEqual(barView.convert(view.bounds, from: view).midY, fieldMidY, accuracy: 0.5)
+        }
+    }
+
+    func testWhenEmbeddedFieldLaysOutThenIconSlotsAreInsetFromTheCapsuleEnds() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+
+        let field = try XCTUnwrap(barView.searchContainer)
+        let fieldFrame = barView.convert(field.bounds, from: field)
+        let slot = try XCTUnwrap(barView.leftIconContainerView)
+        let slotFrame = barView.convert(slot.bounds, from: slot)
+        let shield = try XCTUnwrap(barView.privacyInfoContainer)
+        let shieldCentre = barView.convert(shield.center, from: shield.superview)
+
+        let inset: CGFloat = 2
+
+        // The 44pt slot sits 2pt in from the capsule so its 47pt shield animation is not trimmed
+        // against the leading edge.
+        XCTAssertEqual(slotFrame.minX, fieldFrame.minX + inset, accuracy: 0.5)
+
+        // With a 48pt field the inset lands the shield on the centre of the leading arc, so the
+        // trackers-blocked burst is symmetrical inside the capsule.
+        XCTAssertEqual(shieldCentre.x, fieldFrame.minX + fieldFrame.height / 2, accuracy: 0.5)
+
+        // The trailing end of the content row (whichever control, or the text field, is last) gets
+        // the same breathing room from the trailing arc.
+        let trailingViews: [UIView] = [barView.clearButton, barView.cancelButton, barView.refreshButton,
+                                       barView.customizableButton, barView.urlSeparatorView, barView.aiChatButton,
+                                       barView.textField]
+        let trailingEdge = try XCTUnwrap(trailingViews
+            .filter { !$0.isHidden }
+            .map { barView.convert($0.bounds, from: $0).maxX }
+            .max())
+        XCTAssertEqual(trailingEdge, fieldFrame.maxX - inset, accuracy: 0.5)
+    }
+
+    func testWhenNonFloatingIPadSearchAreaExpandsThenModeToggleDoesNotOverlapBottomControls() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        barView.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)
+        barView.setLayoutMode(.expandedPad)
+        barView.isModeToggleHidden = false
+        barView.setSearchAreaExpanded(true, animated: false)
+        barView.layoutIfNeeded()
+
+        let modeToggle = try XCTUnwrap(firstSubview(of: PadOmnibarToggleView.self, in: barView))
+        let modeToggleFrame = barView.convert(modeToggle.bounds, from: modeToggle)
+        let sendButtonFrame = barView.convert(barView.aiChatSendButton.bounds, from: barView.aiChatSendButton)
+
+        XCTAssertLessThanOrEqual(modeToggleFrame.maxY, sendButtonFrame.minY)
+    }
+
+    func testWhenFieldIsEmbeddedAtBottomThenItFillsTheFullSlotHeight() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let glassView = try XCTUnwrap(firstGlassView(in: searchContainer))
+
+        // The visible field is the glass, so it has to be the full 48pt rather than a 44pt pill
+        // floating inside the slot.
+        XCTAssertEqual(barView.expectedHeight, 48, accuracy: 0.01)
+        XCTAssertEqual(searchContainer.bounds.height, barView.expectedHeight, accuracy: 0.01)
+        XCTAssertEqual(glassView.frame.height, barView.expectedHeight, accuracy: 0.01)
+    }
+
     func testWhenToolbarMaterialAppearanceRefreshesThenHostedOmnibarUsesSettledStyle() {
         let toolbar = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 390, height: 200))
         toolbar.overrideUserInterfaceStyle = .light
@@ -550,11 +667,15 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         let loupe = try XCTUnwrap(barView.searchLoupe)
         let loupeFrame = searchView.convert(loupe.bounds, from: loupe)
         XCTAssertEqual(searchContainerFrame.height, 48, accuracy: 0.01)
+        XCTAssertEqual(searchContainerFrame.minX, 16, accuracy: 0.5)
+        XCTAssertEqual(barView.bounds.width - searchContainerFrame.maxX, 16, accuracy: 0.5)
+        XCTAssertEqual(barView.restingSearchFieldSize.width, searchContainerFrame.width, accuracy: 0.01)
+        XCTAssertEqual(barView.restingSearchFieldSize.height, 48, accuracy: 0.01)
         XCTAssertEqual(searchContainerFrame.midX, barView.bounds.midX, accuracy: 0.01)
         XCTAssertEqual(searchContainerFrame.midY, barView.bounds.midY, accuracy: 0.01)
         XCTAssertEqual(searchView.bounds.height, 44, accuracy: 0.01)
         XCTAssertEqual((searchContainerFrame.height - searchView.bounds.height) / 2, 2, accuracy: 0.01)
-        XCTAssertEqual(loupeFrame.midY, searchView.bounds.midY - 2, accuracy: 0.01)
+        XCTAssertEqual(loupeFrame.midY, searchView.bounds.midY, accuracy: 0.01)
     }
 
     func testWhenTopFloatingLandscapeChromeThenInputHeightStaysUnchanged() {
@@ -687,10 +808,24 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertLessThan(button?.bounds.width ?? .greatestFiniteMagnitude, expandedFrame.width / 2)
     }
 
-    func testWhenTopBarsHiddenThenPillKeepsEightPointsBelowIt() {
+    func testWhenTopBarsHiddenThenPillKeepsTheBarsTopEdge() {
         let button = update(barsVisibilityPercent: 0)
 
-        XCTAssertEqual(expandedFrame.maxY - (button?.frame.maxY ?? 0), FloatingDomainCapsuleController.restEdgePadding, accuracy: 0.5)
+        // The pill collapses upward into the bar's top edge, so no empty band is left above it.
+        XCTAssertEqual(button?.frame.minY ?? 0, expandedFrame.minY, accuracy: 0.5)
+    }
+
+    func testWhenTopCapsuleRestsThenObscuredHeightTracksThePillBottom() {
+        update(barsVisibilityPercent: 0)
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+
+        let obscured = controller.restObscuredHeightFromScreenEdge(for: .top,
+                                                                   safeAreaInsets: insets,
+                                                                   expandedFrame: expandedFrame)
+
+        // Tracks the moved pill, so page-fixed headers don't leave a dead band beneath it.
+        XCTAssertEqual(obscured, expandedFrame.minY + controller.capsuleHeight, accuracy: 0.001)
+        XCTAssertLessThan(obscured, expandedFrame.maxY)
     }
 
     func testWhenPartiallyVisibleThenPillWidthIsBetweenCapsuleAndBarAndFullyOpaque() {
@@ -771,7 +906,7 @@ final class FloatingDomainCapsuleGeometryTests: XCTestCase {
         XCTAssertEqual(restCenterY, previousRestCenterY + FloatingDomainCapsuleController.restBottomInsetReduction, accuracy: 0.001)
     }
 
-    func testWhenTopAddressBarThenCollapsedRestCenterKeepsEightPointsBelowCapsule() {
+    func testWhenTopAddressBarThenCollapsedRestCenterAlignsWithTheBarsTopEdge() {
         let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
         let capsuleHeight: CGFloat = 28
         let expandedFrame = CGRect(x: 16, y: insets.top, width: 358, height: 60)
@@ -782,10 +917,7 @@ final class FloatingDomainCapsuleGeometryTests: XCTestCase {
             safeAreaInsets: insets,
             capsuleHeight: capsuleHeight)
 
-        XCTAssertEqual(
-            expandedFrame.maxY - (restCenterY + capsuleHeight / 2),
-            FloatingDomainCapsuleController.restEdgePadding,
-            accuracy: 0.001)
+        XCTAssertEqual(restCenterY - capsuleHeight / 2, expandedFrame.minY, accuracy: 0.001)
     }
 }
 

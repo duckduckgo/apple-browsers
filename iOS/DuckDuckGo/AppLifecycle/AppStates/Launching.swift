@@ -467,15 +467,6 @@ struct Launching: LaunchingHandling {
 #endif
 
         logAppLaunchTime()
-
-#if DEBUG
-        if LaunchOptionsHandler().shouldOpenPIRDashboardForTesting {
-            let mainCoordinator = mainCoordinator
-            Task { @MainActor in
-                mainCoordinator.presentDataBrokerProtectionDashboard()
-            }
-        }
-#endif
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.
@@ -501,8 +492,7 @@ struct Launching: LaunchingHandling {
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
                     label: .default,
                     keyValueStore: keyValueStore,
-                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter(),
-                    lockedLaunchFixEnabled: featureFlagger.isFeatureOn(.duckAINativeStorageMigrationLockedLaunchFix)
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
                 ).run()
                 if outcome == .skip {
                     return nil

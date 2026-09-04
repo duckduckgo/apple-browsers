@@ -29,7 +29,7 @@ final class UTIFooterCardView: UIView {
         static let cornerRadius: CGFloat = 28
         static let contentTopGap: CGFloat = 12
         static let contentBottom: CGFloat = 12
-        static let contentLeading: CGFloat = 16
+        static let contentLeading: CGFloat = 20
         static let contentTrailing: CGFloat = 12
         static let iconSize: CGFloat = 16
         static let iconTextGap: CGFloat = 10
@@ -102,9 +102,8 @@ final class UTIFooterCardView: UIView {
         iconSlotWidthConstraint?.constant = hasIcon ? Constants.iconSize : 0
         iconTextGapConstraint?.constant = hasIcon ? Constants.iconTextGap : 0
 
-        // A title above a reset line is a headline that truncates; a standalone one is body copy.
+        // A title above a reset line is a headline; a standalone one is body copy.
         let isStandaloneCopy = message.subtitle == nil
-        titleLabel.numberOfLines = isStandaloneCopy ? 2 : 1
         titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
         titleLabel.text = message.title
 
@@ -170,13 +169,17 @@ private extension UTIFooterCardView {
         }
 
         for label in [titleLabel, subtitleLabel] {
-            label.numberOfLines = 1
-            label.lineBreakMode = .byTruncatingTail
             label.adjustsFontForContentSizeCategory = true
             label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         }
+        // The title carries the message, so it wraps; the reset line under it is short enough
+        // to stay on one line.
+        titleLabel.numberOfLines = 0
+        titleLabel.lineBreakMode = .byWordWrapping
         titleLabel.font = .daxFootnoteSemibold()
         titleLabel.accessibilityIdentifier = "AIChat.Footer.Label.Title"
+        subtitleLabel.numberOfLines = 1
+        subtitleLabel.lineBreakMode = .byTruncatingTail
         subtitleLabel.font = .daxCaption1()
         subtitleLabel.accessibilityIdentifier = "AIChat.Footer.Label.Subtitle"
 
@@ -284,7 +287,6 @@ final class UTIFooterActionButton: UIView {
     private enum Constants {
         static let height: CGFloat = 34
         static let titleHorizontalPadding: CGFloat = 14
-        static let strokeWidth: CGFloat = 0.5
     }
 
     var onPrimaryTap: (() -> Void)?
@@ -311,8 +313,7 @@ final class UTIFooterActionButton: UIView {
     }
 
     func applyColors() {
-        backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
-        layer.borderColor = UIColor(designSystemColor: .lines).cgColor
+        backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         primaryButton.configuration?.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
     }
 
@@ -326,7 +327,6 @@ final class UTIFooterActionButton: UIView {
     private func setupUI() {
         clipsToBounds = true
         layer.cornerCurve = .continuous
-        layer.borderWidth = Constants.strokeWidth
 
         primaryButton.translatesAutoresizingMaskIntoConstraints = false
         primaryButton.accessibilityIdentifier = "AIChat.Footer.Button.Primary"

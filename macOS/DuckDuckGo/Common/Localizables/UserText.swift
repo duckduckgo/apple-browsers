@@ -987,10 +987,34 @@ struct UserText {
     static let aiChatUsageWarningsSwitchModel = NotLocalizedString("aichat.usageWarnings.switch-model", value: "Switch Model", comment: "Button on the Duck.ai usage card offering a model that uses the allowance more slowly, used when the suggested model has no short name to show")
     static let aiChatUsageWarningsSwitchToFreeModel = NotLocalizedString("aichat.usageWarnings.switch-to-free-model", value: "Switch to a Free Model", comment: "Button on the Duck.ai usage card offering a free-tier model, shown once the advanced-model allowance is spent")
     static let aiChatUsageWarningsStartUsingWeeklyLimit = NotLocalizedString("aichat.usageWarnings.start-using-weekly-limit", value: "Start Using Weekly Limit", comment: "Button on the Duck.ai usage card letting a paid user keep chatting on their weekly allowance after the daily one is spent")
-    static let aiChatUsageWarningsTryForFree = NotLocalizedString("aichat.usageWarnings.try-for-free", value: "Try for Free", comment: "Button on the Duck.ai usage card taking a user who is still eligible for a free trial to the subscription flow")
+    static let aiChatUsageWarningsTryForFree = NotLocalizedString("aichat.usageWarnings.try-for-free", value: "Try Subscription for Free", comment: "Button on the Duck.ai usage card taking a user who is still eligible for a free trial to the subscription flow")
     static let aiChatUsageWarningsSubscribe = NotLocalizedString("aichat.usageWarnings.subscribe", value: "Subscribe", comment: "Button on the Duck.ai usage card taking a user who has already used their free trial to the subscription flow")
     static let aiChatUsageWarningsDismissAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.dismiss.accessibility", value: "Dismiss", comment: "Accessibility label for the close button on the Duck.ai usage card")
     static let aiChatUsageWarningsModelPickerAccessibilityLabel = NotLocalizedString("aichat.usageWarnings.model-picker.accessibility", value: "Choose a model", comment: "Accessibility label for the chevron on the Duck.ai usage card, which opens the model picker")
+    static func aiChatCreateImageModelSwitchTitle(_ modelShortName: String) -> String {
+        let message = NotLocalizedString(
+            "aichat.createImage.modelSwitch.title",
+            value: "Now using %@",
+            comment: "Title of the Duck.ai input card shown after switching to an image-capable model. Parameter is the new model's short name."
+        )
+        return String(format: message, modelShortName)
+    }
+    static func aiChatCreateImageModelSwitchSubtitle(_ modelShortName: String) -> String {
+        let message = NotLocalizedString(
+            "aichat.createImage.modelSwitch.subtitle",
+            value: "%@ doesn't support image creation.",
+            comment: "Subtitle explaining why Duck.ai switched models. Parameter is the previous model's short name."
+        )
+        return String(format: message, modelShortName)
+    }
+    static func aiChatCreateImageModelSwitchPrivacySubtitle(_ modelShortName: String) -> String {
+        let message = NotLocalizedString(
+            "aichat.createImage.modelSwitch.privacy.subtitle",
+            value: "%@ can't create images. Its extra privacy protections won't apply until you switch back.",
+            comment: "Subtitle shown after switching away from an OSS model for image creation. Parameter is the previous model's short name."
+        )
+        return String(format: message, modelShortName)
+    }
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
     static let moreSearchSettingsDescription = NSLocalizedString("settings.more-search-settings.description", value: "Customize your language, region, and more.", comment: "Subtitle of the 'More Search Settings' button")
     static let moreSearchSettingsLink = NSLocalizedString("settings.more-search-settings.link", value: "Open DuckDuckGo Search Settings", comment: "Button to open Search Settings on duckduckgo.com")
@@ -1483,6 +1507,11 @@ struct UserText {
             comment: "Message for the dialog to confirm sync setup with another DuckDuckGo device")
         return String(format: message, peerName)
     }
+
+    // Confirmation shown when closing the Sync setup dialog while a device is still being connected (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let syncCloseSetupConfirmationTitleV2 = NotLocalizedString("sync.close-setup-v2.confirmation.title", value: "Are you sure you want to close this window?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
+    static let syncCloseSetupConfirmationMessageV2 = NotLocalizedString("sync.close-setup-v2.confirmation.message", value: "Closing this window will stop connecting Sync & Backup.", comment: "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
+    static let syncCloseSetupConfirmationActionV2 = NotLocalizedString("sync.close-setup-v2.confirmation.action", value: "Close", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)")
     static let syncBookmarkPausedAlertTitle = NSLocalizedString("alert.sync-bookmarks-paused-title", value: "Bookmark Sync is Paused", comment: "Title for alert shown when sync bookmarks paused for too many items")
     static let syncBookmarkPausedAlertDescription = NSLocalizedString("alert.sync-bookmarks-paused-description", value: "You've reached the maximum number of bookmarks. Please delete some bookmarks to resume sync.", comment: "Description for alert shown when sync bookmarks paused for too many items")
     static let syncCredentialsPausedAlertTitle = NSLocalizedString("alert.sync-credentials-paused-title", value: "Password Sync is Paused", comment: "Title for alert shown when sync credentials paused for too many items")

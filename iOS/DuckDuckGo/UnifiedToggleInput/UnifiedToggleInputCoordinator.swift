@@ -263,7 +263,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
     private let isUpdatedCreateImageEnabled: Bool
-    private let createImageModelSwitcher: CreateImageModelSwitcher
+    private lazy var createImagePixelFiring: CreateImagePixelFiring = CreateImagePixelAdapter(
+        surface: { [weak self] in self?.pixelSurface ?? .addressBar }
+    )
+    private lazy var createImageModelSwitcher = CreateImageModelSwitcher(
+        isFeatureEnabled: isUpdatedCreateImageEnabled,
+        pixelFiring: createImagePixelFiring
+    )
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -326,7 +332,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.isUpdatedCreateImageEnabled = updatedCreateImageFeature.isAvailable
-        self.createImageModelSwitcher = CreateImageModelSwitcher(isFeatureEnabled: updatedCreateImageFeature.isAvailable)
         self.host = host
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
@@ -443,7 +448,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onUserChoiceRecorded: { [weak self] in self?.recordUserChoiceToStore() },
                 clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) },
-                onModelSelectionChanged: { [weak self] _ in self?.footerController?.recordModelSwitched() }
+                onModelSelectionChanged: { [weak self] previousModelId, modelId in
+                    self?.footerController?.userSwitchedModel(from: previousModelId, to: modelId)
+                }
             ),
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
             isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled
@@ -915,7 +922,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         footerController = UTIFooterController(viewModel: viewModel,
                                               highUsageNotice: makeHighUsageNoticeSource(),
-                                              measurement: makeUsageWarningMeasurement())
+                                              measurement: makeUsageWarningMeasurement(),
+                                              createImagePixelFiring: createImagePixelFiring)
         footerController?.presenter = viewController
 
         // Also what brings a message back after the user has acted on the previous one.
@@ -1209,11 +1217,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             recordUserChoiceToStore()
             refreshFooterSuppression()
         }
-    }
-
-    func updateAIVoiceChatAvailability(_ enabled: Bool) {
-        viewController.handler.isAIVoiceChatEnabled = enabled
-        updateToolbarAIVoiceChat()
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
@@ -1580,9 +1583,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelReporter.reportModelPickerShown()
     }
 
-    func selectTool(_ tool: AIChatRAGTool) {
+    func selectTool(_ tool: AIChatRAGTool, createImageEntryPoint: CreateImageEntryPoint? = nil) {
         if tool == .imageGeneration {
-            selectImageGeneration()
+            selectImageGeneration(entryPoint: createImageEntryPoint)
         } else {
             toolsController.select(tool, for: modelStore)
         }
@@ -1677,16 +1680,18 @@ extension UnifiedToggleInputCoordinator {
             toolsController: toolsController,
             modelStore: modelStore,
             canSwitchModel: canSwitchModelForImageGeneration,
+            entryPoint: .toolsMenu,
             applyModel: { modelSelector.updateSelectedModel($0) }
         )
         showModelSwitchNoticeIfNeeded(notice)
     }
 
-    private func selectImageGeneration() {
+    private func selectImageGeneration(entryPoint: CreateImageEntryPoint?) {
         let notice = createImageModelSwitcher.select(
             toolsController: toolsController,
             modelStore: modelStore,
             canSwitchModel: canSwitchModelForImageGeneration,
+            entryPoint: entryPoint,
             applyModel: { modelSelector.updateSelectedModel($0) }
         )
         showModelSwitchNoticeIfNeeded(notice)
@@ -2088,7 +2093,7 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Toolbar
 
     func updateToolbarAIVoiceChat() {
-        viewController.isToolbarAIVoiceChatActive = viewController.handler.isAIVoiceChatEnabled && inputMode == .aiChat
+        viewController.isToolbarAIVoiceChatActive = inputMode == .aiChat
     }
 
     func applyToolbarPresentation() {
@@ -2236,8 +2241,7 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.microphoneButtonTappedPublisher
             .sink { [weak self] in
                 guard let self else { return }
-                let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
-                    && viewController.inputMode == .aiChat
+                let isCollapsedAIVoiceChatButton = viewController.inputMode == .aiChat
                     && !isInputPaneExpanded
                     && !stateMachine.prefersDictationOverVoiceChat
                 if isCollapsedAIVoiceChatButton {

@@ -40,4 +40,5 @@ struct PromoDependencies {
     let syncService: DDGSyncing?
     let syncBookmarksAdapter: SyncBookmarksAdapter?
     let pinningManager: PinningManager
+    let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
 }

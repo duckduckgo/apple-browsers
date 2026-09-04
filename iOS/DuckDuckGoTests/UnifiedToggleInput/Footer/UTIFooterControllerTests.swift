@@ -25,9 +25,11 @@ import XCTest
 final class UTIFooterControllerTests: XCTestCase {
 
     private var limitsProvider: StubUsageLimitsProvider!
+    private var dismissalStore: InMemoryDuckAiUsageWarningDismissalStore!
     private var presenter: SpyUTIFooterPresenter!
     private var viewModel: DuckAiUsageWarningViewModel!
     private var measurementFiring: RecordingUsageWarningPixelFiring!
+    private var createImagePixelFiring: MockCreateImagePixelFiring!
     private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
     private var animationCount = 0
     private var sut: UTIFooterController!
@@ -37,14 +39,17 @@ final class UTIFooterControllerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         limitsProvider = StubUsageLimitsProvider()
+        dismissalStore = InMemoryDuckAiUsageWarningDismissalStore()
         presenter = SpyUTIFooterPresenter()
         measurementFiring = RecordingUsageWarningPixelFiring()
+        createImagePixelFiring = MockCreateImagePixelFiring()
         selectedModel = (nil, nil)
         animationCount = 0
         viewModel = makeViewModel()
         sut = UTIFooterController(viewModel: viewModel,
                                   highUsageNotice: makeNoticeSource(),
                                   measurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
+                                  createImagePixelFiring: createImagePixelFiring,
                                   animator: { [unowned self] changes in
                                       animationCount += 1
                                       changes()
@@ -57,6 +62,8 @@ final class UTIFooterControllerTests: XCTestCase {
         viewModel = nil
         presenter = nil
         measurementFiring = nil
+        createImagePixelFiring = nil
+        dismissalStore = nil
         limitsProvider = nil
         super.tearDown()
     }
@@ -146,6 +153,52 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
 
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Weekly usage limit reached") ?? false)
+    }
+
+    // MARK: - Model switch
+
+    /// Picking the model the message offered from the bar's picker settles it as the CTA would.
+    func test_userSwitchedModel_hidesTheFooterWhenTheModelIsTheOneOffered() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+
+        sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    func test_userSwitchedModel_keepsTheMessageHiddenUntilWebPublishesAgain() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
+
+        sut.refresh()
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+
+        limitsProvider.limits = weeklyUsage(80)
+        sut.refresh()
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("80%") ?? false)
+    }
+
+    /// A heavier or sideways switch has not dealt with the message.
+    func test_userSwitchedModel_leavesTheFooterUpWhenTheModelIsNotOneOffered() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+
+        sut.userSwitchedModel(from: "gpt-5.4", to: "claude-opus")
+
+        XCTAssertEqual(presenter.appliedMessages.count, 1)
+        XCTAssertNotNil(presenter.appliedMessages.last ?? nil)
+    }
+
+    func test_userSwitchedModel_leavesAMessageThatAskedForNoSwitchUp() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        sut.refresh()
+
+        sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
+
+        XCTAssertEqual(presenter.appliedMessages.count, 1)
+        XCTAssertNotNil(presenter.appliedMessages.last ?? nil)
     }
 
     // MARK: - Suppression
@@ -273,6 +326,32 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
 
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("90%") ?? false)
+    }
+
+    /// Web republishing the same message under a new payload right after the switch must not read as
+    /// the button having done nothing.
+    func test_performPrimaryAction_keepsAnIdenticalRepublishedMessageHidden() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.performPrimaryAction()
+
+        limitsProvider.limits = weeklyUsage(50, signature: "snapshot-50-republished")
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    /// The debug menu clears the persisted record; the controller's own copy must not outlive it.
+    func test_performPrimaryAction_showsTheMessageAgainOnceTheActedRecordIsCleared() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.performPrimaryAction()
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+
+        dismissalStore.setActedSnapshot(nil)
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("50%") ?? false)
     }
 
     /// The upsell is not a switch: the user is still blocked, so the message stays up.
@@ -513,12 +592,23 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(measurementFiring.events.last, .promptSubmitted(approachingExposure(percentBucket: 75)))
     }
 
-    func test_recordModelSwitched_reportsAgainstTheWarningTheUserSaw() {
+    func test_userSwitchedModel_reportsAgainstTheWarningTheUserSaw() {
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
 
-        sut.recordModelSwitched()
+        sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
+
+        XCTAssertEqual(measurementFiring.events.last, .modelSwitched(approachingExposure(percentBucket: 75)))
+    }
+
+    /// The pixel is about what the user did, not whether it settled the message.
+    func test_userSwitchedModel_reportsASwitchThatLeavesTheMessageUp() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.userSwitchedModel(from: "gpt-5.4", to: "claude-opus")
 
         XCTAssertEqual(measurementFiring.events.last, .modelSwitched(approachingExposure(percentBucket: 75)))
     }
@@ -602,6 +692,68 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(measurementFiring.events, [.shown(approachingExposure(percentBucket: 75))])
     }
 
+    // MARK: - Create Image pixels
+
+    func test_createImagePixels_whenTheUserClosesTheNotice_reportsTheDismissal() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.dismissCurrent()
+
+        XCTAssertEqual(createImagePixelFiring.noticeDismissedCount, 1)
+    }
+
+    func test_createImagePixels_whenTheNoticeIsClearedAutomatically_reportsNothing() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.clearModelSwitchNotice()
+
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
+    }
+
+    func test_createImagePixels_whenThePoseChangesWhileTheNoticeIsStored_reportsNothing() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.resetForPoseChange()
+
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
+    }
+
+    func test_createImagePixels_whenTheInputIsSuppressedWhileTheNoticeIsStored_reportsNothing() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.setSuppressed(true)
+
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
+    }
+
+    func test_createImagePixels_whenTheUserClosesAUsageWarning_reportsNothing() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+
+        sut.dismissCurrent()
+
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
+    }
+
+    func test_createImagePixels_whenTheNoticeAndThenTheWarningAreClosed_reportsOneDismissal() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.dismissCurrent()
+        sut.dismissCurrent()
+
+        XCTAssertEqual(createImagePixelFiring.noticeDismissedCount, 1)
+    }
+
+    func test_createImagePixels_whenThePrimaryActionRunsWhileTheNoticeIsVisible_reportsNothing() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        sut.performPrimaryAction()
+
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
+    }
+
     // MARK: - Helpers
 
     private func approachingExposure(percentBucket: Int) -> DuckAiUsageWarningExposure {
@@ -633,14 +785,14 @@ final class UTIFooterControllerTests: XCTestCase {
     private func makeViewModel() -> DuckAiUsageWarningViewModel {
         DuckAiUsageWarningViewModel(
             snapshotProvider: limitsProvider,
-            dismissalStore: InMemoryDuckAiUsageWarningDismissalStore(),
+            dismissalStore: dismissalStore,
             modelSuggester: StubCheaperModelSuggester(),
             dateProvider: { [unowned self] in now }
         )
     }
 
     /// An approaching notice with a cheaper-model CTA — what the footer shows most of the time.
-    private func weeklyUsage(_ percent: Int) -> DuckAiUsageSnapshot {
+    private func weeklyUsage(_ percent: Int, signature: String? = nil) -> DuckAiUsageSnapshot {
         DuckAiUsageSnapshot(
             notice: DuckAiUsageNotice(id: .approaching,
                                       window: .weekly,
@@ -650,7 +802,7 @@ final class UTIFooterControllerTests: XCTestCase {
                                       dismissible: true),
             cta: DuckAiUsageCta(id: .switchToCheaper,
                                 target: .init(modelId: "gpt-5.4-mini", modelIds: ["gpt-5.4-mini"])),
-            signature: "snapshot-\(percent)"
+            signature: signature ?? "snapshot-\(percent)"
         )
     }
 

@@ -83,6 +83,20 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNil(promo.delegate)
     }
 
+    func testFactoryCreatesBookmarkToolbarPromoWithCorrectConfiguration() async {
+        let promo = await PromoServiceFactory.bookmarkToolbar(dependencies: dependencies)
+
+        XCTAssertEqual(promo.id, "bookmark-toolbar")
+        XCTAssertEqual(promo.triggers, [.bookmarkAdded, .bookmarksImported])
+        XCTAssertEqual(promo.initiated, .user)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertNil(promo.promoType.timeoutInterval)
+        XCTAssertEqual(promo.context, .global)
+        XCTAssertTrue(promo.respectsGlobalCooldown)
+        XCTAssertTrue(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
+    }
+
     func testFactoryCreatesDefaultBrowserAndDockPromosWithCorrectConfiguration() async {
         let popoverPromo = await PromoServiceFactory.defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService)
         let bannerPromo = await PromoServiceFactory.defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService)
@@ -153,6 +167,7 @@ extension PromoServiceFactoryTests {
             isOnboardingCompletedProvider: { true },
             dockCustomization: DockCustomizerMock()
         )
+        let windowControllersManager = WindowControllersManagerMock()
         return PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
@@ -167,7 +182,21 @@ extension PromoServiceFactoryTests {
             windowControllersManager: WindowControllersManagerMock(),
             syncService: nil,
             syncBookmarksAdapter: nil,
-            pinningManager: MockPinningManager()
+            pinningManager: MockPinningManager(),
+            cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                keyValueStore: InMemoryThrowingKeyValueStore(),
+                windowControllersManager: windowControllersManager,
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                appearancePreferences: AppearancePreferences(
+                    persistor: AppearancePreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                    featureFlagger: MockFeatureFlagger(),
+                    aiChatMenuConfig: MockAIChatConfig()
+                ),
+                onboardingStateUpdater: MockOnboardingStateUpdater(),
+                autoconsentStats: MockAutoconsentStats()
+            )
         )
     }
 }

@@ -47,6 +47,7 @@ final class UTIFooterController {
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let mapper: UTIFooterMessageMapper
     private let measurement: DuckAiUsageWarningMeasurement
+    private let createImagePixelFiring: CreateImagePixelFiring
     private let animator: Animator
 
     private var isSuppressed = false
@@ -63,11 +64,13 @@ final class UTIFooterController {
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
+         createImagePixelFiring: CreateImagePixelFiring,
          animator: Animator? = nil) {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
         self.mapper = mapper
         self.measurement = measurement
+        self.createImagePixelFiring = createImagePixelFiring
         self.animator = animator ?? Self.springAnimator
     }
 
@@ -119,6 +122,7 @@ final class UTIFooterController {
     func dismissCurrent() {
         if modelSwitchNotice != nil {
             modelSwitchNotice = nil
+            createImagePixelFiring.modelSwitchNoticeDismissed()
             applyCurrentState()
             return
         }
@@ -137,9 +141,12 @@ final class UTIFooterController {
         measurement.promptSubmitted()
     }
 
-    /// A switch the user made themselves; the card's own switch CTA reports its own tap.
-    func recordModelSwitched() {
+    /// A switch from the bar's picker: always reported, but it only retires the message when it is the
+    /// step down the message asked for. The card's own CTA reports and retires itself.
+    func userSwitchedModel(from previousModelId: String?, to modelId: String) {
         measurement.modelSwitched()
+        viewModel.userSwitchedModel(from: previousModelId, to: modelId)
+        applyCurrentState()
     }
 
     func performPrimaryAction() {
@@ -231,9 +238,11 @@ final class UTIFooterController {
         return nil
     }
 
-    /// Releases as soon as the resolver produces a different message, so the next rung still shows.
+    /// Releases as soon as the resolver produces a different message, so the next rung still shows,
+    /// and once the acted-on record is gone, so clearing it is not undone by this copy.
     private func unlessActedOn(_ message: UTIFooterMessage) -> UTIFooterMessage? {
-        message == actedOnMessage ? nil : message
+        guard viewModel.hasActedOnCurrentNotice, message == actedOnMessage else { return message }
+        return nil
     }
 
     static let springAnimator: Animator = { changes in

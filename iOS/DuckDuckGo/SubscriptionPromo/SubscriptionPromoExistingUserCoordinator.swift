@@ -86,9 +86,16 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
             && hasCooldownPassed()
             // Don't show for users who skipped onboarding: handled by SubscriptionPromoCoordinator
             && !(daxDialogsSettings.isDismissed && isReturningUser && tutorialSettings.hasSkippedOnboarding)
-
-        Logger.subscription.debug("[Subscription Promo - Existing User] shouldPresentLaunchPrompt: \(shouldShow)")
-        return shouldShow
+        guard shouldShow else {
+            Logger.subscription.debug("[Subscription Promo - Existing User] shouldPresentLaunchPrompt: false")
+            return false
+        }
+        guard subscriptionManager.isSubscriptionPurchaseEligible else {
+            Logger.subscription.debug("[Subscription Promo] App Store products unavailable, skipping.")
+            return false
+        }
+        Logger.subscription.debug("[Subscription Promo - Existing User] shouldPresentLaunchPrompt: true")
+        return true
     }
 
     func markLaunchPromptPresented() {

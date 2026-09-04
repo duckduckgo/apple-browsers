@@ -167,6 +167,7 @@ extension PromoServiceFactoryTests {
             isOnboardingCompletedProvider: { true },
             dockCustomization: DockCustomizerMock()
         )
+        let windowControllersManager = WindowControllersManagerMock()
         return PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
@@ -180,7 +181,21 @@ extension PromoServiceFactoryTests {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
             windowControllersManager: WindowControllersManagerMock(),
             syncService: nil,
-            syncBookmarksAdapter: nil
+            syncBookmarksAdapter: nil,
+            cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                keyValueStore: InMemoryThrowingKeyValueStore(),
+                windowControllersManager: windowControllersManager,
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                appearancePreferences: AppearancePreferences(
+                    persistor: AppearancePreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                    featureFlagger: MockFeatureFlagger(),
+                    aiChatMenuConfig: MockAIChatConfig()
+                ),
+                onboardingStateUpdater: MockOnboardingStateUpdater(),
+                autoconsentStats: MockAutoconsentStats()
+            )
         )
     }
 }

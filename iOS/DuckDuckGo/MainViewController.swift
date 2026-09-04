@@ -3937,6 +3937,10 @@ class MainViewController: UIViewController {
 
     private func makeDataBrokerProtectionSubscriptionFlowViewController(redirectURLComponents: URLComponents?) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
+        let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
+            privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
         let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makePurchaseFlowV2(
             redirectURLComponents: redirectURLComponents,
             navigationCoordinator: subscriptionNavigationCoordinator,
@@ -3949,6 +3953,7 @@ class MainViewController: UIViewController {
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger,
+            performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
             onboardingKeyValueStore: keyValueStore,
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false

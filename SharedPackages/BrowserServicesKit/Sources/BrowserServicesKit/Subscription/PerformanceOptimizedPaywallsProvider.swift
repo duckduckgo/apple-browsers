@@ -29,6 +29,11 @@ public protocol PerformanceOptimizedPaywallsProviding {
     var paths: SubscriptionURL.PerformanceOptimizedPaywallPaths { get }
 }
 
+/// Provides the rollout state for performance-optimized paywalls.
+public protocol PerformanceOptimizedPaywallsFeatureFlagging {
+    var isPerformanceOptimizedPaywallsEnabled: Bool { get }
+}
+
 /// Default implementation of `PerformanceOptimizedPaywallsProviding`.
 ///
 /// The paths come from the subfeature's settings so the frontend can move the pages without an app
@@ -36,19 +41,19 @@ public protocol PerformanceOptimizedPaywallsProviding {
 public struct DefaultPerformanceOptimizedPaywallsProvider: PerformanceOptimizedPaywallsProviding {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let isFeatureEnabled: () -> Bool
+    private let featureFlagger: any PerformanceOptimizedPaywallsFeatureFlagging
     private let fallbackPaths: SubscriptionURL.PerformanceOptimizedPaywallPaths
 
     public init(privacyConfigurationManager: PrivacyConfigurationManaging,
-                isFeatureEnabled: @escaping () -> Bool,
+                featureFlagger: any PerformanceOptimizedPaywallsFeatureFlagging,
                 fallbackPaths: SubscriptionURL.PerformanceOptimizedPaywallPaths = .default) {
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.isFeatureEnabled = isFeatureEnabled
+        self.featureFlagger = featureFlagger
         self.fallbackPaths = fallbackPaths
     }
 
     public var isEnabled: Bool {
-        isFeatureEnabled()
+        featureFlagger.isPerformanceOptimizedPaywallsEnabled
     }
 
     public var paths: SubscriptionURL.PerformanceOptimizedPaywallPaths {

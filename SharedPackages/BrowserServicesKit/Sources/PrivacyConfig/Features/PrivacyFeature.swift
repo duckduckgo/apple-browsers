@@ -652,7 +652,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionOnboardingPaidSubsSep2026
     case onboardingSubscriptionUpsellExperiment
 
-    /// Gates the server-rendered first paywall. Wired only — nothing reads it yet.
+    /// Gates the server-rendered first paywall.
     case performanceOptimizedPaywalls
 }
 

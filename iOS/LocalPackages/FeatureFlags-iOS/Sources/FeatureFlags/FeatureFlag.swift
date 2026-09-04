@@ -147,9 +147,6 @@ public enum FeatureFlag: String {
 
     /// Gates the server-rendered first paywall: `/subscriptions/new/mobile/<emphasis>` in place of
     /// `/subscriptions` with a `featurePage` query item.
-    ///
-    /// Wired only. Nothing reads this yet — see `SubscriptionURLTests` for the URLs it has to
-    /// produce once something does.
     case performanceOptimizedPaywalls
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475

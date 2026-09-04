@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Synchronisatie- en back-upfout";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Synchronisatie-instellingen";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Probeer het opnieuw.";
 
@@ -5130,17 +5127,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI-melding";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Herstelcode gekopieerd naar klembord";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Servergegevens verwijderen";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Je back-up wordt verwijderd van de server. Alle apparaten worden losgekoppeld van de synchronisatie, maar er wordt niets van de apparaten verwijderd.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Wil je de servergegevens verwijderen?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Nu synchroniseren";
@@ -5222,9 +5210,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Nieuw apparaat toegevoegd!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Synchronisatie en back-up ingeschakeld";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Herstelcode gekopieerd";

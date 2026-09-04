@@ -19,54 +19,83 @@
 
 import SwiftUI
 import DesignResourcesKit
-import DesignResourcesKitIcons
-
 
 public struct SimplifiedConnectingSheetView: View {
 
-    public enum Context {
-        case syncingDevices
-        case recoveringData
-    }
+    @ObservedObject public var model: SyncSettingsViewModel
 
-    private let context: Context
-
-    public init(context: Context = .syncingDevices) {
-        self.context = context
+    public init(model: SyncSettingsViewModel) {
+        self.model = model
     }
 
     public var body: some View {
-        VStack(spacing: 24) {
-            Image(rebrandable: "Sync-128")
-                .padding(.top, 40)
-
-            Text(title)
-                .daxTitle3()
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.horizontal, 40)
-
-            HStack(spacing: 8) {
-                ProgressView()
-                    .tint(Color(designSystemColor: .textSecondary))
-                Text(UserText.simplifiedConnectingStatus)
-                    .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
+        ZStack {
+            switch model.connectingSheetPhase {
+            case .syncAnotherDevice:
+                SyncAnotherDevicePromptView(model: model)
+            case .connecting(let isRecovery, let isFinishing):
+                SimplifiedConnectingContentView(
+                    isRecovery: isRecovery,
+                    isFinishing: isFinishing,
+                    onAnimationFinished: { model.connectingAnimationDidFinish() }
+                )
+            case .success(let isRecovery):
+                SyncSuccessView(model: model, isRecovery: isRecovery)
+            case .none:
+                EmptyView()
             }
-            .padding(.top, 20)
-            .padding(.bottom, 24)
         }
-        .frame(maxWidth: .infinity)
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
+}
 
-    private var title: String {
-        switch context {
-        case .syncingDevices:
-            return UserText.simplifiedConnectingTitle
-        case .recoveringData:
-            return UserText.preparingToSyncTitle
-        }
+#if DEBUG
+#Preview("Connecting") {
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
     }
 }
+
+#Preview("Connecting – Dark") {
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Sync Another Device") {
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .syncAnotherDevice(isConnecting: false)))
+    }
+}
+
+#Preview("Device Connected") {
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(isRecovery: false)))
+    }
+}
+
+
+#Preview("Recovering") {
+    SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .connecting(isRecovery: true)))
+}
+
+#Preview("Recovery Completed") {
+    SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(isRecovery: true)))
+}
+
+private extension SyncSettingsViewModel {
+    static func connectingSheetPreview(phase: ConnectingSheetPhase) -> SyncSettingsViewModel {
+        let model = SyncSettingsViewModel(
+            isOnDevEnvironment: { false },
+            switchToProdEnvironment: {},
+            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+        )
+        model.isSyncEnabled = true
+        model.devices = [.init(id: "1", name: "Dave’s iPhone", type: "phone", isThisDevice: true)]
+        model.recoveryCode = "y2cJyqsW3FPSJ9y2cJyqsW3FPSJ9y2cJyqsW3FPSJ9"
+        model.connectingSheetPhase = phase
+        return model
+    }
+}
+#endif

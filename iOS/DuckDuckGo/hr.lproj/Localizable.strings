@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Pogreška Sinkronizacije i sigurnosnog kopiranja";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Postavke sinkronizacije";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Pokušaj ponovno.";
 
@@ -5130,17 +5127,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI upozorenje";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Šifra za oporavak kopirana je u međuspremnik";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Brisanje podataka poslužitelja";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tvoja sigurnosna kopija bit će izbrisana s poslužitelja. Svi uređaji bit će isključeni iz sinkronizacije, ali ništa se neće izbrisati s bilo kojeg uređaja.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Izbrisati podatke poslužitelja?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sinkroniziraj";
@@ -5222,9 +5210,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Dodan je novi uređaj!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup je uključen";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Šifra za oporavak je kopirana";

@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Erro de sincronização e cópia de segurança";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Definições de sincronização";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Tenta novamente.";
 
@@ -5130,17 +5127,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "Alerta SwiftUI";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Código de recuperação copiado para a área de transferência";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Eliminar dados do servidor";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "A tua cópia de segurança será eliminada do servidor. Todos os dispositivos serão desligados da sincronização, mas nada será eliminado dos dispositivos.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Eliminar dados do servidor?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sincronizar agora";
@@ -5222,9 +5210,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Novo dispositivo adicionado!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sincronização e cópia de segurança ativada";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Código de recuperação copiado";

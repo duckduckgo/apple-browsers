@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Senkronizasyon ve Yedekleme Hatası";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Senkronizasyon Ayarları";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Lütfen tekrar deneyin.";
 
@@ -5130,17 +5127,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI Uyarısı";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Kurtarma kodu panoya kopyalandı";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Sunucu Verilerini Sil";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Yedekleriniz sunucudan silinecektir. Tüm cihazların senkronizasyon bağlantısı kesilecek, ancak hiçbir cihazdan hiçbir şey silinmeyecektir.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Sunucu Verileri Silinsin mi?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Şimdi Senkronize Et";
@@ -5222,9 +5210,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Yeni cihaz eklendi!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup etkin";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Kurtarma Kodu Kopyalandı";

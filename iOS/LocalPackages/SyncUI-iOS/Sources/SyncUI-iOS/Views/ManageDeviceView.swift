@@ -1,5 +1,5 @@
 //
-//  ManageDeviceViewV2.swift
+//  ManageDeviceView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -23,7 +23,7 @@ import DuckUI
 import SwiftUI
 import UIComponents
 
-struct ManageDeviceViewV2: View {
+struct ManageDeviceView: View {
 
     @ObservedObject var model: SyncSettingsViewModel
 
@@ -124,7 +124,7 @@ struct ManageDeviceViewV2: View {
     private var syncToggleSection: some View {
         Section {
             HStack {
-                Text(UserText.simplifiedSyncToggleTitleThisDevice)
+                Text(UserText.simplifiedSyncToggleTitle)
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                 Spacer()
@@ -132,7 +132,7 @@ struct ManageDeviceViewV2: View {
                     .labelsHidden()
                     .tint(Color(designSystemColor: .accentPrimary))
                     .disabled(model.isBusy)
-                    .accessibilityLabel(UserText.simplifiedSyncToggleTitleThisDevice)
+                    .accessibilityLabel(UserText.simplifiedSyncToggleTitle)
                     .accessibility(identifier: "SyncThisDeviceToggle")
             }
         } footer: {
@@ -210,7 +210,7 @@ private extension SyncSettingsViewModel {
 #Preview("Other Device – Desktop") {
     RebrandedPreview(isRebranded: true) {
         NavigationView {
-            ManageDeviceViewV2(
+            ManageDeviceView(
                 model: .managePreview(),
                 device: .init(id: "2", name: "macOS Ventura", type: "desktop", isThisDevice: false)
             )
@@ -221,7 +221,7 @@ private extension SyncSettingsViewModel {
 #Preview("Other Device – Mobile") {
     RebrandedPreview(isRebranded: true) {
         NavigationView {
-            ManageDeviceViewV2(
+            ManageDeviceView(
                 model: .managePreview(),
                 device: .init(id: "3", name: "Pixel 8", type: "phone", isThisDevice: false)
             )
@@ -232,7 +232,7 @@ private extension SyncSettingsViewModel {
 #Preview("This Device – Sync On") {
     RebrandedPreview(isRebranded: true) {
         NavigationView {
-            ManageDeviceViewV2(
+            ManageDeviceView(
                 model: .managePreview(isSyncEnabled: true),
                 device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
             )
@@ -243,7 +243,7 @@ private extension SyncSettingsViewModel {
 #Preview("This Device – Sync Off") {
     RebrandedPreview(isRebranded: true) {
         NavigationView {
-            ManageDeviceViewV2(
+            ManageDeviceView(
                 model: .managePreview(isSyncEnabled: false),
                 device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
             )

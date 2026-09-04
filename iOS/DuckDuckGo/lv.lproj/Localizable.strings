@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Sinhronizācijas un dublēšanas kļūda";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Sinhronizācijas iestatījumi";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Lūdzu, mēģini vēlreiz.";
 
@@ -5130,17 +5127,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI brīdinājums";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Atgūšanas kods ir nokopēts starpliktuvē";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Dzēst servera datus";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tavs dublējums tiks dzēsts no servera. Visas ierīces tiks atvienotas no sinhronizācijas, bet nekas netiks dzēsts ne no vienas ierīces.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Dzēst servera datus?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sinhronizēt tagad";
@@ -5222,9 +5210,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Pievienota jauna ierīce!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup iespējots";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Atgūšanas kods nokopēts";

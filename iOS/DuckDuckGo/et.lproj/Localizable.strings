@@ -532,9 +532,6 @@
 /* Title for sync error alert */
 "alert.sync-error" = "Sünkroonimise ja varundamise tõrge";
 
-/* Sync error alert action button title, takes the user to the sync settings page. */
-"alert.sync-error-action" = "Sünkroonimise sätted";
-
 /* Description for generic Sync setup failure alerts */
 "alert.sync-failed-description" = "Proovi uuesti.";
 
@@ -5130,17 +5127,8 @@
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUI teade";
 
-/* Message confirming that recovery code was copied to clipboard */
-"sync.code.copied" = "Taastamiskood kopeeriti lõikelauale";
-
 /* Caption for a button to delete Sync server data */
 "sync.delete.all.confirm.action" = "Kustuta serveri andmed";
-
-/* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Sinu varukoopia kustutatakse serverist. Kõigi seadmete sünkroonimine katkestatakse, kuid ühestki seadmest ei kustutata midagi.";
-
-/* Title of the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.title" = "Kas kustutada serveri andmed?";
 
 /* Caption for a button to confirm sync setup with another device */
 "sync.pairing-v2.confirmation.action" = "Sünkrooni kohe";
@@ -5222,9 +5210,6 @@
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Uus seade lisatud!";
-
-/* Toast message shown after sync is successfully enabled */
-"sync.simplified.enabled.toast" = "Sync & Backup lubatud";
 
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Taastamiskood kopeeritud";

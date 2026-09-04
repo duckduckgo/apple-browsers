@@ -482,7 +482,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         tabs[tabIdentifier] = state
     }
 
-    /// Removes all navigation work and extension-tab mappings owned by a closed tab.
+    /// Removes all navigation work and extension-tab mappings owned by a closed tab, then retries
+    /// buffered response attribution because removing the tab may leave a unique matching candidate.
     /// - Parameter tabIdentifier: Stable app identifier for the closed tab.
     private func removeTab(_ tabIdentifier: String) {
         if let state = tabs.removeValue(forKey: tabIdentifier) {
@@ -490,6 +491,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             cancelMeasurement(state.measurement)
         }
         extensionTabMappings = extensionTabMappings.filter { $0.value != tabIdentifier }
+        associateBufferedResponses()
     }
 
     /// Starts a navigation-scoped measurement and captures the current extension reload generation.

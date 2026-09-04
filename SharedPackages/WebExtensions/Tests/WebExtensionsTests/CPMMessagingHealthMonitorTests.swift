@@ -740,6 +740,20 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixelFiring.events.isEmpty)
     }
 
+    func testTabCloseAssociatesBufferedResponseWithRemainingMatchingTab() async {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeEventMonitor(pixelFiring: pixelFiring)
+        let sharedURL = URL(string: "https://example.com/shared")!
+
+        finishNavigation(tabIdentifier: "tab-1", url: sharedURL, on: monitor)
+        finishNavigation(tabIdentifier: "tab-2", url: sharedURL, on: monitor)
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: sharedURL))
+        monitor.handle(.tabClosed(tabIdentifier: "tab-2"))
+        await waitForEventTimeout()
+
+        XCTAssertTrue(pixelFiring.events.isEmpty)
+    }
+
     func testNavigationFailureAfterCrashPreservesCrashAttributionForRetry() async {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)

@@ -586,7 +586,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
                                                   progress: progress,
                                                   onFinish: onFinish,
                                                   onRequestDuckAIChat: onRequestDuckAIChat,
-                                                  instrumentation: instrumentation ?? NullSubscriptionOnboardingInstrumentation(),
+                                                  instrumentation: instrumentation ?? NullInstrumentation(),
                                                   pirScreen: { EmptyView() })
     }
 }
@@ -603,6 +603,14 @@ private final class SpyInstrumentation: SubscriptionOnboardingInstrumenting {
     func stepShown(_ section: SubscriptionOnboardingSection) { shown.append(section) }
     func stepCompleted(_ section: SubscriptionOnboardingSection) { completed.append(section) }
     func stepSkipped(_ section: SubscriptionOnboardingSection) { skipped.append(section) }
+}
+
+/// The `makeSUT` default for tests that aren't about instrumentation at all.
+private struct NullInstrumentation: SubscriptionOnboardingInstrumenting {
+    func flowStarted() {}
+    func stepShown(_ section: SubscriptionOnboardingSection) {}
+    func stepCompleted(_ section: SubscriptionOnboardingSection) {}
+    func stepSkipped(_ section: SubscriptionOnboardingSection) {}
 }
 
 /// A reference-typed persistor so a test can observe writes the flow makes through its own copy.

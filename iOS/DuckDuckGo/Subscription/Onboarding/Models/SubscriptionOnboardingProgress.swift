@@ -228,7 +228,7 @@ extension SubscriptionOnboardingProgress {
 
 extension EntitlementStatus {
 
-    /// Every entitlement enabled, for previews and debug rows
+    /// Every entitlement enabled, for previews, debug rows, and tests.
     static var mockAllEnabled: EntitlementStatus {
         EntitlementStatus(networkProtection: true,
                           dataBrokerProtection: true,

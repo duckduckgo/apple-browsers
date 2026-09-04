@@ -23,7 +23,6 @@ import ObjectiveC
 import WebKit
 import XCTest
 @testable import DuckDuckGo
-@testable import AIChat
 
 @MainActor
 final class TabViewControllerMediaCapturePermissionLegacyMatrixTests: XCTestCase {
@@ -33,23 +32,6 @@ final class TabViewControllerMediaCapturePermissionLegacyMatrixTests: XCTestCase
 
         try assertLegacyMatrix(fallthroughDecision: .prompt) { origin, frame, type, decisionHandler in
             sut.webView(sut.webView,
-                        requestMediaCapturePermissionFor: origin,
-                        initiatedByFrame: frame,
-                        type: type,
-                        decisionHandler: decisionHandler)
-        }
-    }
-}
-
-@MainActor
-final class AIChatWebViewControllerMediaCapturePermissionLegacyMatrixTests: XCTestCase {
-
-    func testLegacyPermissionMatrix() throws {
-        let sut = AIChatWebViewController(chatModel: StubAIChatViewModel(), downloadHandler: StubDownloadHandler())
-        let webView = WKWebView()
-
-        try assertLegacyMatrix(fallthroughDecision: .deny) { origin, frame, type, decisionHandler in
-            sut.webView(webView,
                         requestMediaCapturePermissionFor: origin,
                         initiatedByFrame: frame,
                         type: type,
@@ -166,32 +148,5 @@ private enum AVCaptureAuthorizationStatusStub {
 private extension AVCaptureDevice {
     @objc class func osp_authorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
         AVCaptureAuthorizationStatusStub.status(for: mediaType)
-    }
-}
-
-private final class StubAIChatViewModel: AIChatViewModeling {
-    let aiChatURL = URL(string: "https://duck.ai")!
-    let webViewConfiguration = WKWebViewConfiguration()
-    let requestAuthHandler: AIChatRequestAuthorizationHandling = StubAIChatRequestAuthorizationHandler()
-    let inspectableWebView = false
-    let downloadsPath = FileManager.default.temporaryDirectory
-    let userAgent = ""
-
-    func shouldAllowRequestWithNavigationAction(_ navigationAction: WKNavigationAction) -> Bool {
-        true
-    }
-}
-
-private struct StubAIChatRequestAuthorizationHandler: AIChatRequestAuthorizationHandling {
-    func shouldAllowRequestWithNavigationAction(_ navigationAction: WKNavigationAction) -> Bool {
-        true
-    }
-}
-
-private final class StubDownloadHandler: NSObject, DownloadHandling {
-    var onDownloadComplete: DownloadCompletionHandler?
-
-    func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
-        nil
     }
 }

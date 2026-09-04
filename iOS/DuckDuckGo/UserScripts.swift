@@ -49,7 +49,7 @@ final class UserScripts: UserScriptsProvider {
     let serpSettingsUserScript: SERPSettingsUserScript
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let pageContextUserScript: PageContextUserScript
-    let internalFeedbackUserScript: InternalFeedbackUserScript?
+    let internalFeedbackUserScript: InternalFeedbackUserScript
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -149,12 +149,10 @@ final class UserScripts: UserScriptsProvider {
         }
 
         pageContextUserScript = PageContextUserScript()
-        internalFeedbackUserScript = featureFlagger.internalUserDecider.isInternalUser
-            ? InternalFeedbackUserScript(
-                deviceInfoProvider: IOSInternalFeedbackDeviceInfoProvider(tabCountProvider: internalFeedbackTabCountProvider),
-                attachmentsProvider: internalFeedbackAttachmentsProvider
-            )
-            : nil
+        internalFeedbackUserScript = InternalFeedbackUserScript(
+            deviceInfoProvider: IOSInternalFeedbackDeviceInfoProvider(tabCountProvider: internalFeedbackTabCountProvider),
+            attachmentsProvider: internalFeedbackAttachmentsProvider
+        )
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)
@@ -170,9 +168,7 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: selectionFrameScript)
-        if let internalFeedbackUserScript {
-            contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
-        }
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }

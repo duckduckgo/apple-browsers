@@ -54,7 +54,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let aiChatUserScript: AIChatUserScript?
     let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
-    let internalFeedbackUserScript: InternalFeedbackUserScript?
+    let internalFeedbackUserScript: InternalFeedbackUserScript
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
     let serpUserScript: SERPInstallOriginUserScript
@@ -111,14 +111,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
-        if sourceProvider.featureFlagger.internalUserDecider.isInternalUser {
-            internalFeedbackUserScript = InternalFeedbackUserScript(
-                deviceInfoProvider: NSApp.delegateTyped.internalFeedbackDeviceInfoProvider,
-                attachmentsProvider: NSApp.delegateTyped.internalFeedbackAttachmentsProvider
-            )
-        } else {
-            internalFeedbackUserScript = nil
-        }
+        internalFeedbackUserScript = InternalFeedbackUserScript(
+            deviceInfoProvider: NSApp.delegateTyped.internalFeedbackDeviceInfoProvider,
+            attachmentsProvider: NSApp.delegateTyped.internalFeedbackAttachmentsProvider
+        )
 
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
@@ -237,9 +233,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         }
 
-        if let internalFeedbackUserScript {
-            contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
-        }
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
 
         if let youtubeOverlayScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: youtubeOverlayScript)

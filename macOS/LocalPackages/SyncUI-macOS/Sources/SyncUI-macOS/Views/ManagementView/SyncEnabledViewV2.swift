@@ -93,7 +93,9 @@ struct SyncEnabledViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
         // Turn Off and Delete Data
         PreferencePaneSection {
             Button {
-                model.presentDeleteAccount()
+                Task {
+                    await model.presentDeleteAccount()
+                }
             } label: {
                 Text(UserText.turnOffAndDeleteServerDataV2)
                     .foregroundColor(Color(designSystemColor: .destructivePrimary))

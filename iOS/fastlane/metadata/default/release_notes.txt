@@ -1,1 +1,3 @@
-This update includes various bug fixes and other improvements.
+• We made some very minor design tweaks to the address bar. 
+• We fixed the bug that prevented captions from working on full screen videos. 
+• This update includes various other bug fixes and improvements.

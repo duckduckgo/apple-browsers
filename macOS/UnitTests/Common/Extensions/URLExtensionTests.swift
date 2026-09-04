@@ -1027,4 +1027,52 @@ extension URLExtensionTests {
         #expect(resolvedTemporaryDirectory.isContained(in: temporaryDirectory) == true)
         #expect(temporaryDirectory.appendingPathComponent("file").isContained(in: resolvedTemporaryDirectory) == true)
     }
+
+    // MARK: - isSystemDownloadsDirectory
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The system Downloads folder is recognised", .timeLimit(.minutes(1)))
+    func thatSystemDownloadsDirectoryIsRecognised() throws {
+        let downloads = try #require(FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first)
+
+        #expect(downloads.isSystemDownloadsDirectory)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The system Downloads folder is recognised without a trailing slash", .timeLimit(.minutes(1)))
+    func thatSystemDownloadsDirectoryIsRecognisedWithoutTrailingSlash() throws {
+        let downloads = try #require(FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first)
+        // NSOpenPanel and URL(fileURLWithPath:) can both yield a slash-less directory URL
+        let withoutTrailingSlash = URL(fileURLWithPath: downloads.path, isDirectory: false)
+
+        #expect(withoutTrailingSlash.isSystemDownloadsDirectory)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A symlink to the Downloads folder is recognised", .timeLimit(.minutes(1)))
+    func thatSymlinkToSystemDownloadsDirectoryIsRecognised() throws {
+        let downloads = try #require(FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first)
+        let link = FileManager.default.temporaryDirectory
+            .appendingPathComponent("downloads-link-\(UUID().uuidString)")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: downloads)
+        defer { try? FileManager.default.removeItem(at: link) }
+
+        #expect(link.isSystemDownloadsDirectory)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A folder inside Downloads is not the Downloads folder itself", .timeLimit(.minutes(1)))
+    func thatSubfolderOfSystemDownloadsDirectoryIsNotRecognised() throws {
+        let downloads = try #require(FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first)
+
+        #expect(downloads.appendingPathComponent("Subfolder").isSystemDownloadsDirectory == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Unrelated folders are not the Downloads folder", .timeLimit(.minutes(1)))
+    func thatUnrelatedDirectoriesAreNotRecognised() {
+        #expect(FileManager.default.temporaryDirectory.isSystemDownloadsDirectory == false)
+        #expect(FileManager.default.homeDirectoryForCurrentUser.isSystemDownloadsDirectory == false)
+        #expect(URL(fileURLWithPath: "/Users/someone-else/Downloads", isDirectory: true).isSystemDownloadsDirectory == false)
+    }
 }

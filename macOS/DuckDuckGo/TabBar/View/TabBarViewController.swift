@@ -127,7 +127,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
-    private let autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating?
+    private let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? // swiftlint:disable:this weak_delegate
 
     let themeManager: ThemeManaging
     private let tabDragAndDropManager: TabDragAndDropManager
@@ -230,7 +230,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
         tabDragAndDropManager: TabDragAndDropManager,
-        autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil
+        cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? = nil
     ) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -243,7 +243,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 aiChatMenuConfig: aiChatMenuConfig,
                 duckAIChromeButtonsVisibilityManager: duckAIChromeButtonsVisibilityManager,
                 tabDragAndDropManager: tabDragAndDropManager,
-                autoconsentStatsPopoverCoordinator: autoconsentStatsPopoverCoordinator
+                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
             )
         }!
     }
@@ -262,7 +262,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging,
           themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
           tabDragAndDropManager: TabDragAndDropManager,
-          autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil) {
+          cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? = nil) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.fireproofDomains = fireproofDomains
@@ -276,7 +276,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         )
         self.themeManager = themeManager
         self.tabDragAndDropManager = tabDragAndDropManager
-        self.autoconsentStatsPopoverCoordinator = autoconsentStatsPopoverCoordinator
+        self.cookiePopupsBlockedPromoDelegate = cookiePopupsBlockedPromoDelegate
 
         standardTabHeight = themeManager.theme.tabStyleProvider.standardTabHeight
         pinnedTabHeight = themeManager.theme.tabStyleProvider.pinnedTabHeight
@@ -1372,7 +1372,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Actions
 
     @objc func addButtonAction(_ sender: NSButton) {
-        autoconsentStatsPopoverCoordinator?.dismissDialogDueToNewTabBeingShown()
+        cookiePopupsBlockedPromoDelegate?.dismissDueToNewTabBeingShown()
         tabCollectionViewModel.insertOrAppendNewTab()
     }
 

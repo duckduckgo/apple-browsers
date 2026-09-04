@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import CoreData
 import Foundation
 import PrivacyConfig
 import XCTest
@@ -232,6 +233,63 @@ final class PermissionManagerTests: XCTestCase {
                        .allow)
         XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity2.domain, permissionType: PermissionEntity.entity2.type),
                      .ask)
+    }
+
+    func testDebugEntriesPreserveStoredDomain() throws {
+        let objectID = NSManagedObjectID()
+        store.permissions = [
+            PermissionEntity(permission: StoredPermission(id: objectID, decision: .allow),
+                             domain: "www.example.com",
+                             type: .camera)
+        ]
+        store.rawPermissions = [
+            RawPermissionRow(storageIdentifier: "stored-row",
+                             objectID: objectID,
+                             domain: "www.example.com",
+                             permissionType: PermissionType.camera.rawValue,
+                             allow: true,
+                             isRemoved: false)
+        ]
+
+        let entry = try XCTUnwrap(manager.allPermissionsDebugEntries().first)
+
+        XCTAssertEqual(entry.domain, "www.example.com")
+        XCTAssertEqual(entry.storageIdentifier, "stored-row")
+        XCTAssertEqual(entry.effectiveDecision, .allow)
+        XCTAssertFalse(entry.isOverridden)
+    }
+
+    func testDebugRemovalDeletesRawRowWithUnknownPermissionType() {
+        let objectID = NSManagedObjectID()
+        store.rawPermissions = [
+            RawPermissionRow(storageIdentifier: "unknown-row",
+                             objectID: objectID,
+                             domain: "example.com",
+                             permissionType: "future-permission-type",
+                             allow: false,
+                             isRemoved: true)
+        ]
+
+        let removedCount = manager.removePermissionsDebugEntries(withIdentifiers: ["unknown-row"])
+
+        XCTAssertEqual(removedCount, 1)
+        XCTAssertEqual(store.history, [.load, .loadRaw, .remove(objectID)])
+    }
+
+    func testDebugRemoveAllClearsStoreContainingUnknownPermissionType() {
+        store.rawPermissions = [
+            RawPermissionRow(storageIdentifier: "unknown-row",
+                             objectID: NSManagedObjectID(),
+                             domain: "example.com",
+                             permissionType: "future-permission-type",
+                             allow: false,
+                             isRemoved: true)
+        ]
+
+        let removedCount = manager.removeAllPermissions()
+
+        XCTAssertEqual(removedCount, 1)
+        XCTAssertEqual(store.history, [.load, .loadRaw, .clear(exceptions: [])])
     }
 
 }

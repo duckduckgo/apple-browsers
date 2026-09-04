@@ -91,4 +91,6 @@ public enum TabURLInterceptorParameter {
     /// Set only by the front-end `openAIChat` message, never by the interceptor: the page that asked
     /// native to open Duck.ai, so its entry is attributed to that page rather than to a typed address.
     public static let aiChatRequestHost = "aiChatRequestHost"
+    /// The requesting page's URL, when its web view is known; tells the homepage apart from the SERP.
+    public static let aiChatRequestURL = "aiChatRequestURL"
 }

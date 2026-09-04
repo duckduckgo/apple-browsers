@@ -1,6 +1,5 @@
 //
-//  DuckAIVoiceShortcutFeature.swift
-//  DuckDuckGo
+//  MockAutofillToolbarPinningPromoPresenter.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,22 +16,23 @@
 //  limitations under the License.
 //
 
-import PrivacyConfig
-import FeatureFlags_iOS
+import Foundation
+@testable import DuckDuckGo_Privacy_Browser
 
-/// Provides access to Duck AI voice shortcut availability.
-protocol DuckAIVoiceShortcutFeatureProviding {
-    var isAvailable: Bool { get }
-}
+@MainActor
+final class MockAutofillToolbarPinningPromoPresenter: AutofillToolbarPinningPromoPresenting {
+    private(set) var presentCallCount = 0
+    private(set) var retractCallCount = 0
+    var result: PromoResult?
 
-struct DuckAIVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
-    private let featureFlagger: any FeatureFlagger
-
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
-        self.featureFlagger = featureFlagger
+    func presentAutofillToolbarPinningPromo(completion: @escaping (PromoResult) -> Void) {
+        presentCallCount += 1
+        if let result {
+            completion(result)
+        }
     }
 
-    var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.duckAIVoiceShortcut)
+    func retractAutofillToolbarPinningPromo() {
+        retractCallCount += 1
     }
 }

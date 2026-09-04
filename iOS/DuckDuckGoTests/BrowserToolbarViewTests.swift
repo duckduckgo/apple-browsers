@@ -118,6 +118,20 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertFalse(isInsideGlassContentView)
     }
 
+    func testWhenStandaloneGlassUsesDarkAppearanceThenItHasAContrastTint() throws {
+        guard #available(iOS 26.0, *) else { return }
+        let sut = makeSUT(embeddedOmnibar: false)
+
+        sut.refreshMaterialAppearance(interfaceStyle: .dark)
+
+        let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
+        XCTAssertNotNil((glassView.effect as? UIGlassEffect)?.tintColor)
+
+        sut.refreshMaterialAppearance(interfaceStyle: .light)
+
+        XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
+    }
+
     func testWhenNotFloatingThenProgressIsANoOp() {
         let sut = makeSUT(floating: false)
         let legacyFullHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: false)
@@ -125,6 +139,11 @@ final class BrowserToolbarViewTests: XCTestCase {
         let height = sut.setButtonRowCollapseProgress(1, reduceMotion: false)
 
         XCTAssertEqual(height, legacyFullHeight, accuracy: 0.01)
+    }
+
+    private func firstVisualEffectView(in view: UIView) -> UIVisualEffectView? {
+        if let view = view as? UIVisualEffectView { return view }
+        return view.subviews.lazy.compactMap { self.firstVisualEffectView(in: $0) }.first
     }
 
     func testWhenButtonRowIsMidCollapseThenRestingCapsuleFrameStillReportsSingleRowHeight() {
@@ -189,13 +208,13 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         let frame = sut.restingCapsuleFrame(in: container)
 
-        XCTAssertEqual(BrowserToolbarView.floatingStandaloneButtonRowHorizontalPadding, 16)
         if #available(iOS 26.0, *) {
-            let guide = container.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
-            let expected = guide.layoutFrame.minX + BrowserToolbarView.floatingConcentricGlassInset
-            XCTAssertEqual(frame.minX, expected, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.width - frame.maxX, expected, accuracy: 0.01)
+            // Standalone shares the combined chrome's physical inset, so the two line up.
+            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
         } else {
+            XCTAssertEqual(BrowserToolbarView.floatingStandaloneButtonRowHorizontalPadding, 16)
             XCTAssertEqual(BrowserToolbarView.floatingStandaloneHorizontalInset, 24)
             XCTAssertEqual(frame.minX, 24, accuracy: 0.01)
             XCTAssertEqual(container.bounds.width - frame.maxX, 24, accuracy: 0.01)
@@ -211,9 +230,11 @@ final class BrowserToolbarViewTests: XCTestCase {
         let frame = sut.restingCapsuleFrame(in: container)
 
         if #available(iOS 26.0, *) {
-            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            // Device-specific inset (guide + tuck), equal on every edge.
+            let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: BrowserToolbarView.horizontalGuideInsets(in: container))
+            XCTAssertEqual(frame.minX, physical, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, physical, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, physical, accuracy: 0.01)
         } else {
             XCTAssertEqual(BrowserToolbarView.floatingEmbeddedHorizontalInset, 16)
             XCTAssertEqual(frame.minX, 16, accuracy: 0.01)
@@ -247,12 +268,28 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         let frame = sut.restingCapsuleFrame(in: container)
         let guideInsets = BrowserToolbarView.horizontalGuideInsets(in: container)
+        let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: guideInsets)
 
-        // Each edge sits at its own guide, or at the concentric inset when the guide is smaller.
-        XCTAssertEqual(frame.minX, max(guideInsets.left, concentric), accuracy: 0.01)
-        XCTAssertEqual(container.bounds.width - frame.maxX, max(guideInsets.right, concentric), accuracy: 0.01)
-        // The wide leading guide must not pull the opposite edge inside the concentric inset.
-        XCTAssertGreaterThanOrEqual(container.bounds.width - frame.maxX, concentric - 0.01)
+        // Each edge sits at its own guide, or at the physical inset when the guide is smaller.
+        XCTAssertEqual(frame.minX, max(guideInsets.left, physical), accuracy: 0.01)
+        XCTAssertEqual(container.bounds.width - frame.maxX, max(guideInsets.right, physical), accuracy: 0.01)
+        // The wide leading guide must not pull the opposite edge inside the physical inset.
+        XCTAssertGreaterThanOrEqual(container.bounds.width - frame.maxX, physical - 0.01)
+    }
+
+    func testWhenConcentricGuideHasResolvedThenThePillTucksInFromTheGuide() {
+        // Resolved guide wins over the fallback; the narrower side wins under a Dynamic Island.
+        let tuck = BrowserToolbarView.floatingConcentricTuck
+        XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 18, right: 18)), 18 + tuck, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 57, right: 18)), 18 + tuck, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateInnerInset(guideInset: 18, physicalInset: 18 + tuck), tuck, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.embeddedRestStateBottomOffset(guideBottomGap: 34, physicalInset: 18 + tuck), 34 - 18 - tuck, accuracy: 0.01)
+    }
+
+    func testWhenConcentricGuideIsUnresolvedThenTheFallbackInsetIsUsed() {
+        let concentric = BrowserToolbarView.floatingEmbeddedConcentricInset
+        XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 0, right: 0)), concentric, accuracy: 0.01)
+        XCTAssertEqual(BrowserToolbarView.floatingPhysicalInset(guideInsets: (left: 57, right: 0)), concentric, accuracy: 0.01)
     }
 
     func testWhenGuideGapExceedsConcentricInsetThenGlassShiftsDown() {
@@ -308,19 +345,27 @@ final class BrowserToolbarViewTests: XCTestCase {
         let frame = sut.restingCapsuleFrame(in: container)
 
         if #available(iOS 26.0, *) {
-            XCTAssertEqual(frame.minX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.width - frame.maxX, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
-            XCTAssertEqual(container.bounds.maxY - frame.maxY, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            // Device-specific inset (guide + tuck), equal on every edge.
+            let physical = BrowserToolbarView.floatingPhysicalInset(guideInsets: BrowserToolbarView.horizontalGuideInsets(in: container))
+            XCTAssertEqual(frame.minX, physical, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.width - frame.maxX, physical, accuracy: 0.01)
+            XCTAssertEqual(container.bounds.maxY - frame.maxY, physical, accuracy: 0.01)
         }
     }
 
-    func testWhenStandaloneFloatingThenBottomMarginIsTwentyOnePoints() {
+    func testWhenStandaloneFloatingThenBottomMarginMatchesCombinedChrome() {
         let sut = makeSUT(embeddedOmnibar: false)
 
-        XCTAssertEqual(BrowserToolbarView.floatingStandaloneBottomMargin, 21)
-        XCTAssertEqual(sut.floatingBottomMargin, 21, accuracy: 0.01)
-        XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .top), 24)
-        XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .top), 21)
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(sut.floatingBottomMargin, BrowserToolbarView.floatingEmbeddedConcentricInset, accuracy: 0.01)
+            XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .top), BrowserToolbarView.floatingEmbeddedConcentricInset)
+            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .top), BrowserToolbarView.floatingEmbeddedConcentricInset)
+        } else {
+            XCTAssertEqual(BrowserToolbarView.floatingStandaloneBottomMargin, 21)
+            XCTAssertEqual(sut.floatingBottomMargin, 21, accuracy: 0.01)
+            XCTAssertEqual(BrowserToolbarView.floatingOuterHorizontalInset(for: .top), 24)
+            XCTAssertEqual(BrowserToolbarView.floatingBottomMargin(for: .top), 21)
+        }
     }
 
     func testWhenEmbeddedFloatingThenBottomMarginMatchesPlatformGeometry() {
@@ -368,6 +413,42 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         // Both rows carry 44pt controls, so aligned centres mean the same distance from the glass
         // edge as the address field's icons: its 16pt text-area padding plus half a control.
+        let expectedInset = BrowserToolbarView.floatingEmbeddedAddressBarIconInset
+        XCTAssertEqual(first - capsule.minX, expectedInset, accuracy: 0.5)
+        XCTAssertEqual(capsule.maxX - last, expectedInset, accuracy: 0.5)
+    }
+
+    func testWhenStandaloneFloatingThenOuterButtonsSitWhereTheCombinedChromeIconsDo() throws {
+        guard #available(iOS 26.0, *) else { throw XCTSkip("Floating UI is iOS 26+") }
+        let sut = makeSUT(embeddedOmnibar: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        window.addSubview(sut)
+        window.makeKeyAndVisible()
+        let horizontalGuide = window.layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: horizontalGuide.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: horizontalGuide.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: window.bottomAnchor),
+            sut.heightAnchor.constraint(equalToConstant: 62)
+        ])
+        sut.setToolbarButtons([
+            makeToolbarButton(identifier: "back", width: 44),
+            makeToolbarButton(identifier: "forward", width: 44),
+            makeToolbarButton(identifier: "fire", width: 44),
+            makeToolbarButton(identifier: "tabs", width: 44),
+            makeToolbarButton(identifier: "menu", width: 44)
+        ])
+        window.layoutIfNeeded()
+
+        let centers = sut.arrangedToolbarButtonViews.map { view in
+            window.convert(view.center, from: view.superview).x
+        }
+        let first = try XCTUnwrap(centers.first)
+        let last = try XCTUnwrap(centers.last)
+        let capsule = sut.restingCapsuleFrame(in: window)
+
+        // Outer buttons land where the combined chrome's icons do.
         let expectedInset = BrowserToolbarView.floatingEmbeddedAddressBarIconInset
         XCTAssertEqual(first - capsule.minX, expectedInset, accuracy: 0.5)
         XCTAssertEqual(capsule.maxX - last, expectedInset, accuracy: 0.5)

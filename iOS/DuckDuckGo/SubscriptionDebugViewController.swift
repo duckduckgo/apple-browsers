@@ -121,6 +121,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     enum RegionOverrideRows: Int, CaseIterable {
         case currentRegionOverride
+        case noProductsOverride
     }
 
     enum ExpirationReminderRows: Int, CaseIterable {
@@ -316,6 +317,14 @@ final class SubscriptionDebugViewController: UITableViewController {
 
                 cell.accessoryView = button
                 adjustMenuButtonWidth()
+            case .noProductsOverride:
+                cell.textLabel?.text = "Load no products"
+                cell.selectionStyle = .none
+
+                let toggle = UISwitch()
+                toggle.isOn = subscriptionUserDefaults.noSubscriptionProductsOverride
+                toggle.addTarget(self, action: #selector(noProductsOverrideChanged(_:)), for: .valueChanged)
+                cell.accessoryView = toggle
             case .none:
                 break
             }
@@ -451,6 +460,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         DispatchQueue.main.async {
             self.present(alertController, animated: true, completion: nil)
         }
+    }
+
+    @objc private func noProductsOverrideChanged(_ sender: UISwitch) {
+        subscriptionUserDefaults.noSubscriptionProductsOverride = sender.isOn
     }
 
     private func showAlert(title: String, message: String? = nil) {

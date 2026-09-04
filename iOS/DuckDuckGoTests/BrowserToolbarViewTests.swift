@@ -34,6 +34,72 @@ final class BrowserToolbarViewTests: XCTestCase {
         return toolbar
     }
 
+    func testWhenLegacySafeAreaChangesThenBackgroundCoversScreenBottomWithoutMovingButtons() throws {
+        let container = SafeAreaStubView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let sut = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 390, height: BrowserToolbarView.legacyButtonsHeight))
+        sut.setFloatingStyleEnabled(false)
+        container.addSubview(sut)
+        let background = try XCTUnwrap(sut.subviews.first?.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+
+        let buttonWidths: [[CGFloat]] = [[32, 44, 56], [44, 36, 48, 32, 44, 40]]
+        let bottomInsets: [CGFloat] = [34, 21, 0, 34]
+        for widths in buttonWidths {
+            let buttons = widths.enumerated().map { makeToolbarButton(identifier: "button-\($0.offset)", width: $0.element) }
+            sut.setToolbarButtons(buttons)
+            sut.frame = CGRect(x: 0, y: 0, width: container.bounds.width, height: BrowserToolbarView.legacyButtonsHeight)
+            sut.setNeedsLayout()
+            sut.layoutIfNeeded()
+            let buttonFrames = buttons.map { $0.convert($0.bounds, to: sut) }
+
+            for bottomInset in bottomInsets {
+                container.stubbedSafeAreaInsets.bottom = bottomInset
+                sut.frame.origin.y = container.bounds.maxY - bottomInset - sut.bounds.height
+                sut.setNeedsLayout()
+                sut.layoutIfNeeded()
+
+                XCTAssertEqual(background.convert(background.bounds, to: container).maxY, container.bounds.maxY, accuracy: 0.01)
+                XCTAssertNil(background.effect)
+                XCTAssertEqual(background.backgroundColor?.cgColor.alpha, 1)
+                XCTAssertEqual(sut.bounds.height, BrowserToolbarView.legacyButtonsHeight)
+                XCTAssertEqual(sut.arrangedToolbarButtonViews, buttons)
+                XCTAssertEqual(buttons.map { $0.convert($0.bounds, to: sut) }, buttonFrames)
+                for button in buttons {
+                    let center = button.convert(CGPoint(x: button.bounds.midX, y: button.bounds.midY), to: sut)
+                    XCTAssertTrue(sut.hitTest(center, with: nil) === button)
+                }
+            }
+        }
+    }
+
+    func testWhenSwitchingFromLegacyToFloatingThenBackgroundExtensionIsRemoved() throws {
+        let container = SafeAreaStubView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        container.stubbedSafeAreaInsets.bottom = 34
+        let sut = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 390, height: BrowserToolbarView.legacyButtonsHeight))
+        sut.setFloatingStyleEnabled(false)
+        container.addSubview(sut)
+        sut.setNeedsLayout()
+        sut.layoutIfNeeded()
+        let background = try XCTUnwrap(sut.subviews.first?.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+        XCTAssertGreaterThan(background.bounds.height, try XCTUnwrap(background.superview).bounds.height)
+
+        sut.frame.size.height = BrowserToolbarView.floatingButtonsHeight
+        sut.setFloatingStyleEnabled(true)
+        sut.layoutIfNeeded()
+
+        XCTAssertEqual(background.frame, try XCTUnwrap(background.superview).bounds)
+        XCTAssertNotNil(background.effect)
+        XCTAssertEqual(background.backgroundColor, .clear)
+
+        sut.setLegacyBackgroundTransparent(true)
+        sut.frame.size.height = BrowserToolbarView.legacyButtonsHeight
+        sut.setFloatingStyleEnabled(false)
+        sut.layoutIfNeeded()
+
+        XCTAssertNil(background.effect)
+        XCTAssertEqual(background.backgroundColor, .clear)
+        XCTAssertEqual(background.contentView.backgroundColor, .clear)
+    }
+
     func testWhenProgressIsZeroThenButtonRowIsFullyShownAtFullHeight() {
         let sut = makeSUT()
         let fullHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: true)

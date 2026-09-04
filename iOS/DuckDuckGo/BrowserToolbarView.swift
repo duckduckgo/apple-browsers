@@ -258,6 +258,7 @@ final class BrowserToolbarView: UIView {
     }()
     private lazy var expandedContentHeightConstraint = expandedContentContainer.heightAnchor.constraint(equalToConstant: 0)
     private lazy var materialBackgroundTopConstraint = chromeContainer.topAnchor.constraint(equalTo: topAnchor)
+    private lazy var materialBackgroundSafeAreaBottomConstraint = materialBackgroundView.bottomAnchor.constraint(equalTo: chromeContainer.bottomAnchor)
     private lazy var contentStackTopConstraint = contentStack.topAnchor.constraint(equalTo: chromeContentHost.topAnchor, constant: Self.defaultVerticalContentPadding)
     private lazy var contentStackBottomConstraint = contentStack.bottomAnchor.constraint(equalTo: chromeContentHost.bottomAnchor, constant: -Self.defaultVerticalContentPadding)
     private var materialBackgroundLeadingConstraint: NSLayoutConstraint!
@@ -442,7 +443,7 @@ final class BrowserToolbarView: UIView {
             materialBackgroundView.topAnchor.constraint(equalTo: chromeContainer.topAnchor),
             materialBackgroundView.leadingAnchor.constraint(equalTo: chromeContainer.leadingAnchor),
             materialBackgroundView.trailingAnchor.constraint(equalTo: chromeContainer.trailingAnchor),
-            materialBackgroundView.bottomAnchor.constraint(equalTo: chromeContainer.bottomAnchor),
+            materialBackgroundSafeAreaBottomConstraint,
             chromeContentHost.topAnchor.constraint(equalTo: chromeContainer.topAnchor),
             chromeContentHost.leadingAnchor.constraint(equalTo: chromeContainer.leadingAnchor),
             chromeContentHost.trailingAnchor.constraint(equalTo: chromeContainer.trailingAnchor),
@@ -847,6 +848,9 @@ final class BrowserToolbarView: UIView {
     
     override func layoutSubviews() {
         applyHorizontalChromeMetrics()
+        // The legacy toolbar ends at the safe area, but its background must cover overflowing
+        // focused Favorites down to the screen edge. Keep the buttons and floating glass unchanged.
+        materialBackgroundSafeAreaBottomConstraint.constant = isFloatingStyleEnabled ? 0 : (superview?.safeAreaInsets.bottom ?? 0)
         super.layoutSubviews()
         updateFloatingBottomOffset()
         updateCornerStyle()

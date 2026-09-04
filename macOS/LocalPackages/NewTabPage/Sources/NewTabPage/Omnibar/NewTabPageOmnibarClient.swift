@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import WebKit
+import AIChat
 import Combine
 import Common
 import FoundationExtensions
+import WebKit
 
 public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
@@ -42,6 +43,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case showSubscriptionUpgrade = "omnibar_showSubscriptionUpgrade"
         case confirmDeleteAiChat = "omnibar_confirmDeleteAiChat"
         case removeSuggestion = "omnibar_removeSuggestion"
+        case setImageGenerationActive = "omnibar_setImageGenerationActive"
+        case dismissCreateImageModelSwitch = "omnibar_dismissCreateImageModelSwitch"
     }
 
     private let configProvider: NewTabPageOmnibarConfigProviding
@@ -51,6 +54,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private let actionHandler: NewTabPageOmnibarActionsHandling
     private let tabsProvider: NewTabPageOmnibarTabsProviding
     private let subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenting?
+    private var createImageModelSwitch: NewTabPageDataModel.OmnibarCreateImageModelSwitch?
     private var cancellables = Set<AnyCancellable>()
 
     @MainActor
@@ -127,7 +131,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.showSubscriptionUpsell.rawValue: { [weak self] in try await self?.showSubscriptionUpsell(params: $0, original: $1) },
             MessageName.showSubscriptionUpgrade.rawValue: { [weak self] in try await self?.showSubscriptionUpgrade(params: $0, original: $1) },
             MessageName.confirmDeleteAiChat.rawValue: { [weak self] in try await self?.confirmDeleteAiChat(params: $0, original: $1) },
-            MessageName.removeSuggestion.rawValue: { [weak self] in try await self?.removeSuggestion(params: $0, original: $1) }
+            MessageName.removeSuggestion.rawValue: { [weak self] in try await self?.removeSuggestion(params: $0, original: $1) },
+            MessageName.setImageGenerationActive.rawValue: { [weak self] in try await self?.setImageGenerationActive(params: $0, original: $1) },
+            MessageName.dismissCreateImageModelSwitch.rawValue: { [weak self] in try await self?.dismissCreateImageModelSwitch(params: $0, original: $1) }
         ])
     }
 
@@ -162,7 +168,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             attachmentLimits: modelsProvider?.attachmentLimits,
             isEligibleForFreeTrial: modelsProvider?.isEligibleForFreeTrial,
             enableAiChatDeletion: configProvider.isAIChatDeletionEnabled,
-            enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled
+            enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
+            enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
+            createImageModelSwitch: createImageModelSwitch
         )
     }
 
@@ -245,7 +253,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             attachmentLimits: modelsProvider?.attachmentLimits,
             isEligibleForFreeTrial: modelsProvider?.isEligibleForFreeTrial,
             enableAiChatDeletion: configProvider.isAIChatDeletionEnabled,
-            enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled
+            enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
+            enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
+            createImageModelSwitch: createImageModelSwitch
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -291,17 +301,19 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         return nil
     }
 
+    @MainActor
     private func submitChat(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let action: NewTabPageDataModel.SubmitChatAction = DecodableHelper.decode(from: params) else {
             return nil
         }
+        let imageGenerationModelId = imageGenerationModelIdForSubmission(action: action)
         await actionHandler.submitChat(
             action.chat,
             target: action.target,
-            modelId: modelIdForSubmission(action: action),
+            modelId: imageGenerationModelId ?? modelIdForSubmission(action: action),
             images: action.images,
-            mode: action.mode,
-            toolChoice: action.toolChoice,
+            mode: imageGenerationModelId == nil ? action.mode : nil,
+            toolChoice: imageGenerationModelId == nil ? action.toolChoice : [AIChatRAGTool.imageGeneration.rawValue],
             reasoningEffort: reasoningEffortForSubmission(action: action),
             pageContexts: action.pageContext,
             files: action.files
@@ -324,6 +336,37 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private func modelIdForSubmission(action: NewTabPageDataModel.SubmitChatAction) -> String? {
         guard let modelId = action.modelId else { return nil }
         return matchedItem(forModelId: modelId)?.isAvailable == false ? nil : modelId
+    }
+
+    @MainActor
+    private func imageGenerationModelIdForSubmission(action: NewTabPageDataModel.SubmitChatAction) -> String? {
+        guard configProvider.isUpdatedCreateImageEnabled,
+              action.mode == AIChatNativePrompt.imageGenerationMode,
+              let selectedModelId = configProvider.selectedModelId,
+              let selectedModel = matchedItem(forModelId: selectedModelId),
+              selectedModel.isAvailable,
+              selectedModel.supportedTools.contains(AIChatRAGTool.imageGeneration.rawValue) else {
+            return nil
+        }
+        return selectedModelId
+    }
+
+    @MainActor
+    private func setImageGenerationActive(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard configProvider.isUpdatedCreateImageEnabled,
+              let request: NewTabPageDataModel.OmnibarSetImageGenerationActive = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        createImageModelSwitch = request.active ? configProvider.activateImageGeneration() : nil
+        notifyConfigUpdated()
+        return nil
+    }
+
+    @MainActor
+    private func dismissCreateImageModelSwitch(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        createImageModelSwitch = nil
+        notifyConfigUpdated()
+        return nil
     }
 
     @MainActor

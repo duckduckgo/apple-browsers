@@ -1,0 +1,202 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent once per VPN runtime segment: from the WireGuard adapter coming up until the provider stops, cancels, transitions unexpectedly, or 24 eligible hours roll it over. Measures whether an already-running VPN stayed healthy. Separate from macos-vpn-connection, which measures startup.",
+    "$comment": "{\"owners\":[\"jleandroperez\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "macos-vpn-session-health" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, PIR agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+                    "enum": [
+                        "DuckDuckGo",
+                        "DuckDuckGo Alpha",
+                        "DuckDuckGo Review",
+                        "DuckDuckGo App Store",
+                        "DuckDuckGo VPN",
+                        "DuckDuckGo VPN Alpha",
+                        "DuckDuckGo VPN Review",
+                        "DuckDuckGo VPN App Store",
+                        "DuckDuckGo Personal Information Removal",
+                        "DuckDuckGo Personal Information Removal App Store",
+                        "NetworkProtectionAppExtension",
+                        "com.duckduckgo.macos.vpn.network-extension",
+                        "com.duckduckgo.macos.vpn.network-extension.debug",
+                        "com.duckduckgo.macos.vpn.network-extension.review",
+                        "com.duckduckgo.macos.vpn.network-extension.alpha",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+                    ]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["macOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["vpn-session-health"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "segment_start_reason": {
+                                    "type": "string",
+                                    "description": "Why the segment began. One connection can produce several segments, because a segment is closed and reopened every 24 eligible hours.",
+                                    "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start", "rollover_after_24h"]
+                                },
+                                "segment_end_reason": {
+                                    "type": "string",
+                                    "description": "Why the segment ended. Exactly one applies. `stopped_by_user` covers every VPN-off surface; `stopped_administratively` covers app and OS housekeeping; `process_died` is recovered on the next launch.",
+                                    "enum": [
+                                        "stopped_by_user",
+                                        "stopped_by_failure",
+                                        "stopped_administratively",
+                                        "stopped_without_network",
+                                        "cancelled_with_error",
+                                        "rolled_over",
+                                        "process_died"
+                                    ]
+                                },
+                                "failure_reason": {
+                                    "type": "string",
+                                    "description": "The reason a segment FAILED. Absent on SUCCESS and UNKNOWN, which use status_reason. `routing_outage` = the tester crossed its extended failure threshold (8 consecutive failures); `stale_handshake` = no WireGuard handshake for over 5 minutes.",
+                                    "enum": [
+                                        "routing_outage",
+                                        "routing_outage_at_user_disable",
+                                        "stale_handshake",
+                                        "failure_recovery_failed",
+                                        "stopped_with_failure",
+                                        "cancelled_with_error"
+                                    ]
+                                },
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "The activity that failed to produce a judgement, for a segment that ended UNKNOWN. `monitors_never_started` = the monitors this measurement needs never came up; `connection_tester_never_reported` = they came up but the segment ended before the first result.",
+                                    "enum": [
+                                        "monitors_never_started",
+                                        "connection_tester_never_reported",
+                                        "extension_process_died",
+                                        "os_stopped_without_network"
+                                    ]
+                                },
+                                "monitoring_coverage": {
+                                    "type": "string",
+                                    "description": "How much of the segment was observed. Publish beside the SLI: rising `partial` or `none` means a degrading denominator, not better reliability.",
+                                    "enum": ["full", "partial", "none"]
+                                },
+                                "segment_duration_seconds_bucketed": {
+                                    "type": "string",
+                                    "description": "Wall-clock length of the segment, bucketed (lower end of bucket, in seconds). Includes paused periods.",
+                                    "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
+                                },
+                                "eligible_duration_seconds_bucketed": {
+                                    "type": "string",
+                                    "description": "Wall clock minus sleep, snooze and other intentional unavailability, bucketed (lower end of bucket, in seconds). What the 24 hour rollover measures.",
+                                    "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
+                                },
+                                "time_to_first_error_seconds_bucketed": {
+                                    "type": "string",
+                                    "description": "Time from segment start to the first error of any kind, bucketed (lower end of bucket, in seconds). Absent when there were none.",
+                                    "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
+                                },
+                                "connection_tester_outage_count_bucketed": {
+                                    "type": "string",
+                                    "description": "How many distinct connection-tester outages occurred, bucketed (lower end of bucket).",
+                                    "enum": ["0", "1", "2", "4", "9"]
+                                },
+                                "connection_tester_outage_total_seconds_bucketed": {
+                                    "type": "string",
+                                    "description": "Summed duration of all connection-tester outages, bucketed (lower end of bucket, in seconds). The `0` bucket also covers a total under one second.",
+                                    "enum": ["0", "1", "15", "60", "300", "1800"]
+                                },
+                                "connection_tester_outage_max_seconds_bucketed": {
+                                    "type": "string",
+                                    "description": "Longest single connection-tester outage, bucketed (lower end of bucket, in seconds). The `0` bucket also covers an outage under one second.",
+                                    "enum": ["0", "1", "15", "60", "300", "1800"]
+                                },
+                                "extension_type": {
+                                    "type": "string",
+                                    "description": "Which network extension served the segment.",
+                                    "enum": ["app", "system", "unknown"]
+                                },
+                                "connection_tester_failure_seen": {
+                                    "type": "boolean",
+                                    "description": "Whether any connection-tester failure occurred, including one that recovered."
+                                },
+                                "connection_tester_extended_failure_seen": {
+                                    "type": "boolean",
+                                    "description": "Whether a tester outage crossed the extended failure threshold. The primary routing_outage input."
+                                },
+                                "connection_tester_failure_active_at_end": {
+                                    "type": "boolean",
+                                    "description": "Whether a tester failure was still active when the segment ended."
+                                },
+                                "stale_handshake_seen": {
+                                    "type": "boolean",
+                                    "description": "Whether the stale-handshake monitor reported a failure."
+                                },
+                                "stale_handshake_recovered": {
+                                    "type": "boolean",
+                                    "description": "Whether a reported stale handshake later recovered. Present only when stale_handshake_seen."
+                                },
+                                "failure_recovery_attempted": {
+                                    "type": "boolean",
+                                    "description": "Whether server failure recovery was attempted."
+                                },
+                                "failure_recovery_succeeded": {
+                                    "type": "boolean",
+                                    "description": "Whether that recovery succeeded. Present only when a recovery finished."
+                                },
+                                "human_stop_with_active_failure": {
+                                    "type": "boolean",
+                                    "description": "Whether a deliberate user disable coincided with an active routing failure. The headline diagnostic for silently broken tunnels."
+                                },
+                                "ip_leak_detected": {
+                                    "type": "boolean",
+                                    "description": "Whether an IP leak was confirmed during the segment. Diagnostic only."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

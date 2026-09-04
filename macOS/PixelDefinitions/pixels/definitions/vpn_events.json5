@@ -316,5 +316,171 @@
                 "enum": ["under_5m", "under_30m", "under_2h", "over_2h"]
             }
         ]
+    },
+    "m_mac_wide_vpn_session_health": {
+        "description": "Wide pixel sent once per VPN runtime segment, measuring whether an already-running VPN stayed healthy, including tunnels that stayed connected but stopped routing traffic",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventMetaVersion",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-vpn-session-health"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["vpn-session-health"]
+            },
+            {
+                "key": "feature.data.ext.segment_start_reason",
+                "type": "string",
+                "description": "Why the segment began. One connection can produce several segments, because a segment is closed and reopened every 24 eligible hours.",
+                "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start", "rollover_after_24h"]
+            },
+            {
+                "key": "feature.data.ext.segment_end_reason",
+                "type": "string",
+                "description": "Why the segment ended. Exactly one applies. `stopped_by_user` covers every VPN-off surface; `stopped_administratively` covers app and OS housekeeping; `process_died` is recovered on the next launch.",
+                "enum": [
+                    "stopped_by_user",
+                    "stopped_by_failure",
+                    "stopped_administratively",
+                    "stopped_without_network",
+                    "cancelled_with_error",
+                    "rolled_over",
+                    "process_died"
+                ]
+            },
+            {
+                "key": "feature.data.ext.failure_reason",
+                "type": "string",
+                "description": "The reason a segment FAILED. Absent on SUCCESS and UNKNOWN, which use status_reason. `routing_outage` = the tester crossed its extended failure threshold (8 consecutive failures); `stale_handshake` = no WireGuard handshake for over 5 minutes.",
+                "enum": [
+                    "routing_outage",
+                    "routing_outage_at_user_disable",
+                    "stale_handshake",
+                    "failure_recovery_failed",
+                    "stopped_with_failure",
+                    "cancelled_with_error"
+                ]
+            },
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "The activity that failed to produce a judgement, for a segment that ended UNKNOWN. `monitors_never_started` = the monitors this measurement needs never came up; `connection_tester_never_reported` = they came up but the segment ended before the first result.",
+                "enum": [
+                    "monitors_never_started",
+                    "connection_tester_never_reported",
+                    "extension_process_died",
+                    "os_stopped_without_network"
+                ]
+            },
+            {
+                "key": "feature.data.ext.monitoring_coverage",
+                "type": "string",
+                "description": "How much of the segment was observed. Publish beside the SLI: rising `partial` or `none` means a degrading denominator, not better reliability.",
+                "enum": ["full", "partial", "none"]
+            },
+            {
+                "key": "feature.data.ext.segment_duration_seconds_bucketed",
+                "type": "string",
+                "description": "Wall-clock length of the segment, bucketed (lower end of bucket, in seconds). Includes paused periods.",
+                "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
+            },
+            {
+                "key": "feature.data.ext.eligible_duration_seconds_bucketed",
+                "type": "string",
+                "description": "Wall clock minus sleep, snooze and other intentional unavailability, bucketed (lower end of bucket, in seconds). What the 24 hour rollover measures.",
+                "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
+            },
+            {
+                "key": "feature.data.ext.time_to_first_error_seconds_bucketed",
+                "type": "string",
+                "description": "Time from segment start to the first error of any kind, bucketed (lower end of bucket, in seconds). Absent when there were none.",
+                "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
+            },
+            {
+                "key": "feature.data.ext.connection_tester_outage_count_bucketed",
+                "type": "string",
+                "description": "How many distinct connection-tester outages occurred, bucketed (lower end of bucket).",
+                "enum": ["0", "1", "2", "4", "9"]
+            },
+            {
+                "key": "feature.data.ext.connection_tester_outage_total_seconds_bucketed",
+                "type": "string",
+                "description": "Summed duration of all connection-tester outages, bucketed (lower end of bucket, in seconds). The `0` bucket also covers a total under one second.",
+                "enum": ["0", "1", "15", "60", "300", "1800"]
+            },
+            {
+                "key": "feature.data.ext.connection_tester_outage_max_seconds_bucketed",
+                "type": "string",
+                "description": "Longest single connection-tester outage, bucketed (lower end of bucket, in seconds). The `0` bucket also covers an outage under one second.",
+                "enum": ["0", "1", "15", "60", "300", "1800"]
+            },
+            {
+                "key": "feature.data.ext.extension_type",
+                "type": "string",
+                "description": "Which network extension served the segment.",
+                "enum": ["app", "system", "unknown"]
+            },
+            {
+                "key": "feature.data.ext.connection_tester_failure_seen",
+                "type": "boolean",
+                "description": "Whether any connection-tester failure occurred, including one that recovered."
+            },
+            {
+                "key": "feature.data.ext.connection_tester_extended_failure_seen",
+                "type": "boolean",
+                "description": "Whether a tester outage crossed the extended failure threshold. The primary routing_outage input."
+            },
+            {
+                "key": "feature.data.ext.connection_tester_failure_active_at_end",
+                "type": "boolean",
+                "description": "Whether a tester failure was still active when the segment ended."
+            },
+            {
+                "key": "feature.data.ext.stale_handshake_seen",
+                "type": "boolean",
+                "description": "Whether the stale-handshake monitor reported a failure."
+            },
+            {
+                "key": "feature.data.ext.stale_handshake_recovered",
+                "type": "boolean",
+                "description": "Whether a reported stale handshake later recovered. Present only when stale_handshake_seen."
+            },
+            {
+                "key": "feature.data.ext.failure_recovery_attempted",
+                "type": "boolean",
+                "description": "Whether server failure recovery was attempted."
+            },
+            {
+                "key": "feature.data.ext.failure_recovery_succeeded",
+                "type": "boolean",
+                "description": "Whether that recovery succeeded. Present only when a recovery finished."
+            },
+            {
+                "key": "feature.data.ext.human_stop_with_active_failure",
+                "type": "boolean",
+                "description": "Whether a deliberate user disable coincided with an active routing failure. The headline diagnostic for silently broken tunnels."
+            },
+            {
+                "key": "feature.data.ext.ip_leak_detected",
+                "type": "boolean",
+                "description": "Whether an IP leak was confirmed during the segment. Diagnostic only."
+            }
+        ]
     }
 }

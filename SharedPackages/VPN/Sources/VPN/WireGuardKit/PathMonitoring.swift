@@ -19,8 +19,34 @@
 import Foundation
 import Network
 
+/// Status Snapshot of the current network path
+struct VPNNetworkPathSnapshot: Equatable {
+
+    let status: NWPath.Status
+
+    /// `nil` when the path is not backed by wifi, ethernet or cellular.
+    let connectionType: NetworkConnectionType?
+
+    let anonymousDescription: String
+
+    init(status: NWPath.Status, connectionType: NetworkConnectionType?, anonymousDescription: String) {
+        self.status = status
+        self.connectionType = connectionType
+        self.anonymousDescription = anonymousDescription
+    }
+
+    /// A handshake gap only indicates tunnel failure when the network is up
+    var isReachable: Bool {
+        connectionType != nil && status == .satisfied
+    }
+}
+
 protocol PathMonitoring: AnyObject {
     var pathUpdateHandler: ((NWPath.Status) -> Void)? { get set }
+
+    /// The most recent path, or `nil` before the monitor has started.
+    var currentPathSnapshot: VPNNetworkPathSnapshot? { get }
+
     func start(queue: DispatchQueue)
     func cancel()
 }
@@ -48,11 +74,22 @@ final class PathMonitor: PathMonitoring {
         }
     }
 
+    /// Read through rather than cached: no lock, and never staler than the path.
+    var currentPathSnapshot: VPNNetworkPathSnapshot? {
+        Self.snapshot(from: monitor.currentPath)
+    }
+
     func start(queue: DispatchQueue) {
         monitor.start(queue: queue)
     }
 
     func cancel() {
         monitor.cancel()
+    }
+
+    private static func snapshot(from path: NWPath) -> VPNNetworkPathSnapshot {
+        VPNNetworkPathSnapshot(status: path.status,
+                               connectionType: NetworkConnectionType(nwPath: path),
+                               anonymousDescription: path.anonymousDescription)
     }
 }

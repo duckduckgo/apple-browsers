@@ -24,6 +24,14 @@ final class MockPathMonitor: PathMonitoring {
     var pathUpdateHandler: ((Network.NWPath.Status) -> Void)?
     private var queue: DispatchQueue?
 
+    /// `nil` until the monitor has started, as in `PathMonitor`. `emitStatus(_:)` keeps it in
+    /// step with the last emitted status so the snapshot cannot contradict the handler.
+    private(set) var currentPathSnapshot: VPNNetworkPathSnapshot?
+
+    /// The connection type reported by the emitted snapshots. `nil` makes the path
+    /// unreachable regardless of its status.
+    var stubbedConnectionType: NetworkConnectionType? = .wifi
+
     private(set) var startCallCount = 0
     private(set) var cancelCallCount = 0
 
@@ -41,6 +49,9 @@ final class MockPathMonitor: PathMonitoring {
             assertionFailure("Expected the monitor to have started before emitting statuses")
             return
         }
+        currentPathSnapshot = VPNNetworkPathSnapshot(status: status,
+                                                    connectionType: stubbedConnectionType,
+                                                    anonymousDescription: "mock-path")
         queue.sync {
             self.pathUpdateHandler?(status)
         }

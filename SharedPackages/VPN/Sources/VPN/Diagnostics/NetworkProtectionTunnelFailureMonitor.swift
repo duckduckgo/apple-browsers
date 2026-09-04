@@ -24,7 +24,7 @@ import NetworkExtension
 import os.log
 
 public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
-    public enum Result {
+    public enum Result: Equatable {
         case failureDetected
         case failureRecovered
         case networkPathChanged(String)
@@ -41,7 +41,8 @@ public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
         }
     }
 
-    private static let monitoringInterval: TimeInterval = .minutes(1)
+    private static let pathQueue = DispatchQueue(
+        label: "com.duckduckgo.NetworkProtectionTunnelFailureMonitor.pathQueue")
 
     private var task: Task<Never, Error>? {
         willSet {
@@ -54,24 +55,35 @@ public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
     }
 
     private let handshakeReporter: HandshakeReporting
+    private let pathMonitorProvider: () -> PathMonitoring
+    private let monitoringInterval: TimeInterval
 
-    private let networkMonitor = NWPathMonitor()
+    /// `nil` in production. Tests set it so the background timer cannot consume the deliberate first-check skip.
+    private let initialDelay: TimeInterval?
+
+    private var pathMonitor: PathMonitoring?
+    private var callback: ((Result) -> Void)?
 
     private var failureReported = false
     private var firstCheckSkipped = false
 
     // MARK: - Init & deinit
 
-    init(handshakeReporter: HandshakeReporting) {
+    init(handshakeReporter: HandshakeReporting,
+         pathMonitorProvider: @escaping () -> PathMonitoring = { PathMonitor() },
+         monitoringInterval: TimeInterval = .minutes(1),
+         initialDelay: TimeInterval? = nil) {
         self.handshakeReporter = handshakeReporter
-        self.networkMonitor.start(queue: .global())
+        self.pathMonitorProvider = pathMonitorProvider
+        self.monitoringInterval = monitoringInterval
+        self.initialDelay = initialDelay
 
         Logger.networkProtectionMemory.debug("[+] \(String(describing: self), privacy: .public)")
     }
 
     deinit {
         task?.cancel()
-        networkMonitor.cancel()
+        pathMonitor?.cancel()
 
         Logger.networkProtectionMemory.debug("[-] \(String(describing: self), privacy: .public)")
     }
@@ -83,21 +95,29 @@ public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
 
         failureReported = false
         firstCheckSkipped = false
+        self.callback = callback
 
-        networkMonitor.pathUpdateHandler = { path in
-            callback(.networkPathChanged(path.anonymousDescription))
+        let monitor = pathMonitorProvider()
+        monitor.pathUpdateHandler = { [weak self] _ in
+            Task { [weak self] in
+                await self?.reportPathChange()
+            }
         }
+        monitor.start(queue: Self.pathQueue)
+        pathMonitor = monitor
 
-        task = Task.periodic(interval: Self.monitoringInterval) { [weak self] in
-            await self?.monitorHandshakes(callback: callback)
+        task = Task.periodic(delay: initialDelay, interval: monitoringInterval) { [weak self] in
+            await self?.checkHandshakes()
         }
     }
 
     public func stop() {
         Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Stopping tunnel failure monitor")
 
-        networkMonitor.cancel()
-        networkMonitor.pathUpdateHandler = nil
+        pathMonitor?.pathUpdateHandler = nil
+        pathMonitor?.cancel()
+        pathMonitor = nil
+        callback = nil
 
         task?.cancel() // Just making extra sure in case it's detached
         task = nil
@@ -105,7 +125,15 @@ public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
 
     // MARK: - Handshake monitor
 
-    private func monitorHandshakes(callback: @escaping (Result) -> Void) async {
+    private func reportPathChange() {
+        guard let description = pathMonitor?.currentPathSnapshot?.anonymousDescription else {
+            return
+        }
+        callback?(.networkPathChanged(description))
+    }
+
+    /// Internal so tests drive checks directly rather than sleeping on `monitoringInterval`.
+    func checkHandshakes() async {
         guard firstCheckSkipped else {
             // Avoid running the first tunnel failure check after startup to avoid reading the first handshake after sleep, which will almost always
             // be out of date. In normal operation, the first check will frequently be 0 as WireGuard hasn't had the chance to handshake yet.
@@ -124,26 +152,23 @@ public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
         let difference = Date().timeIntervalSince1970 - mostRecentHandshake
         Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Last handshake: \(difference, privacy: .public) seconds ago")
 
-        if difference > Result.failureDetected.threshold, isConnected {
+        if difference > Result.failureDetected.threshold, isReachable {
             if failureReported {
                 Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Tunnel failure already reported")
             } else {
                 Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Tunnel failure reported")
-                callback(.failureDetected)
+                callback?(.failureDetected)
                 failureReported = true
             }
         } else if difference <= Result.failureRecovered.threshold, failureReported {
             Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Tunnel recovered from failure")
-            callback(.failureRecovered)
+            callback?(.failureRecovered)
             failureReported = false
         }
     }
 
-    private var isConnected: Bool {
-        let path = networkMonitor.currentPath
-        let connectionType = NetworkConnectionType(nwPath: path)
-
-        return [.wifi, .eth, .cellular].contains(connectionType) && path.status == .satisfied
+    private var isReachable: Bool {
+        pathMonitor?.currentPathSnapshot?.isReachable ?? false
     }
 }
 

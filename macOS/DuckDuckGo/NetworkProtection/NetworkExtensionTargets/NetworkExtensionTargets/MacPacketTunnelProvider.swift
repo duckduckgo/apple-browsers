@@ -518,10 +518,18 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = AppVersion.shared.versionAndBuildNumber
         let settings = VPNSettings(defaults: defaults) // Note, settings here is not yet populated with the startup options
         let buildType = StandardApplicationBuildType()
-        self.wideEvent = WideEvent(
+
+        let wideEvent = WideEvent(
             useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
             featureFlagProvider: WideEventFeatureFlagProvider(settings: settings)
         )
+        self.wideEvent = wideEvent
+
+        let sessionHealth = DefaultVPNSessionHealthInstrumentation(
+            wideEvent: wideEvent,
+            extensionType: { Self.isAppex ? .app : .system }(),
+            isEnabled: { true },
+            sampleRate: { 1.0 })
 
         // MARK: - Subscription configuration
 
@@ -602,7 +610,11 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck,
                    loopDetector: loopDetector,
-                   heartbeatStore: heartbeatStore)
+                   heartbeatStore: heartbeatStore,
+                   sessionHealth: sessionHealth)
+
+        // An orphan from a previous process must be classified before a new segment opens.
+        sessionHealth.processOrphanEvents()
 
         setupPixels()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")

@@ -51,6 +51,7 @@ final class TunnelMonitors: TunnelMonitoring {
 
     private let onReconfigureForMigration: @MainActor () async throws -> Void
     private let onConnectionTestResult: @MainActor (ConnectionTestingResult) -> Void
+    private let onTunnelFailureResult: @MainActor (NetworkProtectionTunnelFailureMonitor.Result) -> Void
     private let onFailureRecoveryConfigUpdate: @MainActor (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     private let onAccessRevoked: @MainActor () async -> Void
 
@@ -69,6 +70,7 @@ final class TunnelMonitors: TunnelMonitoring {
         isConnectionTesterEnabled: @escaping @MainActor () -> Bool,
         onReconfigureForMigration: @escaping @MainActor () async throws -> Void,
         onConnectionTestResult: @escaping @MainActor (ConnectionTestingResult) -> Void,
+        onTunnelFailureResult: @escaping @MainActor (NetworkProtectionTunnelFailureMonitor.Result) -> Void = { _ in },
         onFailureRecoveryConfigUpdate: @escaping @MainActor (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void,
         onAccessRevoked: @escaping @MainActor () async -> Void
     ) {
@@ -86,6 +88,7 @@ final class TunnelMonitors: TunnelMonitoring {
         self.isConnectionTesterEnabled = isConnectionTesterEnabled
         self.onReconfigureForMigration = onReconfigureForMigration
         self.onConnectionTestResult = onConnectionTestResult
+        self.onTunnelFailureResult = onTunnelFailureResult
         self.onFailureRecoveryConfigUpdate = onFailureRecoveryConfigUpdate
         self.onAccessRevoked = onAccessRevoked
 
@@ -140,8 +143,10 @@ final class TunnelMonitors: TunnelMonitoring {
 
             switch result {
             case .failureDetected:
+                onTunnelFailureResult(.failureDetected)
                 startServerFailureRecovery()
             case .failureRecovered:
+                onTunnelFailureResult(.failureRecovered)
                 Task {
                     await self.failureRecoveryHandler.stop()
                 }

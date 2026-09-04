@@ -1562,6 +1562,11 @@ extension MainViewController {
         browserTabViewController.openNewTab(with: .url(.favicons, source: .ui))
     }
 
+    @objc func inspectPermissions(_ sender: Any?) {
+        makeKeyIfNeeded()
+        browserTabViewController.openNewTab(with: .url(.permissions, source: .ui))
+    }
+
     @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {
         browserTabViewController.showCookiePopupProtectionOptInDialog()
     }

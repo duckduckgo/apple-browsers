@@ -85,7 +85,7 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
     func testUpsellCopyFollowsTrialEligibility() {
         XCTAssertEqual(warning(.freeReached, window: .daily,
                                action: .tryForFree(isTrialEligible: true)).localizedActionTitle,
-                       "Try for Free")
+                       "Try Subscription for Free")
         XCTAssertEqual(warning(.freeReached, window: .daily,
                                action: .tryForFree(isTrialEligible: false)).localizedActionTitle,
                        "Subscribe")
@@ -119,6 +119,20 @@ final class AIChatUsageWarningCopyTests: XCTestCase {
         XCTAssertTrue(DuckAiHighUsageModels.includes("claude-opus-4-8"))
         XCTAssertFalse(DuckAiHighUsageModels.includes("claude-sonnet-4-6"))
         XCTAssertFalse(DuckAiHighUsageModels.includes(nil))
+    }
+
+    // MARK: - Create Image model switch notice
+
+    func testWhenCreateImageSwitchesModels_ThenCopyNamesBothModels() {
+        XCTAssertEqual(UserText.aiChatCreateImageModelSwitchTitle("GPT-5.4 mini"),
+                       "Now using GPT-5.4 mini")
+        XCTAssertEqual(UserText.aiChatCreateImageModelSwitchSubtitle("Mistral Small"),
+                       "Mistral Small doesn't support image creation.")
+    }
+
+    func testWhenCreateImageSwitchesFromOSSModel_ThenCopyExplainsPrivacyChange() {
+        XCTAssertEqual(UserText.aiChatCreateImageModelSwitchPrivacySubtitle("GPT-OSS"),
+                       "GPT-OSS can't create images. Its extra privacy protections won't apply until you switch back.")
     }
 
     // MARK: - Helpers

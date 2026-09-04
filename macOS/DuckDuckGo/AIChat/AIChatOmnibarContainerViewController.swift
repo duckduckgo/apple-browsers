@@ -2444,6 +2444,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         dialog.onHaveSubscription = { [weak self] in
             self?.omnibarController.presentSubscriptionActivationFlow()
         }
+        omnibarController.pixelHandler.fire(.gatedRowClick(origin: origin.rawValue))
         omnibarController.pixelHandler.fire(.subscriptionUpsellShown(origin: origin.rawValue))
         dialog.show()
     }

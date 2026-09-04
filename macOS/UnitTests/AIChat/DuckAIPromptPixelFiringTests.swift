@@ -50,6 +50,10 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.reasoningEffortSelected, .aiChatAddressBarReasoningEffortSelected),
         (.modelPickerShown, .aiChatAddressBarModelPickerShown(origin: "funnel_addressbar_macos__modelpicker")),
         (.reasoningPickerShown, .aiChatAddressBarReasoningPickerShown(origin: "funnel_addressbar_macos__reasoningdropdown")),
+        (.gatedRowClick(origin: "funnel_addressbar_macos__modelpicker"),
+         .aiChatAddressBarGatedRowClick(origin: "funnel_addressbar_macos__modelpicker")),
+        (.gatedRowClick(origin: "funnel_addressbar_macos__reasoningdropdown"),
+         .aiChatAddressBarGatedRowClick(origin: "funnel_addressbar_macos__reasoningdropdown")),
         (.subscriptionUpsellShown(origin: "funnel_addressbar_macos__modelpicker"),
          .aiChatAddressBarSubscriptionUpsellShown(origin: "funnel_addressbar_macos__modelpicker")),
         (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal", origin: "funnel_addressbar_macos__modelpicker"),
@@ -86,6 +90,7 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.reasoningEffortSelected, .reasoningEffortSelected),
         (.modelPickerShown, .modelPickerShown(origin: "funnel_promptbar_macos__modelpicker")),
         (.reasoningPickerShown, .reasoningPickerShown(origin: "funnel_promptbar_macos__reasoningdropdown")),
+        (.gatedRowClick(origin: "x"), nil),
         (.subscriptionUpsellShown(origin: "x"), nil),
         (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal", origin: "x"), nil),
         (.voiceChatOpened, .newVoiceChat)
@@ -98,6 +103,11 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.aiChatAddressBarReasoningPickerShown(origin: "x"), "aichat_addressbar_reasoning_picker_shown")
     ]
 
+    private static let gatedRowClickNames: [(AIChatPixel, String)] = [
+        (.aiChatAddressBarGatedRowClick(origin: "x"), "aichat_addressbar_gated_row_click"),
+        (.aiChatNtpGatedRowClick(origin: "x"), "aichat_ntp_gated_row_click")
+    ]
+
     func testPickerImpressionPixelNames() {
         for (pixel, expectedName) in Self.pickerImpressionNames {
             XCTAssertEqual(pixel.name, expectedName)
@@ -105,6 +115,14 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         XCTAssertEqual(PromptBarPixel.modelPickerShown(origin: "x").name, "aichat_promptbar_model_picker_shown")
         XCTAssertEqual(PromptBarPixel.reasoningPickerShown(origin: "x").name, "aichat_promptbar_reasoning_picker_shown")
         XCTAssertEqual(PromptBarPixel.modelPickerShown(origin: "x").parameters, ["origin": "x"])
+    }
+
+    func testGatedRowClickPixelNames() {
+        for (pixel, expectedName) in Self.gatedRowClickNames {
+            XCTAssertEqual(pixel.name, expectedName)
+            XCTAssertEqual(pixel.parameters, ["origin": "x"])
+            XCTAssertEqual(pixel.namePrefix, .none)
+        }
     }
 
     func testWhenAddressBarHandlerMapsAnEvent_ThenItKeepsThePixelItFiredBefore() {

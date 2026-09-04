@@ -551,6 +551,9 @@ final class AIChatContextualSheetCoordinator {
             await presentFloatingInput(from: presentingViewController, skippingAutoAttach: true)
         } else {
             await presentSheet(from: presentingViewController, restoreURL: restoreURL, skippingAutoAttach: true)
+            if action.attachesSelection {
+                persistentUTIHost?.activateInput()
+            }
         }
         refreshSelectionChips()
 

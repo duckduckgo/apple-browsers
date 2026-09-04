@@ -360,6 +360,32 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.sessionState.contextualChatURL, restoreURL)
     }
 
+    @MainActor
+    func testAttachSelectionExpandsInputForExistingChat() async throws {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        sut.sessionState.handlePromptSubmission("Previous prompt")
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        XCTAssertFalse(host.isInputCollapsed)
+    }
+
+    @MainActor
+    func testPresentingExistingChatWithoutSelectionKeepsInputCollapsed() async throws {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        sut.sessionState.handlePromptSubmission("Previous prompt")
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        XCTAssertTrue(host.isInputCollapsed)
+    }
+
     /// The signals-only payload is content-free and marked unattached, so pushing it while a page is
     /// attached would clear that page on the frontend while the chip still shows it.
     @MainActor

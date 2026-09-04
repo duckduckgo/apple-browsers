@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingSectionDelegate.swift
+//  SubscriptionOnboardingPIRLaunchState.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,10 +17,11 @@
 //  limitations under the License.
 //
 
-/// Receives events from an onboarding section.
-protocol SubscriptionOnboardingSectionDelegate: AnyObject {
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection)
-    /// - Returns: whether the chat was actually launched.
-    func sectionDidRequestDuckAIChat(modelID: String?) -> Bool
-    func sectionDidRequestAdvance()
+import SwiftUI
+
+#warning("Post-iOS15-Drop: fold back into the flow view model")
+/// The PIR launch's presentation
+@MainActor
+final class SubscriptionOnboardingPIRLaunchState: ObservableObject {
+    @Published var isPresentingPIR = false
 }

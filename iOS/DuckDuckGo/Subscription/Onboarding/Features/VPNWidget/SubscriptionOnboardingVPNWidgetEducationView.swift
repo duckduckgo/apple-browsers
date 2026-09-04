@@ -23,18 +23,21 @@ import SwiftUI
 struct SubscriptionOnboardingVPNWidgetEducationView: View {
 
     var title: String?
-    /// Passed through to the tips screen, which is where the VPN section finishes.
-    var onDone: () -> Void = {}
+    var navigationButton: SubscriptionOnboardingNavigationButton?
+    var onComplete: () -> Void = {}
+    var onNext: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ dismiss() }),
+            navigationButton: navigationButton ?? .back({ dismiss() }),
             header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNWidgetEducationTitle),
-            footer: .single(.init(UserText.subscriptionOnboardingVPNWidgetEducationGotItButton,
-                                           push: SubscriptionOnboardingVPNTipsView(title: title, onDone: onDone)))) {
+            footer: .single(.init(UserText.subscriptionOnboardingVPNWidgetEducationGotItButton, action: {
+                onComplete()
+                onNext()
+            }))) {
             WidgetEducationContentView(
                 thirdParagraphText: UserText.addVPNWidgetSettingsThirdParagraph,
                 thirdParagraphDetail: .image(

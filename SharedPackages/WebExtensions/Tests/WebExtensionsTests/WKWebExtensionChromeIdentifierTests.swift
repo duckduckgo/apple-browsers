@@ -47,55 +47,36 @@ final class WKWebExtensionChromeIdentifierTests: XCTestCase {
 
     // MARK: - chromeExtensionIdentifier
 
-    @MainActor
     func testWhenManifestHasOnePasswordKey_ThenIdentifierMatchesChromeWebStoreIdentifier() async throws {
-        let context = try await makeContext(manifest: manifest(key: Self.onePasswordKey))
+        let webExtension = try await makeExtension(manifest: manifest(key: Self.onePasswordKey))
 
-        XCTAssertEqual(context.chromeExtensionIdentifier, Self.onePasswordIdentifier)
+        XCTAssertEqual(webExtension.chromeExtensionIdentifier, Self.onePasswordIdentifier)
     }
 
-    @MainActor
     func testWhenManifestHasNoKey_ThenIdentifierIsNil() async throws {
-        let context = try await makeContext(manifest: manifest(key: nil))
+        let webExtension = try await makeExtension(manifest: manifest(key: nil))
 
-        XCTAssertNil(context.chromeExtensionIdentifier)
+        XCTAssertNil(webExtension.chromeExtensionIdentifier)
     }
 
-    @MainActor
     func testWhenManifestKeyIsNotBase64_ThenIdentifierIsNil() async throws {
-        let context = try await makeContext(manifest: manifest(key: "not base64 at all!!"))
+        let webExtension = try await makeExtension(manifest: manifest(key: "not base64 at all!!"))
 
-        XCTAssertNil(context.chromeExtensionIdentifier)
+        XCTAssertNil(webExtension.chromeExtensionIdentifier)
     }
 
-    @MainActor
     func testWhenManifestKeyIsEmpty_ThenIdentifierIsNil() async throws {
-        let context = try await makeContext(manifest: manifest(key: ""))
+        let webExtension = try await makeExtension(manifest: manifest(key: ""))
 
-        XCTAssertNil(context.chromeExtensionIdentifier)
+        XCTAssertNil(webExtension.chromeExtensionIdentifier)
     }
 
     // MARK: - chromeExtensionOrigin
 
-    @MainActor
     func testWhenManifestHasOnePasswordKey_ThenOriginIsChromeExtensionOrigin() async throws {
-        let context = try await makeContext(manifest: manifest(key: Self.onePasswordKey))
+        let webExtension = try await makeExtension(manifest: manifest(key: Self.onePasswordKey))
 
-        XCTAssertEqual(context.chromeExtensionOrigin, "chrome-extension://\(Self.onePasswordIdentifier)/")
-    }
-
-    @MainActor
-    func testWhenManifestHasNoKey_ThenOriginIsNil() async throws {
-        let context = try await makeContext(manifest: manifest(key: nil))
-
-        XCTAssertNil(context.chromeExtensionOrigin)
-    }
-
-    @MainActor
-    func testWhenManifestKeyIsNotBase64_ThenOriginIsNil() async throws {
-        let context = try await makeContext(manifest: manifest(key: "not base64 at all!!"))
-
-        XCTAssertNil(context.chromeExtensionOrigin)
+        XCTAssertEqual(webExtension.chromeExtensionOrigin, "chrome-extension://\(Self.onePasswordIdentifier)/")
     }
 
     // MARK: - Helpers
@@ -111,8 +92,7 @@ final class WKWebExtensionChromeIdentifierTests: XCTestCase {
         """
     }
 
-    @MainActor
-    private func makeContext(manifest: String) async throws -> WKWebExtensionContext {
+    private func makeExtension(manifest: String) async throws -> WKWebExtension {
         let extensionDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("WKWebExtensionChromeIdentifierTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: extensionDir, withIntermediateDirectories: true)
@@ -122,7 +102,6 @@ final class WKWebExtensionChromeIdentifierTests: XCTestCase {
                            atomically: true,
                            encoding: .utf8)
 
-        let webExtension = try await WKWebExtension(resourceBaseURL: extensionDir)
-        return WKWebExtensionContext(for: webExtension)
+        return try await WKWebExtension(resourceBaseURL: extensionDir)
     }
 }

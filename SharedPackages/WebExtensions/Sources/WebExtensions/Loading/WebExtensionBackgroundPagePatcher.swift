@@ -30,11 +30,8 @@ import os.log
 /// same way — 1Password's Safari build, for instance, ships the very same worker code as a
 /// background page.
 ///
-/// The conversion therefore buys two things:
-/// - a top-level exception in a Chrome build becomes survivable rather than fatal;
-/// - the generated page is a manifest-level place to load a script *before* the extension's own
-///   code, which a module service worker offers no hook for, so we can install API stubs without
-///   editing the extension's own sources.
+/// The conversion therefore buys one thing: a top-level exception in a Chrome build becomes
+/// survivable rather than fatal.
 ///
 /// The patch is deliberately generic and conservative:
 /// - it only applies when `background.service_worker` is the *only* background declaration, so a
@@ -42,9 +39,10 @@ import os.log
 ///   such as Dark Reader) is left byte-for-byte untouched;
 /// - it is idempotent, because a patched manifest no longer declares a service worker.
 ///
-/// The generated page also loads `WebExtensionAPIStubScript` ahead of the extension's own script,
+/// The generated page loads nothing but the extension's own script. `WebExtensionAPIStubScript`,
 /// which keeps a Chrome build's top-level startup code alive when it touches a `chrome.*` namespace
-/// WebKit does not implement.
+/// WebKit does not implement, reaches this page like any other extension page: as a user script on
+/// the extension controller's configuration (see `WebExtensionManager`).
 struct WebExtensionBackgroundPagePatcher {
 
     /// Name of the generated background page, written next to `manifest.json`.
@@ -69,9 +67,9 @@ struct WebExtensionBackgroundPagePatcher {
 
     /// Patches the manifest of the extension installed at `installedExtensionURL` when it declares
     /// its background as a service worker only.
-    /// - Parameter installedExtensionURL: The installed extension directory. The manifest is looked
-    ///   up directly in that directory or, for archives wrapped in a top-level folder, one level
-    ///   below it — mirroring how `WebExtensionStorageProviding.resolveInstalledExtension` locates it.
+    /// - Parameter installedExtensionURL: The installed extension directory, as
+    ///   `WebExtensionStorageProviding.resolveInstalledExtension` resolved it — so the manifest sits
+    ///   directly in it, and any top-level wrapper folder an archive carried is already unwrapped.
     /// - Returns: `true` when the manifest was rewritten, `false` when nothing needed patching or
     ///   the patch could not be applied.
     @discardableResult
@@ -94,9 +92,6 @@ struct WebExtensionBackgroundPagePatcher {
                 return false
             }
 
-            let stubScriptURL = manifestDirectory.appendingPathComponent(WebExtensionAPIStubScript.filename)
-            try WebExtensionAPIStubScript.source.write(to: stubScriptURL, atomically: true, encoding: .utf8)
-
             let isModule = background[ManifestKey.type] as? String == ManifestKey.moduleType
             let backgroundPage = Self.backgroundPage(loading: serviceWorkerPath, asModule: isModule)
             let backgroundPageURL = manifestDirectory.appendingPathComponent(Self.backgroundPageFilename)
@@ -113,8 +108,7 @@ struct WebExtensionBackgroundPagePatcher {
 
             Logger.webExtensions.info("""
             🔧 Patched manifest at \(manifestURL.path): service worker background '\(serviceWorkerPath)' \
-            rewritten as background page '\(Self.backgroundPageFilename)' (module: \(isModule)), \
-            preloading API stubs from '\(WebExtensionAPIStubScript.filename)'
+            rewritten as background page '\(Self.backgroundPageFilename)' (module: \(isModule))
             """)
             return true
         } catch {
@@ -123,32 +117,25 @@ struct WebExtensionBackgroundPagePatcher {
         }
     }
 
-    /// Locates the directory holding `manifest.json`, either `directory` itself or one of its
-    /// immediate subdirectories (an archive wrapped in a top-level folder).
+    /// Returns `directory` when it is a directory holding `manifest.json`, and `nil` otherwise.
+    ///
+    /// The directory check is not redundant: an installed extension can also be an archive file,
+    /// which has no manifest to patch.
     private func manifestDirectory(in directory: URL) -> URL? {
         var isDirectory: ObjCBool = false
         guard fileManager.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
             return nil
         }
 
-        if fileManager.fileExists(atPath: directory.appendingPathComponent(Self.manifestFilename).path) {
-            return directory
+        guard fileManager.fileExists(atPath: directory.appendingPathComponent(Self.manifestFilename).path) else {
+            return nil
         }
 
-        let contents = (try? fileManager.contentsOfDirectory(at: directory,
-                                                             includingPropertiesForKeys: nil,
-                                                             options: [.skipsHiddenFiles])) ?? []
-        return contents.first { item in
-            fileManager.fileExists(atPath: item.appendingPathComponent(Self.manifestFilename).path)
-        }
+        return directory
     }
 
     /// Builds a background page that loads `scriptPath` with a root-absolute `src`, so the page
     /// resolves the script the same way the manifest's service worker path did.
-    ///
-    /// The API stub script is a classic, non-deferred script placed first, so it always finishes
-    /// executing before the extension's own script starts — whether that one is a module (always
-    /// deferred) or a classic deferred script.
     private static func backgroundPage(loading scriptPath: String, asModule isModule: Bool) -> String {
         var normalizedPath = scriptPath
         while normalizedPath.hasPrefix("./") {
@@ -169,7 +156,6 @@ struct WebExtensionBackgroundPagePatcher {
             <title>Background</title>
         </head>
         <body>
-            <script src="/\(WebExtensionAPIStubScript.filename)"></script>
             <script defer\(typeAttribute) src="\(source)"></script>
         </body>
         </html>

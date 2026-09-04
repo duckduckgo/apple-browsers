@@ -834,6 +834,12 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Cookie Pop-ups Blocked promo.
     case cookiePopupsBlockedPromo
+
+    /// Kill switch for the "Update available" promo.
+    case updateAvailablePromo
+
+    /// Kill switch for the "Browser updated" promo.
+    case browserUpdatedPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

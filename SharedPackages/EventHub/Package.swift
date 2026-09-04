@@ -49,6 +49,9 @@ let package = Package(
             ]),
         .testTarget(
             name: "EventHubTests",
-            dependencies: ["EventHub"]),
+            dependencies: [
+                "EventHub",
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
+            ]),
     ]
 )

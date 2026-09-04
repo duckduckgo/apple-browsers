@@ -26,7 +26,8 @@ import Foundation
 /// against the document in one place:
 ///
 /// - Binding — M-SEL-1, M-SEL-2, M-SEL-3, M-SEL-4, M-SEL-5, M-SEL-6, M-SEL-7, M-SEL-8, M-SEL-9,
-///   M-SEL-10
+///   M-SEL-10 (M-SEL-8's parent-feature-reading clause is covered by
+///   `EventHubExperimentSettingsTests`, since this suite bypasses the config-reading step)
 /// - Fan-out — M-FAN-1
 /// - Web-event de-duplication — M-DED-1
 /// - Configuration lifecycle — M-LIF-1, M-LIF-2, M-LIF-3, M-LIF-4, M-LIF-5, M-LIF-6
@@ -222,7 +223,11 @@ struct MetricsSpecTests {
     @Test("M-SEL-8: metrics attach under both experiment parent features")
     func metricsAttachUnderBothExperimentParentFeatures() {
         // contentScopeExperiment1 sits under `contentScopeExperiments`, tdsNextExperiment007 under
-        // `contentBlocking`. Both parents are read, so both experiments' `pageLoad` is requested.
+        // `contentBlocking`, so both experiments' `pageLoad` is requested.
+        //
+        // This suite injects its experiment settings straight into the hub, so the case's other
+        // clause — that both parent features are *read* — cannot be observed here: nothing below runs
+        // the config-reading step. `EventHubExperimentSettingsTests` pins that leg.
         let f = Self.fixture(enrolled: ["contentScopeExperiment1", "tdsNextExperiment007"])
         f.send("pageLoaded", reason: "any", on: f.openPage())
 

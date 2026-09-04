@@ -146,6 +146,8 @@
                     },
                     "clear_permissions_latency_ms": {
                         "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000,
                         "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
                     },
                     "clear_permissions_error": "dataClearingActionError",

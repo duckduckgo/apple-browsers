@@ -378,6 +378,20 @@ final class DataClearingWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.clear_permissions_error.domain"] as? String, "PermissionsError")
     }
 
+    func testJSONParameters_whenReportingClearPermissionsDurationThenLatencyMatchesSchemaBounds() {
+        let eventData = DataClearingWideEventData(
+            trigger: .manualFire,
+            contextData: WideEventContextData(name: "test-context")
+        )
+        let start = Date(timeIntervalSince1970: 0)
+
+        eventData.clearPermissionsDuration = WideEvent.MeasuredInterval(start: start, end: start.addingTimeInterval(15))
+        XCTAssertEqual(eventData.jsonParameters()["feature.data.ext.clear_permissions_latency_ms"] as? Int, 10000)
+
+        eventData.clearPermissionsDuration = WideEvent.MeasuredInterval(start: start, end: start.addingTimeInterval(0.004))
+        XCTAssertEqual(eventData.jsonParameters()["feature.data.ext.clear_permissions_latency_ms"] as? Int, 0)
+    }
+
     func testJSONParameters_partiallyFailedFlow_withMixedStatuses() {
         // Given
         let eventData = DataClearingWideEventData(

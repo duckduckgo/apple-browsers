@@ -119,9 +119,6 @@ extension WebExtensionManager {
                                        toApplicationWithIdentifier applicationIdentifier: String?,
                                        for extensionContext: WKWebExtensionContext) async throws -> Any? {
         let displayName = extensionContext.webExtension.displayName ?? "(unknown)"
-        if String(describing: message).contains("sleep") {
-            return nil
-        }
         Logger.webExtensions.debug("📬 Received native message from extension: \(displayName)")
 
         Logger.webExtensions.debug("🔎 Full message received: \(String(describing: message))")

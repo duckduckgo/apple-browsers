@@ -96,7 +96,27 @@ final class NativeMessagingHostSession {
     func stop() {
         guard !didFinish else { return }
         didFinish = true
+        tearDown()
+    }
 
+    @MainActor
+    private func finish(with error: Error?) {
+        guard !didFinish else { return }
+        didFinish = true
+        tearDown()
+
+        let handler = terminationHandler
+        terminationHandler = nil
+        messageHandler = nil
+        handler?(error)
+    }
+
+    /// Cancels the pipe readers, ends the host if it still runs, and closes its input.
+    ///
+    /// Both ways out of a session go through here, so a host that made the read loop throw
+    /// does not stay alive with an open stdin after the session is gone.
+    @MainActor
+    private func tearDown() {
         readTask?.cancel()
         readTask = nil
         errorTask?.cancel()
@@ -107,22 +127,6 @@ final class NativeMessagingHostSession {
             process.terminate()
         }
         try? inputPipe.fileHandleForWriting.close()
-    }
-
-    @MainActor
-    private func finish(with error: Error?) {
-        guard !didFinish else { return }
-        didFinish = true
-
-        readTask?.cancel()
-        readTask = nil
-        errorTask?.cancel()
-        errorTask = nil
-
-        let handler = terminationHandler
-        terminationHandler = nil
-        messageHandler = nil
-        handler?(error)
     }
 
     // MARK: - Write

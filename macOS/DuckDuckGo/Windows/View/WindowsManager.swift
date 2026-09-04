@@ -76,7 +76,7 @@ final class WindowsManager {
                              isFullscreen: Bool = false) -> NSWindow? {
         // Determine effective burner mode based on user preference
         let effectiveBurnerMode = burnerModeForNewWindow(burnerMode: burnerMode)
-//        assert(tabCollectionViewModel == nil || tabCollectionViewModel!.isPopup == popUp)
+        assert(tabCollectionViewModel == nil || tabCollectionViewModel!.isPopup == popUp)
         let fireWindowOpenTrigger = Self.fireWindowOpenTrigger(
             isBurner: effectiveBurnerMode.isBurner,
             burnerModeWasExplicitlyProvided: burnerMode != nil,
@@ -262,7 +262,7 @@ final class WindowsManager {
                                      autofillPopoverPresenter: AutofillPopoverPresenter,
                                      fireCoordinator: FireCoordinator,
                                      aiChatSessionStore: AIChatSessionStoring) -> MainWindowController {
-//        assert(tabCollectionViewModel == nil || tabCollectionViewModel!.isPopup == popUp)
+        assert(tabCollectionViewModel == nil || tabCollectionViewModel!.isPopup == popUp)
         let mainViewController = MainViewController(
             tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(isPopup: popUp, burnerMode: burnerMode),
             autofillPopoverPresenter: autofillPopoverPresenter,

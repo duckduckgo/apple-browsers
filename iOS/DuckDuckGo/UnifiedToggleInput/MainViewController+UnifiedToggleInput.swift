@@ -1093,6 +1093,10 @@ extension MainViewController {
             && newTabPageViewController?.restingContentIsLogo == true
         let isSearchContentToSearchContent = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsSearchContent == true
+        let snapsSearchContentToTop = FloatingUILayoutPolicy.shouldSnapSearchContentToTopOnDismiss(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            isAddressBarAtBottom: coordinator.cardPosition.isBottom,
+            isSearchContentToSearchContent: isSearchContentToSearchContent)
         // Top portrait only: the focused List and the resting NTP share the same content top there
         // (below the bar, whether the bar is legacy chrome or floating glass), so scrolling both to
         // the top makes the handoff seamless.
@@ -1100,6 +1104,7 @@ extension MainViewController {
         let searchContentToScroll = usesTopPortraitLayout && isSearchContentToSearchContent
             ? coordinator.contentViewController
             : nil
+        let searchContentToReset = snapsSearchContentToTop ? coordinator.contentViewController : searchContentToScroll
         let isSeamlessHandoff = isLogoToLogo || isSearchContentToSearchContent
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
@@ -1135,8 +1140,10 @@ extension MainViewController {
             self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
             // Reconcile the stored offset only after the focused host is hidden, so cancelling a
             // native scroll that outlasts the collapse cannot produce a visible final-frame snap.
-            DispatchQueue.main.async {
-                searchContentToScroll?.scrollToTop(animated: false)
+            DispatchQueue.main.async { [weak self] in
+                // A completion can immediately open a new UTI session; leave its scroll position alone.
+                guard !snapsSearchContentToTop || self?.unifiedToggleInputCoordinator?.isActive == false else { return }
+                searchContentToReset?.scrollToTop(animated: false)
             }
         }
 
@@ -1157,7 +1164,9 @@ extension MainViewController {
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
-                if stationaryContentSnapshot != nil {
+                // Keep the old scroll position opaque until the NTP is ready at the top; fading
+                // the snapshot would blend two copies of Favorites, the hatch, and RMF messages.
+                if stationaryContentSnapshot != nil, !snapsSearchContentToTop {
                     self.viewCoordinator.fadeOmnibarDismissContentSnapshot()
                 } else if !isSeamlessHandoff, let contentContainer {
                     contentContainer.alpha = 0
@@ -1175,7 +1184,7 @@ extension MainViewController {
         searchContentToScroll?.scrollToTop(animated: true)
         // The resting NTP keeps whatever offset it had before focus (SwiftUI re-applies it after UIKit
         // clamps), so it has to land at the top too before the handoff reveals it.
-        if searchContentToScroll != nil {
+        if searchContentToReset != nil {
             newTabPageViewController?.scrollToTop()
         }
 

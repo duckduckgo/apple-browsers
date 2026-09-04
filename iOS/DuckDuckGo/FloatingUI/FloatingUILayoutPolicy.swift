@@ -22,6 +22,12 @@ import UIKit
 
 enum FloatingUILayoutPolicy {
 
+    static func shouldSnapSearchContentToTopOnDismiss(isFloatingUIEnabled: Bool,
+                                                       isAddressBarAtBottom: Bool,
+                                                       isSearchContentToSearchContent: Bool) -> Bool {
+        isFloatingUIEnabled && isAddressBarAtBottom && isSearchContentToSearchContent
+    }
+
     /// Keep focused Favorites clear of the standalone floating toolbar without a large empty band.
     static func focusedFavoritesBottomSpacing(isFloatingUIEnabled: Bool,
                                               isAddressBarAtBottom: Bool,

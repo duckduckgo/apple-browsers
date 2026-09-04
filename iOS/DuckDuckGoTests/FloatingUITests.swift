@@ -169,6 +169,27 @@ final class FloatingGlassAppearancePolicyTests: XCTestCase {
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
+    func testSearchContentDismissalOnlySnapsToTopForFloatingBottomHandoff() {
+        let cases: [(floating: Bool, bottom: Bool, searchHandoff: Bool, expected: Bool)] = [
+            (false, false, false, false),
+            (false, false, true, false),
+            (false, true, false, false),
+            (false, true, true, false),
+            (true, false, false, false),
+            (true, false, true, false),
+            (true, true, false, false),
+            (true, true, true, true)
+        ]
+        for testCase in cases {
+            let snapsToTop = FloatingUILayoutPolicy.shouldSnapSearchContentToTopOnDismiss(
+                isFloatingUIEnabled: testCase.floating,
+                isAddressBarAtBottom: testCase.bottom,
+                isSearchContentToSearchContent: testCase.searchHandoff)
+
+            XCTAssertEqual(snapsToTop, testCase.expected, "\(testCase)")
+        }
+    }
+
     func testFocusedFavoritesSpacingOnlyAppliesToFloatingTopInputInPortrait() {
         let cases: [(floating: Bool, bottom: Bool, favorites: Bool, expected: CGFloat)] = [
             (false, false, false, 0),

@@ -23,8 +23,6 @@ import PixelKit
 import PrivacyConfig
 import UIKit
 
-typealias PixelKitFiring = PixelFiring
-
 @MainActor
 protocol TabTerminationTelemetry {
     func webContentProcessDidTerminate(activeTabCount: Int)

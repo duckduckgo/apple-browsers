@@ -50,7 +50,9 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     }
     var selectedWindowIndex: Int
     var selectedTab: Tab? {
-        allTabCollectionViewModels[selectedWindowIndex].selectedTab
+        // Matches the real WindowControllersManager: no window means nil, not a crash.
+        guard allTabCollectionViewModels.indices.contains(selectedWindowIndex) else { return nil }
+        return allTabCollectionViewModels[selectedWindowIndex].selectedTab
     }
 
     struct ShowArgs: Equatable {

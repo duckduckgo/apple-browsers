@@ -117,6 +117,8 @@ class SuggestionTrayViewController: UIViewController {
     /// `AutocompleteViewController`; its source is retained here for row-tap resolution.
     private var popoverSearchController: PopoverSuggestionsController?
     private var popoverSearchSource: SearchSuggestionsSource?
+    /// Retained so the display pixels can report the results last shown when the surface is removed.
+    private var popoverSearchLoader: SearchSuggestionsLoader?
     /// iPad Duck.ai surface hosted in the same popover; source provided by the owner.
     weak var duckAINavigationDelegate: SuggestionTrayDuckAINavigationDelegate?
     private var popoverDuckAIController: PopoverSuggestionsController?
@@ -144,6 +146,7 @@ class SuggestionTrayViewController: UIViewController {
     private let aiChatSettings: AIChatSettingsProvider
     private let featureDiscovery: FeatureDiscovery
     private let hideBorder: Bool
+    private let autocompletePixels = AutocompleteSuggestionsPixels()
 
     var coversFullScreen: Bool = false
 
@@ -557,6 +560,7 @@ class SuggestionTrayViewController: UIViewController {
                                              query: { querySubject.value },
                                              showAskAIChat: aiChatSettings.isAIChatEnabled)
         popoverSearchSource = source
+        popoverSearchLoader = loader
 
         let controller = PopoverSuggestionsController(
             source: source,
@@ -566,8 +570,9 @@ class SuggestionTrayViewController: UIViewController {
             self?.applyPopoverContentHeight(height, from: .search)
         }
         controller.onSelectRow = { [weak self] id in
-            guard let suggestion = source.suggestion(forRowID: id) else { return }
-            self?.autocompleteDelegate?.autocomplete(selectedSuggestion: suggestion)
+            guard let self, let suggestion = source.suggestion(forRowID: id) else { return }
+            self.fireSearchSuggestionClickPixels(for: suggestion)
+            self.autocompleteDelegate?.autocomplete(selectedSuggestion: suggestion)
         }
         controller.onTapAheadRow = { [weak self] id in
             guard let suggestion = source.suggestion(forRowID: id) else { return }
@@ -598,6 +603,23 @@ class SuggestionTrayViewController: UIViewController {
                 additionalInsets: UIEdgeInsets(top: 0, left: autocompleteHorizontalInset, bottom: 0, right: autocompleteHorizontalInset))
         controller.view.isHidden = (popoverMode != .search)
         popoverSearchController = controller
+    }
+
+    // MARK: - iPad search surface pixels
+
+    /// The iPad popover replaced `AutocompleteViewController`, which was the only thing firing the
+    /// autocomplete telemetry on this path, so both surfaces fire it through the shared mapper.
+    private func fireSearchSuggestionClickPixels(for suggestion: Suggestion) {
+        autocompletePixels.fireClickPixels(
+            for: suggestion,
+            isExperimentalAIChatExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            aiChatDiscoveryParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+    }
+
+    /// Fires one display pixel per local category last shown, at the same point in the surface's
+    /// lifecycle as the legacy `viewWillDisappear` it replaced.
+    private func fireSearchSuggestionsDisplayPixels() {
+        autocompletePixels.fireDisplayPixels(for: popoverSearchLoader?.result.all ?? [])
     }
 
     // MARK: - iPad Duck.ai surface
@@ -730,10 +752,12 @@ class SuggestionTrayViewController: UIViewController {
 
     private func removeAutocomplete(animated: Bool) {
         if let popoverController = popoverSearchController {
+            fireSearchSuggestionsDisplayPixels()
             popoverController.tearDown()
             removeController(popoverController, animated: animated)
             popoverSearchController = nil
             popoverSearchSource = nil
+            popoverSearchLoader = nil
         }
         guard let controller = autocompleteController else { return }
         removeController(controller, animated: deferAutocompleteReveal ? false : animated)

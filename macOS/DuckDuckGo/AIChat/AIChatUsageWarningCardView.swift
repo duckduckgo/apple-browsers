@@ -385,8 +385,16 @@ final class AIChatUsageWarningCardView: NSView {
         // the only rule there is.
         guard let closeAlignmentConstraint else { return }
 
-        closeAlignmentConstraint.isActive = isVisible
-        closeTrailingConstraint?.isActive = !isVisible
+        // Outgoing one first: these two place the button differently, so both being in the engine
+        // at once — even for the rest of this call — is a conflict Auto Layout reports and resolves
+        // by breaking whichever it likes, which here was the submit button's width.
+        if isVisible {
+            closeTrailingConstraint?.isActive = false
+            closeAlignmentConstraint.isActive = true
+        } else {
+            closeAlignmentConstraint.isActive = false
+            closeTrailingConstraint?.isActive = true
+        }
     }
 
     func update(with notice: AIChatCreateImageModelSwitchNotice) {

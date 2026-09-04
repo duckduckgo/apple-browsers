@@ -92,8 +92,8 @@ final class PreviewManagementViewModel: ManagementViewModel {
         self.devices = devices
     }
 
-    func presentDeleteAccount() {}
-    func presentDeviceDetails(_ device: SyncDevice) {}
+    func presentDeleteAccount() async {}
+    func presentDeviceDetails(_ device: SyncDevice) async {}
     func presentRemoveDevice(_ device: SyncDevice) {}
     func saveRecoveryPDF() {}
     func refreshDevices() {}

@@ -78,7 +78,6 @@ final public class DataBrokerProtectionViewController: UIViewController {
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.uiDelegate = self
         webView.navigationDelegate = self
-        webView.accessibilityIdentifier = "PIR.Dashboard.WebView"
         return webView
     }()
 
@@ -87,7 +86,6 @@ final public class DataBrokerProtectionViewController: UIViewController {
         activityIndicator.color = .label
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
         activityIndicator.hidesWhenStopped = true
-        activityIndicator.accessibilityIdentifier = "PIR.Dashboard.LoadingIndicator"
         return activityIndicator
     }()
 

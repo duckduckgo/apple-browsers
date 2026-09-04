@@ -58,13 +58,14 @@ import Foundation
 /// way — see makePermissionsMethod below — while leaving `getAll` and the events alone.
 ///
 /// Chrome also exposes enum-like constant objects on its namespaces — `scripting.ExecutionWorld`,
-/// `tabs.TAB_ID_NONE`, `runtime.OnInstalledReason` and friends — and extension code dereferences
-/// them right where it passes them, as call arguments. WebKit implements the calls but not the
+/// `tabs.TAB_ID_NONE` and the `windows.WINDOW_ID_*` values — and extension code dereferences them
+/// right where it passes them, as call arguments. WebKit implements the calls but not the
 /// constants, so the dereference throws before the call is ever made: Bitwarden injects its autofill
 /// scripts with `world: chrome.scripting.ExecutionWorld.ISOLATED`, which WebKit would have accepted
 /// as the string `"ISOLATED"`, and instead of injecting anything the statement fails with a
 /// `TypeError`. Defining the missing constants with Chrome's documented values makes those call
-/// sites work as written.
+/// sites work as written. The list holds only the constants the supported extensions actually read,
+/// rather than everything Chrome documents.
 ///
 /// Two behaviors of the host are worth calling out, both established by measurement on macOS 26.6.2:
 /// - `chrome.webNavigation`, `chrome.tabs` and friends are native wrapper objects that WebKit
@@ -125,43 +126,12 @@ enum WebExtensionAPIStubScript {
         // Extension code dereferences these as call arguments — Bitwarden passes
         // `world: chrome.scripting.ExecutionWorld.ISOLATED` to `scripting.executeScript` — and WebKit
         // implements the call but not the constant, so the argument throws before the call happens.
+        // Only the constants the supported extensions actually read are listed here.
         var missingConstants = [
             { path: "scripting.ExecutionWorld", value: { ISOLATED: "ISOLATED", MAIN: "MAIN" } },
-            { path: "runtime.OnInstalledReason", value: {
-                INSTALL: "install", UPDATE: "update", CHROME_UPDATE: "chrome_update",
-                SHARED_MODULE_UPDATE: "shared_module_update"
-            } },
-            { path: "runtime.OnRestartRequiredReason", value: { APP_UPDATE: "app_update", OS_UPDATE: "os_update", PERIODIC: "periodic" } },
-            { path: "runtime.PlatformOs", value: {
-                MAC: "mac", WIN: "win", ANDROID: "android", CROS: "cros", LINUX: "linux",
-                OPENBSD: "openbsd", FUCHSIA: "fuchsia"
-            } },
-            { path: "runtime.PlatformArch", value: {
-                ARM: "arm", ARM64: "arm64", X86_32: "x86-32", X86_64: "x86-64", MIPS: "mips", MIPS64: "mips64"
-            } },
-            { path: "runtime.ContextType", value: {
-                TAB: "TAB", POPUP: "POPUP", BACKGROUND: "BACKGROUND", OFFSCREEN_DOCUMENT: "OFFSCREEN_DOCUMENT",
-                SIDE_PANEL: "SIDE_PANEL", DEVELOPER_TOOLS: "DEVELOPER_TOOLS"
-            } },
             { path: "tabs.TAB_ID_NONE", value: -1 },
-            { path: "tabs.WindowType", value: { NORMAL: "normal", POPUP: "popup", PANEL: "panel", APP: "app", DEVTOOLS: "devtools" } },
-            { path: "tabs.TabStatus", value: { UNLOADED: "unloaded", LOADING: "loading", COMPLETE: "complete" } },
             { path: "windows.WINDOW_ID_NONE", value: -1 },
-            { path: "windows.WINDOW_ID_CURRENT", value: -2 },
-            { path: "windows.WindowType", value: { NORMAL: "normal", POPUP: "popup", PANEL: "panel", APP: "app", DEVTOOLS: "devtools" } },
-            { path: "windows.WindowState", value: {
-                NORMAL: "normal", MINIMIZED: "minimized", MAXIMIZED: "maximized", FULLSCREEN: "fullscreen",
-                LOCKED_FULLSCREEN: "locked-fullscreen"
-            } },
-            { path: "contextMenus.ContextType", value: {
-                ALL: "all", PAGE: "page", FRAME: "frame", SELECTION: "selection", LINK: "link", EDITABLE: "editable",
-                IMAGE: "image", VIDEO: "video", AUDIO: "audio", LAUNCHER: "launcher", BROWSER_ACTION: "browser_action",
-                PAGE_ACTION: "page_action", ACTION: "action"
-            } },
-            { path: "contextMenus.ItemType", value: { NORMAL: "normal", CHECKBOX: "checkbox", RADIO: "radio", SEPARATOR: "separator" } },
-            { path: "storage.AccessLevel", value: {
-                TRUSTED_CONTEXTS: "TRUSTED_CONTEXTS", TRUSTED_AND_UNTRUSTED_CONTEXTS: "TRUSTED_AND_UNTRUSTED_CONTEXTS"
-            } }
+            { path: "windows.WINDOW_ID_CURRENT", value: -2 }
         ];
 
         // Constants are installed exactly like the members above — same "is it missing?" check, same
@@ -170,7 +140,7 @@ enum WebExtensionAPIStubScript {
             missingMembers.push({ path: constant.path, kind: "constants", value: constant.value });
         });
 
-        var retentionPropertyName = "__ddgRetainedExtensionAPINamespaces";
+        var retentionPropertyName = "\(Self.retentionPropertyName)";
         var eventNamePattern = /^on[A-Z]/;
         var stubDescription = "[DuckDuckGo API stub]";
 
@@ -295,37 +265,9 @@ enum WebExtensionAPIStubScript {
             };
         }
 
-        // Resolves a document URL against the background page the way `new URL(url, location.href)`
-        // would, for the shapes an extension actually passes: a relative path, a root-relative path,
-        // or an already absolute URL.
+        // Resolves a document URL against the background page, the way the page itself would.
         function resolveDocumentURL(url) {
-            var target = url === undefined || url === null ? "" : String(url);
-            var base = globalThis.location && globalThis.location.href ? String(globalThis.location.href) : "";
-            var schemeEnd = target.indexOf("://");
-            if (schemeEnd > 0 && (target.indexOf("/") === -1 || schemeEnd < target.indexOf("/"))) {
-                return target;
-            }
-            var end = base.length;
-            var query = base.indexOf("?");
-            var fragment = base.indexOf("#");
-            if (query !== -1 && query < end) {
-                end = query;
-            }
-            if (fragment !== -1 && fragment < end) {
-                end = fragment;
-            }
-            var origin = base.slice(0, end);
-            var originSchemeEnd = origin.indexOf("://");
-            var directoryEnd = origin.lastIndexOf("/");
-            if (directoryEnd <= originSchemeEnd + 2) {
-                // The base has no path segment of its own, so everything hangs off its root.
-                return origin + "/" + (target.charAt(0) === "/" ? target.slice(1) : target);
-            }
-            if (target.charAt(0) === "/") {
-                var authorityEnd = origin.indexOf("/", originSchemeEnd + 3);
-                return origin.slice(0, authorityEnd) + target;
-            }
-            return origin.slice(0, directoryEnd + 1) + target;
+            return new URL(url === undefined || url === null ? "" : String(url), globalThis.location.href).href;
         }
 
         var offscreenReasonNames = [

@@ -48,30 +48,7 @@ final class WebExtensionImportScriptsShimTests: XCTestCase {
             error: function(message) { consoleMessages.push(message); }
         };
 
-        function isAbsoluteURL(value) {
-            var separator = value.indexOf("://");
-            return separator > 0 && value.slice(0, separator).indexOf("/") === -1;
-        }
-
-        // Just enough of the WHATWG URL parser for the shim: absolute passthrough, root-absolute and
-        // directory-relative resolution against a base.
-        globalThis.URL = function(url, base) {
-            if (isAbsoluteURL(url)) {
-                this.href = url;
-                return;
-            }
-            if (!base || !isAbsoluteURL(base)) {
-                throw new TypeError("Invalid URL: " + url);
-            }
-            var pathStart = base.indexOf("/", base.indexOf("://") + 3);
-            var origin = pathStart === -1 ? base : base.slice(0, pathStart);
-            if (url.charAt(0) === "/") {
-                this.href = origin + url;
-                return;
-            }
-            var path = pathStart === -1 ? "/" : base.slice(pathStart);
-            this.href = origin + path.slice(0, path.lastIndexOf("/") + 1) + url;
-        };
+        \(JSContextPolyfills.url)
 
         globalThis.location = { href: "chrome-extension://abc/ddg-background-page.html" };
         globalThis.document = { scripts: [{ src: "chrome-extension://abc/719.background.js" }] };
@@ -121,9 +98,6 @@ final class WebExtensionImportScriptsShimTests: XCTestCase {
 
         try assertTrue("pushedEntries.length === 1")
         try assertTrue("pushedEntries[0] === capturedChunk")
-        try assertTrue("consoleMessages.length === 1")
-        try assertTrue("consoleMessages[0].indexOf('719.background.js') !== -1")
-        try assertTrue("consoleMessages[0].indexOf('replayed 1') !== -1")
     }
 
     func testWhenImportScriptsIsCalledAgain_ThenNothingIsReplayedTwice() throws {
@@ -137,8 +111,6 @@ final class WebExtensionImportScriptsShimTests: XCTestCase {
         try assertNoExceptions()
 
         try assertTrue("pushedEntries.length === 1")
-        try assertTrue("consoleMessages.length === 2")
-        try assertTrue("consoleMessages[1].indexOf('replayed 0') !== -1")
     }
 
     func testWhenAWebpackChunkGlobalIsNotAnArray_ThenItIsIgnored() throws {

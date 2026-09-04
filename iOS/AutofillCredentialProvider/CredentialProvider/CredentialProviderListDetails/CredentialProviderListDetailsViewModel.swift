@@ -25,6 +25,7 @@ import Common
 import FoundationExtensions
 import Combine
 import Core
+import UniformTypeIdentifiers
 
 protocol CredentialProviderListDetailsViewModelDelegate: AnyObject {
     func credentialProviderListDetailsViewModelShowActionMessage(message: String)
@@ -117,7 +118,8 @@ final class CredentialProviderListDetailsViewModel: ObservableObject {
             Pixel.fire(pixel: .autofillManagementCopyUsername)
         case .password:
             message = UserText.credentialProviderDetailsCopyToastPasswordCopied
-            UIPasteboard.general.string = password
+            UIPasteboard.general.setItems([[UTType.utf8PlainText.identifier: password]],
+                                         options: [.expirationDate: Date().addingTimeInterval(60)])
             Pixel.fire(pixel: .autofillManagementCopyPassword)
         case .address:
             message = UserText.credentialProviderDetailsCopyToastAddressCopied

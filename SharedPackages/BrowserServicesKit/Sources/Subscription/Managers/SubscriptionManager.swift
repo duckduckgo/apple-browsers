@@ -283,8 +283,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public var hasAppStoreProductsAvailable: Bool {
-        guard currentEnvironment.purchasePlatform == .appStore, _storePurchaseManager != nil else { return false }
-        return userDefaults.cachedHasAppStoreProductsAvailable ?? false
+        guard let storePurchaseManager = _storePurchaseManager else { return false }
+        return storePurchaseManager.areProductsAvailable || (userDefaults.cachedHasAppStoreProductsAvailable ?? false)
     }
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.

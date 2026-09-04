@@ -57,7 +57,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     }
 
     @Test("Check Is In Cooldown After Presenting Prompt")
-    func whenPromptIsPresentedThenIsInCooldown() async {
+    func whenPromptIsPresentedThenIsInCooldown() {
         // GIVEN
         let provider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
@@ -69,14 +69,14 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(!cooldownManager.isInCooldownPeriod)
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(cooldownManager.isInCooldownPeriod)
     }
 
     @Test("Check Modal Is Blocked At 23 Hours")
-    func when23HoursIntoCooldownThenModalIsBlocked() async {
+    func when23HoursIntoCooldownThenModalIsBlocked() {
         // GIVEN
         cooldownStore.lastPresentationTimestamp = timeTraveller.getDate().timeIntervalSince1970
         let firstProvider = MockModalPromptProvider()
@@ -90,7 +90,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
 
         // WHEN - Advance time but stay within 24-hour cooldown
         timeTraveller.advanceBy(.hours(23))
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(cooldownManager.isInCooldownPeriod)
@@ -100,7 +100,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     }
 
     @Test("Check Modal Is Allowed At 24 Hours")
-    func when24HoursAfterPresentationThenModalIsAllowed() async {
+    func when24HoursAfterPresentationThenModalIsAllowed() {
         // GIVEN
         cooldownStore.lastPresentationTimestamp = timeTraveller.getDate().timeIntervalSince1970
         let firstProvider = MockModalPromptProvider()
@@ -119,7 +119,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(!cooldownManager.isInCooldownPeriod)
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
         #expect(firstProvider.didCallProvideModalPrompt)
         #expect(presenterMock.didCallPresent)
         #expect(firstProvider.didCallDidPresentModal)
@@ -128,7 +128,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     // MARK: - Multiple Presentations Over Time
 
     @Test("Check Multiple Modals Can Be Presented After Cooldown Interval")
-    func whenCooldownIntervalPassAllModalArePresented() async {
+    func whenCooldownIntervalPassAllModalArePresented() {
         // GIVEN
         let provider1 = MockModalPromptProvider()
         let provider2 = MockModalPromptProvider()
@@ -142,7 +142,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         )
 
         // WHEN presenting the first prompt
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN first prompt is presented
         #expect(provider1.didCallDidPresentModal)
@@ -160,7 +160,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
 
         // WHEN presenting the modal again
         provider1.modalConfigurationToReturn = nil
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN second prompt is presented
         #expect(!provider1.didCallDidPresentModal)
@@ -177,7 +177,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(!cooldownManager.isInCooldownPeriod)
 
         // WHEN presenting the first prompt
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN third prompt is presented
         #expect(!provider1.didCallDidPresentModal)
@@ -187,7 +187,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     }
 
     @Test("Check Prompt Is Not Presented If Presented During Cooldown")
-    func whenModalIsPresentedTooSoonThenItIsNotPresented() async {
+    func whenModalIsPresentedTooSoonThenItIsNotPresented() {
         // GIVEN
         let provider1 = MockModalPromptProvider()
         let provider2 = MockModalPromptProvider()
@@ -200,7 +200,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         )
 
         // WHEN presenting the first modal
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(provider1.didCallDidPresentModal)
@@ -218,7 +218,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         presenterMock.reset()
 
         // WHEN trying to present again during cooldown
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN no modals are presented
         #expect(!provider1.didCallDidPresentModal)
@@ -229,7 +229,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     // MARK: - Cooldown Info Integration
 
     @Test("Check Cooldown Info Reports Correct Dates After Presentation")
-    func whenModalPresentedThenCooldownInfoIsCorrect() async {
+    func whenModalPresentedThenCooldownInfoIsCorrect() {
         // GIVEN
         let provider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
@@ -241,7 +241,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         let presentationTime = timeTraveller.getDate()
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         let info = cooldownManager.cooldownInfo
@@ -251,7 +251,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     }
 
     @Test("Check Cooldown Info Updates After Time Advances")
-    func whenTimeAdvancesThenCooldownInfoReflectsNewState() async {
+    func whenTimeAdvancesThenCooldownInfoReflectsNewState() {
         // GIVEN
         let provider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
@@ -261,7 +261,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             modalPromptScheduling: schedulerMock
         )
         var lastPresentationTime = timeTraveller.getDate()
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // Advance time to 12 hours later (still in cooldown)
         timeTraveller.advanceBy(.hours(12))
@@ -287,7 +287,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
 
         // WHEN
         lastPresentationTime = timeTraveller.getDate()
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         let infoAfterCooldownAfterPresentingModalAgain = cooldownManager.cooldownInfo
 
@@ -300,7 +300,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     // MARK: - Persistence Tests
 
     @Test("Check Cooldown Persists In Storage")
-    func whenModalPresentedThenTimestampIsPersisted() async throws {
+    func whenModalPresentedThenTimestampIsPersisted() throws {
         // GIVEN
         let provider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
@@ -312,7 +312,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         let presentationTime = timeTraveller.getDate()
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         let storedTimestamp = try keyValueStore.object(forKey: PromptCooldownKeyValueFilesStore.StorageKey.lastPromptShownTimestamp) as? TimeInterval
@@ -320,7 +320,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     }
 
     @Test("Check Cooldown Is Read From Storage")
-    func whenManagerCreatedThenCooldownIsReadFromStorage() async throws {
+    func whenManagerCreatedThenCooldownIsReadFromStorage() throws {
         // GIVEN
         #expect(!cooldownManager.isInCooldownPeriod)
 
@@ -337,7 +337,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
 
     @available(iOS 16, *)
     @Test("Coordinated Presentation Retains Lease And Records Cooldown", .timeLimit(.minutes(1)))
-    func whenCoordinatedPromptPresentsThenLeaseAndPersistentCooldownAreRetained() async throws {
+    func whenCoordinatedPromptPresentsThenLeaseAndPersistentCooldownAreRetained() throws {
         let provider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
             providers: [provider],
@@ -350,7 +350,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             return
         }
 
-        await sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
         #expect(promoQueueLeaseArbiter.snapshot.modalOwnershipIdentity == lease.ownershipIdentity)
         #expect(sut.modalAttemptPhase == .presentationActive(lease.ownershipIdentity))
@@ -364,7 +364,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
 
     @available(iOS 16, *)
     @Test("Coordinated Cooldown Denial Releases Lease Before Provider Evaluation", .timeLimit(.minutes(1)))
-    func whenPersistentCooldownBlocksCoordinatedAttemptThenLeaseIsReleased() async {
+    func whenPersistentCooldownBlocksCoordinatedAttemptThenLeaseIsReleased() {
         cooldownStore.lastPresentationTimestamp = timeTraveller.getDate().timeIntervalSince1970
         let provider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
@@ -378,7 +378,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             return
         }
 
-        await sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
         #expect(!provider.didCallProvideModalPrompt)

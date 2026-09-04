@@ -673,8 +673,8 @@ final class MainCoordinator {
         controller.presentDataBrokerProtectionDashboard()
     }
 
-    func presentModalPromptIfNeeded() async {
-        await promoCoordinationService.presentModalPromptIfNeeded(from: controller)
+    func presentModalPromptIfNeeded() {
+        promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
     func prepareHomePageMessagesForForegroundIfNeeded() {

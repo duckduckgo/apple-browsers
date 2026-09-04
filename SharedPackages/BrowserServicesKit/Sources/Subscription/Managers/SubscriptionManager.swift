@@ -68,9 +68,6 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
     var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
-
-    /// Waits for the initial App Store product request to complete and returns whether products are available.
-    @MainActor func hasAppStoreProductsAvailableAfterInitialLoad() async -> Bool
     func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
 
     /// Returns subscription tier options (plans and pricing) for the appropriate platform.
@@ -235,7 +232,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let isInternalUserEnabled: () -> Bool
     private let userDefaults: UserDefaults
     private let hasAppStoreProductsAvailableSubject = PassthroughSubject<Bool, Never>()
-    private var appStoreProductsInitialLoadTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
     private let requestCoalescer = SubscriptionRequestCoalescer()
     private let wideEvent: WideEventManaging?
@@ -295,27 +291,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
     }
 
-    @MainActor
-    public func hasAppStoreProductsAvailableAfterInitialLoad() async -> Bool {
-        guard currentEnvironment.purchasePlatform == .appStore, _storePurchaseManager != nil else {
-            return false
-        }
-
-        let loadTask: Task<Void, Never>
-        if let appStoreProductsInitialLoadTask {
-            loadTask = appStoreProductsInitialLoadTask
-        } else {
-            loadTask = Task { [weak self] in
-                guard let self else { return }
-                await self.storePurchaseManager().updateAvailableProducts()
-            }
-            appStoreProductsInitialLoadTask = loadTask
-        }
-
-        await loadTask.value
-        return hasAppStoreProductsAvailable
-    }
-
     @available(iOS 15.0, *)
     public func storePurchaseManager() -> StorePurchaseManager {
         return _storePurchaseManager!
@@ -350,8 +325,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             }
             .store(in: &cancellables)
 
-        Task { @MainActor [weak self] in
-            _ = await self?.hasAppStoreProductsAvailableAfterInitialLoad()
+        Task {
+            await storePurchaseManager().updateAvailableProducts()
         }
     }
 

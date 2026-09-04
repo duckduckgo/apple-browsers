@@ -39,7 +39,7 @@ final class ModalPromptCoordinationManagerTests {
     // MARK: - Cooldown Period Tests
 
     @Test("Check Modal Is Not Presented When In Cooldown Period")
-    func whenInCooldownPeriodThenNoModalIsPresented() async {
+    func whenInCooldownPeriodThenNoModalIsPresented() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .inCoolDown
         let provider = MockModalPromptProvider()
@@ -53,7 +53,7 @@ final class ModalPromptCoordinationManagerTests {
         #expect(!provider.didCallProvideModalPrompt)
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(!presenterMock.didCallPresent)
@@ -63,7 +63,7 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @Test("Check Modal Is Presented When Not In Cooldown Period")
-    func whenNotInCooldownPeriodThenModalIsPresented() async {
+    func whenNotInCooldownPeriodThenModalIsPresented() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -76,7 +76,7 @@ final class ModalPromptCoordinationManagerTests {
         #expect(!presenterMock.didCallPresent)
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(provider.didCallProvideModalPrompt)
@@ -93,7 +93,7 @@ final class ModalPromptCoordinationManagerTests {
     // MARK: - Priority Tests
 
     @Test("Check First Provider Is Checked First")
-    func whenMultipleProvidersThenFirstProviderIsCheckedFirst() async {
+    func whenMultipleProvidersThenFirstProviderIsCheckedFirst() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let firstProvider = MockModalPromptProvider()
@@ -106,7 +106,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(firstProvider.didCallProvideModalPrompt)
@@ -120,7 +120,7 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @Test("Check The Right Provider Is Used When Others Return Nil")
-    func whenFirstTwoProvidersReturnNilThenThirdProviderIsChecked() async {
+    func whenFirstTwoProvidersReturnNilThenThirdProviderIsChecked() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let firstProvider = MockModalPromptProvider(shouldReturnPrompt: false)
@@ -137,7 +137,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(firstProvider.didCallProvideModalPrompt)
@@ -157,7 +157,7 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @Test("Check No Modal Is Presented When All Providers Return Nil")
-    func whenAllProvidersReturnNilThenNoModalIsPresented() async {
+    func whenAllProvidersReturnNilThenNoModalIsPresented() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let firstProvider = MockModalPromptProvider(shouldReturnPrompt: false)
@@ -171,7 +171,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(firstProvider.didCallProvideModalPrompt)
@@ -185,7 +185,7 @@ final class ModalPromptCoordinationManagerTests {
     // MARK: - Presentation Tests
 
     @Test("Check View Controller From Provider Is Presented")
-    func whenPresentingModalThenViewControllerFromProviderIsPresented() async {
+    func whenPresentingModalThenViewControllerFromProviderIsPresented() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -205,7 +205,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -221,7 +221,7 @@ final class ModalPromptCoordinationManagerTests {
         "Check Animated Flag Is Applied Correctly",
         arguments: [true, false]
     )
-    func whenDifferentAnimatedSettingsThenAnimatedFlagIsPassedCorrectly(animated: Bool) async {
+    func whenDifferentAnimatedSettingsThenAnimatedFlagIsPassedCorrectly(animated: Bool) {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -237,7 +237,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -247,7 +247,7 @@ final class ModalPromptCoordinationManagerTests {
     // MARK: - Scheduler Tests
 
     @Test("Check Presentation Is Scheduled With Correct Delay")
-    func whenPresentingModalThenSchedulerIsCalledWithCorrectDelay() async {
+    func whenPresentingModalThenSchedulerIsCalledWithCorrectDelay() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -259,7 +259,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
         #expect(schedulerMock.didCallSchedule)
@@ -267,7 +267,7 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @Test("Check Presentation Happens Only After Scheduled Delay")
-    func whenScheduledThenPresentationDoesNotHappenImmediately() async {
+    func whenScheduledThenPresentationDoesNotHappenImmediately() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -279,7 +279,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN (before executing scheduled block)
         #expect(!presenterMock.didCallPresent)
@@ -294,7 +294,7 @@ final class ModalPromptCoordinationManagerTests {
     // MARK: - Cooldown Recording Tests
 
     @Test("Check Cooldown Is Recorded After Successful Presentation")
-    func whenModalIsPresentedThenCooldownIsRecorded() async {
+    func whenModalIsPresentedThenCooldownIsRecorded() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -307,7 +307,7 @@ final class ModalPromptCoordinationManagerTests {
         #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -316,7 +316,7 @@ final class ModalPromptCoordinationManagerTests {
 
     @available(iOS 16, *)
     @Test("Check Session Flag Survives The Legacy Presentation Completion", .timeLimit(.minutes(1)))
-    func whenLegacyPresentationCompletesThenSessionFlagRemainsSet() async {
+    func whenLegacyPresentationCompletesThenSessionFlagRemainsSet() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -326,7 +326,7 @@ final class ModalPromptCoordinationManagerTests {
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
         // Held up by the in-flight legacy attempt alone: UIKit has not presented anything yet.
         #expect(sut.didPresentModalPromptThisSession)
         #expect(!sut.didActuallyPresentModalPromptThisSession)
@@ -343,7 +343,7 @@ final class ModalPromptCoordinationManagerTests {
 
     @available(iOS 16, *)
     @Test("Check Session Flag Is Not Set When No Modal Is Presented", .timeLimit(.minutes(1)))
-    func whenNoModalIsPresentedThenSessionFlagIsNotSet() async {
+    func whenNoModalIsPresentedThenSessionFlagIsNotSet() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider(shouldReturnPrompt: false)
@@ -355,7 +355,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -363,7 +363,7 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @Test("Check Cooldown Is Not Recorded When No Modal Is Presented")
-    func whenNoModalIsPresentedThenCooldownIsNotRecorded() async {
+    func whenNoModalIsPresentedThenCooldownIsNotRecorded() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider(shouldReturnPrompt: false)
@@ -375,7 +375,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -383,7 +383,7 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @Test("Check Cooldown Is Not Recorded When Already In Cooldown Period")
-    func whenInCooldownPeriodThenCooldownIsNotRecorded() async {
+    func whenInCooldownPeriodThenCooldownIsNotRecorded() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .inCoolDown
         let provider = MockModalPromptProvider()
@@ -395,7 +395,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -405,7 +405,7 @@ final class ModalPromptCoordinationManagerTests {
     // MARK: - Direct Presentation Tests
 
     @Test("Check Modal Is Presented From Presenter When Non-Dismissible ViewController Is Presented")
-    func whenNonDismissibleViewControllerIsPresentedThenPresenterIsUsed() async {
+    func whenNonDismissibleViewControllerIsPresentedThenPresenterIsUsed() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -419,7 +419,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
         schedulerMock.executeScheduledBlock()
 
         // THEN
@@ -428,7 +428,7 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @Test("Check Modal Presents Directly When No ViewController Is Presented")
-    func whenNoPresentedViewControllerThenModalPresentsDirectly() async {
+    func whenNoPresentedViewControllerThenModalPresentsDirectly() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -441,7 +441,7 @@ final class ModalPromptCoordinationManagerTests {
         )
 
         // WHEN
-        await sut.presentModalPromptIfNeeded(from: presenterMock)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
         schedulerMock.executeScheduledBlock()
 
         // THEN

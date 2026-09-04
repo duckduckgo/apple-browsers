@@ -515,7 +515,7 @@ struct HomePageConfigurationTests {
 
         sut.handleAppBackgrounded()
         sut.handleAppForegrounded()
-        await service.presentModalPromptIfNeeded(from: MockModalPromptPresenter())
+        service.presentModalPromptIfNeeded(from: MockModalPromptPresenter())
 
         #expect(history.recordedDates == [now])
         #expect(store.hasShownRemoteMessageCallCount == 1)
@@ -625,7 +625,7 @@ struct HomePageConfigurationTests {
 
     @available(iOS 16, *)
     @Test("Foreground revalidation releases an invalid owner before modal evaluation", .timeLimit(.minutes(1)))
-    func foregroundReleasesInvalidOwnerBeforeModalEvaluation() async {
+    func foregroundReleasesInvalidOwnerBeforeModalEvaluation() {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
         let arbiter = PromoQueueLeaseArbiter()
@@ -651,7 +651,7 @@ struct HomePageConfigurationTests {
         sut.handleAppBackgrounded()
         store.noTriggerMessage = nil
         sut.handleAppForegrounded()
-        await service.presentModalPromptIfNeeded(from: MockModalPromptPresenter())
+        service.presentModalPromptIfNeeded(from: MockModalPromptPresenter())
 
         #expect(sut.homeMessages.isEmpty)
         #expect(modalManager.didCallPresentModalPromptIfNeeded)

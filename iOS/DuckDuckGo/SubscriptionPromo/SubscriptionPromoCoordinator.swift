@@ -27,11 +27,12 @@ import FeatureFlags_iOS
 /// Coordinates the subscription promotion launch sheet for users who skipped onboarding.
 ///
 /// Self-contained: owns eligibility, pixel firing, and CTA navigation.
+/// Uses only stable, synchronous signals, including already-loaded product availability.
 protocol SubscriptionPromoCoordinating: AnyObject {
     /// Per-coordinator presentation gate. Each coordinator decides independently whether the
     /// current onboarding state permits the launch prompt to be shown.
     func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool
-    func shouldPresentLaunchPrompt() async -> Bool
+    func shouldPresentLaunchPrompt() -> Bool
     func markLaunchPromptPresented()
     func promoTitle() -> String
     func proceedButtonText() -> String
@@ -73,7 +74,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
          daxDialogsSettings.isDismissed
     }
 
-    func shouldPresentLaunchPrompt() async -> Bool {
+    func shouldPresentLaunchPrompt() -> Bool {
         guard !daxDialogsSettings.subscriptionPromotionDialogShown else {
             Logger.subscription.debug("[Subscription Promo] Promo already shown, skipping.")
             return false
@@ -87,7 +88,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
             Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: false")
             return false
         }
-        guard await subscriptionManager.hasAppStoreProductsAvailableAfterInitialLoad() else {
+        guard subscriptionManager.hasAppStoreProductsAvailable else {
             Logger.subscription.debug("[Subscription Promo] App Store products unavailable, skipping.")
             return false
         }

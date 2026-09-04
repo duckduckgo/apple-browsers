@@ -72,7 +72,7 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
         isOnboardingComplete || !daxDialogs.isShowingContextualOnboardingDialog
     }
 
-    func shouldPresentLaunchPrompt() async -> Bool {
+    func shouldPresentLaunchPrompt() -> Bool {
         guard !daxDialogs.subscriptionPromotionDialogSeen else {
             Logger.subscription.debug("[Subscription Promo - Existing User] Promo already shown, skipping.")
             return false
@@ -90,7 +90,7 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
             Logger.subscription.debug("[Subscription Promo - Existing User] shouldPresentLaunchPrompt: false")
             return false
         }
-        guard await subscriptionManager.hasAppStoreProductsAvailableAfterInitialLoad() else {
+        guard subscriptionManager.hasAppStoreProductsAvailable else {
             Logger.subscription.debug("[Subscription Promo] App Store products unavailable, skipping.")
             return false
         }

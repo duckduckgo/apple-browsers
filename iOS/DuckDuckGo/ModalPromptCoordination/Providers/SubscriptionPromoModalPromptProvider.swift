@@ -32,8 +32,8 @@ final class SubscriptionPromoModalPromptProvider: ModalPromptProvider {
         coordinator.isEligibleToPresent(isOnboardingComplete: isOnboardingComplete)
     }
 
-    func provideModalPrompt() async -> ModalPromptConfiguration? {
-        guard await coordinator.shouldPresentLaunchPrompt() else { return nil }
+    func provideModalPrompt() -> ModalPromptConfiguration? {
+        guard coordinator.shouldPresentLaunchPrompt() else { return nil }
         let prompt = presenter.makeSubscriptionPromoPrompt()
         return ModalPromptConfiguration(viewController: prompt, animated: true)
     }

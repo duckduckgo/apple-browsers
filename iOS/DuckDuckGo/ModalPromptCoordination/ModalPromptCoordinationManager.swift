@@ -23,11 +23,11 @@ import UIKit
 protocol ModalPromptCoordinationManaging {
     var didPresentModalPromptThisSession: Bool { get }
 
-    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) async
+    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease
-    ) async
+    )
     func reconcilePresentedModal()
 }
 
@@ -93,7 +93,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private let rootAttachmentChecker: ModalPromptRootAttachmentChecking
 
     private var attemptState = AttemptState.idle
-    private var isLegacyEvaluationInProgress = false
     private var legacyActiveAttemptIDs = Set<UUID>()
 
     private(set) var didActuallyPresentModalPromptThisSession = false
@@ -103,7 +102,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     }
 
     var hasActiveOrPendingModalAttempt: Bool {
-        isLegacyEvaluationInProgress || !legacyActiveAttemptIDs.isEmpty || modalAttemptPhase != .idle
+        !legacyActiveAttemptIDs.isEmpty || modalAttemptPhase != .idle
     }
 
     var modalAttemptPhase: ModalPromptAttemptPhase {
@@ -143,12 +142,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// 5. Save the modal presentation date.
     ///
     /// - Parameter presenter: The view controller to present from.
-    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) async {
-        guard !isLegacyEvaluationInProgress else { return }
-        isLegacyEvaluationInProgress = true
-        defer { isLegacyEvaluationInProgress = false }
-
-        guard let selectedPrompt = await selectModalPrompt() else { return }
+    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
+        guard let selectedPrompt = selectModalPrompt() else { return }
 
         let scheduledAttemptID = UUID()
         legacyActiveAttemptIDs.insert(scheduledAttemptID)
@@ -168,7 +163,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease
-    ) async {
+    ) {
         guard modalAttemptPhase == .idle else {
             assertionFailure("A coordinated modal lease cannot replace an active modal attempt.")
             lease.release()
@@ -177,7 +172,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
         attemptState = .evaluating(lease)
 
-        guard let selectedPrompt = await selectModalPrompt() else {
+        guard let selectedPrompt = selectModalPrompt() else {
             releaseCoordinationAttempt()
             return
         }
@@ -212,7 +207,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
 private extension ModalPromptCoordinationManager {
 
-    private func selectModalPrompt() async -> SelectedPrompt? {
+    private func selectModalPrompt() -> SelectedPrompt? {
         guard !cooldownManager.isInCooldownPeriod else {
             let cooldownInfo = cooldownManager.cooldownInfo
             let lastPresentationDate = cooldownInfo.lastPresentationDate.flatMap(String.init) ?? "-"
@@ -236,7 +231,7 @@ private extension ModalPromptCoordinationManager {
                 )
                 continue
             }
-            guard let configuration = await provider.provideModalPrompt() else { continue }
+            guard let configuration = provider.provideModalPrompt() else { continue }
 
             return SelectedPrompt(configuration: configuration, provider: provider)
         }

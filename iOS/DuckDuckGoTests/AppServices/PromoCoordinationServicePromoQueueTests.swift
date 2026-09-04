@@ -36,10 +36,10 @@ final class PromoCoordinationServicePromoQueueTests {
 
     @available(iOS 16, *)
     @Test("Coordinated modal admission acquires before manager evaluation", .timeLimit(.minutes(1)))
-    func coordinatedModalAdmission() async {
+    func coordinatedModalAdmission() {
         let service = makeService(mode: .coordinated)
 
-        await service.presentModalPromptIfNeeded(from: presenter)
+        service.presentModalPromptIfNeeded(from: presenter)
 
         #expect(manager.capturedModalLease != nil)
         #expect(arbiter.snapshot.hasModalLease)
@@ -49,11 +49,11 @@ final class PromoCoordinationServicePromoQueueTests {
 
     @available(iOS 16, *)
     @Test("Remote-message ownership blocks modal evaluation", .timeLimit(.minutes(1)))
-    func remoteMessageBlocksModalEvaluation() async throws {
+    func remoteMessageBlocksModalEvaluation() throws {
         let remoteMessageLease = try acquiredRemoteMessageLease(from: arbiter.acquireRemoteMessageLease(for: "message"))
         let service = makeService(mode: .coordinated)
 
-        await service.presentModalPromptIfNeeded(from: presenter)
+        service.presentModalPromptIfNeeded(from: presenter)
 
         #expect(!manager.didCallPresentModalPromptIfNeeded)
         #expect(cooldownPolicy.modalAdmissionCallCount == 0)
@@ -69,10 +69,10 @@ final class PromoCoordinationServicePromoQueueTests {
 
     @available(iOS 16, *)
     @Test("Legacy mode preserves the unarbitrated manager route", .timeLimit(.minutes(1)))
-    func legacyModeUsesLegacyManagerRoute() async {
+    func legacyModeUsesLegacyManagerRoute() {
         let service = makeService(mode: .legacy)
 
-        await service.presentModalPromptIfNeeded(from: presenter)
+        service.presentModalPromptIfNeeded(from: presenter)
 
         #expect(manager.didCallPresentModalPromptIfNeeded)
         #expect(manager.capturedModalLease == nil)
@@ -102,11 +102,11 @@ final class PromoCoordinationServicePromoQueueTests {
 
     @available(iOS 16, *)
     @Test("RMF-to-modal cooldown releases before provider evaluation", .timeLimit(.minutes(1)))
-    func remoteMessageCooldownBlocksModalEvaluation() async {
+    func remoteMessageCooldownBlocksModalEvaluation() {
         cooldownPolicy.modalAdmissionDecision = .blocked(until: .distantFuture)
         let service = makeService(mode: .coordinated)
 
-        await service.presentModalPromptIfNeeded(from: presenter)
+        service.presentModalPromptIfNeeded(from: presenter)
 
         #expect(!manager.didCallPresentModalPromptIfNeeded)
         #expect(arbiter.snapshot.owner == nil)

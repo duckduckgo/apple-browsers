@@ -150,9 +150,7 @@ struct Foreground: ForegroundHandling {
                 appDependencies.mainCoordinator.prepareHomePageMessagesForForegroundIfNeeded()
 
                 // Present any eligible modal prompt
-                Task { @MainActor in
-                    await appDependencies.mainCoordinator.presentModalPromptIfNeeded()
-                }
+                appDependencies.mainCoordinator.presentModalPromptIfNeeded()
             }
         )
 

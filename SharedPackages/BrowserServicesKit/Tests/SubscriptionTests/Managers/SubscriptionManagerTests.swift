@@ -912,35 +912,6 @@ class SubscriptionManagerTests: XCTestCase {
 
     // MARK: - Tests for hasAppStoreProductsAvailablePublisher
 
-    func testHasAppStoreProductsAvailableAfterInitialLoadLoadsProductsOnlyOnce() async {
-        // Given
-        let storePurchaseManager = StorePurchaseManagerMock()
-        storePurchaseManager.onUpdateAvailableProducts = {
-            storePurchaseManager.areProductsAvailable = true
-        }
-        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-        let sut = DefaultSubscriptionManager(
-            storePurchaseManager: storePurchaseManager,
-            oAuthClient: mockOAuthClient,
-            userDefaults: userDefaults,
-            subscriptionEndpointService: mockSubscriptionEndpointService,
-            subscriptionCachingService: mockSubscriptionCachingService,
-            subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-            pixelHandler: mockPixelHandler,
-            initForPurchase: false
-        )
-
-        // When
-        let isAvailableAfterInitialLoad = await sut.hasAppStoreProductsAvailableAfterInitialLoad()
-        storePurchaseManager.updateAvailableProductsCalled = false
-        let isAvailableAfterSecondCall = await sut.hasAppStoreProductsAvailableAfterInitialLoad()
-
-        // Then
-        XCTAssertTrue(isAvailableAfterInitialLoad)
-        XCTAssertTrue(isAvailableAfterSecondCall)
-        XCTAssertFalse(storePurchaseManager.updateAvailableProductsCalled)
-    }
-
     func testCanPurchasePublisherEmitsValuesFromStorePurchaseManager() async throws {
         // Given
         let expectation = expectation(description: "Publisher should emit value")

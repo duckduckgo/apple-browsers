@@ -25,23 +25,13 @@ protocol SubscriptionOnboardingSessionStateManaging: AnyObject {
     /// Whether the checklist reached 100% during this session.
     var didCompleteDuringThisSession: Bool { get }
     func recordCompletedDuringThisSession()
-
-    /// Whether the VPN-configuration backfill check has already run this session, so it isn't repeated
-    /// (a real IPC round-trip) on every Settings appearance.
-    var didCheckVPNActivationDuringThisSession: Bool { get }
-    func recordVPNActivationCheckedDuringThisSession()
 }
 
 final class SubscriptionOnboardingSessionState: SubscriptionOnboardingSessionStateManaging {
 
     private(set) var didCompleteDuringThisSession = false
-    private(set) var didCheckVPNActivationDuringThisSession = false
 
     func recordCompletedDuringThisSession() {
         didCompleteDuringThisSession = true
-    }
-
-    func recordVPNActivationCheckedDuringThisSession() {
-        didCheckVPNActivationDuringThisSession = true
     }
 }

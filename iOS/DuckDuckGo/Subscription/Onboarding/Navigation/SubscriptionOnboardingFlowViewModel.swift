@@ -61,11 +61,16 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject, Identifiable 
     /// unless `isPIRAvailable`
     let pirScreen: () -> AnyView
 
+    /// Whether `.pir` was already complete when the sheet now closing was opened — set on presentation so
+    /// dismissal only reports a completion for one that happened just now, not one from a prior visit.
+    private var wasPIRCompleteOnPresent = false
+
     /// Both edges of the PIR sheet, reported from the summary's own observation of `pirLaunch`
     func reportPIRPresentation(_ isPresenting: Bool) {
         if isPresenting {
+            wasPIRCompleteOnPresent = progress.completedItems.contains(.pir)
             instrumentation.stepShown(.pir)
-        } else if progress.completedItems.contains(.pir) {
+        } else if progress.completedItems.contains(.pir), !wasPIRCompleteOnPresent {
             instrumentation.stepCompleted(.pir)
         }
     }

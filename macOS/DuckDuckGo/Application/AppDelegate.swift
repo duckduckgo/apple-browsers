@@ -787,6 +787,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         subscriptionEnvironment.serviceEnvironment == .staging &&
                         subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
+            case .useSubscriptionNoProductsOverride:
+                return (featureFlagger.internalUserDecider.isInternalUser &&
+                        subscriptionEnvironment.serviceEnvironment == .staging &&
+                        subscriptionUserDefaults.noSubscriptionProductsOverride)
             }
         }
 

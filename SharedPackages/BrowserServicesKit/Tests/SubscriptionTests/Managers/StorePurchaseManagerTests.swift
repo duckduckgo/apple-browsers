@@ -68,6 +68,21 @@ final class StorePurchaseManagerTests: XCTestCase {
         XCTAssertTrue(products.isEmpty)
     }
 
+    func testUpdateAvailableProductsWithNoProductsOverrideClearsProducts() async {
+        // Given
+        mockProductFetcher.mockProducts = [createMonthlyProduct(), createYearlyProduct()]
+        await sut.updateAvailableProducts()
+        XCTAssertFalse(sut.availableProducts.isEmpty)
+
+        // When
+        mockFeatureFlagger.enabledFeatures = [.useSubscriptionNoProductsOverride]
+        await sut.updateAvailableProducts()
+
+        // Then
+        XCTAssertTrue(sut.availableProducts.isEmpty)
+        XCTAssertEqual(mockProductFetcher.fetchCount, 2)
+    }
+
     func testUpdateAvailableProductsWithDifferentRegions() async {
         // Given
         let usaMonthlyProduct = MockSubscriptionProduct(

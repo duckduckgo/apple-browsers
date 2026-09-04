@@ -158,7 +158,7 @@ final class AIChatContextualWebViewController: UIViewController {
          pixelHandler: AIChatContextualModePixelFiring,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
-         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording = NullSubscriptionOnboardingActivationRecorder(),
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
          utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager

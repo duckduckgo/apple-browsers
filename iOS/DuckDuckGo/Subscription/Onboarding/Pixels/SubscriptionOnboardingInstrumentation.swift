@@ -22,7 +22,6 @@ import PixelKit
 import AIChat
 
 /// Reports the onboarding funnel.
-@MainActor
 protocol SubscriptionOnboardingInstrumenting {
     /// The funnel's denominator, and the only place the Duck.ai-disabled cohort is counted.
     func flowStarted()

@@ -3904,7 +3904,7 @@ class MainViewController: UIViewController {
     }
 
     /// Dismisses whatever's presented, then opens Duck.ai chat from the subscription onboarding flow.
-    /// - Returns: `false` if there's nothing to dismiss into, so a caller can fall back.
+    /// - Returns: Always `true`; a `weak self` caller sees `false` only once `self` is deallocated.
     func requestOnboardingDuckAIChat(modelID: String?) -> Bool {
         dismiss(animated: true) {
             self.openAIChat(source: .onboarding, flowType: .mobileAppOnboarding, modelId: modelID)

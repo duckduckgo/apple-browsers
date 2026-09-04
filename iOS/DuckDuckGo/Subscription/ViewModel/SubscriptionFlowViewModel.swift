@@ -152,9 +152,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
         state.shouldPresentOnboarding = true
     }
 
-    /// Called once the flow has actually been built and is about to be shown.
+    /// Called once the onboarding sheet has actually appeared
     @MainActor
     func didPresentOnboarding() {
+        state.shouldPresentOnboarding = false
         didRequestOnboarding = true
     }
 

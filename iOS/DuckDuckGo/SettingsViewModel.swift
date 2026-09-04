@@ -160,7 +160,7 @@ final class SettingsViewModel: ObservableObject {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     let keyValueStore: ThrowingKeyValueStoring
-    let subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging
+    lazy var subscriptionOnboardingSession = AppDependencyProvider.shared.subscriptionOnboardingSession
     private let vpnController: SubscriptionOnboardingVPNControlling
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
@@ -1036,7 +1036,6 @@ final class SettingsViewModel: ObservableObject {
          urlOpener: URLOpener = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
-         subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
@@ -1082,7 +1081,6 @@ final class SettingsViewModel: ObservableObject {
         self.urlOpener = urlOpener
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
-        self.subscriptionOnboardingSession = subscriptionOnboardingSession
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter

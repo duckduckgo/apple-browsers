@@ -466,8 +466,8 @@ struct SubscriptionSettingsViewV2: View {
                 downgradeBanner
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
-            if isOnboardingEnabled {
-                onboardingSetupSection
+            if isOnboardingEnabled, let onboardingProgress {
+                onboardingSetupSection(progress: onboardingProgress)
             }
             if viewModel.shouldShowUpgrade {
                 upgradeSection
@@ -675,15 +675,13 @@ private var resubscribeWithWinBackOfferView: some View {
 extension SubscriptionSettingsViewV2 {
 
     /// The "Continue Setup" re-entry card.
-    var onboardingSetupSection: some View {
+    func onboardingSetupSection(progress: SubscriptionOnboardingProgress) -> some View {
         Section {
-            if let onboardingProgress {
-                SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
-                                                progress: onboardingProgress,
-                                                session: settingsViewModel.subscriptionOnboardingSession,
-                                                isPresentingFlow: onboardingFlow != nil,
-                                                onContinue: { startOnboarding() })
-            }
+            SubscriptionOnboardingSetupCard(visual: .image(Image(.subscription56)),
+                                            progress: progress,
+                                            session: settingsViewModel.subscriptionOnboardingSession,
+                                            isPresentingFlow: onboardingFlow != nil,
+                                            onContinue: { startOnboarding() })
         }
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets())

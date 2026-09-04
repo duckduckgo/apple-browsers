@@ -85,8 +85,22 @@ public class AIChatSyncHandler: AIChatSyncHandling {
         }
     }
 
+    /// The account backing a live sync session, or `nil` when sync is off.
+    ///
+    /// Deliberately not a plain `account != nil` check: the account lives in the keychain, which
+    /// survives app deletion, and `syncAutoRestore` preserves it while leaving `authState` as
+    /// `.inactive`.
+    private var activeSyncAccount: SyncAccount? {
+        switch sync.authState {
+        case .active, .addingNewDevice:
+            return sync.account
+        case .initializing, .inactive:
+            return nil
+        }
+    }
+
     public func isSyncTurnedOn() -> Bool {
-        sync.authState != .initializing && sync.account != nil
+        activeSyncAccount != nil
     }
 
     public var authStatePublisher: AnyPublisher<SyncAuthState, Never> {
@@ -104,7 +118,9 @@ public class AIChatSyncHandler: AIChatSyncHandling {
 
         try validateSetup()
 
-        guard let account = sync.account else {
+        // Sync off reports the feature as available but signed out rather than throwing — the
+        // web app treats an error as a transient failure and retries.
+        guard let account = activeSyncAccount else {
             return SyncStatus(syncAvailable: true,
                               userId: nil,
                               deviceId: nil,
@@ -121,6 +137,11 @@ public class AIChatSyncHandler: AIChatSyncHandling {
 
     public func getScopedToken() async throws -> SyncToken {
         try validateSetup()
+
+        // `accountNotFound` is deliberate: the caller already maps it to "sync off".
+        guard activeSyncAccount != nil else {
+            throw SyncError.accountNotFound
+        }
 
         do {
             guard let token = try await sync.mainTokenRescope(to: "ai_chats"),

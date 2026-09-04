@@ -925,6 +925,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                               measurement: makeUsageWarningMeasurement(),
                                               createImagePixelFiring: createImagePixelFiring)
         footerController?.presenter = viewController
+        footerController?.onInputBlockChanged = { [weak self] blocked in
+            self?.viewController.isInputBlockedByUsageLimit = blocked
+        }
 
         // Also what brings a message back after the user has acted on the previous one.
         usageLimitsStore?.snapshotUpdates?

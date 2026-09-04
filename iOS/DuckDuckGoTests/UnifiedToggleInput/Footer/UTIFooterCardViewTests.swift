@@ -26,6 +26,10 @@ import XCTest
 final class UTIFooterCardViewTests: XCTestCase {
 
     private let phoneWidth: CGFloat = 390
+    /// The input card's two widths on a phone: expanded to the omnibar margins, and flanked by the
+    /// AI tab's fire and menu buttons — the footer card follows both.
+    private let expandedCardWidth: CGFloat = 361
+    private let flankedCardWidth: CGFloat = 249
     /// Longer than the room a titled card leaves beside its CTA and close button at phone width.
     private let wrappingTitle = "Advanced AI models limit reached for this billing period"
 
@@ -236,6 +240,24 @@ final class UTIFooterCardViewTests: XCTestCase {
                                  sut.convert(dismiss.bounds, from: dismiss).minX)
     }
 
+    /// The footer's width follows the input card, so a message can be measured at the flanked
+    /// AI-tab width. A title left at its own intrinsic width keeps that measurement, which is what
+    /// draws it as a column of one or two characters a line.
+    func test_title_ownsItsRoomAtEveryCardWidth() {
+        let sut = UTIFooterCardView()
+        sut.configure(with: makeLimitReachedMessage(), animateIcon: false)
+
+        for width in [flankedCardWidth, expandedCardWidth] {
+            layOut(sut, atWidth: width)
+
+            guard let label = titleLabel(in: sut), let stack = textStack(in: sut) else {
+                return XCTFail("Expected the title to be part of the card")
+            }
+            XCTAssertEqual(label.bounds.width, stack.bounds.width, accuracy: 0.5,
+                           "The title has to own the room the CTA leaves it, at card width \(width)")
+        }
+    }
+
     // MARK: - Helpers
 
     /// Lays the card out at phone width for `isDismissible` and reports the trailing edge of the
@@ -253,6 +275,12 @@ final class UTIFooterCardViewTests: XCTestCase {
             return 0
         }
         return card.convert(subview.bounds, from: subview).maxX
+    }
+
+    private func layOut(_ card: UTIFooterCardView, atWidth width: CGFloat) {
+        card.frame = CGRect(x: 0, y: 0, width: width, height: 200)
+        card.setNeedsLayout()
+        card.layoutIfNeeded()
     }
 
     private func infoIcon(in card: UTIFooterCardView) -> UIImageView? {
@@ -344,6 +372,16 @@ final class UTIFooterCardViewTests: XCTestCase {
                          subtitle: nil,
                          primaryAction: nil,
                          isDismissible: true)
+    }
+
+    /// The blocked card as shipped: a short title beside a CTA wide enough to compress it, and no
+    /// close button, so the pill reaches the trailing edge.
+    private func makeLimitReachedMessage() -> UTIFooterMessage {
+        UTIFooterMessage(icon: .alert,
+                         title: "Daily limit reached",
+                         subtitle: "Resets in 5 hours",
+                         primaryAction: .init(title: "Start Using Weekly Limit"),
+                         isDismissible: false)
     }
 
     private func makeIconlessMessage() -> UTIFooterMessage {

@@ -114,6 +114,57 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertTrue(selectedToolClearButton?.isEnabled ?? false)
     }
 
+    /// A spent allowance leaves the card's own CTA as the only live control.
+    func test_isInputBlockedByUsageLimit_disablesToolbarConfigurationButtons() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isImageButtonEnabled = true
+        sut.selectedTool = .webSearch
+
+        let attachmentButton = findButton(accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel, in: sut)
+        let toolsButton = findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)
+        let reasoningButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Reasoning", in: sut)
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+
+        sut.isInputBlockedByUsageLimit = true
+
+        XCTAssertFalse(attachmentButton?.isEnabled ?? true)
+        XCTAssertFalse(toolsButton?.isEnabled ?? true)
+        XCTAssertFalse(reasoningButton?.isEnabled ?? true)
+        XCTAssertFalse(modelChipButton?.isEnabled ?? true)
+
+        sut.isInputBlockedByUsageLimit = false
+
+        XCTAssertTrue(attachmentButton?.isEnabled ?? false)
+        XCTAssertTrue(toolsButton?.isEnabled ?? false)
+        XCTAssertTrue(reasoningButton?.isEnabled ?? false)
+        XCTAssertTrue(modelChipButton?.isEnabled ?? false)
+    }
+
+    func test_isInputBlockedByUsageLimit_disablesTheSubmitButton() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+
+        let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut)
+        XCTAssertTrue(submitButton?.isEnabled ?? false)
+
+        sut.isInputBlockedByUsageLimit = true
+
+        XCTAssertFalse(submitButton?.isEnabled ?? true)
+    }
+
+    /// Voice is a way into a chat the allowance can't pay for either, so it greys out with submit.
+    func test_isInputBlockedByUsageLimit_disablesTheVoiceButton() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isAIVoiceChatActive = true
+
+        let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut)
+        XCTAssertTrue(submitButton?.isEnabled ?? false, "Voice is live on an empty input")
+
+        sut.isInputBlockedByUsageLimit = true
+
+        XCTAssertFalse(submitButton?.isEnabled ?? true)
+    }
+
     func test_isGenerating_doesNotReenableUnavailableAttachmentButton() {
         let sut = UnifiedToggleInputToolbarView()
         sut.isImageButtonEnabled = false

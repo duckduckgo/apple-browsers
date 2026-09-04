@@ -32,6 +32,7 @@ final class UTIFooterControllerTests: XCTestCase {
     private var createImagePixelFiring: MockCreateImagePixelFiring!
     private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
     private var animationCount = 0
+    private var reportedBlocks: [Bool] = []
     private var sut: UTIFooterController!
 
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
@@ -45,6 +46,7 @@ final class UTIFooterControllerTests: XCTestCase {
         createImagePixelFiring = MockCreateImagePixelFiring()
         selectedModel = (nil, nil)
         animationCount = 0
+        reportedBlocks = []
         viewModel = makeViewModel()
         sut = UTIFooterController(viewModel: viewModel,
                                   highUsageNotice: makeNoticeSource(),
@@ -55,6 +57,7 @@ final class UTIFooterControllerTests: XCTestCase {
                                       changes()
                                   })
         sut.presenter = presenter
+        sut.onInputBlockChanged = { [unowned self] blocked in reportedBlocks.append(blocked) }
     }
 
     override func tearDown() {
@@ -105,6 +108,56 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
 
         XCTAssertEqual(animationCount, 2)
+    }
+
+    // MARK: - Input block
+
+    /// The allowance is spent, so the card is the only thing left to act on.
+    func test_refresh_reportsTheInputBlockedWhenTheLimitIsReached() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+
+        sut.refresh()
+
+        XCTAssertEqual(reportedBlocks, [true])
+    }
+
+    func test_refresh_leavesTheInputLiveWhileTheWarningIsOnlyApproaching() {
+        limitsProvider.limits = weeklyUsage(90)
+
+        sut.refresh()
+
+        XCTAssertTrue(reportedBlocks.isEmpty)
+    }
+
+    /// A block with no card on screen to explain it would read as the input having broken.
+    func test_setSuppressed_liftsTheBlockWithTheCard() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        sut.refresh()
+
+        sut.setSuppressed(true)
+
+        XCTAssertEqual(reportedBlocks, [true, false])
+    }
+
+    func test_resetForPoseChange_liftsTheBlock() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        sut.refresh()
+
+        sut.resetForPoseChange()
+
+        XCTAssertEqual(reportedBlocks, [true, false])
+    }
+
+    /// The CTA exists to unblock the user, and since #6644 it pushes the hand-off to the live chat
+    /// instead of writing an entry — so no snapshot update comes back to lift the block for it.
+    func test_performPrimaryAction_liftsTheBlockWhenTheHandOffIsTaken() {
+        limitsProvider.limits = dailyReachedWithWeeklyHandOff()
+        sut.refresh()
+        XCTAssertEqual(reportedBlocks, [true])
+
+        sut.performPrimaryAction()
+
+        XCTAssertEqual(reportedBlocks, [true, false])
     }
 
     // MARK: - Dismissal
@@ -817,6 +870,22 @@ final class UTIFooterControllerTests: XCTestCase {
                                       dismissible: false),
             cta: DuckAiUsageCta(id: .subscribe),
             signature: "snapshot-reached-upsell"
+        )
+    }
+
+    /// The blocked state the screenshot shows: a spent daily allowance whose only offer is the
+    /// weekly hand-off.
+    private func dailyReachedWithWeeklyHandOff() -> DuckAiUsageSnapshot {
+        DuckAiUsageSnapshot(
+            notice: DuckAiUsageNotice(id: .dailyReached,
+                                      window: .daily,
+                                      percentUsed: 100,
+                                      resetsAt: now.addingTimeInterval(18_000),
+                                      reached: true,
+                                      dismissible: false),
+            cta: DuckAiUsageCta(id: .bypassWeekly,
+                                putEntries: [DuckAiNativeStorageEntry(key: "usageLimits", value: "{}")]),
+            signature: "snapshot-daily-reached"
         )
     }
 

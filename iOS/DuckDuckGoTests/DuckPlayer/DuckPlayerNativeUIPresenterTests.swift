@@ -975,6 +975,19 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     }
 
     @MainActor
+    func testFloatingPillWithShortChromeUsesReportedHeight() {
+        mockAppSettings.currentAddressBarPosition = .top
+        mockHostViewController.floatingBottomChromeObscuredHeight = 34
+        mockDuckPlayerSettings.primingMessagePresented = true
+        sut = makeFloatingUISUT()
+
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        XCTAssertEqual(sut.bottomConstraint?.constant, -48)
+        assertFloatingPillClearsChrome(obscuredHeight: 34)
+    }
+
+    @MainActor
     func testAddressBarPositionChanged_WithNilBottomConstraint_HandlesGracefully() {
         // Given - no pill presented, so no bottom constraint exists
         mockAppSettings.currentAddressBarPosition = .bottom

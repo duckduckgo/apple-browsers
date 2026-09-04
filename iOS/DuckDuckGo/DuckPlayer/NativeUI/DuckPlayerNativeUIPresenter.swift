@@ -80,8 +80,6 @@ final class DuckPlayerNativeUIPresenter {
         static let fadeAnimationDuration: TimeInterval = 0.2
         static let visibleDuration: TimeInterval = 3.0
 
-        // Fallback clearance for the floating toolbar if the host hasn't reported its obscured height yet.
-        static let floatingToolbarObscuredHeight: CGFloat = BrowserToolbarView.floatingButtonsHeight + 21
         static let floatingChromeClearance: CGFloat = 4
 
         // Max time to wait for the floating pill thumbnail before sliding in anyway.
@@ -220,8 +218,7 @@ final class DuckPlayerNativeUIPresenter {
     /// the address bar when it's at the bottom, at screen bottom when it's at the top.
     private var pillBottomConstraintConstant: CGFloat {
         if floatingUIManager.isFloatingUIEnabled {
-            let obscuredHeight = hostView?.floatingBottomChromeObscuredHeight ?? 0
-            let chromeHeight = max(obscuredHeight, Constants.floatingToolbarObscuredHeight)
+            let chromeHeight = hostView?.floatingBottomChromeObscuredHeight ?? 0
             return -(chromeHeight + DuckPlayerContainer.Constants.presentedOffset + Constants.floatingChromeClearance)
         }
         return appSettings.currentAddressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0

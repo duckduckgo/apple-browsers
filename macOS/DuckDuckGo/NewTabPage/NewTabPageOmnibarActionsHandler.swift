@@ -154,7 +154,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
-        if mode == AIChatNativePrompt.imageGenerationMode {
+        if mode == AIChatNativePrompt.imageGenerationMode || toolChoice?.contains(AIChatRAGTool.imageGeneration.rawValue) == true {
             PixelKit.fire(AIChatPixel.aiChatNtpImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         } else if mode == AIChatNativePrompt.voiceMode {
             PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNtp, frequency: .dailyAndStandard, includeAppVersionParameter: true)

@@ -42,6 +42,13 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isImageGenerationEnabled: Bool { get }
 
+    /// Whether Create Image activation is resolved natively, including automatic model switching.
+    var isUpdatedCreateImageEnabled: Bool { get }
+
+    /// Switches to an accessible image-capable model when needed and returns native-localized notice copy.
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch?
+
     var isWebSearchEnabled: Bool { get }
 
     /// Whether the "Customize Responses" tool is shown in the NTP omnibar Tools menu.
@@ -103,4 +110,11 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// Whether history-entry suggestions can be deleted. Published so the client can push `omnibar_onConfigUpdate`.
     var isSearchSuggestionDeletionEnabled: Bool { get }
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> { get }
+}
+
+public extension NewTabPageOmnibarConfigProviding {
+    var isUpdatedCreateImageEnabled: Bool { false }
+
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? { nil }
 }

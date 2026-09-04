@@ -266,6 +266,47 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpImageGeneration)
     }
 
+    var isUpdatedCreateImageEnabled: Bool {
+        isImageGenerationEnabled && featureFlagger.isFeatureOn(.updatedCreateImage)
+    }
+
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
+        guard isUpdatedCreateImageEnabled else { return nil }
+
+        let models = availableModelsProvider()
+        let previousModel = models.first(where: { $0.id == aiChatPreferencesPersistor.selectedModelId })
+        guard let previousModel,
+              !previousModel.supportsTool(.imageGeneration) else {
+            return nil
+        }
+
+        guard let imageModel = AIChatModel.preferredImageGenerationModel(in: models) else {
+            return nil
+        }
+
+        aiChatPreferencesPersistor.selectedModelId = imageModel.id
+        aiChatPreferencesPersistor.selectedModelShortName = imageModel.shortName
+        clearReasoningEffortIfUnsupported(by: imageModel)
+
+        let secondaryText = previousModel.provider == .oss
+            ? UserText.aiChatCreateImageModelSwitchPrivacySubtitle(previousModel.shortName)
+            : UserText.aiChatCreateImageModelSwitchSubtitle(previousModel.shortName)
+        return NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+            message: UserText.aiChatCreateImageModelSwitchTitle(imageModel.shortName),
+            secondaryText: secondaryText
+        )
+    }
+
+    private func clearReasoningEffortIfUnsupported(by model: AIChatModel) {
+        guard let rawValue = aiChatPreferencesPersistor.selectedReasoningEffort,
+              let effort = AIChatReasoningEffort(rawValue: rawValue),
+              !model.isAccessible(effort) else {
+            return
+        }
+        aiChatPreferencesPersistor.selectedReasoningEffort = nil
+    }
+
     var isWebSearchEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
     }

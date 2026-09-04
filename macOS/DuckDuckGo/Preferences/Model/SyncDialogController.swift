@@ -430,6 +430,18 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         }
     }
 
+    func presentRemoveDeviceConfirmation(_ device: SyncDevice) {
+        presentDialog(for: .removeDeviceV2(device))
+    }
+
+    func removeDeviceConfirmed(_ device: SyncDevice) {
+        if device.isCurrent {
+            turnOffSync()
+        } else {
+            removeDevice(device)
+        }
+    }
+
     func removeDevice(_ device: SyncDevice) {
         Task { @MainActor in
             do {
@@ -627,12 +639,20 @@ extension SyncDialogController: SyncSettingsViewHandling {
 
     @MainActor
     func presentDeviceDetails(_ device: SyncDevice) {
-        presentDialog(for: .deviceDetails(device))
+        if featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) {
+            presentDialog(for: .deviceDetailsV2(device))
+        } else {
+            presentDialog(for: .deviceDetails(device))
+        }
     }
 
     @MainActor
     func presentRemoveDevice(_ device: SyncDevice) {
-        presentDialog(for: .removeDevice(device))
+        if featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) {
+            presentDialog(for: .removeDeviceV2(device))
+        } else {
+            presentDialog(for: .removeDevice(device))
+        }
     }
 
     @MainActor

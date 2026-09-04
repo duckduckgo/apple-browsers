@@ -37,8 +37,7 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             SyncedDevicesListV2(devices: model.devices,
-                                presentDeviceDetails: model.presentDeviceDetails,
-                                presentRemoveDevice: model.presentRemoveDevice)
+                                presentDeviceDetails: model.presentDeviceDetails)
             .onReceive(timer) { _ in
                 guard isVisible else { return }
                 model.refreshDevices()
@@ -77,7 +76,6 @@ private struct SyncedDevicesListV2: View {
     @State var hoveredDevice: SyncDevice?
 
     var presentDeviceDetails: ((SyncDevice) -> Void)?
-    var presentRemoveDevice: ((SyncDevice) -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -116,31 +114,20 @@ private struct SyncedDevicesListV2: View {
             hoveredDevice = hovering ? device : nil
         }
         .accessibilityElement(children: .combine)
-        .accessibilityAction(named: Text(deviceActionTitle(for: device))) {
-            deviceActionHandler(for: device)?(device)
+        .accessibilityAction(named: Text(UserText.currentDeviceDetails)) {
+            presentDeviceDetails?(device)
         }
     }
 
     @ViewBuilder
     private func deviceAction(for device: SyncDevice) -> some View {
-        let title = deviceActionTitle(for: device)
-        let action = deviceActionHandler(for: device)
-
-        if let action {
-            Button(title) {
-                action(device)
+        if let presentDeviceDetails {
+            Button(UserText.currentDeviceDetails) {
+                presentDeviceDetails(device)
             }
             .accessibilityHidden(true)
             .visibility(hoveredDevice?.id == device.id ? .visible : .gone)
         }
-    }
-
-    private func deviceActionTitle(for device: SyncDevice) -> String {
-        device.isCurrent ? UserText.currentDeviceDetails : UserText.removeDeviceButton
-    }
-
-    private func deviceActionHandler(for device: SyncDevice) -> ((SyncDevice) -> Void)? {
-        device.isCurrent ? presentDeviceDetails : presentRemoveDevice
     }
 
     private var separator: some View {

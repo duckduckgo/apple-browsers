@@ -272,6 +272,77 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
     }
 
+    @MainActor
+    func testPresentRemoveDevice_whenSimplifiedSyncSetupV2Enabled_showsRemoveDeviceV2() {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        let device = SyncDevice(kind: .desktop, name: "test", id: "test")
+
+        syncDialogController.presentRemoveDevice(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDeviceV2(device))
+    }
+
+    @MainActor
+    func testPresentDeviceDetails_whenSimplifiedSyncSetupV2Disabled_showsDeviceDetails() {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = false
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetails(device))
+    }
+
+    @MainActor
+    func testPresentDeviceDetails_whenSimplifiedSyncSetupV2Enabled_showsDeviceDetailsV2() {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetailsV2(device))
+    }
+
+    @MainActor
+    func testPresentRemoveDeviceConfirmationThenRemoveDeviceV2Shown() {
+        let device = SyncDevice(kind: .mobile, name: "test", id: "test")
+
+        syncDialogController.presentRemoveDeviceConfirmation(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDeviceV2(device))
+    }
+
+    func testRemoveDeviceConfirmed_forCurrentDevice_turnsSyncOff() async {
+        let device = SyncDevice(kind: .current, name: "This Device", id: "current-id")
+        var disconnectedDeviceId: String?
+        ddgSyncing.disconnectDeviceCallback = { disconnectedDeviceId = $0 }
+        let expectation = expectation(description: "sync turned off")
+        expectation.assertForOverFulfill = false
+        pausedStateManager.spySyncDidTurnOff = { expectation.fulfill() }
+
+        syncDialogController.removeDeviceConfirmed(device)
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+        XCTAssertTrue(ddgSyncing.disconnectCalled)
+        XCTAssertNil(disconnectedDeviceId)
+    }
+
+    func testRemoveDeviceConfirmed_forOtherDevice_disconnectsThatDeviceOnly() async {
+        let device = SyncDevice(kind: .desktop, name: "Other Device", id: "other-id")
+        let expectation = expectation(description: "device disconnected")
+        var disconnectedDeviceId: String?
+        ddgSyncing.disconnectDeviceCallback = {
+            disconnectedDeviceId = $0
+            expectation.fulfill()
+        }
+
+        syncDialogController.removeDeviceConfirmed(device)
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+        XCTAssertEqual(disconnectedDeviceId, "other-id")
+        XCTAssertFalse(ddgSyncing.disconnectCalled)
+        XCTAssertFalse(pausedStateManager.syncDidTurnOffCalled)
+    }
+
     func testOnTurnOffSyncThenSyncServiceIsDisconnected() async throws {
         let expectation = expectation(description: "disconnectCalled")
         expectation.assertForOverFulfill = false

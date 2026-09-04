@@ -90,7 +90,7 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
             Logger.subscription.debug("[Subscription Promo - Existing User] shouldPresentLaunchPrompt: false")
             return false
         }
-        guard subscriptionManager.hasAppStoreProductsAvailable else {
+        guard subscriptionManager.isSubscriptionPurchaseEligible else {
             Logger.subscription.debug("[Subscription Promo] App Store products unavailable, skipping.")
             return false
         }

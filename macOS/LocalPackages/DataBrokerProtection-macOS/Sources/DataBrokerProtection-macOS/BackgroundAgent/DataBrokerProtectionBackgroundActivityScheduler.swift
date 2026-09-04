@@ -30,6 +30,7 @@ public protocol DataBrokerProtectionBackgroundActivityScheduler {
     var dataSource: DataBrokerProtectionBackgroundActivitySchedulerDataSource? { get set }
 
     var lastTriggerTimestamp: Date? { get }
+    var shouldDefer: Bool { get }
 }
 
 public protocol DataBrokerProtectionBackgroundActivitySchedulerDelegate: AnyObject {
@@ -48,6 +49,9 @@ public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataB
     public weak var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate?
     public weak var dataSource: DataBrokerProtectionBackgroundActivitySchedulerDataSource?
     public private(set) var lastTriggerTimestamp: Date?
+    public var shouldDefer: Bool {
+        activity.shouldDefer
+    }
 
     public init(config: DataBrokerMacOSSchedulingConfig) {
         activity = NSBackgroundActivityScheduler(identifier: schedulerIdentifier)
@@ -64,10 +68,16 @@ public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataB
                     self.lastTriggerTimestamp = Date()
                     Logger.dataBrokerProtection.log("Scheduler running...")
 
+                    guard !self.shouldDefer else {
+                        Logger.dataBrokerProtection.log("Scheduler deferred before work started")
+                        completion(.deferred)
+                        return
+                    }
+
                     await self.delegate?.dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(self)
 
                     Logger.dataBrokerProtection.log("Scheduler finished...")
-                    completion(.finished)
+                    completion(self.shouldDefer ? .deferred : .finished)
                 }
             }
             continuation.resume()

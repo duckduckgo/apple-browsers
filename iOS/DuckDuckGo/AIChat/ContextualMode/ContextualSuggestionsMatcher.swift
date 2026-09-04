@@ -84,7 +84,7 @@ struct ContextualSuggestionsMatcher {
 
             guard let entry = catalog.catalog[id], conditionPasses(entry.condition, input: input) else { continue }
 
-            let copy = localizedCopy(for: id, entry: entry, input: input)
+            let copy = localizedCopy(for: id, entry: entry)
             resolved.append(ContextualSuggestedPrompt(
                 id: id,
                 label: copy.label,
@@ -188,7 +188,12 @@ struct ContextualSuggestionsMatcher {
             guard let condition = catalog.catalog[id]?.condition else { return false }
             return conditionPasses(condition, input: input)
         }
-        let floorDefaults = catalog.defaults.filter { catalog.catalog[$0]?.condition == nil }
+        // A document swaps the floor default for its own id, so the wording fits and the selection
+        // pixel can tell a document summary apart from a page one.
+        let floorDefaults = catalog.defaults.compactMap { id -> String? in
+            guard catalog.catalog[id]?.condition == nil else { return nil }
+            return input.isDocument && id == "summarize-page" ? "summarize-document" : id
+        }
 
         let body = contextual ?? floorDefaults
         let bodyBudget = max(0, cap - priorityDefaults.count)
@@ -241,19 +246,15 @@ struct ContextualSuggestionsMatcher {
 
     // MARK: Localization
 
-    private static func localizedCopy(for id: String, entry: SuggestionCatalog.Entry, input: ResolvePageSuggestionsInput) -> (label: String, prompt: String) {
-        // A document has no "page" to summarize, so the floor default is reworded in place. The
-        // catalog itself stays byte-comparable with the frontend's.
-        if id == "summarize-page", input.isDocument {
-            return (UserText.aiChatSuggestionSummarizeDocumentLabel, UserText.aiChatSuggestionSummarizeDocumentPrompt)
-        }
-        return localizedCopyByID[id] ?? (entry.label, entry.prompt)
+    private static func localizedCopy(for id: String, entry: SuggestionCatalog.Entry) -> (label: String, prompt: String) {
+        localizedCopyByID[id] ?? (entry.label, entry.prompt)
     }
 
     /// Maps each catalog id to its native `UserText` copy. The `UserText` extension holds the strings
     /// (idiomatic for the codebase); this map is the id → strings glue the matcher needs.
     private static let localizedCopyByID: [String: (label: String, prompt: String)] = [
         "summarize-page": (UserText.aiChatSuggestionSummarizePageLabel, UserText.aiChatSuggestionSummarizePagePrompt),
+        "summarize-document": (UserText.aiChatSuggestionSummarizeDocumentLabel, UserText.aiChatSuggestionSummarizeDocumentPrompt),
         "translate-page": (UserText.aiChatSuggestionTranslatePageLabel, UserText.aiChatSuggestionTranslatePagePrompt),
         "summarize-selection": (UserText.aiChatSuggestionSummarizeSelectionLabel, UserText.aiChatSuggestionSummarizeSelectionPrompt),
         "translate-selection": (UserText.aiChatSuggestionTranslateSelectionLabel, UserText.aiChatSuggestionTranslateSelectionPrompt),
@@ -371,7 +372,7 @@ struct DefaultContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProv
     private static func decodeFailureFallback(for input: ResolvePageSuggestionsInput) -> ResolvedPageSuggestions {
         ResolvedPageSuggestions(
             suggestions: [ContextualSuggestedPrompt(
-                id: "summarize-page",
+                id: input.isDocument ? "summarize-document" : "summarize-page",
                 label: input.isDocument ? UserText.aiChatSuggestionSummarizeDocumentLabel : UserText.aiChatSuggestionSummarizePageLabel,
                 prompt: input.isDocument ? UserText.aiChatSuggestionSummarizeDocumentPrompt : UserText.aiChatSuggestionSummarizePagePrompt,
                 icon: "summary"

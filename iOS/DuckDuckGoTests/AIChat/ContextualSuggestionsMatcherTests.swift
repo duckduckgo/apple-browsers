@@ -31,6 +31,7 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
       "defaults": ["summarize-page", "translate-page"],
       "catalog": {
         "summarize-page": { "label": "Summarize", "icon": "summary", "prompt": "Summarize this page." },
+        "summarize-document": { "label": "Summarize document", "icon": "summary", "prompt": "Summarize this document." },
         "translate-page": { "label": "Translate", "icon": "translate", "prompt": "Translate into {language}.", "condition": "differentLanguage" },
         "summarize-selection": { "label": "Summarize selection", "icon": "summary", "prompt": "Summarize this selection." },
         "translate-selection": { "label": "Translate selection", "icon": "translate", "prompt": "Translate selection into {language}.", "condition": "differentLanguage" },
@@ -61,6 +62,7 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
       "defaults": ["summarize-page", "translate-page"],
       "catalog": {
         "summarize-page": { "label": "Summarize", "icon": "summary", "prompt": "Summarize this page." },
+        "summarize-document": { "label": "Summarize document", "icon": "summary", "prompt": "Summarize this document." },
         "translate-page": { "label": "Translate", "icon": "translate", "prompt": "Translate into {language}.", "condition": "differentLanguage" },
         "c-a": { "label": "A", "prompt": "A." },
         "c-b": { "label": "B", "prompt": "B." },
@@ -413,29 +415,34 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         }
     }
 
-    // MARK: - Document copy
+    // MARK: - Documents
 
-    func testDocumentContextRewordsSummarizeWithoutChangingWhichSuggestionsAreOffered() throws {
-        let page = ContextualSuggestionsMatcher.resolve(input(signals(lang: "fr"), uiLocale: "en_US"), catalog: try standardCatalog())
-        let document = ContextualSuggestionsMatcher.resolve(input(signals(lang: "fr"), uiLocale: "en_US", isDocument: true), catalog: try standardCatalog())
+    /// The id is what the selection pixel reports, so a document summary must not report as a page one.
+    func testDocumentSwapsTheFloorDefaultForTheDocumentSuggestion() throws {
+        let result = ContextualSuggestionsMatcher.resolve(input(nil, uiLocale: "en_US", isDocument: true), catalog: try standardCatalog())
 
-        XCTAssertEqual(document.suggestions.map(\.id), page.suggestions.map(\.id))
+        XCTAssertEqual(result.suggestions.map(\.id), ["summarize-document"])
 
-        let summarize = try XCTUnwrap(document.suggestions.first { $0.id == "summarize-page" })
+        let summarize = try XCTUnwrap(result.suggestions.first)
         XCTAssertEqual(summarize.label, UserText.aiChatSuggestionSummarizeDocumentLabel)
         XCTAssertEqual(summarize.prompt, UserText.aiChatSuggestionSummarizeDocumentPrompt)
-
-        // The rest of the set is untouched: only summarize is page-vs-document specific.
-        let translate = try XCTUnwrap(document.suggestions.first { $0.id == "translate-page" })
-        XCTAssertEqual(translate.label, UserText.aiChatSuggestionTranslatePageLabel)
     }
 
-    func testPageContextKeepsThePageWordingForSummarize() throws {
+    func testPageKeepsThePageSuggestion() throws {
         let result = ContextualSuggestionsMatcher.resolve(input(nil, uiLocale: "en_US"), catalog: try standardCatalog())
 
-        let summarize = try XCTUnwrap(result.suggestions.first { $0.id == "summarize-page" })
+        XCTAssertEqual(result.suggestions.map(\.id), ["summarize-page"])
+
+        let summarize = try XCTUnwrap(result.suggestions.first)
         XCTAssertEqual(summarize.label, UserText.aiChatSuggestionSummarizePageLabel)
         XCTAssertEqual(summarize.prompt, UserText.aiChatSuggestionSummarizePagePrompt)
+    }
+
+    /// Only the summarize floor is document-specific: the conditional default still holds its slot.
+    func testDocumentStillOffersTheConditionalDefault() throws {
+        let ids = resolvedIDs(input(signals(lang: "fr"), uiLocale: "en_US", isDocument: true), try standardCatalog())
+
+        XCTAssertEqual(ids, ["summarize-document", "translate-page"])
     }
 
     /// A document with a text selection attached is asking about the selection, not the document.
@@ -443,5 +450,21 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         let ids = resolvedIDs(input(signals(lang: "fr"), scope: .selection, isDocument: true), try standardCatalog())
 
         XCTAssertEqual(ids, ["summarize-selection", "translate-selection"])
+    }
+
+    /// The document id lives in the catalog, not the defaults: it must never surface for a web page.
+    func testPageScopeNeverOffersTheDocumentSuggestion() throws {
+        let catalog = try standardCatalog()
+        let scenarios = [
+            input(nil, uiLocale: "en_US"),
+            input(signals(lang: "fr")),
+            input(signals(jsonLd: ["Recipe"], lang: "fr")),
+            input(signals(ogType: "video", lang: "fr")),
+            input(nil, url: "https://github.com/duckduckgo/apple-browsers")
+        ]
+
+        for scenario in scenarios {
+            XCTAssertFalse(resolvedIDs(scenario, catalog).contains("summarize-document"))
+        }
     }
 }

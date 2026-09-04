@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKit
 import Combine
 import Common
 import FoundationExtensions
@@ -84,6 +85,7 @@ final class TabCrashRecoveryExtension {
     private let featureFlagger: FeatureFlagger
     private let crashLoopDetector: TabCrashLoopDetecting
     private let firePixel: (PixelKit.Event, [String: String]) -> Void
+    private let reportBrokenSite: (NSWindow?) -> Void
     private let tabCrashAggregator: TabCrashAggregator
 
     private var cancellables = Set<AnyCancellable>()
@@ -98,11 +100,13 @@ final class TabCrashRecoveryExtension {
         firePixel: @escaping (PixelKit.Event, [String: String]) -> Void = { event, parameters in
             PixelKit.fire(event, frequency: .dailyAndStandard, withAdditionalParameters: parameters)
         },
+        reportBrokenSite: @escaping (NSWindow?) -> Void,
         tabCrashAggregator: TabCrashAggregator
     ) {
         self.featureFlagger = featureFlagger
         self.crashLoopDetector = crashLoopDetector
         self.firePixel = firePixel
+        self.reportBrokenSite = reportBrokenSite
         self.tabCrashAggregator = tabCrashAggregator
 
         contentPublisher.sink { [weak self] content in
@@ -123,6 +127,22 @@ final class TabCrashRecoveryExtension {
 }
 
 extension TabCrashRecoveryExtension: NavigationResponder {
+
+    @MainActor
+    func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        guard navigationAction.url == .errorPageReportBrokenSite else {
+            return .next
+        }
+        guard navigationAction.isUserInitiated,
+              navigationAction.isForMainFrame,
+              navigationAction.sourceFrame.isMainFrame,
+              webViewError?.isWebContentProcessTerminated == true else {
+            return .cancel
+        }
+
+        reportBrokenSite(navigationAction.sourceFrame.webView?.window)
+        return .cancel
+    }
 
     func webContentProcessDidTerminate(with reason: WKProcessTerminationReason?) {
         guard let webView, (webViewError?.code.rawValue ?? WKError.Code.unknown.rawValue) != WKError.Code.webContentProcessTerminated.rawValue else {

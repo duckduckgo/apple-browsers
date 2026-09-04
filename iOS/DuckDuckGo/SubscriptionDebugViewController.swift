@@ -31,12 +31,36 @@ import UserNotifications
 import UIComponents
 import Lottie
 import FeatureFlags_iOS
+import Persistence
+
+protocol SubscriptionDebugSettingsPersisting {
+    var isDebugOverlayEnabled: Bool { get set }
+}
+
+struct SubscriptionDebugSettingsUserDefaultsPersistor: SubscriptionDebugSettingsPersisting {
+
+    private enum Key: String {
+        case isDebugOverlayEnabled = "subscription-debug-overlay-enabled"
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var isDebugOverlayEnabled: Bool {
+        get { (try? keyValueStore.object(forKey: Key.isDebugOverlayEnabled.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.isDebugOverlayEnabled.rawValue) }
+    }
+}
 
 final class SubscriptionDebugViewController: UITableViewController {
 
     private let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
+    private var debugSettings: any SubscriptionDebugSettingsPersisting
 
     private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
@@ -48,13 +72,16 @@ final class SubscriptionDebugViewController: UITableViewController {
         AppDependencyProvider.shared.subscriptionManager.currentEnvironment
     }
 
-    init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting) {
+    init?(coder: NSCoder,
+          subscriptionDataReporter: SubscriptionDataReporting,
+          debugSettings: any SubscriptionDebugSettingsPersisting) {
         self.reporter = subscriptionDataReporter
+        self.debugSettings = debugSettings
         super.init(coder: coder)
     }
     
     required init?(coder: NSCoder) {
-        fatalError("Use init(coder:subscriptionDataReporter:) instead")
+        fatalError("Use init(coder:subscriptionDataReporter:debugSettings:) instead")
     }
 
     private let titles = [
@@ -67,6 +94,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.metadata: "StoreKit Metadata",
         Sections.regionOverride: "Region override for App Store Sandbox",
         Sections.expirationReminder: "Expiration Reminder Notification",
+        Sections.subscriptionURLs: "Subscription URLs",
         Sections.onboarding: "Onboarding",
     ]
 
@@ -80,6 +108,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case metadata
         case regionOverride
         case expirationReminder
+        case subscriptionURLs
         case onboarding
     }
 
@@ -126,6 +155,10 @@ final class SubscriptionDebugViewController: UITableViewController {
     enum ExpirationReminderRows: Int, CaseIterable {
         case currentStatus
         case triggerMockNotification
+    }
+
+    enum SubscriptionURLRows: Int, CaseIterable {
+        case debugOverlay
     }
 
     enum OnboardingRows: Int, CaseIterable {
@@ -281,6 +314,20 @@ final class SubscriptionDebugViewController: UITableViewController {
                 break
             }
 
+        case .subscriptionURLs:
+            switch SubscriptionURLRows(rawValue: indexPath.row) {
+            case .debugOverlay:
+                cell.textLabel?.text = "Debug overlay"
+                cell.selectionStyle = .none
+
+                let toggle = UISwitch()
+                toggle.isOn = debugSettings.isDebugOverlayEnabled
+                toggle.addTarget(self, action: #selector(debugOverlayToggled(_:)), for: .valueChanged)
+                cell.accessoryView = toggle
+            case .none:
+                break
+            }
+
         case .regionOverride:
             switch RegionOverrideRows(rawValue: indexPath.row) {
             case .currentRegionOverride:
@@ -356,6 +403,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .metadata: return MetadataRows.allCases.count
         case .regionOverride: return RegionOverrideRows.allCases.count
         case .expirationReminder: return ExpirationReminderRows.allCases.count
+        case .subscriptionURLs: return SubscriptionURLRows.allCases.count
         case .onboarding: return OnboardingRows.allCases.count
         case .none: return 0
         }
@@ -405,6 +453,8 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .triggerMockNotification: triggerMockExpirationReminder()
             default: break
             }
+        case .subscriptionURLs:
+            break
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
             case .welcome: showWelcomeOnboarding()
@@ -417,6 +467,10 @@ final class SubscriptionDebugViewController: UITableViewController {
             break
         }
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+
+    @objc private func debugOverlayToggled(_ sender: UISwitch) {
+        debugSettings.isDebugOverlayEnabled = sender.isOn
     }
 
     private func changeSubscriptionEnvironment(envRows: EnvironmentRows) {

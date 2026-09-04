@@ -3871,6 +3871,11 @@ class MainViewController: UIViewController {
 
     private func makeDataBrokerProtectionSubscriptionFlowViewController(redirectURLComponents: URLComponents?) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
+        let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
+            privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
+        let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: keyValueStore)
         let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makePurchaseFlowV2(
             redirectURLComponents: redirectURLComponents,
             navigationCoordinator: subscriptionNavigationCoordinator,
@@ -3882,7 +3887,9 @@ class MainViewController: UIViewController {
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
+            performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider
         ))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController

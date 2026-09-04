@@ -25,6 +25,9 @@ extension UserText {
     public static let aiChatSuggestionSummarizePageLabel = NSLocalizedString("duckai.suggestion.summarize-page.label", value: "Summarize this page", comment: "Suggested prompt chip: summarize the current page")
     public static let aiChatSuggestionSummarizePagePrompt = NSLocalizedString("duckai.suggestion.summarize-page.prompt", value: "Summarize this page.", comment: "Suggested prompt submitted text: summarize the current page")
 
+    public static let aiChatSuggestionSummarizeDocumentLabel = NSLocalizedString("duckai.suggestion.summarize-document.label", value: "Summarize this document", comment: "Suggested prompt chip shown when the attached page is a document such as a PDF: summarize that document")
+    public static let aiChatSuggestionSummarizeDocumentPrompt = NSLocalizedString("duckai.suggestion.summarize-document.prompt", value: "Summarize this document.", comment: "Suggested prompt submitted text: summarize the attached document")
+
     public static let aiChatSuggestionTranslatePageLabel = NSLocalizedString("duckai.suggestion.translate-page.label", value: "Translate this page", comment: "Suggested prompt chip: translate the current page")
     public static let aiChatSuggestionTranslatePagePrompt = NSLocalizedString("duckai.suggestion.translate-page.prompt", value: "Translate this page into %@.", comment: "Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language.")
 

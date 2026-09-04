@@ -449,6 +449,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .feedbackColor24)
                     : .init(resource: .feedbackColor24Legacy)
             }
+            public static var filePDF: DesignSystemImage { .init(resource: .filePDFColor24) }
             public static var fire: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .fireColor24)

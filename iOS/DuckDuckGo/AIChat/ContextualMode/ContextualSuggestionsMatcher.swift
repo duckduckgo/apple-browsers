@@ -84,7 +84,7 @@ struct ContextualSuggestionsMatcher {
 
             guard let entry = catalog.catalog[id], conditionPasses(entry.condition, input: input) else { continue }
 
-            let copy = localizedCopy(for: id, entry: entry)
+            let copy = localizedCopy(for: id, entry: entry, input: input)
             resolved.append(ContextualSuggestedPrompt(
                 id: id,
                 label: copy.label,
@@ -241,8 +241,13 @@ struct ContextualSuggestionsMatcher {
 
     // MARK: Localization
 
-    private static func localizedCopy(for id: String, entry: SuggestionCatalog.Entry) -> (label: String, prompt: String) {
-        localizedCopyByID[id] ?? (entry.label, entry.prompt)
+    private static func localizedCopy(for id: String, entry: SuggestionCatalog.Entry, input: ResolvePageSuggestionsInput) -> (label: String, prompt: String) {
+        // A document has no "page" to summarize, so the floor default is reworded in place. The
+        // catalog itself stays byte-comparable with the frontend's.
+        if id == "summarize-page", input.isDocument {
+            return (UserText.aiChatSuggestionSummarizeDocumentLabel, UserText.aiChatSuggestionSummarizeDocumentPrompt)
+        }
+        return localizedCopyByID[id] ?? (entry.label, entry.prompt)
     }
 
     /// Maps each catalog id to its native `UserText` copy. The `UserText` extension holds the strings
@@ -367,8 +372,8 @@ struct DefaultContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProv
         ResolvedPageSuggestions(
             suggestions: [ContextualSuggestedPrompt(
                 id: "summarize-page",
-                label: UserText.aiChatSuggestionSummarizePageLabel,
-                prompt: UserText.aiChatSuggestionSummarizePagePrompt,
+                label: input.isDocument ? UserText.aiChatSuggestionSummarizeDocumentLabel : UserText.aiChatSuggestionSummarizePageLabel,
+                prompt: input.isDocument ? UserText.aiChatSuggestionSummarizeDocumentPrompt : UserText.aiChatSuggestionSummarizePagePrompt,
                 icon: "summary"
             )],
             isSmart: false,

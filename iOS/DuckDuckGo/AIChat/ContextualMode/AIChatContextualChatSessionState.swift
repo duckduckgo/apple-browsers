@@ -890,7 +890,8 @@ private extension AIChatContextualChatSessionState {
             pageTypeSignals: context?.contextData.pageTypeSignals,
             url: context?.contextData.url,
             uiLocale: Locale.current.identifier,
-            scope: attachedSelections.isEmpty ? .page : .selection
+            scope: attachedSelections.isEmpty ? .page : .selection,
+            isDocument: context?.contextData.mimeType == AIChatPageContextData.pdfMIMEType
         )
 
         suggestionsResolveTask?.cancel()

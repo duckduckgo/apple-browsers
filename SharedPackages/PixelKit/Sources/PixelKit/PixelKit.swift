@@ -124,6 +124,18 @@ public final class PixelKit {
             }
         }
 
+        /// How many requests this frequency fires, and so how many times `fire` calls its
+        /// completion. Every leg completes exactly once, whether it sent or was suppressed, so
+        /// `fireAsync` can wait for all of them. See `PixelFiring.fireAsync(_:frequency:options:)`.
+        var legCount: Int {
+            switch self {
+            case .dailyAndCount, .dailyAndStandard, .legacyDailyAndCount:
+                return 2
+            default:
+                return 1
+            }
+        }
+
         /// Caution: These values are used by `pixelHasBeenFiredDailyToday...` methods.  Changing these values may cause data store lookup
         /// failures and lead to re-firing pixels that otherwise should not be fired.
         fileprivate var mapKey: String {
@@ -854,9 +866,11 @@ public final class PixelKit {
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDailyAndCount, parameters: newParams, skipped: true)
+                onComplete(false, nil)
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDailyAndCount, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
 
         fireRequestWrapper(pixelName + "_c", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyAndCount, retryOnFailure, onComplete)
@@ -879,9 +893,11 @@ public final class PixelKit {
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
+                onComplete(false, nil)
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
 
         fireRequestWrapper(pixelName + "_count", platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)
@@ -903,9 +919,11 @@ public final class PixelKit {
             } catch {
                 fireStorageWriteErrorPixel(suppressedPixelName: pixelName, error: error)
                 printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
+                onComplete(false, nil)
             }
         } else {
             printDebugInfo(pixelName: pixelName + "_daily", frequency: .dailyAndCount, parameters: newParams, skipped: true)
+            onComplete(false, nil)
         }
 
         fireRequestWrapper(pixelName, platformSuffix, headers, newParams, allowedQueryReservedCharacters, true, .dailyAndCount, retryOnFailure, onComplete)

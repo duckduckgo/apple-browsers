@@ -7911,7 +7911,7 @@ extension MainViewController {
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
         viewCoordinator.omniBar.adjust(for: appSettings.currentAddressBarPosition)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)
-        viewCoordinator.bringFloatingTopNavigationBarToFrontIfNeeded()
+        viewCoordinator.bringFloatingNavigationBarToFrontIfNeeded()
         (viewCoordinator.omniBar as? DefaultOmniBarViewController)?.reconcileShadowClip()
         reconcileAIChromeForCurrentTab()
     }

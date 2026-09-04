@@ -146,6 +146,59 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNotNil(promo.delegate)
     }
 
+    @MainActor
+    func testFactoryCreatesUpdateAvailablePromoWithCorrectConfiguration() {
+        let promo = PromoServiceFactory.updateAvailable(dependencies: dependencies)
+
+        XCTAssertEqual(promo.id, "update-available")
+        XCTAssertEqual(promo.triggers, [.updateAvailable])
+        XCTAssertEqual(promo.initiated, .app)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertEqual(promo.promoType.timeoutInterval, .seconds(5))
+        XCTAssertEqual(promo.context, .global)
+        XCTAssertFalse(promo.respectsGlobalCooldown)
+        XCTAssertFalse(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
+    }
+
+    @MainActor
+    func testFactoryCreatesBrowserUpdatedPromoWithCorrectConfiguration() throws {
+        let bridge = UpdateNotificationPromoBridge(notificationCenter: NotificationCenter())
+        let dependenciesWithBridge = PromoDependencies(
+            keyValueStore: dependencies.keyValueStore,
+            isExternallyActivated: dependencies.isExternallyActivated,
+            isNewUserProvider: dependencies.isNewUserProvider,
+            isOnboardingCompletedProvider: dependencies.isOnboardingCompletedProvider,
+            activeRemoteMessageModel: dependencies.activeRemoteMessageModel,
+            defaultBrowserAndDockPromptService: dependencies.defaultBrowserAndDockPromptService,
+            sessionRestoreCoordinator: dependencies.sessionRestoreCoordinator,
+            subscriptionPromoDelegate: dependencies.subscriptionPromoDelegate,
+            featureFlagger: dependencies.featureFlagger,
+            cookiePopupProtectionPreferences: dependencies.cookiePopupProtectionPreferences,
+            windowControllersManager: dependencies.windowControllersManager,
+            updateController: nil,
+            updateNotificationBridge: bridge
+        )
+
+        let promo = try XCTUnwrap(PromoServiceFactory.browserUpdated(dependencies: dependenciesWithBridge))
+
+        XCTAssertEqual(promo.id, "browser-updated")
+        XCTAssertEqual(promo.triggers, [.browserUpdated])
+        XCTAssertEqual(promo.initiated, .app)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertEqual(promo.promoType.timeoutInterval, .seconds(5))
+        XCTAssertEqual(promo.promoType.timeoutResult, .noChange)
+        XCTAssertEqual(promo.context, .global)
+        XCTAssertFalse(promo.respectsGlobalCooldown)
+        XCTAssertFalse(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
+    }
+
+    @MainActor
+    func testFactoryReturnsNilBrowserUpdatedPromoWhenNoBridge() {
+        XCTAssertNil(PromoServiceFactory.browserUpdated(dependencies: dependencies))
+    }
+
 }
 
 extension PromoServiceFactoryTests {
@@ -196,7 +249,9 @@ extension PromoServiceFactoryTests {
                 ),
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
-            )
+            ),
+            updateController: nil,
+            updateNotificationBridge: nil
         )
     }
 }

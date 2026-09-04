@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Entry point for localization workflows
-# Subcommands: upload | approve | status | download
+# Subcommands: upload | nightly | approve | status | download
 
 # Location of the script
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
@@ -15,6 +15,7 @@ usage() {
 	cat <<- EOF
 	Usage:
 		$0 upload --job-name <name> --files <file1> [<file2> ...]
+		$0 nightly --job-name <name> --job-prefix <prefix> --files <file1> [<file2> ...] [--threshold <usd>] [--result-file <path>]
 		$0 approve --job-id <id>
 		$0 status --job-id <id>
 		$0 download --job-id <id> [--out-dir <path>]
@@ -86,6 +87,9 @@ case "$cmd" in
 
 		# Run Python CLI
 		python3 "$PYTHON_TOOL" upload --job-name "$JOB_NAME" --files "${FILES[@]}"
+		;;
+	nightly)
+		python3 "$PYTHON_TOOL" nightly "$@"
 		;;
 	status)
 		JOB_ID=$(parse_job_id "$@")

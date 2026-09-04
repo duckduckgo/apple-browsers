@@ -75,7 +75,7 @@ private struct SyncedDevicesListV2: View {
 
     @State var hoveredDevice: SyncDevice?
 
-    var presentDeviceDetails: ((SyncDevice) -> Void)?
+    var presentDeviceDetails: ((SyncDevice) async -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -115,7 +115,9 @@ private struct SyncedDevicesListV2: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityAction(named: Text(UserText.currentDeviceDetails)) {
-            presentDeviceDetails?(device)
+            Task {
+                await presentDeviceDetails?(device)
+            }
         }
     }
 
@@ -123,7 +125,9 @@ private struct SyncedDevicesListV2: View {
     private func deviceAction(for device: SyncDevice) -> some View {
         if let presentDeviceDetails {
             Button(UserText.currentDeviceDetails) {
-                presentDeviceDetails(device)
+                Task {
+                    await presentDeviceDetails(device)
+                }
             }
             .accessibilityHidden(true)
             .visibility(hoveredDevice?.id == device.id ? .visible : .gone)

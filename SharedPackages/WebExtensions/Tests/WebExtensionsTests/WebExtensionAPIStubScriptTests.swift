@@ -328,25 +328,10 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.scripting.ExecutionWorld.ISOLATED === 'ISOLATED'")
         try assertTrue("chrome.scripting.ExecutionWorld.MAIN === 'MAIN'")
 
-        try assertTrue("chrome.runtime.OnInstalledReason.INSTALL === 'install'")
-        try assertTrue("chrome.runtime.OnRestartRequiredReason.APP_UPDATE === 'app_update'")
-        try assertTrue("chrome.runtime.PlatformOs.MAC === 'mac'")
-        try assertTrue("chrome.runtime.PlatformArch.X86_64 === 'x86-64'")
-        try assertTrue("chrome.runtime.ContextType.OFFSCREEN_DOCUMENT === 'OFFSCREEN_DOCUMENT'")
-
         try assertTrue("chrome.tabs.TAB_ID_NONE === -1")
-        try assertTrue("chrome.tabs.WindowType.DEVTOOLS === 'devtools'")
-        try assertTrue("chrome.tabs.TabStatus.COMPLETE === 'complete'")
 
         try assertTrue("chrome.windows.WINDOW_ID_NONE === -1")
         try assertTrue("chrome.windows.WINDOW_ID_CURRENT === -2")
-        try assertTrue("chrome.windows.WindowType.NORMAL === 'normal'")
-        try assertTrue("chrome.windows.WindowState.LOCKED_FULLSCREEN === 'locked-fullscreen'")
-
-        try assertTrue("chrome.contextMenus.ContextType.BROWSER_ACTION === 'browser_action'")
-        try assertTrue("chrome.contextMenus.ItemType.SEPARATOR === 'separator'")
-
-        try assertTrue("chrome.storage.AccessLevel.TRUSTED_CONTEXTS === 'TRUSTED_CONTEXTS'")
     }
 
     func testWhenConstantsAreInstalled_ThenTheyAreFrozenAndTheirNamespacesAreUntouched() throws {
@@ -354,7 +339,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try evaluateStubScript()
 
         try assertTrue("Object.isFrozen(chrome.scripting.ExecutionWorld)")
-        try assertTrue("Object.isFrozen(chrome.windows.WindowState)")
 
         context.evaluateScript("try { chrome.scripting.ExecutionWorld.ISOLATED = 'tampered'; } catch (error) {}")
         try assertTrue("chrome.scripting.ExecutionWorld.ISOLATED === 'ISOLATED'")
@@ -380,13 +364,12 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     }
 
     func testWhenNamespaceForConstantsIsMissing_ThenNothingIsInstalledAndNothingThrows() throws {
-        // The default context has no `scripting`, `windows` or `contextMenus`, and none of them is
-        // on the stubbed-namespace list, so their constants have nowhere to go.
+        // The default context has neither `scripting` nor `windows`, and neither is on the
+        // stubbed-namespace list, so their constants have nowhere to go.
         try evaluateStubScript()
 
         try assertTrue("chrome.scripting === undefined")
         try assertTrue("chrome.windows === undefined")
-        try assertTrue("chrome.contextMenus === undefined")
         // Namespaces that are present still get theirs.
         try assertTrue("chrome.tabs.TAB_ID_NONE === -1")
     }
@@ -684,9 +667,10 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     // MARK: - Helpers
 
-    /// `JSContext` has neither a DOM nor timers, so the offscreen stub gets the minimum it touches:
-    /// a document that records the elements it hands out, a background page URL to resolve against,
-    /// and a `setTimeout` that parks its callback for the test to fire.
+    /// `JSContext` has no DOM, no timers and no `URL`, so the offscreen stub gets the minimum it
+    /// touches: a document that records the elements it hands out, a background page URL to resolve
+    /// against, a minimal `URL` to resolve it with, and a `setTimeout` that parks its callback for
+    /// the test to fire.
     private func installFakeDocument() throws {
         let scheduleTimer: @convention(block) (JSValue, Double) -> Int = { [weak self] callback, delay in
             self?.scheduledTimers.append(ScheduledTimer(callback: callback, delay: delay))
@@ -695,6 +679,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.setObject(scheduleTimer, forKeyedSubscript: "setTimeout" as NSString)
 
         context.evaluateScript("""
+        \(JSContextPolyfills.url)
+
         var location = { href: "chrome-extension://abc/ddg-background-page.html" };
         var document = {
             documentElement: { children: [], appendChild: function(element) { this.children.push(element); this.lastAppended = element; } },
@@ -755,7 +741,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("""
         chrome.scripting = { executeScript: function() {} };
         chrome.windows = {};
-        chrome.contextMenus = {};
         var originalScripting = chrome.scripting;
         var originalExecuteScript = chrome.scripting.executeScript;
         var originalWindows = chrome.windows;

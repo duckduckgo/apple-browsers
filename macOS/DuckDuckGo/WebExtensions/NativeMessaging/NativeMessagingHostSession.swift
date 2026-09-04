@@ -50,6 +50,10 @@ final class NativeMessagingHostSession {
     private var errorTask: Task<Void, Never>?
     private var didFinish = false
 
+    /// Signalled by the process's termination handler, so the read loop can wait for the exit
+    /// instead of polling for it.
+    private let didExit = DispatchSemaphore(value: 0)
+
     /// Set when the process ends. The read loop still has to drain the pipe.
     private var exitStatus: Int32?
 
@@ -78,6 +82,9 @@ final class NativeMessagingHostSession {
     func start() throws {
         process.terminationHandler = { [weak self] process in
             let status = process.terminationStatus
+            // Before the hop to the main actor: the read loop waits on this and must not be held
+            // up by whatever else is queued there.
+            self?.didExit.signal()
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.exitStatus = status
@@ -179,7 +186,7 @@ final class NativeMessagingHostSession {
                         self.messageHandler?(message)
                     }
                 }
-                Self.waitForExit(of: process)
+                waitForExit()
                 await MainActor.run {
                     self.finishAfterDrain()
                 }
@@ -248,19 +255,15 @@ final class NativeMessagingHostSession {
         }
     }
 
-    /// Describes a host message by its `type` fields only.
-    ///
     /// Waits briefly for a host that closed its output to finish exiting.
     ///
     /// A host's exit status is what tells one that failed from one that ended normally, and
     /// the read loop reaches EOF at about the moment `Process` learns of the exit. This runs
     /// on the read loop's own thread and never on the main one, and it gives up rather than
-    /// wait on a host that closed its output and stayed up.
-    private static func waitForExit(of process: Process, timeout: TimeInterval = 1) {
-        let deadline = Date().addingTimeInterval(timeout)
-        while process.isRunning, Date() < deadline {
-            usleep(5_000)
-        }
+    /// wait on a host that closed its output and stayed up — which is also what happens when
+    /// `tearDown()` has already cleared the termination handler that would have signalled here.
+    private func waitForExit(timeout: TimeInterval = 1) {
+        _ = didExit.wait(timeout: .now() + timeout)
     }
 
     /// Reads exactly `count` bytes, or returns `nil` once the host closes its output.

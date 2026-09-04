@@ -95,8 +95,6 @@ enum WebExtensionImportScriptsShim {
         // Hands every captured chunk payload back to whatever `push` the webpack runtime installed,
         // which is what makes the runtime register the chunk's modules.
         function replayCapturedChunks() {
-            var replayedCount = 0;
-
             Object.getOwnPropertyNames(globalThis).forEach(function(name) {
                 if (name.indexOf("webpackChunk") !== 0) {
                     return;
@@ -124,14 +122,11 @@ enum WebExtensionImportScriptsShim {
                     replayedEntries.add(entry);
                     try {
                         chunks.push(entry);
-                        replayedCount++;
                     } catch (error) {
                         console.info("[DuckDuckGo] importScripts: replaying a chunk of " + name + " failed: " + error);
                     }
                 });
             });
-
-            return replayedCount;
         }
 
         globalThis.importScripts = function() {
@@ -140,8 +135,7 @@ enum WebExtensionImportScriptsShim {
                 if (!isPreloaded(resolveURL(url))) {
                     throw new Error("[DuckDuckGo] importScripts: " + url + " was not preloaded by the background page");
                 }
-                var replayedCount = replayCapturedChunks();
-                console.info("[DuckDuckGo] importScripts(" + url + "): replayed " + replayedCount + " preloaded chunk(s)");
+                replayCapturedChunks();
             }
         };
     })();

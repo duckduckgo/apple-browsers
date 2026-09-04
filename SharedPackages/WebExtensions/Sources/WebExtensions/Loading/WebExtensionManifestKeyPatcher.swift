@@ -22,32 +22,55 @@ import os.log
 /// Restores the Chrome Web Store `key` of a known extension installed from a source that does not
 /// carry one, so the extension keeps the Chrome identity its native messaging host expects.
 ///
-/// See `WebExtensionKnownPublicKeys` for why the key can be missing and why embedding it is safe.
+/// The Web Store injects a `key` field into the manifest of every extension it serves, and Chrome
+/// derives the extension's identifier from it (see `WKWebExtension.chromeExtensionIdentifier`). The
+/// release zips vendors publish themselves are built before that step, so they carry no `key` at
+/// all: there is nothing to derive an identifier from, and a native messaging host that gates
+/// callers on `allowed_origins` — Bitwarden's and 1Password's both do — rejects the extension
+/// outright. Putting the store's key back restores the identifier the host expects.
+///
 /// The extension is recognized by name, which is what a user sees and what a vendor keeps stable
 /// across releases — the manifest has no other stable identity to match on precisely because the
 /// `key` is what is missing.
 ///
 /// A manifest carries more than one name, though, and which one is the vendor's plain product name
-/// varies: Bitwarden's localized `name` is the store listing "Bitwarden Password Manager" while its
-/// `short_name` is "Bitwarden", and 1Password's localized `name` is "1Password – Password Manager".
-/// Every candidate is therefore tried in turn — the localized `name`, a literal (non-placeholder)
-/// `name`, then `short_name` — and the first one the table knows wins. That keeps the table keyed on
-/// short vendor names, which are far less volatile than store listing titles.
+/// varies: Bitwarden's `name` is the store listing "Bitwarden Password Manager" while its
+/// `short_name` is "Bitwarden", and 1Password's `name` is "1Password – Password Manager". Both
+/// candidates are therefore tried in turn — a literal `name`, then `short_name` — and the first one
+/// the table knows wins. That keeps the table keyed on short vendor names, which are far less
+/// volatile than store listing titles.
 struct WebExtensionManifestKeyPatcher {
+
+    /// Base64-encoded DER `SubjectPublicKeyInfo` values, exactly as the Web Store writes them into
+    /// `manifest.json`, keyed by the display name the extension resolves to.
+    ///
+    /// The value is a *public* key, published verbatim in every copy of the extension the Web Store
+    /// serves, so embedding it grants nothing: it names the extension, it does not authenticate
+    /// anyone. A manifest that already carries a `key` is never touched.
+    static let knownPublicKeys: [String: String] = [
+        // Derives to nngceckbapebfimnlniiiahkandclblb, the id Bitwarden's
+        // `com.8bit.bitwarden` host manifest lists in `allowed_origins`.
+        "Bitwarden": """
+        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmqKbvreshyXRuN2gikeR1idqR6KL0Di89JZcMyD4bjJRZVmQO7aznSGSALIHzS\
+        AUGYocUYBNDOP5QAhImxXyQ1qG8+goXs93v9GzrNJETdVuCEhqBggC4/DFabryJZDiKvZ2Jl0DM7MsWdoybZPwrj70V3aJ/nVNOMkf868sc\
+        NTMliwitCqqjT5baTANsG0DkZWQExD4lSXzSZHH9MEO8q0iZ7RRlNuGRBAkZgNV8FwZRsPKm/rwQ9dy3VpgLcmLp5GiMt+kAEncqKAkuRYn\
+        hVXXBsKqIyYTMjHSLkLnpfFySyOPLBdS617i/PGNiP/MT6Xy6z//v5NozUgaAZ4gJQIDAQAB
+        """,
+        // Derives to aeblfdkhhhdcdjpifhhbdiojplfjncoa, the id 1Password's
+        // `com.1password.1password` host manifest lists in `allowed_origins`.
+        "1Password": """
+        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnHpaUll4uWujpAdbIXOQY2WE6hk8PllsYsnoUaj5qHXwv4IB6A9pONqGaTL2KL\
+        20u6E6XVhncY6Ae6SQSBQqiIkgjPsiG0NDNsDlju/kzBnfimKFC/bpzOrqFqbhswQHifnet5uHlpG97whTzLO3ka0M5aqB9V9mD/0qVXvN\
+        gAVVnSTULH254YqpeCcAhmsKiFZSL6OrOZmCp8kZ/OeOUK9iYWYylL7VcOXVrZf10EPrlaCNXzVk7K35dPuQ7svhA0Pgju3kngB4RLa5Ioj\
+        hw3IT+B5+m8pisjOSd1oKMrRmhGs7rDhF5IEtAiVxqVp7uOOMPQj3vrbMDAzf7vqLtQIDAQAB
+        """
+    ]
 
     private enum ManifestKey {
         static let key = "key"
         static let name = "name"
         static let shortName = "short_name"
-        static let defaultLocale = "default_locale"
-    }
-
-    private enum Localization {
-        static let directoryName = "_locales"
-        static let messagesFilename = "messages.json"
         static let placeholderPrefix = "__MSG_"
-        static let placeholderSuffix = "__"
-        static let messageKey = "message"
     }
 
     private let fileManager: FileManager
@@ -65,8 +88,8 @@ struct WebExtensionManifestKeyPatcher {
             return false
         }
 
-        for displayName in candidateNames(in: manifest, manifestDirectory: manifestDirectory) {
-            guard let publicKey = WebExtensionKnownPublicKeys.publicKey(forDisplayName: displayName) else {
+        for displayName in candidateNames(in: manifest) {
+            guard let publicKey = Self.knownPublicKeys[displayName] else {
                 continue
             }
 
@@ -82,21 +105,19 @@ struct WebExtensionManifestKeyPatcher {
         return false
     }
 
-    /// The names this extension could be known by, most specific first: the localized `name`, a
-    /// literal `name`, then `short_name`.
-    private func candidateNames(in manifest: [String: Any], manifestDirectory: URL) -> [String] {
+    /// The names this extension could be known by, most specific first: a literal `name`, then
+    /// `short_name`.
+    ///
+    /// A `name` that is a `__MSG_…__` localization placeholder is skipped: the placeholder itself can
+    /// never match a table key, and the name it stands for is the store listing title, which is not
+    /// what the table is keyed on.
+    private func candidateNames(in manifest: [String: Any]) -> [String] {
         var names: [String] = []
 
-        if let name = manifest[ManifestKey.name] as? String, !name.isEmpty {
-            if let messageIdentifier = messageIdentifier(inPlaceholder: name) {
-                if let localizedName = localizedMessage(forIdentifier: messageIdentifier,
-                                                        in: manifest,
-                                                        manifestDirectory: manifestDirectory) {
-                    names.append(localizedName)
-                }
-            } else {
-                names.append(name)
-            }
+        if let name = manifest[ManifestKey.name] as? String,
+           !name.isEmpty,
+           !name.hasPrefix(ManifestKey.placeholderPrefix) {
+            names.append(name)
         }
 
         if let shortName = manifest[ManifestKey.shortName] as? String, !shortName.isEmpty {
@@ -104,44 +125,5 @@ struct WebExtensionManifestKeyPatcher {
         }
 
         return names
-    }
-
-    /// The message identifier inside a `__MSG_extName__` placeholder, or `nil` when `value` is a
-    /// literal name.
-    private func messageIdentifier(inPlaceholder value: String) -> String? {
-        guard value.hasPrefix(Localization.placeholderPrefix), value.hasSuffix(Localization.placeholderSuffix) else {
-            return nil
-        }
-        let identifier = value
-            .dropFirst(Localization.placeholderPrefix.count)
-            .dropLast(Localization.placeholderSuffix.count)
-        return identifier.isEmpty ? nil : String(identifier)
-    }
-
-    /// Looks `identifier` up in `_locales/<default_locale>/messages.json`. Chrome treats message
-    /// identifiers case-insensitively, so an exact match is tried first and a case-insensitive one
-    /// after it.
-    private func localizedMessage(forIdentifier identifier: String,
-                                  in manifest: [String: Any],
-                                  manifestDirectory: URL) -> String? {
-        guard let defaultLocale = manifest[ManifestKey.defaultLocale] as? String, !defaultLocale.isEmpty else {
-            return nil
-        }
-
-        let messagesURL = manifestDirectory
-            .appendingPathComponent(Localization.directoryName)
-            .appendingPathComponent(defaultLocale)
-            .appendingPathComponent(Localization.messagesFilename)
-
-        guard let data = try? Data(contentsOf: messagesURL),
-              let messages = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return nil
-        }
-
-        let entry = messages[identifier] ?? messages.first { $0.key.caseInsensitiveCompare(identifier) == .orderedSame }?.value
-        guard let message = (entry as? [String: Any])?[Localization.messageKey] as? String, !message.isEmpty else {
-            return nil
-        }
-        return message
     }
 }

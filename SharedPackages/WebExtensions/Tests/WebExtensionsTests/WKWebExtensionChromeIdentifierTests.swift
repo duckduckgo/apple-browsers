@@ -24,15 +24,8 @@ import XCTest
 @available(macOS 15.4, iOS 18.4, *)
 final class WKWebExtensionChromeIdentifierTests: XCTestCase {
 
-    /// The public key of the 1Password extension in the Chrome Web Store, as its manifest
-    /// carries it. 1Password's host manifest lists the matching origin in `allowed_origins`.
-    private static let onePasswordKey = """
-    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnHpaUll4uWujpAdbIXOQY2WE6hk8PllsYsnoUaj5qHXwv4IB6A9pONqGaTL2K\
-    L20u6E6XVhncY6Ae6SQSBQqiIkgjPsiG0NDNsDlju/kzBnfimKFC/bpzOrqFqbhswQHifnet5uHlpG97whTzLO3ka0M5aqB9V9mD/0qVXv\
-    NgAVVnSTULH254YqpeCcAhmsKiFZSL6OrOZmCp8kZ/OeOUK9iYWYylL7VcOXVrZf10EPrlaCNXzVk7K35dPuQ7svhA0Pgju3kngB4RLa5I\
-    ojhw3IT+B5+m8pisjOSd1oKMrRmhGs7rDhF5IEtAiVxqVp7uOOMPQj3vrbMDAzf7vqLtQIDAQAB
-    """
-
+    /// The identifier Chrome derives from the 1Password key the patcher restores, and the one
+    /// 1Password's host manifest lists in `allowed_origins`.
     private static let onePasswordIdentifier = "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
 
     private var createdExtensionURLs: [URL] = []
@@ -48,7 +41,8 @@ final class WKWebExtensionChromeIdentifierTests: XCTestCase {
     // MARK: - chromeExtensionIdentifier
 
     func testWhenManifestHasOnePasswordKey_ThenIdentifierMatchesChromeWebStoreIdentifier() async throws {
-        let webExtension = try await makeExtension(manifest: manifest(key: Self.onePasswordKey))
+        let onePasswordKey = try XCTUnwrap(WebExtensionManifestKeyPatcher.knownPublicKeys["1Password"])
+        let webExtension = try await makeExtension(manifest: manifest(key: onePasswordKey))
 
         XCTAssertEqual(webExtension.chromeExtensionIdentifier, Self.onePasswordIdentifier)
     }
@@ -74,7 +68,8 @@ final class WKWebExtensionChromeIdentifierTests: XCTestCase {
     // MARK: - chromeExtensionOrigin
 
     func testWhenManifestHasOnePasswordKey_ThenOriginIsChromeExtensionOrigin() async throws {
-        let webExtension = try await makeExtension(manifest: manifest(key: Self.onePasswordKey))
+        let onePasswordKey = try XCTUnwrap(WebExtensionManifestKeyPatcher.knownPublicKeys["1Password"])
+        let webExtension = try await makeExtension(manifest: manifest(key: onePasswordKey))
 
         XCTAssertEqual(webExtension.chromeExtensionOrigin, "chrome-extension://\(Self.onePasswordIdentifier)/")
     }

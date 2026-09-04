@@ -185,7 +185,7 @@ final class MainViewController: NSViewController {
             featureFlagger: featureFlagger,
             aiChatMenuConfig: aiChatMenuConfig,
             tabDragAndDropManager: tabDragAndDropManager,
-            autoconsentStatsPopoverCoordinator: NSApp.delegateTyped.autoconsentStatsPopoverCoordinator
+            cookiePopupsBlockedPromoDelegate: NSApp.delegateTyped.cookiePopupsBlockedPromoDelegate
         )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
@@ -431,28 +431,13 @@ final class MainViewController: NSViewController {
         startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
 
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
-        registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
-    }
-
-    var bookmarkBarPromptObserver: Any?
-    func registerForBookmarkBarPromptNotifications() {
-        guard !bookmarksBarViewController.bookmarksBarPromptShown else { return }
-        bookmarkBarPromptObserver = NotificationCenter.default.addObserver(
-            forName: .bookmarkPromptShouldShow,
-            object: nil,
-            queue: .main) { [weak self] _ in
-                self?.showBookmarkPromptIfNeeded()
-            }
     }
 
     override func viewDidDisappear() {
         super.viewDidDisappear()
         mainView.setMouseAboveWebViewTrackingAreaEnabled(false)
-        if let bookmarkBarPromptObserver {
-            NotificationCenter.default.removeObserver(bookmarkBarPromptObserver)
-        }
     }
 
     override func viewDidLayout() {
@@ -475,27 +460,6 @@ final class MainViewController: NSViewController {
     func windowDidResignKey() {
         browserTabViewController.windowDidResignKey()
         tabBarViewController.hideTabPreview()
-    }
-
-    func showBookmarkPromptIfNeeded() {
-        guard !isInPopUpWindow,
-              !bookmarksBarViewController.bookmarksBarPromptShown,
-              OnboardingActionsManager.isOnboardingFinished
-        else {
-            return
-        }
-
-        if bookmarksBarIsVisible {
-            // Don't show this to users who obviously know about the bookmarks bar already
-            bookmarksBarViewController.bookmarksBarPromptShown = true
-            return
-        }
-
-        updateBookmarksBarViewVisibility(visible: true)
-        // This won't work until the bookmarks bar is actually visible which it isn't until the next ui cycle
-        DispatchQueue.main.asyncAfter(deadline: .now() + NSAnimationContext.current.duration) {
-            self.bookmarksBarViewController.showBookmarksBarPrompt()
-        }
     }
 
     override func encodeRestorableState(with coder: NSCoder) {

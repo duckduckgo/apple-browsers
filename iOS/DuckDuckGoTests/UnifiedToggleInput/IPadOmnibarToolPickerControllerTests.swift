@@ -30,10 +30,12 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
     private var sut: IPadOmnibarToolPickerController!
     private var store: UTIModelStore!
     private var preferences: StubToolPreferences!
+    private var createImagePixelFiring: MockCreateImagePixelFiring!
 
     override func setUp() {
         super.setUp()
         preferences = StubToolPreferences()
+        createImagePixelFiring = MockCreateImagePixelFiring()
         store = UTIModelStore(
             modelsService: StubModelsService(),
             preferences: preferences,
@@ -47,6 +49,7 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
         sut = nil
         store = nil
         preferences = nil
+        createImagePixelFiring = nil
         super.tearDown()
     }
 
@@ -99,6 +102,67 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
         sut.handleToolSelection(.imageGeneration)
 
         XCTAssertEqual(sut.selectedToolsForSubmission, [.imageGeneration])
+    }
+
+    func testWhenUpdatedCreateImageSwitchesModelThenUsesSharedSwitcherAndReportsPixel() {
+        setUpUpdatedCreateImageModels()
+        var notices: [CreateImageModelSwitchNotice?] = []
+        sut.onModelSwitchNoticeUpdated = { notices.append($0) }
+
+        sut.handleToolSelection(.imageGeneration)
+
+        XCTAssertEqual(store.persistedModelId, "image-capable")
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertEqual(notices.last??.newModelShortName, "image-capable")
+        XCTAssertEqual(createImagePixelFiring.switches.first?.entryPoint, .toolsMenu)
+    }
+
+    func testWhenModelsRefreshAfterCreateImageSwitchThenNoticeRemainsVisible() {
+        setUpUpdatedCreateImageModels()
+        var notices: [CreateImageModelSwitchNotice?] = []
+        sut.onModelSwitchNoticeUpdated = { notices.append($0) }
+        sut.handleToolSelection(.imageGeneration)
+
+        sut.handleModelsUpdated()
+
+        XCTAssertEqual(notices.count, 1)
+        XCTAssertNotNil(notices.last ?? nil)
+    }
+
+    func testWhenUserChangesModelAfterCreateImageSwitchThenNoticeIsCleared() {
+        setUpUpdatedCreateImageModels()
+        var notices: [CreateImageModelSwitchNotice?] = []
+        sut.onModelSwitchNoticeUpdated = { notices.append($0) }
+        sut.handleToolSelection(.imageGeneration)
+
+        sut.handleModelChanged()
+
+        XCTAssertEqual(notices.count, 2)
+        XCTAssertNil(notices.last ?? nil)
+    }
+
+    func testWhenModelSwitchNoticeDismissedThenDismissPixelFiresOnce() {
+        setUpUpdatedCreateImageModels()
+        sut.handleToolSelection(.imageGeneration)
+
+        sut.dismissModelSwitchNotice()
+        sut.dismissModelSwitchNotice()
+
+        XCTAssertEqual(createImagePixelFiring.noticeDismissedCount, 1)
+    }
+
+    func testWhenUpdatedCreateImageHasNoFallbackThenUnavailablePixelFires() {
+        store.models = [makeModel(id: "unsupported", supportedTools: [])]
+        store.updateSelectedModel("unsupported", isNewChatContext: true)
+        sut = IPadOmnibarToolPickerController(
+            store: store,
+            isUpdatedCreateImageEnabled: true,
+            createImagePixelFiring: createImagePixelFiring)
+
+        sut.handleToolSelection(.imageGeneration)
+
+        XCTAssertEqual(createImagePixelFiring.unavailableCount, 1)
+        XCTAssertNil(sut.selectedTool)
     }
 
     func testWhenUnsupportedToolSelectedThenIgnored() {
@@ -247,6 +311,18 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func setUpUpdatedCreateImageModels() {
+        store.models = [
+            makeModel(id: "unsupported", supportedTools: []),
+            makeModel(id: "image-capable", supportedTools: [.imageGeneration])
+        ]
+        store.updateSelectedModel("unsupported", isNewChatContext: true)
+        sut = IPadOmnibarToolPickerController(
+            store: store,
+            isUpdatedCreateImageEnabled: true,
+            createImagePixelFiring: createImagePixelFiring)
+    }
 
     private func makeModel(id: String, supportedTools: [AIChatRAGTool]) -> AIChatModel {
         AIChatModel(

@@ -1,6 +1,5 @@
 //
-//  DuckAIVoiceShortcutFeature.swift
-//  DuckDuckGo
+//  PromoServiceFactory+CookiePopupsBlocked.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,22 +16,22 @@
 //  limitations under the License.
 //
 
-import PrivacyConfig
-import FeatureFlags_iOS
+import Foundation
 
-/// Provides access to Duck AI voice shortcut availability.
-protocol DuckAIVoiceShortcutFeatureProviding {
-    var isAvailable: Bool { get }
-}
+extension PromoServiceFactory {
 
-struct DuckAIVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
-    private let featureFlagger: any FeatureFlagger
+    static let cookiePopupsBlockedPromoID = "cookie-popups-blocked"
 
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
-    var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.duckAIVoiceShortcut)
+    /// Builds the Cookie Pop-ups Blocked Promo.
+    @MainActor
+    static func cookiePopupsBlocked(delegate: CookiePopupsBlockedPromoDelegate) -> Promo {
+        InternalPromo(
+            id: cookiePopupsBlockedPromoID,
+            triggers: [.appBecameActive],
+            initiated: .app,
+            promoType: PromoType(.featureTip, customTimeoutResult: .ignored()),
+            context: .global,
+            delegate: delegate
+        )
     }
 }

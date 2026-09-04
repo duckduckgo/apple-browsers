@@ -119,8 +119,7 @@ final class UTIModelStore {
     /// `resolve(modelId:)`, which drops an inaccessible model and falls back to `firstAccessibleModelId`
     /// — so switching to one would leave the user on a third model while the footer card names this one.
     var imageGenerationFallbackModel: AIChatModel? {
-        let candidates = models.filter { $0.entityHasAccess && $0.supportsTool(.imageGeneration) }
-        return candidates.first(where: \.isSuggestedForImageCreation) ?? candidates.first
+        AIChatModel.preferredImageGenerationModel(in: models)
     }
 
     private var firstAccessibleModelId: String? {

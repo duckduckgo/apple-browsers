@@ -40,6 +40,9 @@ public enum SingleUseColor {
     /// Resting background fill for the floating address bar field (composites over the toolbar's Liquid Glass capsule)
     case floatingAddressBarBackground
 
+    /// Flat fill for the address field embedded in the bottom floating chrome (no glass highlights).
+    case floatingEmbeddedAddressBarBackground
+
     /// Color used for what's New background
     case whatsNewBackground
 

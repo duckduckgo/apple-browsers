@@ -234,6 +234,7 @@ struct SyncWithAnotherDeviceViewV2: View {
                         Text(UserText.share)
                     }
                     .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
                 }
                 .buttonStyle(DismissActionButtonStyle(showsBorder: false,
                                                       stateColors: .themedDismissButton))
@@ -249,6 +250,7 @@ struct SyncWithAnotherDeviceViewV2: View {
                         Text(showCopyConfirmation ? UserText.syncWithAnotherDeviceCopiedV2 : UserText.copy)
                     }
                     .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
                 }
                 .buttonStyle(DismissActionButtonStyle(showsBorder: false,
                                                       stateColors: .themedDismissButton))
@@ -262,6 +264,7 @@ struct SyncWithAnotherDeviceViewV2: View {
         .padding(.bottom, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(innerCardBackground)
+        .environment(\.colorScheme, .light)
     }
 
     private var enterCodeCard: some View {

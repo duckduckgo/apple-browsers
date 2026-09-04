@@ -43,16 +43,16 @@ protocol SyncSettingsViewHandling {
     /// Initiates the process to turn off sync for the current device
     func turnOffSyncPressed()
 
-    /// Presents the device details view for the specified sync device
+    /// Presents the device details view for the specified sync device, authenticating the user first when required
     /// - Parameter device: The sync device to display details for
-    func presentDeviceDetails(_ device: SyncDevice)
+    func presentDeviceDetails(_ device: SyncDevice) async
 
     /// Presents the remove device confirmation dialog for the specified device
     /// - Parameter device: The sync device to remove
     func presentRemoveDevice(_ device: SyncDevice)
 
-    /// Presents the delete account confirmation dialog
-    func presentDeleteAccount()
+    /// Presents the delete account confirmation dialog, authenticating the user first when required
+    func presentDeleteAccount() async
 
     /// Initiates the sync setup flow to connect with another device
     func syncWithAnotherDevicePressed(source: SyncDeviceButtonTouchpoint?) async
@@ -187,8 +187,15 @@ final class SyncDialogController {
     }
 
     @MainActor
-    func presentDeleteAccount() {
-        presentDialog(for: .deleteAccount(self.devices))
+    func presentDeleteAccount() async {
+        guard featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) else {
+            presentDialog(for: .deleteAccount(self.devices))
+            return
+        }
+        guard await checkAuthenticated() else {
+            return
+        }
+        presentDialog(for: .deleteAccountV2(self.devices))
     }
 
     // MARK: - Private Helper Methods
@@ -430,6 +437,18 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         }
     }
 
+    func presentRemoveDeviceConfirmation(_ device: SyncDevice) {
+        presentDialog(for: .removeDeviceV2(device))
+    }
+
+    func removeDeviceConfirmed(_ device: SyncDevice) {
+        if device.isCurrent {
+            turnOffSync()
+        } else {
+            removeDevice(device)
+        }
+    }
+
     func removeDevice(_ device: SyncDevice) {
         Task { @MainActor in
             do {
@@ -626,13 +645,24 @@ extension SyncDialogController: SyncSettingsViewHandling {
     }
 
     @MainActor
-    func presentDeviceDetails(_ device: SyncDevice) {
-        presentDialog(for: .deviceDetails(device))
+    func presentDeviceDetails(_ device: SyncDevice) async {
+        guard featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) else {
+            presentDialog(for: .deviceDetails(device))
+            return
+        }
+        guard await checkAuthenticated() else {
+            return
+        }
+        presentDialog(for: .deviceDetailsV2(device))
     }
 
     @MainActor
     func presentRemoveDevice(_ device: SyncDevice) {
-        presentDialog(for: .removeDevice(device))
+        if featureFlagger.isFeatureOn(.simplifiedSyncSetupV2) {
+            presentDialog(for: .removeDeviceV2(device))
+        } else {
+            presentDialog(for: .removeDevice(device))
+        }
     }
 
     @MainActor

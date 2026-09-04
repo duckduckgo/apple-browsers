@@ -194,8 +194,14 @@ extension WebExtensionManager {
             return
         }
 
-        try await nativeMessagingHandler.connect(port,
-                                                 applicationIdentifier: port.applicationIdentifier,
-                                                 for: extensionContext)
+        do {
+            try await nativeMessagingHandler.connect(port,
+                                                     applicationIdentifier: port.applicationIdentifier,
+                                                     for: extensionContext)
+        } catch {
+            // WebKit only disconnects the port, so this is the one place the failure is recorded.
+            Logger.webExtensions.error("❌ Port of \(displayName) to \(applicationIdentifier, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
     }
 }

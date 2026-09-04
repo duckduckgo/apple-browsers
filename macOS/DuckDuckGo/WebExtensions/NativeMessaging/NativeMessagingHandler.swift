@@ -46,12 +46,8 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
             case .hostUnavailable(let host, let underlying):
                 return "The native messaging host \(host) is unavailable: \(underlying.localizedDescription)"
             case .originNotAllowed(let host, let origin):
-                guard let origin else {
-                    return "The native messaging host \(host) trusts only the origins in its allowed_origins, "
-                        + "and this extension has no manifest key, so it has no such origin to present."
-                }
-                return "The native messaging host \(host) does not list \(origin) in its allowed_origins, "
-                    + "so it would refuse the connection."
+                return "The native messaging host \(host) does not allow "
+                    + "\(origin ?? "an extension with no manifest key") to connect."
             }
         }
     }
@@ -215,34 +211,17 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     private func callerOrigin(for context: WKWebExtensionContext,
                               hostName: String,
                               manifest: NativeMessagingHostManifest) throws -> String {
-        let chromeOrigin = context.chromeExtensionOrigin
+        let chromeOrigin = context.webExtension.chromeExtensionOrigin
 
         // An empty list is still a list: it trusts nobody, so it must not fall through.
         if let allowedOrigins = manifest.allowedOrigins {
             guard let chromeOrigin, allowedOrigins.contains(chromeOrigin) else {
-                Logger.webExtensions.error("""
-                ❌ Host \(hostName, privacy: .public) does not allow \
-                \(chromeOrigin ?? "an extension without a manifest key", privacy: .public)
-                """)
                 throw HandlerError.originNotAllowed(host: hostName, origin: chromeOrigin)
             }
 
-            Logger.webExtensions.debug("🔗 Host \(hostName, privacy: .public) allows \(chromeOrigin, privacy: .public)")
             return chromeOrigin
         }
 
-        guard let chromeOrigin else {
-            let baseURL = context.baseURL.absoluteString
-            Logger.webExtensions.debug("""
-            🔗 Host \(hostName, privacy: .public) checks no origins, and the extension has no manifest key, \
-            so it gets \(baseURL, privacy: .public)
-            """)
-            return baseURL
-        }
-
-        Logger.webExtensions.debug("""
-        🔗 Host \(hostName, privacy: .public) checks no origins, so it gets \(chromeOrigin, privacy: .public)
-        """)
-        return chromeOrigin
+        return chromeOrigin ?? context.baseURL.absoluteString
     }
 }

@@ -566,6 +566,17 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertFalse(context?.isInspectable == true)
     }
 
+    @MainActor
+    func testWhenManagerIsCreated_ThenAPIStubsAreInstalledAsAUserScript() {
+        let manager = makeManager()
+
+        let userScripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
+        let stubScript = userScripts.first { $0.source == WebExtensionAPIStubScript.source }
+
+        XCTAssertNotNil(stubScript, "Expected the API stub script among the controller's user scripts")
+        XCTAssertEqual(stubScript?.injectionTime, .atDocumentStart)
+    }
+
     // MARK: - Additional Helpers
 
     @MainActor

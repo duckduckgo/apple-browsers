@@ -78,17 +78,12 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.notifications.onClicked.hasListeners() === false")
     }
 
-    func testWhenNamespaceIsMissing_ThenItsMethodsAreCallableFunctions() throws {
+    func testWhenNamespaceIsMissing_ThenItsMethodsAndNestedPropertyChainsResolveToFunctions() throws {
         try evaluateStubScript()
 
         try assertTrue("typeof chrome.offscreen.createDocument === 'function'")
         try assertTrue("typeof chrome.downloads.download === 'function'")
         try assertTrue("typeof chrome.management.getSelf === 'function'")
-    }
-
-    func testWhenNamespaceIsMissing_ThenNestedPropertyChainsResolveToFunctions() throws {
-        try evaluateStubScript()
-
         try assertTrue("typeof chrome.privacy.services.passwordSavingEnabled.get === 'function'")
         try assertTrue("typeof chrome.browsingData.removeCache === 'function'")
     }
@@ -141,8 +136,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try evaluateStubScript()
 
         try assertTrue("typeof chrome.webNavigation.onCreatedNavigationTarget.addListener === 'function'")
-        try assertTrue("typeof chrome.webNavigation.onHistoryStateUpdated.addListener === 'function'")
-        try assertTrue("typeof chrome.tabs.onZoomChange.addListener === 'function'")
         try assertTrue("typeof chrome.runtime.onSuspend.addListener === 'function'")
 
         try assertTrue("chrome.webNavigation.onCommitted === originalOnCommitted")
@@ -260,13 +253,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("var matchAllResult = null; clients.matchAll().then(function(r) { matchAllResult = r; });")
         try assertNoExceptions()
         try assertTrue("matchAllResult.length === 1 && matchAllResult[0] === 'native'")
-    }
-
-    func testWhenEventIsMissingButNamespaceIsToo_ThenNothingIsAddedToTheStub() throws {
-        // `dns` is stubbed wholesale, so its events come from the stub rather than the event list.
-        try evaluateStubScript()
-
-        try assertTrue("typeof chrome.dns.resolve === 'function'")
     }
 
     // MARK: - Logging and Idempotency

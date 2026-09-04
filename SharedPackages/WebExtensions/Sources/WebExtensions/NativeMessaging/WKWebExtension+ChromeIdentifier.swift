@@ -20,20 +20,25 @@ import CryptoKit
 import Foundation
 import WebKit
 
-private let keyKey = "key"
+/// The constants Chrome's identifier derivation is pinned to.
+private enum Chrome {
 
-/// The scheme Chrome gives extension origins.
-private let chromeExtensionScheme = "chrome-extension"
+    /// The manifest field holding the extension's public key.
+    static let manifestKey = "key"
 
-/// Chrome maps each hex digit of the identifier hash into this alphabet.
-private let chromeIdentifierAlphabetStart = UInt8(ascii: "a")
+    /// The scheme Chrome gives extension origins.
+    static let extensionScheme = "chrome-extension"
 
-/// The number of hash bytes Chrome uses. Each byte yields two identifier characters, so the
-/// identifier is 32 characters long.
-private let chromeIdentifierHashByteCount = 16
+    /// Chrome maps each hex digit of the identifier hash into this alphabet.
+    static let identifierAlphabetStart = UInt8(ascii: "a")
+
+    /// The number of hash bytes Chrome uses. Each byte yields two identifier characters, so the
+    /// identifier is 32 characters long.
+    static let identifierHashByteCount = 16
+}
 
 @available(macOS 15.4, iOS 18.4, *)
-public extension WKWebExtension {
+extension WKWebExtension {
 
     /// The identifier Chrome would give this extension, derived from the manifest `key` field.
     ///
@@ -52,7 +57,7 @@ public extension WKWebExtension {
     /// Unpacked extensions and our own bundled ones have no `key`, and neither has a Chrome
     /// identity to claim.
     var chromeExtensionIdentifier: String? {
-        guard let key = manifest[keyKey] as? String,
+        guard let key = manifest[Chrome.manifestKey] as? String,
               let publicKey = Data(base64Encoded: key),
               !publicKey.isEmpty else {
             return nil
@@ -60,11 +65,11 @@ public extension WKWebExtension {
 
         let digest = SHA256.hash(data: publicKey)
         var identifier = ""
-        identifier.reserveCapacity(chromeIdentifierHashByteCount * 2)
+        identifier.reserveCapacity(Chrome.identifierHashByteCount * 2)
 
-        for byte in digest.prefix(chromeIdentifierHashByteCount) {
-            identifier.append(Character(UnicodeScalar(chromeIdentifierAlphabetStart + (byte >> 4))))
-            identifier.append(Character(UnicodeScalar(chromeIdentifierAlphabetStart + (byte & 0x0F))))
+        for byte in digest.prefix(Chrome.identifierHashByteCount) {
+            identifier.append(Character(UnicodeScalar(Chrome.identifierAlphabetStart + (byte >> 4))))
+            identifier.append(Character(UnicodeScalar(Chrome.identifierAlphabetStart + (byte & 0x0F))))
         }
         return identifier
     }
@@ -76,22 +81,8 @@ public extension WKWebExtension {
     /// trailing slash is part of the origin as Chrome writes it, and as host manifests list it.
     ///
     /// Returns `nil` when the extension has no derivable ``chromeExtensionIdentifier``.
-    var chromeExtensionOrigin: String? {
+    public var chromeExtensionOrigin: String? {
         guard let chromeExtensionIdentifier else { return nil }
-        return "\(chromeExtensionScheme)://\(chromeExtensionIdentifier)/"
-    }
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-public extension WKWebExtensionContext {
-
-    /// Convenience proxy to the underlying web extension's Chrome identifier.
-    var chromeExtensionIdentifier: String? {
-        webExtension.chromeExtensionIdentifier
-    }
-
-    /// Convenience proxy to the underlying web extension's Chrome origin.
-    var chromeExtensionOrigin: String? {
-        webExtension.chromeExtensionOrigin
+        return "\(Chrome.extensionScheme)://\(chromeExtensionIdentifier)/"
     }
 }

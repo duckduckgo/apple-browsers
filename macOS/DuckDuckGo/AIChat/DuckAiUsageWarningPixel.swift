@@ -191,20 +191,18 @@ extension DuckAiUsageWarningPixel {
 struct DuckAiUsageWarningPixelAdapter: DuckAiUsageWarningPixelFiring {
 
     private let surface: DuckAiUsageWarningPixelSurface
-    private let firePixel: (DuckAiUsageWarningPixel) -> Void
+    private let pixelFiring: PixelFiring?
 
-    init(surface: DuckAiUsageWarningPixelSurface,
-         firePixel: @escaping (DuckAiUsageWarningPixel) -> Void = { pixel in
-             PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
-         }) {
+    init(surface: DuckAiUsageWarningPixelSurface, pixelFiring: PixelFiring? = PixelKit.shared) {
         self.surface = surface
-        self.firePixel = firePixel
+        self.pixelFiring = pixelFiring
     }
 
     func fire(_ event: DuckAiUsageWarningMeasurementEvent) {
         guard let pixel = DuckAiUsageWarningPixel(event: event, surface: surface) else { return }
 
         Logger.aiChat.debug("Duck.ai usage warning pixel: \(pixel.name, privacy: .public)")
-        firePixel(pixel)
+        // `Options.default` carries the app version, which is what these definitions declare.
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 }

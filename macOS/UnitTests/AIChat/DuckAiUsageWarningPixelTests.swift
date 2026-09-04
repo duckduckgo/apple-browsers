@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -24,15 +25,22 @@ import XCTest
 /// cannot produce must report nothing rather than another state's.
 final class DuckAiUsageWarningPixelTests: XCTestCase {
 
-    private var fired: [DuckAiUsageWarningPixel] = []
-    private lazy var sut = DuckAiUsageWarningPixelAdapter(surface: .addressBar) { [weak self] pixel in
-        self?.fired.append(pixel)
-    }
+    private var pixelFiring: CapturingPixelFiring!
+    private var sut: DuckAiUsageWarningPixelAdapter!
 
     override func setUp() {
         super.setUp()
-        fired = []
+        pixelFiring = CapturingPixelFiring()
+        sut = DuckAiUsageWarningPixelAdapter(surface: .addressBar, pixelFiring: pixelFiring)
     }
+
+    override func tearDown() {
+        pixelFiring = nil
+        sut = nil
+        super.tearDown()
+    }
+
+    private var fired: [PixelKit.Event] { pixelFiring.firedPixels }
 
     func testAnApproachingCardReportsItsRungAndWindow() {
         sut.fire(.shown(approaching))
@@ -94,12 +102,19 @@ final class DuckAiUsageWarningPixelTests: XCTestCase {
     }
 
     func testEveryPixelSaysWhichInputReportedIt() {
-        let promptBar = DuckAiUsageWarningPixelAdapter(surface: .promptBar) { [weak self] in self?.fired.append($0) }
+        let promptBar = DuckAiUsageWarningPixelAdapter(surface: .promptBar, pixelFiring: pixelFiring)
 
         sut.fire(.shown(approaching))
         promptBar.fire(.shown(approaching))
 
         XCTAssertEqual(fired.compactMap { $0.parameters?["surface"] }, ["address_bar", "prompt_bar"])
+    }
+
+    /// The definitions declare `first_daily_count`, which is this frequency.
+    func testPixelsAreFiredDailyAndCount() {
+        sut.fire(.shown(approaching))
+
+        XCTAssertEqual(pixelFiring.firedFrequencies, [.dailyAndCount])
     }
 
     private var approaching: DuckAiUsageWarningExposure {
@@ -112,5 +127,20 @@ final class DuckAiUsageWarningPixelTests: XCTestCase {
 
     private var notice: DuckAiUsageWarningExposure {
         DuckAiUsageWarningExposure(kind: .highUsageModelNotice, modelId: "claude-opus-4-8")
+    }
+}
+
+private final class CapturingPixelFiring: PixelFiring {
+
+    private(set) var firedPixels: [PixelKit.Event] = []
+    private(set) var firedFrequencies: [PixelKit.Frequency] = []
+
+    func fire(event: PixelKit.Event,
+              frequency: PixelKit.Frequency,
+              options: PixelKit.Options,
+              onComplete: @escaping PixelKit.CompletionBlock) {
+        firedPixels.append(event)
+        firedFrequencies.append(frequency)
+        onComplete(true, nil)
     }
 }

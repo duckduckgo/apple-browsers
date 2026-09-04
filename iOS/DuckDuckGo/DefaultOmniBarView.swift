@@ -1311,11 +1311,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
         } else {
-            // Floating UI off (production): preserve the original fire-mode fill so the
-            // fire-mode omnibar colour is unchanged from `main`.
-            setFieldBackgroundColor(fireMode
-                ? UIColor(singleUseColor: .fireModeCardBackground)
-                : restingFieldBackgroundColor)
+            // Floating UI off (production): use the same fire-mode fill as the floating field so the
+            // field stays legible against the surrounding chrome in dark mode.
+            setFieldBackgroundColor(opaqueFieldBackgroundColor)
             activeOutlineView.layer.borderColor = fireMode
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
@@ -1756,7 +1754,7 @@ private extension DefaultOmniBarView {
 
     var opaqueFieldBackgroundColor: UIColor {
         fireMode
-            ? UIColor(singleUseColor: .fireModeBackground)
+            ? UIColor(singleUseColor: .fireModeFieldBackground)
             : restingFieldBackgroundColor
     }
 }

@@ -75,6 +75,9 @@ public enum SingleUseColor {
     case fireModeBackground
     case fireModeCardBackground
 
+    /// Fire Mode address bar field fill (Figma: Unified-Input-Fire/Field)
+    case fireModeFieldBackground
+
     // Duck.ai Grid Cell
     case duckAIVoiceCellBackground
 

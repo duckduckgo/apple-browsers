@@ -31,7 +31,7 @@ import PrivacyConfig
 /// on promo history not currently supported by `PromoHistoryRecord`.
 final class BrokenSitePromoDelegate: InternalPromoDelegate {
 
-    private let featureFlagger: FeatureFlagger
+    private let privacyConfigManager: PrivacyConfigurationManaging
     private let limiter: BrokenSitePromptLimiter
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pixelFiring: PixelFiring?
@@ -39,22 +39,22 @@ final class BrokenSitePromoDelegate: InternalPromoDelegate {
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
     private weak var popover: PopoverMessageViewController?
 
-    init(featureFlagger: FeatureFlagger,
+    init(privacyConfigManager: PrivacyConfigurationManaging,
          limiter: BrokenSitePromptLimiter,
          windowControllersManager: WindowControllersManagerProtocol,
          pixelFiring: PixelFiring? = PixelKit.shared) {
-        self.featureFlagger = featureFlagger
+        self.privacyConfigManager = privacyConfigManager
         self.limiter = limiter
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
     }
 
     var isEligible: Bool {
-        featureFlagger.isFeatureOn(.promoQueueBrokenSitePromo) && limiter.shouldShowToast()
+        limiter.shouldShowToast()
     }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        featureFlagger.updatesPublisher
+        privacyConfigManager.updatesPublisher
             .map { [weak self] _ in self?.isEligible ?? false }
             .prepend(isEligible)
             .removeDuplicates()

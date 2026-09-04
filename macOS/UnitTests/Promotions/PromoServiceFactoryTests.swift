@@ -198,7 +198,8 @@ extension PromoServiceFactoryTests {
                 autoconsentStats: MockAutoconsentStats()
             ),
             brokenSitePromptLimiter: BrokenSitePromptLimiter(privacyConfigManager: MockPrivacyConfigurationManager(),
-                                                             store: MockBrokenSitePromptLimiterStore())
+                                                             store: MockBrokenSitePromptLimiterStore()),
+            privacyConfigManager: MockPrivacyConfigurationManaging()
         )
     }
 }

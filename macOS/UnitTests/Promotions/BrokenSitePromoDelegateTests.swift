@@ -30,7 +30,6 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
 
     private static let promoId = "broken-site"
 
-    private var featureFlagger: MockFeatureFlagger!
     private var configManager: MockPrivacyConfigurationManaging!
     private var limiterStore: MockBrokenSitePromptLimiterStore!
     private var limiter: BrokenSitePromptLimiter!
@@ -40,17 +39,13 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.promoQueueBrokenSitePromo.rawValue: true])
         configManager = MockPrivacyConfigurationManaging()
-        // The limiter also gates on `.brokenSitePrompt` being enabled in the privacy config, independent
-        // of the promo's own feature flag. `MockPrivacyConfiguration` treats every feature as enabled by
-        // default, so this just documents that requirement rather than changing behavior.
         configManager.mockConfig.isFeatureEnabledCheck = { feature, _ in feature == .brokenSitePrompt }
         limiterStore = MockBrokenSitePromptLimiterStore()
         limiter = BrokenSitePromptLimiter(privacyConfigManager: configManager, store: limiterStore)
         windowControllersManager = WindowControllersManagerMock()
         pixelFiring = PixelKitMock()
-        sut = BrokenSitePromoDelegate(featureFlagger: featureFlagger,
+        sut = BrokenSitePromoDelegate(privacyConfigManager: configManager,
                                       limiter: limiter,
                                       windowControllersManager: windowControllersManager,
                                       pixelFiring: pixelFiring)
@@ -63,7 +58,6 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
         limiter = nil
         limiterStore = nil
         configManager = nil
-        featureFlagger = nil
         super.tearDown()
     }
 
@@ -71,13 +65,13 @@ final class BrokenSitePromoDelegateTests: XCTestCase {
 
     // MARK: - Eligibility
 
-    func testWhenFlagOnAndLimiterAllowsThenEligible() {
+    func testWhenFeatureEnabledAndLimiterAllowsThenEligible() {
         XCTAssertTrue(limiter.shouldShowToast())
         XCTAssertTrue(sut.isEligible)
     }
 
-    func testWhenFlagOffThenNotEligible() {
-        featureFlagger.featuresStub = [FeatureFlag.promoQueueBrokenSitePromo.rawValue: false]
+    func testWhenFeatureDisabledThenNotEligible() {
+        configManager.mockConfig.isFeatureEnabledCheck = { _,_ in false }
 
         XCTAssertFalse(sut.isEligible)
     }

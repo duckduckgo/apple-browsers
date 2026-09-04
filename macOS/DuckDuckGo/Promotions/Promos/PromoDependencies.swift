@@ -42,4 +42,5 @@ struct PromoDependencies {
     let syncBookmarksAdapter: SyncBookmarksAdapter?
     let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
+    let privacyConfigManager: PrivacyConfigurationManaging
 }

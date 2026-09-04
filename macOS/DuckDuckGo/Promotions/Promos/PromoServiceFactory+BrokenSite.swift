@@ -23,7 +23,7 @@ extension PromoServiceFactory {
     /// Builds the Broken Site ("Site not working?") Promo.
     @MainActor
     static func brokenSite(dependencies: PromoDependencies) -> Promo {
-        let delegate = BrokenSitePromoDelegate(featureFlagger: dependencies.featureFlagger,
+        let delegate = BrokenSitePromoDelegate(privacyConfigManager: dependencies.privacyConfigManager,
                                                limiter: dependencies.brokenSitePromptLimiter,
                                                windowControllersManager: dependencies.windowControllersManager)
 

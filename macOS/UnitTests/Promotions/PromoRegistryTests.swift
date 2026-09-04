@@ -75,7 +75,8 @@ final class PromoRegistryTests: XCTestCase {
                 autoconsentStats: MockAutoconsentStats()
             ),
             brokenSitePromptLimiter: BrokenSitePromptLimiter(privacyConfigManager: MockPrivacyConfigurationManaging(),
-                                                             store: MockBrokenSitePromptLimiterStore()))
+                                                             store: MockBrokenSitePromptLimiterStore()),
+            privacyConfigManager: MockPrivacyConfigurationManaging())
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

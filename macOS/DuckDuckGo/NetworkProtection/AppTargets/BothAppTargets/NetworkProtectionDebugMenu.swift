@@ -45,6 +45,10 @@ final class NetworkProtectionDebugMenu: NSMenu {
     private let registrationKeyValidityMenu: NSMenu
     private let registrationKeyValidityAutomaticItem = NSMenuItem(title: "Automatic", action: #selector(NetworkProtectionDebugMenu.setRegistrationKeyValidity))
 
+    private let wireGuardPortMenu = NSMenu()
+    private let wireGuardPortServerDefaultItem = NSMenuItem(title: "Server Default", action: #selector(NetworkProtectionDebugMenu.setWireGuardPortOverride))
+    private let wireGuardPortCustomItem = NSMenuItem(title: "Custom…", action: #selector(NetworkProtectionDebugMenu.setCustomWireGuardPortOverride))
+
     private let resetToDefaults = NSMenuItem(title: "Reset Settings to defaults", action: #selector(NetworkProtectionDebugMenu.resetSettings))
 
     private let excludeDDGBrowserTrafficFromVPN = NSMenuItem(title: "DDG Browser", action: #selector(toggleExcludeDDGBrowser))
@@ -186,6 +190,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
                 disableRekeyingMenuItem
                     .targetting(self)
 
+                NSMenuItem.separator()
+                NSMenuItem(title: "WireGuard Port").submenu(wireGuardPortMenu)
+
 #if DEBUG
                 NSMenuItem.separator()
                 NSMenuItem(title: "Validity").submenu(registrationKeyValidityMenu)
@@ -214,6 +221,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
             try? await populateNetworkProtectionServerListMenuItems()
         }
         populateNetworkProtectionRegistrationKeyValidityMenuItems()
+        populateWireGuardPortMenuItems()
     }
 
     required init(coder: NSCoder) {
@@ -415,6 +423,45 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.registrationKeyValidity = .custom(timeInterval)
     }
 
+    /// Sets the WireGuard endpoint port override to "Server Default" or one of the presets.
+    ///
+    @objc func setWireGuardPortOverride(_ menuItem: NSMenuItem) {
+        settings.endpointPortOverride = menuItem.representedObject as? UInt16
+    }
+
+    /// Prompts for a custom WireGuard endpoint port override.
+    ///
+    @objc func setCustomWireGuardPortOverride(_ sender: Any?) {
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = "Custom WireGuard Port"
+            alert.informativeText = "Enter a UDP port number (1-65535)."
+            alert.addButton(withTitle: "Set")
+            alert.addButton(withTitle: "Cancel")
+
+            let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+            if let currentPort = settings.endpointPortOverride {
+                textField.stringValue = String(currentPort)
+            }
+            alert.accessoryView = textField
+
+            guard await alert.runModal() == .alertFirstButtonReturn else { return }
+
+            let text = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            guard let port = UInt16(text), (1...65535).contains(port) else {
+                let errorAlert = NSAlert()
+                errorAlert.messageText = "Invalid Port"
+                errorAlert.informativeText = "Please enter a number between 1 and 65535."
+                errorAlert.addButton(withTitle: "OK")
+                await errorAlert.runModal()
+                return
+            }
+
+            settings.endpointPortOverride = port
+        }
+    }
+
     @objc func toggleEnforceRoutesAction(_ sender: Any?) {
         settings.enforceRoutes.toggle()
 
@@ -574,6 +621,27 @@ final class NetworkProtectionDebugMenu: NSMenu {
 #endif
     }
 
+    private static let wireGuardPortPresets: [UInt16] = [443, 51820]
+
+    private func populateWireGuardPortMenuItems() {
+        wireGuardPortServerDefaultItem.target = self
+        wireGuardPortCustomItem.target = self
+
+        let presetItems = Self.wireGuardPortPresets.map { port in
+            let menuItem = NSMenuItem(title: "\(port)",
+                                      action: #selector(setWireGuardPortOverride(_:)),
+                                      target: self,
+                                      keyEquivalent: "")
+
+            menuItem.representedObject = port
+            return menuItem
+        }
+
+        wireGuardPortMenu.items = [wireGuardPortServerDefaultItem, NSMenuItem.separator()]
+            + presetItems
+            + [NSMenuItem.separator(), wireGuardPortCustomItem]
+    }
+
     func menuItem(title: String, action: Selector, representedObject: Any?) -> NSMenuItem {
         let menuItem = NSMenuItem(title: title, action: action, keyEquivalent: "")
         menuItem.target = self
@@ -588,6 +656,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
         updateExclusionsMenu()
         updatePreferredServerMenu()
         updateRekeyValidityMenu()
+        updateWireGuardPortMenu()
         updateNetworkProtectionMenuItemsState()
         updateUpsellMenuToggleTitle()
     }
@@ -641,6 +710,35 @@ final class NetworkProtectionDebugMenu: NSMenu {
                     item.state = .off
                 }
             }
+        }
+    }
+
+    private func updateWireGuardPortMenu() {
+        let currentPort = settings.endpointPortOverride
+        var matchedPreset = false
+
+        for item in wireGuardPortMenu.items {
+            if item === wireGuardPortServerDefaultItem {
+                item.state = currentPort == nil ? .on : .off
+                continue
+            }
+
+            guard let presetPort = item.representedObject as? UInt16 else { continue }
+
+            if presetPort == currentPort {
+                item.state = .on
+                matchedPreset = true
+            } else {
+                item.state = .off
+            }
+        }
+
+        if let currentPort, !matchedPreset {
+            wireGuardPortCustomItem.state = .on
+            wireGuardPortCustomItem.title = "Custom… (\(currentPort))"
+        } else {
+            wireGuardPortCustomItem.state = .off
+            wireGuardPortCustomItem.title = "Custom…"
         }
     }
 

@@ -1222,6 +1222,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 excludeLocalNetworks: settings.excludeLocalNetworks,
                 excludeCGNAT: settings.excludeCGNAT,
                 dnsSettings: dnsSettings,
+                endpointPortOverride: settings.endpointPortOverride ?? VPNSettings.defaultEndpointPortOverride,
                 regenerateKey: regenerateKey
             )
         } catch {
@@ -1291,6 +1292,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     updateMethod: .selectServer(serverSelectionMethod),
                     reassert: true,
                     attemptSource: .locationChange)
+            }
+        case .setEndpointPortOverride:
+            if case .connected = connectionStatus {
+                try? await handleRestartAdapter()
             }
         case .setConnectOnLogin,
                 .setDNSSettings,

@@ -22,6 +22,14 @@ import UIKit
 
 enum FloatingUILayoutPolicy {
 
+    /// Keep focused Favorites clear of the standalone floating toolbar, using the NTP's regular spacing.
+    static func focusedFavoritesBottomSpacing(isFloatingUIEnabled: Bool,
+                                              isAddressBarAtBottom: Bool,
+                                              isLandscape: Bool,
+                                              isShowingFavorites: Bool) -> CGFloat {
+        isFloatingUIEnabled && !isAddressBarAtBottom && !isLandscape && isShowingFavorites ? 24 : 0
+    }
+
     /// Additional NTP clearance beyond the system safe area. Floating bottom chrome contains both
     /// the address field and buttons; detached input and minimal chrome keep the field-only inset.
     static func newTabPageBottomInset(isFloatingUIEnabled: Bool,

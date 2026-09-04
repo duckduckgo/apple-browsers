@@ -94,6 +94,12 @@ struct UnifiedSuggestionsView: View {
                             dismissKeyboardOnScroll: isShowingList || dismissKeyboardOnRestingContentScroll,
                             usesWholeListDismissFade: usesWholeListDismissFade,
                             animationModel: viewModel.animationModel)
+            // Space outside the List moves its clipping edge above the toolbar while scrolling.
+            .padding(.bottom, FloatingUILayoutPolicy.focusedFavoritesBottomSpacing(
+                isFloatingUIEnabled: isFloatingUIEnabled,
+                isAddressBarAtBottom: isAddressBarAtBottom,
+                isLandscape: viewModel.isLandscape,
+                isShowingFavorites: viewModel.isShowingFavorites))
             // Fade complete lists so native cell surfaces and separators cannot outlive their
             // SwiftUI row content during dismissal.
             .modifier(DismissFade(animationModel: viewModel.animationModel,

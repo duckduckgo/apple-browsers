@@ -169,6 +169,30 @@ final class FloatingGlassAppearancePolicyTests: XCTestCase {
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
+    func testFocusedFavoritesSpacingOnlyAppliesToFloatingTopInputInPortrait() {
+        let cases: [(floating: Bool, bottom: Bool, favorites: Bool, expected: CGFloat)] = [
+            (false, false, false, 0),
+            (false, false, true, 0),
+            (false, true, false, 0),
+            (false, true, true, 0),
+            (true, false, false, 0),
+            (true, false, true, 24),
+            (true, true, false, 0),
+            (true, true, true, 0)
+        ]
+        for testCase in cases {
+            for isLandscape in [false, true] {
+                let spacing = FloatingUILayoutPolicy.focusedFavoritesBottomSpacing(
+                    isFloatingUIEnabled: testCase.floating,
+                    isAddressBarAtBottom: testCase.bottom,
+                    isLandscape: isLandscape,
+                    isShowingFavorites: testCase.favorites)
+
+                XCTAssertEqual(spacing, isLandscape ? 0 : testCase.expected, "\(testCase), landscape: \(isLandscape)")
+            }
+        }
+    }
+
     func testWhenFloatingOmnibarIsInToolbarThenNewTabPageReservesTheWholeToolbar() {
         let toolbarHeights: [CGFloat] = [136, 152]
         for toolbarHeight in toolbarHeights {

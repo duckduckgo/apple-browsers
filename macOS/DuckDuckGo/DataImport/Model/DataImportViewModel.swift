@@ -847,12 +847,13 @@ extension DataImportViewModel {
         case sync
         case close
         case grantDirectoryAccess(source: Source)
+        case showSystemPasswordPrompt
 
         var isDisabled: Bool {
             switch self {
             case .initiateImport(disabled: let disabled):
                 return disabled
-            case .skip, .done, .cancel, .cancelImport, .back, .submit, .continue, .selectFile, .sync, .close, .grantDirectoryAccess:
+            case .skip, .done, .cancel, .cancelImport, .back, .submit, .continue, .selectFile, .sync, .close, .grantDirectoryAccess, .showSystemPasswordPrompt:
                 return false
             }
         }
@@ -880,7 +881,7 @@ extension DataImportViewModel {
         case .getFileReadPermission:
             return nil
         case .passwordEntryHelp:
-            return nil
+            return .showSystemPasswordPrompt
 
         case .archiveImport:
             return nil
@@ -1040,6 +1041,9 @@ extension DataImportViewModel {
             launchSync(using: dismiss)
         case .grantDirectoryAccess:
             grantAccessButtonPressed()
+
+        case .showSystemPasswordPrompt:
+            initiateImport()
         }
     }
 

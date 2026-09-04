@@ -18,6 +18,7 @@
 
 import AIChat
 import AppKit
+import Persistence
 import Combine
 import Common
 import FoundationExtensions

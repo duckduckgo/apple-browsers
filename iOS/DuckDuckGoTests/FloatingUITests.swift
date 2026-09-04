@@ -169,6 +169,33 @@ final class FloatingGlassAppearancePolicyTests: XCTestCase {
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
+    func testWhenFloatingOmnibarIsInToolbarThenNewTabPageReservesTheWholeToolbar() {
+        let toolbarHeights: [CGFloat] = [136, 152]
+        for toolbarHeight in toolbarHeights {
+            let inset = FloatingUILayoutPolicy.newTabPageBottomInset(
+                isFloatingUIEnabled: true,
+                isOmnibarInToolbar: true,
+                omnibarHeight: 48,
+                toolbarHeight: toolbarHeight)
+
+            XCTAssertEqual(inset, toolbarHeight)
+        }
+    }
+
+    func testWhenFloatingIsDisabledOrOmnibarIsDetachedThenNewTabPageKeepsFieldOnlyInset() {
+        for isFloatingUIEnabled in [false, true] {
+            for isOmnibarInToolbar in [false, true] where !isFloatingUIEnabled || !isOmnibarInToolbar {
+                let inset = FloatingUILayoutPolicy.newTabPageBottomInset(
+                    isFloatingUIEnabled: isFloatingUIEnabled,
+                    isOmnibarInToolbar: isOmnibarInToolbar,
+                    omnibarHeight: 48,
+                    toolbarHeight: 136)
+
+                XCTAssertEqual(inset, 48)
+            }
+        }
+    }
+
     func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
         let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
             barsVisibilityPercent: 1,

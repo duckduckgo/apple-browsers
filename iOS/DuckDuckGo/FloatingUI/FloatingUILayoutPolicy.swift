@@ -22,6 +22,15 @@ import UIKit
 
 enum FloatingUILayoutPolicy {
 
+    /// Additional NTP clearance beyond the system safe area. Floating bottom chrome contains both
+    /// the address field and buttons; detached input and minimal chrome keep the field-only inset.
+    static func newTabPageBottomInset(isFloatingUIEnabled: Bool,
+                                      isOmnibarInToolbar: Bool,
+                                      omnibarHeight: CGFloat,
+                                      toolbarHeight: CGFloat) -> CGFloat {
+        isFloatingUIEnabled && isOmnibarInToolbar ? toolbarHeight : omnibarHeight
+    }
+
     static func shouldApplyFloatingTopContentInset(isFloatingUIEnabled: Bool,
                                                    addressBarPosition: AddressBarPosition,
                                                    isUnifiedToggleInputAffectingLayout: Bool) -> Bool {

@@ -1765,16 +1765,26 @@ class MainViewController: UIViewController {
             let topInset = isFloatingTopContentBehindBar ? viewCoordinator.omniBar.barView.expectedHeight * currentBarsVisibility : 0
             newTabPageViewController?.additionalSafeAreaInsets = .init(top: topInset, left: 0, bottom: 0, right: 0)
         case .bottom:
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: viewCoordinator.omniBar.barView.expectedHeight, right: 0)
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: newTabPageBottomInset, right: 0)
         }
     }
 
-    /// Scales the floating-top NTP content inset with chrome visibility so it collapses to zero in
-    /// lock-step as the bar hides, matching the web view's underflow behaviour. No-op outside
-    /// floating top mode.
-    private func updateFloatingTopNewTabPageInset(for barsVisibilityPercent: CGFloat) {
-        guard isFloatingTopContentBehindBar else { return }
-        newTabPageViewController?.additionalSafeAreaInsets.top = viewCoordinator.omniBar.barView.expectedHeight * barsVisibilityPercent
+    var newTabPageBottomInset: CGFloat {
+        FloatingUILayoutPolicy.newTabPageBottomInset(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            isOmnibarInToolbar: viewCoordinator.isOmnibarInToolbar,
+            omnibarHeight: viewCoordinator.omniBar.barView.expectedHeight,
+            toolbarHeight: toolbarHeight)
+    }
+
+    /// Keeps the resting NTP clear of the current floating chrome, including after rotation changes
+    /// toolbar ownership. Focused UTI continues to own its keyboard-driven content insets.
+    private func updateFloatingNewTabPageInsets(for barsVisibilityPercent: CGFloat) {
+        if isFloatingTopContentBehindBar {
+            newTabPageViewController?.additionalSafeAreaInsets.top = viewCoordinator.omniBar.barView.expectedHeight * barsVisibilityPercent
+        } else if isFloatingUIEnabled, appSettings.currentAddressBarPosition.isBottom, !viewCoordinator.isUnifiedToggleInputVisible {
+            newTabPageViewController?.additionalSafeAreaInsets.bottom = newTabPageBottomInset
+        }
     }
 
     /// True when content (web/NTP) is laid out spanning behind the glass omnibar in floating top
@@ -1902,7 +1912,7 @@ class MainViewController: UIViewController {
         if appSettings.currentAddressBarPosition.isBottom,
            let ntp = self.newTabPageViewController,
            !ntp.isShowingLogo {
-            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(newTabPageBottomInset, containerHeight)
         }
 
         UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
@@ -1912,7 +1922,7 @@ class MainViewController: UIViewController {
                !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                let ntp = self.newTabPageViewController,
                ntp.isShowingLogo {
-                self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+                self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(self.newTabPageBottomInset, containerHeight)
             } else {
                 self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
             }
@@ -4637,7 +4647,7 @@ extension MainViewController: BrowserChromeDelegate {
         updateToolbarConstant(percent)
         updateNavBarConstant(percent)
         currentTab?.updateWebViewBottomAnchor(for: percent)
-        updateFloatingTopNewTabPageInset(for: percent)
+        updateFloatingNewTabPageInsets(for: percent)
 
         let chromeAlpha = chromeAlpha(for: percent)
         viewCoordinator.navigationBarContainer.alpha = chromeAlpha

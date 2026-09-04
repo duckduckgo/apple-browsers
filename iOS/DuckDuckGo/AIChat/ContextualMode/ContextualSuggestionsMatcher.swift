@@ -242,15 +242,14 @@ struct ContextualSuggestionsMatcher {
     // MARK: Localization
 
     private static func localizedCopy(for id: String, entry: SuggestionCatalog.Entry, input: ResolvePageSuggestionsInput) -> (label: String, prompt: String) {
-        if input.isDocument, let documentCopy = documentCopyByID[id] {
+        if input.isDocument, let documentCopy = localizedCopyForDocumentsByID[id] {
             return documentCopy
         }
         return localizedCopyByID[id] ?? (entry.label, entry.prompt)
     }
 
-    /// Overrides for suggestions whose page wording makes no sense for a document (a PDF has no
-    /// "page" to summarize). An id absent here keeps its `localizedCopyByID` copy.
-    private static let documentCopyByID: [String: (label: String, prompt: String)] = [
+    /// Maps each catalog id to its native `UserText` copy for document pages
+    private static let localizedCopyForDocumentsByID: [String: (label: String, prompt: String)] = [
         "summarize-page": (UserText.aiChatSuggestionSummarizeDocumentLabel, UserText.aiChatSuggestionSummarizeDocumentPrompt)
     ]
 

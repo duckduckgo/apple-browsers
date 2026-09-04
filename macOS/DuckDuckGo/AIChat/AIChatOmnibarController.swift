@@ -860,13 +860,23 @@ final class AIChatOmnibarController {
     private func switchToImageGenerationModelIfNeeded() -> AIChatCreateImageModelSwitchNotice? {
         guard isUpdatedCreateImageEnabled,
               let previousModel = selectedModel,
-              !previousModel.supportsTool(.imageGeneration),
-              let fallbackModel = imageGenerationModel else {
+              !previousModel.supportsTool(.imageGeneration) else {
+            return nil
+        }
+
+        guard let fallbackModel = imageGenerationModel else {
+            pixelHandler.fire(.createImageUnavailable)
             return nil
         }
 
         updateSelectedModel(fallbackModel.id)
-        return AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        let notice = AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        pixelHandler.fire(.createImageModelSwitched(
+            fromModelId: previousModel.id,
+            toModelId: fallbackModel.id,
+            fromModelPrivacyPreserving: notice.previousModelHasExtraPrivacyProtections
+        ))
+        return notice
     }
 
     /// The model ID to use for the current submission. In image-generation mode an
@@ -1355,13 +1365,7 @@ final class AIChatOmnibarController {
             return
         }
 
-        pixelHandler.fire(.promptSubmitted)
-
-        if isImageGenerationMode {
-            pixelHandler.fire(.imageGenerationSubmitted)
-        } else if isWebSearchMode {
-            pixelHandler.fire(.webSearchSubmitted)
-        }
+        firePromptSubmissionPixels()
 
         // Snapshot everything that could change between now and when the async submit Task
         // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and
@@ -1491,6 +1495,22 @@ final class AIChatOmnibarController {
         }
 
         currentText = ""
+    }
+
+    private func firePromptSubmissionPixels() {
+        pixelHandler.fire(.promptSubmitted)
+
+        switch activeToolMode {
+        case .imageGeneration:
+            if !selectedModelSupportsImageGeneration {
+                pixelHandler.fire(.createImageSubmittedWithUnsupportedModel)
+            }
+            pixelHandler.fire(.imageGenerationSubmitted)
+        case .webSearch:
+            pixelHandler.fire(.webSearchSubmitted)
+        case nil:
+            break
+        }
     }
 
     /// Eagerly extracts the page context for each omnibar-attached tab, returning a

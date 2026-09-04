@@ -1196,6 +1196,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.onDismiss = { [weak self] in
             guard let self else { return }
             if createImageModelSwitchNotice != nil {
+                omnibarController.pixelHandler.fire(.createImageModelSwitchNoticeDismissed)
                 clearCreateImageModelSwitchNotice()
                 return
             } else if omnibarController.usageWarningViewModel?.warning != nil {

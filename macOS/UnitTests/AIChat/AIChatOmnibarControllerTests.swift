@@ -38,6 +38,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockSubscriptionUpsellPresenter: MockAIChatOmnibarSubscriptionUpselling!
     private var tabCollectionViewModel: TabCollectionViewModel!
+    private var pixelHandler: CapturingDuckAIPromptPixelHandler!
 
     override func setUp() {
         super.setUp()
@@ -56,6 +57,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         mockModelsService = MockAIChatModelsProviding()
         mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionUpsellPresenter = MockAIChatOmnibarSubscriptionUpselling()
+        pixelHandler = CapturingDuckAIPromptPixelHandler()
         // Injected (rather than the real UserDefaults-backed default) so the impression cap is
         // controllable and no test leaks state into the shared standard defaults.
         tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
@@ -65,7 +67,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
             surface: .addressBar,
             draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
             origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
-            pixelHandler: AddressBarPromptPixelHandler(),
+            pixelHandler: pixelHandler,
             featureFlagger: featureFlagger,
             searchPreferencesPersistor: searchPreferencesPersistor,
             preferences: mockPreferences,
@@ -87,6 +89,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         mockSubscriptionManager = nil
         mockSubscriptionUpsellPresenter = nil
         tabCollectionViewModel = nil
+        pixelHandler = nil
         super.tearDown()
     }
 
@@ -1344,6 +1347,11 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(notice?.previousModelShortName, "Mistral Small")
         XCTAssertEqual(notice?.newModelShortName, "GPT-5.4 mini")
         XCTAssertEqual(notice?.previousModelHasExtraPrivacyProtections, false)
+        XCTAssertTrue(pixelHandler.events.contains(.createImageModelSwitched(
+            fromModelId: "mistral",
+            toModelId: "suggested",
+            fromModelPrivacyPreserving: false
+        )))
     }
 
     func testWhenUpdatedCreateImageSwitchesFromOSSModel_ThenNoticeMentionsExtraPrivacyProtections() async {
@@ -1365,6 +1373,11 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(notice?.previousModelShortName, "GPT-OSS")
         XCTAssertEqual(notice?.newModelShortName, "GPT-5.4")
         XCTAssertEqual(notice?.previousModelHasExtraPrivacyProtections, true)
+        XCTAssertTrue(pixelHandler.events.contains(.createImageModelSwitched(
+            fromModelId: "gpt-oss-120b",
+            toModelId: "image-model",
+            fromModelPrivacyPreserving: true
+        )))
     }
 
     func testWhenSelectedModelAlreadySupportsImageGeneration_ThenModelIsNotChangedAndNoticeIsNotReturned() async {
@@ -1384,6 +1397,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         // Then
         XCTAssertEqual(mockPreferences.selectedModelId, "selected")
         XCTAssertNil(notice)
+        XCTAssertFalse(pixelHandler.events.contains { event in
+            if case .createImageModelSwitched = event { return true }
+            return false
+        })
     }
 
     func testWhenUpdatedCreateImageIsDisabled_ThenUnsupportedSelectedModelIsNotChanged() async {
@@ -1426,6 +1443,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertNil(controller.effectiveModelId)
         XCTAssertNil(controller.effectiveToolChoice)
         XCTAssertEqual(controller.effectiveMode, AIChatNativePrompt.imageGenerationMode)
+        XCTAssertTrue(pixelHandler.events.contains(.createImageUnavailable))
     }
 
     func testWhenUpdatedCreateImageIsActivatedBeforeModelsLoad_ThenModelSwitchesAfterFetchAndModeStaysActive() async {
@@ -1604,6 +1622,27 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(query.modelId, "img-model")
         XCTAssertEqual(query.toolChoice, [AIChatRAGTool.imageGeneration.rawValue])
         XCTAssertNil(query.mode)
+        XCTAssertFalse(pixelHandler.events.contains(.createImageSubmittedWithUnsupportedModel))
+    }
+
+    func testWhenImageGenerationIsSubmittedWithKnownUnsupportedSelectedModel_ThenErrorPixelFires() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = false
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "unsupported", supportedTools: []),
+            makeRemoteModel(id: "fallback", supportedTools: ["GenerateImage"])
+        ]
+        mockPreferences.selectedModelId = "unsupported"
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.toggleImageGenerationMode()
+        controller.updateText("draw a lighthouse")
+
+        // When
+        controller.submit()
+
+        // Then
+        XCTAssertTrue(pixelHandler.events.contains(.createImageSubmittedWithUnsupportedModel))
     }
 
     // MARK: - Reasoning Effort Tests
@@ -3000,6 +3039,14 @@ private class MockAIChatOmnibarControllerDelegate: AIChatOmnibarControllerDelega
 
 private class AIChatMockSearchPreferencesPersistor: SearchPreferencesPersistor {
     var showAutocompleteSuggestions: Bool = true
+}
+
+private final class CapturingDuckAIPromptPixelHandler: DuckAIPromptPixelFiring {
+    private(set) var events: [DuckAIPromptPixelEvent] = []
+
+    func fire(_ event: DuckAIPromptPixelEvent) {
+        events.append(event)
+    }
 }
 
 // MARK: - Mock AI Chat Preferences

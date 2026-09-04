@@ -205,10 +205,7 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject, Identifiable 
 
 private extension SubscriptionOnboardingFlowViewModel {
 
-    /// The checklist item that gates a section. `.vpnTips` piggybacks on `.vpnWidget`'s
-    /// since it's a required companion screen to the widget step.
     static func activationItem(for section: SubscriptionOnboardingSection) -> SubscriptionOnboardingChecklistItem? {
-        if section == .vpnTips { return .vpnWidget }
         guard case .activation(let item) = section.kind else { return nil }
         return item
     }

@@ -42,6 +42,9 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     @Published private(set) var connectionState: ConnectionState
 
+    /// Whether `turnOnVPN()` is in flight.
+    @Published private(set) var isActivating = false
+
     /// The original (pre-VPN) connection, mirrored from the prefetcher while off and retained.
     @Published private(set) var originalConnectionInfo: ConnectionInfoState = .idle
     /// The VPN egress server info (address + location) from the shared server-info observer.
@@ -155,6 +158,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     /// Starts the VPN.
     func turnOnVPN() async {
         hasAttemptedActivation = true
+        isActivating = true
         await vpnController.start()
     }
 
@@ -180,6 +184,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             .sink { [weak self] in
                 self?.didDenyVPNPermission = true
                 self?.didFailToStartVPN = false
+                self?.isActivating = false
             }
             .store(in: &cancellables)
 
@@ -192,6 +197,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
                 guard self?.hasAttemptedActivation == true else { return }
                 self?.didFailToStartVPN = true
                 self?.didDenyVPNPermission = false
+                self?.isActivating = false
             }
             .store(in: &cancellables)
 
@@ -218,6 +224,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         if isConnected {
             didDenyVPNPermission = false
             didFailToStartVPN = false
+            isActivating = false
             reportCompletionIfNeeded()
         }
     }

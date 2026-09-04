@@ -40,7 +40,6 @@ extension SubscriptionDebugViewController {
     enum OnboardingMockConfigRows: Int, CaseIterable {
         case forcedTrialLength
         case completedVPN
-        case completedWidget
         case completedIDTR
         case completedDuckAI
         case completedPIR
@@ -102,9 +101,6 @@ extension SubscriptionDebugViewController {
         case .completedVPN:
             cell.textLabel?.text = "Completed: VPN"
             cell.accessoryType = mockCompletedItems.contains(.vpn) ? .checkmark : .none
-        case .completedWidget:
-            cell.textLabel?.text = "Completed: VPN Widget"
-            cell.accessoryType = mockCompletedItems.contains(.vpnWidget) ? .checkmark : .none
         case .completedIDTR:
             cell.textLabel?.text = "Completed: IDTR"
             cell.accessoryType = mockCompletedItems.contains(.idtr) ? .checkmark : .none
@@ -196,7 +192,6 @@ extension SubscriptionDebugViewController {
         switch OnboardingMockConfigRows(rawValue: indexPath.row) {
         case .forcedTrialLength: promptForcedTrialLength(at: indexPath)
         case .completedVPN: toggleMockCompleted(.vpn, at: indexPath)
-        case .completedWidget: toggleMockCompleted(.vpnWidget, at: indexPath)
         case .completedIDTR: toggleMockCompleted(.idtr, at: indexPath)
         case .completedDuckAI: toggleMockCompleted(.duckAI, at: indexPath)
         case .completedPIR: toggleMockCompleted(.pir, at: indexPath)
@@ -219,7 +214,7 @@ extension SubscriptionDebugViewController {
         case .idtr: showIDTROnboarding()
         case .duckAI: showDuckAIOnboarding()
         case .pir: showPIROnboarding()
-        case .progress: showProgressOnboarding(completedItems: [.vpn, .vpnWidget, .vpnTips, .idtr, .duckAI])
+        case .progress: showProgressOnboarding(completedItems: [.vpn, .idtr, .duckAI])
         case .progressComplete: showProgressOnboarding(completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
         case .tapAllowHint: showTapAllowHintPlayground()
         case .none: break
@@ -235,7 +230,7 @@ extension SubscriptionDebugViewController {
                     onNext: { [weak self] in self?.dismiss(animated: true) }),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
                 .subscriptionOnboardingNavigationContainer())
-        present(hostingController, animated: true)
+        presentOnboarding(hostingController)
     }
 
     private func showIDTROnboarding() {
@@ -256,7 +251,7 @@ extension SubscriptionDebugViewController {
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
                 onNext: { [weak self] in self?.dismiss(animated: true) })
                 .subscriptionOnboardingNavigationContainer())
-        present(hostingController, animated: true)
+        presentOnboarding(hostingController)
     }
 
     private func showProgressOnboarding(completedItems: Set<SubscriptionOnboardingChecklistItem>) {
@@ -268,7 +263,7 @@ extension SubscriptionDebugViewController {
                 onNext: { [weak self] in self?.dismiss(animated: true) })
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(.app))
-        present(hostingController, animated: true)
+        presentOnboarding(hostingController)
     }
 
     private func showWelcomeOnboarding() {
@@ -277,7 +272,7 @@ extension SubscriptionDebugViewController {
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
                 onNext: { [weak self] in self?.dismiss(animated: true) })
                 .subscriptionOnboardingNavigationContainer())
-        present(hostingController, animated: true)
+        presentOnboarding(hostingController)
     }
 
     private func showVPNOnboarding() {
@@ -289,14 +284,14 @@ extension SubscriptionDebugViewController {
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }))
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(.app))
-        present(hostingController, animated: true)
+        presentOnboarding(hostingController)
     }
 
     private func showVPNWidgetOnboarding() {
         let hostingController = UIHostingController(
             rootView: VPNWidgetAndTipsDebugFlow(onFinish: { [weak self] in self?.dismiss(animated: true) })
                 .subscriptionOnboardingNavigationContainer())
-        present(hostingController, animated: true)
+        presentOnboarding(hostingController)
     }
 
     private func showDuckAIOnboarding() {
@@ -309,10 +304,10 @@ extension SubscriptionDebugViewController {
                         SubscriptionOnboardingDuckAIChatLauncher().launch(modelID: modelID)
                     }),
                 navigationButton: .close({ [weak self] in self?.dismiss(animated: true) }),
-                progress: SubscriptionOnboardingProgress(completedItems: [.vpn, .vpnWidget, .vpnTips, .idtr]))
+                progress: SubscriptionOnboardingProgress(completedItems: [.vpn, .idtr]))
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(.app))
-        present(hostingController, animated: true)
+        presentOnboarding(hostingController)
     }
 
     private func showTapAllowHintPlayground() {
@@ -347,7 +342,15 @@ extension SubscriptionDebugViewController {
             // No Data Broker Protection provider here, so PIR falls back to the move-to-desktop screen.
             pirScreen: { SubscriptionPIRMoveToDesktopView() })
         let root = SubscriptionOnboardingLauncher.launchForDebug(flow: flow, forcedTrialLengthDays: mockForcedTrialLengthDays)
-        present(UIHostingController(rootView: root), animated: true)
+        presentOnboarding(UIHostingController(rootView: root))
+    }
+
+    /// Full-screen on iPad, where the default modal presentation would otherwise show as a centered card.
+    private func presentOnboarding(_ viewController: UIViewController) {
+        if isPad {
+            viewController.modalPresentationStyle = .overFullScreen
+        }
+        present(viewController, animated: true)
     }
 
     private func toggleMock(_ flag: ReferenceWritableKeyPath<SubscriptionDebugViewController, Bool>, at indexPath: IndexPath) {

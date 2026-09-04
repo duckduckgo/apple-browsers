@@ -479,7 +479,7 @@ struct SubscriptionSettingsViewV2: View {
         .padding(.top, -20)
         .navigationTitle(UserText.settingsPProManageSubscription)
         .applyInsetGroupedListStyle()
-        .sheet(item: $onboardingFlow, onDismiss: {
+        .subscriptionOnboardingSheet(item: $onboardingFlow, onDismiss: {
             Task { await viewModel.refreshOnboardingState(hasActiveSubscription: hasActiveSubscription, isPIRAvailable: isPIRAvailable) }
         }) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)

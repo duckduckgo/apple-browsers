@@ -49,6 +49,25 @@ enum SubscriptionOnboardingLauncher {
     }
 }
 
+// MARK: - Presentation
+
+extension View {
+    /// A plain sheet on iPhone; a full-screen cover on iPad, where a plain sheet would show as a
+    /// centered card instead of the full-screen onboarding experience.
+    @ViewBuilder
+    func subscriptionOnboardingSheet<Item: Identifiable, Content: View>(
+        item: Binding<Item?>,
+        onDismiss: (() -> Void)? = nil,
+        @ViewBuilder content: @escaping (Item) -> Content
+    ) -> some View {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            fullScreenCover(item: item, onDismiss: onDismiss, content: content)
+        } else {
+            sheet(item: item, onDismiss: onDismiss, content: content)
+        }
+    }
+}
+
 // MARK: - Orientation lock
 
 private extension SubscriptionOnboardingLauncher {

@@ -26,15 +26,19 @@ import os.log
 public protocol EventHubManaging: AnyObject {
     /// Processes an incoming `webEvent` envelope (`{ "type": ..., "data": ... }`) from the tab
     /// identified by `tabID` against the active telemetry configs.
+    ///
+    /// De-duplicated once at ingestion, keyed `type × data × tabID` against the tab's current page: a
+    /// repeat reaches no handler, a first occurrence reaches every handler. See `DedupStore`.
     func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID)
 
     /// Fires any enabled immediate-trigger telemetry whose `trigger.source` equals `type`. For
-    /// browser-native events (not content-scope-scripts); there is no tab context.
+    /// browser-native events (not content-scope-scripts): there is no tab context, so no page to
+    /// de-duplicate against, and every call is a genuine occurrence.
     func handleImmediateEvent(_ type: String, data: Encodable?)
 
     /// Counts a browser-native event toward any enabled period/aggregated telemetry whose parameter
-    /// `source` equals `type`. Unlike web events there is no per-tab dedup: each call is a genuine
-    /// occurrence.
+    /// `source` equals `type`. Like `handleImmediateEvent`, and unlike web events, this never passes
+    /// through de-duplication: each call is a genuine occurrence.
     func handleAggregatedEvent(_ type: String, data: Encodable?)
 
     /// Signals that the given tab has navigated to `url` (clears per-tab dedup on URL change).
@@ -91,8 +95,9 @@ public final class EventHub: EventHubManaging {
     private var telemetries: [String: Telemetry] = [:]
     private var dirtyNames: Set<String> = []
     private var tabURLs: [EventHubTabID: String] = [:]
-    /// Hub-lifetime so per-tab dedup outlives the `Telemetry` objects that consult it — a period
-    /// rollover, and a period firing while backgrounded, both replace those. See `DedupStore`.
+    /// The one de-duplication decision, taken in `handleWebEvent` before any handler runs. Hub-owned
+    /// and hub-lifetime, so it outlives the `Telemetry` objects a period rollover replaces — dedup is
+    /// page-scoped, not period-scoped. See `DedupStore`.
     private let dedupStore = DedupStore()
     private var latestConfigs: [TelemetryPixelConfig] = []
     private var latestEnabled = false
@@ -171,8 +176,8 @@ public final class EventHub: EventHubManaging {
             Logger.eventHub.debug("[EventHub] web event ignored, `type` was missing or empty")
             return
         }
-        Logger.eventHub.debug("[EventHub] web event received: \(type, privacy: .private), tab \(tabID.rawValue.uuidString, privacy: .private)")
         let data = webEventData["data"] as? [String: Any]
+        Logger.eventHub.debug("[EventHub] web event received: \(type, privacy: .private), tab \(tabID.rawValue.uuidString, privacy: .private), data \(Self.payloadDescription(data), privacy: .private)")
         // Sampled here, not in the block: `now` decides whether the event still belongs to the running
         // period, so it has to be the arrival time. Read on the queue it would be the drain time, and an
         // event arriving just before `periodEnd` could be dropped for landing in no period at all.
@@ -182,8 +187,16 @@ public final class EventHub: EventHubManaging {
                 Logger.eventHub.debug("[EventHub] \(type, privacy: .private) dropped, the eventHub feature is disabled")
                 return
             }
+            // The single de-duplication decision, taken before fan-out: a duplicate reaches no
+            // handler at all, a first occurrence reaches every one of them. Deliberately after the
+            // `latestEnabled` guard — an event dropped because the feature is off must not record a
+            // key that would then suppress the real occurrence once it is switched back on.
+            guard dedupStore.markSeen(type: type, data: data, tabID: tabID) else {
+                Logger.eventHub.debug("[EventHub] \(type, privacy: .private) dropped, already seen on this tab's current page")
+                return
+            }
             fireImmediateLocked(source: type, data: data)
-            countPeriodLocked(source: type, data: data, tabID: tabID, nowMillis: nowMillis)
+            countPeriodLocked(source: type, data: data, nowMillis: nowMillis)
         }
     }
 
@@ -214,22 +227,29 @@ public final class EventHub: EventHubManaging {
                 Logger.eventHub.debug("[EventHub] \(type, privacy: .public) dropped, the eventHub feature is disabled")
                 return
             }
-            countPeriodLocked(source: type, data: encoded, tabID: .empty, nowMillis: nowMillis)
+            countPeriodLocked(source: type, data: encoded, nowMillis: nowMillis)
         }
     }
 
     private func fireImmediateLocked(source: String, data: [String: Any]?) {
-        let matching = latestConfigs.filter { $0.isEnabled && $0.trigger.type == .immediate && $0.trigger.source == source }
+        let matching = latestConfigs.filter { $0.isEnabled && $0.trigger.type == .immediateV2 && $0.trigger.source == source }
         Logger.eventHub.debug("[EventHub] immediate routing for \(source, privacy: .private) → \(matching.isEmpty ? "no immediate telemetry is triggered by it" : matching.map(\.name).joined(separator: ", "), privacy: .public)")
         for config in matching {
             var params: [String: String] = [:]
+            var declaresDataParameters = false
             for (paramName, paramConfig) in config.parameters where paramConfig.template == .data {
-                // Transient: an immediate pixel has no period and no dedup, so this parameter reports the
-                // triggering event's own payload and is discarded straight after firing.
+                declaresDataParameters = true
+                // Transient: an immediate pixel has no period, so this parameter reports the triggering
+                // event's own payload and is discarded straight after firing.
                 let parameter = DataParameter(dataKey: paramConfig.dataKey)
-                if parameter.handle(data: data, tabID: .empty), let value = parameter.queryValue() {
-                    params[paramName] = value
-                }
+                parameter.handle(data: data)
+                if let value = parameter.queryValue() { params[paramName] = value }
+            }
+            // A pixel that declares data parameters but resolved none of them has nothing to report, so
+            // it does not fire. A pixel declaring no parameters at all still fires on the event alone.
+            guard !declaresDataParameters || !params.isEmpty else {
+                Logger.eventHub.debug("[EventHub] \(config.name, privacy: .public) not fired, none of its data parameters resolved")
+                continue
             }
             pixelFiring.enqueueFirePixel(named: config.name, parameters: params)
         }
@@ -244,7 +264,7 @@ public final class EventHub: EventHubManaging {
     ///   onto the queue. The timer is best-effort, so it can legitimately be past `periodEnd` before the
     ///   sweep has run (notably on macOS, where a period can end while the app runs unfocused). An event
     ///   arriving in that window belongs to no period and must not be counted into the elapsed one.
-    private func countPeriodLocked(source: String, data: [String: Any]?, tabID: EventHubTabID, nowMillis now: Int64) {
+    private func countPeriodLocked(source: String, data: [String: Any]?, nowMillis now: Int64) {
         // Every period telemetry this event was offered to, and what became of it. Logged as one line so
         // "the pixel never fired" can be answered from a single entry: whether anything was listening,
         // and if so why it did or did not count.
@@ -259,11 +279,11 @@ public final class EventHub: EventHubManaging {
                 outcomes.append("\(config.name): period already ended")
                 continue
             }
-            if telemetry.handleEvent(source: source, data: data, tabID: tabID) {
+            if telemetry.handleEvent(source: source, data: data) {
                 dirtyNames.insert(config.name)
                 outcomes.append("\(config.name): counted")
             } else {
-                outcomes.append("\(config.name): no change (already counted on this tab, or the counter is capped)")
+                outcomes.append("\(config.name): no change (the counter is capped, or no parameter had a value to record)")
             }
         }
         let summary = outcomes.isEmpty
@@ -298,7 +318,7 @@ public final class EventHub: EventHubManaging {
 
     private func startNewPeriodLocked(_ config: TelemetryPixelConfig) {
         guard isForeground, latestEnabled, config.isEnabled, config.trigger.periodSeconds != nil else { return }
-        let telemetry = Telemetry(config: config, periodStartMillis: scheduler.nowMillis(), dedupStore: dedupStore)
+        let telemetry = Telemetry(config: config, periodStartMillis: scheduler.nowMillis())
         telemetries[config.name] = telemetry
         dirtyNames.insert(config.name)
     }
@@ -338,7 +358,7 @@ public final class EventHub: EventHubManaging {
     private func checkPixelsLocked() {
         guard latestEnabled else { return }
         for stored in store.allPixelStates() where telemetries[stored.pixelName] == nil {
-            telemetries[stored.pixelName] = Telemetry(restoring: stored, dedupStore: dedupStore)
+            telemetries[stored.pixelName] = Telemetry(restoring: stored)
         }
         let now = scheduler.nowMillis()
         // Snapshot the values: fireLocked mutates `telemetries` (removes the fired entry and may add a
@@ -443,6 +463,17 @@ public final class EventHub: EventHubManaging {
             tabURLs.removeValue(forKey: tabID)
             dedupStore.clear(tabID: tabID)
         }
+    }
+
+    /// The payload rendered for the debug log, in the same canonical form `DedupStore` keys on — so a
+    /// "dropped, already seen" line can be read against the event that first claimed that key.
+    ///
+    /// Page-derived, so it is only ever interpolated as `.private` and only at `debug` level.
+    private static func payloadDescription(_ data: [String: Any]?) -> String {
+        guard let data, !data.isEmpty else { return "<none>" }
+        guard let encoded = try? JSONSerialization.data(withJSONObject: data, options: [.sortedKeys]),
+              let json = String(data: encoded, encoding: .utf8) else { return "<unserialisable>" }
+        return json
     }
 
     private static func encode(_ data: Encodable?) -> [String: Any]? {

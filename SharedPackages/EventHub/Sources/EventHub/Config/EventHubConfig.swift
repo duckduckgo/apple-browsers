@@ -20,11 +20,16 @@ import Foundation
 
 /// When a pixel fires. Raw values are the strings remote config authors and the persisted config
 /// snapshot carries, so they must not change.
+///
+/// The one exception, deliberate: the immediate trigger was renamed from `immediate` to
+/// `immediate_v2` when web events began de-duplicating at the hub. Clients already in the wild parse
+/// `immediate` and would fire on every occurrence, so config carrying the new semantics needs a name
+/// they ignore. Safe for the persisted snapshot too: only `period` pixels ever have state to persist.
 public enum TelemetryTriggerType: String, Equatable, Sendable {
     /// Aggregated over a period, and the default when config omits the type.
     case period
-    /// One pixel per event.
-    case immediate
+    /// One pixel per delivered event.
+    case immediateV2 = "immediate_v2"
 }
 
 /// What a parameter measures. Raw values are the strings remote config authors and the persisted config

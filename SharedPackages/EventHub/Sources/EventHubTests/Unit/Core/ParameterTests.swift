@@ -28,87 +28,41 @@ struct CounterParameterTests {
         OrderedBucket(name: "2+", config: BucketConfig(gte: 2)),
     ]
 
-    /// Builds a parameter alongside the store it dedups against, so a test can clear dedup the way
-    /// `EventHub` does (the parameter consults the store; it no longer owns the state itself).
-    private static func makeParameter() -> (parameter: CounterParameter, dedupStore: DedupStore) {
-        let dedupStore = DedupStore()
-        let parameter = CounterParameter(buckets: buckets, dedupKey: "pixel:count:test", dedupStore: dedupStore)
-        return (parameter, dedupStore)
+    private static func makeParameter() -> CounterParameter {
+        CounterParameter(buckets: buckets)
     }
 
-    @Test("increments on each distinct-tab event")
-    func incrementsOnEachDistinctTabEvent() {
-        let (parameter, _) = Self.makeParameter()
-        #expect(parameter.handle(data: nil, tabID: .new()))
-        #expect(parameter.handle(data: nil, tabID: .new()))
+    @Test("counts every delivered event")
+    func countsEveryDeliveredEvent() {
+        // De-duplication happens at the hub, before fan-out, so everything reaching a parameter is a
+        // genuine occurrence — the parameter itself never suppresses anything. See `DedupStore`.
+        let parameter = Self.makeParameter()
+        #expect(parameter.handle(data: nil))
+        #expect(parameter.handle(data: nil))
         #expect(parameter.state.value == 2)
-    }
-
-    @Test("dedups repeated events on the same tab")
-    func dedupsRepeatedEventsOnSameTab() {
-        let (parameter, _) = Self.makeParameter()
-        let tab = EventHubTabID.new()
-        #expect(parameter.handle(data: nil, tabID: tab))
-        #expect(!parameter.handle(data: nil, tabID: tab))
-        #expect(parameter.state.value == 1)
-    }
-
-    @Test("native events (.empty tab) are never deduped")
-    func nativeEventsAreNeverDeduped() {
-        let (parameter, _) = Self.makeParameter()
-        #expect(parameter.handle(data: nil, tabID: .empty))
-        #expect(parameter.handle(data: nil, tabID: .empty))
-        #expect(parameter.state.value == 2)
-    }
-
-    @Test("clearing the tab's dedup entry lets it count again")
-    func clearingTabDedupLetsItCountAgain() {
-        // `EventHub` clears the store on navigation to a different URL and on tab close; from the
-        // parameter's side both look the same, so one test covers each caller.
-        let (parameter, dedupStore) = Self.makeParameter()
-        let tab = EventHubTabID.new()
-        #expect(parameter.handle(data: nil, tabID: tab))
-        dedupStore.clear(tabID: tab)
-        #expect(parameter.handle(data: nil, tabID: tab))
-        #expect(parameter.state.value == 2)
-    }
-
-    @Test("two parameters sharing a store dedup independently")
-    func parametersSharingStoreDedupIndependently() {
-        // The store is hub-wide, so the dedup key must keep pixels/params from shadowing each other.
-        let dedupStore = DedupStore()
-        let first = CounterParameter(buckets: Self.buckets, dedupKey: "pixelA:count:test", dedupStore: dedupStore)
-        let second = CounterParameter(buckets: Self.buckets, dedupKey: "pixelB:count:test", dedupStore: dedupStore)
-        let tab = EventHubTabID.new()
-
-        #expect(first.handle(data: nil, tabID: tab))
-        #expect(second.handle(data: nil, tabID: tab))
-
-        #expect(first.state.value == 1)
-        #expect(second.state.value == 1)
     }
 
     @Test("stops counting at the open-ended bucket and further events are no-ops")
     func stopsCountingAtOpenEndedBucket() {
-        let (parameter, _) = Self.makeParameter()
-        for _ in 0..<5 { parameter.handle(data: nil, tabID: .new()) }
+        let parameter = Self.makeParameter()
+        for _ in 0..<5 { parameter.handle(data: nil) }
         #expect(parameter.state.stopCounting)
         let valueAtStop = parameter.state.value
-        #expect(!parameter.handle(data: nil, tabID: .new()))
+        #expect(!parameter.handle(data: nil))
         #expect(parameter.state.value == valueAtStop)
     }
 
     @Test("queryValue reflects the matching bucket")
     func queryValueReflectsMatchingBucket() {
-        let (parameter, _) = Self.makeParameter()
+        let parameter = Self.makeParameter()
         #expect(parameter.queryValue() == "0")
-        parameter.handle(data: nil, tabID: .new())
+        parameter.handle(data: nil)
         #expect(parameter.queryValue() == "1")
     }
 
     @Test("restoreState round trips value and stopCounting")
     func restoreStateRoundTrips() {
-        let (parameter, _) = Self.makeParameter()
+        let parameter = Self.makeParameter()
         parameter.restoreState(ParamState(value: 3, stopCounting: true))
         #expect(parameter.state.value == 3)
         #expect(parameter.state.stopCounting)
@@ -120,22 +74,39 @@ struct DataParameterTests {
     @Test("captures and percent-encodes a matching data key")
     func capturesAndEncodesMatchingKey() {
         let parameter = DataParameter(dataKey: "loginState")
-        #expect(parameter.handle(data: ["loginState": "logged-in"], tabID: .new()))
+        #expect(parameter.handle(data: ["loginState": "logged-in"]))
         #expect(parameter.queryValue() != nil)
     }
 
-    @Test("ignores events with no matching data key")
-    func ignoresEventsWithNoMatchingKey() {
+    @Test("an event without the key clears a previously captured value")
+    func eventWithoutKeyClearsPreviousValue() {
+        // Every delivered event of the parameter's source assigns, so the pixel reports what the
+        // latest event carried rather than a stale reading from an earlier one.
         let parameter = DataParameter(dataKey: "loginState")
-        #expect(!parameter.handle(data: ["other": "x"], tabID: .new()))
+        parameter.handle(data: ["loginState": "logged-in"])
+        #expect(parameter.handle(data: ["other": "x"]))
         #expect(parameter.queryValue() == nil)
+    }
+
+    @Test("an event without the key is no change when there is nothing to clear")
+    func eventWithoutKeyIsNoChangeWhenEmpty() {
+        let parameter = DataParameter(dataKey: "loginState")
+        #expect(!parameter.handle(data: ["other": "x"]))
+        #expect(parameter.queryValue() == nil)
+    }
+
+    @Test("re-reporting the same value is no change")
+    func reReportingSameValueIsNoChange() {
+        let parameter = DataParameter(dataKey: "loginState")
+        #expect(parameter.handle(data: ["loginState": "a"]))
+        #expect(!parameter.handle(data: ["loginState": "a"]))
     }
 
     @Test("keeps the last value across multiple matching events")
     func keepsLastValueAcrossMultipleEvents() {
         let parameter = DataParameter(dataKey: "loginState")
-        parameter.handle(data: ["loginState": "a"], tabID: .new())
-        parameter.handle(data: ["loginState": "b"], tabID: .new())
+        parameter.handle(data: ["loginState": "a"])
+        parameter.handle(data: ["loginState": "b"])
         #expect(parameter.queryValue()?.contains("b") == true)
     }
 

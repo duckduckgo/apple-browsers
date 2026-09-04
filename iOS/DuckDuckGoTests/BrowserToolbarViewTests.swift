@@ -118,6 +118,20 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertFalse(isInsideGlassContentView)
     }
 
+    func testWhenStandaloneGlassUsesDarkAppearanceThenItHasAContrastTint() throws {
+        guard #available(iOS 26.0, *) else { return }
+        let sut = makeSUT(embeddedOmnibar: false)
+
+        sut.refreshMaterialAppearance(interfaceStyle: .dark)
+
+        let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
+        XCTAssertNotNil((glassView.effect as? UIGlassEffect)?.tintColor)
+
+        sut.refreshMaterialAppearance(interfaceStyle: .light)
+
+        XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
+    }
+
     func testWhenNotFloatingThenProgressIsANoOp() {
         let sut = makeSUT(floating: false)
         let legacyFullHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: false)
@@ -125,6 +139,11 @@ final class BrowserToolbarViewTests: XCTestCase {
         let height = sut.setButtonRowCollapseProgress(1, reduceMotion: false)
 
         XCTAssertEqual(height, legacyFullHeight, accuracy: 0.01)
+    }
+
+    private func firstVisualEffectView(in view: UIView) -> UIVisualEffectView? {
+        if let view = view as? UIVisualEffectView { return view }
+        return view.subviews.lazy.compactMap { self.firstVisualEffectView(in: $0) }.first
     }
 
     func testWhenButtonRowIsMidCollapseThenRestingCapsuleFrameStillReportsSingleRowHeight() {

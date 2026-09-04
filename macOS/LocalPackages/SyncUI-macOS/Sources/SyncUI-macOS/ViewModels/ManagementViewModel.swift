@@ -66,8 +66,8 @@ public protocol ManagementViewModel: ObservableObject {
     var isFaviconsFetchingEnabled: Bool { get set }
     var isUnifiedFavoritesEnabled: Bool { get set }
 
-    func presentDeleteAccount()
-    func presentDeviceDetails(_ device: SyncDevice)
+    func presentDeleteAccount() async
+    func presentDeviceDetails(_ device: SyncDevice) async
     func presentRemoveDevice(_ device: SyncDevice)
 
     func saveRecoveryPDF()

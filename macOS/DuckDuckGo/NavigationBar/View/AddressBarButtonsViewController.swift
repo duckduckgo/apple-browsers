@@ -2876,7 +2876,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         switch popover {
         case popovers.bookmarkPopover:
             if popovers.bookmarkPopover?.isNew == true {
-                NotificationCenter.default.post(name: .bookmarkPromptShouldShow, object: nil)
+                NotificationCenter.default.post(name: .bookmarkAdded, object: nil)
             }
             updateBookmarkButtonVisibility()
         case popovers.zoomPopover:

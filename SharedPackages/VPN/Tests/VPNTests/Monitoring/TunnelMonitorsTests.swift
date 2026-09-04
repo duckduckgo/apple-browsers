@@ -84,6 +84,7 @@ final class TunnelMonitorsTests: XCTestCase {
             events: events,
             entitlementCheck: { tunablesBox.entitlementResult },
             isConnectionTesterEnabled: { tunablesBox.connectionTesterEnabled },
+            endpointPortProvider: { tunablesBox.endpointPortOverride },
             onReconfigureForMigration: {
                 hooksBox.reconfigureForMigrationCount += 1
                 if let error = hooksBox.reconfigureForMigrationError {
@@ -321,12 +322,25 @@ final class TunnelMonitorsTests: XCTestCase {
     }
 
     func testTunnelFailureCallback_failureDetected_invokesFailureRecovery() async throws {
+        tunables.endpointPortOverride = 51900
+
         try await monitors.start(testImmediately: false)
         await tunnelFailureMonitor.fire(.failureDetected)
         await waitForSpawnedTasks()
 
         XCTAssertEqual(failureRecoveryHandler.attemptCount, 1)
         XCTAssertEqual(failureRecoveryHandler.lastExcludeLocalNetworks, false)
+        XCTAssertEqual(failureRecoveryHandler.lastEndpointPortOverride, 51900)
+    }
+
+    func testTunnelFailureCallback_failureDetected_whenPortProviderReturnsNil_passesNilEndpointPortOverride() async throws {
+        tunables.endpointPortOverride = nil
+
+        try await monitors.start(testImmediately: false)
+        await tunnelFailureMonitor.fire(.failureDetected)
+        await waitForSpawnedTasks()
+
+        XCTAssertEqual(failureRecoveryHandler.attemptCount, 1)
         XCTAssertNil(failureRecoveryHandler.lastEndpointPortOverride)
     }
 
@@ -498,6 +512,7 @@ private final class FiredEventsBox: @unchecked Sendable {
 private final class TunablesBox: @unchecked Sendable {
     var entitlementResult: Result<Bool, Error> = .success(true)
     var connectionTesterEnabled: Bool = true
+    var endpointPortOverride: UInt16?
 }
 
 private final class HooksBox: @unchecked Sendable {

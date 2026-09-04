@@ -336,6 +336,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     public let lastSelectedServerInfoPublisher = CurrentValueSubject<NetworkProtectionServerInfo?, Never>(nil)
 
+    /// Port chosen by automatic fallback (set by the port-fallback logic; nil until it runs).
+    /// A manual `settings.endpointPortOverride` always takes precedence.
+    @MainActor var automaticEndpointPort: UInt16?
+
+    /// The port to use for the WireGuard endpoint, or nil to use the server-provided port.
+    @MainActor var effectiveEndpointPort: UInt16? {
+        settings.endpointPortOverride ?? automaticEndpointPort
+    }
+
     // MARK: - User Notifications
 
     private let notificationsPresenter: VPNNotificationsPresenting
@@ -599,6 +608,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             entitlementCheck: self.entitlementCheck,
             isConnectionTesterEnabled: { [weak self] in
                 self?.isConnectionTesterEnabled ?? true
+            },
+            endpointPortProvider: { [weak self] in
+                self?.effectiveEndpointPort
             },
             onReconfigureForMigration: { @MainActor [weak self] in
                 guard let self else { throw CancellationError() }
@@ -1222,7 +1234,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 excludeLocalNetworks: settings.excludeLocalNetworks,
                 excludeCGNAT: settings.excludeCGNAT,
                 dnsSettings: dnsSettings,
-                endpointPortOverride: settings.endpointPortOverride ?? VPNSettings.defaultEndpointPortOverride,
+                endpointPortOverride: effectiveEndpointPort,
                 regenerateKey: regenerateKey
             )
         } catch {

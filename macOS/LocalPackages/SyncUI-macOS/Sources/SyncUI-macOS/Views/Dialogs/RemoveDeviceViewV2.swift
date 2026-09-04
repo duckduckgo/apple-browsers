@@ -29,7 +29,12 @@ struct RemoveDeviceViewV2: View {
     @State private var isRemoving = false
 
     private var illustration: Image {
-        device.kind == .mobile ? Image(.syncRemoveDeviceMobile) : Image(.syncRemoveDeviceDesktop)
+        switch device.kind {
+        case .current, .desktop:
+            return Image(.syncRemoveDeviceDesktop)
+        case .mobile, .thirdParty:
+            return Image(.syncRemoveDeviceMobile)
+        }
     }
 
     var body: some View {

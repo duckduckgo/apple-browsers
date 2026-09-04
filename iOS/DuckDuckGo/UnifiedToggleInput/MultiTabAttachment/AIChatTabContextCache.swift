@@ -22,8 +22,8 @@ import Foundation
 
 /// In-memory page context per browser tab, keyed on the tab `uid`.
 ///
-/// Retains page updates during the hack phase. Submission collects fresh context from the tab,
-/// waking its web view when needed, so this cache is not required to survive an app restart.
+/// Retains page updates during the hack phase. Attachments prepare their own context from the
+/// live tab, waking its web view when needed, so this cache need not survive an app restart.
 // @MainActor
 final class AIChatTabContextCache {
 

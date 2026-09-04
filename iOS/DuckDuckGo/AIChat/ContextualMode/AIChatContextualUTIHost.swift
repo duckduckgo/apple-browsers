@@ -437,8 +437,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         print("🇱🇻🟢 PROVIDER called - \(attachments.count) attached tab(s): \(attachments.map(\.title).joined(separator: " | "))")
         guard !attachments.isEmpty else { return nil }
         let currentTabID = multiTabCurrentTabUID
+        let preparations = coordinator.attachedTabPreparations()
         return MultiTabAttachmentRequest(collect: {
-            await multiTabAttachmentContext.pageContexts(for: attachments, currentTabId: currentTabID)
+            await multiTabAttachmentContext.pageContexts(for: attachments, currentTabId: currentTabID, preparations: preparations)
         }, didConsume: { [weak self] in
             self?.coordinator.consumeSubmittedTabAttachments(ids: attachments.map(\.id))
         })

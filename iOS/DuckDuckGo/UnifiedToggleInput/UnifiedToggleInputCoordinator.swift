@@ -198,6 +198,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// that later moment, so this survives until the user script reports the push, exactly like the
     /// attached selections do.
     private var submittedTabAttachments: [UnifiedToggleInputTabAttachment]?
+    private var draftTabPreparations: [UUID: MultiTabAttachmentPreparation] = [:]
+    private var submittedTabPreparations: [UUID: MultiTabAttachmentPreparation] = [:]
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
     /// submit or session reset.
@@ -504,6 +506,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
+                    self?.prepareDraftTabContexts()
                     self?.persistDraftToStore()
                     self?.onAttachmentsChanged?()
                 },
@@ -687,6 +690,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         syncInputModeFromExternalSource(state.toggleMode)
 
         attachmentController.replaceAllAttachments(with: state.attachments)
+        prepareDraftTabContexts()
 
         // Always sync the live model store from per-tab state — including nil values —
         // so the previous tab's selections don't leak through preferences. With the
@@ -864,6 +868,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if wasEditing { applyEditMode() }
         showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
         attachmentController.replaceAllAttachments(with: attachments)
+        prepareDraftTabContexts()
     }
 
     func endEditMode() {
@@ -1492,6 +1497,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func startNewChat() {
+        submittedTabAttachments = nil
+        submittedTabPreparations.removeAll()
+        draftTabPreparations.removeAll()
         attachmentController.resetPasteConversation()
         isNewChatPending = true
         hasSubmittedPrompt = false
@@ -1670,9 +1678,33 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// Hands the input the tabs it can attach, and the tab it belongs to.
     func setMultiTabAttachmentContext(_ context: MultiTabAttachmentContext?, currentTabUID: TabUID?) {
+        if multiTabAttachmentContext !== context || multiTabCurrentTabUID != currentTabUID {
+            draftTabPreparations.removeAll()
+            submittedTabPreparations.removeAll()
+        }
         multiTabAttachmentContext = context
         multiTabCurrentTabUID = currentTabUID
+        prepareDraftTabContexts()
         attachmentController.updateAttachButtonPresentation()
+    }
+
+    private func prepareDraftTabContexts() {
+        guard let multiTabAttachmentContext, multiTabAttachmentContext.isEnabled else {
+            draftTabPreparations.removeAll()
+            return
+        }
+        let attachments = viewController.currentAttachments.compactMap(\.tabAttachment)
+        let ids = Set(attachments.map(\.id))
+        draftTabPreparations = draftTabPreparations.filter { ids.contains($0.key) }
+        for attachment in attachments where draftTabPreparations[attachment.id] == nil {
+            draftTabPreparations[attachment.id] = multiTabAttachmentContext.prepareContext(
+                for: attachment, currentTabId: multiTabCurrentTabUID)
+        }
+    }
+
+    /// The request retains these handles while delivery clears the draft's chips.
+    func attachedTabPreparations() -> [UUID: MultiTabAttachmentPreparation] {
+        submittedTabPreparations.merging(draftTabPreparations) { _, draft in draft }
     }
 
     /// The tabs attached to the current draft, in the order the user attached them. Falls back to
@@ -1684,6 +1716,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// Drops the tabs held for a delivery, once the user script reports the payload was pushed.
     func consumeSubmittedTabAttachments(ids: [UUID]) {
+        for id in ids { submittedTabPreparations[id] = nil }
         submittedTabAttachments?.removeAll { ids.contains($0.id) }
         if submittedTabAttachments?.isEmpty == true { submittedTabAttachments = nil }
     }
@@ -1879,6 +1912,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         // Held rather than scoped to this call: a queued prompt builds its payload later.
         let attachedTabs = viewController.currentAttachments.compactMap(\.tabAttachment)
         submittedTabAttachments = attachedTabs
+        submittedTabPreparations = draftTabPreparations
         print("🇱🇻🟢 DELIVER held=\(submittedTabAttachments?.count ?? 0) tab(s), userScriptBound=\(userScript != nil), contextualState=\(isContextualChatState)")
 
         if isContextualChatState, userScript == nil {

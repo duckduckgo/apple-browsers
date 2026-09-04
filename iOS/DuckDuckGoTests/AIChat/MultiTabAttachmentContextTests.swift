@@ -72,6 +72,113 @@ final class MultiTabAttachmentContextTests: XCTestCase {
         XCTAssertEqual(contexts.first?.content, "Fresh article")
     }
 
+    func testWhenAttachmentIsPreparedThenContentIsCollectedBeforeSendAndReused() async throws {
+        let tab = Tab(link: Link(title: "Article", url: url))
+        let attachment = UnifiedToggleInputTabAttachment(tabId: tab.uid, title: "Article", url: url)
+        let expected = makeContext()
+        var collectionCount = 0
+        let subject = makeSubject(tabs: { [tab] }, content: { _ in
+            collectionCount += 1
+            return expected
+        })
+
+        let preparation = try XCTUnwrap(subject.prepareContext(for: attachment, currentTabId: nil))
+        let preparedContent = await preparation.value()
+        XCTAssertEqual(preparedContent, expected)
+        XCTAssertEqual(collectionCount, 1)
+        XCTAssertTrue(preparation.isComplete)
+
+        let contexts = await subject.pageContexts(for: [attachment], currentTabId: nil,
+                                                 preparations: [attachment.id: preparation])
+        XCTAssertEqual(contexts, [expected.withTabId(tab.uid)])
+        XCTAssertEqual(collectionCount, 1)
+    }
+
+    func testWhenSendArrivesDuringPreparationThenItWaitsWithoutStartingAnotherCollection() async throws {
+        let tab = Tab(link: Link(title: "Article", url: url))
+        let attachment = UnifiedToggleInputTabAttachment(tabId: tab.uid, title: "Article", url: url)
+        let started = expectation(description: "Preparation started before send")
+        let publisher = PassthroughSubject<AIChatPageContextData, Never>()
+        var collectionCount = 0
+        let subject = makeSubject(tabs: { [tab] }, content: { _ in
+            collectionCount += 1
+            return await MultiTabAttachmentWaiter.firstValue(
+                from: publisher.eraseToAnyPublisher(), timeout: 5, start: { started.fulfill() })
+        })
+        let preparation = try XCTUnwrap(subject.prepareContext(for: attachment, currentTabId: nil))
+        await fulfillment(of: [started], timeout: 1)
+        XCTAssertFalse(preparation.isComplete)
+
+        let sendStarted = expectation(description: "Submission started")
+        let submission = Task {
+            sendStarted.fulfill()
+            return await subject.pageContexts(for: [attachment], currentTabId: nil,
+                                              preparations: [attachment.id: preparation])
+        }
+        await fulfillment(of: [sendStarted], timeout: 1)
+        XCTAssertEqual(collectionCount, 1)
+        publisher.send(makeContext())
+        let contexts = await submission.value
+        XCTAssertEqual(contexts, [makeContext().withTabId(tab.uid)])
+        XCTAssertEqual(collectionCount, 1)
+    }
+
+    func testWhenPreparationFailsThenSendRetriesCollection() async throws {
+        let tab = Tab(link: Link(title: "Article", url: url))
+        let attachment = UnifiedToggleInputTabAttachment(tabId: tab.uid, title: "Article", url: url)
+        let expected = makeContext()
+        var collectionCount = 0
+        let subject = makeSubject(tabs: { [tab] }, content: { _ in
+            collectionCount += 1
+            return collectionCount == 1 ? nil : expected
+        })
+        let preparation = try XCTUnwrap(subject.prepareContext(for: attachment, currentTabId: nil))
+        let preparedContent = await preparation.value()
+        XCTAssertNil(preparedContent)
+
+        let contexts = await subject.pageContexts(for: [attachment], currentTabId: nil,
+                                                 preparations: [attachment.id: preparation])
+        XCTAssertEqual(contexts, [expected.withTabId(tab.uid)])
+        XCTAssertEqual(collectionCount, 2)
+    }
+
+    func testWhenPreparationLosesItsLastOwnerThenCollectionIsCancelled() async {
+        let tab = Tab(link: Link(title: "Article", url: url))
+        let attachment = UnifiedToggleInputTabAttachment(tabId: tab.uid, title: "Article", url: url)
+        let started = expectation(description: "Collection started")
+        let cancelled = expectation(description: "Collection cancelled")
+        let publisher = PassthroughSubject<AIChatPageContextData, Never>()
+        let subject = makeSubject(tabs: { [tab] }, content: { _ in
+            let result = await MultiTabAttachmentWaiter.firstValue(
+                from: publisher.eraseToAnyPublisher(), timeout: 30, start: { started.fulfill() })
+            XCTAssertTrue(Task.isCancelled)
+            cancelled.fulfill()
+            return result
+        })
+        var preparation = subject.prepareContext(for: attachment, currentTabId: nil)
+        weak var releasedPreparation = preparation
+        await fulfillment(of: [started], timeout: 1)
+
+        preparation = nil
+
+        XCTAssertNil(releasedPreparation)
+        await fulfillment(of: [cancelled], timeout: 1)
+    }
+
+    func testWhenPreparedTabNavigatesBeforeSendThenItsSnapshotIsNotSent() async throws {
+        let tab = Tab(link: Link(title: "Article", url: url))
+        let attachment = UnifiedToggleInputTabAttachment(tabId: tab.uid, title: "Article", url: url)
+        let expected = makeContext()
+        let subject = makeSubject(tabs: { [tab] }, content: { _ in expected })
+        let preparation = try XCTUnwrap(subject.prepareContext(for: attachment, currentTabId: nil))
+        _ = await preparation.value()
+        tab.link = Link(title: "Other", url: URL(string: "https://example.com/other")!)
+
+        let contexts = await subject.pageContexts(for: [attachment], currentTabId: nil,
+                                                 preparations: [attachment.id: preparation])
+        XCTAssertTrue(contexts.isEmpty)
+    }
+
     func testWhenCollectionFailsThenNoMetadataOnlyAttachmentIsSent() async {
         let tab = Tab(link: Link(title: "Article", url: url))
         let subject = makeSubject(tabs: { [tab] }, content: { _ in nil })

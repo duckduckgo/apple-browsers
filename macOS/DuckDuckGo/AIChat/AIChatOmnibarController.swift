@@ -145,19 +145,34 @@ final class AIChatOmnibarController {
     /// selected model, and the picker menu is not the only thing that can change it.
     var onSelectedModelChanged: (() -> Void)?
 
+    /// Create Image can be enabled before models finish loading. If resolving the models then
+    /// requires a switch, the container presents the same notice as an immediate switch.
+    var onCreateImageModelSwitchNotice: ((AIChatCreateImageModelSwitchNotice) -> Void)?
+
     /// The high-usage notice has no publisher of its own, so it re-resolves on the same beats the
     /// warning does — activation included, which is what `cleanup()` dropped it for.
     var onUsageWarningsRefreshed: (() -> Void)?
+
+    /// Advanced models have no allowance left until web republishes. Read off the snapshot, not the
+    /// message: switching to a free model retires the message while the limit it named still stands.
+    var isAdvancedModelUsageExhausted: Bool {
+        usageWarningViewModel?.activeNoticeID == .weeklyReachedDegraded
+    }
+
+    /// The card's subscribe CTA. The container VC owns the dialog, and the window it has to open in.
+    var onSubscriptionUpsellDialogRequested: ((SubscriptionFunnelOrigin) -> Void)?
+
+    /// Set by the container VC from the card it renders; the text VC listens so the prompt goes
+    /// inert alongside the buttons.
+    @Published var isInputBlockedByUsageLimit = false
 
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
             updateSelectedModel(suggestion.modelId)
         case .tryForFree:
-            // Free tier only, so `.plus` always resolves to the purchase flow rather than an upgrade.
-            subscriptionUpsellPresenter.routeGatedSelection(requiredTier: .plus,
-                                                            userTier: userTier,
-                                                            origin: surface.usageLimitFunnelOrigin)
+            // Confirms first, the same as a gated pick in either picker, rather than navigating on tap.
+            onSubscriptionUpsellDialogRequested?(surface.usageLimitFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
             // Web reads the entry on its next hydration, so there is nothing to reload here.
             usageLimitsStore?.write(entries)
@@ -220,6 +235,10 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatOmnibarImageGeneration)
     }
 
+    var isUpdatedCreateImageEnabled: Bool {
+        featureFlagger.isFeatureOn(.updatedCreateImage)
+    }
+
     /// Whether the web search tool is available.
     var isWebSearchEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarWebSearch)
@@ -268,8 +287,16 @@ final class AIChatOmnibarController {
             && featureFlagger.isFeatureOn(.aiChatOmnibarAttachMoreTabs)
     }
 
-    func toggleImageGenerationMode() {
-        activeToolMode = isImageGenerationMode ? nil : .imageGeneration
+    @discardableResult
+    func toggleImageGenerationMode() -> AIChatCreateImageModelSwitchNotice? {
+        guard !isImageGenerationMode else {
+            activeToolMode = nil
+            return nil
+        }
+
+        let notice = switchToImageGenerationModelIfNeeded()
+        activeToolMode = .imageGeneration
+        return notice
     }
 
     func toggleWebSearchMode() {
@@ -358,7 +385,7 @@ final class AIChatOmnibarController {
                 currentModelIdProvider: { [weak self] in self?.currentModelId },
                 requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
             ),
-            isTrialEligible: { [weak self] in self?.subscriptionManager.isUserEligibleForFreeTrial() ?? false },
+            isTrialEligible: { [weak self] in self?.shouldOfferFreeTrial ?? false },
             isFireMode: { [weak self] in self?.isBurner ?? false }
         )
         usageWarningViewModel?.onAction = { [weak self] action in
@@ -484,6 +511,10 @@ final class AIChatOmnibarController {
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningEffortIfNeeded()
                 self.deactivateWebSearchIfUnsupported()
+                if self.isImageGenerationMode,
+                   let notice = self.switchToImageGenerationModelIfNeeded() {
+                    self.onCreateImageModelSwitchNotice?(notice)
+                }
                 self.deactivateImageGenerationIfUnsupported()
                 // Tier and models land after the activation that resolved the warning, so the first
                 // banner after a tier change would otherwise show a stale tier and no CTA.
@@ -823,7 +854,19 @@ final class AIChatOmnibarController {
         if let selectedModel, selectedModel.supportsTool(.imageGeneration) {
             return selectedModel
         }
-        return models.first(where: { $0.entityHasAccess && $0.supportsTool(.imageGeneration) })
+        return AIChatModel.preferredImageGenerationModel(in: models)
+    }
+
+    private func switchToImageGenerationModelIfNeeded() -> AIChatCreateImageModelSwitchNotice? {
+        guard isUpdatedCreateImageEnabled,
+              let previousModel = selectedModel,
+              !previousModel.supportsTool(.imageGeneration),
+              let fallbackModel = imageGenerationModel else {
+            return nil
+        }
+
+        updateSelectedModel(fallbackModel.id)
+        return AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
     }
 
     /// The model ID to use for the current submission. In image-generation mode an
@@ -1605,6 +1648,8 @@ enum AIChatModelPickerItem {
     /// `routesToUpsell` is false when the upsell is unavailable (kill switch, or a surface that
     /// doesn't support it) — the row still shows, but must not open the purchase dialog.
     case gatedModel(AIChatModel, routesToUpsell: Bool)
+    /// Out of allowance rather than out of subscription: the row shows, greyed, and selects nothing.
+    case unavailableModel(AIChatModel, isSelected: Bool)
 }
 
 /// A fully-resolved reasoning-effort row so the view controller only maps it to an `NSMenuItem`.
@@ -1628,14 +1673,19 @@ extension AIChatOmnibarController {
         // Recommended = backend-labelled models, shown first with the label as a subtitle.
         let (recommended, rest) = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
 
+        let advancedExhausted = isAdvancedModelUsageExhausted
+        func item(for model: AIChatModel, subtitle: String? = nil) -> AIChatModelPickerItem {
+            let isSelected = model.id == selectedModelId
+            guard advancedExhausted, model.isAdvanced else {
+                return .model(model, subtitle: subtitle, isSelected: isSelected)
+            }
+            return .unavailableModel(model, isSelected: isSelected)
+        }
+
         var items: [AIChatModelPickerItem] = recommended.map { model in
-            .model(model,
-                   subtitle: AIChatPickerSectionCopy.subtitle(for: model.label),
-                   isSelected: model.id == selectedModelId)
+            item(for: model, subtitle: AIChatPickerSectionCopy.subtitle(for: model.label))
         }
-        items += rest.map { model in
-            .model(model, isSelected: model.id == selectedModelId)
-        }
+        items += rest.map { item(for: $0) }
 
         guard !gated.isEmpty, !freeModelsOnly else { return items }
         items.append(.separator)

@@ -68,11 +68,11 @@ final class DefaultOmniBarSearchView: UIView {
     private let mainStackView = UIStackView()
     private var mainStackLeadingConstraint: NSLayoutConstraint?
 
-    init() {
+    init(centersContentVertically: Bool = false) {
         super.init(frame: .zero)
 
         setUpSubviews()
-        setUpConstraints()
+        setUpConstraints(centersContentVertically: centersContentVertically)
         setUpProperties()
     }
 
@@ -139,7 +139,7 @@ final class DefaultOmniBarSearchView: UIView {
         leftIconContainer.addSubview(dismissButtonView)
     }
 
-    private func setUpConstraints() {
+    private func setUpConstraints(centersContentVertically: Bool) {
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         leftIconContainer.translatesAutoresizingMaskIntoConstraints = false
         modeToggleContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -151,9 +151,6 @@ final class DefaultOmniBarSearchView: UIView {
         NSLayoutConstraint.activate([
             leadingConstraint,
             mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            mainStackView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            mainStackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
-            mainStackView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
 
             notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 4),
             notificationContainer.trailingAnchor.constraint(equalTo: textField.trailingAnchor),
@@ -176,6 +173,19 @@ final class DefaultOmniBarSearchView: UIView {
             modeToggleView.trailingAnchor.constraint(equalTo: modeToggleContainer.trailingAnchor, constant: -6),
             modeToggleView.centerYAnchor.constraint(equalTo: modeToggleContainer.centerYAnchor)
         ])
+
+        if centersContentVertically {
+            NSLayoutConstraint.activate([
+                mainStackView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                mainStackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
+                mainStackView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                mainStackView.topAnchor.constraint(equalTo: topAnchor),
+                mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+        }
 
         DefaultOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: reloadButton)

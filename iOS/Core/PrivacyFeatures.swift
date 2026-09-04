@@ -46,9 +46,7 @@ public final class PrivacyFeatures {
             domainEvent = .dbSaveExcludedHTTPSDomainsError
             dailyAndCount = false
         }
-
-        // `EventMapping` promises the completion resolves, so this fires through `fireAsync` even
-        // though no current caller supplies one.
+        
         Task {
             do {
                 try await PixelKit.fireAsync(domainEvent.withError(error),

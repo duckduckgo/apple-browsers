@@ -954,37 +954,78 @@ final class PixelKitTests: XCTestCase {
     }
 
     /// `.dailyAndCount` fires two requests (`_daily` and `_count`), completing once per request:
-    /// `fireAsync` must resume with the first result and not trap on the second completion.
-    func testAsyncFireWithDailyAndCountFrequencyResumesOnlyOnce() async throws {
-        // The second (`_count`) request can complete after `fireAsync` has already resumed,
-        // so the names are gathered behind a lock and awaited via an expectation.
+    /// `fireAsync` waits for both before returning, so both have fired by the time it resumes and
+    /// no expectation is needed to observe them.
+    func testAsyncFireWithDailyAndCountWaitsForBothLegs() async throws {
         let namesLock = NSLock()
         var firedPixelNames = [String]()
-        let bothRequestsFired = expectation(description: "fires the _daily and _count requests")
-        bothRequestsFired.expectedFulfillmentCount = 2
 
         let pixelKit = makePixelKit { pixelName, _, _, _, _, completion in
             namesLock.lock()
             firedPixelNames.append(pixelName)
             namesLock.unlock()
             completion(true, nil)
-            bothRequestsFired.fulfill()
         }
 
         let result = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
-        await fulfillment(of: [bothRequestsFired], timeout: 1)
 
         XCTAssertEqual(result, .sent)
         namesLock.lock()
         let names = firedPixelNames
         namesLock.unlock()
-        XCTAssertTrue(names.contains { $0.hasSuffix("_daily") })
-        XCTAssertTrue(names.contains { $0.hasSuffix("_count") })
+        XCTAssertTrue(names.contains { $0.hasSuffix("_daily") },
+                      "the _daily leg must have fired before fireAsync resumed")
+        XCTAssertTrue(names.contains { $0.hasSuffix("_count") },
+                      "the _count leg must have fired before fireAsync resumed")
     }
 
-    /// Even if the underlying completion is somehow invoked multiple times with mixed results,
-    /// `fireAsync` resolves with the first one and ignores the rest.
-    func testAsyncFireIgnoresCompletionsAfterTheFirst() async throws {
+    /// The second fire of the day suppresses the `_daily` leg and sends only `_count`. The
+    /// suppressed leg still completes, so waiting for every leg must not hang.
+    func testAsyncFireWithDailyAndCountResolvesWhenTheDailyLegIsThrottled() async throws {
+        let pixelKit = makePixelKit()
+
+        let firstFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+        let secondFire = try await pixelKit.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+
+        XCTAssertEqual(firstFire, .sent)
+        XCTAssertEqual(secondFire, .sent, "the _count leg still sends once the _daily leg is throttled")
+    }
+
+    /// `.suppressed` only when every leg was suppressed.
+    func testAsyncFireWithTwoLegsReturnsSuppressedOnlyWhenEveryLegIsSuppressed() async throws {
+        let allSuppressed = StubPixelFiring(completions: [(fired: false, error: nil),
+                                                          (fired: false, error: nil)])
+        let oneSent = StubPixelFiring(completions: [(fired: false, error: nil),
+                                                    (fired: true, error: nil)])
+
+        let suppressedResult = try await allSuppressed.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+        let sentResult = try await oneSent.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+
+        XCTAssertEqual(suppressedResult, .suppressed)
+        XCTAssertEqual(sentResult, .sent)
+    }
+
+    /// An error on any leg surfaces, and only once every leg has finished.
+    func testAsyncFireWithTwoLegsThrowsTheFirstLegErrorAfterAllLegsFinish() async {
+        let expectedError = AsyncFireSampleError()
+        // The error arrives on the second leg, so resolving on the first completion would have
+        // returned `.sent` and swallowed it.
+        let pixelFiring = StubPixelFiring(completions: [(fired: true, error: nil),
+                                                        (fired: false, error: expectedError)])
+
+        do {
+            _ = try await pixelFiring.fireAsync(TestEventV2.dailyEvent, frequency: .dailyAndCount)
+            XCTFail("Expected fireAsync to throw the error reported by the second leg")
+        } catch let error as AsyncFireSampleError {
+            XCTAssertEqual(error, expectedError)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    /// A single-leg frequency expects one completion. If the handler somehow over-completes,
+    /// `fireAsync` resolves on the first and ignores the rest rather than trapping.
+    func testAsyncFireIgnoresCompletionsBeyondTheExpectedLegCount() async throws {
         let pixelFiring = StubPixelFiring(completions: [(fired: true, error: nil),
                                                         (fired: false, error: AsyncFireSampleError())])
 

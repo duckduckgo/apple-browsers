@@ -678,11 +678,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let pixelKitStore = Self.setupPixelKit(vpnFileStoreDirectory: vpnFileStoreDirectory)
             let legacyStores = Self.configureLegacyPixelFileStores(vpnFileStoreDirectory: vpnFileStoreDirectory)
 
-            // The tunnel keeps its legacy daily and once-ever pixel state in its own app-group
-            // files, not in the suites the browser migrates, so it runs its own migration here
-            // against whichever store PixelKit actually ended up using. Without it every VPN daily
-            // pixel fires once extra and every VPN once-ever pixel fires a second time on the
-            // release that migrates.
+            // One-off migration from Pixel to PixelKit
             let destination: ThrowingKeyValueStoring = pixelKitStore ?? UserDefaults.networkProtectionGroupDefaults
             LegacyPixelStateMigration(
                 destination: destination,
@@ -696,15 +692,15 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             _ = Self.setupPixelKit(vpnFileStoreDirectory: nil)
             PixelKit.fire(Pixel.Event.networkProtectionPixelStorageSetupFailure.withError(error))
 
-            // configureLegacyPixelFileStores never ran, so migrate whatever a pre-migration install
-            // left in the legacy daily/unique UserDefaults suites into the same fallback destination.
+            // One-off migration from Pixel to PixelKit, using the fallback UserDefaults
             let destination: ThrowingKeyValueStoring = UserDefaults.networkProtectionGroupDefaults
             LegacyPixelStateMigration(
                 destination: destination,
                 dailyStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.daily),
                 uniqueStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.unique),
                 debounceStore: nil,
-                completionFlagStore: destination
+                completionFlagStore: destination,
+                completionFlagKey: "\(LegacyPixelStateMigration.completionFlagKey).ios-vpn-tunnel-fallback"
             ).run()
         }
     }

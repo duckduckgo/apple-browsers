@@ -678,7 +678,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     final class TrailingButtonsContainer: UIStackView { }
     private(set) var trailingButtonsContainer = TrailingButtonsContainer()
 
-    private let searchAreaView = DefaultOmniBarSearchView()
+    private let searchAreaView: DefaultOmniBarSearchView
 
     final class SearchAreaContainerView: UIView { }
 
@@ -794,6 +794,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     init(isFloatingUIEnabled: Bool) {
         self.isFloatingUIEnabled = isFloatingUIEnabled
+        self.searchAreaView = DefaultOmniBarSearchView(centersContentVertically: isFloatingUIEnabled)
         if isFloatingUIEnabled {
             self.searchAreaContainerView = SearchAreaContainerView()
             self.searchAreaContainerView.backgroundColor = .clear

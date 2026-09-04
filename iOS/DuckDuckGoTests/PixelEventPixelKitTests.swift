@@ -21,12 +21,8 @@ import XCTest
 import PixelKit
 @testable import Core
 
-/// Pins the naming contract the whole migration rests on: a `Pixel.Event` fired through PixelKit
-/// must produce the byte-identical name legacy `Pixel` produced.
-///
-/// Legacy `Pixel` built `<name><frequencySuffix>` and `URL.makePixelURL` then appended
-/// `_ios_<formFactor>`. These tests assert PixelKit reproduces that for every frequency the
-/// migration assigns.
+/// Pins the naming contract the migration rests on: a `Pixel.Event` fired through PixelKit must
+/// produce the byte-identical name legacy `Pixel` produced, for every frequency it's assigned.
 final class PixelEventPixelKitTests: XCTestCase {
 
     /// `.appLaunch` is the reference case: a short legacy name with no interpolation, so the

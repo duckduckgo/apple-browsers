@@ -66,7 +66,13 @@ final class CrashCollectionService {
                 // If for some reason the parameter can't be found, fall back to the current version.
                 if let crashAppVersion = params[.appVersion] {
                     let dailyParameters = [PixelParameters.appVersion: crashAppVersion]
-                    PixelKit.fire(Pixel.Event.dbCrashDetectedDaily(appIdentifier: appIdentifier), frequency: .legacyDailyNoSuffix, options: .parameters(dailyParameters))
+                    // `includeAppVersionParameter: false` so PixelKit does not overwrite the crash's
+                    // own `appVersion` with the current one. Legacy `Pixel.fire` only filled the
+                    // parameter in when the caller had not already set it.
+                    PixelKit.fire(Pixel.Event.dbCrashDetectedDaily(appIdentifier: appIdentifier),
+                                  frequency: .legacyDailyNoSuffix,
+                                  options: PixelKit.Options(additionalParameters: dailyParameters,
+                                                            includeAppVersionParameter: false))
                 } else {
                     PixelKit.fire(Pixel.Event.dbCrashDetectedDaily(appIdentifier: appIdentifier), frequency: .legacyDailyNoSuffix)
                 }

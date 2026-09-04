@@ -115483,6 +115483,42 @@
         }
       }
     },
+    "sync.close-setup-v2.confirmation.action" : {
+      "comment" : "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "sync.close-setup-v2.confirmation.message" : {
+      "comment" : "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Closing this window will stop connecting Sync & Backup."
+          }
+        }
+      }
+    },
+    "sync.close-setup-v2.confirmation.title" : {
+      "comment" : "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Are you sure you want to close this window?"
+          }
+        }
+      }
+    },
     "sync.pairing-v2.confirmation.action" : {
       "comment" : "Caption for a button to confirm sync setup with another device",
       "extractionState" : "extracted_with_value",

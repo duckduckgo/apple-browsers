@@ -2339,6 +2339,54 @@
         }
       }
     },
+    "preferences.begin-sync-v2.card-button" : {
+      "comment" : "Button text on the Begin Syncing card in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync With Another Device"
+          }
+        }
+      }
+    },
+    "preferences.begin-sync-v2.card-description" : {
+      "comment" : "Begin Syncing card description in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your autofill data, bookmarks, and Duck.ai chats, end-to-end encrypted across your DuckDuckGo apps."
+          }
+        }
+      }
+    },
+    "preferences.begin-sync-v2.card-footer" : {
+      "comment" : "Footer under the Begin Syncing card in sync settings (V2). The [text](url) markdown is a link and must be preserved.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t have DuckDuckGo on another device? [Get the DuckDuckGo app?](https://duckduckgo.com/app/devices)"
+          }
+        }
+      }
+    },
+    "preferences.begin-sync-v2.card-title" : {
+      "comment" : "Begin Syncing card title in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep DuckDuckGo in sync!"
+          }
+        }
+      }
+    },
     "preferences.begin-sync.card-button" : {
       "comment" : "Button text on the Begin Syncing card in sync settings",
       "extractionState" : "extracted_with_value",
@@ -2939,6 +2987,42 @@
         }
       }
     },
+    "preferences.preparing-to-sync-v2.check-other-device-title" : {
+      "comment" : "Title shown while the joining device waits for the other device during sync set up (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Check your other device..."
+          }
+        }
+      }
+    },
+    "preferences.preparing-to-sync-v2.dialog-action" : {
+      "comment" : "Status text while preparing to sync (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Connecting..."
+          }
+        }
+      }
+    },
+    "preferences.preparing-to-sync-v2.dialog-title" : {
+      "comment" : "Preparing to sync dialog title during two-device sync set up (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync & Backup is end-to-end encrypted on all your devices."
+          }
+        }
+      }
+    },
     "preferences.preparing-to-sync.dialog-action" : {
       "comment" : "Sync preparing to sync dialog action",
       "extractionState" : "extracted_with_value",
@@ -3299,6 +3383,30 @@
         }
       }
     },
+    "preferences.recover-synced-data-v2.button" : {
+      "comment" : "Button to recover synced data with a recovery code in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I Have a Recovery Code"
+          }
+        }
+      }
+    },
+    "preferences.recover-synced-data-v2.section-title" : {
+      "comment" : "Recover Synced Data section title in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recover Synced Data"
+          }
+        }
+      }
+    },
     "preferences.recover-synced-data.dialog-button" : {
       "comment" : "Sync recover synced data dialog button",
       "extractionState" : "extracted_with_value",
@@ -3539,6 +3647,42 @@
         }
       }
     },
+    "preferences.sync-enabled-v2.footer" : {
+      "comment" : "Footer describing what is being synced in sync settings when sync is enabled (V2). The [text](url) markdown is a link and must be preserved.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your bookmarks, autofill data, and Duck.ai chats, are being synced with end-to-end encryption. Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        }
+      }
+    },
+    "preferences.sync-enabled-v2.footer-without-ai-chat" : {
+      "comment" : "Footer describing what is being synced in sync settings when sync is enabled and Duck.ai chat sync is unavailable (V2). The [text](url) markdown is a link and must be preserved.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your bookmarks and autofill data are being synced with end-to-end encryption. Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)"
+          }
+        }
+      }
+    },
+    "preferences.sync-this-device-v2.title" : {
+      "comment" : "Title of the row to start syncing and backing up this device in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync this Device"
+          }
+        }
+      }
+    },
     "preferences.sync-this-device.link-title" : {
       "comment" : "Sync settings. Title of a link to start setting up sync and backup the device",
       "extractionState" : "extracted_with_value",
@@ -3595,6 +3739,102 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Синхронизация и резервное копирование устройства"
+          }
+        }
+      }
+    },
+    "preferences.sync.another-device-prompt-v2.another-device-button" : {
+      "comment" : "Button to continue to the pairing screen to sync with another device (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync With Another Device"
+          }
+        }
+      }
+    },
+    "preferences.sync.another-device-prompt-v2.subtitle" : {
+      "comment" : "Subtitle of the prompt asking whether to sync with another device or just this device (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We’ll help you sync your devices."
+          }
+        }
+      }
+    },
+    "preferences.sync.another-device-prompt-v2.this-device-only-button" : {
+      "comment" : "Button to enable Sync & Backup on the current device only, without pairing another device (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync This Device Only"
+          }
+        }
+      }
+    },
+    "preferences.sync.another-device-prompt-v2.title" : {
+      "comment" : "Title of the prompt asking whether to sync with another device or just this device (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync this device with a nearby phone."
+          }
+        }
+      }
+    },
+    "preferences.sync.authentication-cancelled-v2.close-button" : {
+      "comment" : "Button to dismiss the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "preferences.sync.authentication-cancelled-v2.subtitle" : {
+      "comment" : "Subtitle of the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync & Backup is end-to-end encrypted. macOS will ask for an authentication method."
+          }
+        }
+      }
+    },
+    "preferences.sync.authentication-cancelled-v2.title" : {
+      "comment" : "Title of the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Authenticate to enable Sync & Backup"
+          }
+        }
+      }
+    },
+    "preferences.sync.bookmarks-section-title-v2" : {
+      "comment" : "Bookmarks options section title in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bookmarks"
           }
         }
       }
@@ -3835,6 +4075,210 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подробности..."
+          }
+        }
+      }
+    },
+    "preferences.sync.delete-account-v2.button" : {
+      "comment" : "Button that confirms turning Sync off and deleting the server data (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Server Data"
+          }
+        }
+      }
+    },
+    "preferences.sync.delete-account-v2.message" : {
+      "comment" : "Message of the confirmation shown before turning Sync off and deleting the server data (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server."
+          }
+        }
+      }
+    },
+    "preferences.sync.delete-account-v2.title" : {
+      "comment" : "Title of the confirmation shown before turning Sync off and deleting the server data (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stop Sync & Backup and Delete Server Data?"
+          }
+        }
+      }
+    },
+    "preferences.sync.device-details-v2.close-button" : {
+      "comment" : "Button that dismisses the details dialog of another synced device (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "preferences.sync.device-details-v2.done-button" : {
+      "comment" : "Button that saves the device name and dismisses the device details dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "preferences.sync.device-details-v2.name-label" : {
+      "comment" : "Label of the editable device name field on the device details dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Name"
+          }
+        }
+      }
+    },
+    "preferences.sync.device-details-v2.remove-device-button" : {
+      "comment" : "Button that removes another synced device, on the device details dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove Device"
+          }
+        }
+      }
+    },
+    "preferences.sync.device-details-v2.synced-status" : {
+      "comment" : "Status shown under the device name on the device details dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Synced"
+          }
+        }
+      }
+    },
+    "preferences.sync.device-details-v2.turn-off-sync-button" : {
+      "comment" : "Button that turns Sync & Backup off for the current device, on the device details dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn Off Sync & Backup"
+          }
+        }
+      }
+    },
+    "preferences.sync.download-recovery-code-v2" : {
+      "comment" : "Button to download the recovery code in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Download Recovery Code"
+          }
+        }
+      }
+    },
+    "preferences.sync.fetch-favicons-option-caption-v2" : {
+      "comment" : "Caption for the load bookmark icons option in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Loads icons from websites you’ve bookmarked. Icon downloads are exposed to your network."
+          }
+        }
+      }
+    },
+    "preferences.sync.fetch-favicons-option-title-v2" : {
+      "comment" : "Title for the load bookmark icons option in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Load Bookmark Icons"
+          }
+        }
+      }
+    },
+    "preferences.sync.my-devices-footer-v2" : {
+      "comment" : "Footer under the synced devices section in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your data is end-to-end encrypted. Nobody but you can see your data, not even us."
+          }
+        }
+      }
+    },
+    "preferences.sync.my-devices-v2" : {
+      "comment" : "Synced devices section title in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "My Devices"
+          }
+        }
+      }
+    },
+    "preferences.sync.recovery-code-section-title-v2" : {
+      "comment" : "Recovery code section title in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recovery Code"
+          }
+        }
+      }
+    },
+    "preferences.sync.recovery-instructions-footer-v2" : {
+      "comment" : "Footer on the recovery code section in sync settings (V2). The [text](url) markdown is a link and must be preserved.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)"
+          }
+        }
+      }
+    },
+    "preferences.sync.recovery-instructions-v2" : {
+      "comment" : "Instructions on how to restore synced data in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use this code to restore your data if you lose access to this device."
           }
         }
       }
@@ -4139,6 +4583,42 @@
         }
       }
     },
+    "preferences.sync.remove-device-v2.button" : {
+      "comment" : "Button that confirms removing a synced device (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove Device"
+          }
+        }
+      }
+    },
+    "preferences.sync.remove-device-v2.message" : {
+      "comment" : "Message of the confirmation shown before removing a synced device (V2). The device name is inserted in place of %@ and the ** markers around it indicate bold styling, which should be preserved.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**%@** will no longer be able to access your synced data.\n\nYour autofill data, bookmarks, and duck.ai chats won’t sync across your other devices with DuckDuckGo."
+          }
+        }
+      }
+    },
+    "preferences.sync.remove-device-v2.title" : {
+      "comment" : "Title of the confirmation shown before removing a synced device (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove Device?"
+          }
+        }
+      }
+    },
     "preferences.sync.rollout-banner.description" : {
       "comment" : "Description of rollout banner",
       "extractionState" : "extracted_with_value",
@@ -4199,6 +4679,30 @@
         }
       }
     },
+    "preferences.sync.share-favorite-option-caption-v2" : {
+      "comment" : "Caption for the share favorites option in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use the same favorite bookmarks on mobile and desktop."
+          }
+        }
+      }
+    },
+    "preferences.sync.share-favorite-option-title-v2" : {
+      "comment" : "Title for the share favorites option in sync settings (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Share Favorites Across Devices"
+          }
+        }
+      }
+    },
     "preferences.sync.single-device-setup.action" : {
       "comment" : "Button to turn on sync and backup for a single device",
       "extractionState" : "extracted_with_value",
@@ -4255,6 +4759,282 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Включить только на этом устройстве"
+          }
+        }
+      }
+    },
+    "preferences.sync.success-v2.copy-code-button" : {
+      "comment" : "Button to copy the recovery code in the Sync success dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copy Code"
+          }
+        }
+      }
+    },
+    "preferences.sync.success-v2.description" : {
+      "comment" : "Recovery code explanation in the Sync success dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use this code to restore your synced data if you lose access to your devices. Keep it safe."
+          }
+        }
+      }
+    },
+    "preferences.sync.success-v2.download-pdf-button" : {
+      "comment" : "Button to download the recovery code as a PDF in the Sync success dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Download as PDF"
+          }
+        }
+      }
+    },
+    "preferences.sync.success-v2.fallback-device-name" : {
+      "comment" : "Fallback device name in the Sync success dialog when the current device name is unavailable (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This device"
+          }
+        }
+      }
+    },
+    "preferences.sync.success-v2.recovery-code-label" : {
+      "comment" : "Recovery code label in the Sync success dialog (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recovery Code"
+          }
+        }
+      }
+    },
+    "preferences.sync.success-v2.title" : {
+      "comment" : "Title in the Sync success dialog. %@ is the name of the device that was added (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ has been added to Sync & Backup."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.copied" : {
+      "comment" : "Confirmation shown after copying the sync code (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copied"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.copy-confirmation-message" : {
+      "comment" : "Message of the reminder shown after copying the sync code (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open DuckDuckGo on your other device and paste the code."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.copy-confirmation-title" : {
+      "comment" : "Title of the reminder shown after copying the sync code (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t close this page"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.enter-step-1-detail" : {
+      "comment" : "Emphasized DuckDuckGo product name in the first code entry instruction (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo App"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.enter-step-1-prefix" : {
+      "comment" : "First part of the first code entry instruction, before the DuckDuckGo product name (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open another"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.enter-step-3" : {
+      "comment" : "Third pairing instruction when entering a code from another device (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copy the QR Text Code and click ‘Paste Code’ below:"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.enter-tab" : {
+      "comment" : "Tab that lets the user paste a sync code from another device (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enter Code"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.enter-title" : {
+      "comment" : "Title of the Sync with another device dialog when entering a sync code (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enter the Sync Code"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.example-code" : {
+      "comment" : "Label above the example sync code in the code entry tab (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Example Code:"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.paste-code" : {
+      "comment" : "Button that pastes a sync code from the clipboard (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Paste Code"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.scan-step-1-detail" : {
+      "comment" : "Emphasized DuckDuckGo product name in the first QR scanning instruction (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.scan-step-1-prefix" : {
+      "comment" : "First part of the first QR scanning instruction, before the DuckDuckGo product name (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On your phone, open"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.scan-step-3" : {
+      "comment" : "Third pairing instruction when showing the QR code (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan this QR code from your phone"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.scan-tab" : {
+      "comment" : "Tab that displays a QR code to scan from another device (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan Code"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.scan-title" : {
+      "comment" : "Title of the Sync with another device dialog when showing the QR code (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan QR code to sync"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.step-2-detail" : {
+      "comment" : "Emphasized Settings path in the second pairing instruction (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Settings › Sync & Backup › Sync With Another Device"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.step-2-prefix" : {
+      "comment" : "First part of the second pairing instruction, before the Settings path (V2)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Go to"
           }
         }
       }
@@ -6295,6 +7075,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отключить и удалить данные с сервера..."
+          }
+        }
+      }
+    },
+    "preferences.sync.turn-off-and-delete-data-v2" : {
+      "comment" : "Disable and delete data sync button caption",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn Off and Delete Server Data"
           }
         }
       }

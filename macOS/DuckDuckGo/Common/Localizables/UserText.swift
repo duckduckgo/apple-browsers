@@ -1508,10 +1508,10 @@ struct UserText {
         return String(format: message, peerName)
     }
 
-    // Confirmation shown when closing the Sync setup dialog while a device is still being connected (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
-    static let syncCloseSetupConfirmationTitleV2 = NotLocalizedString("sync.close-setup-v2.confirmation.title", value: "Are you sure you want to close this window?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
-    static let syncCloseSetupConfirmationMessageV2 = NotLocalizedString("sync.close-setup-v2.confirmation.message", value: "Closing this window will stop connecting Sync & Backup.", comment: "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
-    static let syncCloseSetupConfirmationActionV2 = NotLocalizedString("sync.close-setup-v2.confirmation.action", value: "Close", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)")
+    // Confirmation shown when closing the Sync setup dialog while a device is still being connected (V2 — simplifiedSyncSetupV2).
+    static let syncCloseSetupConfirmationTitleV2 = NSLocalizedString("sync.close-setup-v2.confirmation.title", value: "Are you sure you want to close this window?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
+    static let syncCloseSetupConfirmationMessageV2 = NSLocalizedString("sync.close-setup-v2.confirmation.message", value: "Closing this window will stop connecting Sync & Backup.", comment: "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
+    static let syncCloseSetupConfirmationActionV2 = NSLocalizedString("sync.close-setup-v2.confirmation.action", value: "Close", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)")
     static let syncBookmarkPausedAlertTitle = NSLocalizedString("alert.sync-bookmarks-paused-title", value: "Bookmark Sync is Paused", comment: "Title for alert shown when sync bookmarks paused for too many items")
     static let syncBookmarkPausedAlertDescription = NSLocalizedString("alert.sync-bookmarks-paused-description", value: "You've reached the maximum number of bookmarks. Please delete some bookmarks to resume sync.", comment: "Description for alert shown when sync bookmarks paused for too many items")
     static let syncCredentialsPausedAlertTitle = NSLocalizedString("alert.sync-credentials-paused-title", value: "Password Sync is Paused", comment: "Title for alert shown when sync credentials paused for too many items")

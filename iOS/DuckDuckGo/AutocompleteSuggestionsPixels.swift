@@ -60,6 +60,17 @@ struct AutocompleteSuggestionsPixels {
         if openTab { pixelFiring.fire(.autocompleteDisplayedOpenedTab, withAdditionalParameters: [:]) }
     }
 
+    /// The single entry point hosts should use for a tapped suggestion: fires the standard click
+    /// pixel plus, for `.askAIChat`, its daily pixel — so no surface can fire a partial set.
+    func fireClickPixels(for suggestion: Suggestion,
+                         isExperimentalAIChatExperience: @autoclosure () -> Bool,
+                         aiChatDiscoveryParameters: @autoclosure () -> [String: String]) {
+        fireClickPixel(for: suggestion)
+        guard case .askAIChat = suggestion else { return }
+        fireAskAIChatClickPixel(isExperimentalExperience: isExperimentalAIChatExperience(),
+                                additionalParameters: aiChatDiscoveryParameters())
+    }
+
     /// Fires the click pixel matching a tapped suggestion. `.askAIChat` is a daily pixel with
     /// feature-discovery params, so it's fired separately via `fireAskAIChatClickPixel`.
     func fireClickPixel(for suggestion: Suggestion) {

@@ -35,7 +35,6 @@ final class OnboardingUserScript: NSObject, Subfeature {
         case `init`
         case dismissToSettings
         case dismissToAddressBar
-        case skipOnboarding
         case requestDockOptIn
         case stepCompleted
         case setBlockCookiePopups
@@ -65,7 +64,6 @@ final class OnboardingUserScript: NSObject, Subfeature {
             .`init`: setInit,
             .dismissToAddressBar: dismissToAddressBar,
             .dismissToSettings: dismissToSettings,
-            .skipOnboarding: skipOnboarding,
             .requestDockOptIn: requestDockOptIn,
             .requestImport: requestImport,
             .requestChromeExtensionInstall: requestChromeExtensionInstall,
@@ -110,12 +108,6 @@ extension OnboardingUserScript {
     @MainActor
     private func dismissToSettings(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         onboardingActionsManager.goToSettings()
-        return nil
-    }
-
-    @MainActor
-    private func skipOnboarding(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        onboardingActionsManager.skipOnboarding()
         return nil
     }
 

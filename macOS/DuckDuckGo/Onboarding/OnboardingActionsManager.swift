@@ -61,9 +61,6 @@ protocol OnboardingActionsManaging {
     /// Used for any setup necessary for during the onboarding
     func onboardingStarted()
 
-    /// Skips the onboarding flow entirely and starts browsing
-    func skipOnboarding()
-
     /// At the end of the onboarding the user will be taken to the DuckDuckGo search page
     func goToAddressBar()
 
@@ -171,15 +168,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
         let excludedSteps = buildExcludedSteps()
 
-        let showSkip: Bool? = featureFlagger.isFeatureOn(.onboardingSkipOption) ? true : nil
-
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
                                        exclude: excludedSteps,
                                        order: "v4",
                                        env: env,
                                        locale: preferredLocale,
-                                       platform: platform,
-                                       showSkip: showSkip)
+                                       platform: platform)
     }
 
     private func buildExcludedSteps() -> [String] {
@@ -315,9 +309,11 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         navigation.replaceTabWith(tab)
     }
 
+    /// The user closed the onboarding tab. Records the skip and puts a browsing tab in its place,
+    /// so closing onboarding leaves them somewhere to be rather than with nothing.
     @MainActor
     func skipOnboarding() {
-        // A repeated message would otherwise fire the pixel again and, with the onboarding tab
+        // A repeated close would otherwise fire the pixel again and, with the onboarding tab
         // already released, replace whichever tab the user happens to be on. Guarded per instance
         // rather than on `isOnboardingFinished`, which a developer replaying onboarding via launch
         // options leaves set — that would make skipping do nothing for them.

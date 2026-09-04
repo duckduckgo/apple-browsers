@@ -26,7 +26,6 @@ struct OnboardingConfiguration: Codable, Equatable {
     var env: String
     var locale: String
     var platform: OnboardingPlatform
-    var showSkip: Bool?
 }
 
 /// Defines the onboarding steps desired

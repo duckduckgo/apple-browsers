@@ -497,9 +497,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
 
-    /// Local-only: shows a "Skip Setup" link on the onboarding GetStarted screen.
-    case onboardingSkipOption
-
     /// Local-only: switches the contextual onboarding highlights off outright. Overrides the rest
     /// of the highlight logic; with it off, that logic decides as usual.
     case onboardingSkipHighlights
@@ -850,8 +847,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
-        case .onboardingSkipOption:
-            Config(source: .disabled)
         case .onboardingSkipHighlights:
             Config(source: .disabled)
         case .onboardingAsync:

@@ -38,6 +38,21 @@ private final class MockUserAuthenticator: UserAuthenticating {
     }
 }
 
+@MainActor
+private final class StubCloseSetupConfirmation {
+    var answer: Bool
+    private(set) var presentationCount = 0
+
+    init(answer: Bool) {
+        self.answer = answer
+    }
+
+    func present() -> Bool {
+        presentationCount += 1
+        return answer
+    }
+}
+
 private final class MockDeviceSyncCoordinationDelegate: DeviceSyncCoordinationDelegate {
     var didEndFlowCalled: (() -> Void)?
 
@@ -1612,7 +1627,87 @@ final class SyncDialogControllerTests: XCTestCase {
         await fulfillment(of: [cancelCalled, didEndFlowCalled], timeout: 5.0)
     }
 
+    // MARK: - Closing the setup flow
+
+    func testCancellingPairing_whenUserConfirms_endsTheFlow() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        makeControllerWithCloseSetupConfirmation(confirmation, isSimplifiedSyncSetupV2Enabled: true)
+        managementDialogModel.currentDialog = .syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(confirmation.presentationCount, 1)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testCancellingPairing_whenUserDeclines_keepsTheDialogOpen() async {
+        let confirmation = StubCloseSetupConfirmation(answer: false)
+        makeControllerWithCloseSetupConfirmation(confirmation, isSimplifiedSyncSetupV2Enabled: true)
+        let dialog = ManagementDialogKind.syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+        managementDialogModel.currentDialog = dialog
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(confirmation.presentationCount, 1)
+        XCTAssertEqual(managementDialogModel.currentDialog, dialog)
+    }
+
+    func testCancellingPairing_whenSimplifiedSyncSetupV2Disabled_endsTheFlowWithoutConfirming() async {
+        let confirmation = StubCloseSetupConfirmation(answer: false)
+        makeControllerWithCloseSetupConfirmation(confirmation, isSimplifiedSyncSetupV2Enabled: false)
+        managementDialogModel.currentDialog = .syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(confirmation.presentationCount, 0)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testCancellingADialogOutsideSetup_endsTheFlowWithoutConfirming() async {
+        let confirmation = StubCloseSetupConfirmation(answer: false)
+        makeControllerWithCloseSetupConfirmation(confirmation, isSimplifiedSyncSetupV2Enabled: true)
+        managementDialogModel.currentDialog = .removeDeviceV2(SyncDevice(kind: .current, name: "Mac", id: "1"))
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(confirmation.presentationCount, 0)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testCancellingPairing_whenUserDeclinesThenConfirms_endsTheFlow() async {
+        let confirmation = StubCloseSetupConfirmation(answer: false)
+        makeControllerWithCloseSetupConfirmation(confirmation, isSimplifiedSyncSetupV2Enabled: true)
+        let dialog = ManagementDialogKind.syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+        managementDialogModel.currentDialog = dialog
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+        XCTAssertEqual(managementDialogModel.currentDialog, dialog)
+
+        confirmation.answer = true
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(confirmation.presentationCount, 2)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
     // MARK: - Helper Methods
+
+    private func makeControllerWithCloseSetupConfirmation(_ confirmation: StubCloseSetupConfirmation, isSimplifiedSyncSetupV2Enabled: Bool) {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = isSimplifiedSyncSetupV2Enabled
+        syncDialogController = SyncDialogController(
+            syncService: ddgSyncing,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: authenticator,
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                self?.connectionController ?? MockSyncConnectionControlling()
+            },
+            featureFlagger: featureFlagger,
+            pixelFiring: pixelKitMock,
+            keyValueStore: mockKeyValueStore,
+            confirmCloseSetup: { await confirmation.present() }
+        )
+    }
 
     private func setUpWithSingleDevice(id: String) {
         ddgSyncing.account = SyncAccount(deviceId: id, deviceName: "iPhone", deviceType: "iPhone", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)

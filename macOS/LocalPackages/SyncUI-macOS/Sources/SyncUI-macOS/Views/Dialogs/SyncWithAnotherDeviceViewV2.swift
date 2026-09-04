@@ -83,7 +83,9 @@ struct SyncWithAnotherDeviceViewV2: View {
         } buttons: {
             Spacer()
             Button(UserText.cancel) {
-                model.cancelPressed()
+                Task {
+                    await model.cancelPressedWithConfirmation()
+                }
             }
             .buttonStyle(DismissActionButtonStyle())
         }

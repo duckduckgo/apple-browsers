@@ -39,6 +39,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func openSystemPasswordSettings()
     func userConfirmedSwitchAccounts(recoveryCode: String)
     func userPressedCancel(from dialog: ManagementDialogKind)
+    func shouldEndFlow(from dialog: ManagementDialogKind) async -> Bool
     func switchAccountsCancelled()
     func enterCodeViewDidAppear()
     func didEndFlow()
@@ -83,6 +84,14 @@ public final class ManagementDialogModel: ObservableObject {
             delegate?.userPressedCancel(from: currentDialog)
         }
         endFlow()
+    }
+
+    @MainActor
+    public func cancelPressedWithConfirmation() async {
+        if let currentDialog, let delegate {
+            guard await delegate.shouldEndFlow(from: currentDialog) else { return }
+        }
+        cancelPressed()
     }
 
     @MainActor

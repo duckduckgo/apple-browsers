@@ -315,8 +315,7 @@ final class StubEventHub: EventHubManaging {
     private(set) var closedTabIDs: [EventHubTabID] = []
 
     func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
-    func handleImmediateEvent(_ type: String, data: Encodable?) {}
-    func handleAggregatedEvent(_ type: String, data: Encodable?) {}
+    func handleNativeEvent(_ type: String, data: Encodable?) {}
 
     func onNavigationStarted(tabID: EventHubTabID, url: String) {
         navigationStarts.append((tabID, url))

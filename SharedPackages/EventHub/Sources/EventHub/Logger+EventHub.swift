@@ -27,7 +27,8 @@ public extension Logger {
     /// activity filterable as one stream.
     ///
     /// Only config-governed identifiers (pixel names, parameter names, bucket names, data keys) and
-    /// error descriptions are interpolated as `.public`; web-page-derived event payloads are never
-    /// logged at all, at any privacy level.
+    /// error descriptions are interpolated as `.public`. Web-page-derived values — event types, event
+    /// payloads and tab identifiers — are interpolated as `.private` and only at `debug` level, so they
+    /// are redacted unless someone deliberately enables private-data logging on a development device.
     static let eventHub = Logger(subsystem: "EventHub", category: "")
 }

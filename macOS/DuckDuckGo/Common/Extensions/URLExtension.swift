@@ -170,6 +170,8 @@ extension URL {
     static let history = URL(string: "duck://history")!
     /// Debug-only favicon manager page (Debug ▸ Favicon Browser). Served by `DuckURLSchemeHandler`.
     static let favicons = URL(string: "duck://favicons")!
+    /// Debug-only permissions inspector page (Debug ▸ Permissions ▸ Inspect). Served by `DuckURLSchemeHandler`.
+    static let permissions = URL(string: "duck://permissions")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
     static let errorPageReportBrokenSite = URL(string: "duck://error/report-broken-site")!
@@ -204,6 +206,11 @@ extension URL {
     /// `duck://favicons` (and its sub-paths) — the debug-only favicon manager page.
     var isFavicons: Bool {
         return navigationalScheme == .duck && host == URL.favicons.host
+    }
+
+    /// `duck://permissions` (and its sub-paths) — the debug-only permissions inspector page.
+    var isPermissions: Bool {
+        return navigationalScheme == .duck && host == URL.permissions.host
     }
 
 #endif
@@ -882,6 +889,18 @@ extension URL {
         guard isFileURL,
               FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) else { return false }
         return isDirectory.boolValue
+    }
+
+    /// `true` when the receiver is the user's Downloads folder.
+    ///
+    /// Compared by path components, like `isContained(in:)`, so a trailing slash or a symlinked
+    /// path (`/tmp` vs `/private/tmp`) doesn't change the outcome.
+    var isSystemDownloadsDirectory: Bool {
+        guard let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
+            return false
+        }
+
+        return standardizedFileURL.resolvingSymlinksInPath().pathComponents == downloads.standardizedFileURL.resolvingSymlinksInPath().pathComponents
     }
 
     mutating func setFileHidden(_ hidden: Bool) throws {

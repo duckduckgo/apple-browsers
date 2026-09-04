@@ -1,6 +1,5 @@
 //
-//  DuckAIVoiceShortcutFeature.swift
-//  DuckDuckGo
+//  AIChatCreateImageModelSwitchNotice.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,22 +16,16 @@
 //  limitations under the License.
 //
 
-import PrivacyConfig
-import FeatureFlags_iOS
+import AIChat
 
-/// Provides access to Duck AI voice shortcut availability.
-protocol DuckAIVoiceShortcutFeatureProviding {
-    var isAvailable: Bool { get }
-}
+struct AIChatCreateImageModelSwitchNotice: Equatable {
+    let previousModelShortName: String
+    let newModelShortName: String
+    let previousModelHasExtraPrivacyProtections: Bool
 
-struct DuckAIVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
-    private let featureFlagger: any FeatureFlagger
-
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
-    var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.duckAIVoiceShortcut)
+    init(previousModel: AIChatModel, newModel: AIChatModel) {
+        previousModelShortName = previousModel.shortName
+        newModelShortName = newModel.shortName
+        previousModelHasExtraPrivacyProtections = previousModel.provider == .oss
     }
 }

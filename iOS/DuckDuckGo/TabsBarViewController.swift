@@ -998,11 +998,13 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {
+        recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         newTab()
     }
 
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
+        recordDuckAISessionPendingExit(.newTabOpened)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
     }

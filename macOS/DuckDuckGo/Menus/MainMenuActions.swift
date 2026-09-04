@@ -647,13 +647,6 @@ extension AppDelegate {
         NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
-    @MainActor
-    @objc func debugShowFeatureAwarenessDialogForNTPWidget(_ sender: Any?) {
-        Task {
-            await Application.appDelegate.autoconsentStatsPopoverCoordinator.showDialogForDebug()
-        }
-    }
-
     @objc func debugIncrementAutoconsentStats(_ sender: Any?) {
         Task {
             await autoconsentStats.recordAutoconsentAction(clicksMade: 1, timeSpent: 1.0)
@@ -663,7 +656,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func debugClearBlockedCookiesPopoverSeenFlag(_ sender: Any?) {
-        Application.appDelegate.autoconsentStatsPopoverCoordinator.clearBlockedCookiesPopoverSeenFlag()
+        try? keyValueStore.removeObject(forKey: CookiePopupsBlockedPromoDelegate.StorageKey.blockedCookiesPopoverSeen)
         print("DEBUG: Cleared blockedCookiesPopoverSeen flag")
     }
 
@@ -1567,6 +1560,11 @@ extension MainViewController {
     @objc func inspectFavicons(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .url(.favicons, source: .ui))
+    }
+
+    @objc func inspectPermissions(_ sender: Any?) {
+        makeKeyIfNeeded()
+        browserTabViewController.openNewTab(with: .url(.permissions, source: .ui))
     }
 
     @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {

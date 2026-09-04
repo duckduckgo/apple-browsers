@@ -79,9 +79,6 @@ final class BookmarksBarViewController: NSViewController {
         return indicatorFrameInCollectionView.minX - 3
     }
 
-    @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)
-    var bookmarksBarPromptShown: Bool
-
     static func create(
         tabCollectionViewModel: TabCollectionViewModel,
         bookmarkManager: BookmarkManager,
@@ -207,9 +204,21 @@ final class BookmarksBarViewController: NSViewController {
         frameDidChangeNotification()
     }
 
-    func showBookmarksBarPrompt() {
-        BookmarksBarPromptPopover().show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
-        self.bookmarksBarPromptShown = true
+    private var bookmarksBarPrompt: BookmarksBarPromptPopover?
+
+    func showBookmarksBarPrompt(onDismiss: @escaping (PromoResult) -> Void) {
+        let popover = BookmarksBarPromptPopover()
+        popover.viewController.rootView.model.onDismiss = { [weak self] result in
+            self?.bookmarksBarPrompt = nil
+            onDismiss(result)
+        }
+        bookmarksBarPrompt = popover
+        popover.show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
+    }
+
+    func retractBookmarksBarPromptIfNeeded() {
+        bookmarksBarPrompt?.retract()
+        bookmarksBarPrompt = nil
     }
 
     func userInteraction(prevented: Bool) {
@@ -760,11 +769,5 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
             return
         }
     }
-
-}
-
-extension Notification.Name {
-
-    static let bookmarkPromptShouldShow = Notification.Name(rawValue: "bookmarkPromptShouldShow")
 
 }

@@ -1543,6 +1543,7 @@ class TabViewController: UIViewController {
 
         webView.stopLoading()
         dismissJSAlertIfNeeded()
+        pendingNativeLoadURL = urlRequest.url
         webView.load(urlRequest)
     }
     
@@ -1987,6 +1988,8 @@ class TabViewController: UIViewController {
         }
     }
 
+    private var pendingNativeLoadURL: URL?
+
     private lazy var navigationPixelResponder = NavigationPixelNavigationResponder(
         isErrorPageReload: { [weak self] navigationAction in
             // Keyed on URL — not just `isSpecialErrorPageVisible` — so the "error page reload" gate
@@ -2371,6 +2374,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        pendingNativeLoadURL = nil
         userScripts?.selectionFrameScript.reset()
 
         if let url = webView.url {
@@ -3056,6 +3060,7 @@ extension TabViewController: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
+        pendingNativeLoadURL = nil
         adClickAttributionDetection.onDidFailNavigation()
         adClickExternalOpenDetector.failNavigation(error: error)
         hideProgressIndicator()
@@ -3234,6 +3239,10 @@ extension TabViewController: WKNavigationDelegate {
             break
         }
 
+        let inPageDuckAIEntrySource = Self.inPageDuckAIEntrySource(currentURL: url,
+                                                                   navigationAction: navigationAction,
+                                                                   pendingNativeLoadURL: pendingNativeLoadURL)
+
         // Same-frame boundary-cross link taps spawn a new tab (cross-frame is handled by `aiChatNewWindowDecision` above). Skip when ⌘ is held.
         // Runs before tracking-link/referrer/DNS rewrites — acceptable since the new tab re-runs the full policy pipeline; only originating-frame context is lost, which a boundary cross severs anyway.
         if navigationAction.navigationType == .linkActivated,
@@ -3250,12 +3259,28 @@ extension TabViewController: WKNavigationDelegate {
             )
             if decision == .openInNewTab {
                 wrappedHandler(.cancel)
-                delegate?.tab(self,
-                              didRequestNewTabForUrl: linkURL,
-                              openedByPage: true,
-                              inheritingAttribution: adClickAttributionLogic.state)
+                if let inPageDuckAIEntrySource {
+                    delegate?.tab(self,
+                                  didStartDuckAINavigationTo: linkURL,
+                                  entrySource: inPageDuckAIEntrySource,
+                                  opensNewTab: true,
+                                  inheritingAttribution: adClickAttributionLogic.state)
+                } else {
+                    delegate?.tab(self,
+                                  didRequestNewTabForUrl: linkURL,
+                                  openedByPage: true,
+                                  inheritingAttribution: adClickAttributionLogic.state)
+                }
                 return
             }
+        }
+
+        if let inPageDuckAIEntrySource, let targetURL = navigationAction.request.url {
+            delegate?.tab(self,
+                          didStartDuckAINavigationTo: targetURL,
+                          entrySource: inPageDuckAIEntrySource,
+                          opensNewTab: false,
+                          inheritingAttribution: nil)
         }
 
         // This check needs to happen before GPC checks. Otherwise the navigation type may be rewritten to `.other`

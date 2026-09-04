@@ -325,6 +325,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the image generation mode toggle in the Duck.ai omnibar
     case aiChatOmnibarImageGeneration
 
+    /// Enables updated Create Image behavior, including switching unsupported models.
+    case updatedCreateImage
+
     /// Enables the web search tool in the Duck.ai omnibar
     case aiChatOmnibarWebSearch
 
@@ -401,9 +404,17 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
     case promoQueue
 
+    /// Enables the Bookmark Toolbar ("Show Bookmarks Bar?") promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667616?focus=true
+    case promoQueueBookmarkToolbarPromo
+
     /// Enables the Sync Favicons ("Download Missing Icons?") promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667610?focus=true
     case promoQueueSyncFaviconsPromo
+
+    /// Enables the Cookie Pop-ups Blocked promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
+    case promoQueueCookiePopupsBlockedPromo
 
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
@@ -683,7 +694,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewExperience:
             Config(source: .remoteReleasable(DataImportSubfeature.newDataImportExperience))
         case .dataImportDataDirectoryAccess:
-            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.dataDirectoryAccess))
+            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.dataDirectoryAccess))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .standaloneMigration:
@@ -734,6 +745,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
         case .aiChatOmnibarImageGeneration:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarImageGeneration), category: .duckAI)
+        case .updatedCreateImage:
+            Config(source: .remoteReleasable(AIChatSubfeature.updatedCreateImage), category: .duckAI)
         case .aiChatOmnibarWebSearch:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarWebSearch), category: .duckAI)
         case .aiChatOmnibarReasoningEffort:
@@ -776,8 +789,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .promoQueue:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
+        case .promoQueueBookmarkToolbarPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkToolbarPromo))
         case .promoQueueSyncFaviconsPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncFaviconsPromo))
+        case .promoQueueCookiePopupsBlockedPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:

@@ -448,7 +448,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onUserChoiceRecorded: { [weak self] in self?.recordUserChoiceToStore() },
                 clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) },
-                onModelSelectionChanged: { [weak self] _ in self?.footerController?.recordModelSwitched() }
+                onModelSelectionChanged: { [weak self] previousModelId, modelId in
+                    self?.footerController?.userSwitchedModel(from: previousModelId, to: modelId)
+                }
             ),
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
             isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled
@@ -1215,11 +1217,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             recordUserChoiceToStore()
             refreshFooterSuppression()
         }
-    }
-
-    func updateAIVoiceChatAvailability(_ enabled: Bool) {
-        viewController.handler.isAIVoiceChatEnabled = enabled
-        updateToolbarAIVoiceChat()
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
@@ -2096,7 +2093,7 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Toolbar
 
     func updateToolbarAIVoiceChat() {
-        viewController.isToolbarAIVoiceChatActive = viewController.handler.isAIVoiceChatEnabled && inputMode == .aiChat
+        viewController.isToolbarAIVoiceChatActive = inputMode == .aiChat
     }
 
     func applyToolbarPresentation() {
@@ -2244,8 +2241,7 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.microphoneButtonTappedPublisher
             .sink { [weak self] in
                 guard let self else { return }
-                let isCollapsedAIVoiceChatButton = viewController.handler.isAIVoiceChatEnabled
-                    && viewController.inputMode == .aiChat
+                let isCollapsedAIVoiceChatButton = viewController.inputMode == .aiChat
                     && !isInputPaneExpanded
                     && !stateMachine.prefersDictationOverVoiceChat
                 if isCollapsedAIVoiceChatButton {

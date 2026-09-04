@@ -118,9 +118,9 @@ final class OverlayWindowManager: OverlayWindowManaging {
         UIDevice.current.endGeneratingDeviceOrientationNotifications()
     }
 
-    /// Caching is only worthwhile when app lock is on (the overlay is shown until authentication) and the flag is enabled.
+    /// Caching is only worthwhile when app lock is on (the overlay is shown until authentication).
     private var isCachingEnabled: Bool {
-        featureFlagger.isFeatureOn(.blankSnapshotCaching) && privacyStore.authenticationEnabled
+        privacyStore.authenticationEnabled
     }
 
     func prepareBlankSnapshotWindow() {

@@ -578,6 +578,7 @@ public extension DesignSystemImages {
                     : .init(resource: .vpnColor24Legacy)
             }
             public static var vpnGrayscale: DesignSystemImage { .init(resource: .vpnGrayscaleColor24) }
+            public static var websitePermissions: DesignSystemImage { .init(resource: .websitePermissionsColor24) }
         }
 
         public enum Size32 {

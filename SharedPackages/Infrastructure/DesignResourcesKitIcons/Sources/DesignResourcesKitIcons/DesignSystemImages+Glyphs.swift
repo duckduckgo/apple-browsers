@@ -594,6 +594,7 @@ public extension DesignSystemImages {
             public static var menuHamburgerAlertDot: DesignSystemImage { .init(resource: .menuHamburgerAlertDot24) }
             public static var menuHamburgerAlertRecolorable: DesignSystemImage { .init(resource: .menuHamburgerAlertRecolorable24) }
             public static var microphone: DesignSystemImage { .init(resource: .microphone24) }
+            public static var microphoneBlocked: DesignSystemImage { .init(resource: .microphoneBlocked24) }
             public static var microphoneSolid: DesignSystemImage { .init(resource: .microphoneSolid24) }
             public static var minus: DesignSystemImage { .init(resource: .minus24) }
             public static var moreApple: DesignSystemImage { .init(resource: .moreApple24) }
@@ -660,6 +661,7 @@ public extension DesignSystemImages {
             public static var vpnUnlocked: DesignSystemImage { .init(resource: .vpnUnlocked24) }
             public static var video: DesignSystemImage { .init(resource: .video24) }
             public static var videoAdBlocked: DesignSystemImage { .init(resource: .videoAdBlocked24) }
+            public static var videoBlocked: DesignSystemImage { .init(resource: .videoBlocked24) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayer24) }
             public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid24) }
             public static var viewList: DesignSystemImage { .init(resource: .viewList24) }

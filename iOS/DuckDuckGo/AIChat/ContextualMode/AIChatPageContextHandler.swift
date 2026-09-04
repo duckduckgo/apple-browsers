@@ -34,6 +34,8 @@ struct AIChatPageContext: Equatable {
 
     init(contextData: AIChatPageContextData, favicon: UIImage?) {
         self.title = contextData.title
+        // A PDF is identified by its file type, not by whoever served it, so the chip shows the
+        // document icon rather than the host's favicon.
         self.favicon = contextData.mimeType == AIChatPageContextData.pdfMIMEType
             ? DesignSystemImages.Color.Size24.filePDF
             : favicon

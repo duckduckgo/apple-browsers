@@ -1745,7 +1745,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.suggestionsScope, .selection)
     }
 
-    func testDocumentContextIsFlaggedToTheResolver() {
+    func testDocumentContextReachesTheResolverSoSummarizeIsWordedForADocument() {
         let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize", prompt: "Summarize.", icon: "summary")]
         let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
         mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
@@ -1772,7 +1772,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(mockProvider.lastInput?.isDocument == true)
     }
 
-    func testWebPageContextIsNotFlaggedAsADocument() {
+    func testWebPageContextIsNotResolvedAsADocument() {
         let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize", prompt: "Summarize.", icon: "summary")]
         let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
         mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]

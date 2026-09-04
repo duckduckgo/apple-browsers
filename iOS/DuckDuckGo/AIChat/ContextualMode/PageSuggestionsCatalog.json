@@ -4,7 +4,6 @@
 
   "catalog": {
     "summarize-page":      { "label": "Summarize this page", "icon": "summary", "prompt": "Summarize this page." },
-    "summarize-document":  { "label": "Summarize this document", "icon": "summary", "prompt": "Summarize this document." },
     "translate-page":      { "label": "Translate this page", "icon": "translate", "prompt": "Translate this page into {language}.", "condition": "differentLanguage" },
 
     "summarize-selection": { "label": "Summarize this selection", "icon": "summary", "prompt": "Summarize this selection." },

@@ -225,7 +225,7 @@
             "appVersion",
             {
                 "key": "suggestionId",
-                "description": "Catalog key of the selected suggestion (e.g. summarize-page, summarize-document, translate-page, ask-about-page).",
+                "description": "Catalog key of the selected suggestion (e.g. summarize-page, translate-page, ask-about-page).",
                 "type": "string"
             },
             {

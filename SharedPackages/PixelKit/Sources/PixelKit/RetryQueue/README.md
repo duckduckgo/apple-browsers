@@ -66,5 +66,4 @@ parameters. The case disappears as those queues age out.
 ## Related
 
 - `PixelKit.Options.retryOnFailure` — the caller-facing switch.
-- `iOS/Core/PersistentPixel.swift` — the older, iOS-only system this is a port of. It is deprecated;
-  new pixels should use PixelKit.
+- iOS's older, `PersistentPixel`-based retry system this was ported from and has since replaced.

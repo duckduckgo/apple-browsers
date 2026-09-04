@@ -93,6 +93,11 @@ final class SyncDialogController {
     private static let defaultConnectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling = { syncService, delegate in
         syncService.createConnectionController(deviceName: deviceInfo().name, deviceType: deviceInfo().type, delegate: delegate)
     }
+    private static let defaultCloseSetupConfirmation: @MainActor () async -> Bool = {
+        NSAlert.syncCloseSetupConfirmation().runModal() == .alertFirstButtonReturn
+    }
+    private let confirmCloseSetup: @MainActor () async -> Bool
+
     private let connectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling
     private lazy var connectionController: SyncConnectionControlling = connectionControllerFactory(syncService, self)
 
@@ -122,8 +127,10 @@ final class SyncDialogController {
         connectionControllerFactory: ((DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling)? = nil,
         featureFlagger: FeatureFlagger? = nil,
         pixelFiring: PixelFiring? = PixelKit.shared,
-        keyValueStore: KeyValueStoring = UserDefaults.standard
+        keyValueStore: KeyValueStoring = UserDefaults.standard,
+        confirmCloseSetup: (@MainActor () async -> Bool)? = nil
     ) {
+        self.confirmCloseSetup = confirmCloseSetup ?? SyncDialogController.defaultCloseSetupConfirmation
         self.syncService = syncService
         self.userAuthenticator = userAuthenticator
         self.syncPausedStateManager = syncPausedStateManager
@@ -632,6 +639,15 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         default:
             break
         }
+    }
+
+    func shouldEndFlow(from dialog: ManagementDialogKind) async -> Bool {
+        guard managementDialogModel.isSimplifiedSyncSetupV2Enabled,
+              case .syncWithAnotherDevice = dialog else {
+            return true
+        }
+
+        return await confirmCloseSetup()
     }
 
     func switchAccountsCancelled() {

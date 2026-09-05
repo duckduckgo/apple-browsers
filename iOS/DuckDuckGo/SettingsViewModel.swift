@@ -1475,7 +1475,7 @@ extension SettingsViewModel {
     /// Reads the live connection status rather than `state.networkProtectionConnected`, which isn't loaded
     /// yet the first time this runs on `onFirstAppear`.
     private func reportVPNActivatedExperimentMetricIfNeeded() {
-        guard case .connected = AppDependencyProvider.shared.connectionObserver.recentValue else { return }
+        guard vpnController.isConnected else { return }
         SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: state.subscription.hasActiveSubscription)
     }
 

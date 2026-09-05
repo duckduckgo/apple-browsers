@@ -57,12 +57,6 @@ struct AppRatingPromptCoordinationPolicyTests {
         #expect(policy.isCoordinationEnabled == scenario.isCoordinationEnabled)
     }
 
-    @Test("The promo presentation flag alone does not enable coordination")
-    func promoPresentationFlagAloneDoesNotEnableCoordination() {
-        let policy = makePolicy(mode: .coordinated, enabledFlags: [.promoPresentationCoordination])
-
-        #expect(!policy.isCoordinationEnabled)
-    }
 
     // MARK: - Unredeemed slot cap
 

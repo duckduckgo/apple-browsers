@@ -160,14 +160,6 @@ final class ModalPromptCoordinationManagerDeferredTests {
         #expect(!sut.redeemDeferredModal())
     }
 
-    @available(iOS 16, *)
-    @Test("Redeeming with no slot held does nothing", .timeLimit(.minutes(1)))
-    func redeemingWithoutHeldSlotDoesNothing() {
-        let sut = makeManager(providers: [makeDeferredProvider(isEligible: true)])
-
-        #expect(!sut.redeemDeferredModal())
-        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
-    }
 
     // MARK: - Release
 

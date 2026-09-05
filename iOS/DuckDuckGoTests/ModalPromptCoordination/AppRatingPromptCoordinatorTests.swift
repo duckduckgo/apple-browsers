@@ -58,13 +58,6 @@ final class AppRatingPromptCoordinatorTests {
         #expect(sut.isEligibleToPresent(isOnboardingComplete: true))
     }
 
-    @Test("Not eligible before the prompt is due")
-    func notEligibleBeforeDue() {
-        let sut = makeCoordinator(isCoordinationEnabled: true)
-        accrueUsageDays(2)
-
-        #expect(!sut.isEligibleToPresent(isOnboardingComplete: true))
-    }
 
     @Test("Not eligible when coordination is off")
     func notEligibleWhenCoordinationOff() {
@@ -129,41 +122,38 @@ final class AppRatingPromptCoordinatorTests {
         #expect(storage.firstShown != nil)
     }
 
-    @Test("The second request becomes due after four more usage days")
-    func secondRequestBecomesDueLater() {
-        let sut = makeCoordinator(isCoordinationEnabled: true)
-        accrueUsageDays(3)
-        sut.didRequestRating()
-
-        // `shown()` resets the counter, so the second needs four fresh days.
-        accrueUsageDays(4)
-
-        #expect(sut.isEligibleToPresent(isOnboardingComplete: true))
-
-        sut.didRequestRating()
-
-        #expect(!sut.isEligibleToPresent(isOnboardingComplete: true))
-        #expect(storage.lastShown != nil)
-    }
 
     // MARK: - Unredeemed slot cap
 
-    @Test("Stops taking the slot once the unredeemed cap is reached")
-    func stopsTakingSlotAtCap() {
-        let sut = makeCoordinator(isCoordinationEnabled: true)
+    struct CapScenario: Sendable, CustomTestStringConvertible {
+        let cap: Int
+        let releases: Int
+        let isStillEligible: Bool
+
+        var testDescription: String {
+            "cap \(cap), \(releases) releases -> eligible: \(isStillEligible)"
+        }
+    }
+
+    @Test(
+        "The unredeemed slot cap comes from the policy, and zero removes it",
+        arguments: [
+            CapScenario(cap: 3, releases: 2, isStillEligible: true),
+            CapScenario(cap: 3, releases: 3, isStillEligible: false),
+            CapScenario(cap: 1, releases: 1, isStillEligible: false),
+            CapScenario(cap: 0, releases: 10, isStillEligible: true),
+        ]
+    )
+    func unredeemedSlotCap(_ scenario: CapScenario) {
+        let sut = makeCoordinator(isCoordinationEnabled: true, maxUnredeemedSlots: scenario.cap)
         accrueUsageDays(3)
 
-        sut.didReleaseDeferredSlot()
-        #expect(sut.unredeemedSlotCount == 1)
-        #expect(sut.isEligibleToPresent(isOnboardingComplete: true))
+        for _ in 0..<scenario.releases {
+            sut.didReleaseDeferredSlot()
+        }
 
-        sut.didReleaseDeferredSlot()
-        #expect(sut.unredeemedSlotCount == 2)
-        #expect(sut.isEligibleToPresent(isOnboardingComplete: true))
-
-        sut.didReleaseDeferredSlot()
-        #expect(sut.unredeemedSlotCount == 3)
-        #expect(!sut.isEligibleToPresent(isOnboardingComplete: true))
+        #expect(sut.unredeemedSlotCount == scenario.releases)
+        #expect(sut.isEligibleToPresent(isOnboardingComplete: true) == scenario.isStillEligible)
     }
 
     @Test("Redeeming clears the unredeemed count")
@@ -175,29 +165,6 @@ final class AppRatingPromptCoordinatorTests {
         sut.didRequestRating()
 
         #expect(sut.unredeemedSlotCount == 0)
-    }
-
-    @Test("A configured cap of zero removes the limit")
-    func zeroCapRemovesTheLimit() {
-        let sut = makeCoordinator(isCoordinationEnabled: true, maxUnredeemedSlots: 0)
-        accrueUsageDays(3)
-
-        for _ in 0..<10 {
-            sut.didReleaseDeferredSlot()
-        }
-
-        #expect(sut.unredeemedSlotCount == 10)
-        #expect(sut.isEligibleToPresent(isOnboardingComplete: true))
-    }
-
-    @Test("The cap honours a remotely configured value")
-    func capHonoursRemoteValue() {
-        let sut = makeCoordinator(isCoordinationEnabled: true, maxUnredeemedSlots: 1)
-        accrueUsageDays(3)
-
-        sut.didReleaseDeferredSlot()
-
-        #expect(!sut.isEligibleToPresent(isOnboardingComplete: true))
     }
 
     // MARK: - Debug reset

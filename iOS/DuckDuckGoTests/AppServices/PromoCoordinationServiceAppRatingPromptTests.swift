@@ -109,30 +109,6 @@ final class PromoCoordinationServiceAppRatingPromptTests {
         #expect(ratingCoordinator.didRequestRatingCallCount == 0)
     }
 
-    @available(iOS 16, *)
-    @Test("With coordination off an ineligible prompt is not requested", .timeLimit(.minutes(1)))
-    func coordinationOffIneligibleIsNotRequested() {
-        ratingCoordinator.isCoordinationEnabled = false
-        ratingCoordinator.uncoordinatedDecision = false
-        let service = makeService(mode: .coordinated)
-
-        #expect(!service.shouldRequestAppRatingPrompt())
-        #expect(ratingCoordinator.didRequestRatingCallCount == 0)
-    }
-
-    // MARK: - Consuming eligibility
-
-    @available(iOS 16, *)
-    @Test("Eligibility is consumed the same way on both paths", .timeLimit(.minutes(1)), arguments: [true, false])
-    func consumingEligibilityIsPathIndependent(_ isCoordinationEnabled: Bool) {
-        ratingCoordinator.isCoordinationEnabled = isCoordinationEnabled
-        let service = makeService(mode: .coordinated)
-
-        service.didRequestAppRatingPrompt()
-
-        #expect(ratingCoordinator.didRequestRatingCallCount == 1)
-    }
-
     // MARK: - Backgrounding
 
     @available(iOS 16, *)

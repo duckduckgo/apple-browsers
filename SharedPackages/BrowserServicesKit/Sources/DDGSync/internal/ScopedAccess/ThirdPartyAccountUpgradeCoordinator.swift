@@ -186,6 +186,7 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
             throw ThirdPartyAccountUpgradeError.protectedKeysFetchFailed
         }
 
+        // Native credential creation rewraps every 3party-protected purpose, including account_info.
         let thirdPartyProtectedKeys = protectedKeys
             .filter { $0.encryptedWith == SyncCode.RecoveryKeyV2.thirdPartyCredentialId }
             .removingDuplicateWrappingIdentities()

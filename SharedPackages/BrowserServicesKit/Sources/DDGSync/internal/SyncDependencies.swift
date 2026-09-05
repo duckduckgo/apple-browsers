@@ -76,11 +76,12 @@ protocol ScopedAccessCredentialManaging {
     func recoverScopedPassword(from accessCredentials: [AccessCredential]?,
                                primaryKey: Data,
                                userID: String) throws -> Data?
-    /// Returns the account's scoped password, creating and uploading the 3party credential (and its protected keys) if absent; reuses `cachedScopedPassword` when creating.
+    /// Returns the account's scoped password, creating the credential and rewrapping existing protected keys when absent.
+    /// Reconciliation after credential creation remains gated by unified-device writes.
     func ensureThirdPartyScopedPassword(for account: SyncAccount,
                                         purpose: String,
                                         cachedScopedPassword: () throws -> Data?) async throws -> EnsuredThirdPartyCredential
-    /// Returns stored account_info key wrappers, creating and registering them when the purpose is absent.
+    /// Returns complete account_info wrappers, creating the key when absent and repairing wrappers missing for account credentials.
     func ensureAccountInfoProtectedKeys(for account: SyncAccount) async throws -> [ProtectedKey]
     /// Builds the Base64URL recovery code that shares the account via the scoped password, or nil if the password is empty.
     func makeRecoveryCode(for account: SyncAccount, scopedPassword: Data) -> String?
@@ -88,7 +89,7 @@ protocol ScopedAccessCredentialManaging {
     func fetchAccessCredentials(_ account: SyncAccount) async throws -> [AccessCredential]
     /// Fetches the account's protected keys (empty if none exist).
     func fetchProtectedKeys(_ account: SyncAccount) async throws -> [ProtectedKey]
-    /// Uploads every wrapper for a protected-key purpose atomically if the purpose is absent, returning the wrappers stored by the server.
+    /// Registers wrapper candidates without replacing existing key material, returning the wrappers stored by the server.
     func setKeysIfAbsent(purpose: String, keys: [ProtectedKey], for account: SyncAccount) async throws -> [ProtectedKey]
 }
 

@@ -40,25 +40,17 @@ struct AppRatingPromptCoordinationPolicy: AppRatingPromptCoordinationPolicying {
         static let maxUnredeemedSlotsKey = "maxUnredeemedSlots"
     }
 
-    private let promoCoordinationMode: PromoCoordinationMode
-    private let featureFlagger: FeatureFlagger
+    let isCoordinationEnabled: Bool
+
     private let privacyConfigurationManager: PrivacyConfigurationManaging
 
-    init(
-        promoCoordinationMode: PromoCoordinationMode,
-        featureFlagger: FeatureFlagger,
-        privacyConfigurationManager: PrivacyConfigurationManaging
-    ) {
-        self.promoCoordinationMode = promoCoordinationMode
-        self.featureFlagger = featureFlagger
-        self.privacyConfigurationManager = privacyConfigurationManager
-    }
-
-    /// Coordination needs both the queue itself and the prompt's own flag. Taking the mode as an
-    /// input rather than reading its flag keeps this in step with the mode latched at launch.
-    var isCoordinationEnabled: Bool {
-        promoCoordinationMode == .coordinated
+    init(promoCoordinationMode: PromoCoordinationMode,
+         featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging) {
+        // Coordination needs both the queue itself and the prompt's own flag.
+        self.isCoordinationEnabled = promoCoordinationMode == .coordinated
             && featureFlagger.isFeatureOn(for: FeatureFlag.appRatingPromptCoordination)
+        self.privacyConfigurationManager = privacyConfigurationManager
     }
 
     /// Read from the `appRatingPromptCoordination` subfeature settings, falling back to the default

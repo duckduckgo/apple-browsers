@@ -58,6 +58,24 @@ struct AppRatingPromptCoordinationPolicyTests {
     }
 
 
+    @Test("The coordination decision is latched at construction")
+    func coordinationDecisionIsLatched() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.appRatingPromptCoordination]
+        let policy = AppRatingPromptCoordinationPolicy(
+            promoCoordinationMode: .coordinated,
+            featureFlagger: featureFlagger,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
+        #expect(policy.isCoordinationEnabled)
+
+        featureFlagger.enabledFeatureFlags = []
+
+        // A live read turning false while a slot is held would strand the lease and skip the
+        // cooldown, so this follows the promo mode and stays fixed for the session.
+        #expect(policy.isCoordinationEnabled)
+    }
+
     // MARK: - Unredeemed slot cap
 
     struct MaxUnredeemedSlotsScenario: Sendable, CustomTestStringConvertible {

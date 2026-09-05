@@ -112,8 +112,12 @@ private extension SubscriptionOnboardingOrderConfirmationViewModel {
               let trialLength = subscription.trialLengthInDays(calendar: calendar),
               drawableTrialLengths.contains(trialLength) else { return .paid }
 
+        // HACK: billingStartDate recomputed from trialLength since expiresOrRenewsAt still reflects the
+        // real subscription's actual renewal date — hack/htang/ios/force-override-feature-flagger — do not merge
+        let billingStartDate = calendar.date(byAdding: .day, value: trialLength, to: subscription.startedAt) ?? subscription.expiresOrRenewsAt
+
         return .freeTrial(SubscriptionOnboardingFreeTrialCalendarCardModel(freeTrialStartDate: subscription.startedAt,
-                                                                          billingStartDate: subscription.expiresOrRenewsAt,
+                                                                          billingStartDate: billingStartDate,
                                                                           trialLength: trialLength,
                                                                           now: now,
                                                                           calendar: calendar))

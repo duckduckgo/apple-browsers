@@ -401,13 +401,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             throw error
         }
 
+        // Safe to unregister up front only because the unload above succeeded: the context these
+        // handlers served is gone, so the gap before `loadWebExtension` re-registers them is not a
+        // window in which a live context is left without handlers. (An earlier revision unregistered
+        // before the unload, which did open that window — hence the ordering here.)
         unregisterHandlers(for: identifier)
 
         do {
             _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
         } catch {
-            // The old extension was unloaded successfully, so no live context should retain handlers.
+            // `loadWebExtension` registers handlers as part of loading, so a partially completed
+            // load can leave some behind for a context that never became active. Clear them again.
             unregisterHandlers(for: identifier)
             reportLifecycleEvent(.reloadFailed(identifier: identifier, type: type, trigger: trigger))
             throw error

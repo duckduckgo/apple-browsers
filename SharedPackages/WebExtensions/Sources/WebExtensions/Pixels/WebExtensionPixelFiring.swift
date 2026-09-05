@@ -95,7 +95,11 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "debug_web_extension_cpm_messaging_extension_reload_failed"
             frequency = .dailyAndCount
             parameters = [:]
-        default:
+        case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
+             .uninstallAllError, .loaded, .loadError, .stateChecked, .expectedExtensionNotLoaded,
+             .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
+             .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
+             .scriptletValidationError, .scriptletInstalled, .scriptletInstallError:
             return nil
         }
     }

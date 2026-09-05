@@ -2386,6 +2386,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         pendingNativeLoadURL = nil
         userScripts?.selectionFrameScript.reset()
+        tabModel.clearPendingSessionRestoration()
 
         if let url = webView.url {
             if #available(iOS 18.4, *) {
@@ -2581,10 +2582,11 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        // iOS receives the raw WebKit callbacks and has no Navigation redirect history. Consume
-        // the marker here so restoration is attributed to the initiating provisional load and
-        // cannot leak into a later navigation if this one redirects or fails.
-        let isSessionRestoration = tabModel.consumePendingSessionRestoration()
+        // iOS receives the raw WebKit callbacks and has no Navigation redirect history, so the
+        // marker is read here and cleared at commit. A provisional load replaced before it commits
+        // raises this callback again, and that replacement is still the same logical restoration —
+        // macOS gets the equivalent from `redirectHistory.first`.
+        let isSessionRestoration = tabModel.hasPendingSessionRestoration
         if #available(iOS 18.4, *) {
             let navigationKind = Self.cpmNavigationKind(
                 isSessionRestoration: isSessionRestoration,

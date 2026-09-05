@@ -51,6 +51,12 @@ public protocol WebExtensionManaging: AnyObject {
     var extensionUpdates: AsyncStream<Void> { get }
 
     /// An async stream describing extension load and reload lifecycle changes.
+    ///
+    /// Backed by a single continuation created on first access, so it supports **one** consumer:
+    /// two iterators would split the events between them rather than each receiving all of them.
+    /// Events emitted before the first access are dropped, so subscribe before loading extensions
+    /// if the initial `loaded` events matter. `WebExtensionManager` delivers the same events to
+    /// `cpmMessagingHealthMonitor` directly and does not depend on this stream.
     @available(macOS 15.4, iOS 18.4, *)
     var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { get }
 

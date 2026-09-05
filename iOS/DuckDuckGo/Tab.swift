@@ -60,7 +60,11 @@ public class Tab: NSObject, NSCoding {
     private var observersHolder = [WeaklyHeldTabObserver]()
     
     let uid: String
-    /// Set only for decoded tabs and consumed when their first provisional main-frame navigation starts.
+    /// Set only for decoded tabs and cleared when their restoring main-frame navigation commits.
+    ///
+    /// Deliberately outlives the provisional load that starts it: a provisional load replaced before
+    /// it commits (link cleaning, HTTPS upgrade, a policy-driven reload) is still the same logical
+    /// restoration, and the replacement must be attributed to it too.
     private(set) var hasPendingSessionRestoration = false
 
     /// The date last time this tab was displayed.
@@ -218,10 +222,9 @@ public class Tab: NSObject, NSCoding {
         hasPendingSessionRestoration = true
     }
 
-    /// Returns whether the next provisional navigation belongs to session restoration, then clears the marker.
-    func consumePendingSessionRestoration() -> Bool {
-        defer { hasPendingSessionRestoration = false }
-        return hasPendingSessionRestoration
+    /// Ends session-restoration attribution for this tab, once a restoring navigation has committed.
+    func clearPendingSessionRestoration() {
+        hasPendingSessionRestoration = false
     }
 
     public func encode(with coder: NSCoder) {

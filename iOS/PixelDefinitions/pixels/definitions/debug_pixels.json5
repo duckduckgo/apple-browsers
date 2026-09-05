@@ -71,14 +71,14 @@
         "parameters": ["appVersion"]
     },
     "debug_web_extension_cpm_initialization_failed_after_tab_crash": {
-        "description": "Fires when the CPM dashboard remains waiting on the first eligible navigation after a tab crash.",
+        "description": "Fires once daily when the CPM dashboard remains waiting on the first eligible navigation after a tab crash.",
         "owners": ["mallexxx"],
         "triggers": ["exception"],
         "suffixes": ["daily", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "debug_web_extension_cpm_initialization_failed_after_extension_reload": {
-        "description": "Fires when the CPM dashboard remains waiting on the first eligible navigation after an extension reload.",
+        "description": "Fires once daily when the CPM dashboard remains waiting on the first eligible navigation after an extension reload.",
         "owners": ["mallexxx"],
         "triggers": ["exception"],
         "suffixes": ["daily", "platform", "form_factor"],

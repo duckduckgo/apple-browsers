@@ -80,15 +80,21 @@ class TabTests: XCTestCase {
         XCTAssertTrue(tab?.isDesktop ?? false)
     }
 
-    func testDecodedTabHasOnePendingSessionRestoration() throws {
+    /// The marker survives repeated reads so a provisional load replaced before it commits keeps the
+    /// restoration attribution; only a commit ends it.
+    func testDecodedTabKeepsPendingSessionRestorationUntilCleared() throws {
         let freshTab = Tab(link: link())
-        XCTAssertFalse(freshTab.consumePendingSessionRestoration())
+        XCTAssertFalse(freshTab.hasPendingSessionRestoration)
 
         let data = try NSKeyedArchiver.archivedData(withRootObject: freshTab, requiringSecureCoding: false)
         let restoredTab = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab)
 
-        XCTAssertTrue(restoredTab.consumePendingSessionRestoration())
-        XCTAssertFalse(restoredTab.consumePendingSessionRestoration())
+        XCTAssertTrue(restoredTab.hasPendingSessionRestoration)
+        XCTAssertTrue(restoredTab.hasPendingSessionRestoration)
+
+        restoredTab.clearPendingSessionRestoration()
+
+        XCTAssertFalse(restoredTab.hasPendingSessionRestoration)
     }
 
     @available(iOS 18.4, *)

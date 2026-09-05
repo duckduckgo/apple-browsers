@@ -103,11 +103,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         var measurement: CPMMessagingMeasurement?
         var timeoutTask: Task<Void, Never>?
         var crashPending = false
-    }
-
-    private struct BufferedResponse {
-        let url: URL
-        let receivedAt: Date
+        /// Set when a response arrived that could not be tied to this navigation's document, so
+        /// neither outcome is provable for it. Survives until the next navigation starts.
+        var didReceiveUnattributableResponse = false
     }
 
     private enum MeasurementState: Equatable {
@@ -150,7 +148,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// identifier is learned from the first unambiguous response and retained only for correlation.
     private var tabs: [String: TabNavigationState] = [:]
     private var extensionTabMappings: [Int: String] = [:]
-    private var bufferedResponses: [Int: BufferedResponse] = [:]
 
     /// The first navigation begun with this generation measures whether the latest reload restored messaging.
     private var pendingExtensionReloadMeasurementGeneration: UInt?
@@ -235,6 +232,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         state.navigationKind = navigationKind
         state.committedURL = nil
         state.didReceiveResponse = false
+        state.didReceiveUnattributableResponse = false
         state.measurement = nil
         state.timeoutTask = nil
         tabs[tabIdentifier] = state
@@ -255,7 +253,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         state.committedURL = url
         state.didReceiveResponse = false
         tabs[tabIdentifier] = state
-        associateBufferedResponses()
     }
 
     /// Starts CPM measurement for an eligible completed document.
@@ -272,15 +269,17 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             return
         }
         var state = tabs[tabIdentifier] ?? TabNavigationState()
+        // Checked before the generation sync below, so a dropped finish cannot leave the tab
+        // half-updated — it stays on its own generation until a finish this monitor accepts.
+        guard state.committedURL?.matchesCPMDiagnosticsDocument(url) ?? true else {
+            Logger.webExtensions.debug("[CPM Health Monitor] Dropped navigationFinished: URL differs from committed document, tab=\(tabIdentifier, privacy: .public)")
+            return
+        }
         if state.extensionReloadGeneration != extensionReloadGeneration {
             // A navigation spanning an extension reload is measured against the replacement
             // context once it finishes. Responses received before this point remain stale.
             state.extensionReloadGeneration = extensionReloadGeneration
             state.didReceiveResponse = false
-        }
-        guard state.committedURL?.matchesCPMDiagnosticsDocument(url) ?? true else {
-            Logger.webExtensions.debug("[CPM Health Monitor] Dropped navigationFinished: URL differs from committed document, tab=\(tabIdentifier, privacy: .public)")
-            return
         }
         state.committedURL = url
 
@@ -291,6 +290,13 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         // absence of a fresh dashboard response is not a CPM health signal. A pending crash takes
         // precedence above because the restored document then belongs to a new content process.
         guard effectiveNavigationKind != .backForward else {
+            tabs[tabIdentifier] = state
+            return
+        }
+
+        // A response already arrived for this navigation that could not be attributed to it, so
+        // measuring it now could only produce an unprovable failure.
+        guard !state.didReceiveUnattributableResponse else {
             tabs[tabIdentifier] = state
             return
         }
@@ -377,11 +383,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
     /// Correlates an extension response with the app tab that owns its document.
     ///
-    /// A known numeric extension-tab mapping wins. Otherwise a uniquely matching committed URL
-    /// establishes the mapping; ambiguous responses are buffered until a later commit resolves
-    /// them without guessing between tabs that share a URL.
-    ///
-    /// A response matching no committed document is buffered but contributes nothing to the episode.
+    /// A known extension-tab mapping identifies the sender; otherwise a uniquely matching committed
+    /// URL establishes one. A response that cannot be tied to exactly one tab reports nothing: the
+    /// affected navigations are abandoned rather than guessed at, because neither a failure nor a
+    /// recovery is provable for them.
     private func receiveDashboardResponse(extensionTabIdentifier: Int?, url: URL) {
         guard url.isEligibleForCPMMessagingHealthMeasurement else { return }
 
@@ -389,12 +394,13 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
            let tabIdentifier = extensionTabMappings[extensionTabIdentifier] {
             if responseMatchesCurrentNavigation(url, in: tabIdentifier) {
                 markResponseReceived(in: tabIdentifier)
-            } else {
-                // The mapped tab may just not have committed yet — `startNavigation` clears
-                // `committedURL`. Buffer for `commitNavigation` to retry rather than dropping, but
-                // never fall through to candidate matching, which could credit a different tab.
-                bufferedResponses[extensionTabIdentifier] = BufferedResponse(url: url, receivedAt: now())
+            } else if isTabOnCurrentExtensionGeneration(tabIdentifier) {
+                // Known sender on the loaded context, but not the document being measured — usually
+                // the response beat `navigationCommitted`. Neither outcome is provable.
+                abandonMeasurement(in: tabIdentifier)
             }
+            // A response from a pre-reload generation is stale evidence, not grounds to abandon the
+            // replacement context's navigation: that one still has to prove itself.
             return
         }
 
@@ -403,28 +409,40 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         if candidates.count == 1, let tabIdentifier = candidates.first {
             if let extensionTabIdentifier {
                 extensionTabMappings[extensionTabIdentifier] = tabIdentifier
-                bufferedResponses[extensionTabIdentifier] = nil
             }
             markResponseReceived(in: tabIdentifier)
             return
         }
 
-        if let extensionTabIdentifier {
-            bufferedResponses[extensionTabIdentifier] = BufferedResponse(url: url, receivedAt: now())
-            associateBufferedResponses()
+        Logger.webExtensions.debug("[CPM Health Monitor] Unattributable dashboard response: extensionTab=\(extensionTabIdentifier.logDescription, privacy: .public) candidates=\(candidates.count, privacy: .public)")
+        for tabIdentifier in candidates {
+            abandonMeasurement(in: tabIdentifier)
         }
 
-        // A response matching no committed document is not evidence of health: closing an episode on
-        // one fires a recovery while the tab that received it still times out into a failure.
-        guard !candidates.isEmpty else {
-            if extensionTabIdentifier.map({ bufferedResponses[$0] != nil }) ?? true {
-                Logger.webExtensions.debug(
-                    "[CPM Health Monitor] Dashboard response matched no committed document: extensionTab=\(extensionTabIdentifier.logDescription, privacy: .public)"
-                )
-            }
-            return
+        // No tab may be reported failed or recovered on this response's account, but matching some
+        // tab's committed document still proves the extension is answering — and an episode is
+        // browser-wide, so that is all closing one requires. A response matching nothing proves
+        // nothing: it may be stale, or response and navigation URLs may disagree, and crediting it
+        // would pair a recovery with the failure its own tab is still about to report.
+        guard !candidates.isEmpty else { return }
+        closeEpisodeForCurrentGeneration()
+    }
+
+    /// Closes an episode on proof that the extension is answering, without attributing it to a tab.
+    ///
+    /// After a reload only a measurement begun against the new generation may validate it, so a
+    /// response that cannot be tied to one is not allowed to claim that recovery.
+    private func closeEpisodeForCurrentGeneration() {
+        guard let episode, episode.reloadGeneration == nil else { return }
+        if episode.isStuck {
+            pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload)
         }
-        closeEpisodeForUnattributedSuccess()
+        self.episode = nil
+    }
+
+    /// Whether the tab's navigation belongs to the extension context that is currently loaded.
+    private func isTabOnCurrentExtensionGeneration(_ tabIdentifier: String) -> Bool {
+        tabs[tabIdentifier]?.extensionReloadGeneration == extensionReloadGeneration
     }
 
     /// Returns whether a response URL belongs to the tab's current committed document.
@@ -464,47 +482,22 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         }
     }
 
-    /// Resolves responses that could not initially be attributed to one app tab.
+    /// Drops a navigation's measurement without reporting either outcome, and stops a later
+    /// `finishNavigation` starting a new one for the same navigation.
     ///
-    /// Unique matches are consumed first. When several restored tabs share a URL, an equal number
-    /// of distinct extension-tab responses proves that every candidate answered even though the
-    /// individual extension-to-app tab pairing is unknowable. The batch is consumed without saving
-    /// arbitrary mappings that could misattribute a later response.
-    private func associateBufferedResponses() {
-        while let uniqueMatch = bufferedResponses.first(where: { availableCandidateTabs(for: $0.value.url).count == 1 }),
-              let tabIdentifier = availableCandidateTabs(for: uniqueMatch.value.url).first {
-            let extensionTabIdentifier = uniqueMatch.key
-            extensionTabMappings[extensionTabIdentifier] = tabIdentifier
-            bufferedResponses[extensionTabIdentifier] = nil
-            markResponseReceived(in: tabIdentifier)
+    /// Only ever prevents an *unreported* outcome. A measurement that already failed is a fact on
+    /// record, and its token is what a later attributed response needs to report the recovery.
+    private func abandonMeasurement(in tabIdentifier: String) {
+        guard var state = tabs[tabIdentifier] else { return }
+        if let measurement = state.measurement, measurements[measurement.identifier]?.state == .failed {
+            return
         }
-
-        let groupedResponses = Dictionary(grouping: bufferedResponses.keys) { extensionTabIdentifier in
-            bufferedResponses[extensionTabIdentifier].map { availableCandidateTabs(for: $0.url).sorted() } ?? []
-        }
-        for (candidateTabs, extensionTabIdentifiers) in groupedResponses where !candidateTabs.isEmpty {
-            guard let response = extensionTabIdentifiers.first.flatMap({ bufferedResponses[$0] }),
-                  availableCandidateTabs(for: response.url).sorted() == candidateTabs,
-                  extensionTabIdentifiers.count == candidateTabs.count else {
-                continue
-            }
-            for (extensionTabIdentifier, tabIdentifier) in zip(extensionTabIdentifiers.sorted(), candidateTabs) {
-                bufferedResponses[extensionTabIdentifier] = nil
-                markResponseReceived(in: tabIdentifier)
-            }
-        }
-    }
-
-    /// Treats an ambiguous response as process health only when no reload boundary is active.
-    private func closeEpisodeForUnattributedSuccess() {
-        // A response that could not be tied to one tab proves the current process is responsive only
-        // when no reload boundary must be crossed. After a reload, require a mapped measurement
-        // from the new generation so a delayed response from the old process cannot claim recovery.
-        guard let episode, episode.reloadGeneration == nil else { return }
-        if episode.isStuck {
-            pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload)
-        }
-        self.episode = nil
+        state.didReceiveUnattributableResponse = true
+        state.timeoutTask?.cancel()
+        state.timeoutTask = nil
+        cancelMeasurement(state.measurement)
+        state.measurement = nil
+        tabs[tabIdentifier] = state
     }
 
     /// Cancels work owned by the terminated process and attributes the tab's next finish to a crash.
@@ -527,14 +520,14 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         state.measurement = nil
         state.committedURL = nil
         state.didReceiveResponse = false
+        state.didReceiveUnattributableResponse = false
         if !preserveCrashMarker {
             state.crashPending = false
         }
         tabs[tabIdentifier] = state
     }
 
-    /// Removes all navigation work and extension-tab mappings owned by a closed tab, then retries
-    /// buffered response attribution because removing the tab may leave a unique matching candidate.
+    /// Removes all navigation work and extension-tab mappings owned by a closed tab.
     /// - Parameter tabIdentifier: Stable app identifier for the closed tab.
     private func removeTab(_ tabIdentifier: String) {
         if let state = tabs.removeValue(forKey: tabIdentifier) {
@@ -542,7 +535,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             cancelMeasurement(state.measurement)
         }
         extensionTabMappings = extensionTabMappings.filter { $0.value != tabIdentifier }
-        associateBufferedResponses()
     }
 
     /// Starts a navigation-scoped measurement and captures the current extension reload generation.
@@ -727,11 +719,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
     /// Invalidates measurements and responses owned by the extension context being replaced.
     ///
-    /// Both attributed and buffered responses are context-scoped evidence. Clearing document state
-    /// at each reload boundary prevents an old response from satisfying a new-generation measurement.
-    /// Proven tab-ID mappings remain useful, while generation checks reject their stale responses.
+    /// Responses are context-scoped evidence. Clearing document state at each reload boundary
+    /// prevents an old response from satisfying a new-generation measurement. Proven tab-ID
+    /// mappings remain useful, while generation checks reject their stale responses.
     private func invalidateNavigationEvidenceForReload() {
-        bufferedResponses.removeAll()
         for tabIdentifier in Array(tabs.keys) {
             guard var state = tabs[tabIdentifier] else { continue }
             state.timeoutTask?.cancel()
@@ -740,14 +731,15 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             state.measurement = nil
             state.committedURL = nil
             state.didReceiveResponse = false
+            state.didReceiveUnattributableResponse = false
             tabs[tabIdentifier] = state
         }
     }
 
     /// Expires correlation state that can no longer safely participate in a health decision.
     ///
-    /// Measurements and buffered responses have bounded attribution windows. Removing their tokens
-    /// from tab state also cancels deadlines that could otherwise report after the evidence expired.
+    /// Measurements have a bounded attribution window. Removing their tokens from tab state also
+    /// cancels deadlines that could otherwise report after the evidence expired.
     private func discardExpiredState() {
         let currentDate = now()
         if let episode, currentDate.timeIntervalSince(episode.startedAt) >= episodeLifetime {
@@ -757,7 +749,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         for record in expiredMeasurements {
             cancel(record.measurement)
         }
-        bufferedResponses = bufferedResponses.filter { currentDate.timeIntervalSince($0.value.receivedAt) < extensionLoadWait }
         for tabIdentifier in Array(tabs.keys) {
             guard var state = tabs[tabIdentifier],
                   let measurement = state.measurement,
@@ -783,7 +774,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
         return "episode={\(episodeDescription)} " +
             "counts={tabs=\(tabs.count),measurements=\(measurements.count)," +
-            "mappings=\(extensionTabMappings.count),buffered=\(bufferedResponses.count)} " +
+            "mappings=\(extensionTabMappings.count)} " +
             "reloadGeneration=\(extensionReloadGeneration) " +
             "pendingReloadGeneration=\(pendingExtensionReloadMeasurementGeneration.logDescription) " +
             "postReloadMeasurement=\(postReloadMeasurementIdentifier.logDescription)"

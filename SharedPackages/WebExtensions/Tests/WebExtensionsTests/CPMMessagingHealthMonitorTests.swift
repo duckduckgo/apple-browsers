@@ -491,16 +491,16 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixelFiring.events.isEmpty)
     }
 
-    func testBufferedResponseBeforeReloadCannotCompletePostReloadMeasurement() async {
+    func testPreReloadResponseCannotCompletePostReloadMeasurement() async {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)
-        let bufferedURL = URL(string: "https://example.com/buffered-before-reload")!
+        let preReloadURL = URL(string: "https://example.com/buffered-before-reload")!
 
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 7, url: bufferedURL))
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 7, url: preReloadURL))
         beginAndReportFailure(on: monitor, tabIdentifier: "failed", navigationKind: .other)
         monitor.handle(.willReload(identifier: "embedded", type: .embedded, trigger: .explicit))
         monitor.handle(.reloaded(identifier: "embedded", type: .embedded, trigger: .explicit))
-        finishNavigation(tabIdentifier: "post-reload", url: bufferedURL, on: monitor)
+        finishNavigation(tabIdentifier: "post-reload", url: preReloadURL, on: monitor)
         await waitForEventTimeout()
 
         XCTAssertEqual(pixelFiring.events, [
@@ -643,7 +643,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
     /// Once a tab mapping is learned, a response arriving between `navigationStarted` and
     /// `navigationCommitted` must survive until the commit that can claim it.
-    func testMappedResponseArrivingBeforeCommitIsNotDropped() async {
+    func testMappedResponseArrivingBeforeCommitDoesNotCauseFailure() async {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)
         let url = URL(string: "https://example.com/mapped")!
@@ -663,7 +663,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     }
 
     /// A response matching several unanswered tabs cannot be pinned to one of them, but it still
-    /// proves the extension is answering for a document the monitor is measuring.
+    /// proves the extension is answering, which is all a browser-wide episode needs to close.
     func testAmbiguousResponseRecoversStuckEpisodeWithoutReload() {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)
@@ -701,29 +701,6 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         ])
     }
 
-    /// Withholding recovery does not discard the response: it stays buffered, so the navigation that
-    /// later reveals which tab it belongs to still closes the episode.
-    func testBufferedUnmatchedResponseRecoversOnceItsNavigationIsMeasured() async {
-        let pixelFiring = CapturingWebExtensionPixelFiring()
-        let monitor = makeEventMonitor(pixelFiring: pixelFiring)
-        let url = URL(string: "https://example.com/late-commit")!
-
-        beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other)
-        beginAndReportFailure(on: monitor, tabIdentifier: "tab-2", navigationKind: .other)
-        monitor.handle(.dashboardResponse(extensionTabIdentifier: 11, url: url))
-
-        XCTAssertEqual(pixelFiring.events, [
-            "initialization_failed_other",
-            "initialization_failed_other",
-            "stuck_other"
-        ])
-
-        finishNavigation(tabIdentifier: "tab-3", url: url, on: monitor)
-        await waitForEventTimeout()
-
-        XCTAssertEqual(pixelFiring.events.suffix(1), ["recovered_without_reload"])
-    }
-
     func testUnattributedResponseCannotRecoverEpisodeAcrossReloadBoundary() {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
@@ -738,7 +715,33 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(pixelFiring.events, ["initialization_failed_other", "recovered_after_reload"])
     }
 
-    func testAmbiguousBufferedResponseIsAssociatedAfterOneTabNavigatesAway() async {
+    /// The end-to-end shape of the reported case: two tabs share a URL, the episode goes stuck, and
+    /// the extension starts answering again. The response is unattributable, but recovery is still
+    /// reported rather than the episode being left open to be re-confirmed as stuck.
+    func testAmbiguousResponseAfterStuckReportsRecovery() async {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeEventMonitor(pixelFiring: pixelFiring)
+        let sharedURL = URL(string: "https://example.com/shared")!
+
+        finishNavigation(tabIdentifier: "tab-1", url: sharedURL, on: monitor)
+        await waitForEventTimeout()
+        finishNavigation(tabIdentifier: "tab-2", url: sharedURL, on: monitor)
+        await waitForEventTimeout()
+
+        XCTAssertEqual(pixelFiring.events, [
+            "initialization_failed_other",
+            "initialization_failed_other",
+            "stuck_other"
+        ])
+
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: sharedURL))
+
+        XCTAssertEqual(pixelFiring.events.suffix(1), ["recovered_without_reload"])
+    }
+
+    /// Both candidates of an ambiguous response are abandoned, so neither reports an outcome even
+    /// once the ambiguity resolves.
+    func testAmbiguousResponseAbandonsCandidateNavigations() async {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)
         let sharedURL = URL(string: "https://example.com/shared")!
@@ -771,7 +774,8 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixelFiring.events.isEmpty)
     }
 
-    func testAmbiguousBatchDoesNotPersistMappingsThatStealLaterResponse() async {
+    /// Tabs restored to the same URL cannot be told apart, so they never report an outcome.
+    func testDuplicateURLRestoredTabsNeverReportOutcomes() async {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)
         let sharedURL = URL(string: "https://example.com/restored")!
@@ -823,7 +827,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         ])
     }
 
-    func testExpiredBufferedResponseDoesNotCompleteLaterNavigation() async {
+    func testEarlierUnattributedResponseDoesNotCompleteLaterNavigation() async {
         var currentDate = Date(timeIntervalSince1970: 0)
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = CPMMessagingHealthMonitor(
@@ -859,7 +863,9 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertTrue(pixelFiring.events.isEmpty)
     }
 
-    func testTabCloseAssociatesBufferedResponseWithRemainingMatchingTab() async {
+    /// Closing one of two identically-committed tabs does not revive the abandoned measurement of
+    /// the tab that remains.
+    func testTabCloseDoesNotReviveAbandonedMeasurement() async {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)
         let sharedURL = URL(string: "https://example.com/shared")!

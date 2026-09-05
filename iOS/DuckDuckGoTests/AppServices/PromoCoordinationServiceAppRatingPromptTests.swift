@@ -24,13 +24,19 @@ import Testing
 final class MockAppRatingPromptCoordinator: AppRatingPromptCoordinating {
     var isCoordinationEnabled = true
     var uncoordinatedDecision = false
+    var unredeemedSlotCount = 0
 
     private(set) var registerUsageCallCount = 0
     private(set) var didRequestRatingCallCount = 0
+    private(set) var resetForDebugCallCount = 0
 
     func registerUsage() { registerUsageCallCount += 1 }
     func shouldRequestUncoordinated() -> Bool { uncoordinatedDecision }
     func didRequestRating() { didRequestRatingCallCount += 1 }
+    func resetForDebug() {
+        resetForDebugCallCount += 1
+        unredeemedSlotCount = 0
+    }
 }
 
 @MainActor
@@ -137,6 +143,22 @@ final class PromoCoordinationServiceAppRatingPromptTests {
         service.handleAppBackgrounded()
 
         #expect(manager.releaseDeferredModalCallCount == 1)
+    }
+
+    // MARK: - Debug reset
+
+    @available(iOS 16, *)
+    @Test("The debug reset frees the slot before clearing the count", .timeLimit(.minutes(1)))
+    func debugResetFreesSlotBeforeClearingCount() {
+        let service = makeService(mode: .coordinated)
+
+        service.resetAppRatingPrompt()
+
+        // Releasing bumps the unredeemed count through the provider, so the reset has to run after
+        // it to leave the count at zero.
+        #expect(manager.releaseDeferredModalCallCount == 1)
+        #expect(ratingCoordinator.resetForDebugCallCount == 1)
+        #expect(ratingCoordinator.unredeemedSlotCount == 0)
     }
 
     private func makeService(mode: PromoCoordinationMode) -> PromoCoordinationService {

@@ -58,6 +58,12 @@ protocol AppRatingPromptCoordinating: AnyObject {
 
     /// The dialog was requested. Consumes the prompt's eligibility.
     func didRequestRating()
+
+    /// Consecutive foregrounds that took the slot without a search following.
+    var unredeemedSlotCount: Int { get }
+
+    /// Debug only: clears the unredeemed count and the prompt's eligibility state.
+    func resetForDebug()
 }
 
 /// Brings the App Store rating prompt into the Promo Queue.

@@ -90,7 +90,8 @@ struct PromptCoordinationDebugViewModelTests {
             snapshot: PromoCoordinationDiagnosticSnapshot(
                 mode: scenarios[0].mode,
                 owner: scenarios[0].owner,
-                cooldown: cooldown
+                cooldown: cooldown,
+                unredeemedAppRatingSlots: 0
             )
         )
         let viewModel = PromptCoordinationDebugViewModel(
@@ -107,7 +108,8 @@ struct PromptCoordinationDebugViewModelTests {
             provider.snapshot = PromoCoordinationDiagnosticSnapshot(
                 mode: scenario.mode,
                 owner: scenario.owner,
-                cooldown: cooldown
+                cooldown: cooldown,
+                unredeemedAppRatingSlots: 0
             )
             viewModel.refresh()
 

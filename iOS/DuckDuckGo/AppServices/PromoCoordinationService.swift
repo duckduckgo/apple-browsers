@@ -62,6 +62,7 @@ struct PromoCoordinationDiagnosticSnapshot: Equatable {
     let mode: PromoCoordinationMode
     let owner: PromoQueueLeaseOwnerSnapshot?
     let cooldown: PromoQueueCooldownSnapshot
+    let unredeemedAppRatingSlots: Int
 }
 
 @MainActor
@@ -73,6 +74,7 @@ protocol PromoCoordinationDiagnosticsProviding: AnyObject {
 protocol PromoCoordinationCooldownResetting: AnyObject {
     func resetModalCooldown()
     func resetRemoteMessageCooldown()
+    func resetAppRatingPrompt()
 }
 
 /// Coordinates app-launch modal prompts with the shared new-tab remote-message source.
@@ -221,7 +223,8 @@ extension PromoCoordinationService: PromoCoordinationDiagnosticsProviding {
         PromoCoordinationDiagnosticSnapshot(
             mode: mode,
             owner: promoQueueLeaseArbiter.snapshot.owner,
-            cooldown: promoQueueCooldownPolicy.snapshot
+            cooldown: promoQueueCooldownPolicy.snapshot,
+            unredeemedAppRatingSlots: appRatingPromptCoordinator.unredeemedSlotCount
         )
     }
 }
@@ -229,6 +232,11 @@ extension PromoCoordinationService: PromoCoordinationDiagnosticsProviding {
 extension PromoCoordinationService: PromoCoordinationCooldownResetting {
     func resetModalCooldown() {
         promoQueueCooldownPolicy.resetModalCooldown()
+    }
+
+    func resetAppRatingPrompt() {
+        modalPromptCoordinationManager.releaseDeferredModal()
+        appRatingPromptCoordinator.resetForDebug()
     }
 
     func resetRemoteMessageCooldown() {

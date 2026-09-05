@@ -40,6 +40,7 @@ struct PromptCoordinationDebugView: View {
                 diagnosticRow(title: "Mode", value: viewModel.modeDescription)
                 diagnosticRow(title: "Owner", value: viewModel.ownerDescription)
                 diagnosticRow(title: "RMF Appearance Confirmed", value: viewModel.remoteMessageAppearanceDescription)
+                diagnosticRow(title: "Unredeemed Rating Slots", value: viewModel.unredeemedAppRatingSlotsDescription)
                 Button("Refresh") {
                     viewModel.refresh()
                 }
@@ -70,10 +71,15 @@ struct PromptCoordinationDebugView: View {
                     viewModel.resetRemoteMessageCooldown()
                 }
                 .disabled(!viewModel.canResetCooldowns)
+
+                Button("Reset App Rating Prompt (Debug Only)", role: .destructive) {
+                    viewModel.resetAppRatingPrompt()
+                }
+                .disabled(!viewModel.canResetCooldowns)
             } header: {
                 Text(verbatim: "Manual Testing")
             } footer: {
-                Text(verbatim: "Cooldown resets do not release an active owner or dismiss a message.")
+                Text(verbatim: "Cooldown resets do not release an active owner or dismiss a message. The rating prompt reset does release its slot.")
             }
         }
         .navigationTitle("Prompt Coordination")
@@ -142,6 +148,11 @@ final class PromptCoordinationDebugViewModel: ObservableObject {
         }
     }
 
+    var unredeemedAppRatingSlotsDescription: String {
+        guard let snapshot else { return Text.unavailable }
+        return String(snapshot.unredeemedAppRatingSlots)
+    }
+
     var remoteMessageAppearanceDescription: String {
         guard let snapshot else { return Text.unavailable }
         guard case .remoteMessage(_, _, let appearanceConfirmed) = snapshot.owner else {
@@ -189,6 +200,11 @@ final class PromptCoordinationDebugViewModel: ObservableObject {
 
     func resetRemoteMessageCooldown() {
         cooldownResetter?.resetRemoteMessageCooldown()
+        refresh()
+    }
+
+    func resetAppRatingPrompt() {
+        cooldownResetter?.resetAppRatingPrompt()
         refresh()
     }
 

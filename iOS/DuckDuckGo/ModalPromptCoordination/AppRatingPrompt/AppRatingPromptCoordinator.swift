@@ -74,21 +74,17 @@ protocol AppRatingPromptCoordinating: AnyObject {
 @MainActor
 final class AppRatingPromptCoordinator: ModalPromptProvider, AppRatingPromptCoordinating {
 
-    /// Stop taking the slot after this many foregrounds with no search, so a user who does not
-    /// search cannot starve the queue.
-    static let maxUnredeemedSlots = 3
-
     private let appRatingPrompt: AppRatingPrompt
-    private let coordinationCapability: AppRatingCoordinationCapable
+    private let coordinationPolicy: AppRatingPromptCoordinationPolicying
     private let store: AppRatingPromptSlotStore
 
     init(
         appRatingPrompt: AppRatingPrompt,
-        coordinationCapability: AppRatingCoordinationCapable,
+        coordinationPolicy: AppRatingPromptCoordinationPolicying,
         store: AppRatingPromptSlotStore
     ) {
         self.appRatingPrompt = appRatingPrompt
-        self.coordinationCapability = coordinationCapability
+        self.coordinationPolicy = coordinationPolicy
         self.store = store
     }
 
@@ -99,12 +95,21 @@ final class AppRatingPromptCoordinator: ModalPromptProvider, AppRatingPromptCoor
     func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool {
         guard isCoordinationEnabled else { return false }
 
-        guard store.unredeemedSlotCount < Self.maxUnredeemedSlots else {
+        guard !isUnredeemedSlotCapReached else {
             Logger.modalPrompt.debug("[App Rating Prompt] - Unredeemed slot cap reached; not taking the slot.")
             return false
         }
 
         return appRatingPrompt.shouldPrompt()
+    }
+
+    /// Stop taking the slot after this many foregrounds with no search, so a user who does not
+    /// search cannot starve the queue. A remote value of zero or less removes the cap.
+    private var isUnredeemedSlotCapReached: Bool {
+        let cap = coordinationPolicy.maxUnredeemedSlots
+        guard cap > 0 else { return false }
+
+        return store.unredeemedSlotCount >= cap
     }
 
     /// Never called: the manager short-circuits `.deferred` providers after eligibility.
@@ -124,7 +129,7 @@ final class AppRatingPromptCoordinator: ModalPromptProvider, AppRatingPromptCoor
     // MARK: - AppRatingPromptCoordinating
 
     var isCoordinationEnabled: Bool {
-        coordinationCapability.isCoordinationEnabled
+        coordinationPolicy.isCoordinationEnabled
     }
 
     var unredeemedSlotCount: Int {

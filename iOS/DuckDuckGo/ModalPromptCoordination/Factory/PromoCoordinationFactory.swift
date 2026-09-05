@@ -62,9 +62,10 @@ enum PromoCoordinationFactory {
 
         let appRatingPromptCoordinator = AppRatingPromptCoordinator(
             appRatingPrompt: AppRatingPrompt(featureFlagger: dependency.featureFlagger),
-            coordinationCapability: AppRatingCoordinationCapability.create(
+            coordinationPolicy: AppRatingPromptCoordinationPolicy(
                 promoCoordinationMode: mode,
-                featureFlagger: dependency.featureFlagger
+                featureFlagger: dependency.featureFlagger,
+                privacyConfigurationManager: dependency.privacyConfigurationManager
             ),
             store: AppRatingPromptSlotStore(keyValueStore: dependency.keyValueFileStoreService)
         )

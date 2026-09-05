@@ -668,7 +668,7 @@
 		805DF6B12F28E807004F1F41 /* GranularFireConfirmationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805DF6B02F28E807004F1F41 /* GranularFireConfirmationViewModelTests.swift */; };
 		8065741D2ED917410001497A /* FireExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8065741C2ED917350001497A /* FireExecutor.swift */; };
 		806DF4092F3B89BD00FBCA3F /* DataClearingCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806DF4082F3B89BD00FBCA3F /* DataClearingCapability.swift */; };
-		806FB186304A6894004EA754 /* AppRatingCoordinationCapabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB185304A6894004EA754 /* AppRatingCoordinationCapabilityTests.swift */; };
+		806FB186304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB185304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift */; };
 		806FB188304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB187304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift */; };
 		806FB3D0304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB3CF304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift */; };
 		806FB3E1304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB3E0304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift */; };
@@ -3279,7 +3279,7 @@
 		805FC085FDE8FE82A5752D91 /* SubscriptionOnboardingNavigationContainer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingNavigationContainer.swift; sourceTree = "<group>"; };
 		8065741C2ED917350001497A /* FireExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireExecutor.swift; sourceTree = "<group>"; };
 		806DF4082F3B89BD00FBCA3F /* DataClearingCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingCapability.swift; sourceTree = "<group>"; };
-		806FB185304A6894004EA754 /* AppRatingCoordinationCapabilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingCoordinationCapabilityTests.swift; sourceTree = "<group>"; };
+		806FB185304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptCoordinationPolicyTests.swift; sourceTree = "<group>"; };
 		806FB187304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerDeferredTests.swift; sourceTree = "<group>"; };
 		806FB3CF304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		806FB3E0304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoCoordinationServiceAppRatingPromptTests.swift; sourceTree = "<group>"; };
@@ -8387,7 +8387,7 @@
 				9F80A9892EA9E4CF0079C5AD /* Migrator */,
 				9F7634BC2EA8633300804550 /* Cooldown */,
 				9F387E052EA9A1D8006861F8 /* Providers */,
-				806FB185304A6894004EA754 /* AppRatingCoordinationCapabilityTests.swift */,
+				806FB185304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift */,
 				9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */,
 				806FB187304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift */,
 				B6A7C21931A1000100F00D01 /* ModalPromptCoordinationManagerPromoQueueTests.swift */,
@@ -13692,7 +13692,7 @@
 				CC3445752E6760D100019518 /* UserScriptErrorTests.swift in Sources */,
 				97C00D0C2F98EEE300593A53 /* UnifiedInputContentContainerViewControllerTests.swift in Sources */,
 				98E563EA2DE8B32D00E6E75F /* MockTextZoomCoordinator.swift in Sources */,
-				806FB186304A6894004EA754 /* AppRatingCoordinationCapabilityTests.swift in Sources */,
+				806FB186304A6894004EA754 /* AppRatingPromptCoordinationPolicyTests.swift in Sources */,
 				CB27DAFD30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift in Sources */,
 				98E563EC2DE8B32D00E6E75F /* MockWebsiteDataManager.swift in Sources */,
 				C1EA266A2EB572E1006A863C /* AutofillExtensionSettingsViewModelTests.swift in Sources */,

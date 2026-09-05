@@ -166,7 +166,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// - Parameter presenter: The view controller to present from.
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
         // Deferred promos need the coordinated route, which owns the lease they hold. So they
-        // must report themselves ineligible here — see `AppRatingCoordinationCapability`.
+        // must report themselves ineligible here — see `AppRatingPromptCoordinationPolicy`.
         guard case .modal(let configuration, let provider) = selectModalPrompt() else { return }
 
         let scheduledAttemptID = UUID()

@@ -31,8 +31,9 @@ private final class InMemoryAppRatingPromptStorage: AppRatingPromptStorage {
     var lastShown: Date?
 }
 
-private struct StubAppRatingCoordinationCapability: AppRatingCoordinationCapable {
+private struct StubAppRatingPromptCoordinationPolicy: AppRatingPromptCoordinationPolicying {
     let isCoordinationEnabled: Bool
+    var maxUnredeemedSlots: Int = 3
 }
 
 @MainActor
@@ -176,6 +177,29 @@ final class AppRatingPromptCoordinatorTests {
         #expect(sut.unredeemedSlotCount == 0)
     }
 
+    @Test("A configured cap of zero removes the limit")
+    func zeroCapRemovesTheLimit() {
+        let sut = makeCoordinator(isCoordinationEnabled: true, maxUnredeemedSlots: 0)
+        accrueUsageDays(3)
+
+        for _ in 0..<10 {
+            sut.didReleaseDeferredSlot()
+        }
+
+        #expect(sut.unredeemedSlotCount == 10)
+        #expect(sut.isEligibleToPresent(isOnboardingComplete: true))
+    }
+
+    @Test("The cap honours a remotely configured value")
+    func capHonoursRemoteValue() {
+        let sut = makeCoordinator(isCoordinationEnabled: true, maxUnredeemedSlots: 1)
+        accrueUsageDays(3)
+
+        sut.didReleaseDeferredSlot()
+
+        #expect(!sut.isEligibleToPresent(isOnboardingComplete: true))
+    }
+
     // MARK: - Debug reset
 
     @Test("The debug reset clears both the count and the eligibility state")
@@ -198,10 +222,16 @@ final class AppRatingPromptCoordinatorTests {
 
     // MARK: - Helpers
 
-    private func makeCoordinator(isCoordinationEnabled: Bool) -> AppRatingPromptCoordinator {
+    private func makeCoordinator(
+        isCoordinationEnabled: Bool,
+        maxUnredeemedSlots: Int = 3
+    ) -> AppRatingPromptCoordinator {
         AppRatingPromptCoordinator(
             appRatingPrompt: AppRatingPrompt(storage: storage, featureFlagger: featureFlagger),
-            coordinationCapability: StubAppRatingCoordinationCapability(isCoordinationEnabled: isCoordinationEnabled),
+            coordinationPolicy: StubAppRatingPromptCoordinationPolicy(
+                isCoordinationEnabled: isCoordinationEnabled,
+                maxUnredeemedSlots: maxUnredeemedSlots
+            ),
             store: AppRatingPromptSlotStore(keyValueStore: keyValueStore)
         )
     }

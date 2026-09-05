@@ -35,17 +35,17 @@ final class SitePermissionDialogViewModelTests: XCTestCase {
     func testMicrophonePromptUsesMicrophoneCopy() throws {
         let viewModel = try XCTUnwrap(SitePermissionDialogViewModel(prompt: prompt(for: [.microphone])))
 
-        XCTAssertEqual(viewModel.title, "“example.com” website wants to access the microphone")
+        XCTAssertEqual(viewModel.title, "“example.com” website wants to access your microphone")
         XCTAssertNil(viewModel.body)
         XCTAssertEqual(viewModel.icon, .microphone)
     }
 
-    func testCombinedPromptNamesBothPermissionsAndUsesCameraIcon() throws {
+    func testCombinedPromptNamesBothPermissionsWithoutAnIcon() throws {
         let viewModel = try XCTUnwrap(SitePermissionDialogViewModel(prompt: prompt(for: [.camera, .microphone])))
 
         XCTAssertEqual(viewModel.title, "“example.com” website wants to access your camera and microphone")
         XCTAssertNil(viewModel.body)
-        XCTAssertEqual(viewModel.icon, .camera)
+        XCTAssertNil(viewModel.icon)
         XCTAssertEqual(viewModel.actions.map(\.action), [.allowOnce, .allowWhileUsingSite, .neverAllow])
     }
 

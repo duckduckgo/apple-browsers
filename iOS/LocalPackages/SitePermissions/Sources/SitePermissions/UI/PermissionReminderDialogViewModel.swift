@@ -64,14 +64,7 @@ public struct PermissionReminderDialogViewModel: Equatable, Sendable {
             return nil
         }
 
-        actions = [
-            ActionItem(action: .changePermissions,
-                       title: UserText.PermissionRecovery.changePermissions,
-                       style: .primary),
-            ActionItem(action: .cancel,
-                       title: UserText.PermissionRecovery.cancel,
-                       style: .secondary)
-        ]
+        actions = Self.settingsActions
     }
 
     public static var voiceSearch: PermissionReminderDialogViewModel {
@@ -91,6 +84,23 @@ public struct PermissionReminderDialogViewModel: Equatable, Sendable {
             ]
         )
     }
+
+    public static var voiceChat: PermissionReminderDialogViewModel {
+        PermissionReminderDialogViewModel(
+            title: UserText.PermissionRecovery.microphoneTitle,
+            body: UserText.VoiceChatPermissionRecovery.body,
+            actions: settingsActions
+        )
+    }
+
+    private static let settingsActions = [
+        ActionItem(action: .changePermissions,
+                   title: UserText.PermissionRecovery.changePermissions,
+                   style: .primary),
+        ActionItem(action: .cancel,
+                   title: UserText.PermissionRecovery.cancel,
+                   style: .secondary)
+    ]
 
     public static func sitePermissionToastMessage(for permissionTypes: Set<SitePermissionType>) -> String? {
         switch permissionTypes {

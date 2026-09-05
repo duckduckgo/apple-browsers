@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
 import DesignResourcesKitIcons
 
 @MainActor
@@ -168,6 +169,7 @@ private struct PIRDestinationView<Content: View>: View {
     var body: some View {
         content
             .navigationBarBackButtonHidden(true)
+            .navigationBarBackground(Color(designSystemColor: .background))
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: { dismiss() }) {

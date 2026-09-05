@@ -45,6 +45,148 @@ struct AccountInfoKeyManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Repeated loads use the in-memory key", .timeLimit(.minutes(1)))
+    func testWhenKeyIsLoadedRepeatedlyThenUsesInMemoryKeyMaterial() async throws {
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([protectedKey])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        let firstKey = try await manager.loadKey(for: account)
+        secureStore.theProtectedKeysData = nil
+        let secondKey = try await manager.loadKey(for: account)
+
+        #expect(firstKey.kid == protectedKey.kid)
+        #expect(secondKey.kid == protectedKey.kid)
+        #expect(secureStore.protectedKeysCalls == 1)
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A default-credential key from login is reused without fetching or persisting", .timeLimit(.minutes(1)))
+    func testWhenLoginProvidesDefaultCredentialKeyThenLoadsItInMemoryOnly() async throws {
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        let secureStore = SecureStorageStub()
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        try await manager.preloadKey(from: [protectedKey],
+                                     accessCredentials: [],
+                                     for: account)
+        let cachedKey = try await manager.loadKey(for: account)
+
+        #expect(cachedKey.kid == protectedKey.kid)
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+        #expect(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+        #expect(secureStore.protectedKeysCalls == 0)
+        #expect(secureStore.theProtectedKeysData == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A third-party key from login uses the provided credential without fetching or persisting", .timeLimit(.minutes(1)))
+    func testWhenLoginProvidesThirdPartyKeyThenUsesResponseCredentialInMemoryOnly() async throws {
+        let scopedPassword = Data(repeating: 0x03, count: 32)
+        let protectedKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: scopedPassword)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: "encrypted-credential")
+        ]
+        let secureStore = SecureStorageStub()
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.recoverScopedPasswordStub = scopedPassword
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        try await manager.preloadKey(from: [protectedKey],
+                                     accessCredentials: accessCredentials,
+                                     for: account)
+        let cachedKey = try await manager.loadKey(for: account)
+
+        let recoveryCall = try #require(scopedAccess.recoverScopedPasswordCalls.first)
+        #expect(cachedKey.kid == protectedKey.kid)
+        #expect(recoveryCall.accessCredentials?.map(\.id) == [SyncCredentialID.thirdParty])
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+        #expect(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+        #expect(secureStore.protectedKeysCalls == 0)
+        #expect(secureStore.theProtectedKeysData == nil)
+        #expect(secureStore.theScopedPassword == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Changing accounts does not reuse the in-memory key", .timeLimit(.minutes(1)))
+    func testWhenAccountChangesThenDoesNotReuseInMemoryKeyMaterial() async throws {
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([protectedKey])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+        let otherAccount = SyncAccount(deviceId: "other-device",
+                                       deviceName: account.deviceName,
+                                       deviceType: account.deviceType,
+                                       userId: "other-user",
+                                       primaryKey: account.primaryKey,
+                                       secretKey: account.secretKey,
+                                       token: account.token,
+                                       state: account.state)
+
+        _ = try await manager.loadKey(for: account)
+        _ = try await manager.loadKey(for: otherAccount)
+
+        #expect(secureStore.protectedKeysCalls == 2)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Clearing the in-memory key reloads protected keys", .timeLimit(.minutes(1)))
+    func testWhenCachedKeyIsClearedThenLoadsProtectedKeyAgain() async throws {
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([protectedKey])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        _ = try await manager.loadKey(for: account)
+        await manager.clearCachedKey(for: account)
+        _ = try await manager.loadKey(for: account)
+
+        #expect(secureStore.protectedKeysCalls == 2)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Refreshing replaces the in-memory key", .timeLimit(.minutes(1)))
+    func testWhenKeyIsRefreshedThenSubsequentLoadsUseRefreshedInMemoryMaterial() async throws {
+        let cachedProtectedKey = try makeDefaultCredentialProtectedKey()
+        let refreshedProtectedKey = try makeDefaultCredentialProtectedKey()
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([cachedProtectedKey])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysStub = [refreshedProtectedKey]
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        _ = try await manager.loadKey(for: account)
+        let refreshedKey = try await manager.refreshKey(for: account)
+        secureStore.theProtectedKeysData = nil
+        let loadedKey = try await manager.loadKey(for: account)
+
+        #expect(refreshedKey.kid == refreshedProtectedKey.kid)
+        #expect(loadedKey.kid == refreshedProtectedKey.kid)
+        #expect(secureStore.protectedKeysCalls == 2)
+        #expect(scopedAccess.fetchProtectedKeysCalls.map(\.userId) == [account.userId])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A corrupt cache is replaced with server keys", .timeLimit(.minutes(1)))
     func testWhenCacheIsCorruptThenFetchesAndCachesServerKeys() async throws {
         let protectedKey = try makeDefaultCredentialProtectedKey()

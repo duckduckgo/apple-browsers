@@ -467,15 +467,6 @@ struct Launching: LaunchingHandling {
 #endif
 
         logAppLaunchTime()
-
-#if DEBUG
-        if LaunchOptionsHandler().shouldOpenPIRDashboardForTesting {
-            let mainCoordinator = mainCoordinator
-            Task { @MainActor in
-                mainCoordinator.presentDataBrokerProtectionDashboard()
-            }
-        }
-#endif
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.

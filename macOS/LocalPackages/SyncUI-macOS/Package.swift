@@ -24,6 +24,7 @@ let package = Package(
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/SnapshotTestingSupport"),
+        .package(url: "https://github.com/airbnb/lottie-spm.git", exact: "4.6.1"),
     ],
     targets: [
         .target(
@@ -34,6 +35,7 @@ let package = Package(
                 .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
                 .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
                 .product(name: "PreviewSnapshots", package: "SnapshotTestingSupport"),
+                .product(name: "Lottie", package: "lottie-spm"),
             ],
             resources: [
                 .process("Assets.xcassets"),

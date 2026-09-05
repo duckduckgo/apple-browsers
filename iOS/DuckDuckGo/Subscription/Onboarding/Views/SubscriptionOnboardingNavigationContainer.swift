@@ -21,17 +21,20 @@ import SwiftUI
 import UIKit
 
 extension View {
+    #warning("Post-iOS15-Drop: `NavigationView` + `.navigationViewStyle(.stack)` become a plain `NavigationStack`.")
     func subscriptionOnboardingNavigationContainer() -> some View {
         NavigationView {
-            self
-                .background(InteractivePopGestureEnabler())
+            self.subscriptionOnboardingInteractivePopEnabled()
         }
         .navigationViewStyle(.stack)
     }
+
+    /// Re-enables swipe-back after hiding the default back button. 
+    func subscriptionOnboardingInteractivePopEnabled() -> some View {
+        background(InteractivePopGestureEnabler())
+    }
 }
 
-/// Re-enables the interactive pop (swipe-back) gesture, which UIKit disables whenever a screen hides
-/// the default back button (as the onboarding pages do in favour of a custom button).
 private struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 

@@ -662,6 +662,76 @@ final class TabViewControllerAIChatNewWindowDecisionTests: XCTestCase {
     }
 }
 
+final class TabViewControllerInPageDuckAIEntryTests: XCTestCase {
+
+    private let homepage = URL(string: "https://duckduckgo.com/")!
+    private let duckAIChat = URL(string: "https://duck.ai/chat?ia=chat&origin=funnel_home_website&q=hello&prompt=1")!
+
+    func testWhenHomepageLinkTargetsDuckAIInMainFrameThenSourceIsHomepage() {
+        let source = TabViewController.inPageDuckAIEntrySource(currentURL: homepage,
+                                                               navigationAction: mainFrameNavigation(to: duckAIChat),
+                                                               pendingNativeLoadURL: nil)
+
+        XCTAssertEqual(source, .ddgHomepage)
+    }
+
+    func testWhenHomepageScriptOrFormNavigatesToDuckAIThenSourceIsHomepage() {
+        for navigationType in [WKNavigationType.other, .formSubmitted] {
+            let source = TabViewController.inPageDuckAIEntrySource(currentURL: homepage,
+                                                                   navigationAction: mainFrameNavigation(to: duckAIChat, type: navigationType),
+                                                                   pendingNativeLoadURL: nil)
+
+            XCTAssertEqual(source, .ddgHomepage, "\(navigationType.rawValue)")
+        }
+    }
+
+    func testWhenNavigationIsBackForwardOrReloadThenNoSource() {
+        for navigationType in [WKNavigationType.backForward, .reload] {
+            let source = TabViewController.inPageDuckAIEntrySource(currentURL: homepage,
+                                                                   navigationAction: mainFrameNavigation(to: duckAIChat, type: navigationType),
+                                                                   pendingNativeLoadURL: nil)
+
+            XCTAssertNil(source, "\(navigationType.rawValue)")
+        }
+    }
+
+    func testWhenNavigationIsTheTabsOwnLoadThenNoSource() {
+        let source = TabViewController.inPageDuckAIEntrySource(currentURL: homepage,
+                                                               navigationAction: mainFrameNavigation(to: duckAIChat, type: .other),
+                                                               pendingNativeLoadURL: duckAIChat)
+
+        XCTAssertNil(source)
+    }
+
+    func testWhenNavigationTargetsSubframeThenNoSource() {
+        let request = URLRequest(url: duckAIChat)
+        let subframe = WKFrameInfo.mock(isMainFrame: false, securityOriginHost: "duckduckgo.com", request: request)
+        let navigationAction = MockNavigationAction(request: request, navigationType: .linkActivated, targetFrame: subframe)
+
+        let source = TabViewController.inPageDuckAIEntrySource(currentURL: homepage,
+                                                               navigationAction: navigationAction,
+                                                               pendingNativeLoadURL: nil)
+
+        XCTAssertNil(source)
+    }
+
+    func testWhenCurrentPageIsNotHomepageThenNoSource() {
+        let serp = URL(string: "https://duckduckgo.com/?q=test&ia=web")!
+
+        let source = TabViewController.inPageDuckAIEntrySource(currentURL: serp,
+                                                               navigationAction: mainFrameNavigation(to: duckAIChat),
+                                                               pendingNativeLoadURL: nil)
+
+        XCTAssertNil(source)
+    }
+
+    private func mainFrameNavigation(to url: URL, type: WKNavigationType = .linkActivated) -> WKNavigationAction {
+        let request = URLRequest(url: url)
+        let mainFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "duckduckgo.com", request: request)
+        return MockNavigationAction(request: request, navigationType: type, targetFrame: mainFrame)
+    }
+}
+
 private class CoderStub: NSCoder {
 
     private let properties: [String: Any]

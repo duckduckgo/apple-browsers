@@ -47,6 +47,8 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
                     withAnimation {
                         model.moveFavorites(from: from, to: to)
                     }
+                } onMoveFinished: {
+                    model.favoritesReordered()
                 }
             }
         }

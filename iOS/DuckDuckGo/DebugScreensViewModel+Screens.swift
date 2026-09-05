@@ -29,6 +29,7 @@ import WebExtensions
 import DuckUI
 import Persistence
 import FeatureFlags_iOS
+import UIComponents
 
 extension DebugScreensViewModel {
 
@@ -159,6 +160,9 @@ extension DebugScreensViewModel {
             .view(title: "Alert Playground", { _ in
                 AlertPlaygroundView()
             }),
+            .view(title: "Confetti Playground", { _ in
+                ConfettiPlaygroundView()
+            }),
             .view(title: "Tab Generator", { d in
                 BulkGeneratorView(factory: BulkTabFactory(tabManager: d.tabManager))
             }),
@@ -254,9 +258,11 @@ extension DebugScreensViewModel {
                 return LoggingDebugViewController()
             }),
             .controller(title: "Subscription", { dependencies in
-                return self.debugStoryboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
+                let subscriptionDebugViewController = self.debugStoryboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
                     SubscriptionDebugViewController(coder: coder, subscriptionDataReporter: dependencies.subscriptionDataReporter)
                 }
+                subscriptionDebugViewController.keyValueStore = dependencies.keyValueStore
+                return subscriptionDebugViewController
             }),
             .controller(title: "Configuration URLs", { _ in
                 return self.debugStoryboard.instantiateViewController(identifier: "ConfigurationURLDebugViewController") { coder in

@@ -97,6 +97,29 @@ enum UserText {
     static let recoveryInstructionsFooterV2 = NotLocalizedString("preferences.sync.recovery-instructions-footer-v2", value: "Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)", comment: "Footer on the recovery code section in sync settings (V2). The [text](url) markdown is a link and must be preserved.")
     static let turnOffAndDeleteServerDataV2 = NotLocalizedString("preferences.sync.turn-off-and-delete-data-v2", bundle: Bundle.module, value: "Turn Off and Delete Server Data", comment: "Disable and delete data sync button caption")
 
+    // Device details dialogs (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let deviceDetailsSyncedStatusV2 = NotLocalizedString("preferences.sync.device-details-v2.synced-status", value: "Synced", comment: "Status shown under the device name on the device details dialog (V2)")
+    static let deviceDetailsNameLabelV2 = NotLocalizedString("preferences.sync.device-details-v2.name-label", value: "Name", comment: "Label of the editable device name field on the device details dialog (V2)")
+    static let deviceDetailsDoneButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.done-button", value: "Done", comment: "Button that saves the device name and dismisses the device details dialog (V2)")
+    static let deviceDetailsCloseButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.close-button", value: "Close", comment: "Button that dismisses the details dialog of another synced device (V2)")
+    static let deviceDetailsTurnOffSyncButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.turn-off-sync-button", value: "Turn Off Sync & Backup", comment: "Button that turns Sync & Backup off for the current device, on the device details dialog (V2)")
+    static let deviceDetailsRemoveDeviceButtonV2 = NotLocalizedString("preferences.sync.device-details-v2.remove-device-button", value: "Remove Device", comment: "Button that removes another synced device, on the device details dialog (V2)")
+
+    // Remove device confirmation dialog (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let removeDeviceConfirmTitleV2 = NotLocalizedString("preferences.sync.remove-device-v2.title", value: "Remove Device?", comment: "Title of the confirmation shown before removing a synced device (V2)")
+    static let removeDeviceConfirmButtonV2 = NotLocalizedString("preferences.sync.remove-device-v2.button", value: "Remove Device", comment: "Button that confirms removing a synced device (V2)")
+    static func removeDeviceConfirmMessageV2(_ deviceName: String) -> String {
+        let notLocalized = NotLocalizedString("preferences.sync.remove-device-v2.message",
+                                              value: "**%@** will no longer be able to access your synced data.\n\nYour autofill data, bookmarks, and duck.ai chats won’t sync across your other devices with DuckDuckGo.",
+                                              comment: "Message of the confirmation shown before removing a synced device (V2). The device name is inserted in place of %@ and the ** markers around it indicate bold styling, which should be preserved.")
+        return String(format: notLocalized, deviceName)
+    }
+
+    // Turn off and delete server data confirmation dialog (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let deleteAccountConfirmTitleV2 = NotLocalizedString("preferences.sync.delete-account-v2.title", value: "Stop Sync & Backup and Delete Server Data?", comment: "Title of the confirmation shown before turning Sync off and deleting the server data (V2)")
+    static let deleteAccountConfirmMessageV2 = NotLocalizedString("preferences.sync.delete-account-v2.message", value: "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server.", comment: "Message of the confirmation shown before turning Sync off and deleting the server data (V2)")
+    static let deleteAccountConfirmButtonV2 = NotLocalizedString("preferences.sync.delete-account-v2.button", value: "Delete Server Data", comment: "Button that confirms turning Sync off and deleting the server data (V2)")
+
     // Options
     static let otherOptionsSectionTitle = NSLocalizedString("preferences.other-options.section-title", bundle: Bundle.module, value: "Other Options", comment: "Sync settings. Other Options section title")
     static let syncThisDeviceLink = NSLocalizedString("preferences.sync-this-device.link-title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Sync settings. Title of a link to start setting up sync and backup the device")
@@ -108,6 +131,20 @@ enum UserText {
     static let preparingToSyncDialogSubTitleUpdated = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle-updated", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks, autofill data, and Duck.ai chats with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
     static let preparingToSyncTwoDeviceDialogTitle = NSLocalizedString("preferences.preparing-to-sync.two-device.dialog-title", bundle: Bundle.module, value: "End-to-end encrypted on all your devices.", comment: "Preparing to sync dialog title during two-device sync set up.")
     static let preparingToSyncDialogAction = NSLocalizedString("preferences.preparing-to-sync.dialog-action", bundle: Bundle.module, value: "Connecting…", comment: "Sync preparing to sync dialog action")
+    static let preparingToSyncDialogTitleV2 = NotLocalizedString("preferences.preparing-to-sync-v2.dialog-title", value: "Sync & Backup is end-to-end encrypted on all your devices.", comment: "Preparing to sync dialog title during two-device sync set up (V2)")
+    static let preparingToSyncCheckOtherDeviceTitleV2 = NotLocalizedString("preferences.preparing-to-sync-v2.check-other-device-title", value: "Check your other device...", comment: "Title shown while the joining device waits for the other device during sync set up (V2)")
+    static let preparingToSyncDialogActionV2 = NotLocalizedString("preferences.preparing-to-sync-v2.dialog-action", value: "Connecting...", comment: "Status text while preparing to sync (V2)")
+
+    // Sync success dialog (V2 — simplifiedSyncSetupV2). Not localized while behind the feature flag.
+    static let syncSuccessFallbackDeviceNameV2 = NotLocalizedString("preferences.sync.success-v2.fallback-device-name", value: "This device", comment: "Fallback device name in the Sync success dialog when the current device name is unavailable (V2)")
+    static func syncSuccessTitleV2(deviceName: String) -> String {
+        let format = NotLocalizedString("preferences.sync.success-v2.title", value: "%@ has been added to Sync & Backup.", comment: "Title in the Sync success dialog. %@ is the name of the device that was added (V2)")
+        return String(format: format, deviceName)
+    }
+    static let syncSuccessDescriptionV2 = NotLocalizedString("preferences.sync.success-v2.description", value: "Use this code to restore your synced data if you lose access to your devices. Keep it safe.", comment: "Recovery code explanation in the Sync success dialog (V2)")
+    static let syncSuccessRecoveryCodeLabelV2 = NotLocalizedString("preferences.sync.success-v2.recovery-code-label", value: "Recovery Code", comment: "Recovery code label in the Sync success dialog (V2)")
+    static let syncSuccessCopyCodeButtonV2 = NotLocalizedString("preferences.sync.success-v2.copy-code-button", value: "Copy Code", comment: "Button to copy the recovery code in the Sync success dialog (V2)")
+    static let syncSuccessDownloadPDFButtonV2 = NotLocalizedString("preferences.sync.success-v2.download-pdf-button", value: "Download as PDF", comment: "Button to download the recovery code as a PDF in the Sync success dialog (V2)")
 
     // Enter recovery code dialog
     static let enterRecoveryCodeDialogTitle = NSLocalizedString("preferences.enter-recovery-code.dialog-title", bundle: Bundle.module, value: "Enter Code", comment: "Sync enter recovery code dialog title")

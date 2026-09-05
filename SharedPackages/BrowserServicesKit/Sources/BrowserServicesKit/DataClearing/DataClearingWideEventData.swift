@@ -38,7 +38,7 @@ public class DataClearingWideEventData: WideEventData {
         featureName: "data-clearing",
         mobileMetaType: "ios-data-clearing",
         desktopMetaType: "macos-data-clearing",
-        version: "1.1.0"
+        version: "1.1.1"
     )
 
     public static let clearingTimeout: TimeInterval = .minutes(15)
@@ -131,6 +131,10 @@ public class DataClearingWideEventData: WideEventData {
     public var clearPrivacyStatsStatus: ActionStatus?
     public var clearPrivacyStatsError: WideEventErrorData?
 
+    public var clearPermissionsDuration: WideEvent.MeasuredInterval?
+    public var clearPermissionsStatus: ActionStatus?
+    public var clearPermissionsError: WideEventErrorData?
+
     // iOS-only actions
     public var clearURLCachesDuration: WideEvent.MeasuredInterval?
     public var clearURLCachesStatus: ActionStatus?
@@ -165,10 +169,6 @@ public class DataClearingWideEventData: WideEventData {
     public var forgetTextZoomFireModeError: WideEventErrorData?
 
     // macOS-only actions
-    public var clearPermissionsDuration: WideEvent.MeasuredInterval?
-    public var clearPermissionsStatus: ActionStatus?
-    public var clearPermissionsError: WideEventErrorData?
-
     public var clearVisitedLinksDuration: WideEvent.MeasuredInterval?
     public var clearVisitedLinksStatus: ActionStatus?
     public var clearVisitedLinksError: WideEventErrorData?
@@ -340,6 +340,7 @@ extension DataClearingWideEventData {
         case clearBookmarkDatabase = "clear_bookmark_database"
         case forgetTextZoom = "forget_text_zoom"
         case clearPrivacyStats = "clear_privacy_stats"
+        case clearPermissions = "clear_permissions"
 
         // iOS-only actions
         case clearURLCaches = "clear_url_caches"
@@ -352,7 +353,6 @@ extension DataClearingWideEventData {
         case forgetTextZoomFireMode = "forget_text_zoom_fire_mode"
 
         // macOS-only actions
-        case clearPermissions = "clear_permissions"
         case clearVisitedLinks = "clear_visited_links"
         case clearRecentlyClosed = "clear_recently_closed"
         case clearLastSessionState = "clear_last_session_state"

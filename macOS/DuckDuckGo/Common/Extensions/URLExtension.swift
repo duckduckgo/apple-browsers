@@ -890,6 +890,18 @@ extension URL {
         return isDirectory.boolValue
     }
 
+    /// `true` when the receiver is the user's Downloads folder.
+    ///
+    /// Compared by path components, like `isContained(in:)`, so a trailing slash or a symlinked
+    /// path (`/tmp` vs `/private/tmp`) doesn't change the outcome.
+    var isSystemDownloadsDirectory: Bool {
+        guard let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
+            return false
+        }
+
+        return standardizedFileURL.resolvingSymlinksInPath().pathComponents == downloads.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+    }
+
     mutating func setFileHidden(_ hidden: Bool) throws {
         var resourceValues = URLResourceValues()
         resourceValues.isHidden = true

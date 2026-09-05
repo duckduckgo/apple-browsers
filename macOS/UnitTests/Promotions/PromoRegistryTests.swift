@@ -44,6 +44,7 @@ final class PromoRegistryTests: XCTestCase {
             isOnboardingCompletedProvider: { true },
             dockCustomization: DockCustomizerMock()
         )
+        let windowControllersManager = WindowControllersManagerMock()
         let dependencies = PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
@@ -57,7 +58,22 @@ final class PromoRegistryTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
             windowControllersManager: WindowControllersManagerMock(),
             syncService: nil,
-            syncBookmarksAdapter: nil)
+            syncBookmarksAdapter: nil,
+            pinningManager: MockPinningManager(),
+            cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                keyValueStore: InMemoryThrowingKeyValueStore(),
+                windowControllersManager: windowControllersManager,
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                appearancePreferences: AppearancePreferences(
+                    persistor: AppearancePreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    featureFlagger: MockFeatureFlagger(),
+                    aiChatMenuConfig: MockAIChatConfig()
+                ),
+                onboardingStateUpdater: MockOnboardingStateUpdater(),
+                autoconsentStats: MockAutoconsentStats()
+            ))
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

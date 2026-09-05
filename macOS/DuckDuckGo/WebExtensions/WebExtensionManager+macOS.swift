@@ -50,16 +50,20 @@ enum WebExtensionManagerFactory {
         scriptletConfiguration: ScriptletConfiguration? = nil
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
+        let pixelFiring = MacOSWebExtensionPixelFiring()
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
 
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(),
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
             internalSiteHandler: internalSiteHandler,
-            pixelFiring: MacOSWebExtensionPixelFiring(),
+            pixelFiring: pixelFiring,
+            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
+                cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
             ),
             scriptletConfiguration: scriptletConfiguration

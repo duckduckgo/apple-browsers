@@ -56,6 +56,83 @@
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "debug_web_extension_cpm_initialization_failed_after_session_restoration": {
+        "description": "Fires once daily when the CPM dashboard remains waiting after a restored tab's extension-response grace period.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_web_extension_cpm_initialization_failed_after_other": {
+        "description": "Fires once daily when the CPM dashboard remains waiting after an ordinary page navigation finishes loading.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_web_extension_cpm_initialization_failed_after_tab_crash": {
+        "description": "Fires once daily when the CPM dashboard remains waiting on the first eligible navigation after a tab crash.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_web_extension_cpm_initialization_failed_after_extension_reload": {
+        "description": "Fires once daily when the CPM dashboard remains waiting on the first eligible navigation after an extension reload.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_web_extension_cpm_messaging_stuck_session_restoration": {
+        "description": "Fires when a session-restoration failure is confirmed by a later regular navigation failure.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_web_extension_cpm_messaging_stuck_tab_crash": {
+        "description": "Fires when a post-tab-crash failure is followed by a failed non-restoration navigation begun after that failure.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_web_extension_cpm_messaging_stuck_extension_reload": {
+        "description": "Fires when an extension-reload failure is confirmed by a later regular navigation failure.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_web_extension_cpm_messaging_stuck_other": {
+        "description": "Fires when an ordinary-navigation failure is followed by a failed non-restoration navigation begun after that failure.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_web_extension_cpm_messaging_recovered_without_extension_reload": {
+        "description": "Fires when CPM recovers on a previously failed tab or from a stuck episode without reloading the extension.",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_web_extension_cpm_messaging_recovered_after_extension_reload": {
+        "description": "Fires when CPM recovers on a previously failed tab or from a stuck episode after the extension reloads.",
+        "owners": ["mallexxx"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_web_extension_cpm_messaging_extension_reload_failed": {
+        "description": "Fires when the first CPM measurement using a successful extension-reload generation also times out.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_pixel_fire_suppressed_storage_error": {
         "description": "Fired when a daily or unique pixel is suppressed because the storage write for its last-fire date failed. Indicates a broken pixel store that would otherwise cause repeated firing.",
         "owners": ["samsymons"],

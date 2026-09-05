@@ -25,6 +25,45 @@ import WebKit
 @available(macOS 15.4, iOS 18.4, *)
 open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInstallationPathResolving {
 
+    private enum InstalledExtensionsLoadLifecycle {
+        case initial
+        case reloadAll(trigger: WebExtensionReloadTrigger, identifiers: Set<String>)
+        /// Completes lifecycle reporting for identifiers whose data-clearing unload already emitted `willReload`.
+        case reloadFallback(trigger: WebExtensionReloadTrigger, identifiers: Set<String>)
+
+        func loadSucceededEvent(identifier: String, type: DuckDuckGoWebExtensionType?) -> WebExtensionLifecycleEvent? {
+            switch self {
+            case .initial:
+                return .loaded(identifier: identifier, type: type)
+            case .reloadAll(let trigger, let identifiers):
+                guard identifiers.contains(identifier) else { return nil }
+                return .reloaded(identifier: identifier, type: type, trigger: trigger)
+            case .reloadFallback(let trigger, let identifiers):
+                guard identifiers.contains(identifier) else { return nil }
+                return .reloaded(identifier: identifier, type: type, trigger: trigger)
+            }
+        }
+
+        func loadFailedEvent(identifier: String, type: DuckDuckGoWebExtensionType?) -> WebExtensionLifecycleEvent? {
+            switch self {
+            case .reloadAll(let trigger, let identifiers):
+                guard identifiers.contains(identifier) else { return nil }
+                return .reloadFailed(identifier: identifier, type: type, trigger: trigger)
+            case .reloadFallback(let trigger, let identifiers):
+                guard identifiers.contains(identifier) else { return nil }
+                return .reloadFailed(identifier: identifier, type: type, trigger: trigger)
+            case .initial:
+                return nil
+            }
+        }
+    }
+
+    private struct InstalledExtensionsLoadSummary {
+        var failedIdentifiers: [String] = []
+        var successCount = 0
+        var firstError: Error?
+    }
+
     // MARK: - Dependencies
 
     public let installationStore: InstalledWebExtensionStoring
@@ -64,18 +103,29 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// can re-create their contexts without re-reading and re-parsing them from disk. Cleared once
     /// consumed by a reload.
     private var unloadedExtensionsCache: [String: WKWebExtension] = [:]
+    /// Distinguishes the next full load as restoration after data clearing rather than initial startup.
+    private var isDataClearingReloadPending = false
+    /// Extensions whose data-clearing reload lifecycle began before their contexts were unloaded.
+    private var dataClearingReloadIdentifiers: Set<String> = []
 
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
 
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
+    /// Shared monitor because all tabs communicate through the same embedded-extension process.
+    public let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
 
     // MARK: - AsyncStream
 
     private var continuation: AsyncStream<Void>.Continuation?
     public private(set) lazy var extensionUpdates = AsyncStream<Void> { [weak self] continuation in
         self?.continuation = continuation
+    }
+    /// Continuation retained for observers of detailed extension lifecycle transitions.
+    private var lifecycleEventsContinuation: AsyncStream<WebExtensionLifecycleEvent>.Continuation?
+    public private(set) lazy var lifecycleEvents = AsyncStream<WebExtensionLifecycleEvent> { [weak self] continuation in
+        self?.lifecycleEventsContinuation = continuation
     }
 
     // MARK: - Init
@@ -90,6 +140,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+                cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil) {
@@ -105,6 +156,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
+        self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.scriptletConfiguration = scriptletConfiguration
@@ -180,6 +232,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             )
 
             installationStore.add(installedExtension)
+            await reportLifecycleEvent(.loaded(identifier: identifier, type: metadata.type))
 
             Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) v\(installedExtension.version ?? "unknown") (\(identifier))")
             pixelFiring.fire(.installed)
@@ -268,6 +321,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func unloadAllExtensions() {
+        isDataClearingReloadPending = true
         let contexts = controller.extensionContexts
         Logger.webExtensions.debug("🔄 Unloading all extensions from memory (count: \(contexts.count))")
 
@@ -276,16 +330,20 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         for context in contexts {
             let identifier = context.uniqueIdentifier
+            let type = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
+            reportLifecycleEvent(.willReload(identifier: identifier, type: type, trigger: .dataClearing))
             do {
                 try controller.unload(context)
                 // Capture the parsed extension only after a confirmed unload, so the cache never
                 // holds an extension still loaded in the controller. reloadInstalledExtensions()
                 // uses it to re-create the context without re-reading and re-parsing from disk.
                 unloadedExtensionsCache[identifier] = context.webExtension
+                dataClearingReloadIdentifiers.insert(identifier)
                 unregisterHandlers(for: identifier)
                 successCount += 1
             } catch {
                 Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
+                reportLifecycleEvent(.reloadFailed(identifier: identifier, type: type, trigger: .dataClearing))
                 failureCount += 1
             }
         }
@@ -324,22 +382,43 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func reloadExtension(identifier: String) async throws {
+        try await reloadExtension(identifier: identifier, trigger: .explicit)
+    }
+
+    @MainActor
+    func reloadExtension(identifier: String, trigger: WebExtensionReloadTrigger) async throws {
         Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")
 
+        let type = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
+        reportLifecycleEvent(.willReload(identifier: identifier, type: type, trigger: trigger))
         await unloadGuard.awaitSettled(context(for: identifier))
 
-        try loader.unloadExtension(identifier: identifier, from: controller)
+        do {
+            try loader.unloadExtension(identifier: identifier, from: controller)
+        } catch {
+            // The extension and its native handlers are still active when unload fails.
+            reportLifecycleEvent(.reloadFailed(identifier: identifier, type: type, trigger: trigger))
+            throw error
+        }
 
-        // loadWebExtension re-registers the handlers itself, so unregistering up front only opens a
-        // window with no handlers — and leaves none at all if the reload throws. Clean up on failure.
+        // Safe to unregister up front only because the unload above succeeded: the context these
+        // handlers served is gone, so the gap before `loadWebExtension` re-registers them is not a
+        // window in which a live context is left without handlers. (An earlier revision unregistered
+        // before the unload, which did open that window — hence the ordering here.)
+        unregisterHandlers(for: identifier)
+
         do {
             _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
         } catch {
+            // `loadWebExtension` registers handlers as part of loading, so a partially completed
+            // load can leave some behind for a context that never became active. Clear them again.
             unregisterHandlers(for: identifier)
+            reportLifecycleEvent(.reloadFailed(identifier: identifier, type: type, trigger: trigger))
             throw error
         }
 
+        reportLifecycleEvent(.reloaded(identifier: identifier, type: type, trigger: trigger))
         Logger.webExtensions.info("✅ Reloaded extension '\(identifier)'")
         notifyUpdate()
     }
@@ -348,6 +427,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func loadInstalledExtensions() async {
+        let lifecycle: InstalledExtensionsLoadLifecycle = isDataClearingReloadPending
+            ? .reloadAll(trigger: .dataClearing, identifiers: dataClearingReloadIdentifiers)
+            : .initial
+        isDataClearingReloadPending = false
+        dataClearingReloadIdentifiers.removeAll()
+        await loadInstalledExtensions(lifecycle: lifecycle)
+    }
+
+    @MainActor
+    private func loadInstalledExtensions(lifecycle: InstalledExtensionsLoadLifecycle) async {
+
         isLoadingInstalledExtensions = true
         defer { isLoadingInstalledExtensions = false }
 
@@ -361,21 +451,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let identifiers = extensions.map(\.uniqueIdentifier)
         let results = await loader.loadWebExtensions(identifiers: identifiers, into: controller)
 
-        var failedIdentifiers: [String] = []
-        var successCount = 0
-        for (installedExtension, result) in zip(extensions, results) {
-            switch result {
-            case .success:
-                Logger.webExtensions.debug("✅ Loaded extension `\(installedExtension.name ?? "")` v\(installedExtension.version ?? "unknown") | \(installedExtension.filename) | \(installedExtension.uniqueIdentifier)")
-                unloadGuard.recordLoad(of: installedExtension.uniqueIdentifier)
-                successCount += 1
-            case .failure(let failure):
-                Logger.webExtensions.error("❌ Failed to load web extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier)): \(failure.localizedDescription)")
-                failedIdentifiers.append(installedExtension.uniqueIdentifier)
-            }
-        }
+        let summary = processInstalledExtensionLoadResults(extensions: extensions, results: results, lifecycle: lifecycle)
 
-        for identifier in failedIdentifiers {
+        for identifier in summary.failedIdentifiers {
             do {
                 try uninstallExtension(identifier: identifier)
             } catch {
@@ -383,17 +461,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
         }
 
-        if failedIdentifiers.isEmpty {
-            Logger.webExtensions.info("✅ Extension loading completed: \(successCount) loaded")
-            if successCount > 0 {
+        if summary.failedIdentifiers.isEmpty {
+            Logger.webExtensions.info("✅ Extension loading completed: \(summary.successCount) loaded")
+            if summary.successCount > 0 {
                 pixelFiring.fire(.loaded)
             }
         } else {
-            Logger.webExtensions.error("❌ Extension loading completed with errors: \(successCount) loaded, \(failedIdentifiers.count) failed and removed")
-            if let firstError = results.compactMap({ result -> Error? in
-                if case .failure(let error) = result { return error }
-                return nil
-            }).first {
+            Logger.webExtensions.error("❌ Extension loading completed with errors: \(summary.successCount) loaded, \(summary.failedIdentifiers.count) failed and removed")
+            if let firstError = summary.firstError {
                 pixelFiring.fire(.loadError(error: firstError))
             }
         }
@@ -408,6 +483,40 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         notifyUpdate()
+    }
+
+    @MainActor
+    private func processInstalledExtensionLoadResults(
+        extensions: [InstalledWebExtension],
+        results: [Result<WebExtensionLoadResult, Error>],
+        lifecycle: InstalledExtensionsLoadLifecycle
+    ) -> InstalledExtensionsLoadSummary {
+        var summary = InstalledExtensionsLoadSummary()
+        for (installedExtension, result) in zip(extensions, results) {
+            switch result {
+            case .success:
+                Logger.webExtensions.debug("✅ Loaded extension `\(installedExtension.name ?? "")` v\(installedExtension.version ?? "unknown") | \(installedExtension.filename) | \(installedExtension.uniqueIdentifier)")
+                unloadGuard.recordLoad(of: installedExtension.uniqueIdentifier)
+                if let event = lifecycle.loadSucceededEvent(
+                    identifier: installedExtension.uniqueIdentifier,
+                    type: installedExtension.embeddedType
+                ) {
+                    reportLifecycleEvent(event)
+                }
+                summary.successCount += 1
+            case .failure(let error):
+                Logger.webExtensions.error("❌ Failed to load web extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier)): \(error.localizedDescription)")
+                if let event = lifecycle.loadFailedEvent(
+                    identifier: installedExtension.uniqueIdentifier,
+                    type: installedExtension.embeddedType
+                ) {
+                    reportLifecycleEvent(event)
+                }
+                summary.failedIdentifiers.append(installedExtension.uniqueIdentifier)
+                summary.firstError = summary.firstError ?? error
+            }
+        }
+        return summary
     }
 
     /// Reloads the extensions that the most recent `unloadAllExtensions()` removed, reusing the
@@ -426,6 +535,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             return
         }
 
+        isDataClearingReloadPending = false
+        dataClearingReloadIdentifiers.removeAll()
+
         // Mirror loadInstalledExtensions(): block syncEmbeddedExtensions from interleaving across
         // this method's await points, so a concurrent sync (e.g. a remote config change during a
         // fire) can't mutate the installed set while the reload is in progress.
@@ -438,26 +550,30 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         eventsListener.controller = controller
 
         var successCount = 0
-        var didFail = false
+        var failedExtensionIdentifiers: [String] = []
         for (identifier, webExtension) in cachedExtensions {
+            let type = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
+
             // Yield between extensions so the main run loop can service system events,
             // mirroring loadWebExtensions' watchdog (0x8badf00d) mitigation.
             await Task.yield()
             do {
                 try await loader.reloadWebExtension(webExtension, identifier: identifier, into: controller)
                 unloadGuard.recordLoad(of: identifier)
+                reportLifecycleEvent(.reloaded(identifier: identifier, type: type, trigger: .dataClearing))
                 successCount += 1
             } catch {
                 Logger.webExtensions.error("❌ Failed to reload web extension '\(identifier)': \(error.localizedDescription)")
-                didFail = true
+                failedExtensionIdentifiers.append(identifier)
             }
         }
 
-        if didFail {
+        if !failedExtensionIdentifiers.isEmpty {
             // Recover anything that failed the lightweight reload via a full load from disk.
             // Already-loaded contexts are skipped by the idempotent loader.
             Logger.webExtensions.error("⚠️ Lightweight reload incomplete; falling back to loadInstalledExtensions()")
-            await loadInstalledExtensions()
+            let failedIdentifiers = Set(failedExtensionIdentifiers)
+            await loadInstalledExtensions(lifecycle: .reloadFallback(trigger: .dataClearing, identifiers: failedIdentifiers))
             return
         }
 
@@ -491,6 +607,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     public func context(for identifier: String) -> WKWebExtensionContext? {
         contexts.first { $0.uniqueIdentifier == identifier }
+    }
+
+    @MainActor
+    func reportLifecycleEvent(_ event: WebExtensionLifecycleEvent) {
+        lifecycleEventsContinuation?.yield(event)
+        cpmMessagingHealthMonitor.handle(.extensionLifecycle(event))
     }
 
     func notifyUpdate() {

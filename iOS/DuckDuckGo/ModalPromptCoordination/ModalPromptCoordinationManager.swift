@@ -30,12 +30,11 @@ protocol ModalPromptCoordinationManaging {
     )
     func reconcilePresentedModal()
 
-    /// Redeems a held deferred slot: starts the shared cooldown, notifies the provider, and frees
-    /// the slot.
-    /// - Returns: `true` when a deferred slot was held and has now been redeemed, `false` otherwise.
+    /// Starts the cooldown, notifies the provider, and frees the slot.
+    /// - Returns: `true` if a deferred slot was held and is now redeemed.
     func redeemDeferredModal() -> Bool
 
-    /// Frees a held deferred slot without starting any cooldown, because nothing was shown.
+    /// Frees a held deferred slot without a cooldown, because nothing was shown.
     func releaseDeferredModal()
 }
 
@@ -48,8 +47,7 @@ enum ModalPromptAttemptPhase: Equatable {
     case committed(PromoQueueModalOwnershipIdentity)
     /// The modal root was handed to UIKit; carries this lease acquisition's identity.
     case presentationActive(PromoQueueModalOwnershipIdentity)
-    /// A deferred promo holds the slot pending an external event; carries this lease
-    /// acquisition's identity.
+    /// A deferred promo holds the slot pending an external event.
     case deferred(PromoQueueModalOwnershipIdentity)
 }
 
@@ -96,8 +94,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         case committed(CommittedAttempt)
         /// Holds the lease and exact presented root until reconciliation observes its dismissal.
         case presentationActive(PromoQueueModalLease, exactRoot: PresentedModalRoot)
-        /// Holds the lease for a deferred promo until it is redeemed or released. There is no root
-        /// to observe, so reconciliation deliberately leaves this state alone.
+        /// Holds the lease until redeemed or released. No root to observe, so reconciliation
+        /// deliberately leaves this state alone.
         case deferred(PromoQueueModalLease, provider: any ModalPromptProvider)
     }
 
@@ -118,9 +116,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
     /// Whether a modal is on its way to the screen.
     ///
-    /// A held deferred slot is deliberately excluded: it means a promo owns the slot, not that the
-    /// user has been shown anything. This property feeds `didPresentModalPromptThisSession`, which
-    /// callers read to mean "the user has recently seen a prompt".
+    /// A held deferred slot is excluded: it means a promo owns the slot, not that the user saw
+    /// anything. This feeds `didPresentModalPromptThisSession`, read as "recently saw a prompt".
     var hasActiveOrPendingModalAttempt: Bool {
         if case .deferred = attemptState {
             return !legacyActiveAttemptIDs.isEmpty
@@ -168,9 +165,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     ///
     /// - Parameter presenter: The view controller to present from.
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
-        // Deferred promos need the coordinated route, which owns the lease that holding a slot
-        // requires. A deferred provider must therefore report itself ineligible in legacy mode —
-        // see `AppRatingCoordinationCapability` for how the rating prompt does it.
+        // Deferred promos need the coordinated route, which owns the lease they hold. So they
+        // must report themselves ineligible here — see `AppRatingCoordinationCapability`.
         guard case .modal(let configuration, let provider) = selectModalPrompt() else { return }
 
         let scheduledAttemptID = UUID()

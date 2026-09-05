@@ -138,7 +138,8 @@ struct PromptCoordinationDebugViewModelTests {
             modalPromptCoordinationManager: MockModalPromptCoordinationManager(),
             mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
-            promoQueueCooldownPolicy: policy
+            promoQueueCooldownPolicy: policy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
         let lease = try #require(service.tryAcquireRemoteMessageLease(for: "message"))
         #expect(lease.markShown())

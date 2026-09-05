@@ -39,17 +39,16 @@ struct ModalPromptConfiguration {
 
 /// How the coordination manager should treat a selected provider.
 enum ModalPromptPresentationKind {
-    /// The provider supplies a view controller to present. The manager starts the shared
-    /// cooldown once it appears, and frees the promo slot when it is dismissed.
+    /// Supplies a view controller. The manager starts the cooldown once it appears and frees the
+    /// slot when it is dismissed.
     case modal
 
-    /// The provider holds the promo slot until an external event redeems or releases it.
-    /// The manager presents nothing and starts no cooldown until redemption.
+    /// Holds the slot until an external event redeems or releases it. Nothing is presented and no
+    /// cooldown starts until redemption.
     ///
-    /// Use this for a promo whose UI the app does not own, or whose trigger arrives later than
-    /// the foreground checkpoint where providers are evaluated. A deferred provider expresses
-    /// its whole eligibility in `isEligibleToPresent(isOnboardingComplete:)`, because
-    /// `provideModalPrompt()` is never called for it.
+    /// For a promo whose UI the app does not own, or whose trigger comes after the foreground
+    /// checkpoint. All its eligibility must live in `isEligibleToPresent(isOnboardingComplete:)`,
+    /// since `provideModalPrompt()` is never called.
     case deferred
 }
 
@@ -57,9 +56,7 @@ enum ModalPromptPresentationKind {
 /// Providers act as lightweight adapters between feature-specific modal prompt logic and the centralised `ModalPromptCoordinationManager`.
 @MainActor
 protocol ModalPromptProvider {
-    /// Whether this provider presents a modal or holds the slot for a later event.
-    ///
-    /// Default: `.modal`.
+    /// Whether this provider presents a modal or holds the slot for a later event. Default: `.modal`.
     var presentationKind: ModalPromptPresentationKind { get }
 
     /// Per-provider onboarding gate. The manager calls this before evaluating `provideModalPrompt()`.
@@ -75,13 +72,11 @@ protocol ModalPromptProvider {
     /// Called after the modal has been successfully presented.
     /// Use this to update any feature-specific tracking or state.
     ///
-    /// For a `.deferred` provider this is called at redemption, not when the slot is taken, so an
-    /// attempt that is never redeemed does not consume the promo's eligibility.
+    /// For `.deferred`, called at redemption rather than when the slot is taken, so an unredeemed
+    /// attempt does not consume eligibility.
     func didPresentModal()
 
-    /// Called when a held `.deferred` slot is released without having been redeemed.
-    ///
-    /// Default: no-op.
+    /// Called when a held `.deferred` slot is released unredeemed. Default: no-op.
     func didReleaseDeferredSlot()
 }
 

@@ -24,8 +24,7 @@ import PrivacyConfig
 
 /// Protocol for resolving whether the App Store rating prompt participates in the Promo Queue.
 protocol AppRatingCoordinationCapable {
-    /// Whether the rating prompt should be coordinated through the Promo Queue.
-    /// When `false` the prompt keeps its existing uncoordinated search-time behaviour.
+    /// Whether the prompt is coordinated. When `false` it keeps its existing search-time behaviour.
     var isCoordinationEnabled: Bool { get }
 }
 

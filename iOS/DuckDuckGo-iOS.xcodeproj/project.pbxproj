@@ -670,6 +670,8 @@
 		806DF4092F3B89BD00FBCA3F /* DataClearingCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806DF4082F3B89BD00FBCA3F /* DataClearingCapability.swift */; };
 		806FB186304A6894004EA754 /* AppRatingCoordinationCapabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB185304A6894004EA754 /* AppRatingCoordinationCapabilityTests.swift */; };
 		806FB188304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB187304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift */; };
+		806FB3D0304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB3CF304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift */; };
+		806FB3E1304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806FB3E0304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift */; };
 		80879D552F7B5B9A000C2267 /* TabViewGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80879D542F7B5B9A000C2267 /* TabViewGridCell.swift */; };
 		80879D572F7B5BA9000C2267 /* TabViewListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80879D562F7B5BA9000C2267 /* TabViewListCell.swift */; };
 		808DA5012F230245001D5F76 /* TabViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808DA5002F230245001D5F76 /* TabViewModelTests.swift */; };
@@ -1723,7 +1725,6 @@
 		AD5E1ED02B0000000000F10A /* SelectionFrameUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F109 /* SelectionFrameUserScript.swift */; };
 		AD5E1ED02B0000000000F20A /* SelectionFrameUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5E1ED02B0000000000F209 /* SelectionFrameUserScriptTests.swift */; };
 		AEFAD441F96F4A6ABA569982 /* PixelKitExtensionSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C522B740A724721A361FC42 /* PixelKitExtensionSetup.swift */; };
-		AF33940B4B7A2549F1C56A04 /* SearchTokenDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5CCC4AE7E388D27D0689A8 /* SearchTokenDebugView.swift */; };
 		B2258FABEA7BDFCEF297DCFE /* OnboardingView+SearchExperienceContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF81E0C6EDC46254CF28AFCB /* OnboardingView+SearchExperienceContent.swift */; };
 		B39FB0F42E25368100DF2C4E /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39FB0F32E25368100DF2C4E /* AutoconsentPixels.swift */; };
 		B50DAF4F2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50DAF4E2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift */; };
@@ -2306,7 +2307,6 @@
 		D6FEB8B32B74990D00C3615F /* HeadlessWebViewNavCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FEB8B22B74990D00C3615F /* HeadlessWebViewNavCoordinator.swift */; };
 		D6FEB8B52B74994000C3615F /* HeadlessWebViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FEB8B42B74994000C3615F /* HeadlessWebViewCoordinator.swift */; };
 		D88C403FE39ACF7BAD379AAF /* SubscriptionOnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70AA0BDA5B192D7F634F5112 /* SubscriptionOnboardingWelcomeView.swift */; };
-		DA0001022F3D000100000002 /* DarkReaderFeatureSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0001042F3D000100000002 /* DarkReaderFeatureSettings.swift */; };
 		DA19AC9ABF6B4AD98E1887EE /* LegacyPixelStateMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CDC8DDC4354433A6952FF0 /* LegacyPixelStateMigration.swift */; };
 		DA46CDBDABEE6B9945F597C3 /* AIChatDebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 3C12C8760D7AF6C888DAD36A /* AIChatDebugServer */; };
 		DA9073A7F6F11BD081C2FA27 /* RebrandedOnboardingSearchExperiencePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61EDFAE3163584454362A466 /* RebrandedOnboardingSearchExperiencePicker.swift */; };
@@ -2713,7 +2713,6 @@
 		096F16CFD07B443887F47E3F /* ContextualSuggestedPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualSuggestedPrompt.swift; sourceTree = "<group>"; };
 		0A6CC0EE23904D5400E4F627 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		0C1FD7423FDC4DE994AE2329 /* PixelUserAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelUserAgent.swift; sourceTree = "<group>"; };
-		0D5BA3FF1041A3BB9396AE65 /* UnifiedToggleInputFloatingReturnKeyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputFloatingReturnKeyViewController.swift; sourceTree = "<group>"; };
 		0DB0515A4C7C59A0BAFD1D00 /* SubscriptionOnboardingDuckAIView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingDuckAIView.swift; sourceTree = "<group>"; };
 		0DB842C9EB504CCBA5A14D4C /* RebrandedOnboardingView+DaxAnimationOverlay.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+DaxAnimationOverlay.swift"; sourceTree = "<group>"; };
 		0DEC03128C893FD62A15EF4A /* SubscriptionPromoExistingUserCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoExistingUserCoordinatorTests.swift; sourceTree = "<group>"; };
@@ -3282,6 +3281,8 @@
 		806DF4082F3B89BD00FBCA3F /* DataClearingCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingCapability.swift; sourceTree = "<group>"; };
 		806FB185304A6894004EA754 /* AppRatingCoordinationCapabilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingCoordinationCapabilityTests.swift; sourceTree = "<group>"; };
 		806FB187304A6B25004EA754 /* ModalPromptCoordinationManagerDeferredTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerDeferredTests.swift; sourceTree = "<group>"; };
+		806FB3CF304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptCoordinatorTests.swift; sourceTree = "<group>"; };
+		806FB3E0304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoCoordinationServiceAppRatingPromptTests.swift; sourceTree = "<group>"; };
 		80879D542F7B5B9A000C2267 /* TabViewGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewGridCell.swift; sourceTree = "<group>"; };
 		80879D562F7B5BA9000C2267 /* TabViewListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewListCell.swift; sourceTree = "<group>"; };
 		808DA5002F230245001D5F76 /* TabViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModelTests.swift; sourceTree = "<group>"; };
@@ -6570,6 +6571,7 @@
 				CB019FD3300A000100000001 /* OverlayWindowPresenterTests.swift */,
 				9F387DF42EA8BED0006861F8 /* PromoCoordinationServiceTests.swift */,
 				B6A7C21731A1000100F00D01 /* PromoCoordinationServicePromoQueueTests.swift */,
+				806FB3E0304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift */,
 				C1A74BAF2EC2618D00870321 /* AutofillServiceTests.swift */,
 				852A4D003013738B00FA7A16 /* PrivacyUserDefaultsTests.swift */,
 			);
@@ -8381,6 +8383,7 @@
 		9F7634BD2EA8633300804550 /* ModalPromptCoordination */ = {
 			isa = PBXGroup;
 			children = (
+				806FB3CF304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift */,
 				9F80A9892EA9E4CF0079C5AD /* Migrator */,
 				9F7634BC2EA8633300804550 /* Cooldown */,
 				9F387E052EA9A1D8006861F8 /* Providers */,
@@ -13533,6 +13536,7 @@
 				569437342BE4E41500C0881B /* SyncErrorHandlerSyncErrorsAlertsTests.swift in Sources */,
 				9F387DF52EA8BED0006861F8 /* PromoCoordinationServiceTests.swift in Sources */,
 				B6A7C21831A1000100F00D01 /* PromoCoordinationServicePromoQueueTests.swift in Sources */,
+				806FB3E1304A7B00004EA754 /* PromoCoordinationServiceAppRatingPromptTests.swift in Sources */,
 				9F3668762EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */,
 				CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */,
 				C13A463D2EB39C9200BF7762 /* UniversalOmniBarStateTests.swift in Sources */,
@@ -13788,6 +13792,7 @@
 				CB15F6EE2FE4000300EDEB50 /* FocusedLogoModelTests.swift in Sources */,
 				C18390D72F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift in Sources */,
 				FA57E0020002000200020002 /* PasteboardAttachmentReaderTests.swift in Sources */,
+				806FB3D0304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift in Sources */,
 				FA57E0060006000600060006 /* UnifiedToggleInputPasteHandlerTests.swift in Sources */,
 				314A3EFC293905EC00D3D4C8 /* BrokenSiteReportingTests.swift in Sources */,
 				851B1283221FE65E004781BC /* ImproveOnboardingExperiment1Tests.swift in Sources */,

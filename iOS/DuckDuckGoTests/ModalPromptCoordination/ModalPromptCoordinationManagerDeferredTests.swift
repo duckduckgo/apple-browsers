@@ -207,9 +207,8 @@ final class ModalPromptCoordinationManagerDeferredTests {
 
     // MARK: - Legacy route
 
-    /// Deferred promos are coordinated-route only for now. This pins that the legacy route never
-    /// ends up holding a slot it cannot release; it does not assert anything about the providers
-    /// behind an eligible deferred one, which that route currently suppresses.
+    /// Pins that the legacy route never holds a slot it cannot release. Says nothing about
+    /// providers behind an eligible deferred one, which that route currently suppresses.
     @available(iOS 16, *)
     @Test("The legacy route never holds a slot for a deferred provider", .timeLimit(.minutes(1)))
     func legacyRouteNeverHoldsSlotForDeferredProvider() {

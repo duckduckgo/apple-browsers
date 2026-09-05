@@ -34,6 +34,7 @@ extension MainViewController: ModalPromptPresenter {}
 // MARK: - Service
 
 struct ModalPromptProviders {
+    let appRatingPrompt: ModalPromptProvider
     let newAddressBarPicker: ModalPromptProvider
     let defaultBrowser: ModalPromptProvider
     let winBackOffer: ModalPromptProvider
@@ -45,6 +46,7 @@ struct ModalPromptProviders {
     /// Highest-to-lowest launch-promo priority used by the modal manager.
     var ordered: [ModalPromptProvider] {
         [
+            appRatingPrompt,
             winBackOffer,
             subscriptionPromo,
             subscriptionPromoExistingUser,
@@ -80,6 +82,7 @@ final class PromoCoordinationService {
     private let launchSourceManager: LaunchSourceManaging
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     private let promoQueueCooldownPolicy: PromoQueueCooldownPolicying
+    private let appRatingPromptCoordinator: AppRatingPromptCoordinating
 
     let mode: PromoCoordinationMode
 
@@ -88,13 +91,15 @@ final class PromoCoordinationService {
         modalPromptCoordinationManager: ModalPromptCoordinationManaging,
         mode: PromoCoordinationMode,
         promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
-        promoQueueCooldownPolicy: PromoQueueCooldownPolicying
+        promoQueueCooldownPolicy: PromoQueueCooldownPolicying,
+        appRatingPromptCoordinator: AppRatingPromptCoordinating
     ) {
         self.launchSourceManager = launchSourceManager
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
         self.mode = mode
         self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
         self.promoQueueCooldownPolicy = promoQueueCooldownPolicy
+        self.appRatingPromptCoordinator = appRatingPromptCoordinator
     }
 
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
@@ -142,6 +147,11 @@ final class PromoCoordinationService {
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - A remote message owns the slot.")
         }
     }
+    
+    /// Frees a deferred slot that was never redeemed during the session.
+    func handleAppBackgrounded() {
+        modalPromptCoordinationManager.releaseDeferredModal()
+    }
 }
 
 extension PromoCoordinationService: PromoGating {
@@ -163,6 +173,42 @@ extension PromoCoordinationService: PromoGating {
             arbiterLease: arbiterLease,
             cooldownPolicy: promoQueueCooldownPolicy
         )
+    }
+}
+
+// MARK: - App Rating Prompt
+
+@MainActor
+protocol AppRatingPromptGating: AnyObject {
+    /// Records a page load towards the usage-day counter.
+    func registerAppRatingPromptUsage()
+
+    /// Whether to request the dialog now.
+    ///
+    /// With coordination on this redeems a slot the deferred provider took at foreground, so the
+    /// request only happens if the prompt already owns it. With it off, existing behaviour.
+    func shouldRequestAppRatingPrompt() -> Bool
+
+    /// Records that the dialog was requested, consuming one of the two per-install chances.
+    func didRequestAppRatingPrompt()
+}
+
+extension PromoCoordinationService: AppRatingPromptGating {
+
+    func registerAppRatingPromptUsage() {
+        appRatingPromptCoordinator.registerUsage()
+    }
+
+    func shouldRequestAppRatingPrompt() -> Bool {
+        guard appRatingPromptCoordinator.isCoordinationEnabled else {
+            return appRatingPromptCoordinator.shouldRequestUncoordinated()
+        }
+
+        return modalPromptCoordinationManager.redeemDeferredModal()
+    }
+
+    func didRequestAppRatingPrompt() {
+        appRatingPromptCoordinator.didRequestRating()
     }
 }
 

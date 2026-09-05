@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AVFoundation
 @_spi(Testing) import PixelKit
 import SitePermissions
 import SwiftUI
@@ -26,6 +27,27 @@ import XCTest
 @testable import DuckDuckGo
 
 final class SitePermissionsPixelHandlerTests: XCTestCase {
+
+    @MainActor
+    func testVoiceChatReminderRequiresEnabledFeatureAndBlockedMicrophone() {
+        let cases: [(isEnabled: Bool, status: AVAuthorizationStatus, showsReminder: Bool)] = [
+            (true, .authorized, false), (true, .notDetermined, false),
+            (true, .denied, true), (true, .restricted, true),
+            (false, .authorized, false), (false, .notDetermined, false),
+            (false, .denied, false), (false, .restricted, false)
+        ]
+        for testCase in cases {
+            let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
+                isSitePermissionsEnabled: testCase.isEnabled,
+                microphoneAuthorization: testCase.status,
+                onAction: { _ in })
+
+            XCTAssertEqual(reminder != nil, testCase.showsReminder, "\(testCase)")
+            if let reminder {
+                XCTAssertTrue(reminder is UIHostingController<PermissionReminderDialogView>)
+            }
+        }
+    }
 
     @MainActor
     func testVoiceSearchPermissionPromptUsesUnchangedLegacyAlertWhenRedesignIsDisabled() throws {

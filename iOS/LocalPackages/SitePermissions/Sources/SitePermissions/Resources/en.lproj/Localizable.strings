@@ -1,5 +1,5 @@
 "sitePermissions.dialog.camera.title" = "“%@” website wants to access your camera";
-"sitePermissions.dialog.microphone.title" = "“%@” website wants to access the microphone";
+"sitePermissions.dialog.microphone.title" = "“%@” website wants to access your microphone";
 "sitePermissions.dialog.camera-and-microphone.title" = "“%@” website wants to access your camera and microphone";
 "sitePermissions.dialog.allow-once" = "Allow Once";
 "sitePermissions.dialog.allow-while-using-site" = "Allow While Using Site";
@@ -18,3 +18,6 @@
 "sitePermissions.voice-search.reminder.title" = "DuckDuckGo needs to access your microphone";
 "sitePermissions.voice-search.reminder.body" = "Microphone permissions are needed if you want to use our Private Voice Search.";
 "sitePermissions.voice-search.reminder.hide" = "Hide Voice Search";
+
+/* Body of the reminder shown when iOS microphone access for Duck.ai Voice Chat is blocked. */
+"sitePermissions.voice-chat.reminder.body" = "Microphone permissions are needed if you want to use Voice Chat in Duck.ai.";

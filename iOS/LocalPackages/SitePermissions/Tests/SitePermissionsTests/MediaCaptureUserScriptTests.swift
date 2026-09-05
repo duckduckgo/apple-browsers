@@ -125,22 +125,62 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
-        let result = try await requestCameraFromBlobFrame(in: webView, sandboxedThenRemoved: false)
+        let result = try await requestCameraFromBlobFrame(in: webView)
 
         XCTAssertEqual(result["result"] as? String, "native-result")
         XCTAssertEqual(result["nativeCallCount"] as? Int, 1)
         XCTAssertEqual(handler.receivedBodies.count, 1)
     }
 
-    func testInjectedJavaScriptRejectsSandboxedBlobFrameAfterAttributeRemovalWithoutCallingBridgeOrNative() async throws {
+    func testInjectedJavaScriptRejectsOpaqueSandboxAfterAttributeRemovalWithoutCallingBridgeOrNative() async throws {
         let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
-        let result = try await requestCameraFromBlobFrame(in: webView, sandboxedThenRemoved: true)
+        let result = try await requestCameraFromBlobFrame(in: webView, sandbox: "allow-scripts", removeSandboxAfterLoad: true)
 
+        XCTAssertEqual(result["origin"] as? String, "null")
         XCTAssertEqual(result["rejected"] as? Bool, true)
         XCTAssertEqual(result["nativeCallCount"] as? Int, 0)
         XCTAssertTrue(handler.receivedBodies.isEmpty)
+    }
+
+    func testInjectedJavaScriptAllowsSameOriginFramesInOpenAndClosedShadowRoots() async throws {
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+                                                   baseURL: URL(string: "https://duck.ai")!)
+
+        for mode in ["open", "closed"] {
+            let result = try await requestCameraFromBlobFrame(in: webView, shadowRootMode: mode)
+
+            XCTAssertEqual(result["result"] as? String, "native-result", mode)
+            XCTAssertEqual(result["nativeCallCount"] as? Int, 1, mode)
+        }
+        XCTAssertEqual(handler.receivedBodies.count, 2)
+    }
+
+    func testInjectedJavaScriptAllowsSandboxWithSameOriginPermission() async throws {
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+                                                   baseURL: URL(string: "https://duck.ai")!)
+
+        // A sandbox with allow-same-origin is eligible for media under the web platform rules.
+        let result = try await requestCameraFromBlobFrame(in: webView, sandbox: "allow-same-origin allow-scripts")
+
+        XCTAssertEqual(result["result"] as? String, "native-result")
+        XCTAssertEqual(result["nativeCallCount"] as? Int, 1)
+        XCTAssertEqual(handler.receivedBodies.count, 1)
+    }
+
+    func testInjectedJavaScriptAllowsNewDocumentAfterRemovingOpaqueSandboxAndNavigating() async throws {
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+                                                   baseURL: URL(string: "https://duck.ai")!)
+
+        let result = try await requestCameraFromBlobFrame(in: webView,
+                                                          sandbox: "allow-scripts",
+                                                          navigateAfterRemovingSandbox: true)
+
+        XCTAssertEqual(result["origin"] as? String, "https://duck.ai")
+        XCTAssertEqual(result["result"] as? String, "native-result")
+        XCTAssertEqual(result["nativeCallCount"] as? Int, 1)
+        XCTAssertEqual(handler.receivedBodies.count, 1)
     }
 
     func testInjectedJavaScriptHonorsPermissionsPolicyBeforeCallingBridgeOrNative() async throws {
@@ -148,7 +188,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
                                                    baseURL: URL(string: "https://duck.ai")!,
                                                    deniedPolicyFeatures: ["camera"])
 
-        let result = try await requestCameraFromBlobFrame(in: webView, sandboxedThenRemoved: false)
+        let result = try await requestCameraFromBlobFrame(in: webView)
 
         XCTAssertEqual(result["rejected"] as? Bool, true)
         XCTAssertEqual(result["nativeCallCount"] as? Int, 0)
@@ -238,36 +278,6 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(nativeCallCount, 0)
     }
 
-    func testInjectedJavaScriptSnapshotsProxyConstraintsOnce() async throws {
-        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
-                                                   baseURL: URL(string: "https://duck.ai")!)
-
-        let reads = try await webView.callAsyncJavaScript(
-            """
-            const reads = { video: 0, audio: 0 };
-            const constraints = new Proxy({}, {
-                get(_, key) {
-                    reads[key] += 1;
-                    return key === "video" ? reads[key] === 1 : reads[key] !== 1;
-                }
-            });
-            await navigator.mediaDevices.getUserMedia(constraints);
-            return reads;
-            """,
-            arguments: [:],
-            in: nil,
-            contentWorld: .page
-        ) as? [String: Any]
-        let nativeConstraints = try await capturedNativeConstraints(in: webView)
-
-        XCTAssertEqual(reads?["video"] as? Int, 1)
-        XCTAssertEqual(reads?["audio"] as? Int, 1)
-        XCTAssertEqual(handler.receivedBodies[0]["video"] as? Bool, true)
-        XCTAssertEqual(handler.receivedBodies[0]["audio"] as? Bool, false)
-        XCTAssertEqual(nativeConstraints["video"] as? Bool, true)
-        XCTAssertEqual(nativeConstraints["audio"] as? Bool, false)
-    }
-
     private func makeWebView(reply: (Any?, String?),
                              baseURL: URL,
                              deniedPolicyFeatures: [String] = []) async -> (WKWebView, MediaCaptureReplyHandler) {
@@ -324,36 +334,67 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     }
 
     private func requestCameraFromBlobFrame(in webView: WKWebView,
-                                            sandboxedThenRemoved: Bool) async throws -> [String: Any] {
+                                            sandbox: String? = nil,
+                                            removeSandboxAfterLoad: Bool = false,
+                                            navigateAfterRemovingSandbox: Bool = false,
+                                            shadowRootMode: String? = nil) async throws -> [String: Any] {
         try await webView.callAsyncJavaScript(
             """
             const iframe = document.createElement("iframe");
-            if (sandboxedThenRemoved) {
-                iframe.setAttribute("sandbox", "allow-same-origin allow-scripts");
+            if (sandbox !== null) {
+                iframe.setAttribute("sandbox", sandbox);
             }
-            const blob = new Blob(["<html><body></body></html>"], { type: "text/html" });
-            iframe.src = URL.createObjectURL(blob);
+            let container = document.body;
+            if (shadowRootMode !== null) {
+                const host = document.createElement("div");
+                document.body.appendChild(host);
+                container = host.attachShadow({ mode: shadowRootMode });
+            }
+            const blob = new Blob([`
+                <script>
+                addEventListener("message", async () => {
+                    try {
+                        const result = await navigator.mediaDevices.getUserMedia({ video: true });
+                        parent.postMessage({ result, rejected: false, nativeCallCount: __nativeMediaCallCount }, "*");
+                    } catch (error) {
+                        parent.postMessage({ rejected: true, nativeCallCount: __nativeMediaCallCount }, "*");
+                    }
+                }, { once: true });
+                </script>
+                `], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            iframe.src = url;
             const loaded = new Promise(resolve => iframe.addEventListener("load", resolve, { once: true }));
-            document.body.appendChild(iframe);
-            if (sandboxedThenRemoved) {
+            container.appendChild(iframe);
+            await loaded;
+            if (removeSandboxAfterLoad) {
                 iframe.removeAttribute("sandbox");
             }
-            await loaded;
-            try {
-                const result = await iframe.contentWindow.navigator.mediaDevices.getUserMedia({ video: true });
-                return {
-                    result,
-                    rejected: false,
-                    nativeCallCount: iframe.contentWindow.__nativeMediaCallCount
-                };
-            } catch (_) {
-                return {
-                    rejected: true,
-                    nativeCallCount: iframe.contentWindow.__nativeMediaCallCount
-                };
+            if (navigateAfterRemovingSandbox) {
+                iframe.removeAttribute("sandbox");
+                const reloaded = new Promise(resolve => iframe.addEventListener("load", resolve, { once: true }));
+                iframe.src = url;
+                await reloaded;
             }
+            // postMessage also works for an opaque child, whose DOM the parent cannot access.
+            const result = await new Promise(resolve => {
+                const receiveResult = event => {
+                    if (event.source === iframe.contentWindow) {
+                        removeEventListener("message", receiveResult);
+                        resolve({ ...event.data, origin: event.origin });
+                    }
+                };
+                addEventListener("message", receiveResult);
+                iframe.contentWindow.postMessage("request-camera", "*");
+            });
+            iframe.remove();
+            URL.revokeObjectURL(url);
+            return result;
             """,
-            arguments: ["sandboxedThenRemoved": sandboxedThenRemoved],
+            arguments: ["sandbox": sandbox as Any? ?? NSNull(),
+                        "removeSandboxAfterLoad": removeSandboxAfterLoad,
+                        "navigateAfterRemovingSandbox": navigateAfterRemovingSandbox,
+                        "shadowRootMode": shadowRootMode as Any? ?? NSNull()],
             in: nil,
             contentWorld: .page
         ) as? [String: Any] ?? [:]

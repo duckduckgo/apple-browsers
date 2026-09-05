@@ -31,7 +31,7 @@ enum UserText {
 
         static func microphoneTitle(domain: String) -> String {
             let format = NSLocalizedString("sitePermissions.dialog.microphone.title", bundle: Bundle.module,
-                                           value: "“%@” website wants to access the microphone",
+                                           value: "“%@” website wants to access your microphone",
                                            comment: "Title shown when a website asks to use the microphone. The placeholder is the website domain.")
             return String(format: format, domain)
         }
@@ -113,6 +113,12 @@ enum UserText {
         static let hideVoiceSearch = NSLocalizedString("sitePermissions.voice-search.reminder.hide", bundle: Bundle.module,
                                                        value: "Hide Voice Search",
                                                        comment: "Button that turns off Voice Search in DuckDuckGo.")
+    }
+
+    enum VoiceChatPermissionRecovery {
+        static let body = NSLocalizedString("sitePermissions.voice-chat.reminder.body", bundle: Bundle.module,
+                                            value: "Microphone permissions are needed if you want to use Voice Chat in Duck.ai.",
+                                            comment: "Body of the reminder shown when iOS microphone access for Duck.ai Voice Chat is blocked.")
     }
 
 }

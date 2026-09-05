@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AVFoundation
 import Foundation
 import SitePermissions
 import SwiftUI
@@ -46,8 +47,17 @@ struct NoMicPermissionAlert {
         return alertController
     }
 
-    static func buildReminder(onAction: @escaping (PermissionReminderDialogAction) -> Void) -> UIViewController {
-        let reminder = PermissionReminderDialogView(viewModel: .voiceSearch, onAction: onAction)
+    static func buildVoiceChatReminderIfNeeded(isSitePermissionsEnabled: Bool,
+                                               microphoneAuthorization: AVAuthorizationStatus,
+                                               onAction: @escaping (PermissionReminderDialogAction) -> Void) -> UIViewController? {
+        guard isSitePermissionsEnabled,
+              microphoneAuthorization == .denied || microphoneAuthorization == .restricted else { return nil }
+        return buildReminder(viewModel: .voiceChat, onAction: onAction)
+    }
+
+    static func buildReminder(viewModel: PermissionReminderDialogViewModel = .voiceSearch,
+                              onAction: @escaping (PermissionReminderDialogAction) -> Void) -> UIViewController {
+        let reminder = PermissionReminderDialogView(viewModel: viewModel, onAction: onAction)
         let hostingController = UIHostingController(rootView: reminder)
         hostingController.modalPresentationStyle = .overFullScreen
         hostingController.modalTransitionStyle = .crossDissolve

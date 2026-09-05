@@ -49,7 +49,7 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
 
     let domain: String
     let permissionTypes: Set<SitePermissionType>
-    let icon: Icon
+    let icon: Icon?
 
     public init?(prompt: SitePermissionPrompt) {
         domain = prompt.site.host
@@ -60,7 +60,7 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
         case [.microphone]:
             icon = .microphone
         case [.camera, .microphone]:
-            icon = .camera
+            icon = nil
         default:
             return nil
         }

@@ -53,7 +53,9 @@ public struct SitePermissionDialogView: View {
                              accessibilityIdentifier: "SitePermissions.Dialog") {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: Constants.headerSpacing) {
-                    icon
+                    if let icon = viewModel.icon {
+                        iconView(for: icon)
+                    }
                     title
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -113,25 +115,30 @@ public struct SitePermissionDialogView: View {
         return "…"
     }
 
-    private var icon: some View {
-        Image(uiImage: image)
+    private func iconView(for icon: SitePermissionDialogViewModel.Icon) -> some View {
+        Image(systemName: systemImageName(for: icon))
             .renderingMode(.template)
             .resizable()
             .scaledToFit()
             .frame(width: Constants.iconSize, height: Constants.iconSize)
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .frame(width: Constants.iconContainerSize, height: Constants.iconContainerSize)
-            .background(Color(designSystemColor: .surfaceSecondary))
+            .background(AppRebrand.isAppRebranded()
+                        ? Color(singleUseColor: .rebranding(.buttonsSecondaryDefault))
+                        : Color(designSystemColor: .buttonsSecondaryFillDefault))
             .clipShape(RoundedRectangle(cornerRadius: Constants.iconContainerCornerRadius, style: .continuous))
             .accessibilityHidden(true)
     }
 
-    private var image: DesignSystemImage {
-        switch viewModel.icon {
+    private func systemImageName(for icon: SitePermissionDialogViewModel.Icon) -> String {
+        switch icon {
         case .camera:
-            return DesignSystemImages.Glyphs.Size24.video
+            return "video"
         case .microphone:
-            return DesignSystemImages.Glyphs.Size24.microphone
+            if #available(iOS 18.0, *) {
+                return "microphone"
+            }
+            return "mic"
         }
     }
 

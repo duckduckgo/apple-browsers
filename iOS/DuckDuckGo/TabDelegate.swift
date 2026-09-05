@@ -154,6 +154,17 @@ protocol TabDelegate: AnyObject {
 
     /// User activated an in-page link in this tab.
     func tabDidEngageWithPage(_ tab: TabViewController)
+
+    /// A page started loading. Advances the App Store rating prompt's usage-day counter, which is
+    /// what makes the prompt become due. Call for every page, not only searches.
+    func tabDidLoadPageForAppRatingPrompt(_ tab: TabViewController)
+
+    /// Whether to request the App Store rating dialog now. Only ask on a search page, the prompt's
+    /// trigger. Follow a `true` with `tabDidRequestAppRatingPrompt(_:)`.
+    func tabShouldRequestAppRatingPrompt(_ tab: TabViewController) -> Bool
+
+    /// The rating dialog was requested, consuming one of the two per-install chances.
+    func tabDidRequestAppRatingPrompt(_ tab: TabViewController)
     
     func tabDidRequestFireButtonPulse(tab: TabViewController)
 

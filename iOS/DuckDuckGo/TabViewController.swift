@@ -291,7 +291,6 @@ class TabViewController: UIViewController {
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
     private var contextualOnboardingTopInset: CGFloat = 0
-    private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     lazy var floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger,
                                                    unifiedToggleInputFeature: unifiedToggleInputFeature)
@@ -2418,13 +2417,14 @@ extension TabViewController: WKNavigationDelegate {
         tabModel.link = link
         delegate?.tabLoadingStateDidChange(tab: self)
 
-        appRatingPrompt.registerUsage()
+        delegate?.tabDidLoadPageForAppRatingPrompt(self)
 
+        // The scene check comes first so eligibility is never consumed for a request we cannot make.
         if let scene = self.view.window?.windowScene,
            webView.url?.isDuckDuckGoSearch == true,
-           appRatingPrompt.shouldPrompt() {
+           delegate?.tabShouldRequestAppRatingPrompt(self) == true {
             SKStoreReviewController.requestReview(in: scene)
-            appRatingPrompt.shown()
+            delegate?.tabDidRequestAppRatingPrompt(self)
         }
         
         duckPlayerNavigationHandler.handleDidStartLoading(webView: webView)

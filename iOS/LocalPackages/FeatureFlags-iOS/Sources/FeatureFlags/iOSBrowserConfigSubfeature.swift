@@ -80,6 +80,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216996143775013?focus=true
     case promoPresentationCoordination
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218112848073763?focus=true
+    case appRatingPromptCoordination
+
     case crashReportOptInStatusResetting
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true

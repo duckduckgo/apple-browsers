@@ -284,12 +284,14 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var isPairingV2ScanningEnabled: () -> Bool = { true }
     var isPairingV2CodeEnabled: () -> Bool = { true }
     var canWriteUnifiedDeviceList: () -> Bool = { false }
+    var canUsePatchEndpointForLegacyDeviceRename: () -> Bool = { true }
     var canReadUnifiedDeviceList: () -> Bool = { false }
     lazy var syncFeatureFlags: any SyncFeatureFlagProviding = SyncFeatureFlagProvider(
         isScopedAccessCredentialsEnabled: { [weak self] in self?.isScopedAccessCredentialsEnabled() == true },
         isPairingV2ScanningEnabled: { [weak self] in self?.isPairingV2ScanningEnabled() == true },
         isPairingV2CodeEnabled: { [weak self] in self?.isPairingV2CodeEnabled() == true },
         canWriteUnifiedDeviceList: { [weak self] in self?.canWriteUnifiedDeviceList() == true },
+        canUsePatchEndpointForLegacyDeviceRename: { [weak self] in self?.canUsePatchEndpointForLegacyDeviceRename() == true },
         canReadUnifiedDeviceList: { [weak self] in self?.canReadUnifiedDeviceList() == true }
     )
     var keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
@@ -600,6 +602,7 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     private let lock = NSLock()
     private var recordedCalls: [Call] = []
     private var recordedRepairCalls: [Call] = []
+    private var recordedRenameCalls: [(name: String, account: SyncAccount, mode: DeviceInfoRenameMode)] = []
     private var recordedResetCallCount = 0
     var hasCompletedMigrationStub = false
     var calls: [Call] {
@@ -617,8 +620,16 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
         defer { lock.unlock() }
         return recordedResetCallCount
     }
+    var renameCalls: [(name: String, account: SyncAccount, mode: DeviceInfoRenameMode)] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedRenameCalls
+    }
     var migrateCurrentDeviceHandler: (() async -> Void)?
     var repairCurrentDeviceInfoHandler: (() async -> Void)?
+    var renameCurrentDeviceStub: [RegisteredDevice] = []
+    var renameCurrentDeviceError: Error?
+    var renameCurrentDeviceHandler: (() async throws -> [RegisteredDevice])?
 
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async {
         let handler = record(Call(account: account))
@@ -628,6 +639,28 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     func repairCurrentDeviceInfo(for account: SyncAccount) async {
         let handler = recordRepair(Call(account: account))
         await handler?()
+    }
+
+    func renameCurrentDevice(to name: String,
+                             for account: SyncAccount,
+                             mode: DeviceInfoRenameMode) async throws -> [RegisteredDevice] {
+        let result = recordRename(name: name, account: account, mode: mode)
+        if let handler = result.handler {
+            return try await handler()
+        }
+        if let error = result.error {
+            throw error
+        }
+        return result.stub
+    }
+
+    private func recordRename(name: String,
+                              account: SyncAccount,
+                              mode: DeviceInfoRenameMode) -> (handler: (() async throws -> [RegisteredDevice])?, error: Error?, stub: [RegisteredDevice]) {
+        lock.lock()
+        defer { lock.unlock() }
+        recordedRenameCalls.append((name: name, account: account, mode: mode))
+        return (renameCurrentDeviceHandler, renameCurrentDeviceError, renameCurrentDeviceStub)
     }
 
     func hasCompletedMigration(for account: SyncAccount) -> Bool {

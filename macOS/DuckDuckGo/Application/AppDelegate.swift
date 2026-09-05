@@ -2267,6 +2267,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 canWriteUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanWriteUnifiedDeviceList)
                 },
+                canUsePatchEndpointForLegacyDeviceRename: { [featureFlagger] in
+                    featureFlagger.isFeatureOn(.syncCanUsePatchEndpointForLegacyDeviceRename)
+                },
                 canReadUnifiedDeviceList: { [featureFlagger] in
                     featureFlagger.isFeatureOn(.syncCanReadUnifiedDeviceList)
                 }

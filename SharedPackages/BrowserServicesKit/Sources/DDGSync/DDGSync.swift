@@ -259,6 +259,7 @@ public class DDGSync: DDGSyncing {
     }
 
     public func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
+        let isUnifiedWriteEnabled = dependencies.syncFeatureFlags.canWriteUnifiedDeviceList()
         isDeviceRenameInProgress = true
         defer { isDeviceRenameInProgress = false }
         await cancelDeviceInfoUpdatesAndWait()
@@ -268,14 +269,22 @@ public class DDGSync: DDGSyncing {
         }
 
         do {
+            if isUnifiedWriteEnabled {
+                return try await deviceInfoMigrationCoordinator.renameCurrentDevice(to: name,
+                                                                                     for: account,
+                                                                                     mode: .unified)
+            }
+
+            if dependencies.syncFeatureFlags.canUsePatchEndpointForLegacyDeviceRename() {
+                return try await deviceInfoMigrationCoordinator.renameCurrentDevice(to: name,
+                                                                                     for: account,
+                                                                                     mode: .legacyOnly)
+            }
+
             let result = try await dependencies.account.refreshToken(account, deviceName: name)
             try dependencies.secureStore.persistAccount(result.account)
             persistRecoveredThirdPartyScopedPasswordIfAvailable(from: result.accessCredentials, account: result.account)
             updateProtectedKeysCache(with: result.keys)
-            if dependencies.syncFeatureFlags.canWriteUnifiedDeviceList() {
-                // The legacy rename leaves device_info stale, so allow migration to write the new name.
-                deviceInfoMigrationCoordinator.reset()
-            }
             scheduleDeviceInfoMigration(for: result.account)
             return result.devices
         } catch {

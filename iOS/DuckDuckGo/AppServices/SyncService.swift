@@ -99,6 +99,9 @@ final class SyncService {
                 canWriteUnifiedDeviceList: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanWriteUnifiedDeviceList)
                 },
+                canUsePatchEndpointForLegacyDeviceRename: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanUsePatchEndpointForLegacyDeviceRename)
+                },
                 canReadUnifiedDeviceList: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanReadUnifiedDeviceList)
                 }

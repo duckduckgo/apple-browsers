@@ -916,8 +916,9 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(scopedAccess.recoverScopedPasswordCalls.count, 1)
     }
 
-    func testWhenRenamingDeviceDuringMigrationThenMigrationIsCancelledBeforeRenameAndRescheduled() async throws {
+    func testWhenWriteIsDisabledAndRenamingDeviceDuringMigrationThenLegacyRefreshRunsAfterCancellationAndMigrationIsRescheduled() async throws {
         dependencies.canWriteUnifiedDeviceList = { true }
+        dependencies.canUsePatchEndpointForLegacyDeviceRename = { false }
         let migrationStarted = expectation(description: "Device info migration started")
         let migrationFinished = expectation(description: "Device info migration finished")
         let migrationRescheduled = expectation(description: "Device info migration rescheduled")
@@ -948,19 +949,26 @@ final class DDGSyncTests: XCTestCase {
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
         syncService.initializeIfNeeded()
         await fulfillment(of: [migrationStarted], timeout: 1)
+        dependencies.canWriteUnifiedDeviceList = { false }
 
         _ = try await syncService.updateDeviceName(renamedAccount.deviceName)
         await fulfillment(of: [migrationFinished, migrationRescheduled], timeout: 1)
 
         XCTAssertTrue(accountManager.refreshTokenCalled)
+        XCTAssertTrue(migrationCoordinator.renameCalls.isEmpty)
         XCTAssertEqual((dependencies.secureStore as? SecureStorageStub)?.theAccount?.deviceName, renamedAccount.deviceName)
         XCTAssertEqual(migrationCoordinator.calls.count, 2)
         XCTAssertEqual(migrationCoordinator.calls.last?.account.deviceName, renamedAccount.deviceName)
-        XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
+        XCTAssertEqual(migrationCoordinator.resetCallCount, 0)
     }
 
-    func testWhenRenamingDeviceWithUnifiedWritesDisabledThenMigrationStateIsPreserved() async throws {
-        dependencies.canWriteUnifiedDeviceList = { false }
+    func testWhenWriteFlagChangesDuringLegacyRenameThenInitialStateDeterminesRoutingAndMigrationState() async throws {
+        var writeFlagEvaluationCount = 0
+        dependencies.canWriteUnifiedDeviceList = {
+            writeFlagEvaluationCount += 1
+            return writeFlagEvaluationCount > 1
+        }
+        dependencies.canUsePatchEndpointForLegacyDeviceRename = { false }
         let migrationScheduled = expectation(description: "Device info migration scheduled")
         let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
         migrationCoordinator.migrateCurrentDeviceHandler = {
@@ -983,15 +991,17 @@ final class DDGSyncTests: XCTestCase {
         _ = try await syncService.updateDeviceName(renamedAccount.deviceName)
         await fulfillment(of: [migrationScheduled], timeout: 1)
 
+        XCTAssertEqual(writeFlagEvaluationCount, 1)
+        XCTAssertTrue(accountManager.refreshTokenCalled)
+        XCTAssertTrue(migrationCoordinator.renameCalls.isEmpty)
         XCTAssertEqual(migrationCoordinator.resetCallCount, 0)
     }
 
     func testWhenRenamingDeviceFailsWithUnifiedWritesEnabledThenMigrationStateIsPreserved() async throws {
         dependencies.canWriteUnifiedDeviceList = { true }
         let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.renameCurrentDeviceError = SyncError.noResponseBody
         dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
-        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
-        accountManager.refreshTokenError = SyncError.noResponseBody
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
 
         do {
@@ -1004,14 +1014,117 @@ final class DDGSyncTests: XCTestCase {
 
         XCTAssertEqual(migrationCoordinator.resetCallCount, 0)
         XCTAssertTrue(migrationCoordinator.calls.isEmpty)
+        XCTAssertEqual(migrationCoordinator.renameCalls.count, 1)
+        XCTAssertEqual(migrationCoordinator.renameCalls.first?.mode, .unified)
+    }
+
+    func testWhenWriteIsDisabledAndLegacyPatchIsEnabledThenRenameOmitsUnifiedInfoWithoutRefreshingToken() async throws {
+        dependencies.canWriteUnifiedDeviceList = { false }
+        dependencies.canUsePatchEndpointForLegacyDeviceRename = { true }
+        let expectedDevices = [RegisteredDevice(id: "renamed-device", name: "Renamed Device", type: "iOS")]
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.renameCurrentDeviceStub = expectedDevices
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let devices = try await syncService.updateDeviceName("Renamed Device")
+
+        XCTAssertEqual(devices.map(\.id), expectedDevices.map(\.id))
+        XCTAssertFalse(accountManager.refreshTokenCalled)
+        XCTAssertEqual(migrationCoordinator.renameCalls.count, 1)
+        XCTAssertEqual(migrationCoordinator.renameCalls.first?.name, "Renamed Device")
+        XCTAssertEqual(migrationCoordinator.renameCalls.first?.account.deviceId, SyncAccount.mock.deviceId)
+        XCTAssertEqual(migrationCoordinator.renameCalls.first?.mode, .legacyOnly)
+    }
+
+    func testWhenWriteIsEnabledThenRenameUsesUnifiedUpdateWithoutRefreshingToken() async throws {
+        dependencies.canWriteUnifiedDeviceList = { true }
+        let expectedDevices = [RegisteredDevice(id: "renamed-device", name: "Renamed Device", type: "iOS")]
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.renameCurrentDeviceStub = expectedDevices
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let devices = try await syncService.updateDeviceName("Renamed Device")
+
+        XCTAssertEqual(devices.map(\.id), expectedDevices.map(\.id))
+        XCTAssertFalse(accountManager.refreshTokenCalled)
+        XCTAssertEqual(migrationCoordinator.renameCalls.count, 1)
+        XCTAssertEqual(migrationCoordinator.renameCalls.first?.name, "Renamed Device")
+        XCTAssertEqual(migrationCoordinator.renameCalls.first?.account.deviceId, SyncAccount.mock.deviceId)
+        XCTAssertEqual(migrationCoordinator.renameCalls.first?.mode, .unified)
+    }
+
+    func testWhenWriteIsEnabledAndRenamingDuringMigrationThenMigrationIsCancelledAndAwaitedBeforeUnifiedRename() async throws {
+        dependencies.canWriteUnifiedDeviceList = { true }
+        let migrationStarted = expectation(description: "Device info migration started")
+        let migrationFinished = expectation(description: "Device info migration finished")
+        let unifiedRenameStarted = expectation(description: "Unified rename started")
+        let (migrationGate, migrationGateContinuation) = AsyncStream<Void>.makeStream()
+        defer { migrationGateContinuation.finish() }
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.migrateCurrentDeviceHandler = {
+            migrationStarted.fulfill()
+            for await _ in migrationGate {}
+            migrationFinished.fulfill()
+        }
+        migrationCoordinator.renameCurrentDeviceHandler = {
+            unifiedRenameStarted.fulfill()
+            return [.mock]
+        }
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+        await fulfillment(of: [migrationStarted], timeout: 1)
+
+        let devices = try await syncService.updateDeviceName("Renamed Device")
+        await fulfillment(of: [migrationFinished, unifiedRenameStarted], timeout: 1, enforceOrder: true)
+
+        XCTAssertEqual(devices.map(\.id), [RegisteredDevice.mock.id])
+        XCTAssertEqual(migrationCoordinator.calls.count, 1)
+        XCTAssertEqual(migrationCoordinator.renameCalls.count, 1)
+    }
+
+    func testWhenWriteIsEnabledAndRenamingDuringRepairThenRepairIsCancelledAndAwaitedBeforeUnifiedRename() async throws {
+        dependencies.canWriteUnifiedDeviceList = { true }
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        accountManager.fetchDevicesForAccountStub = RegisteredDeviceMappingResult(
+            devices: [.mock],
+            needsCurrentDeviceInfoRepair: true)
+        let repairStarted = expectation(description: "Device info repair started")
+        let repairFinished = expectation(description: "Device info repair finished")
+        let unifiedRenameStarted = expectation(description: "Unified rename started")
+        let (repairGate, repairGateContinuation) = AsyncStream<Void>.makeStream()
+        defer { repairGateContinuation.finish() }
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.repairCurrentDeviceInfoHandler = {
+            repairStarted.fulfill()
+            for await _ in repairGate {}
+            repairFinished.fulfill()
+        }
+        migrationCoordinator.renameCurrentDeviceHandler = {
+            unifiedRenameStarted.fulfill()
+            return [.mock]
+        }
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        _ = try await syncService.fetchDevices()
+        await fulfillment(of: [repairStarted], timeout: 1)
+
+        _ = try await syncService.updateDeviceName("Renamed Device")
+        await fulfillment(of: [repairFinished, unifiedRenameStarted], timeout: 1, enforceOrder: true)
+
+        XCTAssertEqual(migrationCoordinator.repairCalls.count, 1)
+        XCTAssertEqual(migrationCoordinator.renameCalls.count, 1)
     }
 
     func testWhenRepairingFetchCompletesDuringRenameThenRepairWaitsForNextPoll() async throws {
         dependencies.canWriteUnifiedDeviceList = { true }
         let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
         let deviceFetchStarted = expectation(description: "Device fetch started")
-        let renameStarted = expectation(description: "Device rename started")
-        let migrationFinished = expectation(description: "Device info migration finished")
+        let unifiedRenameStarted = expectation(description: "Unified rename started")
         let unexpectedRepair = expectation(description: "Current device info repair not scheduled during rename")
         unexpectedRepair.isInverted = true
         let (deviceFetchGate, deviceFetchGateContinuation) = AsyncStream<Void>.makeStream()
@@ -1025,23 +1138,11 @@ final class DDGSyncTests: XCTestCase {
             for await _ in deviceFetchGate {}
             return RegisteredDeviceMappingResult(devices: [.mock], needsCurrentDeviceInfoRepair: true)
         }
-        accountManager.refreshTokenHandler = { account, deviceName in
-            renameStarted.fulfill()
-            for await _ in renameGate {}
-            let renamedAccount = SyncAccount(
-                deviceId: account.deviceId,
-                deviceName: deviceName,
-                deviceType: account.deviceType,
-                userId: account.userId,
-                primaryKey: account.primaryKey,
-                secretKey: account.secretKey,
-                token: account.token,
-                state: account.state)
-            return LoginResult(account: renamedAccount, devices: [.mock])
-        }
         let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
-        migrationCoordinator.migrateCurrentDeviceHandler = {
-            migrationFinished.fulfill()
+        migrationCoordinator.renameCurrentDeviceHandler = {
+            unifiedRenameStarted.fulfill()
+            for await _ in renameGate {}
+            return [.mock]
         }
         migrationCoordinator.repairCurrentDeviceInfoHandler = {
             unexpectedRepair.fulfill()
@@ -1052,14 +1153,12 @@ final class DDGSyncTests: XCTestCase {
         async let fetchedDevices = syncService.fetchDevices()
         await fulfillment(of: [deviceFetchStarted], timeout: 1)
         async let renamedDevices = syncService.updateDeviceName("Renamed Device")
-        await fulfillment(of: [renameStarted], timeout: 1)
+        await fulfillment(of: [unifiedRenameStarted], timeout: 1)
         deviceFetchGateContinuation.finish()
         _ = try await fetchedDevices
         await fulfillment(of: [unexpectedRepair], timeout: 0.1)
         renameGateContinuation.finish()
         _ = try await renamedDevices
-        await fulfillment(of: [migrationFinished], timeout: 1)
-        await Task.yield()
 
         XCTAssertTrue(migrationCoordinator.repairCalls.isEmpty)
 
@@ -1078,7 +1177,53 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(migrationCoordinator.repairCalls.map(\.account.deviceId), [SyncAccount.mock.deviceId])
     }
 
+    func testWhenUnifiedRenameReturns401ThenExistingUnauthenticatedHandlingLogsOut() async throws {
+        dependencies.canWriteUnifiedDeviceList = { true }
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.renameCurrentDeviceError = SyncError.unexpectedStatusCode(401)
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+
+        do {
+            _ = try await syncService.updateDeviceName("Renamed Device")
+            XCTFail("Expected rename to throw")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .unauthenticatedWhileLoggedIn)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theAccount)
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
+    }
+
+    func testWhenRenameWithoutUnifiedInfoReturns401ThenExistingUnauthenticatedHandlingLogsOut() async throws {
+        dependencies.canWriteUnifiedDeviceList = { false }
+        dependencies.canUsePatchEndpointForLegacyDeviceRename = { true }
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.renameCurrentDeviceError = SyncError.unexpectedStatusCode(401)
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+
+        do {
+            _ = try await syncService.updateDeviceName("Renamed Device")
+            XCTFail("Expected rename to throw")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .unauthenticatedWhileLoggedIn)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theAccount)
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
+    }
+
     func testWhenRefreshResponseContainsRecoverableScopedPasswordThenScopedPasswordIsCached() async throws {
+        dependencies.canUsePatchEndpointForLegacyDeviceRename = { false }
         let scopedPassword = Data(repeating: 7, count: 32)
         (dependencies.account as? AccountManagingMock)?.refreshTokenStub = LoginResult(
             account: .mock,

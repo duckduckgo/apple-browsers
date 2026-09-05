@@ -17,6 +17,7 @@
 //
 
 import DDGSyncCrypto
+import Common
 import Foundation
 import os.log
 
@@ -66,6 +67,7 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
     let crypter: CryptingInternal
     let scopedAccess: ScopedAccessCredentialManaging
     let account: AccountManaging
+    let unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>
 
     /// Back-off delays for retrying the final native login on transient failures after the credential
     /// is created. Nanoseconds; default is 0.5s then 1s — two retries.
@@ -81,6 +83,7 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
          crypter: CryptingInternal,
          scopedAccess: ScopedAccessCredentialManaging,
          account: AccountManaging,
+         unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>? = nil,
          finalNativeLoginRetryDelays: [UInt64] = [500_000_000, 1_000_000_000],
          retrySleep: @escaping @Sendable (UInt64) async throws -> Void = { try await Task.sleep(nanoseconds: $0) }) {
         self.endpoints = endpoints
@@ -88,6 +91,9 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
         self.crypter = crypter
         self.scopedAccess = scopedAccess
         self.account = account
+        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? EventMapping { _, _, _, onComplete in
+            onComplete(nil)
+        }
         self.finalNativeLoginRetryDelays = finalNativeLoginRetryDelays
         self.retrySleep = retrySleep
     }
@@ -128,14 +134,26 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
             let thirdPartyProtectedKeys = try await fetchUsableThirdPartyProtectedKeys(for: thirdPartyAccount)
             let accountKeys = try generateDefaultCredentialMaterial(userId: recoveryKey.userId)
             let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: accountKeys.primaryKey, userID: recoveryKey.userId)
-            let rewrappedProtectedKeys = try rewrapThirdPartyProtectedKeys(thirdPartyProtectedKeys, fromWrappingKey: thirdPartyLogin.mainKey, toAccountSecretKey: accountKeys.secretKey)
+            let addsAccountInfoWrapper = thirdPartyProtectedKeys.contains { $0.purpose == ProtectedKeyPurpose.accountInfo }
+            let rewrappedProtectedKeys: [ProtectedKey]
+            do {
+                rewrappedProtectedKeys = try rewrapThirdPartyProtectedKeys(thirdPartyProtectedKeys,
+                                                                           fromWrappingKey: thirdPartyLogin.mainKey,
+                                                                           toAccountSecretKey: accountKeys.secretKey)
+            } catch {
+                if addsAccountInfoWrapper {
+                    unifiedDeviceListEvents.fire(.accountInfoKeyWrapFailed(.unwrapFailed), error: error)
+                }
+                throw error
+            }
             let encryptedThirdPartyCredential = try encryptThirdPartyCredential(scopedPassword, defaultCredentialMainKey: defaultCredentialMainKey)
             try await postDefaultAccessCredential(token: thirdPartyLogin.token,
                                                  hashedPassword: thirdPartyLogin.hashedPassword,
                                                  credentialHashedPassword: accountKeys.passwordHash.base64EncodedString(),
                                                  protectedEncryptionKey: accountKeys.protectedSecretKey.base64EncodedString(),
                                                  encryptedThirdPartyCredential: encryptedThirdPartyCredential,
-                                                 keys: rewrappedProtectedKeys)
+                                                 keys: rewrappedProtectedKeys,
+                                                 addsAccountInfoWrapper: addsAccountInfoWrapper)
 
             // Remove the temporary 3party device before logging in as the newly-created native device.
             await logoutTemporaryThirdPartyDevice(thirdPartyLogin)
@@ -305,7 +323,8 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
                                              credentialHashedPassword: String,
                                              protectedEncryptionKey: String,
                                              encryptedThirdPartyCredential: String,
-                                             keys: [ProtectedKey]) async throws {
+                                             keys: [ProtectedKey],
+                                             addsAccountInfoWrapper: Bool) async throws {
         let params = CreateDefaultCredentialParameters(
             hashedPassword: hashedPassword,
             credentialHashedPassword: credentialHashedPassword,
@@ -323,16 +342,30 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
             statusCode = try await request.execute().response.statusCode
         } catch SyncError.unexpectedStatusCode(let code) {
             statusCode = code
+        } catch is CancellationError {
+            throw ThirdPartyAccountUpgradeError.nativeCredentialCreationRequestFailed
         } catch {
+            if addsAccountInfoWrapper {
+                unifiedDeviceListEvents.fire(.accountInfoKeyWrapFailed(.requestFailed), error: error)
+            }
             throw ThirdPartyAccountUpgradeError.nativeCredentialCreationRequestFailed
         }
 
         switch statusCode {
         case 200, 201, 204:
+            if addsAccountInfoWrapper {
+                unifiedDeviceListEvents.fire(.accountInfoKeyWrapSuccess)
+            }
             return
         case 409:
             throw ThirdPartyAccountUpgradeError.nativeCredentialAlreadyPresent
         default:
+            if addsAccountInfoWrapper {
+                let error = SyncError.unexpectedStatusCode(statusCode)
+                unifiedDeviceListEvents.fire(
+                    .accountInfoKeyWrapFailed(UnifiedDeviceListTelemetry.keyWrapRequestFailureReason(for: error)),
+                    error: error)
+            }
             throw ThirdPartyAccountUpgradeError.nativeCredentialCreationFailed(statusCode: statusCode)
         }
     }

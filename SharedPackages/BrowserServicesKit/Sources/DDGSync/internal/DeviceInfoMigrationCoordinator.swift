@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 import os.log
 import Persistence
 
@@ -30,6 +31,7 @@ protocol DeviceInfoMigrationCoordinating {
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async
     func repairCurrentDeviceInfo(for account: SyncAccount) async
     func renameCurrentDevice(to name: String, for account: SyncAccount, mode: DeviceInfoRenameMode) async throws -> [RegisteredDevice]
+    func recordSuccessfulUnifiedWrite(for account: SyncAccount)
     func hasCompletedMigration(for account: SyncAccount) -> Bool
     func reset()
 }
@@ -55,6 +57,25 @@ enum DeviceInfoMigrationError: Error, Equatable {
 
 struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
 
+    private enum DeviceInfoWrite {
+        case firstWrite
+        case repair
+
+        var successEvent: UnifiedDeviceListEvent {
+            switch self {
+            case .firstWrite: return .ownRowDeviceInfoFirstWriteSuccess
+            case .repair: return .ownRowDeviceInfoRepairSuccess
+            }
+        }
+
+        func failureEvent(_ reason: UnifiedDeviceListEvent.DeviceInfoWriteFailureReason) -> UnifiedDeviceListEvent {
+            switch self {
+            case .firstWrite: return .ownRowDeviceInfoFirstWriteFailed(reason)
+            case .repair: return .ownRowDeviceInfoRepairFailed(reason)
+            }
+        }
+    }
+
     private enum Key: String {
         case completedAccountDevice = "com.duckduckgo.sync.device-info-migration.completed-account-device"
     }
@@ -64,6 +85,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
     private let updateBuilder: DeviceInfoUpdateBuilder
     private let secureStore: SecureStoring
     private let keyValueStore: ThrowingKeyValueStoring
+    private let unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>
     private let canWriteUnifiedDeviceList: () -> Bool
 
     init(accountManager: AccountManaging,
@@ -72,12 +94,16 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
          deviceInfoCodec: DeviceInfoCoding = DeviceInfoCodec(),
          secureStore: SecureStoring,
          keyValueStore: ThrowingKeyValueStoring,
+         unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent>? = nil,
          canWriteUnifiedDeviceList: @escaping () -> Bool) {
         self.accountManager = accountManager
         self.scopedAccess = scopedAccess
         self.updateBuilder = DeviceInfoUpdateBuilder(crypter: crypter, deviceInfoCodec: deviceInfoCodec)
         self.secureStore = secureStore
         self.keyValueStore = keyValueStore
+        self.unifiedDeviceListEvents = unifiedDeviceListEvents ?? EventMapping { _, _, _, onComplete in
+            onComplete(nil)
+        }
         self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
     }
 
@@ -90,7 +116,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
             return
         }
         Logger.sync.debug("Sync-UnifiedDevices: migrating current device_info")
-        await updateCurrentDeviceInfo(for: account, identity: identity)
+        await updateCurrentDeviceInfo(for: account, identity: identity, write: .firstWrite)
     }
 
     func repairCurrentDeviceInfo(for account: SyncAccount) async {
@@ -100,7 +126,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
               !Task.isCancelled else {
             return
         }
-        await updateCurrentDeviceInfo(for: account, identity: identity)
+        await updateCurrentDeviceInfo(for: account, identity: identity, write: .repair)
     }
 
     func renameCurrentDevice(to name: String, for account: SyncAccount, mode: DeviceInfoRenameMode) async throws -> [RegisteredDevice] {
@@ -119,11 +145,18 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
                   isCurrentAccountSnapshot(currentAccount, identity: identity) else {
                 throw CancellationError()
             }
-            update = try updateBuilder.makeUpdate(deviceID: currentAccount.deviceId,
-                                                   deviceName: name,
-                                                   deviceType: currentAccount.deviceType,
-                                                   primaryKey: currentAccount.primaryKey,
-                                                   protectedKey: protectedKey)
+            do {
+                update = try updateBuilder.makeUpdate(deviceID: currentAccount.deviceId,
+                                                       deviceName: name,
+                                                       deviceType: currentAccount.deviceType,
+                                                       primaryKey: currentAccount.primaryKey,
+                                                       protectedKey: protectedKey)
+            } catch {
+                unifiedDeviceListEvents.fire(
+                    .ownRowDeviceInfoUpdateFailed(.encryptFailed),
+                    error: error)
+                throw error
+            }
         case .legacyOnly:
             update = try updateBuilder.makeUpdateWithoutUnifiedInfo(deviceID: currentAccount.deviceId,
                                                                      deviceName: name,
@@ -134,7 +167,8 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
         let devices = try await applyRename(update,
                                             newDeviceName: name,
                                             account: currentAccount,
-                                            identity: identity)
+                                            identity: identity,
+                                            unifiedWrite: mode == .unified)
         switch mode {
         case .unified:
             markMigrationComplete(for: currentAccount)
@@ -145,61 +179,116 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
         return devices
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func updateCurrentDeviceInfo(for account: SyncAccount,
-                                         identity: DeviceInfoMigrationIdentity) async {
+                                         identity: DeviceInfoMigrationIdentity,
+                                         write: DeviceInfoWrite) async {
+        let protectedKey: ProtectedKey
         do {
-            let protectedKey = try await prepareAccountInfoProtectedKey(for: account,
-                                                                        identity: identity)
-            guard !Task.isCancelled,
-                  let currentAccount = currentAccount(matching: identity) else {
-                return
-            }
-
-            let update = try updateBuilder.makeUpdate(deviceID: currentAccount.deviceId,
-                                                       deviceName: currentAccount.deviceName,
-                                                       deviceType: currentAccount.deviceType,
-                                                       primaryKey: currentAccount.primaryKey,
-                                                       protectedKey: protectedKey)
-            guard !Task.isCancelled,
-                  isCurrentAccountSnapshot(currentAccount, identity: identity) else {
-                return
-            }
-            _ = try await accountManager.updateDevice(update, for: currentAccount)
-
-            guard !Task.isCancelled,
-                  isCurrentAccountSnapshot(currentAccount, identity: identity) else {
-                return
-            }
-            markMigrationComplete(for: currentAccount)
-            Logger.sync.debug("Sync-UnifiedDevices: current device_info update complete")
+            protectedKey = try await prepareAccountInfoProtectedKey(for: account,
+                                                                    identity: identity)
         } catch is CancellationError {
             return
         } catch {
             guard !Task.isCancelled else {
                 return
             }
-            let errorType = String(describing: Swift.type(of: error))
-            Logger.sync.error("Sync-UnifiedDevices: failed to update current device_info: \(errorType)")
+            logDeviceInfoUpdateFailure(error)
+            return
         }
+
+        guard !Task.isCancelled,
+              let currentAccount = currentAccount(matching: identity) else {
+            return
+        }
+        let update: UpdateDevices.Update
+        do {
+            update = try updateBuilder.makeUpdate(deviceID: currentAccount.deviceId,
+                                                   deviceName: currentAccount.deviceName,
+                                                   deviceType: currentAccount.deviceType,
+                                                   primaryKey: currentAccount.primaryKey,
+                                                   protectedKey: protectedKey)
+        } catch {
+            guard !Task.isCancelled else {
+                return
+            }
+            unifiedDeviceListEvents.fire(
+                write.failureEvent(.encryptFailed),
+                error: error)
+            logDeviceInfoUpdateFailure(error)
+            return
+        }
+        guard !Task.isCancelled,
+              isCurrentAccountSnapshot(currentAccount, identity: identity) else {
+            return
+        }
+        do {
+            _ = try await accountManager.updateDevice(update, for: currentAccount)
+        } catch is CancellationError {
+            return
+        } catch {
+            guard !Task.isCancelled else {
+                return
+            }
+            unifiedDeviceListEvents.fire(
+                write.failureEvent(UnifiedDeviceListTelemetry.deviceInfoRequestFailureReason(for: error)),
+                error: error)
+            logDeviceInfoUpdateFailure(error)
+            return
+        }
+
+        guard !Task.isCancelled,
+              isCurrentAccountSnapshot(currentAccount, identity: identity) else {
+            return
+        }
+        markMigrationComplete(for: currentAccount)
+        unifiedDeviceListEvents.fire(write.successEvent)
+        Logger.sync.debug("Sync-UnifiedDevices: current device_info update complete")
     }
 
     private func applyRename(_ update: UpdateDevices.Update,
                              newDeviceName: String,
                              account: SyncAccount,
-                             identity: DeviceInfoMigrationIdentity) async throws -> [RegisteredDevice] {
+                             identity: DeviceInfoMigrationIdentity,
+                             unifiedWrite: Bool) async throws -> [RegisteredDevice] {
         guard !Task.isCancelled,
               isCurrentAccountSnapshot(account, identity: identity) else {
             throw CancellationError()
         }
 
-        let devices = try await accountManager.updateDevice(update, for: account)
+        let devices: [RegisteredDevice]
+        do {
+            devices = try await accountManager.updateDevice(update, for: account)
+        } catch {
+            if unifiedWrite, !(error is CancellationError) {
+                unifiedDeviceListEvents.fire(
+                    .ownRowDeviceInfoUpdateFailed(UnifiedDeviceListTelemetry.deviceInfoRequestFailureReason(for: error)),
+                    error: error)
+            }
+            throw error
+        }
         guard !Task.isCancelled,
               isCurrentAccountSnapshot(account, identity: identity) else {
             throw CancellationError()
         }
 
-        try secureStore.persistAccount(account.updatingDeviceName(newDeviceName))
+        do {
+            try secureStore.persistAccount(account.updatingDeviceName(newDeviceName))
+        } catch {
+            if unifiedWrite {
+                unifiedDeviceListEvents.fire(.ownRowDeviceInfoUpdateFailed(.persistFailed), error: error)
+            }
+            throw error
+        }
+        if unifiedWrite {
+            unifiedDeviceListEvents.fire(.ownRowDeviceInfoUpdateSuccess)
+        }
         return devices
+    }
+
+    private func logDeviceInfoUpdateFailure(_ error: Error) {
+        let errorType = String(describing: Swift.type(of: error))
+        Logger.sync.error("Sync-UnifiedDevices: failed to update current device_info: \(errorType)")
     }
 
     func reset() {
@@ -211,6 +300,10 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
             return false
         }
         return storedValue as? String == DeviceInfoMigrationIdentity(account: account).persistedValue
+    }
+
+    func recordSuccessfulUnifiedWrite(for account: SyncAccount) {
+        markMigrationComplete(for: account)
     }
 
     private func markMigrationComplete(for account: SyncAccount) {

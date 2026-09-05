@@ -626,6 +626,23 @@ final class DDGSyncTests: XCTestCase {
 
         let migrationCall = try XCTUnwrap(migrationCoordinator.calls.first)
         XCTAssertEqual(migrationCall.account.deviceId, SyncAccount.mock.deviceId)
+        XCTAssertTrue(migrationCoordinator.successfulUnifiedWriteCalls.isEmpty)
+    }
+
+    func testWhenAccountCreationPublishesDeviceInfoThenSuccessfulWriteIsRecordedWithoutSchedulingMigration() async throws {
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        accountManager.createAccountStub = AccountCreationResult(account: .mock,
+                                                                  didPublishDeviceInfo: true)
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        try await syncService.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        XCTAssertTrue(migrationCoordinator.calls.isEmpty)
+        XCTAssertEqual(migrationCoordinator.successfulUnifiedWriteCalls.map(\.account.deviceId),
+                       [SyncAccount.mock.deviceId])
     }
 
     func testWhenLoginSucceedsThenCurrentDeviceMigrationIsScheduled() async throws {
@@ -659,6 +676,80 @@ final class DDGSyncTests: XCTestCase {
 
         XCTAssertEqual(migrationCoordinator.calls.count, 2)
         XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
+    }
+
+    func testWhenUnifiedReadObservationsAreReturnedThenTheyFireWithoutRequiringWriteFlag() async throws {
+        dependencies.canReadUnifiedDeviceList = { true }
+        dependencies.canWriteUnifiedDeviceList = { false }
+        let events = UnifiedDeviceListEventMappingMock()
+        dependencies.unifiedDeviceListEvents = events
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        accountManager.fetchDevicesForAccountStub = RegisteredDeviceMappingResult(
+            devices: [.mock],
+            needsCurrentDeviceInfoRepair: false,
+            unifiedReadObservations: [
+                .event(.ownRowResolvedDeviceInfo),
+                .event(.otherRowResolvedPlaceholder(.ddg))
+            ])
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.fetchDevices()
+
+        XCTAssertEqual(events.events, [
+            .ownRowResolvedDeviceInfo,
+            .otherRowResolvedPlaceholder(.ddg)
+        ])
+    }
+
+    func testWhenUnifiedWriteIsDisabledThenOwnRowFallbackObservationsDoNotFire() async throws {
+        dependencies.canReadUnifiedDeviceList = { true }
+        dependencies.canWriteUnifiedDeviceList = { false }
+        let events = UnifiedDeviceListEventMappingMock()
+        dependencies.unifiedDeviceListEvents = events
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        accountManager.fetchDevicesForAccountStub = RegisteredDeviceMappingResult(
+            devices: [.mock],
+            needsCurrentDeviceInfoRepair: false,
+            unifiedReadObservations: [
+                .event(.ownRowResolvedLegacy(.blobDecryptFailed)),
+                .event(.ownRowResolvedPlaceholder(.blobDecryptFailed)),
+                .ownRowMissingDeviceInfo(.legacy),
+                .ownRowMissingDeviceInfo(.placeholder),
+                .event(.ownRowResolvedDeviceInfo),
+                .event(.otherRowResolvedPlaceholder(.ddg))
+            ])
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.fetchDevices()
+
+        XCTAssertEqual(events.events, [
+            .ownRowResolvedDeviceInfo,
+            .otherRowResolvedPlaceholder(.ddg)
+        ])
+    }
+
+    func testWhenOwnRowDeviceInfoIsMissingThenMigrationMarkerDistinguishesNotPublishedFromAbsent() async throws {
+        dependencies.canReadUnifiedDeviceList = { true }
+        dependencies.canWriteUnifiedDeviceList = { true }
+        let events = UnifiedDeviceListEventMappingMock()
+        dependencies.unifiedDeviceListEvents = events
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        accountManager.fetchDevicesForAccountStub = RegisteredDeviceMappingResult(
+            devices: [.mock],
+            needsCurrentDeviceInfoRepair: false,
+            unifiedReadObservations: [.ownRowMissingDeviceInfo(.legacy)])
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.fetchDevices()
+        migrationCoordinator.hasCompletedMigrationStub = true
+        _ = try await syncService.fetchDevices()
+
+        XCTAssertEqual(events.events, [
+            .ownRowResolvedLegacy(.notPublishedYet),
+            .ownRowResolvedLegacy(.blobAbsent)
+        ])
     }
 
     func testWhenMigrationCompletesDuringDeviceFetchThenStaleResultDoesNotScheduleRepairUntilNextPoll() async throws {

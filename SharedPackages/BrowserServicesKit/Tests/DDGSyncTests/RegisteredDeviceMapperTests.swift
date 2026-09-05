@@ -167,6 +167,7 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         XCTAssertTrue(accountInfoKeys.loadKeyCalls.isEmpty)
         XCTAssertTrue(deviceInfoCodec.decryptCalls.isEmpty)
         XCTAssertFalse(result.needsCurrentDeviceInfoRepair)
+        XCTAssertTrue(result.unifiedReadObservations.isEmpty)
     }
 
     func testWhenUnifiedReadIsDisabledAndNativeLegacyFieldsCannotBeDecryptedThenReturnsUnknownPlaceholder() async {
@@ -220,20 +221,83 @@ final class RegisteredDeviceMapperTests: XCTestCase {
                                   name: nil,
                                   type: nil,
                                   info: "invalid-info",
-                                  credentialId: SyncCredentialID.thirdParty)
+                                  credentialId: SyncCredentialID.thirdParty),
+            RegisteredDeviceEntry(id: "legacy-native-device",
+                                  name: nil,
+                                  type: nil,
+                                  info: "valid-info",
+                                  credentialId: nil)
         ]
 
         let result = await mapper.registeredDevicesWithRepairState(from: entries, account: account)
         let devices = result.devices
 
-        XCTAssertEqual(devices.map(\.id), ["future-device", "native-device", "third-party-device"])
-        XCTAssertEqual(devices.map(\.name), ["Future Browser", "Legacy Mac", "Browser"])
-        XCTAssertEqual(devices.map(\.type), ["browser", "desktop", "unknown"])
-        XCTAssertEqual(devices.map(\.credentialId), ["future", SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty])
+        XCTAssertEqual(devices.map(\.id), ["future-device", "native-device", "third-party-device", "legacy-native-device"])
+        XCTAssertEqual(devices.map(\.name), ["Future Browser", "Legacy Mac", "Browser", "Future Browser"])
+        XCTAssertEqual(devices.map(\.type), ["browser", "desktop", "unknown", "browser"])
+        XCTAssertEqual(devices.map(\.credentialId), [
+            "future", SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty, SyncCredentialID.defaultCredential
+        ])
         XCTAssertEqual(accountInfoKeys.loadKeyCalls.count, 1)
         XCTAssertTrue(accountInfoKeys.refreshKeyCalls.isEmpty)
-        XCTAssertEqual(deviceInfoCodec.decryptCalls, ["valid-info", "invalid-info", "invalid-info"])
+        XCTAssertEqual(deviceInfoCodec.decryptCalls, ["valid-info", "invalid-info", "invalid-info", "valid-info"])
         XCTAssertFalse(result.needsCurrentDeviceInfoRepair)
+        XCTAssertEqual(result.unifiedReadObservations, [
+            .event(.otherRowDeviceInfoFailedDecryption(.ddg)),
+            .event(.otherRowDeviceInfoFailedDecryption(.thirdParty)),
+            .event(.otherRowResolvedPlaceholder(.thirdParty))
+        ])
+    }
+
+    func testWhenOtherRowUsesUnknownCredentialThenDoesNotEmitCredentialScopedObservations() async throws {
+        let account = makeAccount()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKey()
+        let deviceInfoCodec = DeviceInfoReadingMock()
+        deviceInfoCodec.decryptHandler = { _, _ in
+            throw DeviceInfoCodecError.invalidPayload
+        }
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: accountInfoKeys,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { true })
+        let entry = RegisteredDeviceEntry(id: "future-device",
+                                          name: nil,
+                                          type: nil,
+                                          info: "invalid-info",
+                                          credentialId: "future")
+
+        let result = await mapper.registeredDevicesWithRepairState(from: [entry], account: account)
+
+        XCTAssertTrue(result.unifiedReadObservations.isEmpty)
+    }
+
+    func testWhenOtherRowOmitsCredentialThenEmitsNoneCredentialObservations() async throws {
+        let account = makeAccount()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKey()
+        let deviceInfoCodec = DeviceInfoReadingMock()
+        deviceInfoCodec.decryptHandler = { _, _ in
+            throw DeviceInfoCodecError.invalidPayload
+        }
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: accountInfoKeys,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { true })
+        let entry = RegisteredDeviceEntry(id: "legacy-device",
+                                          name: nil,
+                                          type: nil,
+                                          info: "invalid-info",
+                                          credentialId: nil)
+
+        let result = await mapper.registeredDevicesWithRepairState(from: [entry], account: account)
+
+        XCTAssertEqual(result.unifiedReadObservations, [
+            .event(.otherRowDeviceInfoFailedDecryption(.none)),
+            .event(.otherRowResolvedPlaceholder(.none))
+        ])
     }
 
     func testWhenUnifiedInfoUsesUnexpectedKeyIDThenRefreshesOnceAndRetriesAllEntries() async throws {
@@ -274,6 +338,39 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         XCTAssertEqual(accountInfoKeys.refreshKeyCalls.map(\.deviceId), [account.deviceId])
         XCTAssertEqual(deviceInfoCodec.decryptCalls, ["info-one", "info-two", "info-one", "info-two"])
         XCTAssertFalse(result.needsCurrentDeviceInfoRepair)
+        XCTAssertEqual(result.unifiedReadObservations, [
+            .event(.ownRowResolvedDeviceInfo)
+        ])
+    }
+
+    func testWhenStaleKeyRefreshIsRateLimitedThenReportsKeyUnavailableWithoutRefreshExhaustion() async throws {
+        let account = makeAccount()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKey(kid: "stale-key")
+        accountInfoKeys.refreshKeyError = SyncError.unexpectedStatusCode(429)
+        let deviceInfoCodec = DeviceInfoReadingMock()
+        deviceInfoCodec.decryptHandler = { _, _ in
+            throw DeviceInfoCodecError.unexpectedKeyID
+        }
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: accountInfoKeys,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { true })
+        let entry = RegisteredDeviceEntry(id: account.deviceId,
+                                          name: "encrypted_Legacy Mac",
+                                          type: "encrypted_desktop",
+                                          info: "encrypted-info",
+                                          credentialId: SyncCredentialID.defaultCredential)
+
+        let result = await mapper.registeredDevicesWithRepairState(from: [entry], account: account)
+
+        XCTAssertEqual(result.devices.map(\.name), ["Legacy Mac"])
+        XCTAssertEqual(accountInfoKeys.refreshKeyCalls.count, 1)
+        XCTAssertEqual(result.unifiedReadObservations, [
+            .event(.accountInfoKeyUnavailable(.rateLimited)),
+            .event(.ownRowResolvedLegacy(.blobDecryptFailed))
+        ])
     }
 
     func testWhenUnifiedInfoStillUsesUnexpectedKeyIDAfterRefreshThenFallsBackWithoutRefreshingAgain() async throws {
@@ -304,6 +401,7 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         XCTAssertEqual(accountInfoKeys.refreshKeyCalls.count, 1)
         XCTAssertEqual(deviceInfoCodec.decryptCalls, ["encrypted-info", "encrypted-info"])
         XCTAssertTrue(result.needsCurrentDeviceInfoRepair)
+        XCTAssertEqual(result.unifiedReadObservations, [.event(.ownRowResolvedLegacy(.blobDecryptFailed))])
     }
 
     func testWhenCurrentDeviceUnifiedInfoIsCorruptThenRequestsRepair() async throws {
@@ -329,6 +427,7 @@ final class RegisteredDeviceMapperTests: XCTestCase {
 
         XCTAssertEqual(result.devices.map(\.name), ["Legacy Mac"])
         XCTAssertTrue(result.needsCurrentDeviceInfoRepair)
+        XCTAssertEqual(result.unifiedReadObservations, [.event(.ownRowResolvedLegacy(.blobDecryptFailed))])
     }
 
     func testWhenCurrentDeviceAccountInfoKeyIsUnavailableThenDoesNotRequestRepair() async {
@@ -348,6 +447,9 @@ final class RegisteredDeviceMapperTests: XCTestCase {
 
         XCTAssertEqual(result.devices.map(\.name), ["Legacy Mac"])
         XCTAssertFalse(result.needsCurrentDeviceInfoRepair)
+        XCTAssertEqual(result.unifiedReadObservations, [
+            .event(.accountInfoKeyUnavailable(.noKeyOnServer))
+        ])
     }
 
     func testWhenUnifiedReadIsEnabledButNoEntryHasInfoThenDoesNotLoadAccountInfoKey() async {
@@ -369,6 +471,9 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         XCTAssertEqual(devices.map(\.name), ["Mac"])
         XCTAssertTrue(accountInfoKeys.loadKeyCalls.isEmpty)
         XCTAssertTrue(result.needsCurrentDeviceInfoRepair)
+        XCTAssertEqual(result.unifiedReadObservations, [
+            .ownRowMissingDeviceInfo(.legacy)
+        ])
     }
 
     func testWhenMappingThirdPartyEntryWithCachedScopedPasswordThenDecryptsJWEFields() async throws {

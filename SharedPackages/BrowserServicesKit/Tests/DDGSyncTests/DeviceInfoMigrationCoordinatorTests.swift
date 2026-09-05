@@ -32,6 +32,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
     private var coordinator: DeviceInfoMigrationCoordinator!
     private var canWriteUnifiedDeviceList: Bool!
     private var accountInfoProtectedKey: ProtectedKey!
+    private var unifiedDeviceListEvents: UnifiedDeviceListEventMappingMock!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -44,6 +45,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         secureStore.theAccount = .mock
         keyValueStore = try MockKeyValueFileStore()
         canWriteUnifiedDeviceList = true
+        unifiedDeviceListEvents = UnifiedDeviceListEventMappingMock()
         accountInfoProtectedKey = ProtectedKey(
             kid: "account-info-key",
             encryptedPrivateKey: "encrypted-private-key",
@@ -64,6 +66,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         coordinator = nil
         canWriteUnifiedDeviceList = nil
         accountInfoProtectedKey = nil
+        unifiedDeviceListEvents = nil
 
         super.tearDown()
     }
@@ -76,6 +79,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertTrue(scopedAccess.ensureAccountInfoProtectedKeysCalls.isEmpty)
         XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
         XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertTrue(unifiedDeviceListEvents.events.isEmpty)
     }
 
     func testWhenMigrationSucceedsThenCurrentDeviceIsPatchedInBothFormatsAndMarkedComplete() async throws {
@@ -92,6 +96,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(call.update.type, "encrypted_\(SyncAccount.mock.deviceType)")
         XCTAssertEqual(call.update.info, deviceInfoCodec.encryptStub)
         XCTAssertTrue(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [.ownRowDeviceInfoFirstWriteSuccess])
     }
 
     func testWhenRenameSucceedsThenOnlyCurrentDeviceIsPatchedInBothFormatsAndRenamedAccountIsPersisted() async throws {
@@ -123,6 +128,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(persistedAccount.token, SyncAccount.mock.token)
         XCTAssertEqual(persistedAccount.state, SyncAccount.mock.state)
         XCTAssertTrue(coordinator.hasCompletedMigration(for: persistedAccount))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [.ownRowDeviceInfoUpdateSuccess])
     }
 
     func testWhenRenameWithoutUnifiedInfoSucceedsThenOnlyCurrentDeviceLegacyFieldsArePatchedAndRenamedAccountIsPersisted() async throws {
@@ -152,6 +158,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(persistedAccount.token, SyncAccount.mock.token)
         XCTAssertEqual(persistedAccount.state, SyncAccount.mock.state)
         XCTAssertFalse(coordinator.hasCompletedMigration(for: persistedAccount))
+        XCTAssertTrue(unifiedDeviceListEvents.events.isEmpty)
     }
 
     func testWhenRenameWithoutUnifiedInfoSucceedsThenExistingMigrationMarkerIsPreserved() async throws {
@@ -217,6 +224,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
         XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
         XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertTrue(unifiedDeviceListEvents.events.isEmpty)
     }
 
     func testWhenRenameEncryptionFailsThenAccountAndMigrationMarkerAreUnchanged() async {
@@ -233,6 +241,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
         XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
         XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [.ownRowDeviceInfoUpdateFailed(.encryptFailed)])
     }
 
     func testWhenRenameLegacyEncryptionFailsThenAccountAndMigrationMarkerAreUnchanged() async {
@@ -268,6 +277,26 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(accountManager.updateDeviceCalls.count, 1)
         XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
         XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [.ownRowDeviceInfoUpdateFailed(.requestFailed)])
+    }
+
+    func testWhenRenamePersistenceFailsThenPatchSucceedsButAccountAndMigrationMarkerAreUnchanged() async {
+        let expectedError = SyncError.failedToWriteSecureStore(status: -1)
+        secureStore.mockWriteError = expectedError
+
+        do {
+            _ = try await coordinator.renameCurrentDevice(to: "Renamed Device", for: .mock, mode: .unified)
+            XCTFail("Expected rename to throw")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, expectedError)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(accountManager.updateDeviceCalls.count, 1)
+        XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
+        XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [.ownRowDeviceInfoUpdateFailed(.persistFailed)])
     }
 
     func testWhenEncryptedDeviceInfoExceedsServerLimitThenRenameIsNotPatchedPersistedOrMarkedComplete() async {
@@ -285,6 +314,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
         XCTAssertEqual(secureStore.theAccount?.deviceName, SyncAccount.mock.deviceName)
         XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [.ownRowDeviceInfoUpdateFailed(.encryptFailed)])
     }
 
     func testWhenMigrationRunsTwiceThenCurrentDeviceIsPatchedOnce() async {
@@ -295,6 +325,17 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.count, 1)
     }
 
+    func testWhenSuccessfulUnifiedWriteIsRecordedThenMigrationDoesNotPatchCurrentDevice() async {
+        coordinator.recordSuccessfulUnifiedWrite(for: .mock)
+
+        await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)
+
+        XCTAssertTrue(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertTrue(scopedAccess.ensureAccountInfoProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
+        XCTAssertTrue(unifiedDeviceListEvents.events.isEmpty)
+    }
+
     func testWhenMigrationAlreadyCompletedThenRepairStillPatchesCurrentDevice() async {
         await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)
 
@@ -303,6 +344,10 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(accountManager.updateDeviceCalls.count, 2)
         XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.count, 2)
         XCTAssertTrue(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [
+            .ownRowDeviceInfoFirstWriteSuccess,
+            .ownRowDeviceInfoRepairSuccess
+        ])
     }
 
     func testWhenCompletedMigrationIsResetAfterRenameThenCurrentDeviceIsPatchedAgainWithLatestName() async throws {
@@ -418,6 +463,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.count, 2)
         XCTAssertEqual(accountManager.updateDeviceCalls.count, 1)
         XCTAssertTrue(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [.ownRowDeviceInfoFirstWriteSuccess])
     }
 
     func testWhenPatchFailsThenLaterAttemptRetries() async {
@@ -433,6 +479,10 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(accountManager.updateDeviceCalls.count, 2)
         XCTAssertTrue(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [
+            .ownRowDeviceInfoFirstWriteFailed(.requestFailed),
+            .ownRowDeviceInfoFirstWriteSuccess
+        ])
     }
 
     func testWhenPatchIsUnauthorizedThenAccountIsPreservedAndMigrationIsNotMarkedComplete() async {
@@ -442,6 +492,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
 
         XCTAssertNotNil(secureStore.theAccount)
         XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [.ownRowDeviceInfoFirstWriteFailed(.requestFailed)])
     }
 
     func testWhenEncryptedDeviceInfoExceedsServerLimitThenMigrationIsNotPatchedOrMarkedComplete() async {
@@ -451,6 +502,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(accountManager.updateDeviceCalls.isEmpty)
         XCTAssertFalse(coordinator.hasCompletedMigration(for: .mock))
+        XCTAssertEqual(unifiedDeviceListEvents.events, [.ownRowDeviceInfoFirstWriteFailed(.encryptFailed)])
     }
 
     func testWhenAccountChangesThenCompletedMigrationDoesNotSkipNewDevice() async {
@@ -480,6 +532,7 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
             deviceInfoCodec: deviceInfoCodec,
             secureStore: secureStore,
             keyValueStore: keyValueStore,
+            unifiedDeviceListEvents: unifiedDeviceListEvents,
             canWriteUnifiedDeviceList: { [weak self] in self?.canWriteUnifiedDeviceList == true })
     }
 }

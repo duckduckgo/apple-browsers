@@ -641,6 +641,27 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(pixelFiring.events, ["initialization_failed_other", "recovered_after_reload"])
     }
 
+    /// Once a tab mapping is learned, a response arriving between `navigationStarted` and
+    /// `navigationCommitted` must survive until the commit that can claim it.
+    func testMappedResponseArrivingBeforeCommitIsNotDropped() async {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeEventMonitor(pixelFiring: pixelFiring)
+        let url = URL(string: "https://example.com/mapped")!
+
+        finishNavigation(tabIdentifier: "tab-1", url: url, on: monitor)
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 21, url: url))
+        await waitForEventTimeout()
+        XCTAssertTrue(pixelFiring.events.isEmpty, "Expected the first navigation to establish the mapping cleanly")
+
+        monitor.handle(.navigationStarted(tabIdentifier: "tab-1", navigationKind: .other))
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 21, url: url))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: url))
+        monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: url, extensionIsLoaded: true))
+        await waitForEventTimeout()
+
+        XCTAssertTrue(pixelFiring.events.isEmpty)
+    }
+
     /// A response matching several unanswered tabs cannot be pinned to one of them, but it still
     /// proves the extension is answering for a document the monitor is measuring.
     func testAmbiguousResponseRecoversStuckEpisodeWithoutReload() {

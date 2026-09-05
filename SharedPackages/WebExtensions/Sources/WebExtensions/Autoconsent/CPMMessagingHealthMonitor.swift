@@ -387,10 +387,14 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
         if let extensionTabIdentifier,
            let tabIdentifier = extensionTabMappings[extensionTabIdentifier] {
-            // A mapping learned from a unique match identifies the sender. If its navigation is
-            // stale or its URL differs, this response cannot safely belong to another tab.
-            guard responseMatchesCurrentNavigation(url, in: tabIdentifier) else { return }
-            markResponseReceived(in: tabIdentifier)
+            if responseMatchesCurrentNavigation(url, in: tabIdentifier) {
+                markResponseReceived(in: tabIdentifier)
+            } else {
+                // The mapped tab may just not have committed yet — `startNavigation` clears
+                // `committedURL`. Buffer for `commitNavigation` to retry rather than dropping, but
+                // never fall through to candidate matching, which could credit a different tab.
+                bufferedResponses[extensionTabIdentifier] = BufferedResponse(url: url, receivedAt: now())
+            }
             return
         }
 

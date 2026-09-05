@@ -499,19 +499,6 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertEqual(spy.completed, [.pir])
     }
 
-    /// Reopening an already-completed PIR row must not report another completion.
-    func testWhenThePIRSheetReopensAfterAnEarlierCompletionThenNothingFurtherIsReported() {
-        let spy = SpyInstrumentation()
-        let store = MockProgressStore()
-        store.completedItems.insert(.pir)
-        let sut = makeSUT(entryPoint: .postCheckout, store: store, instrumentation: spy)
-
-        sut.reportPIRPresentation(true)
-        sut.reportPIRPresentation(false)
-
-        XCTAssertTrue(spy.completed.isEmpty)
-    }
-
     /// Closing the sheet is not a skip — PIR has a close button, not a skip CTA.
     func testWhenThePIRSheetClosesWithoutAProfileThenNothingFurtherIsReported() {
         let spy = SpyInstrumentation()

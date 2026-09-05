@@ -33,6 +33,7 @@ import Utilities
 /// - "Advance Simulated Date …" – advances the simulated "now" for cooldown checks and expires active promo sessions whose logical timeout deadline has passed
 /// - "Reset Simulated Date" – clears the simulated date (disabled when none set)
 /// - "Reset All Promo State" – clears debug date override and all promo history
+/// - "Reset Broken Site Prompt State" – clears the Broken Site limiter's cooldown and dismiss streak
 /// - When no promos: disabled "No promos registered"
 ///
 /// **Force-show behavior:**
@@ -163,6 +164,12 @@ final class PromoDebugMenu: NSMenu {
         resetItem.target = self
         resetItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.resetAllPromoState)
         addItem(resetItem)
+
+        let resetBrokenSiteItem = NSMenuItem(title: "Reset Broken Site Prompt State",
+                                             action: #selector(resetBrokenSitePromptState),
+                                             keyEquivalent: "")
+        resetBrokenSiteItem.target = self
+        addItem(resetBrokenSiteItem)
     }
 
     private func statusString(for promo: Promo) -> String {
@@ -253,15 +260,26 @@ final class PromoDebugMenu: NSMenu {
     private func advanceSimulatedDate(by interval: TimeInterval) {
         debugSimulatedDateStore.advance(by: interval)
         NSApp.delegateTyped.promoService?.reconcileActivePromoTimeoutsAfterSimulatedDateAdvance()
+        NSApp.delegateTyped.brokenSitePromptLimiter.debugAdvanceDate(by: interval)
     }
 
     @objc private func resetSimulatedDate() {
         debugSimulatedDateStore.reset()
+        /// Limiter has no date to restore; resets state instead.
+        resetBrokenSitePromptState()
     }
 
     @objc private func resetAllPromoState() {
         debugSimulatedDateStore.reset()
         NSApp.delegateTyped.promoService?.resetDebugState()
         NSApp.delegateTyped.defaultBrowserAndDockPromptService.resetDebugState()
+        NSApp.delegateTyped.brokenSitePromptLimiter.reset()
+    }
+
+    /// The Broken Site promo's cooldown and dismiss streak live in `BrokenSitePromptLimiter`, not in promo
+    /// history, so Undismiss doesn't reach them. Offered on its own as well as via Reset All Promo State so
+    /// this one promo can be returned to a first-run state without wiping every other promo's history.
+    @objc private func resetBrokenSitePromptState() {
+        NSApp.delegateTyped.brokenSitePromptLimiter.reset()
     }
 }

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrokenSitePrompt
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -196,7 +197,11 @@ extension PromoServiceFactoryTests {
                 ),
                 onboardingStateUpdater: MockOnboardingStateUpdater(),
                 autoconsentStats: MockAutoconsentStats()
-            )
+            ),
+            brokenSitePromptLimiter: BrokenSitePromptLimiter(privacyConfigManager: MockPrivacyConfigurationManager(),
+                                                             store: MockBrokenSitePromptLimiterStore()),
+            privacyConfigManager: MockPrivacyConfigurationManaging(),
+            onboardingStateUpdater: MockOnboardingStateUpdater()
         )
     }
 }

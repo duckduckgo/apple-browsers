@@ -96,4 +96,26 @@ public final class BrokenSitePromptLimiter {
         toastDismissStreakCounter = 0
     }
 
+#if os(macOS)
+    // MARK: - macOS Promo Queue helpers
+
+    public var coolDownInterval: TimeInterval {
+        TimeInterval.days(getSettingsFromConfig().coolDownDays)
+    }
+
+    /// Clears all limiter state so the prompt behaves as it would for a new user.
+    /// Debug/QA only — this state is otherwise write-once-per-show and has no user-facing reset.
+    public func reset() {
+        lastToastShownDate = .distantPast
+        toastDismissStreakCounter = 0
+    }
+
+    /// Simulates time advancing for the toast eligibility by moving the last shown date to the past.
+    /// Debug/QA only.
+    public func debugAdvanceDate(by interval: TimeInterval) {
+        let simulatedLastToastShownDate = Date(timeInterval: -interval, since: lastToastShownDate)
+        lastToastShownDate = simulatedLastToastShownDate
+    }
+#endif
+
 }

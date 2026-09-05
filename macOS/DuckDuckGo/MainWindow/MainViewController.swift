@@ -17,7 +17,6 @@
 //
 
 import AIChat
-import BrokenSitePrompt
 import Cocoa
 import Carbon.HIToolbox
 import Combine
@@ -128,7 +127,6 @@ final class MainViewController: NSViewController {
          aiChatSessionStore: AIChatSessionStoring,
          aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
          aiChatConversationSourceHandler: AIChatConversationSourceHandler = NSApp.delegateTyped.aiChatConversationSourceHandler,
-         brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          searchPreferences: SearchPreferences = NSApp.delegateTyped.searchPreferences,
          defaultBrowserPreferences: DefaultBrowserPreferences = NSApp.delegateTyped.defaultBrowserPreferences,
@@ -300,7 +298,6 @@ final class MainViewController: NSViewController {
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
-                                                                         brokenSitePromptLimiter: brokenSitePromptLimiter,
                                                                          adBlockingAvailability: adBlockingAvailability,
                                                                          searchPreferences: searchPreferences,
                                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,

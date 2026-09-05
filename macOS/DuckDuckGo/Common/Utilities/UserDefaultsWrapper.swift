@@ -236,11 +236,6 @@ extension UserDefaults {
 
         case refreshTimestamps = "pageRefreshMonitor.refresh-timestamps"
 
-        // BrokenSitePrompt
-
-        case lastBrokenSiteToastShownDate = "brokenSitePrompt.last-broken-site-toast-shown-date"
-        case toastDismissStreakCounter = "brokenSitePrompt.toast-dismiss-streak-counter"
-
         // SAD/ATT Debug
         case debugSetDefaultAndAddToDockPromptInstallDateKey = "com.duckduckgo.debug.setDefaultAndAddToDockPromptInstallDate"
 

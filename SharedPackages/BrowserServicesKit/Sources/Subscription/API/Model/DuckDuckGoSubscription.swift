@@ -204,7 +204,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     /// Returns `true` is the Subscription has an active `Offer` with a type of `trial`. False otherwise.
     public var hasActiveTrialOffer: Bool {
         // HACK: forced on for testing on branch hack/htang/ios/force-override-feature-flagger — do not merge
-        return true
+        return false
     }
 
     /// Days in the active trial, derived from `startedAt`...`expiresOrRenewsAt` since `Offer` carries no duration itself; `nil` if there's no trial.

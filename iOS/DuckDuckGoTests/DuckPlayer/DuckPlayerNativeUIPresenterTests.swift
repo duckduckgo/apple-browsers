@@ -77,6 +77,11 @@ class MockDuckPlayerPixelHandler: DuckPlayerPixelFiring {
     }
 }
 
+private struct MockFloatingUIManager: FloatingUIManaging {
+    let isFloatingUIEnabled: Bool
+    let isFloatingTabSwitcherEnabled = false
+}
+
 final class DuckPlayerNativeUIPresenterTests: XCTestCase {
 
     // MARK: - Properties
@@ -142,7 +147,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         mockHostViewController = MockDuckPlayerHosting()
         let mockWebView = MockWebView(frame: .zero, configuration: .nonPersistent())
         mockHostViewController.webView = mockWebView
-        mockHostViewController.persistentBottomBarHeight = 44.0 // Set a standard address bar height
+        mockHostViewController.floatingBottomChromeObscuredHeight = 44.0
         
         // Set default YouTube watch URL for tests (required for new presentPill safeguard)
         let defaultYouTubeURL = URL(string: "https://www.youtube.com/watch?v=defaultTestVideo")!
@@ -190,6 +195,35 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         cancellables = nil
         constraintUpdates = []
         super.tearDown()
+    }
+
+    private func makeFloatingUISUT() -> DuckPlayerNativeUIPresenter {
+        DuckPlayerNativeUIPresenter(
+            appSettings: mockAppSettings,
+            duckPlayerSettings: mockDuckPlayerSettings,
+            state: DuckPlayerState(),
+            notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockPrivacyConfig),
+            pixelHandler: MockDuckPlayerPixelHandler.self,
+            floatingUIManager: MockFloatingUIManager(isFloatingUIEnabled: true)
+        )
+    }
+
+    @MainActor
+    private func assertFloatingPillClearsChrome(obscuredHeight: CGFloat,
+                                                file: StaticString = #filePath,
+                                                line: UInt = #line) {
+        mockHostViewController.view.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
+        mockHostViewController.view.layoutIfNeeded()
+
+        guard let pillView = sut.containerViewController?.view else {
+            XCTFail("Pill view should be created", file: file, line: line)
+            return
+        }
+
+        let pillBottom = pillView.frame.maxY + DuckPlayerContainer.Constants.presentedOffset
+        let chromeTop = mockHostViewController.view.bounds.maxY - obscuredHeight
+        XCTAssertEqual(chromeTop - pillBottom, 4, accuracy: 0.5, file: file, line: line)
     }
 
     // MARK: - Welcome Pill Tests
@@ -912,6 +946,45 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         // Then
         XCTAssertEqual(sut.bottomConstraint?.constant, -DefaultOmniBarView.expectedHeight, "Bottom constraint should be negative expected height for bottom address bar")
+    }
+
+    @MainActor
+    func testFloatingPillWithTopAddressBarClearsBottomChrome() {
+        mockAppSettings.currentAddressBarPosition = .top
+        mockHostViewController.floatingBottomChromeObscuredHeight = 96
+        mockDuckPlayerSettings.primingMessagePresented = true
+        sut = makeFloatingUISUT()
+
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        XCTAssertEqual(sut.bottomConstraint?.constant, -110)
+        assertFloatingPillClearsChrome(obscuredHeight: 96)
+    }
+
+    @MainActor
+    func testFloatingPillWithBottomAddressBarClearsCombinedChrome() {
+        mockAppSettings.currentAddressBarPosition = .bottom
+        mockHostViewController.floatingBottomChromeObscuredHeight = 170
+        mockDuckPlayerSettings.primingMessagePresented = true
+        sut = makeFloatingUISUT()
+
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        XCTAssertEqual(sut.bottomConstraint?.constant, -184)
+        assertFloatingPillClearsChrome(obscuredHeight: 170)
+    }
+
+    @MainActor
+    func testFloatingPillWithShortChromeUsesReportedHeight() {
+        mockAppSettings.currentAddressBarPosition = .top
+        mockHostViewController.floatingBottomChromeObscuredHeight = 34
+        mockDuckPlayerSettings.primingMessagePresented = true
+        sut = makeFloatingUISUT()
+
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        XCTAssertEqual(sut.bottomConstraint?.constant, -48)
+        assertFloatingPillClearsChrome(obscuredHeight: 34)
     }
 
     @MainActor

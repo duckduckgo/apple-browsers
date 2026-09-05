@@ -159,6 +159,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         if initialMappings.contains(where: { $0.unifiedDeviceInfoFailure == .staleKey }),
            let accountInfoKeys,
            let refreshedAccountInfoKey = try? await accountInfoKeys.refreshKey(for: account) {
+            Logger.sync.debug("Sync-UnifiedDevices: refreshed account_info key after stale device_info")
             finalMappings = entries.map {
                 registeredDevice(from: $0,
                                  account: account,

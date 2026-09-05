@@ -158,17 +158,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
-    @MainActor private(set) lazy var quickFeedbackService: QuickFeedbackService = {
-        let diagnosticsCollector = QuickFeedbackDiagnosticsCollector(
-            tabAndWindowCountProvider: windowControllersManager,
-            memoryUsageMonitor: memoryUsageMonitor,
-            launchDate: appLaunchDate
-        )
-        return QuickFeedbackService(
-            diagnosticsCollector: diagnosticsCollector,
-            firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
-        )
-    }()
+    @MainActor private(set) lazy var quickFeedbackDiagnosticsCollector = QuickFeedbackDiagnosticsCollector(
+        tabAndWindowCountProvider: windowControllersManager,
+        memoryUsageMonitor: memoryUsageMonitor,
+        launchDate: appLaunchDate
+    )
+
+    @MainActor private(set) lazy var internalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding =
+        InternalFeedbackDeviceInfoProvider(diagnosticsCollector: quickFeedbackDiagnosticsCollector)
+
+    @MainActor private(set) lazy var internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+
+    @MainActor private(set) lazy var quickFeedbackService = QuickFeedbackService(
+        attachmentsProvider: internalFeedbackAttachmentsProvider,
+        firePublisher: fireCoordinator.fireViewModel.fire.burningDataPublisher
+    )
 
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager

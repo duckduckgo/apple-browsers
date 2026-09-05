@@ -73,6 +73,12 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         sections.append(BrowsingMenuModel.Section(items: items))
     }
 
+    private func appendInternalFeedbackSection(from entryBuilder: BrowsingMenuEntryBuilding,
+                                               to sections: inout [BrowsingMenuModel.Section]) {
+        let items = [BrowsingMenuModel.Entry(entryBuilder.makeSendInternalFeedbackEntry())].compactMap { $0 }
+        appendSection(items, to: &sections)
+    }
+
     // MARK: - New Tab Page
 
     private func buildNewTabPageMenu(mobileCustomization: MobileCustomization,
@@ -111,6 +117,8 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         appendSection(duckAIItems.compactMap { .init($0) }, to: &sections)
 
         sections.append(BrowsingMenuModel.Section(items: privacyItems))
+
+        appendInternalFeedbackSection(from: entryBuilder, to: &sections)
 
         return BrowsingMenuModel(
             headerItems: headerItems,
@@ -216,6 +224,8 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         if !otherItems.isEmpty {
             sections.append(BrowsingMenuModel.Section(items: otherItems))
         }
+
+        appendInternalFeedbackSection(from: entryBuilder, to: &sections)
 
         // Show enough items to reveal "Open Bookmarks" (7th item in both layouts):
         // Non-merged: 3 (Bookmark, Favorite, Share) + 3 (Find in Page, Zoom, Desktop Site) + 1 (Open Bookmarks)

@@ -1206,6 +1206,27 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             }
         })
     }
+
+    func makeSendInternalFeedbackEntry() -> BrowsingMenuEntry? {
+        guard featureFlagger.internalUserDecider.isInternalUser else { return nil }
+
+        return .regular(name: UserText.actionSendInternalFeedback,
+                        image: DesignSystemImages.Glyphs.Size24.feedback) { [weak self] in
+            guard let self else { return }
+            AppDependencyProvider.shared.internalFeedbackAttachmentsProvider.setScreenshotPNGData(captureVisibleBrowser()?.pngData())
+            delegate?.tab(self,
+                          didRequestNewTabForUrl: .internalFeedbackForm,
+                          openedByPage: false,
+                          inheritingAttribution: nil)
+        }
+    }
+
+    private func captureVisibleBrowser() -> UIImage? {
+        guard let window = view.window, !window.bounds.isEmpty else { return nil }
+        return UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+    }
 }
 
 extension URL {

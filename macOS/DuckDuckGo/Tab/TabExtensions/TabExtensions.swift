@@ -352,13 +352,6 @@ extension TabExtensionsBuilder {
         }
 
         add {
-            InternalFeedbackFormTabExtension(
-                webViewPublisher: args.webViewFuture,
-                internalUserDecider: dependencies.featureFlagger.internalUserDecider
-            )
-        }
-
-        add {
             TabSuspensionExtension(
                 tabID: args.tabID,
                 webViewPublisher: args.webViewFuture.map { $0 as TabSuspensionWebViewChecking },

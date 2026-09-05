@@ -563,6 +563,8 @@ extension URL {
         return debugSettings.effectiveHelpBaseURL
     }
 
+    static let internalFeedbackFormHost = "internalapps.duckduckgo.com"
+
     // MARK: - DuckDuckGo
 
     static var onboarding: URL {
@@ -591,7 +593,13 @@ extension URL {
     }
 
     static var internalFeedbackForm: URL {
-        return URL(string: "https://go.duckduckgo.com/feedback")!
+        return URL(string: "https://\(internalFeedbackFormHost)/internal-feedback/")!
+    }
+
+    var isInternalFeedbackForm: Bool {
+        scheme == "https"
+            && host == URL.internalFeedbackFormHost
+            && path.hasPrefix(URL.internalFeedbackForm.path)
     }
 
     static var webTrackingProtection: URL {

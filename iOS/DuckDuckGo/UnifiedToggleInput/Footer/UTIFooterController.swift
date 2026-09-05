@@ -43,6 +43,9 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
 
+    /// Reported when the spent-allowance state changes, so the input goes inert alongside the card.
+    var onInputBlockChanged: ((Bool) -> Void)?
+
     private let viewModel: DuckAiUsageWarningViewModel
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let mapper: UTIFooterMessageMapper
@@ -57,6 +60,8 @@ final class UTIFooterController {
     private var currentExposure: DuckAiUsageWarningExposure?
 
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
+
+    private var isInputBlocked = false
 
     private(set) var currentMessage: UTIFooterMessage?
 
@@ -90,6 +95,7 @@ final class UTIFooterController {
         highUsageNotice?.clear()
         currentMessage = nil
         currentExposure = nil
+        updateInputBlock()
         // Keeps the view's copy in lockstep — otherwise a later refresh that resolves to no
         // warning no-ops (nil == nil) and the view resurrects the stale card on the next expand.
         presenter?.clearPendingFooterMessage()
@@ -192,6 +198,7 @@ final class UTIFooterController {
     }
 
     private func applyCurrentState() {
+        updateInputBlock()
         let card = resolveCard()
         let message = card?.message
         guard message != currentMessage else {
@@ -206,6 +213,17 @@ final class UTIFooterController {
         animator { [weak self] in
             self?.presenter?.applyFooterMessage(message)
         }
+    }
+
+    /// Suppression counts: a block the card is not on screen to explain would read as the input
+    /// having broken. Reported off the warning rather than the visible message, so the model-switch
+    /// notice taking the slot does not lift it.
+    private func updateInputBlock() {
+        let blocked = !isSuppressed && viewModel.warning?.blocksInput == true
+        guard blocked != isInputBlocked else { return }
+        isInputBlocked = blocked
+        Logger.duckAIUsageWarnings.debug("[UsageWarnings] input blocked=\(blocked, privacy: .public)")
+        onInputBlockChanged?(blocked)
     }
 
     private struct ResolvedCard {

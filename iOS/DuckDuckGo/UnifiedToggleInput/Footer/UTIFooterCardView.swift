@@ -185,7 +185,9 @@ private extension UTIFooterCardView {
 
         let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         textStack.axis = .vertical
-        textStack.alignment = .leading
+        // `.fill`, not `.leading`: a leading-aligned label keeps the width its own content was last
+        // measured at, and this card is measured at the flanked width too, where there is no room.
+        textStack.alignment = .fill
         textStack.spacing = Constants.textSpacing
         textStack.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(textStack)
@@ -333,6 +335,9 @@ final class UTIFooterActionButton: UIView {
         primaryButton.configuration = Self.makePrimaryConfiguration()
         // The label gives before the pill does, so a zero-width collapse can't break the layout.
         primaryButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        // Hugging the title makes the text stack's width the remainder rather than the losing side
+        // of a tie between two default priorities.
+        primaryButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         primaryButton.addTarget(self, action: #selector(primaryTapped), for: .primaryActionTriggered)
         addSubview(primaryButton)
 

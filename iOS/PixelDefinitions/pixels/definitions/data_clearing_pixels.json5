@@ -19,7 +19,7 @@
         "description": "Fired when the app cannot enumerate the iOS app switcher snapshot directory, including when the expected private OS path is missing",
         "owners": ["bkunat"],
         "triggers": ["other"],
-        "suffixes": ["daily_count"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
 

@@ -75,7 +75,8 @@ enum SubscriptionOnboardingExperiment {
 
     /// A read-only check for an already-enrolled device. Still subject to each experiment's remote kill switch.
     static func isEnrolledInTreatment(using featureFlagger: FeatureFlagger) -> Bool {
-        assignedCohort(using: featureFlagger) == .treatment
+        // HACK: forced on for testing on branch hack/htang/ios/force-override-feature-flagger — do not merge
+        return true
     }
 
     /// Whether the Settings re-entry point should show: the flow was already opened from post-checkout,

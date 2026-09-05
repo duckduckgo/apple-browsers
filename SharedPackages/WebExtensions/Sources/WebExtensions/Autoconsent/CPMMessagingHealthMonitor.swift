@@ -472,6 +472,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         guard var state = tabs[tabIdentifier] else { return }
         Logger.webExtensions.debug("[CPM Health Monitor] Dashboard response attributed to tab=\(tabIdentifier, privacy: .public)")
         state.didReceiveResponse = true
+        // This document now has provable evidence, which supersedes any earlier response that could
+        // not be attributed to it — otherwise `finishNavigation` would still refuse to measure it.
+        state.didReceiveUnattributableResponse = false
         state.timeoutTask?.cancel()
         state.timeoutTask = nil
         tabs[tabIdentifier] = state
@@ -489,6 +492,11 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// record, and its token is what a later attributed response needs to report the recovery.
     private func abandonMeasurement(in tabIdentifier: String) {
         guard var state = tabs[tabIdentifier] else { return }
+        // Provable evidence for this document already exists; an unattributable response must not
+        // discard it.
+        if state.didReceiveResponse {
+            return
+        }
         if let measurement = state.measurement, measurements[measurement.identifier]?.state == .failed {
             return
         }

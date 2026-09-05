@@ -715,6 +715,42 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(pixelFiring.events, ["initialization_failed_other", "recovered_after_reload"])
     }
 
+    /// A matching response supersedes an earlier unattributable one, so the navigation is measured
+    /// after all and its success closes the episode instead of leaving it open to re-confirm stuck.
+    func testMatchingResponseAfterAbandonmentStillReportsRecovery() async {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeEventMonitor(pixelFiring: pixelFiring)
+        let url = URL(string: "https://example.com/resumed")!
+
+        // Establish the mapping 3 -> tab-1 with a healthy navigation.
+        finishNavigation(tabIdentifier: "tab-1", url: url, on: monitor)
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 3, url: url))
+        await waitForEventTimeout()
+        XCTAssertTrue(pixelFiring.events.isEmpty)
+
+        // Drive an episode to stuck on unrelated tabs.
+        finishNavigation(tabIdentifier: "tab-2", path: "one", on: monitor)
+        await waitForEventTimeout()
+        finishNavigation(tabIdentifier: "tab-3", path: "two", on: monitor)
+        await waitForEventTimeout()
+        XCTAssertEqual(pixelFiring.events, [
+            "initialization_failed_other",
+            "initialization_failed_other",
+            "stuck_other"
+        ])
+
+        // The response beats the commit, so it is unattributable and the navigation is abandoned.
+        monitor.handle(.navigationStarted(tabIdentifier: "tab-1", navigationKind: .other))
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 3, url: url))
+        // A second response, now matching the committed document, is provable evidence.
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: url))
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 3, url: url))
+        monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: url, extensionIsLoaded: true))
+        await waitForEventTimeout()
+
+        XCTAssertEqual(pixelFiring.events.suffix(1), ["recovered_without_reload"])
+    }
+
     /// The end-to-end shape of the reported case: two tabs share a URL, the episode goes stuck, and
     /// the extension starts answering again. The response is unattributable, but recovery is still
     /// reported rather than the episode being left open to be re-confirmed as stuck.

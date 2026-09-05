@@ -289,6 +289,9 @@ public protocol DDGSyncingDebuggingSupport {
     func ensureAccountInfoKeyForDebug() async throws -> Int
     /// Refreshes the account_info key and returns metadata from a subsequent cache-first reload.
     func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int)
+    func isDeviceInfoMigrationCompleteForDebug() throws -> Bool
+    func runDeviceInfoMigrationForDebug() async throws
+    func resetDeviceInfoMigrationForDebug()
 }
 
 public extension DDGSyncingDebuggingSupport {
@@ -299,6 +302,16 @@ public extension DDGSyncingDebuggingSupport {
     func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int) {
         throw SyncError.accountNotFound
     }
+
+    func isDeviceInfoMigrationCompleteForDebug() throws -> Bool {
+        throw SyncError.accountNotFound
+    }
+
+    func runDeviceInfoMigrationForDebug() async throws {
+        throw SyncError.accountNotFound
+    }
+
+    func resetDeviceInfoMigrationForDebug() {}
 }
 
 public enum ServerEnvironment: LosslessStringConvertible {

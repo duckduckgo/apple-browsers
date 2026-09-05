@@ -28,6 +28,8 @@ class SyncDebugViewController: UITableViewController {
 
     private let titles = [
         Sections.info: "Info",
+        Sections.unifiedDevices: "Unified Devices",
+        Sections.testActions: "Test Actions",
         Sections.models: "Models",
         Sections.environment: "Environment"
     ]
@@ -35,6 +37,8 @@ class SyncDebugViewController: UITableViewController {
     enum Sections: Int, CaseIterable {
 
         case info
+        case unifiedDevices
+        case testActions
         case models
         case environment
 
@@ -43,13 +47,26 @@ class SyncDebugViewController: UITableViewController {
     enum InfoRows: Int, CaseIterable {
 
         case syncNow
-        case ensureAccountInfoKey
-        case validateAccountInfoKey
         case logOut
         case toggleFavoritesDisplayMode
         case resetFaviconsFetcherOnboardingDialog
         case getRecoveryCode
         case resetSyncAnotherDevicePrompt
+
+    }
+
+    enum UnifiedDeviceRows: Int, CaseIterable {
+
+        case accountInfoKey
+        case migration
+
+    }
+
+    enum TestActionRows: Int, CaseIterable {
+
+        case ensureAccountInfoKey
+        case runMigration
+        case resetMigrationMarker
 
     }
 
@@ -69,6 +86,8 @@ class SyncDebugViewController: UITableViewController {
 
     private let bookmarksDatabase: CoreDataDatabase
     private let sync: DDGSyncing
+    private var accountInfoKeyStatus = "Not checked"
+    private var migrationStatus = "Not checked"
 
     var syncCancellable: Cancellable?
 
@@ -92,6 +111,11 @@ class SyncDebugViewController: UITableViewController {
         fatalError("Not implemented")
     }
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        refreshMigrationStatus()
+    }
+
     override func numberOfSections(in tableView: UITableView) -> Int {
         return Sections.allCases.count
     }
@@ -104,7 +128,9 @@ class SyncDebugViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
+        cell.textLabel?.text = nil
         cell.detailTextLabel?.text = nil
+        cell.accessoryType = .none
         cell.accessoryView = nil
         cell.selectionStyle = .default
         
@@ -114,10 +140,6 @@ class SyncDebugViewController: UITableViewController {
             switch InfoRows(rawValue: indexPath.row) {
             case .syncNow:
                 cell.textLabel?.text = "Sync now"
-            case .ensureAccountInfoKey:
-                cell.textLabel?.text = "Ensure account_info key"
-            case .validateAccountInfoKey:
-                cell.textLabel?.text = "Validate account_info key"
             case .logOut:
                 cell.textLabel?.text = "Log out of sync in 10 seconds"
             case .toggleFavoritesDisplayMode:
@@ -128,6 +150,32 @@ class SyncDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Paste and Copy Recovery Code"
             case .resetSyncAnotherDevicePrompt:
                 cell.textLabel?.text = "Reset Sync Another Device prompt"
+            case .none:
+                break
+            }
+
+        case .unifiedDevices:
+            switch UnifiedDeviceRows(rawValue: indexPath.row) {
+            case .accountInfoKey:
+                cell.textLabel?.text = "Account info key"
+                cell.detailTextLabel?.text = accountInfoKeyStatus
+                cell.accessoryType = .disclosureIndicator
+            case .migration:
+                cell.textLabel?.text = "Migration"
+                cell.detailTextLabel?.text = migrationStatus
+                cell.selectionStyle = .none
+            case .none:
+                break
+            }
+
+        case .testActions:
+            switch TestActionRows(rawValue: indexPath.row) {
+            case .ensureAccountInfoKey:
+                cell.textLabel?.text = "Ensure/repair account_info key"
+            case .runMigration:
+                cell.textLabel?.text = "Run device_info migration"
+            case .resetMigrationMarker:
+                cell.textLabel?.text = "Reset migration marker"
             case .none:
                 break
             }
@@ -187,6 +235,8 @@ class SyncDebugViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch Sections(rawValue: section) {
         case .info: return InfoRows.allCases.count
+        case .unifiedDevices: return UnifiedDeviceRows.allCases.count
+        case .testActions: return TestActionRows.allCases.count
         case .models: return ModelRows.allCases.count
         case .environment: return EnvironmentRows.allCases.count
         case .none: return 0
@@ -199,10 +249,6 @@ class SyncDebugViewController: UITableViewController {
             switch InfoRows(rawValue: indexPath.row) {
             case .syncNow:
                 sync.scheduler.requestSyncImmediately()
-            case .ensureAccountInfoKey:
-                ensureAccountInfoKey()
-            case .validateAccountInfoKey:
-                validateAccountInfoKey()
             case .logOut:
                 Task {
                     try await Task.sleep(nanoseconds: UInt64(10e9))
@@ -228,6 +274,24 @@ class SyncDebugViewController: UITableViewController {
             case .resetSyncAnotherDevicePrompt:
                 UserDefaults.standard.removeObject(forKey: "sync.simplified.sync-another-device-prompt.shown")
             default: break
+            }
+        case .unifiedDevices:
+            switch UnifiedDeviceRows(rawValue: indexPath.row) {
+            case .accountInfoKey:
+                validateAccountInfoKey()
+            case .migration, .none:
+                break
+            }
+        case .testActions:
+            switch TestActionRows(rawValue: indexPath.row) {
+            case .ensureAccountInfoKey:
+                ensureAccountInfoKey()
+            case .runMigration:
+                runDeviceInfoMigration()
+            case .resetMigrationMarker:
+                confirmResetMigrationMarker()
+            case .none:
+                break
             }
         case .models:
             switch ModelRows(rawValue: indexPath.row) {
@@ -283,6 +347,8 @@ class SyncDebugViewController: UITableViewController {
                 } else {
                     message = "Ensured \(wrapperCount) wrappers."
                 }
+                accountInfoKeyStatus = message
+                reloadUnifiedDevicesSection()
                 showAlert(title: "Account Info Key Ensured", message: message)
             } catch {
                 showAlert(title: "Unable to Ensure Account Info Key", message: String(reflecting: error))
@@ -301,10 +367,14 @@ class SyncDebugViewController: UITableViewController {
                     Refreshed key ID: \(result.refreshedKeyID)
                     Reloaded key ID: \(result.reloadedKeyID)
                     """
+                    accountInfoKeyStatus = "Reload mismatch"
+                    reloadUnifiedDevicesSection()
                     showAlert(title: "Account Info Key Reload Mismatch", message: message)
                     return
                 }
 
+                accountInfoKeyStatus = "\(abbreviatedKeyID(result.reloadedKeyID)) • \(result.keySizeInBits)-bit"
+                reloadUnifiedDevicesSection()
                 let message = """
                 Key ID: \(result.reloadedKeyID)
                 Key size: \(result.keySizeInBits) bits
@@ -315,6 +385,55 @@ class SyncDebugViewController: UITableViewController {
                 showAlert(title: "Unable to Validate Account Info Key", message: String(reflecting: error))
             }
         }
+    }
+
+    private func refreshMigrationStatus() {
+        do {
+            migrationStatus = try sync.isDeviceInfoMigrationCompleteForDebug() ? "Complete" : "Not complete"
+        } catch {
+            migrationStatus = "Unavailable"
+        }
+        reloadUnifiedDevicesSection()
+    }
+
+    private func runDeviceInfoMigration() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            do {
+                try await sync.runDeviceInfoMigrationForDebug()
+                refreshMigrationStatus()
+                let isComplete = try sync.isDeviceInfoMigrationCompleteForDebug()
+                let message = isComplete ? "Migration is complete." : "Migration did not complete. Check the Sync logs for details."
+                showAlert(title: "Device Info Migration", message: message)
+            } catch {
+                showAlert(title: "Unable to Run Migration", message: String(reflecting: error))
+            }
+        }
+    }
+
+    private func confirmResetMigrationMarker() {
+        let alertController = UIAlertController(
+            title: "Reset Migration Marker?",
+            message: "The next migration run will attempt to write device_info again.",
+            preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alertController.addAction(UIAlertAction(title: "Reset", style: .destructive) { [weak self] _ in
+            guard let self else { return }
+            sync.resetDeviceInfoMigrationForDebug()
+            refreshMigrationStatus()
+        })
+        present(alertController, animated: true)
+    }
+
+    private func abbreviatedKeyID(_ keyID: String) -> String {
+        guard keyID.count > 12 else { return keyID }
+        return "…\(keyID.suffix(12))"
+    }
+
+    private func reloadUnifiedDevicesSection() {
+        guard isViewLoaded else { return }
+        tableView.reloadSections(IndexSet(integer: Sections.unifiedDevices.rawValue), with: .automatic)
     }
 
     private func showAlert(title: String, message: String) {

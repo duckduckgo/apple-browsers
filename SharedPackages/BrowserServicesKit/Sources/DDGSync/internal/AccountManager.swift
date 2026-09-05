@@ -19,6 +19,7 @@
 import Foundation
 import DDGSyncCrypto
 import Networking
+import os.log
 
 struct AccountManager: AccountManaging {
 
@@ -28,19 +29,28 @@ struct AccountManager: AccountManaging {
     let api: RemoteAPIRequestCreating
     let crypter: CryptingInternal
     let registeredDeviceMapper: any RegisteredDeviceMapping
+    let accountInfoKeyFactory: AccountInfoKeyFactory
+    let deviceInfoCodec: DeviceInfoCoding
     let isScopedAccessCredentialsEnabled: () -> Bool
+    let canWriteUnifiedDeviceList: () -> Bool
 
     init(endpoints: Endpoints,
          api: RemoteAPIRequestCreating,
          crypter: CryptingInternal,
          registeredDeviceMapper: (any RegisteredDeviceMapping)? = nil,
-         isScopedAccessCredentialsEnabled: @escaping () -> Bool) {
+         accountInfoKeyFactory: AccountInfoKeyFactory? = nil,
+         deviceInfoCodec: DeviceInfoCoding = DeviceInfoCodec(),
+         isScopedAccessCredentialsEnabled: @escaping () -> Bool,
+         canWriteUnifiedDeviceList: @escaping () -> Bool = { false }) {
         self.endpoints = endpoints
         self.api = api
         self.crypter = crypter
         self.registeredDeviceMapper = registeredDeviceMapper ?? RegisteredDeviceMapper(crypter: crypter,
                                                                                        isScopedAccessCredentialsEnabled: isScopedAccessCredentialsEnabled)
+        self.accountInfoKeyFactory = accountInfoKeyFactory ?? DefaultAccountInfoKeyFactory(crypter: crypter)
+        self.deviceInfoCodec = deviceInfoCodec
         self.isScopedAccessCredentialsEnabled = isScopedAccessCredentialsEnabled
+        self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
     }
 
     func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
@@ -54,6 +64,9 @@ struct AccountManager: AccountManaging {
 
         let hashedPassword = Data(accountKeys.passwordHash).base64EncodedString()
         let protectedEncryptionKey = Data(accountKeys.protectedSecretKey).base64EncodedString()
+        let deviceInfoFields = makeDeviceInfoFieldsForSignup(deviceName: deviceName,
+                                                             deviceType: deviceType,
+                                                             accountSecretKey: Data(accountKeys.secretKey))
 
         let params = Signup.Parameters(
             userId: userId,
@@ -62,7 +75,9 @@ struct AccountManager: AccountManaging {
             deviceId: deviceId,
             deviceName: encryptedDeviceName,
             deviceType: encryptedDeviceType,
-            credentialId: isScopedAccessCredentialsEnabled() ? SyncCredentialID.defaultCredential : nil
+            credentialId: isScopedAccessCredentialsEnabled() ? SyncCredentialID.defaultCredential : nil,
+            keys: deviceInfoFields?.keys,
+            deviceInfo: deviceInfoFields?.deviceInfo
         )
 
         guard let paramJson = try? JSONEncoder.snakeCaseKeys.encode(params) else {
@@ -190,6 +205,36 @@ struct AccountManager: AccountManaging {
         }
     }
 
+    private func makeDeviceInfoFieldsForSignup(deviceName: String,
+                                               deviceType: String,
+                                               accountSecretKey: Data) -> (keys: [ProtectedKey], deviceInfo: String)? {
+        guard canWriteUnifiedDeviceList() else {
+            return nil
+        }
+
+        do {
+            let keys = try accountInfoKeyFactory.makeProtectedKeys(accountSecretKey: accountSecretKey,
+                                                                  thirdPartyMainKey: nil)
+            guard let protectedKey = keys.first else {
+                Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: missing account_info protected key")
+                return nil
+            }
+            let encryptedDeviceInfo = try deviceInfoCodec.encrypt(DeviceInfo(name: deviceName, type: deviceType),
+                                                                  using: protectedKey)
+            guard encryptedDeviceInfo.utf8.count <= DeviceInfo.maximumEncryptedLength else {
+                Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: encrypted payload exceeds the maximum length")
+                return nil
+            }
+            Logger.sync.debug("Sync-UnifiedDevices: prepared account_info key and device_info for signup")
+            return (keys: keys, deviceInfo: encryptedDeviceInfo)
+        } catch {
+            // Device info is additive, so local preparation failures must not block legacy signup.
+            let errorType = String(describing: type(of: error))
+            Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: \(errorType)")
+            return nil
+        }
+    }
+
     private func login(_ info: ExtractedLoginInfo,
                        deviceId: String,
                        deviceName: String,
@@ -268,6 +313,8 @@ struct AccountManager: AccountManaging {
             let deviceName: String
             let deviceType: String
             let credentialId: String?
+            let keys: [ProtectedKey]?
+            let deviceInfo: String?
         }
     }
 

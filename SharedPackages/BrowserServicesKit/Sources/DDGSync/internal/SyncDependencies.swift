@@ -68,6 +68,7 @@ protocol AccountManaging {
     func logout(deviceId: String, token: String) async throws
 
     func fetchDevicesForAccount(_ account: SyncAccount) async throws -> [RegisteredDevice]
+    func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> UpdateDevices.Result
 }
 
 /// Manages the scoped ("3party") access credential: recovering, creating, and fetching its password and protected keys.

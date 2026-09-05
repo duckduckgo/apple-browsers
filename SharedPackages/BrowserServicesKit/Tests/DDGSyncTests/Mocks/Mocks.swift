@@ -115,6 +115,18 @@ class AccountManagingMock: AccountManaging {
     func fetchDevicesForAccount(_ account: SyncAccount) async throws -> [RegisteredDevice] {
         [.mock]
     }
+
+    var updateDeviceCalls: [(update: UpdateDevices.Update, account: SyncAccount)] = []
+    var updateDeviceStub: UpdateDevices.Result?
+    var updateDeviceError: Error?
+    func updateDevice(_ update: UpdateDevices.Update,
+                      for account: SyncAccount) async throws -> UpdateDevices.Result {
+        updateDeviceCalls.append((update: update, account: account))
+        if let updateDeviceError {
+            throw updateDeviceError
+        }
+        return updateDeviceStub ?? UpdateDevices.Result(devices: [], devicesV2: [])
+    }
 }
 
 final class SchedulerMock: SchedulingInternal {

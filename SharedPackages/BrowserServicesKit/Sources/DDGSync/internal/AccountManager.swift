@@ -144,8 +144,7 @@ struct AccountManager: AccountManaging {
             throw SyncError.noToken
         }
 
-        let url = endpoints.syncGet.appendingPathComponent("devices")
-        let request = api.createAuthenticatedGetRequest(url: url, authToken: token)
+        let request = api.createAuthenticatedGetRequest(url: endpoints.devices, authToken: token)
         let result = try await request.execute()
 
         guard let body = result.data else {
@@ -180,6 +179,31 @@ struct AccountManager: AccountManaging {
             }
         }
         return devices
+    }
+
+    func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> UpdateDevices.Result {
+        guard let token = account.token else {
+            throw SyncError.noToken
+        }
+
+        let parameters = UpdateDevices.Parameters(updates: [update])
+        let requestJSON = try JSONEncoder.snakeCaseKeys.encode(parameters)
+        let request = api.createAuthenticatedJSONRequest(url: endpoints.devices,
+                                                         method: .patch,
+                                                         authToken: token,
+                                                         json: requestJSON)
+        let response = try await request.execute()
+
+        guard let body = response.data else {
+            throw SyncError.noResponseBody
+        }
+
+        guard let result = try? JSONDecoder.snakeCaseKeys.decode(UpdateDevices.Result.self, from: body) else {
+            throw SyncError.unableToDecodeResponse("Failed to decode devices update")
+        }
+
+        Logger.sync.debug("Sync-UnifiedDevices: device update PATCH succeeded")
+        return result
     }
 
     func refreshToken(_ account: SyncAccount, deviceName: String) async throws -> LoginResult {
@@ -364,6 +388,26 @@ struct AccountManager: AccountManaging {
         }
 
         var devices: DeviceWrapper?
+    }
+}
+
+struct UpdateDevices {
+
+    struct Parameters: Encodable {
+        let updates: [Update]
+    }
+
+    struct Update: Encodable {
+        let id: String
+        let name: String?
+        let type: String?
+        /// Unlike name and type, nil omits this field and clears any stored device info.
+        let info: String?
+    }
+
+    struct Result: Decodable {
+        let devices: [RegisteredDeviceEntry]
+        let devicesV2: [RegisteredDeviceEntry]
     }
 }
 

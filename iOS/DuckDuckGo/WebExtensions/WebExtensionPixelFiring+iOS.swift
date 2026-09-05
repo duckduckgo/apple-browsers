@@ -20,7 +20,6 @@
 import Foundation
 import Core
 import PixelKit
-import UIKit
 import WebExtensions
 
 private struct CPMWebExtensionPixel: PixelKit.Event {
@@ -28,14 +27,8 @@ private struct CPMWebExtensionPixel: PixelKit.Event {
 
     var name: String { metadata.name }
 
-    var parameters: [String: String]? {
-        var parameters = ["platform": "ios", "form_factor": UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "phone"]
-        parameters.merge(metadata.parameters) { _, metadataValue in metadataValue }
-        return parameters
-    }
+    var parameters: [String: String]? { metadata.parameters }
     var standardParameters: [PixelKitStandardParameter]? { nil }
-    /// The tech design uses one cross-platform series and carries platform dimensions as parameters.
-    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
     var namePrefix: PixelKitNamePrefix { .none }
 }
 

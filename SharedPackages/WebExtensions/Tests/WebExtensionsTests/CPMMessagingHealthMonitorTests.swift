@@ -857,6 +857,38 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertFalse(pageURL.matchesCPMDiagnosticsDocument(URL(string: "http://example.com/path?test=1#first")!))
     }
 
+    func testNonHypertextNavigationDoesNotReportFailure() async {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeEventMonitor(pixelFiring: pixelFiring)
+
+        finishNavigation(tabIdentifier: "tab-1", url: URL(string: "file:///tmp/page.html")!, on: monitor)
+        await waitForEventTimeout()
+
+        XCTAssertEqual(pixelFiring.events, [])
+    }
+
+    func testNonHypertextCommitCancelsPendingMeasurement() async {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeEventMonitor(pixelFiring: pixelFiring)
+
+        finishNavigation(tabIdentifier: "tab-1", path: "first", on: monitor)
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: URL(string: "file:///tmp/page.html")!))
+        await waitForEventTimeout()
+
+        XCTAssertEqual(pixelFiring.events, [])
+    }
+
+    func testNonHypertextDashboardResponseDoesNotRecoverFailureEpisode() {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+
+        beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other)
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: URL(string: "file:///tmp/page.html")!))
+        beginAndReportFailure(on: monitor, tabIdentifier: "tab-2", navigationKind: .other)
+
+        XCTAssertEqual(pixelFiring.events, ["initialization_failed_other", "initialization_failed_other", "stuck_other"])
+    }
+
     func testCPMDashboardMatchingUsesHostAndNormalizedPathOnly() {
         let pageURL = URL(string: "https://example.com:8443?test=1#first")!
 

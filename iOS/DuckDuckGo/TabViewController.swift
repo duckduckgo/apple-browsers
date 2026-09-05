@@ -2312,10 +2312,8 @@ class TabViewController: UIViewController {
 
     deinit {
         if #available(iOS 18.4, *) {
-            let webExtensionManager = webExtensionManagerProvider()
-            let id = tabModel.uid
-            DispatchQueue.main.asyncOrNow {
-                webExtensionManager?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
+            DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
+                webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
             }
         }
         rulesCompilationMonitor.tabWillClose(tabModel.uid)
@@ -2386,7 +2384,7 @@ extension TabViewController: WKNavigationDelegate {
         userScripts?.selectionFrameScript.reset()
 
         if let url = webView.url {
-            if #available(iOS 18.4, *), url.isHttp || url.isHttps {
+            if #available(iOS 18.4, *) {
                 webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationCommitted(tabIdentifier: tabModel.uid, url: url))
             }
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
@@ -2635,7 +2633,7 @@ extension TabViewController: WKNavigationDelegate {
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
 
-        if let url = webView.url, url.isHttp || url.isHttps {
+        if let url = webView.url {
             if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
                 webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
                     tabIdentifier: tabModel.uid,

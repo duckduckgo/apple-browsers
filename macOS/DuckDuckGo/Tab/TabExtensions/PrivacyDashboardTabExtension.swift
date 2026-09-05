@@ -124,9 +124,7 @@ final class PrivacyDashboardTabExtension {
     }
 
     deinit {
-        let tabIdentifier = tabIdentifier
-        let webExtensionManagerProvider = webExtensionManagerProvider
-        Task { @MainActor in
+        DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, tabIdentifier] in
             guard #available(macOS 15.4, *) else { return }
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: tabIdentifier))
         }
@@ -243,7 +241,7 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
     @MainActor
     func didCommit(_ navigation: Navigation) {
         resetDashboardInfo(for: navigation.url, didGoBackForward: navigation.navigationAction.navigationType.isBackForward)
-        guard #available(macOS 15.4, *), navigation.url.isHypertextURL else { return }
+        guard #available(macOS 15.4, *) else { return }
         webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationCommitted(tabIdentifier: tabIdentifier, url: navigation.url))
     }
 
@@ -252,8 +250,6 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
         if privacyInfo?.url != navigation.url {
             resetDashboardInfo(for: navigation.url, didGoBackForward: navigation.navigationAction.navigationType.isBackForward)
         }
-        guard navigation.url.isHypertextURL else { return }
-
         guard #available(macOS 15.4, *), let webExtensionManager = webExtensionManagerProvider() else { return }
         webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
             tabIdentifier: tabIdentifier,

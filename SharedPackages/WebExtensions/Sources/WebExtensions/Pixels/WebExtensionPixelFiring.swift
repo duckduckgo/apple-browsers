@@ -66,7 +66,7 @@ public enum CPMWebExtensionPixelFrequency: Equatable, Sendable {
     case dailyAndCount
 }
 
-/// Canonical CPM pixel contract. Platform adapters add only platform and form-factor parameters.
+/// Canonical CPM pixel contract. Platform adapters preserve these names and let PixelKit apply its standard platform suffix policy.
 public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
     public let name: String
     public let frequency: CPMWebExtensionPixelFrequency

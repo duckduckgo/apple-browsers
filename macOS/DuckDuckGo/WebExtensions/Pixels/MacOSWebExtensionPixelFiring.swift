@@ -204,9 +204,7 @@ enum WebExtensionPixel: PixelKit.Event {
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             return ["extension_loaded": extensionLoaded ? "true" : "false"]
         case .debugCPM(let metadata):
-            var parameters = ["platform": "macos", "form_factor": "desktop"]
-            parameters.merge(metadata.parameters) { _, metadataValue in metadataValue }
-            return parameters
+            return metadata.parameters
         default:
             return nil
         }

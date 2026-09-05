@@ -244,6 +244,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Records the committed document and retries responses buffered before native commit arrived.
     /// - Parameters identify the stable app tab and its committed URL.
     private func commitNavigation(in tabIdentifier: String, url: URL) {
+        guard url.isEligibleForCPMMessagingHealthMeasurement else {
+            cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
+            return
+        }
         var state = tabs[tabIdentifier] ?? TabNavigationState()
         state.committedURL = url
         state.didReceiveResponse = false
@@ -260,6 +264,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         url: URL,
         extensionIsLoaded: Bool
     ) {
+        guard url.isEligibleForCPMMessagingHealthMeasurement else {
+            cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
+            return
+        }
         var state = tabs[tabIdentifier] ?? TabNavigationState()
         guard state.committedURL?.matchesCPMDiagnosticsDocument(url) ?? true else { return }
         state.committedURL = url
@@ -358,6 +366,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// establishes the mapping; ambiguous responses are buffered until a later commit resolves
     /// them without guessing between tabs that share a URL.
     private func receiveDashboardResponse(extensionTabIdentifier: Int?, url: URL) {
+        guard url.isEligibleForCPMMessagingHealthMeasurement else { return }
+
         if let extensionTabIdentifier,
            let tabIdentifier = extensionTabMappings[extensionTabIdentifier],
            responseMatchesCurrentNavigation(url, in: tabIdentifier) {
@@ -839,6 +849,12 @@ private extension Optional where Wrapped: BinaryInteger {
 }
 
 public extension URL {
+    /// Whether CPM content-script messaging is expected for this document scheme.
+    fileprivate var isEligibleForCPMMessagingHealthMeasurement: Bool {
+        guard let scheme = scheme?.lowercased() else { return false }
+        return scheme == "http" || scheme == "https"
+    }
+
     /// Matches the looser page identity used by the CPM dashboard, whose state follows query and
     /// fragment changes. This preserves the dashboard's pre-diagnostics matching behavior.
     func matchesCPMDashboardStatePage(_ other: URL) -> Bool {

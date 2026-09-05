@@ -79,14 +79,16 @@ protocol ScopedAccessCredentialManaging {
     func ensureThirdPartyScopedPassword(for account: SyncAccount,
                                         purpose: String,
                                         cachedScopedPassword: () throws -> Data?) async throws -> EnsuredThirdPartyCredential
+    /// Returns stored account_info key wrappers, creating and registering them when the purpose is absent.
+    func ensureAccountInfoProtectedKeys(for account: SyncAccount) async throws -> [ProtectedKey]
     /// Builds the Base64URL recovery code that shares the account via the scoped password, or nil if the password is empty.
     func makeRecoveryCode(for account: SyncAccount, scopedPassword: Data) -> String?
     /// Fetches the account's access credentials (empty if none exist).
     func fetchAccessCredentials(_ account: SyncAccount) async throws -> [AccessCredential]
     /// Fetches the account's protected keys (empty if none exist).
     func fetchProtectedKeys(_ account: SyncAccount) async throws -> [ProtectedKey]
-    /// Uploads a protected key for the given purpose only if one isn't already stored, returning the stored key (existing or new).
-    func setKeyIfAbsent(purpose: String, key: ProtectedKey, for account: SyncAccount) async throws -> ProtectedKey?
+    /// Uploads every wrapper for a protected-key purpose atomically if the purpose is absent, returning the wrappers stored by the server.
+    func setKeysIfAbsent(purpose: String, keys: [ProtectedKey], for account: SyncAccount) async throws -> [ProtectedKey]
 }
 
 protocol SecureStoring {

@@ -370,6 +370,20 @@ final class PairingV2MessageExchangingMock: PairingV2MessageExchanging {
     }
 }
 
+final class AccountInfoKeyFactoryMock: AccountInfoKeyFactory {
+    var makeProtectedKeysCalls: [(accountSecretKey: Data, thirdPartyMainKey: Data?)] = []
+    var makeProtectedKeysStub: [ProtectedKey] = []
+    var makeProtectedKeysError: Error?
+
+    func makeProtectedKeys(accountSecretKey: Data, thirdPartyMainKey: Data?) throws -> [ProtectedKey] {
+        makeProtectedKeysCalls.append((accountSecretKey: accountSecretKey, thirdPartyMainKey: thirdPartyMainKey))
+        if let makeProtectedKeysError {
+            throw makeProtectedKeysError
+        }
+        return makeProtectedKeysStub
+    }
+}
+
 final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
 
     var recoverScopedPasswordCalls: [(accessCredentials: [AccessCredential]?, primaryKey: Data, userID: String)] = []
@@ -398,6 +412,17 @@ final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
         }
         return EnsuredThirdPartyCredential(scopedPassword: try cachedScopedPassword() ?? Data(repeating: 1, count: 32),
                                            protectedKeysToCache: [])
+    }
+
+    var ensureAccountInfoProtectedKeysCalls: [SyncAccount] = []
+    var ensureAccountInfoProtectedKeysStub: [ProtectedKey] = []
+    var ensureAccountInfoProtectedKeysError: Error?
+    func ensureAccountInfoProtectedKeys(for account: SyncAccount) async throws -> [ProtectedKey] {
+        ensureAccountInfoProtectedKeysCalls.append(account)
+        if let ensureAccountInfoProtectedKeysError {
+            throw ensureAccountInfoProtectedKeysError
+        }
+        return ensureAccountInfoProtectedKeysStub
     }
 
     var makeRecoveryCodeCalls: [(account: SyncAccount, scopedPassword: Data)] = []
@@ -444,15 +469,15 @@ final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
         return fetchProtectedKeysStub
     }
 
-    var setKeyIfAbsentCalls: [(purpose: String, key: ProtectedKey, account: SyncAccount)] = []
-    var setKeyIfAbsentStub: ProtectedKey?
-    var setKeyIfAbsentError: Error?
-    func setKeyIfAbsent(purpose: String, key: ProtectedKey, for account: SyncAccount) async throws -> ProtectedKey? {
-        setKeyIfAbsentCalls.append((purpose: purpose, key: key, account: account))
-        if let setKeyIfAbsentError {
-            throw setKeyIfAbsentError
+    var setKeysIfAbsentCalls: [(purpose: String, keys: [ProtectedKey], account: SyncAccount)] = []
+    var setKeysIfAbsentStub: [ProtectedKey] = []
+    var setKeysIfAbsentError: Error?
+    func setKeysIfAbsent(purpose: String, keys: [ProtectedKey], for account: SyncAccount) async throws -> [ProtectedKey] {
+        setKeysIfAbsentCalls.append((purpose: purpose, keys: keys, account: account))
+        if let setKeysIfAbsentError {
+            throw setKeysIfAbsentError
         }
-        return setKeyIfAbsentStub
+        return setKeysIfAbsentStub
     }
 }
 

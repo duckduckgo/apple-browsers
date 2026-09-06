@@ -54,6 +54,9 @@ public struct UserText {
     public static let actionNewBackgroundTabForUrl = NSLocalizedString("action.title.newBackgroundTabForUrl", value: "Open in Background", comment: "Open in New Background Tab action")
     public static let actionForgetAll = NSLocalizedString("action.title.forgetAll", value: "Clear Tabs and Data", comment: "")
     public static let actionForgetAllDone = NSLocalizedString("action.title.forgetAllDone", value: "Tabs and data cleared", comment: "Confirmation message")
+    public static let sitePermissions = NSLocalizedString("site.permissions",
+                                                          value: "Site Permissions",
+                                                          comment: "Browser menu item that opens permission controls for the current website")
 
     // MARK: Scoped Fire Confirmation
 
@@ -575,6 +578,20 @@ public struct UserText {
     public static let settingsAutoplayLabel = NSLocalizedString("settings.autoplay", value: "Autoplay", comment: "Settings label for the autoplay settings screen")
     public static let settingsAutoplayFooter = NSLocalizedString("settings.autoplay.footer", value: "Autoplay settings will only apply to newly opened tabs. Changes cannot be applied to existing tabs unless the application is restarted. To manage autoplay in Duck Player, go to ", comment: "Footer text in the autoplay settings screen explaining that changes only take effect in new tabs, followed by a link to Duck Player Settings")
     public static let settingsAutoplayDuckPlayerLink = NSLocalizedString("settings.autoplay.duck.player.link", value: "Duck Player Settings", comment: "Link text in the autoplay settings footer that navigates to Duck Player settings")
+    public static let settingsSitePermissionsCamera = NSLocalizedString("settings.site.permissions.camera", value: "Camera", comment: "Camera permission title in Settings")
+    public static let settingsSitePermissionsMicrophone = NSLocalizedString("settings.site.permissions.microphone", value: "Microphone", comment: "Microphone permission title in Settings")
+    public static let settingsSitePermissionsLocation = NSLocalizedString("settings.site.permissions.location", value: "Location", comment: "Location permission title in Settings")
+    public static let settingsSitePermissionsAskEachTime = NSLocalizedString("settings.site.permissions.ask.each.time", value: "Ask Each Time", comment: "Site permission option that asks on each visit")
+    public static let settingsSitePermissionsAlwaysAllow = NSLocalizedString("settings.site.permissions.always.allow", value: "Always Allow", comment: "Site permission option that always grants access")
+    public static let settingsSitePermissionsNeverAllow = NSLocalizedString("settings.site.permissions.never.allow", value: "Never Allow", comment: "Site permission option that prevents access")
+    public static let settingsSitePermissionsManageSites = NSLocalizedString("settings.site.permissions.manage.sites", value: "Manage Sites", comment: "Header for sites with stored permissions")
+    public static let settingsSitePermissionsRemoveAll = NSLocalizedString("settings.site.permissions.remove.all", value: "Remove All Site Permissions", comment: "Button that removes every stored site permission")
+    public static let settingsSitePermissionsRemoveSite = NSLocalizedString("settings.site.permissions.remove.site", value: "Remove Permissions", comment: "Button that removes all stored permissions for one site")
+    public static let settingsSitePermissionsSystemSettingsFooterPrefix = NSLocalizedString("settings.site.permissions.system.settings.footer.prefix", value: "You can view and modify DuckDuckGo’s system permissions in ", comment: "Settings footer before the System Settings link")
+    public static let settingsSitePermissionsSystemSettingsLink = NSLocalizedString("settings.site.permissions.system.settings.link", value: "System Settings.", comment: "Link that opens the DuckDuckGo page in System Settings")
+    public static let settingsSitePermissionsRemovedAll = NSLocalizedString("settings.site.permissions.removed.all", value: "Permissions removed for all sites", comment: "Toast after all stored site permissions are removed")
+    public static let settingsSitePermissionsRemovedSiteFormat = NSLocalizedString("settings.site.permissions.removed.site.format", value: "Permissions removed for %@", comment: "Toast after one site's stored permissions are removed; placeholder is the domain")
+    public static let settingsSitePermissionsSiteHeaderFormat = NSLocalizedString("settings.site.permissions.site.header.format", value: "Permissions for %@", comment: "Header for one site's permission settings; placeholder is the domain")
     public static let settingsMediaSection = NSLocalizedString("settings.media.section", value: "Media", comment: "Header for the media section in general settings")
 
     public static let webJSAlertOKButton = NSLocalizedString("webJSAlert.OK.button", value: "OK", comment: "OK button for JavaScript alerts")

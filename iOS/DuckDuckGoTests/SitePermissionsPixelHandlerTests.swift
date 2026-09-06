@@ -147,7 +147,19 @@ final class SitePermissionsPixelHandlerTests: XCTestCase {
             (.voiceSearchPermissionPrompt(action: .shown), "voice_search_permission_prompt_shown"),
             (.voiceSearchPermissionPrompt(action: .settings), "voice_search_permission_prompt_settings"),
             (.voiceSearchPermissionPrompt(action: .hide), "voice_search_permission_prompt_hide"),
-            (.voiceSearchPermissionPrompt(action: .cancel), "voice_search_permission_prompt_cancel")
+            (.voiceSearchPermissionPrompt(action: .cancel), "voice_search_permission_prompt_cancel"),
+            (.permissionCenterOpened, "permission_center_opened"),
+            (.permissionCenterChanged(type: .camera, from: .ask, to: .allow), "permission_center_changed_camera_to_allow"),
+            (.permissionCenterChanged(type: .microphone, from: .allow, to: .deny), "permission_center_changed_microphone_to_deny"),
+            (.permissionCenterChanged(type: .location, from: .deny, to: .ask), "permission_center_changed_geolocation_to_ask"),
+            (.permissionCenterDismissedDirty, "permission_center_dismissed_dirty"),
+            (.permissionRemoveSite, "permission_remove_site"),
+            (.permissionRemoveAll, "permission_remove_all"),
+            (.permissionRemoveUndo, "permission_remove_undo"),
+            (.settingsSitePermissionsOpen, "settings_site_permissions_open"),
+            (.settingsSitePermissionsGlobalChanged(type: .camera, to: .ask), "settings_site_permissions_global_changed_camera_to_ask"),
+            (.settingsSitePermissionsGlobalChanged(type: .microphone, to: .deny), "settings_site_permissions_global_changed_microphone_to_deny"),
+            (.settingsSitePermissionsGlobalChanged(type: .location, to: .ask), "settings_site_permissions_global_changed_geolocation_to_ask")
         ]
 
         for (event, expectedName) in cases {
@@ -167,6 +179,35 @@ final class SitePermissionsPixelHandlerTests: XCTestCase {
         XCTAssertNil(fireCall.pixel.standardParameters)
         XCTAssertNil(fireCall.additionalParameters)
         XCTAssertTrue(fireCall.includeAppVersionParameter)
+    }
+
+    func testPermissionCenterChangedIncludesFromAsParameter() throws {
+        let fireCall = try fire(.permissionCenterChanged(type: .camera, from: .deny, to: .ask))
+
+        XCTAssertEqual(fireCall.pixel.name, "permission_center_changed_camera_to_ask")
+        XCTAssertEqual(fireCall.pixel.parameters, ["from": "deny"])
+        XCTAssertNil(fireCall.additionalParameters)
+    }
+
+    func testManagementPixelsNeverContainSiteData() throws {
+        let events: [SitePermissionsEvent] = [
+            .permissionCenterOpened,
+            .permissionCenterChanged(type: .microphone, from: .ask, to: .allow),
+            .permissionCenterDismissedDirty,
+            .permissionRemoveSite,
+            .permissionRemoveAll,
+            .permissionRemoveUndo,
+            .settingsSitePermissionsOpen,
+            .settingsSitePermissionsGlobalChanged(type: .microphone, to: .deny)
+        ]
+
+        for event in events {
+            let fireCall = try fire(event)
+            let parameters = fireCall.pixel.parameters ?? [:]
+
+            XCTAssertFalse(fireCall.pixel.name.contains("example"))
+            XCTAssertTrue(Set(parameters.keys).isSubset(of: ["from"]))
+        }
     }
 
     private func fire(_ event: SitePermissionsEvent,

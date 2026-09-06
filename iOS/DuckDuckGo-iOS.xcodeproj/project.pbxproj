@@ -1693,6 +1693,8 @@
 		C0DE53010000000000000002 /* MediaCapturePermissionRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE53010000000000000001 /* MediaCapturePermissionRoutingTests.swift */; };
 		C0DE54010000000000000002 /* SitePermissionsPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE54010000000000000001 /* SitePermissionsPixelHandler.swift */; };
 		C0DE54010000000000000004 /* SitePermissionsPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE54010000000000000003 /* SitePermissionsPixelHandlerTests.swift */; };
+		C0DE55010000000000000002 /* SettingsSitePermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE55010000000000000001 /* SettingsSitePermissionsView.swift */; };
+		C0DE55010000000000000004 /* SettingsSitePermissionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE55010000000000000003 /* SettingsSitePermissionsViewModelTests.swift */; };
 		A1B2C3D4E5F60001AABB0001 /* NTPAfterIdleInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001AABB0002 /* NTPAfterIdleInstrumentationTests.swift */; };
 		A1B2C3D4E5F60002AABBA001 /* IdleReturnTabCountInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002AABBA002 /* IdleReturnTabCountInstrumentationTests.swift */; };
 		A1B2C3D4E5F60002AABBA0B1 /* AppReturnInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60002AABBA0B2 /* AppReturnInstrumentationTests.swift */; };
@@ -4331,6 +4333,8 @@
 		C0DE53010000000000000001 /* MediaCapturePermissionRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCapturePermissionRoutingTests.swift; sourceTree = "<group>"; };
 		C0DE54010000000000000001 /* SitePermissionsPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SitePermissionsPixelHandler.swift; sourceTree = "<group>"; };
 		C0DE54010000000000000003 /* SitePermissionsPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SitePermissionsPixelHandlerTests.swift; sourceTree = "<group>"; };
+		C0DE55010000000000000001 /* SettingsSitePermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSitePermissionsView.swift; sourceTree = "<group>"; };
+		C0DE55010000000000000003 /* SettingsSitePermissionsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSitePermissionsViewModelTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60001AABB0002 /* NTPAfterIdleInstrumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NTPAfterIdleInstrumentationTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002AABBA002 /* IdleReturnTabCountInstrumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleReturnTabCountInstrumentationTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60002AABBA0B2 /* AppReturnInstrumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppReturnInstrumentationTests.swift; sourceTree = "<group>"; };
@@ -5642,6 +5646,7 @@
 			children = (
 				9F7ED8122D52EEBA00CCF4F5 /* Sub Sections */,
 				1DDF402C2BA09482006850D9 /* SettingsMainSettingsView.swift */,
+				C0DE55010000000000000001 /* SettingsSitePermissionsView.swift */,
 				1DEAADE72BA38AA500E25A97 /* SettingsGeneralView.swift */,
 				1DEAADE92BA4539800E25A97 /* SettingsAppearanceView.swift */,
 				1DEAADEB2BA45B4400E25A97 /* SettingsAccessibilityView.swift */,
@@ -7539,6 +7544,7 @@
 				C0DE52010000000000000001 /* MediaCapturePermissionLegacyMatrixTests.swift */,
 				C0DE53010000000000000001 /* MediaCapturePermissionRoutingTests.swift */,
 				C0DE54010000000000000003 /* SitePermissionsPixelHandlerTests.swift */,
+				C0DE55010000000000000003 /* SettingsSitePermissionsViewModelTests.swift */,
 				BB82617030124E5100F8A80F /* MonthlyFreeTrialExperimentTests.swift */,
 				AA10B5012FA0000100AB12CD /* WebExtensionAvailabilityTests.swift */,
 				5B941E702FA29A1600AF2CE7 /* Widgets */,
@@ -13131,6 +13137,7 @@
 				9FE05CEE2C36424E00D9046B /* OnboardingPixelReporter.swift in Sources */,
 				310C4B47281B60E300BA79A9 /* AutofillLoginDetailsViewModel.swift in Sources */,
 				5BF65FD42F58C01F00BCC9F4 /* SettingsAutoplayView.swift in Sources */,
+				C0DE55010000000000000002 /* SettingsSitePermissionsView.swift in Sources */,
 				976C98B93018AD9100385C4B /* AIChatFrontendReadinessGate.swift in Sources */,
 				C1F9D9122EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift in Sources */,
 				BBA8EA4E30120A4600FE41CD /* IOSMonthlyFreeTrialDecider.swift in Sources */,
@@ -13864,6 +13871,7 @@
 				C0DE52010000000000000002 /* MediaCapturePermissionLegacyMatrixTests.swift in Sources */,
 				C0DE53010000000000000002 /* MediaCapturePermissionRoutingTests.swift in Sources */,
 				C0DE54010000000000000004 /* SitePermissionsPixelHandlerTests.swift in Sources */,
+				C0DE55010000000000000004 /* SettingsSitePermissionsViewModelTests.swift in Sources */,
 				CB27DAE92FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift in Sources */,
 				A8452A0101C0DE0000000004 /* HomeScreenTransitionGeometryTests.swift in Sources */,
 				A8452A0101C0DE0000000006 /* BrowserToolbarViewTests.swift in Sources */,

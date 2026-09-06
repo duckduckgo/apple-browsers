@@ -4414,6 +4414,48 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Set Your Address Bar Position";
 
+/* Site permission option that always grants access */
+"settings.site.permissions.always.allow" = "Always Allow";
+
+/* Site permission option that asks on each visit */
+"settings.site.permissions.ask.each.time" = "Ask Each Time";
+
+/* Camera permission title in Settings */
+"settings.site.permissions.camera" = "Camera";
+
+/* Location permission title in Settings */
+"settings.site.permissions.location" = "Location";
+
+/* Header for sites with stored permissions */
+"settings.site.permissions.manage.sites" = "Manage Sites";
+
+/* Microphone permission title in Settings */
+"settings.site.permissions.microphone" = "Microphone";
+
+/* Site permission option that prevents access */
+"settings.site.permissions.never.allow" = "Never Allow";
+
+/* Button that removes every stored site permission */
+"settings.site.permissions.remove.all" = "Remove All Site Permissions";
+
+/* Button that removes all stored permissions for one site */
+"settings.site.permissions.remove.site" = "Remove Permissions";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Permissions removed for all sites";
+
+/* Toast after one site's stored permissions are removed; placeholder is the domain */
+"settings.site.permissions.removed.site.format" = "Permissions removed for %@";
+
+/* Header for one site's permission settings; placeholder is the domain */
+"settings.site.permissions.site.header.format" = "Permissions for %@";
+
+/* Settings footer before the System Settings link */
+"settings.site.permissions.system.settings.footer.prefix" = "You can view and modify DuckDuckGo’s system permissions in ";
+
+/* Link that opens the DuckDuckGo page in System Settings */
+"settings.site.permissions.system.settings.link" = "System Settings.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Activating";
 
@@ -4608,6 +4650,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Site not working? Let DuckDuckGo know.";
+
+/* Browser menu item that opens permission controls for the current website */
+"site.permissions" = "Site Permissions";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Submit Report";

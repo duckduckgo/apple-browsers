@@ -34,6 +34,8 @@ public struct SitePermissionsStoringKeys: StoringKeys {
 public struct SitePermissionsSnapshot: Equatable, Sendable {
     fileprivate let records: [String: [String: String]]
 
+    public static let empty = SitePermissionsSnapshot(records: [:])
+
     public var isEmpty: Bool {
         records.isEmpty
     }

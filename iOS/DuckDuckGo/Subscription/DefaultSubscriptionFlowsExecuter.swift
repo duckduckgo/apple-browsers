@@ -20,7 +20,7 @@
 import Foundation
 import Subscription
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 import os.log
 
 /// Protocol for performing App Store subscription tier changes (upgrade, downgrade, cancel pending downgrade).

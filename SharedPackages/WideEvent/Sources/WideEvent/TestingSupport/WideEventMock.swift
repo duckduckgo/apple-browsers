@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PixelKit
 
 @_spi(Testing)
 public final class WideEventMock: WideEventManaging {

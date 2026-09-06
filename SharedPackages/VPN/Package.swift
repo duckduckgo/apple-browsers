@@ -14,6 +14,7 @@ let package = Package(
         .library(name: "VPNTestUtils", targets: ["VPNTestUtils"]),
     ],
     dependencies: [
+        .package(path: "../WideEvent"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
         .package(path: "../PixelKit"),
@@ -24,6 +25,7 @@ let package = Package(
         .target(
             name: "VPN",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .target(name: "WireGuardC"),
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
@@ -51,6 +53,7 @@ let package = Package(
         .testTarget(
             name: "VPNTests",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "VPN",
                 "VPNTestUtils",
                 .product(name: "NetworkingTestingUtils", package: "BrowserServicesKit"),

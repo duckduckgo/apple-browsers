@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PixelKit
 import os.log
 
 public protocol WideEventSending {

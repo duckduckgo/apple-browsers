@@ -21,6 +21,7 @@ import Subscription
 import Common
 import FoundationExtensions
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import FeatureFlags_macOS
 import Networking

@@ -26,7 +26,7 @@ import FoundationExtensions
 import History
 import os.log
 import Persistence
-import PixelKit
+import WideEvent
 
 public protocol HistoryManaging {
 

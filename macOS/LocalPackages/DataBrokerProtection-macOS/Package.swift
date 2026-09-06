@@ -29,6 +29,7 @@ let package = Package(
             targets: ["DataBrokerProtection-macOS"])
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/WideEvent"),
         .package(path: "../../../SharedPackages/Persistence"),
         .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
@@ -47,6 +48,7 @@ let package = Package(
         .target(
             name: "DataBrokerProtection-macOS",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
                 .product(name: "DataBrokerProtectionDebugServer", package: "DataBrokerProtectionCore"),

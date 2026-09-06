@@ -23,7 +23,7 @@ import FoundationExtensions
 import DDGSync
 import Bookmarks
 import AIChat
-import PixelKit
+import WideEvent
 import Persistence
 import PrivacyConfig
 import SitePermissions

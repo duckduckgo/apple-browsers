@@ -21,7 +21,7 @@ import Common
 import FoundationExtensions
 import WebKit
 import os.log
-import PixelKit
+import WideEvent
 
 import WKAbstractions
 

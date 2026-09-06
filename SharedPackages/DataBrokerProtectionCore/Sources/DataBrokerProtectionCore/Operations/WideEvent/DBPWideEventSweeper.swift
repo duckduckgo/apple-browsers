@@ -18,7 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 import os.log
 
 public final class DBPWideEventSweeper {

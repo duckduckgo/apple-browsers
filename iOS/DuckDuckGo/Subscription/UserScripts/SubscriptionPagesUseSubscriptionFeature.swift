@@ -29,6 +29,7 @@ import Core
 import os.log
 import Networking
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS

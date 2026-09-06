@@ -31,6 +31,7 @@ import DataBrokerProtection_iOS
 import RemoteMessaging
 import PageRefreshMonitor
 import PixelKit
+import WideEvent
 import PixelExperimentKit
 import PrivacyConfig
 import Networking

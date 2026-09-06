@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 /// Visit-scoped hooks for the New Tab Page session wide event.
 ///

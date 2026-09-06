@@ -17,7 +17,8 @@
 //
 
 import XCTest
-@testable import PixelKit
+import PixelKit
+@testable import WideEvent
 import Foundation
 
 final class WideEventStoringTests: XCTestCase {
@@ -37,6 +38,83 @@ final class WideEventStoringTests: XCTestCase {
         testDefaults?.removePersistentDomain(forName: testSuiteName)
         storage = nil
         super.tearDown()
+    }
+
+    func testWhenExistingFlowIsLoadedThenItCompletesWithoutResettingDailyOccurrence() throws {
+        XCTAssertEqual(WideEventUserDefaultsStorage.suiteName, "com.duckduckgo.wide-pixel.storage")
+
+        let globalID = "661A7558-48CC-49B0-B70C-C14F258E7D11"
+        let flowKey = "storage_test_event.\(globalID)"
+#if os(iOS)
+        let eventType = "ios-storage-test-event"
+#else
+        let eventType = "macos-storage-test-event"
+#endif
+        let timestampKey = "last_sent.\(eventType)"
+        let lastSent = Date()
+        // Seed the JSON and keys written before extraction, independently of the current encoder.
+        let json = """
+        {
+            "globalData": {
+                "id": "661A7558-48CC-49B0-B70C-C14F258E7D11",
+                "platform": "macOS",
+                "type": "app",
+                "sampleRate": 1
+            },
+            "appData": {"name": "DuckDuckGo", "version": "1.0.0", "internalUser": true},
+            "contextData": {"name": "existing-flow"}
+        }
+        """
+        testDefaults.set(Data(json.utf8), forKey: flowKey)
+        testDefaults.set(lastSent, forKey: timestampKey)
+
+        let data: StorageTestWideEventData = try storage.load(globalID: globalID)
+        XCTAssertEqual(data.globalData.id, globalID)
+        XCTAssertEqual(data.contextData.name, "existing-flow")
+        XCTAssertEqual(data.appData.internalUser, true)
+        XCTAssertEqual(storage.allWideEvents(for: StorageTestWideEventData.self).count, 1)
+        XCTAssertEqual(storage.lastSentTimestamp(for: eventType), lastSent)
+
+        var capturedParameters: [[String: String]] = []
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                defaultHeaders: [:],
+                                defaults: testDefaults) { _, _, parameters, _, _, onComplete in
+            capturedParameters.append(parameters)
+            onComplete(true, nil)
+        }
+        var postBody: Data?
+        let sender = DefaultWideEventSender(pixelKitProvider: { pixelKit }, postRequestHandler: { _, body, _, onComplete in
+            postBody = body
+            onComplete(true, nil)
+        }, storage: storage)
+        let wideEvent = WideEvent(storage: storage,
+                                  sender: sender,
+                                  failureEventMapping: nil,
+                                  featureFlagProvider: MockWideEventFeatureFlagProvider())
+        let completion = expectation(description: "Existing flow completes")
+
+        wideEvent.completeFlow(data, status: .success) { success, error in
+            XCTAssertTrue(success)
+            XCTAssertNil(error)
+            completion.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertNil(testDefaults.data(forKey: flowKey))
+        XCTAssertTrue(storage.allWideEvents(for: StorageTestWideEventData.self).isEmpty)
+        XCTAssertEqual(capturedParameters.count, 2)
+        for parameters in capturedParameters {
+            XCTAssertNil(parameters["global.is_first_daily_occurrence"])
+            XCTAssertEqual(parameters["context.name"], "existing-flow")
+            XCTAssertEqual(parameters["feature.status"], "SUCCESS")
+        }
+        let body = try XCTUnwrap(postBody)
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let global = try XCTUnwrap(payload["global"] as? [String: Any])
+        XCTAssertNil(global["is_first_daily_occurrence"])
+        let recordedDate = try XCTUnwrap(testDefaults.object(forKey: timestampKey) as? Date)
+        XCTAssertGreaterThanOrEqual(recordedDate, lastSent)
     }
 
     // MARK: - lastSentTimestamp Tests

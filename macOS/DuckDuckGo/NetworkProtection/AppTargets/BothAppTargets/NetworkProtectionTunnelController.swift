@@ -29,6 +29,7 @@ import NetworkProtectionProxy
 import NetworkProtectionUI
 import Networking
 import PixelKit
+import WideEvent
 import os.log
 import Subscription
 import SystemExtensionManager

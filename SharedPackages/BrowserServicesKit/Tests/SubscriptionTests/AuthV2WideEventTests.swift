@@ -18,7 +18,7 @@
 
 import XCTest
 import Networking
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 @testable import Subscription
 
 final class AuthV2WideEventTests: XCTestCase {

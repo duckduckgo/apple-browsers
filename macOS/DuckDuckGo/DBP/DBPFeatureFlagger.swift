@@ -21,7 +21,7 @@ import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
 import PrivacyConfig
 import FeatureFlags_macOS
-import PixelKit
+import WideEvent
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {
     fileprivate let featureFlagger: FeatureFlagger

@@ -20,7 +20,7 @@ import AppKit
 import SwiftUI
 import Subscription
 import StoreKit
-import PixelKit
+import WideEvent
 import Networking
 
 public final class SubscriptionDebugMenu: NSMenuItem {

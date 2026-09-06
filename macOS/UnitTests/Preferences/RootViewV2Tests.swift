@@ -18,7 +18,7 @@
 
 import Combine
 @_spi(Testing) import Persistence
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities

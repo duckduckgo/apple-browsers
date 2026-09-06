@@ -20,7 +20,7 @@ import Foundation
 import Common
 import FoundationExtensions
 import Networking
-import PixelKit
+import WideEvent
 
 public class AuthV2TokenAdoptionWideEventData: WideEventData {
     public static let metadata = WideEventMetadata(

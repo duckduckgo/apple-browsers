@@ -17,7 +17,8 @@
 //
 
 import XCTest
-@testable import PixelKit
+import PixelKit
+@testable import WideEvent
 import Foundation
 
 // MARK: - Mock Wide Event Sending
@@ -152,7 +153,7 @@ final class WideEventTests: XCTestCase {
     }
 
     private func setupMockPixelKit() {
-        let mockFireRequest: PixelKit.FireRequest = { pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete in
+        let mockFireRequest: PixelKit.FireRequest = { pixelName, _, parameters, _, _, onComplete in
             self.capturedPixels.append((name: pixelName, parameters: parameters))
             DispatchQueue.main.async {
                 onComplete(true, nil)
@@ -825,7 +826,7 @@ final class DefaultWideEventSendingTests: XCTestCase {
     }
 
     private func setupMockPixelKit() {
-        let mockFireRequest: PixelKit.FireRequest = { pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete in
+        let mockFireRequest: PixelKit.FireRequest = { pixelName, _, parameters, _, _, onComplete in
             self.capturedPixels.append((name: pixelName, parameters: parameters))
             DispatchQueue.main.async {
                 onComplete(true, nil)

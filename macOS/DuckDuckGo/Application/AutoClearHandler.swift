@@ -21,6 +21,7 @@ import Combine
 import Foundation
 import AIChat
 import PixelKit
+import WideEvent
 
 protocol AutoClearAlertPresenting {
     func confirmAutoClear(clearChats: Bool) -> NSApplication.ModalResponse

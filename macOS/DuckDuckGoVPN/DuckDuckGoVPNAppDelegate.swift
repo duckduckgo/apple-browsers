@@ -32,6 +32,7 @@ import NetworkProtectionProxy
 import NetworkProtectionUI
 import os.log
 import PixelKit
+import WideEvent
 import ServiceManagement
 import Subscription
 import SwiftUI

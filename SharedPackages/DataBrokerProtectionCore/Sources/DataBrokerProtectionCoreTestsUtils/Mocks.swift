@@ -23,7 +23,7 @@ import Common
 import Foundation
 import GRDB
 import SecureStorage
-import PixelKit
+import WideEvent
 import TrackerRadarKit
 import WebKit
 

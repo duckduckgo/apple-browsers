@@ -4860,6 +4860,19 @@
 		FEE12B412E520E4D00AD9807 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FEE12B412E520E4D00AD9809 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FFF6627FC03B410786EF2635 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
+		0B4522CBE78E3ACA916DF169 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 02CEB1343E11D5F92293C1F5 /* WideEvent */; };
+		DD5FCBAE4046A15F255798F3 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = FBC1C50F9D49079832EBBECE /* WideEvent */; };
+		0A13924A522BDE2329EAE4C4 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = E2E9392DAE76D4A028C3D79E /* WideEvent */; };
+		66B5363703F4659F13AC8922 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = BF3F0F4DE57A5A76B79334EB /* WideEvent */; };
+		75BF6C0B86A0D5DD00631347 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = D854723383E90F0652D58F43 /* WideEvent */; };
+		8974DAC582F9B4F81E026EAA /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 2B6E79CFC9F345A68F8AD44B /* WideEvent */; };
+		15D0B63A69CB3A8D4725D037 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 2E3F209A3A786E44DFEE3D9A /* WideEvent */; };
+		8D6186F0686CC9257F2B7DD1 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = CA57AD4FC8F1853F05E21997 /* WideEvent */; };
+		C5401A7B1CC72C4B1A8C3390 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 083E8F2C1E9FFCBA04A4C9EB /* WideEvent */; };
+		880C1ABF57058209BA6D7676 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 5AE9295C2BD02B4D08BA79E4 /* WideEvent */; };
+		3A785FBB5F1BBFF5E75920FC /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 1168B916E0045A81F307E9A8 /* WideEvent */; };
+		0322CFF4BD0A08EC26D3DFD7 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = E59994348B609380F6349489 /* WideEvent */; };
+		1B158E71EEA7E5AEB0B333F7 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = EED0B49B79AB56CC526105EB /* WideEvent */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -7438,6 +7451,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A13924A522BDE2329EAE4C4 /* WideEvent in Frameworks */,
 				23F31642A4C5168A6538E6FD /* EventHub in Frameworks */,
 				84DD63DB2E9662700043A25E /* FoundationExtensions in Frameworks */,
 				F1DF95E42BD1807C0045E591 /* Crashes in Frameworks */,
@@ -7524,6 +7538,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8D6186F0686CC9257F2B7DD1 /* WideEvent in Frameworks */,
 				FD8C554D30455000D23DB903 /* EventHub in Frameworks */,
 				3706FE88293F661700E42796 /* OHHTTPStubs in Frameworks */,
 				A7B000072F6A000100000001 /* SnapshotTestingSupport in Frameworks */,
@@ -7556,6 +7571,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75BF6C0B86A0D5DD00631347 /* WideEvent in Frameworks */,
 				844801702E3BA42800E8A2C1 /* Clocks in Frameworks */,
 				845F57152E97CE8E00C7F78A /* NoARCObjCTestUtilities in Frameworks */,
 				F124E0ED2D6E123A0035C7BA /* Persistence in Frameworks */,
@@ -7596,6 +7612,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				15D0B63A69CB3A8D4725D037 /* WideEvent in Frameworks */,
 				8448016C2E3BA41F00E8A2C1 /* Clocks in Frameworks */,
 				845F57192E97CE9600C7F78A /* NoARCObjCTestUtilities in Frameworks */,
 				F124E0E52D6E12260035C7BA /* SubscriptionTestingUtilities in Frameworks */,
@@ -7618,6 +7635,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3A785FBB5F1BBFF5E75920FC /* WideEvent in Frameworks */,
 				4B5235452C7BB14D00AFAF64 /* WireGuard in Frameworks */,
 				4B9EE3922D76CC4C00DDC75C /* Subscription in Frameworks */,
 				4B9EE3902D76CC4300DDC75C /* PixelKit in Frameworks */,
@@ -7639,6 +7657,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				66B5363703F4659F13AC8922 /* WideEvent in Frameworks */,
 				4B41EDAB2B1544B2001EEDF4 /* LoginItems in Frameworks */,
 				7B00997D2B6508B700FE7C31 /* NetworkProtectionProxy in Frameworks */,
 				4B9EE3A82D76CCC700DDC75C /* Networking in Frameworks */,
@@ -7665,6 +7684,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0322CFF4BD0A08EC26D3DFD7 /* WideEvent in Frameworks */,
 				7B8FE0AA2D6F74C7004CF744 /* SystemExtensionManager in Frameworks */,
 				7B23668E2C09FAFA002D393F /* VPNAppLauncher in Frameworks */,
 				7BEEA5142AD1236300A9E72B /* NetworkProtectionIPC in Frameworks */,
@@ -7689,6 +7709,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1B158E71EEA7E5AEB0B333F7 /* WideEvent in Frameworks */,
 				4B9EE37E2D76CBEE00DDC75C /* Persistence in Frameworks */,
 				1E5921BF2CF479E600E15CCA /* FeatureFlags-macOS in Frameworks */,
 				F1DF95E52BD1807C0045E591 /* Subscription in Frameworks */,
@@ -7718,6 +7739,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				880C1ABF57058209BA6D7676 /* WideEvent in Frameworks */,
 				7BC3E4602D6DF6A0009787CD /* PixelKit in Frameworks */,
 				7BC3E45A2D6DF67B009787CD /* Networking in Frameworks */,
 				7BC3E45E2D6DF69A009787CD /* NetworkProtectionProxy in Frameworks */,
@@ -7778,6 +7800,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B4522CBE78E3ACA916DF169 /* WideEvent in Frameworks */,
 				4B9EE3BC2D76CD3900DDC75C /* Networking in Frameworks */,
 				372E9DC42F92107D0002DD06 /* PrivacyConfig in Frameworks */,
 				4B9EE3C02D76CD3900DDC75C /* Subscription in Frameworks */,
@@ -7795,6 +7818,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8974DAC582F9B4F81E026EAA /* WideEvent in Frameworks */,
 				4B9EE3C42D76CD7100DDC75C /* Networking in Frameworks */,
 				372E9DC62F9210820002DD06 /* PrivacyConfig in Frameworks */,
 				4B9EE3C82D76CD7100DDC75C /* Subscription in Frameworks */,
@@ -7812,6 +7836,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD5FCBAE4046A15F255798F3 /* WideEvent in Frameworks */,
 				9FA9C53A7D5A0C25CA7ED287 /* EventHub in Frameworks */,
 				8456E3612F56D7950045E2B1 /* BWIntegration in Frameworks */,
 				84DD63DA2E9662700043A25E /* FoundationExtensions in Frameworks */,
@@ -7901,6 +7926,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C5401A7B1CC72C4B1A8C3390 /* WideEvent in Frameworks */,
 				35F0EEDB46C5B99058C0A95A /* EventHub in Frameworks */,
 				B6DA44172616C13800DD1EC2 /* OHHTTPStubs in Frameworks */,
 				A7B000042F6A000100000001 /* SnapshotTestingSupport in Frameworks */,
@@ -13867,6 +13893,7 @@
 			);
 			name = "DuckDuckGo Privacy Browser App Store";
 			packageProductDependencies = (
+				E2E9392DAE76D4A028C3D79E /* WideEvent */,
 				3706FA71293F65D500E42796 /* BrowserServicesKit */,
 				7B11B3092EF304B6005F0687 /* AutomationServer */,
 				3706FA76293F65D500E42796 /* ContentBlocking */,
@@ -13966,6 +13993,7 @@
 			);
 			name = "Unit Tests App Store";
 			packageProductDependencies = (
+				CA57AD4FC8F1853F05E21997 /* WideEvent */,
 				3706FDD6293F661700E42796 /* OHHTTPStubs */,
 				3706FDD8293F661700E42796 /* OHHTTPStubsSwift */,
 				CA7335A53836D5A56E2F5B4A /* EventHub */,
@@ -14013,6 +14041,7 @@
 			);
 			name = "Integration Tests App Store";
 			packageProductDependencies = (
+				D854723383E90F0652D58F43 /* WideEvent */,
 				9DC5FACE2C6BA23C0011F068 /* AppKitExtensions */,
 				84B49F0C2CB10F0900FF08BB /* OHHTTPStubs */,
 				84B49F0E2CB10F0900FF08BB /* OHHTTPStubsSwift */,
@@ -14092,6 +14121,7 @@
 			);
 			name = "Integration Tests";
 			packageProductDependencies = (
+				2E3F209A3A786E44DFEE3D9A /* WideEvent */,
 				B6AE39F229374AEC00C37AA4 /* OHHTTPStubs */,
 				B6AE39F429374AEC00C37AA4 /* OHHTTPStubsSwift */,
 				9DC5FAC82C6B8B910011F068 /* AppKitExtensions */,
@@ -14128,6 +14158,7 @@
 			);
 			name = NetworkProtectionSystemExtension;
 			packageProductDependencies = (
+				1168B916E0045A81F307E9A8 /* WideEvent */,
 				7BBE2B7A2B61663C00697445 /* NetworkProtectionProxy */,
 				9D9DE57A2C63AA1F00D20B15 /* AppKitExtensions */,
 				4B5235442C7BB14D00AFAF64 /* WireGuard */,
@@ -14163,6 +14194,7 @@
 			);
 			name = DuckDuckGoVPN;
 			packageProductDependencies = (
+				BF3F0F4DE57A5A76B79334EB /* WideEvent */,
 				7BEEA5112AD1235B00A9E72B /* NetworkProtectionIPC */,
 				7BEEA5152AD1236E00A9E72B /* NetworkProtectionUI */,
 				7BEC182E2AD5D8DC00D30536 /* SystemExtensionManager */,
@@ -14200,6 +14232,7 @@
 			);
 			name = DuckDuckGoVPNAppStore;
 			packageProductDependencies = (
+				E59994348B609380F6349489 /* WideEvent */,
 				4B2D067E2A1334D700DE1F49 /* NetworkProtectionUI */,
 				7BEEA5132AD1236300A9E72B /* NetworkProtectionIPC */,
 				7B00997E2B6508C200FE7C31 /* NetworkProtectionProxy */,
@@ -14231,6 +14264,7 @@
 			);
 			name = NetworkProtectionAppExtension;
 			packageProductDependencies = (
+				EED0B49B79AB56CC526105EB /* WideEvent */,
 				7B25856D2BA2F2ED00D49F79 /* NetworkProtectionUI */,
 				DC3F73D49B2D44464AFEFCD8 /* Subscription */,
 				7B2366872C09FADA002D393F /* VPNAppLauncher */,
@@ -14281,6 +14315,7 @@
 			);
 			name = DuckDuckGoVPNSysexAppStore;
 			packageProductDependencies = (
+				5AE9295C2BD02B4D08BA79E4 /* WideEvent */,
 				7BC3E44F2D6DF658009787CD /* AppKitExtensions */,
 				7BC3E4532D6DF664009787CD /* Common */,
 				7BC3E4552D6DF66C009787CD /* Configuration */,
@@ -14391,6 +14426,7 @@
 			);
 			name = DuckDuckGoDBPBackgroundAgent;
 			packageProductDependencies = (
+				02CEB1343E11D5F92293C1F5 /* WideEvent */,
 				9DC5FAC42C6B8A010011F068 /* AppKitExtensions */,
 				C18BF9CF2C736C9100ED6B8A /* Freemium */,
 				1E5921C22CF47A0700E15CCA /* FeatureFlags-macOS */,
@@ -14421,6 +14457,7 @@
 			);
 			name = DuckDuckGoDBPBackgroundAgentAppStore;
 			packageProductDependencies = (
+				2B6E79CFC9F345A68F8AD44B /* WideEvent */,
 				9DC5FAC62C6B8A080011F068 /* AppKitExtensions */,
 				C18BF9D12C736C9700ED6B8A /* Freemium */,
 				1E5921C42CF47A0F00E15CCA /* FeatureFlags-macOS */,
@@ -14460,6 +14497,7 @@
 			);
 			name = "DuckDuckGo Privacy Browser";
 			packageProductDependencies = (
+				FBC1C50F9D49079832EBBECE /* WideEvent */,
 				378F44E329B4BDE900899924 /* SwiftUIExtensions */,
 				4B4D60B02A0C83B900BCD287 /* NetworkProtectionUI */,
 				7B31FD8B2AD125620086AA24 /* NetworkProtectionIPC */,
@@ -14562,6 +14600,7 @@
 			);
 			name = "Unit Tests";
 			packageProductDependencies = (
+				083E8F2C1E9FFCBA04A4C9EB /* WideEvent */,
 				B6DA44162616C13800DD1EC2 /* OHHTTPStubs */,
 				B6DA44182616C13800DD1EC2 /* OHHTTPStubsSwift */,
 				A7B000062F6A000100000001 /* SnapshotTestingSupport */,
@@ -22864,6 +22903,58 @@
 		F1E720B42E9D586700654B4E /* AttributedMetric */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AttributedMetric;
+		};
+		02CEB1343E11D5F92293C1F5 /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		FBC1C50F9D49079832EBBECE /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		E2E9392DAE76D4A028C3D79E /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		BF3F0F4DE57A5A76B79334EB /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		D854723383E90F0652D58F43 /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		2B6E79CFC9F345A68F8AD44B /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		2E3F209A3A786E44DFEE3D9A /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		CA57AD4FC8F1853F05E21997 /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		083E8F2C1E9FFCBA04A4C9EB /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		5AE9295C2BD02B4D08BA79E4 /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		1168B916E0045A81F307E9A8 /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		E59994348B609380F6349489 /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		EED0B49B79AB56CC526105EB /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
 		};
 /* End XCSwiftPackageProductDependency section */
 

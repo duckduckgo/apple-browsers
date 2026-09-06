@@ -19,6 +19,7 @@
 
 import Combine
 import Foundation
+import UserNotifications
 import VPN
 
 /// Drives the VPN activation screen, from the pre-VPN connection info through to reporting completion.
@@ -40,6 +41,9 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     static let locationPlaceholder = "XX,XX"
 
     @Published private(set) var connectionState: ConnectionState
+
+    /// Whether `turnOnVPN()` is in flight.
+    @Published private(set) var isActivating = false
 
     /// The original (pre-VPN) connection, mirrored from the prefetcher while off and retained.
     @Published private(set) var originalConnectionInfo: ConnectionInfoState = .idle
@@ -154,6 +158,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     /// Starts the VPN.
     func turnOnVPN() async {
         hasAttemptedActivation = true
+        isActivating = true
         await vpnController.start()
     }
 
@@ -179,6 +184,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             .sink { [weak self] in
                 self?.didDenyVPNPermission = true
                 self?.didFailToStartVPN = false
+                self?.isActivating = false
             }
             .store(in: &cancellables)
 
@@ -191,6 +197,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
                 guard self?.hasAttemptedActivation == true else { return }
                 self?.didFailToStartVPN = true
                 self?.didDenyVPNPermission = false
+                self?.isActivating = false
             }
             .store(in: &cancellables)
 
@@ -217,6 +224,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         if isConnected {
             didDenyVPNPermission = false
             didFailToStartVPN = false
+            isActivating = false
             reportCompletionIfNeeded()
         }
     }
@@ -250,11 +258,14 @@ protocol SubscriptionOnboardingVPNControlling {
 final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVPNControlling {
     private let tunnelController: NetworkProtectionTunnelController
     private let connectionObserver: ConnectionStatusObserver
+    private let notificationsAuthorization: NotificationsAuthorizationControlling
 
     init(tunnelController: NetworkProtectionTunnelController = AppDependencyProvider.shared.networkProtectionTunnelController,
-         connectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver) {
+         connectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver,
+         notificationsAuthorization: NotificationsAuthorizationControlling = NotificationsAuthorizationController()) {
         self.tunnelController = tunnelController
         self.connectionObserver = connectionObserver
+        self.notificationsAuthorization = notificationsAuthorization
     }
 
     var isConnected: Bool {
@@ -276,7 +287,9 @@ final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVP
     }
 
     func start() async {
-        await tunnelController.start()
+        let status = await notificationsAuthorization.authorizationStatus
+        let mightPrompt = status == .notDetermined || status == .provisional
+        await tunnelController.start(suppressNotificationAuthorizationRequest: mightPrompt)
     }
 
     func isVPNConfigured() async -> Bool {
@@ -402,7 +415,8 @@ extension SubscriptionOnboardingVPNActivationViewModel {
                         vpnConnectionInfo: SubscriptionOnboardingConnectionInfo? = nil,
                         isNearestSelected: Bool = false,
                         didDenyVPNPermission: Bool = false,
-                        didFailToStartVPN: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
+                        didFailToStartVPN: Bool = false,
+                        isActivating: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
         let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpnConnectionInfo)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
             prefetcher: .preview(connectionInfo: originalConnectionInfo.map(ConnectionInfoState.loaded) ?? .loading),
@@ -415,6 +429,7 @@ extension SubscriptionOnboardingVPNActivationViewModel {
         viewModel.vpnServerInfo = serverInfo
         viewModel.didDenyVPNPermission = didDenyVPNPermission
         viewModel.didFailToStartVPN = didFailToStartVPN
+        viewModel.isActivating = isActivating
         return viewModel
     }
 

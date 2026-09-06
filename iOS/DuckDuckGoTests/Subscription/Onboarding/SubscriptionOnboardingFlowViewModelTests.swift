@@ -51,7 +51,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     }
 
     func testWhenEntryIsPostCheckoutAndEverythingIsAlreadyCompleteThenOnlyTheOverviewAndSummaryShow() {
-        let sut = makeSUT(entryPoint: .postCheckout, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
+        let sut = makeSUT(entryPoint: .postCheckout, completed: [.vpn, .idtr, .duckAI])
 
         XCTAssertEqual(sut.sequence, [.orderConfirmation, .welcome, .progress])
     }
@@ -72,22 +72,21 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     }
 
     func testWhenNothingIsOutstandingThenSequenceIsTheSummaryAlone() {
-        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .vpnWidget, .idtr, .duckAI])
+        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .idtr, .duckAI])
 
         XCTAssertEqual(sut.sequence, [.progress])
     }
 
-    /// `.vpnTips` never appears alone: it is bundled with `.vpnWidget` in both directions — present together
-    /// when entitled and incomplete, absent together once `.vpnWidget` is done (or ungated — see the
-    /// entitlement-gating tests below).
-    func testWhenVpnWidgetIsOutstandingThenVpnTipsIsPresentRightAfterIt() {
-        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn])
+    /// `.vpnActivation`, `.vpnWidget` and `.vpnTips` all share `.vpn`'s completion, so they appear or
+    /// disappear together — `.vpnTips` is never present without `.vpnWidget` right before it.
+    func testWhenVpnIsOutstandingThenVpnWidgetIsPresentRightBeforeVpnTips() {
+        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [])
 
         XCTAssertEqual(sut.sequence.firstIndex(of: .vpnTips), sut.sequence.firstIndex(of: .vpnWidget).map { $0 + 1 })
     }
 
-    func testWhenVpnWidgetIsCompleteThenVpnTipsIsAlsoAbsent() {
-        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .vpnWidget])
+    func testWhenVpnIsCompleteThenVpnWidgetAndVpnTipsAreAlsoAbsent() {
+        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn])
 
         XCTAssertFalse(sut.sequence.contains(.vpnWidget))
         XCTAssertFalse(sut.sequence.contains(.vpnTips))
@@ -100,7 +99,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         // the wrong position — the closing summary would push the section after the opening one, forever.
         let suts = [makeSUT(entryPoint: .postCheckout),
                     makeSUT(entryPoint: .subscriptionSettings, completed: []),
-                    makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .vpnWidget, .idtr]),
+                    makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .idtr]),
                     makeSUT(entryPoint: .subscriptionSettings,
                             completed: Set(SubscriptionOnboardingChecklistItem.allCases))]
 
@@ -122,20 +121,13 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     func testWhenPIRIsUnavailableThenTheChecklistDropsIt() {
         let sut = makeSUT(entryPoint: .postCheckout, isPIRAvailable: false)
 
-        XCTAssertEqual(sut.progress.checklist, [.vpn, .vpnWidget, .idtr, .duckAI])
+        XCTAssertEqual(sut.progress.checklist, [.vpn, .idtr, .duckAI])
     }
 
-    func testWhenPIRIsAvailableThenTheChecklistHasAllFiveItems() {
+    func testWhenPIRIsAvailableThenTheChecklistHasAllFourItems() {
         let sut = makeSUT(entryPoint: .postCheckout)
 
-        XCTAssertEqual(sut.progress.checklist, [.vpn, .vpnWidget, .idtr, .duckAI, .pir])
-    }
-
-    /// `.vpnTips` is a real checklist item (so its section can carry a `.kind`), but it's excluded from the
-    /// checklist itself regardless of PIR availability — it piggybacks on `.vpnWidget` instead of counting.
-    func testVpnTipsIsExcludedFromTheChecklistRegardlessOfPIRAvailability() {
-        XCTAssertFalse(makeSUT(entryPoint: .postCheckout, isPIRAvailable: true).progress.checklist.contains(.vpnTips))
-        XCTAssertFalse(makeSUT(entryPoint: .postCheckout, isPIRAvailable: false).progress.checklist.contains(.vpnTips))
+        XCTAssertEqual(sut.progress.checklist, [.vpn, .idtr, .duckAI, .pir])
     }
 
     // MARK: - Entitlement gating
@@ -155,7 +147,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
                                             paidAIChat: true)
         let sut = makeSUT(entryPoint: .postCheckout, entitlement: entitlement)
 
-        // .vpnTips shares .vpnWidget's networkProtection gate, so it drops right along with it.
+        // .vpnTips shares .vpn's networkProtection gate, so it drops right along with it.
         XCTAssertFalse(sut.sequence.contains(.vpnTips))
         XCTAssertEqual(sut.sequence, [.orderConfirmation, .welcome, .idtr, .duckAI, .progress])
     }
@@ -182,7 +174,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     // MARK: - Routing
 
     func testWhenASectionIsTheLastThenItHasNoSuccessor() {
-        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .vpnWidget, .idtr])
+        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .idtr])
 
         XCTAssertEqual(sut.sequence, [.duckAI, .progress])
         XCTAssertEqual(sut.section(after: .duckAI), .progress)
@@ -190,7 +182,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     }
 
     func testWhenASectionIsNotInTheSequenceThenItHasNoSuccessor() {
-        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .vpnWidget, .idtr])
+        let sut = makeSUT(entryPoint: .subscriptionSettings, completed: [.vpn, .idtr])
 
         XCTAssertNil(sut.section(after: .orderConfirmation))
     }
@@ -446,7 +438,7 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
     func testWhenLeavingDuckAIThenItIsReportedSkipped() {
         let spy = SpyInstrumentation()
         let sut = makeSUT(entryPoint: .subscriptionSettings,
-                          completed: [.vpn, .vpnWidget, .idtr],
+                          completed: [.vpn, .idtr],
                           instrumentation: spy)
         XCTAssertEqual(sut.currentSection, .duckAI)
 
@@ -616,6 +608,7 @@ private struct NullInstrumentation: SubscriptionOnboardingInstrumenting {
 /// A reference-typed persistor so a test can observe writes the flow makes through its own copy.
 private final class MockProgressStore: SubscriptionOnboardingProgressPersisting {
     var completedItems: Set<SubscriptionOnboardingChecklistItem> = []
+    var reversibleCompletedItems: Set<SubscriptionOnboardingChecklistItem> = []
     var cardFirstShownDate: Date?
     var fullyCompletedAt: Date?
     var completionViewCount: Int = 0

@@ -24,6 +24,7 @@ import Persistence
 import Subscription
 import SubscriptionTestingUtilities
 import DataBrokerProtection_iOS
+import AIChat
 @testable import DuckDuckGo
 
 @MainActor
@@ -33,6 +34,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
     private var vpnController: MockVPNController!
     private var profileStateManager: MockDBPProfileStateManager!
     private var freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
+    private var aiChatSettings: MockAIChatSettingsProvider!
 
     override func setUp() {
         super.setUp()
@@ -40,6 +42,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
         vpnController = MockVPNController(isConfigured: false)
         profileStateManager = MockDBPProfileStateManager(profileState: .noProfile)
         freemiumDBPUserStateManager = MockFreemiumDBPUserStateManager(didActivate: false)
+        aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: true)
     }
 
     override func tearDown() {
@@ -47,6 +50,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
         vpnController = nil
         profileStateManager = nil
         freemiumDBPUserStateManager = nil
+        aiChatSettings = nil
         super.tearDown()
     }
 
@@ -68,6 +72,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             vpnController: vpnController,
             profileStateManager: profileStateManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -89,6 +94,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             vpnController: MockVPNController(isConfigured: true),
             profileStateManager: profileStateManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -110,6 +116,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             vpnController: vpnController,
             profileStateManager: MockDBPProfileStateManager(profileState: .hasProfile),
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -130,6 +137,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             vpnController: vpnController,
             profileStateManager: profileStateManager,
             freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager(didActivate: true),
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -150,10 +158,37 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             vpnController: vpnController,
             profileStateManager: profileStateManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
         XCTAssertFalse(flow.progress.completedItems.contains(.pir))
+    }
+
+    /// A resubscription after lapsing must not carry over a previous subscription's completed items.
+    func testWhenStaleProgressExistsFromAPreviousSubscriptionThenPostCheckoutResetsItFirst() async throws {
+        subscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection,
+                                              .identityTheftRestoration, .identityTheftRestorationGlobal,
+                                              .paidAIChat]
+        var persistor = makePersistor()
+        persistor.markComplete(.vpn)
+        persistor.markComplete(.idtr)
+        persistor.markComplete(.duckAI)
+        persistor.markComplete(.pir)
+
+        let result = await SubscriptionOnboardingFlowViewModel.postCheckout(
+            persistor: persistor,
+            isPIRAvailable: true,
+            subscriptionManager: subscriptionManager,
+            onFinish: {},
+            vpnController: vpnController,
+            profileStateManager: profileStateManager,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            aiChatSettings: aiChatSettings,
+            pirScreen: { EmptyView() })
+        let flow = try XCTUnwrap(result)
+
+        XCTAssertEqual(flow.progress.completedItems, [])
     }
 
     /// The fetched entitlement, not a caller-supplied default, is what gates the built flow's sequence.
@@ -168,6 +203,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             vpnController: vpnController,
             profileStateManager: profileStateManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -187,6 +223,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             vpnController: vpnController,
             profileStateManager: profileStateManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
 
         XCTAssertNil(flow)
@@ -211,6 +248,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             vpnController: vpnController,
             profileStateManager: profileStateManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -234,6 +272,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             isPIRAvailable: true,
             subscriptionManager: subscriptionManager,
             onFinish: {},
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 
@@ -248,6 +287,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
             isPIRAvailable: false,
             subscriptionManager: subscriptionManager,
             onFinish: {},
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
 
         XCTAssertNil(flow)
@@ -268,6 +308,7 @@ final class SubscriptionOnboardingLauncherTests: XCTestCase {
                 requestedModelID = modelID
                 return true
             },
+            aiChatSettings: aiChatSettings,
             pirScreen: { EmptyView() })
         let flow = try XCTUnwrap(result)
 

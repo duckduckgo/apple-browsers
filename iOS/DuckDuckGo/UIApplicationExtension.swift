@@ -66,4 +66,10 @@ extension UIApplication {
         return foregroundSceneWindows.first(where: \.isKeyWindow)
     }
 
+    var foregroundWindowScene: UIWindowScene? {
+        let scenes = connectedScenes.compactMap { $0 as? UIWindowScene }
+        return scenes.first { $0.activationState == .foregroundActive }
+            ?? scenes.first { $0.activationState == .foregroundInactive }
+    }
+
 }

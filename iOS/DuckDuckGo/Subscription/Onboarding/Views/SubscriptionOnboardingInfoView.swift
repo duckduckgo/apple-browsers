@@ -183,10 +183,9 @@ struct SubscriptionOnboardingInfoContent {
 }
 
 extension SubscriptionOnboardingInfoContent {
-    /// Info-sheet content for a checklist item. The widget and tips steps resolve to VPN's content.
     static func content(for item: SubscriptionOnboardingChecklistItem) -> SubscriptionOnboardingInfoContent {
         switch item {
-        case .vpn, .vpnWidget, .vpnTips: return .vpn
+        case .vpn: return .vpn
         case .idtr: return .idtr
         case .duckAI: return .duckAI
         case .pir: return .pir
@@ -365,7 +364,7 @@ private enum PIRInfoFeature: CaseIterable {
             .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceAll),
                   title: UserText.subscriptionOnboardingPIRInfoPlatformsTitle,
                   body: UserText.subscriptionOnboardingPIRInfoPlatformsBody,
-                  platforms: [.mac, .windows])
+                  platforms: [.iOS, .mac, .windows])
         case .repeatedScans:
             .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.reload),
                   title: UserText.subscriptionOnboardingPIRInfoScansTitle,
@@ -394,15 +393,14 @@ struct SubscriptionOnboardingPlatformGrid: View {
         static let rowSpacing: CGFloat = 12
         static let iconSpacing: CGFloat = 6
         static let topPadding: CGFloat = 8
-        static let firstColumnMaxWidth: CGFloat = 80
-        static let secondColumnMaxWidth: CGFloat = 121
+        static let columnMaxWidth: CGFloat = 121
     }
 
     private let platforms: [Platform]
 
     private let columns = [
-        GridItem(.flexible(maximum: Metrics.firstColumnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading),
-        GridItem(.flexible(maximum: Metrics.secondColumnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading)
+        GridItem(.flexible(maximum: Metrics.columnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading),
+        GridItem(.flexible(maximum: Metrics.columnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading)
     ]
 
     init(platforms: [Platform] = Platform.allCases) {

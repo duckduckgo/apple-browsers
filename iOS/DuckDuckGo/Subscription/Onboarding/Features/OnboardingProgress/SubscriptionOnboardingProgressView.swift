@@ -185,18 +185,18 @@ private struct SubscriptionOnboardingProgressViewPreview: View {
     }
 }
 
-// 80% is the most the flow itself reaches: every step but PIR, which is started from the checklist.
-#Preview("Summary — 80%") {
+// 75% is the most the flow itself reaches: every step but PIR, which is started from the checklist.
+#Preview("Summary — 75%") {
     RebrandedPreview {
         SubscriptionOnboardingProgressViewPreview(variant: .summary,
-                                                  completedItems: [.vpn, .vpnWidget, .vpnTips, .idtr, .duckAI])
+                                                  completedItems: [.vpn, .idtr, .duckAI])
     }
 }
 
 #Preview("Duck.ai interstitial") {
     RebrandedPreview {
         SubscriptionOnboardingProgressViewPreview(variant: .duckAIInterstitial,
-                                                  completedItems: [.vpn, .vpnWidget, .vpnTips, .idtr, .duckAI])
+                                                  completedItems: [.vpn, .idtr, .duckAI])
     }
 }
 

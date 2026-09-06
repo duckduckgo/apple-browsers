@@ -2276,6 +2276,7 @@
 		D652E24E2DDE8B3B00BCD978 /* DuckPlayerPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = D652E24D2DDE8B3600BCD978 /* DuckPlayerPixelFiring.swift */; };
 		D65625922C22D340006EF297 /* WebDuckPlayerNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D63FF8892C1B21C2006DE24D /* WebDuckPlayerNavigationHandler.swift */; };
 		D65625952C22D382006EF297 /* TabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F159BDA31F0BDB5A00B4A01D /* TabViewController.swift */; };
+		56F2C3E60CB746C88FFFE45F /* TabViewController+SitePermissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7C39CFCEC2D40D5A16FF7D1 /* TabViewController+SitePermissions.swift */; };
 		D65625A12C232F5E006EF297 /* SettingsYouTubeAdBlockingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D65625A02C232F5E006EF297 /* SettingsYouTubeAdBlockingView.swift */; };
 		D65625A22C232F5F006EF298 /* SettingsDuckPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D65625A12C232F5F006EF298 /* SettingsDuckPlayerView.swift */; };
 		D65CEA702B6AC6C9008A759B /* Subscription.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D65CEA6F2B6AC6C9008A759B /* Subscription.xcassets */; };
@@ -5144,6 +5145,7 @@
 		F14B81412F32615B00C39E26 /* SubscriptionPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPixelHandlerTests.swift; sourceTree = "<group>"; };
 		F14E491E1E391CE900DC037C /* URLExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLExtensionTests.swift; sourceTree = "<group>"; };
 		F159BDA31F0BDB5A00B4A01D /* TabViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabViewController.swift; sourceTree = "<group>"; };
+		F7C39CFCEC2D40D5A16FF7D1 /* TabViewController+SitePermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabViewController+SitePermissions.swift"; sourceTree = "<group>"; };
 		F15D431F1E706CC500BF2CDC /* AutocompleteViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutocompleteViewController.swift; sourceTree = "<group>"; };
 		F15FBFA93040496E00C44FD6 /* PixelEvent+PixelKit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "PixelEvent+PixelKit.md"; sourceTree = "<group>"; };
 		F1617C121E572E0300DEDCAF /* TabSwitcherViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabSwitcherViewController.swift; sourceTree = "<group>"; };
@@ -10562,6 +10564,7 @@
 				C13830FB2DCD3F1400A29B3C /* WebView.swift */,
 				F1386BA31E6846C40062FC3C /* TabDelegate.swift */,
 				F159BDA31F0BDB5A00B4A01D /* TabViewController.swift */,
+				F7C39CFCEC2D40D5A16FF7D1 /* TabViewController+SitePermissions.swift */,
 				E1A4A4D42F2A111100AA11BB /* TabViewController+UI.swift */,
 				6F4BFD3D2DE06F1F00E754EB /* StyledTopBottomBorderView.swift */,
 				CB9C3F6B2D898BE000264725 /* PullToRefreshViewAdapter.swift */,
@@ -12654,6 +12657,7 @@
 				31A42566285A0A6300049386 /* FaviconViewModel.swift in Sources */,
 				859DB8132CE6263C001F7210 /* TextZoomStorage.swift in Sources */,
 				D65625952C22D382006EF297 /* TabViewController.swift in Sources */,
+				56F2C3E60CB746C88FFFE45F /* TabViewController+SitePermissions.swift in Sources */,
 				E1A4A4D52F2A111100AA11BB /* TabViewController+UI.swift in Sources */,
 				CBB6055E30081648003607EA /* MinimalChromeModeDecision.swift in Sources */,
 				653561022D4D2C6D0064F258 /* Logger+DuckPlayer.swift in Sources */,

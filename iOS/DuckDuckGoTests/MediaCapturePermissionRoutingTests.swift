@@ -53,6 +53,43 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         await fulfillment(of: [didDeinit], timeout: 3)
     }
 
+    func testWhenTabDeinitializesThenRecoveryToastIsDismissed() async throws {
+        let originalWindow = UIApplication.shared.firstKeyWindow
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            originalWindow?.makeKey()
+        }
+
+        var tab: TabViewController? = makeSUT(systemAuthorizationStatus: .notDetermined,
+                                              avRequestAccess: { _, completion in completion(false) })
+        tab?.specialErrorPageNavigationHandler.delegate = nil // Break the test double's strong delegate cycle.
+        tab?.sitePermissionsPromptHandlerOverride = { _, completion in completion(.allowOnce) }
+        let decision = await requestPermissionThroughBridge(on: try XCTUnwrap(tab),
+                                                             originHost: "top-level.example",
+                                                             captureType: .camera)
+        XCTAssertEqual(decision, .deny)
+
+        let toastReleased = expectation(description: "Recovery toast released during tab cleanup")
+        try autoreleasepool {
+            let toast = try XCTUnwrap(window.subviews.compactMap { $0 as? ActionMessageView }.first)
+            toast.onDeinit { toastReleased.fulfill() }
+        }
+        weak var releasedTab = tab
+        let retainedTab = Unmanaged.passRetained(try XCTUnwrap(tab))
+        tab = nil
+        DispatchQueue.global().async {
+            retainedTab.release()
+        }
+
+        // Cleanup must dismiss the toast before its normal three-second timeout.
+        await fulfillment(of: [toastReleased], timeout: 2)
+        XCTAssertNil(releasedTab)
+    }
+
     func testFlagOnRoutesOrdinaryCaptureTypesUsingCommittedTopLevelSite() async {
         let scenarios: [(WKMediaCaptureType, Set<SitePermissionType>)] = [
             (.camera, [.camera]),

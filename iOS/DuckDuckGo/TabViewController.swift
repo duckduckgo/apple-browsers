@@ -56,20 +56,6 @@ import WebExtensions
 import DesignResourcesKitIcons
 import FeatureFlags_iOS
 
-struct SitePermissionsDependencies {
-    let store: SitePermissionsStore
-    let systemPermissionClient: SystemPermissionClient
-    let eventHandler: (SitePermissionsEvent) -> Void
-
-    init(store: SitePermissionsStore,
-         systemPermissionClient: SystemPermissionClient,
-         eventHandler: @escaping (SitePermissionsEvent) -> Void = { _ in }) {
-        self.store = store
-        self.systemPermissionClient = systemPermissionClient
-        self.eventHandler = eventHandler
-    }
-}
-
 enum WebViewPreviewSnapshotGeometry {
 
     static func visibleRect(webViewBounds: CGRect) -> CGRect? {
@@ -772,61 +758,6 @@ class TabViewController: UIViewController {
     private var sitePermissionsRecoveryToken: UInt?
     private var nextSitePermissionsRecoveryToken: UInt = 0
     private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
-    private struct SitePermissionSecurityOrigin: Equatable {
-        let protocolName: String
-        let host: String
-        let port: Int
-
-        init(_ origin: WKSecurityOrigin) {
-            protocolName = origin.protocol.lowercased()
-            host = Self.normalizedHost(origin.host)
-            port = Self.effectivePort(for: protocolName, explicitPort: origin.port)
-        }
-
-        init?(_ url: URL) {
-            guard let protocolName = url.scheme?.lowercased(),
-                  let host = url.host?.lowercased(),
-                  !host.isEmpty else {
-                return nil
-            }
-            self.protocolName = protocolName
-            self.host = Self.normalizedHost(host)
-            port = Self.effectivePort(for: protocolName, explicitPort: url.port ?? 0)
-        }
-
-        var isPotentiallyTrustworthy: Bool {
-            guard !host.isEmpty else { return false }
-            if protocolName == "https" {
-                return true
-            }
-            guard protocolName == "http" else { return false }
-
-            let ipv4Octets = host.split(separator: ".", omittingEmptySubsequences: false)
-            let isIPv4Loopback = ipv4Octets.count == 4
-                && ipv4Octets.allSatisfy { UInt8($0) != nil }
-                && UInt8(ipv4Octets[0]) == 127
-            return host == "localhost"
-                || host.hasSuffix(".localhost")
-                || host == "::1"
-                || isIPv4Loopback
-        }
-
-        private static func normalizedHost(_ host: String) -> String {
-            host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
-        }
-
-        private static func effectivePort(for protocolName: String, explicitPort: Int) -> Int {
-            guard explicitPort == 0 else { return explicitPort }
-            switch protocolName {
-            case "https":
-                return 443
-            case "http":
-                return 80
-            default:
-                return 0
-            }
-        }
-    }
     private struct PendingMediaCaptureBridgeRequest {
         let context: SitePermissionRequestContext
         let frame: WKFrameInfo
@@ -1008,6 +939,17 @@ class TabViewController: UIViewController {
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         super.init(nibName: nil, bundle: nil)
+
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .map { [weak self] in self?.isMediaCapturePermissionHandlingEnabled == true }
+            .removeDuplicates()
+            .sink { [weak self] isEnabled in
+                if !isEnabled {
+                    self?.configureSitePermissionsMediaCapture(with: nil)
+                }
+            }
+            .store(in: &cancellables)
 
         // Reload AI Chat when subscription state changes
         subscriptionAIChatStateHandler.onSubscriptionStateChanged = { [weak self] in
@@ -1438,22 +1380,9 @@ class TabViewController: UIViewController {
 
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
     // of the Fire button, but the app still does so in the event that previously persisted cookies have not yet been consumed.
-    private func makeTabContentBlockingAssetsPublisher() -> AnyPublisher<ContentBlockingUpdating.NewContent, Never> {
-        guard !isLinkPreview else { return contentBlockingAssetsPublisher }
-
-        return contentBlockingAssetsPublisher
-            .map { [weak self] content in
-                guard let self else { return content }
-                let isEnabled = featureFlagger.isFeatureOn(.sitePermissions)
-                let userScript: MediaCaptureUserScript?
-                if isEnabled {
-                    userScript = sitePermissionsMediaCaptureUserScript ?? MediaCaptureUserScript()
-                    sitePermissionsMediaCaptureUserScript = userScript
-                } else {
-                    userScript = nil
-                }
-                return content.includingSitePermissionsMediaCapture(userScript, enabled: isEnabled)
-            }
+    private func makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: MediaCaptureUserScript) -> AnyPublisher<ContentBlockingUpdating.NewContent, Never> {
+        contentBlockingAssetsPublisher
+            .map { $0.includingSitePermissionsMediaCapture(mediaCaptureUserScript) }
             .eraseToAnyPublisher()
     }
 
@@ -1470,8 +1399,15 @@ class TabViewController: UIViewController {
             sitePermissionsMediaCaptureUserScript = nil
         }
 
-        let userContentController = UserContentController(assetsPublisher: makeTabContentBlockingAssetsPublisher(),
-                                                          privacyConfigurationManager: privacyConfigurationManager)
+        // Install before navigation, even when content-blocking assets are not ready. Keeping
+        // the bridge dormant while disabled lets existing documents participate after activation.
+        let mediaCaptureUserScript = MediaCaptureUserScript()
+        sitePermissionsMediaCaptureUserScript = mediaCaptureUserScript
+        mediaCaptureUserScript.delegate = self
+        let userContentController = UserContentController(assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
+                                                          privacyConfigurationManager: privacyConfigurationManager,
+                                                          earlyAccessHandlers: [mediaCaptureUserScript])
+        userContentController.addUserScript(mediaCaptureUserScript.makeWKUserScriptSync())
         configuration.userContentController = userContentController
         userContentController.delegate = self
 
@@ -2477,6 +2413,7 @@ class TabViewController: UIViewController {
                 webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
             }
         }
+        // UIKit routes UIViewController final release to the main thread, including Swift subclass deinit.
         MainActor.assumeIsolated {
             closeSitePermissions()
         }
@@ -4551,9 +4488,9 @@ extension TabViewController: WKUIDelegate {
         let dialog = SitePermissionDialogView(viewModel: viewModel) { [weak self] action in
             guard let self else { return }
             fireSitePermissionsEvent(.permissionDialogClick(type: pixelPermissionType,
-                                                             selection: pixelDialogSelection(for: action)))
+                                                             selection: action.pixelDialogSelection))
             dismissSitePermissionDialog()
-            completion(sitePermissionPromptDecision(for: action))
+            completion(action.promptDecision)
         }
         let hostingController = UIHostingController(rootView: dialog)
         hostingController.view.backgroundColor = .clear
@@ -4644,28 +4581,6 @@ extension TabViewController: WKUIDelegate {
         }
     }
 
-    private func sitePermissionPromptDecision(for action: SitePermissionDialogAction) -> SitePermissionPromptDecision {
-        switch action {
-        case .allowOnce:
-            return .allowOnce
-        case .allowWhileUsingSite:
-            return .allowWhileUsingSite
-        case .neverAllow:
-            return .neverAllow
-        }
-    }
-
-    private func pixelDialogSelection(for action: SitePermissionDialogAction) -> SitePermissionsEvent.DialogSelection {
-        switch action {
-        case .allowOnce:
-            return .allowOnce
-        case .allowWhileUsingSite:
-            return .allowAlways
-        case .neverAllow:
-            return .never
-        }
-    }
-
     private func fireSitePermissionsEvent(_ event: SitePermissionsEvent) {
         sitePermissionsEventHandler(event)
     }
@@ -4692,6 +4607,7 @@ extension TabViewController: WKUIDelegate {
         guard let recoveryToken, recoveryToken == sitePermissionsRecoveryToken else { return }
 
         if let messageView = sitePermissionsRecoveryMessageView {
+            sitePermissionsRecoveryMessageView = nil
             messageView.dismissAndFadeOut()
             return
         }
@@ -4980,11 +4896,13 @@ extension TabViewController: DaxEasterEggDelegate {
 
 extension TabViewController: MediaCaptureUserScriptDelegate {
 
+    var isMediaCapturePermissionHandlingEnabled: Bool {
+        featureFlagger.isFeatureOn(.sitePermissions)
+    }
+
     func configureSitePermissionsMediaCapture(with userScript: MediaCaptureUserScript?) {
         guard let userScript else {
-            // Existing and back-forward-cached documents keep their injected shim after the flag
-            // turns off. Keep its weakly-held reply handler alive for the web process lifetime so
-            // every request receives a reply, while new documents receive no shim.
+            // Keep the reply handler alive for existing and back-forward-cached documents.
             dismissSitePermissionDialog()
             sitePermissionsCoordinator?.pageDidChange(.navigation)
             dismissSitePermissionRecovery()
@@ -5109,8 +5027,6 @@ extension TabViewController: MediaCaptureUserScriptDelegate {
     }
 
     private func isMediaCaptureAllowed(for origin: SitePermissionSecurityOrigin) -> Bool {
-        // Keep media capture same-origin in this v1 bridge. Delegated cross-origin access requires
-        // broader security review; the authenticated page shim still enforces Permissions Policy.
         guard origin.isPotentiallyTrustworthy,
               let committedURL = sitePermissionsCommittedMainFrameURL,
               let topLevelOrigin = SitePermissionSecurityOrigin(committedURL) else {

@@ -72,7 +72,6 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         sitePermissionsEnabled: Bool? = nil,
          mediaCaptureUserScript: MediaCaptureUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
@@ -80,8 +79,7 @@ final class UserScripts: UserScriptsProvider {
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
         selectionFrameScript = SelectionFrameUserScript()
-        let isSitePermissionsEnabled = sitePermissionsEnabled ?? featureFlagger.isFeatureOn(.sitePermissions)
-        self.mediaCaptureUserScript = isSitePermissionsEnabled ? (mediaCaptureUserScript ?? MediaCaptureUserScript()) : nil
+        self.mediaCaptureUserScript = mediaCaptureUserScript
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey

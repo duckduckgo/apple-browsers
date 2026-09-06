@@ -23,6 +23,28 @@ public enum SitePermissionDialogAction: Hashable, Sendable {
     case allowOnce
     case allowWhileUsingSite
     case neverAllow
+
+    public var promptDecision: SitePermissionPromptDecision {
+        switch self {
+        case .allowOnce:
+            return .allowOnce
+        case .allowWhileUsingSite:
+            return .allowWhileUsingSite
+        case .neverAllow:
+            return .neverAllow
+        }
+    }
+
+    public var pixelDialogSelection: SitePermissionsEvent.DialogSelection {
+        switch self {
+        case .allowOnce:
+            return .allowOnce
+        case .allowWhileUsingSite:
+            return .allowAlways
+        case .neverAllow:
+            return .never
+        }
+    }
 }
 
 public struct SitePermissionDialogViewModel: Equatable, Sendable {

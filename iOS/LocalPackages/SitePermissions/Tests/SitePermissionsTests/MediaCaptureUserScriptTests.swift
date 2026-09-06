@@ -63,7 +63,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(result, "native-result")
         XCTAssertEqual(nativeCallCount, 1)
         XCTAssertEqual(handler.receivedBodies.count, 1)
-        XCTAssertEqual(Set(handler.receivedBodies[0].keys), ["capability", "requestID", "video", "audio"])
+        XCTAssertEqual(Set(handler.receivedBodies[0].keys), ["capability", "requestID", "video", "audio", "isEligible"])
         XCTAssertEqual(handler.receivedBodies[0]["capability"] as? String, MediaCaptureUserScript.capabilityToken)
         XCTAssertEqual(handler.receivedBodies[0]["video"] as? Bool, true)
         XCTAssertEqual(handler.receivedBodies[0]["audio"] as? Bool, false)
@@ -95,7 +95,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.receivedBodies.count, 1)
     }
 
-    func testInjectedJavaScriptRejectsSyntheticFrameBeforeCallingBridgeOrNativeFunction() async {
+    func testInjectedJavaScriptMarksSyntheticFrameIneligibleWithoutCallingNativeFunction() async {
         let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
                                                    baseURL: URL(string: "about:blank")!)
 
@@ -108,7 +108,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             )
             XCTFail("Expected getUserMedia to reject")
         } catch {
-            // Expected: synthetic documents are rejected in JavaScript before native routing.
+            // Expected: the bridge rejects the ineligible document without requesting permission.
         }
 
         let nativeCallCount = try? await webView.callAsyncJavaScript(
@@ -118,7 +118,8 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             contentWorld: .page
         ) as? Int
         XCTAssertEqual(nativeCallCount, 0)
-        XCTAssertTrue(handler.receivedBodies.isEmpty)
+        XCTAssertFalse(handler.receivedBodies.isEmpty)
+        XCTAssertTrue(handler.receivedBodies.allSatisfy { $0["isEligible"] as? Bool == false })
     }
 
     func testInjectedJavaScriptAllowsOrdinarySameOriginBlobFrame() async throws {
@@ -132,7 +133,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.receivedBodies.count, 1)
     }
 
-    func testInjectedJavaScriptRejectsOpaqueSandboxAfterAttributeRemovalWithoutCallingBridgeOrNative() async throws {
+    func testInjectedJavaScriptMarksOpaqueSandboxIneligibleAfterAttributeRemovalWithoutCallingNative() async throws {
         let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
@@ -141,7 +142,8 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(result["origin"] as? String, "null")
         XCTAssertEqual(result["rejected"] as? Bool, true)
         XCTAssertEqual(result["nativeCallCount"] as? Int, 0)
-        XCTAssertTrue(handler.receivedBodies.isEmpty)
+        XCTAssertFalse(handler.receivedBodies.isEmpty)
+        XCTAssertTrue(handler.receivedBodies.allSatisfy { $0["isEligible"] as? Bool == false })
     }
 
     func testInjectedJavaScriptAllowsSameOriginFramesInOpenAndClosedShadowRoots() async throws {
@@ -183,7 +185,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.receivedBodies.count, 1)
     }
 
-    func testInjectedJavaScriptHonorsPermissionsPolicyBeforeCallingBridgeOrNative() async throws {
+    func testInjectedJavaScriptMarksPolicyBlockedFrameIneligibleWithoutCallingNative() async throws {
         let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
                                                    baseURL: URL(string: "https://duck.ai")!,
                                                    deniedPolicyFeatures: ["camera"])
@@ -192,7 +194,107 @@ final class MediaCaptureUserScriptTests: XCTestCase {
 
         XCTAssertEqual(result["rejected"] as? Bool, true)
         XCTAssertEqual(result["nativeCallCount"] as? Int, 0)
-        XCTAssertTrue(handler.receivedBodies.isEmpty)
+        XCTAssertFalse(handler.receivedBodies.isEmpty)
+        XCTAssertTrue(handler.receivedBodies.allSatisfy { $0["isEligible"] as? Bool == false })
+    }
+
+    func testPolicyFallbackRejectsBlockedSameOriginFramesIncludingShadowRootsAndNestedFrames() async throws {
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+                                                   baseURL: URL(string: "https://duck.ai")!)
+
+        for shadowRootMode in [nil, "open", "closed"] as [String?] {
+            for nestedFrame in [false, true] {
+                let result = try await requestCameraFromBlobFrame(in: webView,
+                                                                  shadowRootMode: shadowRootMode,
+                                                                  allow: "camera 'none'; microphone *",
+                                                                  removeAllowAfterLoad: true,
+                                                                  nestedFrame: nestedFrame)
+
+                XCTAssertEqual(result["rejected"] as? Bool, true)
+                XCTAssertEqual(result["nativeCallCount"] as? Int, 0)
+            }
+        }
+        XCTAssertFalse(handler.receivedBodies.isEmpty)
+        XCTAssertTrue(handler.receivedBodies.allSatisfy { $0["isEligible"] as? Bool == false })
+    }
+
+    func testPolicyFallbackPreservesAllowedSameOriginAllowlistForms() async throws {
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+                                                   baseURL: URL(string: "https://duck.ai")!)
+        let policies = ["camera", "camera *", "camera 'self'", "camera 'src'", "camera:'self'",
+                        "camera https://other.example https://duck.ai", "microphone 'none'"]
+
+        for policy in policies {
+            let result = try await requestCameraFromBlobFrame(in: webView, allow: policy, nestedFrame: true)
+
+            XCTAssertEqual(result["result"] as? String, "native-result", policy)
+            XCTAssertEqual(result["nativeCallCount"] as? Int, 1, policy)
+        }
+        XCTAssertEqual(handler.receivedBodies.count, policies.count)
+    }
+
+    func testPolicyFallbackRejectsNonmatchingAllowlistAndUsesFirstDuplicateDirective() async throws {
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+                                                   baseURL: URL(string: "https://duck.ai")!)
+
+        for policy in ["camera https://other.example", "camera 'none'; camera *", "camera:'none'", "camera 'self' 'NONE'"] {
+            let result = try await requestCameraFromBlobFrame(in: webView, allow: policy)
+
+            XCTAssertEqual(result["rejected"] as? Bool, true, policy)
+            XCTAssertEqual(result["nativeCallCount"] as? Int, 0, policy)
+        }
+        XCTAssertFalse(handler.receivedBodies.isEmpty)
+        XCTAssertTrue(handler.receivedBodies.allSatisfy { $0["isEligible"] as? Bool == false })
+    }
+
+    func testPolicyFallbackAppliesChangedAllowAttributeOnNextNavigation() async throws {
+        let (webView, _) = await makeWebView(reply: (["decision": "allow"], nil),
+                                             baseURL: URL(string: "https://duck.ai")!)
+
+        for navigate in [false, true] {
+            let result = try await requestCameraFromBlobFrame(in: webView,
+                                                              allowAfterLoad: "camera 'none'",
+                                                              navigateAfterChangingAllow: navigate)
+
+            XCTAssertEqual(result["rejected"] as? Bool, navigate)
+            XCTAssertEqual(result["nativeCallCount"] as? Int, navigate ? 0 : 1)
+        }
+    }
+
+    func testNativeHandlerAppliesFlagChangesToAnAlreadyLoadedIneligibleDocument() async throws {
+        let script = MediaCaptureUserScript()
+        let delegate = MediaCapturePermissionDelegate()
+        script.delegate = delegate
+        let (webView, _) = await makeWebView(reply: (nil, nil),
+                                              baseURL: URL(string: "about:blank")!,
+                                              messageHandler: script)
+
+        for enabled in [false, true, false] {
+            delegate.isMediaCapturePermissionHandlingEnabled = enabled
+            let result = try await webView.callAsyncJavaScript(
+                """
+                try {
+                    await navigator.mediaDevices.getUserMedia({ video: true });
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+                """,
+                arguments: [:],
+                in: nil,
+                contentWorld: .page
+            ) as? Bool
+            XCTAssertEqual(result, !enabled)
+        }
+
+        let nativeCallCount = try await webView.callAsyncJavaScript(
+            "return globalThis.__nativeMediaCallCount;",
+            arguments: [:],
+            in: nil,
+            contentWorld: .page
+        ) as? Int
+        XCTAssertEqual(nativeCallCount, 2)
+        XCTAssertEqual(delegate.requestCount, 0)
     }
 
     func testNativeCapabilityIsNotExposedAsAGlobalPropertyName() async throws {
@@ -252,7 +354,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(nativeConstraints["audio"] as? Bool, false)
     }
 
-    func testInjectedJavaScriptRejectsBorrowedReceiverWithoutCallingBridgeOrNative() async {
+    func testInjectedJavaScriptMarksBorrowedReceiverIneligibleWithoutCallingNative() async {
         let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
 
@@ -265,7 +367,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             )
             XCTFail("Expected a borrowed receiver to be rejected")
         } catch {
-            // Expected: borrowed receivers are conservatively unsupported without entering native code.
+            // Expected: borrowed receivers are marked ineligible before permission handling.
         }
         let nativeCallCount = try? await webView.callAsyncJavaScript(
             "return globalThis.__nativeMediaCallCount;",
@@ -274,20 +376,22 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             contentWorld: .page
         ) as? Int
 
-        XCTAssertTrue(handler.receivedBodies.isEmpty)
+        XCTAssertFalse(handler.receivedBodies.isEmpty)
+        XCTAssertTrue(handler.receivedBodies.allSatisfy { $0["isEligible"] as? Bool == false })
         XCTAssertEqual(nativeCallCount, 0)
     }
 
     private func makeWebView(reply: (Any?, String?),
                              baseURL: URL,
-                             deniedPolicyFeatures: [String] = []) async -> (WKWebView, MediaCaptureReplyHandler) {
+                             deniedPolicyFeatures: [String] = [],
+                             messageHandler: (any WKScriptMessageHandlerWithReply)? = nil) async -> (WKWebView, MediaCaptureReplyHandler) {
         let configuration = WKWebViewConfiguration()
         let contentController = WKUserContentController()
         configuration.userContentController = contentController
 
         let handler = MediaCaptureReplyHandler(reply: reply)
         let script = MediaCaptureUserScript()
-        contentController.addScriptMessageHandler(handler,
+        contentController.addScriptMessageHandler(messageHandler ?? handler,
                                                   contentWorld: .page,
                                                   name: script.messageNames[0])
         contentController.addUserScript(WKUserScript(
@@ -337,12 +441,20 @@ final class MediaCaptureUserScriptTests: XCTestCase {
                                             sandbox: String? = nil,
                                             removeSandboxAfterLoad: Bool = false,
                                             navigateAfterRemovingSandbox: Bool = false,
-                                            shadowRootMode: String? = nil) async throws -> [String: Any] {
+                                            shadowRootMode: String? = nil,
+                                            allow: String? = nil,
+                                            removeAllowAfterLoad: Bool = false,
+                                            nestedFrame: Bool = false,
+                                            allowAfterLoad: String? = nil,
+                                            navigateAfterChangingAllow: Bool = false) async throws -> [String: Any] {
         try await webView.callAsyncJavaScript(
             """
             const iframe = document.createElement("iframe");
             if (sandbox !== null) {
                 iframe.setAttribute("sandbox", sandbox);
+            }
+            if (allow !== null) {
+                iframe.setAttribute("allow", allow);
             }
             let container = document.body;
             if (shadowRootMode !== null) {
@@ -353,11 +465,20 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             const blob = new Blob([`
                 <script>
                 addEventListener("message", async () => {
+                    let captureWindow = globalThis;
                     try {
-                        const result = await navigator.mediaDevices.getUserMedia({ video: true });
-                        parent.postMessage({ result, rejected: false, nativeCallCount: __nativeMediaCallCount }, "*");
+                        if (${nestedFrame}) {
+                            const child = document.createElement("iframe");
+                            child.src = location.href;
+                            const loaded = new Promise(resolve => child.addEventListener("load", resolve, { once: true }));
+                            document.body.appendChild(child);
+                            await loaded;
+                            captureWindow = child.contentWindow;
+                        }
+                        const result = await captureWindow.navigator.mediaDevices.getUserMedia({ video: true });
+                        parent.postMessage({ result, rejected: false, nativeCallCount: captureWindow.__nativeMediaCallCount }, "*");
                     } catch (error) {
-                        parent.postMessage({ rejected: true, nativeCallCount: __nativeMediaCallCount }, "*");
+                        parent.postMessage({ rejected: true, nativeCallCount: captureWindow.__nativeMediaCallCount }, "*");
                     }
                 }, { once: true });
                 </script>
@@ -370,7 +491,13 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             if (removeSandboxAfterLoad) {
                 iframe.removeAttribute("sandbox");
             }
-            if (navigateAfterRemovingSandbox) {
+            if (removeAllowAfterLoad) {
+                iframe.removeAttribute("allow");
+            }
+            if (allowAfterLoad !== null) {
+                iframe.setAttribute("allow", allowAfterLoad);
+            }
+            if (navigateAfterRemovingSandbox || navigateAfterChangingAllow) {
                 iframe.removeAttribute("sandbox");
                 const reloaded = new Promise(resolve => iframe.addEventListener("load", resolve, { once: true }));
                 iframe.src = url;
@@ -394,7 +521,12 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             arguments: ["sandbox": sandbox as Any? ?? NSNull(),
                         "removeSandboxAfterLoad": removeSandboxAfterLoad,
                         "navigateAfterRemovingSandbox": navigateAfterRemovingSandbox,
-                        "shadowRootMode": shadowRootMode as Any? ?? NSNull()],
+                        "shadowRootMode": shadowRootMode as Any? ?? NSNull(),
+                        "allow": allow as Any? ?? NSNull(),
+                        "removeAllowAfterLoad": removeAllowAfterLoad,
+                        "nestedFrame": nestedFrame,
+                        "allowAfterLoad": allowAfterLoad as Any? ?? NSNull(),
+                        "navigateAfterChangingAllow": navigateAfterChangingAllow],
             in: nil,
             contentWorld: .page
         ) as? [String: Any] ?? [:]
@@ -422,6 +554,21 @@ final class MediaCaptureUserScriptTests: XCTestCase {
 }
 
 @MainActor
+private final class MediaCapturePermissionDelegate: MediaCaptureUserScriptDelegate {
+    var isMediaCapturePermissionHandlingEnabled = false
+    private(set) var requestCount = 0
+
+    func mediaCaptureUserScript(_ userScript: MediaCaptureUserScript,
+                                requestPermissionFor permissionTypes: Set<SitePermissionType>,
+                                requestID: String,
+                                in frame: WKFrameInfo,
+                                webView: WKWebView) async -> MediaCaptureBridgeDecision {
+        requestCount += 1
+        return .allow
+    }
+}
+
+@MainActor
 private final class MediaCaptureReplyHandler: NSObject, WKScriptMessageHandlerWithReply {
     private let reply: (Any?, String?)
     private(set) var receivedBodies = [[String: Any]]()
@@ -434,6 +581,10 @@ private final class MediaCaptureReplyHandler: NSObject, WKScriptMessageHandlerWi
                                didReceive message: WKScriptMessage) async -> (Any?, String?) {
         if let body = message.body as? [String: Any] {
             receivedBodies.append(body)
+            if body["isEligible"] as? Bool == false,
+               (reply.0 as? [String: String])?["decision"] != "bypass" {
+                return (["decision": "deny"], nil)
+            }
         }
         return reply
     }

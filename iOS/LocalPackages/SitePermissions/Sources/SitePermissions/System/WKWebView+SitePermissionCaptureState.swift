@@ -19,9 +19,14 @@
 
 import WebKit
 
+/// The web view's current capture activity, independent of any saved permission choice.
 public enum SitePermissionCaptureState: Equatable, Sendable {
+    /// No capture is running. The initial state, also used after capture ends (`WKMediaCaptureState.none`).
     case inactive
+    /// The web view is actively using the camera or microphone (`WKMediaCaptureState.active`).
     case active
+    /// An existing capture session is muted and can resume (`WKMediaCaptureState.muted`),
+    /// for example after calling `setCameraCaptureState(.muted)` or `setMicrophoneCaptureState(.muted)`.
     case paused
 
     init(_ state: WKMediaCaptureState) {

@@ -19,6 +19,7 @@
 
 import AVFoundation
 import BrowserServicesKitTestsUtils
+import Common
 import CoreLocation
 import ObjectiveC
 @_spi(Testing) import Persistence
@@ -30,6 +31,27 @@ import XCTest
 
 @MainActor
 final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
+
+    func testWhenLastTabReferenceIsReleasedOnBackgroundQueueThenDeinitRunsOnMainThread() async {
+        let didDeinit = expectation(description: "Tab deinitializes on the main thread")
+        let retainedTab: Unmanaged<TabViewController> = autoreleasepool {
+            let tab = makeSUT()
+            // The fake error-page handler retains its delegate, unlike the production handler.
+            tab.specialErrorPageNavigationHandler.delegate = nil
+            tab.onDeinit {
+                XCTAssertTrue(Thread.isMainThread)
+                didDeinit.fulfill()
+            }
+            return .passRetained(tab)
+        }
+
+        DispatchQueue.global().async {
+            XCTAssertFalse(Thread.isMainThread)
+            retainedTab.release()
+        }
+
+        await fulfillment(of: [didDeinit], timeout: 3)
+    }
 
     func testFlagOnRoutesOrdinaryCaptureTypesUsingCommittedTopLevelSite() async {
         let scenarios: [(WKMediaCaptureType, Set<SitePermissionType>)] = [
@@ -115,6 +137,36 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
 
         XCTAssertEqual(decisions, [.prompt, .grant])
+    }
+
+    func testFlagOffInstallsBridgeBeforeContentBlockingAssetsAndHandlesLaterActivation() async {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        // The fake's content-blocking publisher never emits assets.
+        let sut = makeSUT(featureFlagger: featureFlagger)
+        let scripts = sut.webView.configuration.userContentController.userScripts
+        let expectedSource = MediaCaptureUserScript().makeWKUserScriptSync().source
+        let mediaCaptureScripts = scripts.filter { $0.source == expectedSource }
+        XCTAssertEqual(mediaCaptureScripts.count, 1)
+        XCTAssertEqual(mediaCaptureScripts.first?.injectionTime, .atDocumentStart)
+        XCTAssertEqual(mediaCaptureScripts.first?.isForMainFrameOnly, false)
+
+        let disabledDecision = await requestPermissionThroughBridge(on: sut,
+                                                                     originHost: "top-level.example",
+                                                                     captureType: .camera)
+        XCTAssertEqual(disabledDecision, .bypass)
+
+        featureFlagger.enabledFeatureFlags = [.sitePermissions]
+        featureFlagger.triggerUpdate()
+        var didPrompt = false
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in
+            didPrompt = true
+            completion(.allowOnce)
+        }
+        let enabledDecision = await requestPermissionThroughBridge(on: sut,
+                                                                    originHost: "top-level.example",
+                                                                    captureType: .camera)
+        XCTAssertTrue(didPrompt)
+        XCTAssertEqual(enabledDecision, .allow)
     }
 
     func testFlagOnRejectsBridgeRequestBeforeMainFrameCommit() async {
@@ -227,7 +279,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         await fulfillment(of: [promptExpectation], timeout: 1)
 
         featureFlagger.enabledFeatureFlags = []
-        sut.configureSitePermissionsMediaCapture(with: nil)
+        featureFlagger.triggerUpdate()
         let originalDecision = await originalRequest.value
         XCTAssertEqual(originalDecision, .bypass)
 
@@ -239,7 +291,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertTrue(userScript.delegate === sut)
 
         featureFlagger.enabledFeatureFlags = [.sitePermissions]
-        sut.configureSitePermissionsMediaCapture(with: userScript)
+        featureFlagger.triggerUpdate()
         sut.sitePermissionsPromptHandlerOverride = { _, completion in
             completion(.denyOnce)
         }
@@ -600,6 +652,62 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             .permissionReminderDialog(type: .camera, action: .settings),
             .permissionSystemSettingsOpened(type: .camera)
         ])
+        XCTAssertFalse(sut.children.contains { $0 is UIHostingController<PermissionReminderDialogView> })
+    }
+
+    func testWhenNavigationReplacesFadingToastWithReminderThenCancelDismissesReminder() async throws {
+        let originalWindow = UIApplication.shared.firstKeyWindow
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            originalWindow?.makeKey()
+        }
+
+        let authorizationState = AVAuthorizationStateBox(status: .notDetermined)
+        let sut = makeSUT(
+            avAuthorizationStatus: { _ in authorizationState.status },
+            avRequestAccess: { _, completion in
+                authorizationState.status = .denied
+                completion(false)
+            }
+        )
+        defer { sut.closeSitePermissions() }
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in
+            completion(.allowWhileUsingSite)
+        }
+        let firstDecision = await requestPermissionThroughBridge(on: sut,
+                                                                 originHost: "top-level.example",
+                                                                 captureType: .camera)
+        XCTAssertEqual(firstDecision, .deny)
+        let toast = try XCTUnwrap(window.subviews.compactMap { $0 as? ActionMessageView }.first)
+
+        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+        sut.webView(sut.webView,
+                    didFailProvisionalNavigation: nil,
+                    withError: NSError(domain: "WebKitErrorDomain", code: 102))
+
+        let frame = WKFrameInfo.mock(isMainFrame: true,
+                                     securityOrigin: MockWKSecurityOrigin.new(host: "top-level.example"),
+                                     webView: sut.webView,
+                                     request: URLRequest(url: URL(string: "https://top-level.example/path")!))
+        // Stored Allow resolves synchronously, so the new reminder overlaps the old toast's fade.
+        let secondDecision = await sut.mediaCaptureUserScript(
+            MediaCaptureUserScript(),
+            requestPermissionFor: [.camera],
+            requestID: "0123456789abcdef0123456789abcdef:2",
+            in: frame,
+            webView: sut.webView
+        )
+        XCTAssertEqual(secondDecision, .deny)
+        XCTAssertNotNil(toast.superview)
+        let reminder = try XCTUnwrap(sut.children.compactMap {
+            ($0 as? UIHostingController<PermissionReminderDialogView>)?.rootView
+        }.first)
+        reminder.onAction(.cancel)
+
         XCTAssertFalse(sut.children.contains { $0 is UIHostingController<PermissionReminderDialogView> })
     }
 

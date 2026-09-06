@@ -30,6 +30,8 @@ public enum MediaCaptureBridgeDecision: String, Equatable, Sendable {
 @MainActor
 public protocol MediaCaptureUserScriptDelegate: AnyObject {
 
+    var isMediaCapturePermissionHandlingEnabled: Bool { get }
+
     func mediaCaptureUserScript(_ userScript: MediaCaptureUserScript,
                                 requestPermissionFor permissionTypes: Set<SitePermissionType>,
                                 requestID: String,
@@ -71,6 +73,17 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
                                       didReceive message: WKScriptMessage) async -> (Any?, String?) {
         guard let body = message.body as? [String: Any],
               body["capability"] as? String == Self.capabilityToken,
+              let delegate else {
+            return (["decision": MediaCaptureBridgeDecision.deny.rawValue], nil)
+        }
+
+        // A retained document must return to WebKit's behavior on rollback, including contexts
+        // the custom flow does not support. Check the flag before applying its eligibility rules.
+        guard delegate.isMediaCapturePermissionHandlingEnabled else {
+            return (["decision": MediaCaptureBridgeDecision.bypass.rawValue], nil)
+        }
+
+        guard body["isEligible"] as? Bool == true,
               let requestID = body["requestID"] as? String,
               Self.isValidRequestID(requestID),
               let requestsVideo = body["video"] as? Bool,
@@ -89,11 +102,11 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
             permissionTypes.insert(.microphone)
         }
 
-        let decision = await delegate?.mediaCaptureUserScript(self,
+        let decision = await delegate.mediaCaptureUserScript(self,
                                                                requestPermissionFor: permissionTypes,
                                                                requestID: requestID,
                                                                in: message.frameInfo,
-                                                               webView: webView) ?? .deny
+                                                               webView: webView)
         return (["decision": decision.rawValue], nil)
     }
 

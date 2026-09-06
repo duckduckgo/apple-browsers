@@ -43,20 +43,17 @@ public final class ContentBlockingUpdating {
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
         var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript? = nil
-        var isSitePermissionsEnabled: Bool? = nil
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { [duckAiNativeStorageHandler, sitePermissionsMediaCaptureUserScript, isSitePermissionsEnabled] sourceProvider in
+            { [duckAiNativeStorageHandler, sitePermissionsMediaCaptureUserScript] sourceProvider in
                 UserScripts(with: sourceProvider,
-                            sitePermissionsEnabled: isSitePermissionsEnabled,
                             mediaCaptureUserScript: sitePermissionsMediaCaptureUserScript,
                             duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             }
         }
 
-        func includingSitePermissionsMediaCapture(_ userScript: MediaCaptureUserScript?, enabled: Bool) -> Self {
+        func includingSitePermissionsMediaCapture(_ userScript: MediaCaptureUserScript) -> Self {
             var content = self
-            content.sitePermissionsMediaCaptureUserScript = enabled ? userScript : nil
-            content.isSitePermissionsEnabled = enabled
+            content.sitePermissionsMediaCaptureUserScript = userScript
             return content
         }
     }

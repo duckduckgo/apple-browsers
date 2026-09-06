@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import ConcurrencyExtensions
 import WebKit
 

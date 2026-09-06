@@ -22,6 +22,7 @@ import WKAbstractions
 import PixelKit
 
 @testable import Core
+@testable import DuckDuckGo
 
 class MockWebsiteDataManager: WebsiteDataManaging {
     private(set) var clearCallCount = 0

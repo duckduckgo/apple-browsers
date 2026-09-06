@@ -20,6 +20,7 @@
 import UIKit
 import SwiftUI
 import DuckUI
+import BrowserServicesKit
 import Core
 
 class AutofillListItemTableViewCell: UITableViewCell {

@@ -18,7 +18,7 @@
 //
 
 import Foundation
-@testable import Core
+@testable import DuckDuckGo
 
 class MockFireproofing: Fireproofing {
 

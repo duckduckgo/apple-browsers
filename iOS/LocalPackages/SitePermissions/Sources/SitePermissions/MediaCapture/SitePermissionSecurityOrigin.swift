@@ -19,8 +19,13 @@
 
 import WebKit
 
+/// Identifies a web origin when validating camera and microphone requests.
+/// Compares scheme, host, and effective port from either WebKit or a URL;
+/// paths, queries, and fragments are not part of an origin.
+/// This keeps a native media approval tied to the origin that requested it.
 public struct SitePermissionSecurityOrigin: Equatable, Sendable {
     private let protocolName: String
+    /// The lowercase host, without IPv6 address brackets.
     public let host: String
     private let port: Int
 
@@ -42,6 +47,10 @@ public struct SitePermissionSecurityOrigin: Equatable, Sendable {
         port = Self.effectivePort(for: protocolName, explicitPort: url.port ?? 0)
     }
 
+    /// Whether the origin uses HTTPS, or HTTP with a localhost or loopback address.
+    /// The name follows the Secure Contexts specification, but this check covers only
+    /// the schemes supported here. It does not establish that a site is safe or has
+    /// permission to capture media; WebKit still enforces document security restrictions.
     public var isPotentiallyTrustworthy: Bool {
         guard !host.isEmpty else { return false }
         if protocolName == "https" {
@@ -63,6 +72,9 @@ public struct SitePermissionSecurityOrigin: Equatable, Sendable {
         host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
     }
 
+    /// Makes an omitted default port compare equally to an explicit one, such as HTTPS port 443.
+    /// Foundation exposes the URL's port component; WebKit reports zero when it is absent.
+    /// Map that missing/zero value to the HTTP(S) default so both representations match.
     private static func effectivePort(for protocolName: String, explicitPort: Int) -> Int {
         guard explicitPort == 0 else { return explicitPort }
         switch protocolName {

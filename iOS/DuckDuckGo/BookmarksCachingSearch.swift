@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Bookmarks
 import Persistence
 import CoreData

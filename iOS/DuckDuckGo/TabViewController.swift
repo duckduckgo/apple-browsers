@@ -3340,7 +3340,7 @@ extension TabViewController: WKNavigationDelegate {
         // This check needs to happen before GPC checks. Otherwise the navigation type may be rewritten to `.other`
         // which would skip link rewrites.
         if navigationAction.navigationType != .backForward,
-           navigationAction.isTargetingMainFrame(),
+           navigationAction.isTargetingMainFrame,
            !(navigationAction.request.url?.isDuckDuckGoSearch ?? false) {
             let didRewriteLink = linkProtection.requestTrackingLinkRewrite(initiatingURL: webView.url,
                                                                            navigationAction: navigationAction,
@@ -3362,7 +3362,7 @@ extension TabViewController: WKNavigationDelegate {
         var modifiedRequest = navigationAction.request
         var didModifyRequest = false
 
-        if navigationAction.isTargetingMainFrame(),
+        if navigationAction.isTargetingMainFrame,
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),
            navigationAction.navigationType != .backForward,
            let trimmed = referrerTrimming.trimReferrer(forNavigation: navigationAction,
@@ -3371,7 +3371,7 @@ extension TabViewController: WKNavigationDelegate {
             didModifyRequest = true
         }
 
-        if navigationAction.isTargetingMainFrame(),
+        if navigationAction.isTargetingMainFrame,
            !navigationAction.isSameDocumentNavigation,
            !navigationAction.shouldDownload,
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),
@@ -3383,7 +3383,7 @@ extension TabViewController: WKNavigationDelegate {
 
         // Attach Search Token experiment signals (dindexexp param + X-DDG-Search-Token header) to SERP navigations.
         // Enrolled devices only, skipping back/forward so we don't wipe forward history.
-        if navigationAction.isTargetingMainFrame(),
+        if navigationAction.isTargetingMainFrame,
            navigationAction.navigationType != .backForward,
            let url = navigationAction.request.url,
            SerpSearchTokenInterceptor.isSerpURL(url),
@@ -3435,7 +3435,7 @@ extension TabViewController: WKNavigationDelegate {
             if let self = self,
                let url = navigationAction.request.url,
                decision != .cancel,
-               navigationAction.isTargetingMainFrame() {
+               navigationAction.isTargetingMainFrame {
                 if url.isDuckDuckGoSearch {
 
                     if !url.isDuckAIURL {
@@ -3499,7 +3499,7 @@ extension TabViewController: WKNavigationDelegate {
         // If WKNavigationAction requests to shouldPerformDownload prepare for handling it in decidePolicyFor:navigationResponse:
         recentNavigationActionShouldPerformDownloadURL = navigationAction.shouldPerformDownload ? navigationAction.request.url : nil
 
-        if navigationAction.isTargetingMainFrame()
+        if navigationAction.isTargetingMainFrame
             && tld.domain(navigationAction.request.mainDocumentURL?.host) != tld.domain(lastUpgradedURL?.host) {
             lastUpgradedURL = nil
             privacyInfo?.connectionUpgradedTo = nil
@@ -3515,7 +3515,7 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        if navigationAction.isTargetingMainFrame(), navigationAction.navigationType == .backForward {
+        if navigationAction.isTargetingMainFrame, navigationAction.navigationType == .backForward {
             adClickAttributionLogic.onBackForwardNavigation(mainFrameURL: webView.url)
         }
 
@@ -3546,7 +3546,7 @@ extension TabViewController: WKNavigationDelegate {
             performBlobNavigation(navigationAction, completion: completion)
         
         case .duck:
-            if navigationAction.isTargetingMainFrame() {
+            if navigationAction.isTargetingMainFrame {
                 duckPlayerNavigationHandler.handleDuckNavigation(navigationAction, webView: webView)
             }
             completion(.cancel)
@@ -3583,7 +3583,7 @@ extension TabViewController: WKNavigationDelegate {
                                       completion: @escaping (WKNavigationActionPolicy) -> Void) {
 
         // when navigating to a request with basic auth username/password, cache it and redirect to a trimmed URL
-        if navigationAction.isTargetingMainFrame(),
+        if navigationAction.isTargetingMainFrame,
            let credential = url.basicAuthCredential {
             var newRequest = navigationAction.request
             newRequest.url = url.removingBasicAuthCredential()
@@ -3618,7 +3618,7 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        if allowPolicy != WKNavigationActionPolicy.cancel && navigationAction.isTargetingMainFrame() {
+        if allowPolicy != WKNavigationActionPolicy.cancel && navigationAction.isTargetingMainFrame {
             if shouldUseSafariOnlyUserAgentForNextMainFrameNavigation {
                 webView.customUserAgent = userAgentManager.safariOnlyUserAgent(isDesktop: tabModel.isDesktop)
                 shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
@@ -3665,7 +3665,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func shouldUpgradeToHttps(url: URL, navigationAction: WKNavigationAction) -> Bool {
-        return url.isHttp && url.port == nil && !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame()
+        return url.isHttp && url.port == nil && !failingUrls.contains(url.host ?? "") && navigationAction.isTargetingMainFrame
     }
 
     private func performExternalNavigationFor(url: URL, action: SchemeHandler.Action) {

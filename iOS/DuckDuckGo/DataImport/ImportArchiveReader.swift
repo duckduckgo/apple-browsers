@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import BrowserServicesKit
 import ZIPFoundation
 import os.log
 import PrivacyConfig

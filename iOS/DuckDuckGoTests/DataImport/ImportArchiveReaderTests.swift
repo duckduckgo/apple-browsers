@@ -19,6 +19,7 @@
 
 import XCTest
 @testable import Core
+@testable import DuckDuckGo
 import ZIPFoundation
 
 final class ImportArchiveReaderTests: XCTestCase {

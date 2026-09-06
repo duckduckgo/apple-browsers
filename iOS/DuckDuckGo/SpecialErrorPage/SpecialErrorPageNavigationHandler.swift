@@ -66,7 +66,7 @@ extension SpecialErrorPageNavigationHandler: WebViewNavigationHandling {
 
     @MainActor
     func handleDecidePolicy(for navigationAction: WKNavigationAction, webView: WKWebView) {
-        guard navigationAction.isTargetingMainFrame() else { return }
+        guard navigationAction.isTargetingMainFrame else { return }
         maliciousSiteProtectionNavigationHandler.makeMaliciousSiteDetectionTask(for: navigationAction, webView: webView)
     }
 

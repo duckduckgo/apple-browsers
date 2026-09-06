@@ -963,7 +963,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         // Only account for MainFrame navigation
-        guard navigationAction.isTargetingMainFrame() else {
+        guard navigationAction.isTargetingMainFrame else {
             return false
         }
 

@@ -22,6 +22,7 @@ import Bookmarks
 import Persistence
 import CoreData
 @testable import Core
+@testable import DuckDuckGo
 
 class BookmarksExportPerformanceTests: XCTestCase {
     

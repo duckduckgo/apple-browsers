@@ -182,6 +182,7 @@ final class SettingsViewModel: ObservableObject {
     @MainActor
     private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
         store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+        isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sitePermissions) },
         callbacks: makeSitePermissionsCallbacks()
     )
 
@@ -1276,6 +1277,7 @@ extension SettingsViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
+                self.state.sitePermissionsEnabled = self.featureFlagger.isFeatureOn(.sitePermissions)
                 // Refresh the UI for every flag flip so the contingency notice
                 // (which reads `adBlockingAvailability.isRemotelyDisabled` live)
                 // re-renders even for users with explicit storage who skip the

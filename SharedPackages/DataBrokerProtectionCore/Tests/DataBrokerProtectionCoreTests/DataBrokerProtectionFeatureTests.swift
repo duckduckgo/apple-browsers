@@ -128,6 +128,15 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         XCTAssertEqual(mockCSSDelegate.successActionId, "expectation")
     }
 
+    func testWhenExecuteScriptActionIsParsedWithANullResponse_thenDelegateSendsSuccessWithCorrectActionId() async {
+        let params = ["result": ["success": ["actionID": "executeScript", "actionType": "executeScript", "response": NSNull()] as [String: Any]]]
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
+
+        await sut.parseActionCompleted(params: params)
+
+        XCTAssertEqual(mockCSSDelegate.successActionId, "executeScript")
+    }
+
     func testWhenGetCaptchaInfoIsParsed_thenTheCorrectCaptchaInfoIsParsed() async {
         let params = ["result": ["success": ["actionID": "getCaptchaInfo", "actionType": "getCaptchaInfo", "response": ["siteKey": "1234", "url": "www.test.com", "type": "g-captcha"]] as [String: Any]]]
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })

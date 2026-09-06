@@ -100,6 +100,9 @@ public struct Step: Codable, Sendable {
             case .expectation:
                 let action = try JSONDecoder().decode(ExpectationAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
+            case .executeScript:
+                let action = try JSONDecoder().decode(ExecuteScriptAction.self, from: jsonData).with(json: jsonData)
+                actionList.append(action)
             case .getCaptchaInfo:
                 let action = try JSONDecoder().decode(GetCaptchaInfoAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)

@@ -117,7 +117,7 @@ struct CCFSuccessResponse: Decodable {
             self.response = .fillForm
         case .click:
             self.response = .click
-        case .expectation:
+        case .expectation, .executeScript:
             self.response = .expectation
         case .emailConfirmation:
             self.response = nil // Email confirmation is done on the native side. We shouldn't have a response here

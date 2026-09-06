@@ -1,6 +1,5 @@
 //
 //  TextMasker.swift
-//  DuckDuckGo
 //
 //  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
@@ -20,10 +19,10 @@
 import Foundation
 
 public struct TextMasker {
-    
+
     public let originalText: String
     public let maxDisplayLength: Int
-    
+
     public var maskedText: String {
         let textCount = originalText.count > maxDisplayLength ? maxDisplayLength : originalText.count
         return String(repeating: "•", count: textCount)

@@ -564,6 +564,11 @@ extension TabViewController {
         let committedSite = sitePermissionsState.committedMainFrameURL.flatMap(SitePermissionKey.init(committedURL:))
         guard committedSite == site else { return }
 
+        let revokedRequestIDs = sitePermissionsState.mediaCapturePreapprovals.filter {
+            !$0.permissionTypes.isDisjoint(with: permissionTypes)
+        }.map(\.requestID)
+        sitePermissionsState.handledBridgeRequestIDs.subtract(revokedRequestIDs)
+        sitePermissionsState.mediaCapturePreapprovals.removeAll { revokedRequestIDs.contains($0.requestID) }
         webView.revokeSitePermissions(permissionTypes)
         sitePermissionsState.coordinator?.revokeManagementSessionState(for: permissionTypes, at: site)
     }
@@ -607,6 +612,10 @@ extension TabViewController {
                     return
                 }
                 presentSitePermissionRecovery(recovery, completion: completion)
+            },
+            cancellationHandler: { [weak sitePermissionsState] in
+                sitePermissionsState?.dismissDialog()
+                sitePermissionsState?.dismissRecovery()
             },
             eventHandler: { [weak self] event in
                 self?.fireSitePermissionsEvent(event)

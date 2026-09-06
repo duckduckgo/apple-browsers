@@ -139,7 +139,10 @@ public final class SitePermissionsCoordinator {
     private final class PendingRequest {
         let request: SitePermissionRequest
         let promptHandler: PromptHandler
-        let completion: Completion
+        private var completion: Completion?
+        var isCancelled = false
+
+        var hasCompleted: Bool { completion == nil }
 
         init(request: SitePermissionRequest,
              promptHandler: @escaping PromptHandler,
@@ -147,6 +150,12 @@ public final class SitePermissionsCoordinator {
             self.request = request
             self.promptHandler = promptHandler
             self.completion = completion
+        }
+
+        func complete(with resolution: SitePermissionResolution) {
+            let completion = completion
+            self.completion = nil
+            completion?(resolution)
         }
     }
 
@@ -156,6 +165,7 @@ public final class SitePermissionsCoordinator {
     private let authorizationState: AuthorizationStateProvider
     private let requestAuthorization: AuthorizationRequester
     private let recoveryHandler: RecoveryHandler
+    private let cancellationHandler: () -> Void
     private let eventHandler: EventHandler
 
     private var allowOnce = Set<SitePermissionType>()
@@ -179,6 +189,7 @@ public final class SitePermissionsCoordinator {
                             isFireMode: Bool,
                             currentContext: @escaping CurrentContextProvider,
                             recoveryHandler: @escaping RecoveryHandler,
+                            cancellationHandler: @escaping () -> Void = {},
                             eventHandler: @escaping EventHandler = { _ in }) {
         self.init(store: store,
                   isFireMode: isFireMode,
@@ -186,6 +197,7 @@ public final class SitePermissionsCoordinator {
                   authorizationState: systemPermissionClient.authorizationState,
                   requestAuthorization: systemPermissionClient.requestAuthorization,
                   recoveryHandler: recoveryHandler,
+                  cancellationHandler: cancellationHandler,
                   eventHandler: eventHandler)
     }
 
@@ -195,6 +207,7 @@ public final class SitePermissionsCoordinator {
          authorizationState: @escaping AuthorizationStateProvider,
          requestAuthorization: @escaping AuthorizationRequester,
          recoveryHandler: @escaping RecoveryHandler,
+         cancellationHandler: @escaping () -> Void = {},
          eventHandler: @escaping EventHandler = { _ in }) {
         self.store = store
         self.isFireMode = isFireMode
@@ -202,6 +215,7 @@ public final class SitePermissionsCoordinator {
         self.authorizationState = authorizationState
         self.requestAuthorization = requestAuthorization
         self.recoveryHandler = recoveryHandler
+        self.cancellationHandler = cancellationHandler
         self.eventHandler = eventHandler
     }
 
@@ -321,19 +335,19 @@ public final class SitePermissionsCoordinator {
 
     public func removeManagementSessionState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
         currentManagementSite = site
-        clearManagementSessionState(for: permissionTypes)
         if isFireMode {
             fireModeRemovedPermissionTypes.formUnion(permissionTypes)
         }
+        clearManagementSessionState(for: permissionTypes, at: site)
     }
 
     public func revokeManagementSessionState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
         currentManagementSite = site
-        clearManagementSessionState(for: permissionTypes)
         fireModeRemovedPermissionTypes.subtract(permissionTypes)
+        clearManagementSessionState(for: permissionTypes, at: site)
     }
 
-    private func clearManagementSessionState(for permissionTypes: Set<SitePermissionType>) {
+    private func clearManagementSessionState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
         allowOnce.subtract(permissionTypes)
         deniedForPage.subtract(permissionTypes)
         siteAllowedPermissionTypesThisVisit.subtract(permissionTypes)
@@ -341,6 +355,26 @@ public final class SitePermissionsCoordinator {
         for permissionType in permissionTypes {
             fireModeManagementOverrides[permissionType] = nil
         }
+        cancelRequests(for: permissionTypes, at: site)
+    }
+
+    private func cancelRequests(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
+        let isAffected: (PendingRequest) -> Bool = {
+            $0.request.context.topLevelSite == site && !$0.request.permissionTypes.isDisjoint(with: permissionTypes)
+        }
+        var cancelledRequests = queuedRequests.filter(isAffected)
+        queuedRequests.removeAll(where: isAffected)
+        if let activeRequest, !activeRequest.isCancelled, isAffected(activeRequest) {
+            activeRequest.isCancelled = true
+            // Recovery already delivered its decision; keep its FIFO slot until dismissal finishes.
+            if !activeRequest.hasCompleted {
+                self.activeRequest = nil
+            }
+            cancelledRequests.insert(activeRequest, at: 0)
+            cancellationHandler()
+        }
+        cancelledRequests.forEach { $0.complete(with: .deny(systemBlocks: [])) }
+        processNextRequestIfNeeded()
     }
 
     public func applyFireModeManagementDecision(_ decision: SitePermissionDecision,
@@ -581,9 +615,13 @@ public final class SitePermissionsCoordinator {
 
         if case .deny(let systemBlocks) = resolution,
            let recovery = recovery(for: systemBlocks) {
-            pendingRequest.completion(resolution)
+            pendingRequest.complete(with: resolution)
             // Completion releases the bridge context; page resets invalidate the active request.
             guard activeRequest === pendingRequest else { return }
+            guard !pendingRequest.isCancelled else {
+                finishRecovery(for: pendingRequest)
+                return
+            }
 
             recoveryHandler(recovery) { [weak self, weak pendingRequest] in
                 guard let self, let pendingRequest else { return }
@@ -593,7 +631,7 @@ public final class SitePermissionsCoordinator {
         }
 
         activeRequest = nil
-        pendingRequest.completion(resolution)
+        pendingRequest.complete(with: resolution)
         processNextRequestIfNeeded()
     }
 
@@ -642,7 +680,7 @@ public final class SitePermissionsCoordinator {
     }
 
     private func isActiveAndValid(_ pendingRequest: PendingRequest) -> Bool {
-        activeRequest === pendingRequest && isValid(pendingRequest)
+        activeRequest === pendingRequest && !pendingRequest.isCancelled && isValid(pendingRequest)
     }
 
     private func isValid(_ pendingRequest: PendingRequest) -> Bool {

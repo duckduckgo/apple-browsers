@@ -57,7 +57,7 @@ final class WideEventSenderTests: XCTestCase {
     }
 
     private func setupMockPixelKit() {
-        let mockFireRequest: PixelKit.FireRequest = { pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete in
+        let mockFireRequest: PixelKit.FireRequest = { pixelName, _, parameters, _, _, onComplete in
             self.capturedPixels.append((name: pixelName, parameters: parameters))
             DispatchQueue.main.async {
                 onComplete(true, nil)

@@ -1,5 +1,5 @@
 //
-//  PixelKitPlatformSuffixPolicyTests.swift
+//  WideEventFailureEventNamingTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -64,4 +64,3 @@ final class WideEventFailureEventNamingTests: XCTestCase {
                         "\(prefix)wide_pixel_save_failed_count"])
     }
 }
-

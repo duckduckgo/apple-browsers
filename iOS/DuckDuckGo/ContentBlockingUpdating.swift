@@ -42,7 +42,7 @@ public final class ContentBlockingUpdating {
         let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
-        var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript? = nil
+        var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript?
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
             { [duckAiNativeStorageHandler, sitePermissionsMediaCaptureUserScript] sourceProvider in
                 UserScripts(with: sourceProvider,

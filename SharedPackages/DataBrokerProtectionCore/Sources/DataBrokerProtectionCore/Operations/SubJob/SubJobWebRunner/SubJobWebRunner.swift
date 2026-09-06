@@ -218,7 +218,7 @@ public extension SubJobWebRunning {
                                  actionType: action.actionType,
                                  details: "Captcha resolution received")
                 stageCalculator.fireOptOutCaptchaSolve()
-                let request: CCFRequestData = .solveCaptcha(CaptchaToken(token: captchaData))
+                let request: CCFRequestData = .solveCaptcha(CaptchaToken(token: captchaData), context.profileQuery, extractedProfile)
                 recordDebugEvent(kind: .actionPayload,
                                  actionType: action.actionType,
                                  details: DebugHelper.prettyPrintedActionPayload(action: action, data: request))

@@ -58,14 +58,11 @@ public struct SitePermissionDecisionChange: Equatable, Sendable {
 public struct SitePermissionsRemoval: Sendable {
     public let snapshot: SitePermissionsSnapshot
     public let permissionTypes: Set<SitePermissionType>
-    public let revokedPermissionTypes: Set<SitePermissionType>
 
     public init(snapshot: SitePermissionsSnapshot,
-                permissionTypes: Set<SitePermissionType>,
-                revokedPermissionTypes: Set<SitePermissionType>) {
+                permissionTypes: Set<SitePermissionType>) {
         self.snapshot = snapshot
         self.permissionTypes = permissionTypes
-        self.revokedPermissionTypes = revokedPermissionTypes
     }
 }
 
@@ -116,10 +113,6 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
     public var reminderText: String? {
         guard !systemBlockedPermissionTypes.isEmpty else { return nil }
         return UserText.PermissionManagement.reminder(permissionTypes: systemBlockedPermissionTypes)
-    }
-
-    public var removalToastMessage: String {
-        UserText.PermissionManagement.permissionsRemoved(domain: site.host)
     }
 
     public var systemSettingsPermissionTypes: Set<SitePermissionType> {
@@ -232,13 +225,11 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
 
     public func removePermissions() {
         let permissionTypes = relevantPermissionTypes
-        let revokedPermissionTypes = SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes
         let snapshot = isFireMode ? SitePermissionsSnapshot.empty : store.removePermissions(for: site)
 
-        revokePermissions(revokedPermissionTypes)
+        revokePermissions(SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes)
         onRemovePermissions(SitePermissionsRemoval(snapshot: snapshot,
-                                                    permissionTypes: permissionTypes,
-                                                    revokedPermissionTypes: revokedPermissionTypes))
+                                                    permissionTypes: permissionTypes))
         dismiss()
     }
 

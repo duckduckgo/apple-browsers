@@ -222,7 +222,6 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
 
         XCTAssertEqual(order, ["revoke", "remove", "dismiss"])
         XCTAssertEqual(removal?.permissionTypes, [.camera, .microphone])
-        XCTAssertEqual(removal?.revokedPermissionTypes, [.camera, .microphone])
         XCTAssertFalse(removal?.snapshot.isEmpty ?? true)
         XCTAssertEqual(dismissal, .clean)
     }
@@ -278,7 +277,6 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         sut.openSystemSettings()
 
         XCTAssertEqual(openedTypes, [.camera])
-        XCTAssertEqual(sut.removalToastMessage, "Permissions removed for example.com")
         XCTAssertEqual(sut.reminderText,
                        "DuckDuckGo needs to access your camera, if you want to use related features on this site.")
     }

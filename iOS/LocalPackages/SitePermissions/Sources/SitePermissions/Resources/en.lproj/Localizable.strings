@@ -7,7 +7,6 @@
 "sitePermissions.management.never-allow" = "Never Allow";
 "sitePermissions.management.reload-caption" = "Reload the page for changes to take effect.";
 "sitePermissions.management.remove-permissions" = "Remove Permissions";
-"sitePermissions.management.permissions-removed" = "Permissions removed for %@";
 "sitePermissions.management.go-to-system-settings" = "Go to System Settings";
 "sitePermissions.management.close" = "Close";
 "sitePermissions.management.accessibility.in-use" = "%@, in use";

@@ -181,13 +181,6 @@ enum UserText {
             }
         }
 
-        static func permissionsRemoved(domain: String) -> String {
-            let format = NSLocalizedString("sitePermissions.management.permissions-removed", bundle: Bundle.module,
-                                           value: "Permissions removed for %@",
-                                           comment: "Toast shown after removing a site's permissions. The placeholder is the website domain.")
-            return String(format: format, domain)
-        }
-
         static func title(for option: SitePermissionPickerOption) -> String {
             switch option {
             case .askEachTime:

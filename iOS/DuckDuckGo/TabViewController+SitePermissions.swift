@@ -21,6 +21,7 @@ import AIChat
 import AVFoundation
 import BrowserServicesKit
 import Combine
+import Common
 import Core
 import FeatureFlags_iOS
 import Foundation

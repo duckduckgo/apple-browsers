@@ -213,6 +213,7 @@ extension Pixel {
         case shareSheetActivityFindInPage
         case shareSheetActivityPrint
         case shareSheetActivityAddToReadingList
+        case shareSheetActivityAddToHomeScreen
         case shareSheetActivityOther
         
         case tabBarBackPressed
@@ -1871,6 +1872,7 @@ extension Pixel {
         case unifiedToggleInputReasoningEffortPickerShown
         case unifiedToggleInputImageAttached
         case unifiedToggleInputImageRemoved
+        case unifiedToggleInputImageValidationFailed
         case unifiedToggleInputFileAttached
         case unifiedToggleInputFileRemoved
         case unifiedToggleInputFileValidationFailed
@@ -2050,6 +2052,11 @@ extension Pixel {
         case webExtensionAdBlockingInstalled
         case webExtensionAdBlockingUpgraded
         case webExtensionAdBlockingInstallError
+
+        case webExtensionSearchTokenInstalled
+        case webExtensionSearchTokenUpgraded
+        case webExtensionSearchTokenInstallError
+        case webExtensionSearchTokenNotLoaded
 
         case webExtensionAdBlockingSettingsOpen
         case webExtensionAdBlockingEnabled
@@ -2267,6 +2274,7 @@ extension Pixel.Event {
         case .shareSheetActivityFindInPage: return "m_sharesheet_activity_findinpage"
         case .shareSheetActivityPrint: return "m_sharesheet_activity_print"
         case .shareSheetActivityAddToReadingList: return "m_sharesheet_activity_addtoreadinglist"
+        case .shareSheetActivityAddToHomeScreen: return "m_sharesheet_activity_addtohomescreen"
         case .shareSheetActivityOther: return "m_sharesheet_activity_other"
             
         case .tabBarBackPressed: return "mt_bk"
@@ -3773,6 +3781,7 @@ extension Pixel.Event {
         case .unifiedToggleInputReasoningEffortPickerShown: return "m_aichat_unified_input_reasoning_effort_picker_shown"
         case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"
         case .unifiedToggleInputImageRemoved: return "m_aichat_unified_input_image_removed"
+        case .unifiedToggleInputImageValidationFailed: return "m_aichat_unified_input_image_validation_failed"
         case .unifiedToggleInputFileAttached: return "m_aichat_unified_input_file_attached"
         case .unifiedToggleInputFileRemoved: return "m_aichat_unified_input_file_removed"
         case .unifiedToggleInputFileValidationFailed: return "m_aichat_unified_input_file_validation_failed"
@@ -4013,6 +4022,11 @@ extension Pixel.Event {
         case .webExtensionAdBlockingInstalled: return "m_web_extension_ad_blocking_installed"
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
         case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
+
+        case .webExtensionSearchTokenInstalled: return "search-token_web_extension_installed"
+        case .webExtensionSearchTokenUpgraded: return "search-token_web_extension_upgraded"
+        case .webExtensionSearchTokenInstallError: return "search-token_web_extension_install_error"
+        case .webExtensionSearchTokenNotLoaded: return "search-token_web_extension_not_loaded"
 
         case .webExtensionScriptletFetchSuccess: return "m_web_extension_scriptlet_fetch_success"
         case .webExtensionScriptletFetchError: return "m_web_extension_scriptlet_fetch_error"

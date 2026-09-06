@@ -253,7 +253,9 @@ extension TabSwitcherViewController {
         let otherIndexPaths = Set<IndexPath>(tabsModel.tabs.indices.map {
             IndexPath(row: $0, section: 0)
         }).subtracting(indexPaths)
-        
+
+        guard !otherIndexPaths.isEmpty else { return }
+
         self.closeTabs(withIndexPaths: [IndexPath](otherIndexPaths),
                        confirmTitle: UserText.alertTitleCloseOtherTabs(withCount: otherIndexPaths.count),
                        confirmMessage: UserText.alertMessageCloseOtherTabs(withCount: otherIndexPaths.count))
@@ -291,7 +293,7 @@ extension TabSwitcherViewController {
 
         chrome.update(state: state,
                       tabsStyle: tabsStyle,
-                      canShowSelectionMenu: canShowSelectionMenu,
+                      canShowSelectionMenu: multiSelectMenuState.canShowSelectionMenu,
                       isEditing: isEditing)
         applyCollectionContentInsets()
         chrome.trackScrollEdge(of: collectionView)
@@ -299,23 +301,31 @@ extension TabSwitcherViewController {
 
     func applyCollectionContentInsets() {
         chrome.applyCollectionContentInset(to: normalPageController.collectionView)
-        if let fireCollectionView = firePageController?.collectionView {
-            chrome.applyCollectionContentInset(to: fireCollectionView)
+        if let firePageController {
+            if let fireCollectionView = firePageController.collectionView {
+                chrome.applyCollectionContentInset(to: fireCollectionView)
+            }
+            firePageController.applyFloatingTopClearance(chrome.topBarBottomOffset)
         }
     }
     
-    func createMultiSelectionMenu() -> UIMenu {
-        let selectedIndexPaths = selectedTabs
-        let selectedTabObjects = selectedIndexPaths.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
-        let shouldShowSelectionToggleActions = !floatingUIManager.isFloatingTabSwitcherEnabled
-        let state = TabSwitcherMultiSelectMenuState(
+    /// Describes the selection menu for the current selection, so that both the menu contents and
+    /// the enabled state of the control presenting it are derived from the same, up to date, state.
+    var multiSelectMenuState: TabSwitcherMultiSelectMenuState {
+        let selectedTabObjects = selectedTabs.compactMap { tabsModel.get(tabAt: $0.row) }
+        let isFloatingTabSwitcherEnabled = floatingUIManager.isFloatingTabSwitcherEnabled
+        return TabSwitcherMultiSelectMenuState(
             selectedCount: selectedTabObjects.count,
             totalCount: tabsModel.count,
             selectedContainsWebPages: selectedTabObjects.contains(where: { $0.link != nil }),
             allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
-            shouldShowSelectionToggleActions: shouldShowSelectionToggleActions
+            shouldShowSelectionToggleActions: !isFloatingTabSwitcherEnabled,
+            shouldShowCloseSelectedAction: !isFloatingTabSwitcherEnabled || interfaceMode.isLarge
         )
-        canShowSelectionMenu = state.canShowSelectionMenu
+    }
+
+    func createMultiSelectionMenu() -> UIMenu {
+        let state = multiSelectMenuState
         return menuBuilder.multiSelectionMenu(state: state, actions: TabSwitcherMultiSelectMenuActions(
             onDeselectAll: { [weak self] in self?.deselectAllTabs() },
             onSelectAll: { [weak self] in self?.selectAllTabs() },
@@ -380,6 +390,18 @@ extension TabSwitcherViewController {
     func editMenuEnterSelectMode() {
         Pixel.fire(pixel: .tabSwitcherEditMenuSelectTabs)
         DailyPixel.fire(pixel: .tabSwitcherEditMenuSelectTabsDaily)
+
+        guard floatingUIManager.isFloatingTabSwitcherEnabled else {
+            transitionToMultiSelect()
+            return
+        }
+
+        shouldEnterMultiSelectAfterEditMenuDismissal = true
+    }
+
+    func editMenuDidDismiss() {
+        guard shouldEnterMultiSelectAfterEditMenuDismissal, !isEditing else { return }
+        shouldEnterMultiSelectAfterEditMenuDismissal = false
         transitionToMultiSelect()
     }
 

@@ -1074,14 +1074,13 @@ extension UnifiedInputContentContainerViewController {
         delegate?.unifiedInputEditingStateDidRequestSyncSetup()
     }
 
-    /// Fires the click pixel for a tapped Search-surface suggestion. `.askAIChat` gets its own daily
-    /// pixel (needs feature-discovery params), so it's fired here after the standard mapping.
+    /// Fires the click pixels for a tapped Search-surface suggestion. Shared with the iPad popover
+    /// (`SuggestionTrayViewController`) so both surfaces report the same set.
     private func fireSearchSuggestionClickPixel(for suggestion: Suggestion) {
-        autocompletePixels.fireClickPixel(for: suggestion)
-        guard case .askAIChat = suggestion else { return }
-        autocompletePixels.fireAskAIChatClickPixel(
-            isExperimentalExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-            additionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        autocompletePixels.fireClickPixels(
+            for: suggestion,
+            isExperimentalAIChatExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            aiChatDiscoveryParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
     }
 
     private func fireDuckAISuggestionClickPixel(for suggestion: Suggestion) {

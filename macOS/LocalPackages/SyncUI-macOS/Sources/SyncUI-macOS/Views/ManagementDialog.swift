@@ -25,11 +25,15 @@ public enum PreparingToSyncMode: Equatable {
 
 public enum ManagementDialogKind: Equatable {
     case deleteAccount(_ devices: [SyncDevice])
+    case deleteAccountV2(_ devices: [SyncDevice])
     case turnOffSync
     case deviceDetails(_ device: SyncDevice)
+    case deviceDetailsV2(_ device: SyncDevice)
     case removeDevice(_ device: SyncDevice)
+    case removeDeviceV2(_ device: SyncDevice)
     case syncWithAnotherDevice(codeForDisplayOrPasting: String, stringForQRCode: String)
     case prepareToSync(PreparingToSyncMode)
+    case waitForOtherDevice
     case saveRecoveryCode(_ code: String)
     case nowSyncing
     case syncWithServer
@@ -91,16 +95,40 @@ public struct ManagementDialog: View {
                 TurnOffSyncView()
             case .deviceDetails(let device):
                 DeviceDetailsView(device: device)
+            case .deviceDetailsV2(let device):
+                DeviceDetailsViewV2(device: device)
             case .removeDevice(let device):
                 RemoveDeviceView(device: device)
+            case .removeDeviceV2(let device):
+                RemoveDeviceViewV2(device: device)
             case .deleteAccount(let devices):
                 DeleteAccountView(devices: devices)
+            case .deleteAccountV2(let devices):
+                DeleteAccountViewV2(devices: devices)
             case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):
-                SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
+                if model.isSimplifiedSyncSetupV2Enabled {
+                    SyncWithAnotherDeviceViewV2(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
+                } else {
+                    SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
+                }
             case .prepareToSync(let mode):
-                PreparingToSyncView(mode: mode)
+                if model.isSimplifiedSyncSetupV2Enabled {
+                    PreparingToSyncViewV2(state: .connecting)
+                } else {
+                    PreparingToSyncView(mode: mode)
+                }
+            case .waitForOtherDevice:
+                if model.isSimplifiedSyncSetupV2Enabled {
+                    PreparingToSyncViewV2(state: .waitingForOtherDevice)
+                } else {
+                    PreparingToSyncView(mode: .twoDevicePairing)
+                }
             case .saveRecoveryCode(let code):
-                SaveRecoveryPDFView(code: code)
+                if model.isSimplifiedSyncSetupV2Enabled {
+                    SyncSuccessViewV2(code: code)
+                } else {
+                    SaveRecoveryPDFView(code: code)
+                }
             case .nowSyncing:
                 DeviceSyncedView()
             case .syncWithServer:

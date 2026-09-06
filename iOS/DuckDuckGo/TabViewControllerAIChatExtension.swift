@@ -40,7 +40,7 @@ protocol AITabController {
     func submitToggleSidebarAction()
 
     /// Opens a new AI chat in a new tab.
-    func openNewChatInNewTab()
+    func openNewChatInNewTab(source: AIChatEntryPointSource)
 }
 
 // MARK: - AITabController
@@ -59,10 +59,11 @@ extension TabViewController: AITabController {
         isVoiceModeRequested = false
 
         aiChatContentHandler.setPayload(payload: payload)
+        let hasText = query?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
         let hasAttachments = images?.isEmpty == false || files?.isEmpty == false
-        if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hasAttachments {
+        if hasText || hasAttachments {
             let prompt = AIChatNativePrompt.queryPrompt(
-                query,
+                query ?? "",
                 autoSubmit: autoSend,
                 toolChoice: tools?.map(\.rawValue),
                 images: images,
@@ -108,14 +109,14 @@ extension TabViewController: AITabController {
     }
     
     /// Opens a new AI chat in a new tab.
-    func openNewChatInNewTab() {
+    func openNewChatInNewTab(source: AIChatEntryPointSource) {
         let newChatURL = aiChatContentHandler.buildQueryURL(
             query: nil,
             autoSend: false,
             flowType: .default,
             tools: nil
         )
-        delegate?.tab(self, didRequestNewTabForUrl: newChatURL, openedByPage: false, inheritingAttribution: nil)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source)
     }
 
     /// Opens the Duck.ai chats sidebar in a new tab. Mirrors the contextual sheet's "View all chats"
@@ -166,5 +167,20 @@ extension TabViewController {
         }
 
         return .openInNewTab(url)
+    }
+
+    /// Page-started main-frame navigations into Duck.ai that native attributes. The tab's own loads
+    /// report their entry where they start, so the one still pending is skipped.
+    static func inPageDuckAIEntrySource(currentURL: URL?,
+                                        navigationAction: WKNavigationAction,
+                                        pendingNativeLoadURL: URL?) -> AIChatEntryPointSource? {
+        guard navigationAction.isTargetingMainFrame(),
+              navigationAction.navigationType != .backForward,
+              navigationAction.navigationType != .reload,
+              let targetURL = navigationAction.request.url,
+              targetURL != pendingNativeLoadURL else {
+            return nil
+        }
+        return AIChatEntryPointSource.forInPageNavigation(from: currentURL, to: targetURL)
     }
 }

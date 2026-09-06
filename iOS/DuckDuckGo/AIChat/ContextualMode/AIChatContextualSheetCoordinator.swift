@@ -71,6 +71,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user requests a new Duck.ai voice chat.
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator)
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -102,6 +105,7 @@ final class AIChatContextualSheetCoordinator {
     private var sessionEffectCancellable: AnyCancellable?
     private var currentPageURLCancellable: AnyCancellable?
     private var didFinishURLCancellable: AnyCancellable?
+    private var documentReadCancellable: AnyCancellable?
     private var currentPageURL: URL?
     private(set) var persistentUTIHost: AIChatContextualUTIHost?
     private var latestDidFinishURL: URL?
@@ -230,6 +234,15 @@ final class AIChatContextualSheetCoordinator {
                     await self?.notifyPageChanged()
                 }
             }
+        self.documentReadCancellable = pageContextHandler.documentReadInProgressPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.handleDocumentReadInProgress($0) }
+    }
+
+    private func handleDocumentReadInProgress(_ inProgress: Bool) {
+        let chip = persistentUTIHost?.chipViewModel
+        if inProgress { chip?.beginLoading() } else { chip?.endLoading() }
+        sessionState.setDocumentChipLoading(inProgress && chip != nil)
     }
 
     // MARK: - Public Methods
@@ -538,6 +551,9 @@ final class AIChatContextualSheetCoordinator {
             await presentFloatingInput(from: presentingViewController, skippingAutoAttach: true)
         } else {
             await presentSheet(from: presentingViewController, restoreURL: restoreURL, skippingAutoAttach: true)
+            if action.attachesSelection {
+                persistentUTIHost?.activateInput()
+            }
         }
         refreshSelectionChips()
 
@@ -597,7 +613,7 @@ final class AIChatContextualSheetCoordinator {
             if !didTrigger {
                 sessionState.clearProcessingNavigationFlag()
             }
-        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
+        } else if sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
@@ -752,6 +768,10 @@ private extension AIChatContextualSheetCoordinator {
         }
         host.onPromptDelivered = { [weak self] in
             self?.sessionState.markUTIContextDelivered()
+        }
+        host.onDuckAIPromptSubmitted = { [weak self] origin in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: origin)
         }
         host.onAttachmentsChanged = { [weak self] in
             self?.sessionState.refreshForAttachmentChange()
@@ -917,7 +937,7 @@ private extension AIChatContextualSheetCoordinator {
                 }
 
                 if let cached = self.sessionState.latestContext?.contextData,
-                   cached.attached != false, !cached.content.isEmpty {
+                   cached.attached != false, cached.hasAttachedPage {
                     return cached
                 }
                 self.sessionState.beginManualAttach(fromFrontend: true)
@@ -1165,6 +1185,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
         selectionJourneyInstrumentation.promptSubmitted()
         sessionState.handlePromptSubmission(prompt)
+        delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: .contextualChat)
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,

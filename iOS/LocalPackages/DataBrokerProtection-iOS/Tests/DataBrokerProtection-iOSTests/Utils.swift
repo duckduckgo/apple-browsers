@@ -88,7 +88,10 @@ enum DBPIOSManagerTestUtils {
         optOutJobData: [OptOutJobData] = []
     ) -> BrokerProfileQueryData {
         BrokerProfileQueryData(
-            dataBroker: .mock(withId: brokerId),
+            dataBroker: .mockWithDefaults(
+                id: brokerId,
+                steps: DataBroker.mock.steps
+            ),
             profileQuery: ProfileQuery(id: profileQueryId, firstName: "A", lastName: "B", city: "C", state: "D", birthYear: 1980),
             scanJobData: .init(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: scanPreferredRunDate, historyEvents: []),
             optOutJobData: optOutJobData

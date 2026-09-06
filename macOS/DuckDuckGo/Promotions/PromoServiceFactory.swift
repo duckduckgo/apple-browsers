@@ -64,11 +64,15 @@ struct PromoServiceFactory {
             freemiumDBP,
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
             nextSteps,
+            cookiePopupsBlocked(delegate: dependencies.cookiePopupsBlockedPromoDelegate),
+            autofillToolbarPinning(dependencies: dependencies),
             subscriptionPromo(delegate: dependencies.subscriptionPromoDelegate),
             defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockInactiveModal(service: dependencies.defaultBrowserAndDockPromptService),
             cookiePopupProtectionOptIn(dependencies: dependencies),
+            syncFavicons(dependencies: dependencies),
+            bookmarkToolbar(dependencies: dependencies),
             autoplayDiscoverability(dependencies: dependencies)
         ]
 

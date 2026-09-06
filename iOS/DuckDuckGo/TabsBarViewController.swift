@@ -998,11 +998,13 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {
+        recordDuckAISessionPendingExit(.fireTabOpened)
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         newTab()
     }
 
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
+        recordDuckAISessionPendingExit(.newTabOpened)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
     }
@@ -1012,7 +1014,7 @@ extension MainViewController: TabsBarDelegate {
         if let currentTab, currentTab.tabModel.link != nil {
             // Bypasses `openAIChat`, so fire the entry pixel directly.
             fireAIChatEntryPointPixel(source: .tabsBarButton, opensNewTab: true, hasPrompt: false)
-            currentTab.openNewChatInNewTab()
+            currentTab.openNewChatInNewTab(source: .tabsBarButton)
         } else {
             openAIChat(source: .tabsBarButton)
         }

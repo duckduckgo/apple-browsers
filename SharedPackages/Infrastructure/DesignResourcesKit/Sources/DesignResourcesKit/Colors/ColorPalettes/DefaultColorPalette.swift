@@ -340,6 +340,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
         case .floatingAddressBarBackground:
             return DynamicColor(lightColor: .shade(0.05), darkColor: .tint(0.08))
+        case .floatingEmbeddedAddressBarBackground:
+            return DynamicColor(lightColor: .tint(0.8), darkColor: .tint(0.08))
         case .unifiedToggleInputAttachmentErrorBannerBackground:
             return DynamicColor(lightColor: xF6CDD1, darkColor: x5A2A2A)
         case .unifiedToggleInputAttachmentErrorText:
@@ -358,6 +360,26 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .fireModeBackground: return fireModeBackground
         case .fireModeCardBackground: return fireModeCardBackground
         case .duckAIVoiceCellBackground: return duckAIVoiceCellBackground
+        case .confettiMandarinFill:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)
+        case .confettiMandarinStroke:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin70)
+        case .confettiPondwaterFill:
+            return DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater50)
+        case .confettiPondwaterStroke:
+            return DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater70)
+        case .confettiLilypadFill:
+            return DynamicColor(staticColor: RebrandingColor.Lilypad.lilypad50)
+        case .confettiLilypadStroke:
+            return DynamicColor(staticColor: RebrandingColor.Lilypad.lilypad70)
+        case .confettiBlossomFill:
+            return DynamicColor(staticColor: RebrandingColor.Blossom.blossom50)
+        case .confettiBlossomStroke:
+            return DynamicColor(staticColor: RebrandingColor.Blossom.blossom70)
+        case .confettiPollenFill:
+            return DynamicColor(staticColor: RebrandingColor.Pollen.pollen50)
+        case .confettiPollenStroke:
+            return DynamicColor(staticColor: RebrandingColor.Pollen.pollen70)
         }
     }
 }

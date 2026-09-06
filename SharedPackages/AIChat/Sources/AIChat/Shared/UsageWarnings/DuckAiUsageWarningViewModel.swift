@@ -20,21 +20,18 @@ import Combine
 import Foundation
 import os.log
 
-/// Owns the usage-limit message for one Duck.ai input surface. With no UI yet, the debug log is the
-/// observable surface: it reports the resolved decision, or the gate that suppressed it.
+/// Owns the usage-limit message for one Duck.ai input surface.
 public final class DuckAiUsageWarningViewModel: ObservableObject {
 
     @Published public private(set) var warning: DuckAiUsageWarning?
 
-    /// Wired to the platform's model selection and upsell; this type decides what to offer, never applies it.
+    /// This type decides what to offer; the platform applies it.
     public var onAction: ((DuckAiUsageAction) -> Void)?
     /// The `>` beside the primary action.
     public var onOpenModelPicker: (() -> Void)?
 
-    /// `nil` means inactive (flag off, or no storage bridge), which differs from having nothing to show.
-    private let limitsProvider: DuckAiUsageLimitsProviding?
-    private let tierProvider: () -> AIChatUserTier
-    private let isInternalUser: () -> Bool
+    /// `nil` means inactive (flag off, no bridge), which differs from having nothing to show.
+    private let snapshotProvider: DuckAiUsageSnapshotProviding?
     private let dismissalStore: DuckAiUsageWarningDismissalStoring
     private let resolver: DuckAiUsageWarningResolver
     private let isTrialEligible: () -> Bool
@@ -42,20 +39,16 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
     private let isFireMode: () -> Bool
     private let dateProvider: () -> Date
 
-    /// Kept so `dismiss()` can recover the window's `resetsAt` without a second storage read.
-    private var lastReadLimits: DuckAiUsageLimits = .noData
+    /// So `dismiss()` and `performAction()` record against the notice they were shown for.
+    private var lastReadSnapshot: DuckAiUsageSnapshot = .noData
 
-    public init(limitsProvider: DuckAiUsageLimitsProviding?,
-                tierProvider: @escaping () -> AIChatUserTier,
-                isInternalUser: @escaping () -> Bool,
+    public init(snapshotProvider: DuckAiUsageSnapshotProviding?,
                 dismissalStore: DuckAiUsageWarningDismissalStoring,
                 modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
                 isTrialEligible: @escaping () -> Bool = { false },
                 isFireMode: @escaping () -> Bool = { false },
                 dateProvider: @escaping () -> Date = Date.init) {
-        self.limitsProvider = limitsProvider
-        self.tierProvider = tierProvider
-        self.isInternalUser = isInternalUser
+        self.snapshotProvider = snapshotProvider
         self.dismissalStore = dismissalStore
         self.resolver = DuckAiUsageWarningResolver(dismissalStore: dismissalStore,
                                                    modelSuggester: modelSuggester)
@@ -64,45 +57,85 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         self.dateProvider = dateProvider
     }
 
+    /// The notice the snapshot carries, whether or not it is being shown. Acting on a message
+    /// retires the message, not the limit behind it, and a caller may still have to respect it.
+    public var activeNoticeID: DuckAiUsageNotice.ID? { lastReadSnapshot.notice?.id }
+
     /// Synchronous: a lookup in the already-loaded entries blob.
     public func refresh() {
-        // Fire windows and fire tabs are out of scope: an isolated session must not surface the
-        // regular session's usage, and has no usage of its own worth warning about.
+        // An isolated session must not surface the regular session's usage.
         guard !isFireMode() else {
             warning = nil
             Logger.aiChat.debug("Duck.ai usage warning: none — reason=fireMode")
             return
         }
-        guard let limitsProvider else {
+        guard let snapshotProvider else {
             warning = nil
             Logger.aiChat.debug("Duck.ai usage warning: none — reason=featureInactive")
             return
         }
-        lastReadLimits = limitsProvider.currentUsageLimits()
+        lastReadSnapshot = snapshotProvider.currentSnapshot()
         resolveAndPublish()
     }
 
-    /// Holds until the window resets or the user crosses the next redisplay threshold.
+    /// Holds until web publishes a snapshot for the next reset period.
     public func dismiss() {
-        guard let warning, warning.isDismissible, let data = lastReadLimits.window(warning.window) else { return }
+        guard let warning, warning.isDismissible, let notice = lastReadSnapshot.notice else { return }
 
-        let window = warning.window
-        let threshold = window.redisplayThreshold(forDisplayedPercent: data.displayedPercent)
-        dismissalStore.setDismissal(DuckAiUsageWarningDismissal(resetsAt: data.resetsAt, threshold: threshold),
-                                    for: window)
-        Logger.aiChat.debug("""
-            Duck.ai usage warning dismissed: window=\(window.rawValue, privacy: .public) \
-            threshold=\(threshold, privacy: .public)
-            """)
+        dismissalStore.setDismissal(DuckAiUsageWarningDismissal(notice: notice))
+        Logger.aiChat.debug("Duck.ai usage warning dismissed: notice=\(notice.id.rawValue, privacy: .public)")
         resolveAndPublish()
     }
 
     public func performAction() {
-        guard let action = warning?.action else { return }
+        guard let action = warning?.action, let notice = lastReadSnapshot.notice else { return }
 
         Logger.aiChat.debug("Duck.ai usage warning CTA taken: \(action.buttonTitle, privacy: .public)")
         onAction?(action)
+
+        // After the sink has run, and before the re-resolve that has to see it.
+        if action.suppressesNoticeUntilSnapshotChanges, let signature = lastReadSnapshot.signature {
+            dismissalStore.setActedSnapshot(DuckAiUsageWarningActedSnapshot(noticeID: notice.id.rawValue,
+                                                                           signature: signature))
+        }
         resolveAndPublish()
+    }
+
+    /// The `>` opens a picker that applies the model itself, so the message is stood down from there
+    /// too — otherwise the chevron leaves it up while the button beside it hides it.
+    public func modelSwitchedFromMessage() {
+        guard warning?.offersModelPicker == true else { return }
+        recordActedOnCurrentSnapshot()
+    }
+
+    /// A switch made in the normal model picker, which is the CTA by another route. Call it *before*
+    /// applying the switch: the suggestion retargets to the new model as soon as it lands. Only the
+    /// model the message offers counts — any other pick hasn't taken its advice.
+    @discardableResult
+    public func modelSwitchedToSuggestion(_ modelId: String) -> Bool {
+        guard warning?.action?.suggestedModelId == modelId else { return false }
+        return recordActedOnCurrentSnapshot()
+    }
+
+    /// A switch from the bar's own picker settles the message only if web offered that model as a step
+    /// down from the one the user was on. Read off the CTA: iOS re-resolves before reporting the switch.
+    public func userSwitchedModel(from previousModelId: String?, to modelId: String) {
+        guard let cta = lastReadSnapshot.cta, cta.id.asksForModelSwitch,
+              cta.target(forSelectedModelId: previousModelId).candidateModelIds.contains(modelId) else { return }
+
+        Logger.aiChat.debug("Duck.ai usage warning stood down: user switched model")
+        recordActedOnCurrentSnapshot()
+    }
+
+    @discardableResult
+    private func recordActedOnCurrentSnapshot() -> Bool {
+        guard let notice = lastReadSnapshot.notice,
+              let signature = lastReadSnapshot.signature else { return false }
+
+        dismissalStore.setActedSnapshot(DuckAiUsageWarningActedSnapshot(noticeID: notice.id.rawValue,
+                                                                       signature: signature))
+        resolveAndPublish()
+        return true
     }
 
     public func openModelPicker() {
@@ -112,16 +145,21 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         onOpenModelPicker?()
     }
 
+    /// Whether a switch was taken on the notice in the current snapshot, whatever web has published
+    /// since: the record outlives the signature match that hides the message.
+    public var hasActedOnCurrentNotice: Bool {
+        guard let notice = lastReadSnapshot.notice, let acted = dismissalStore.actedSnapshot() else { return false }
+        return acted.noticeID == notice.id.rawValue
+    }
+
     /// Teardown: drops the message without recording a dismissal.
     public func clear() {
         warning = nil
-        lastReadLimits = .noData
+        lastReadSnapshot = .noData
     }
 
     private func resolveAndPublish() {
-        let outcome = resolver.resolve(limits: lastReadLimits,
-                                       tier: tierProvider(),
-                                       isInternalUser: isInternalUser(),
+        let outcome = resolver.resolve(snapshot: lastReadSnapshot,
                                        isTrialEligible: isTrialEligible(),
                                        now: dateProvider())
         switch outcome {
@@ -134,8 +172,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         }
     }
 
-    /// The title carries the percentage and goes out `.public`: this is debug-level behind an
-    /// internal-only flag, and redacting the line the message is read from would defeat logging it.
+    /// `.public` because redacting the line the message is read from would defeat logging it.
     private func log(_ warning: DuckAiUsageWarning, modelSuggestion: DuckAiModelSuggestionOutcome) {
         let message = warning.messagePreview
         let ctaDiagnosis: String
@@ -150,9 +187,7 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
             picker=\(warning.offersModelPicker, privacy: .public) \
             dismissible=\(warning.isDismissible, privacy: .public) \
             [window=\(warning.window.rawValue, privacy: .public) \
-            message=\(warning.message.rawValue, privacy: .public) \
-            severity=\(warning.severity.loggingName, privacy: .public) \
-            tier=\(self.tierProvider().rawValue, privacy: .public) \
+            notice=\(warning.message.rawValue, privacy: .public) \
             cta=\(ctaDiagnosis, privacy: .public)]
             """)
     }

@@ -26,7 +26,7 @@ struct SubscriptionOnboardingHeaderView: View {
     private enum Metrics {
         static let graphicWidth: CGFloat = 128
         static let graphicHeight: CGFloat = 96
-        static let graphicBottomSpacing: CGFloat = 24
+        static let graphicBottomSpacing: CGFloat = 16
     }
 
     private let visual: Graphic?
@@ -70,8 +70,7 @@ struct SubscriptionOnboardingHeaderView: View {
 }
 
 private extension SubscriptionOnboardingHeaderView {
-    /// Renders Markdown, and since every link leads to the section's info screen any tap fires
-    /// `onInfoLinkTap` — falling back to the system URL handler when that's nil.
+    /// Renders Markdown; links fire `onInfoLinkTap` or fall back to the system URL handler.
     func explanationView(_ explanation: String) -> some View {
         Text(.init("\(explanation)"))
             .daxSubheadRegular()

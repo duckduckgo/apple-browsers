@@ -51,6 +51,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onPromptSubmitted: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
+    var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?
 
@@ -70,7 +71,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         isCurrentPageAttachable: @escaping () -> Bool = { true },
         isFireTab: Bool,
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
-        voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
@@ -104,7 +104,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             isAutoAttachEnabled: isAutoAttachEnabled
         )
         coordinator.delegate = self
-        coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
         coordinator.onPageContextAttachRequested = { [weak chipViewModel] in
             chipViewModel?.tapToAttach()
         }
@@ -399,6 +398,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.viewController.isInputFirstResponder
     }
 
+    var isInputCollapsed: Bool {
+        coordinator.isContextualChatCollapsed
+    }
+
     /// A finished transcript belongs in the input, focused so the user can edit or send it.
     func applyDictatedQuery(_ query: String) {
         setText(query)
@@ -476,6 +479,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     func unifiedToggleInputDidSubmitPromptToBoundChat() {
         reportFirstPromptSubmission()
+    }
+
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
+        onDuckAIPromptSubmitted?(origin)
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String,

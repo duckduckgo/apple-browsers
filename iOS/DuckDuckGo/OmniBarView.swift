@@ -129,7 +129,7 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func makeGlass()
     func makeOpaque()
 
-    /// Re-asserts the field's resting background for the current position. No-op unless floating UI.
+    /// Re-asserts the field's resting appearance for the current position. No-op unless floating UI.
     func restoreFloatingFieldAppearance()
 
     /// Swaps the omnibar Duck.ai button glyph to reflect a contextual session on this tab: a surface
@@ -139,6 +139,18 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     /// In floating UI minimal chrome, wraps the button groups in their own glass capsules (the field
     /// keeps its glass). Pass `false` to restore the standard per-position appearance.
     func setFloatingMinimalChromeBar(_ enabled: Bool)
+}
+
+extension OmniBarView {
+    /// Size of the visible search field (the glass). Local bounds stay stable while the bar slides,
+    /// unlike the bar's window frame. Falls back to the full bar size before the first layout.
+    var restingSearchFieldSize: CGSize {
+        let size = searchContainer.bounds.size
+        if size.width > 0, size.height > 0 {
+            return size
+        }
+        return CGSize(width: frame.width, height: expectedHeight)
+    }
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.

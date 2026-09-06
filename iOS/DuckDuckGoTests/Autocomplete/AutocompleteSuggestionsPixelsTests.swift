@@ -130,6 +130,38 @@ final class AutocompleteSuggestionsPixelsTests: XCTestCase {
         XCTAssertTrue(firedNames.isEmpty)
     }
 
+    // MARK: - Click (total entry point)
+
+    func testClickPixelsFiresOnlyTheStandardPixelForANonAIChatSuggestion() {
+        pixels.fireClickPixels(for: .phrase(phrase: "q"),
+                               isExperimentalAIChatExperience: true,
+                               aiChatDiscoveryParameters: [:])
+
+        XCTAssertEqual(firedNames, [Pixel.Event.autocompleteClickPhrase.name])
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
+    }
+
+    func testClickPixelsFiresTheDailyPixelForAskAIChat() {
+        pixels.fireClickPixels(for: .askAIChat(value: "q"),
+                               isExperimentalAIChatExperience: true,
+                               aiChatDiscoveryParameters: ["was_used_before": "1"])
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName,
+                       Pixel.Event.autocompleteAskAIChatExperimentalExperience.name)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["was_used_before"], "1")
+    }
+
+    /// The AI-chat context reads settings and feature-discovery state, so it must stay unevaluated on
+    /// the common (non-AI-chat) tap.
+    func testClickPixelsDoesNotResolveTheAIChatContextForOtherSuggestions() {
+        var didResolveContext = false
+        pixels.fireClickPixels(for: .website(url: url("https://a.com")),
+                               isExperimentalAIChatExperience: { didResolveContext = true; return true }(),
+                               aiChatDiscoveryParameters: [:])
+
+        XCTAssertFalse(didResolveContext)
+    }
+
     // MARK: - Ask AI Chat (daily)
 
     func testAskAIChatExperimentalDailyPixel() {

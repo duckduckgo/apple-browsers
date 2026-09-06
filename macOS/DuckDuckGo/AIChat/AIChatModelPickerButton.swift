@@ -93,8 +93,32 @@ final class AIChatModelPickerButton: NSView {
         }
     }
 
+    var isReadOnly = false {
+        didSet {
+            guard isReadOnly != oldValue else { return }
+            chevronImageView.isHidden = isReadOnly
+            isHovered = false
+            isMouseDown = false
+            setAccessibilityRole(isReadOnly ? .staticText : .popUpButton)
+            invalidateIntrinsicContentSize()
+        }
+    }
+
     var tintColor: NSColor? {
         didSet {
+            updateAppearance()
+        }
+    }
+
+    /// Greys the chip out and makes it inert, for the usage-limit block. Not an `NSControl`, so
+    /// there is no inherited `isEnabled` to lean on.
+    var isEnabled: Bool = true {
+        didSet {
+            guard isEnabled != oldValue else { return }
+            if !isEnabled {
+                isMouseDown = false
+                isHovered = false
+            }
             updateAppearance()
         }
     }
@@ -143,7 +167,8 @@ final class AIChatModelPickerButton: NSView {
 
     override var intrinsicContentSize: NSSize {
         let labelWidth = nameLabel.intrinsicContentSize.width
-        let totalWidth = horizontalPadding + labelWidth + Constants.iconTextSpacing + Constants.chevronSize + horizontalPadding
+        let menuIndicatorWidth = isReadOnly ? 0 : Constants.iconTextSpacing + Constants.chevronSize
+        let totalWidth = horizontalPadding + labelWidth + menuIndicatorWidth + horizontalPadding
         return NSSize(width: totalWidth, height: Constants.height)
     }
 
@@ -159,8 +184,8 @@ final class AIChatModelPickerButton: NSView {
 
     var onTabPressed: (() -> Void)?
 
-    override var acceptsFirstResponder: Bool { true }
-    override var canBecomeKeyView: Bool { true }
+    override var acceptsFirstResponder: Bool { isEnabled && !isReadOnly }
+    override var canBecomeKeyView: Bool { isEnabled && !isReadOnly }
 
     override func becomeFirstResponder() -> Bool {
         let didBecome = super.becomeFirstResponder()
@@ -178,6 +203,7 @@ final class AIChatModelPickerButton: NSView {
     }
 
     func takeKeyboardFocus() {
+        guard isEnabled, !isReadOnly else { return }
         wantsFocusRing = true
         window?.makeFirstResponder(self)
     }
@@ -273,18 +299,23 @@ final class AIChatModelPickerButton: NSView {
         CATransaction.setDisableActions(true)
 
         NSAppearance.withAppAppearance {
-            if isMouseDown {
+            // Checked before the transient flags, so a press or hover recorded on the way into the
+            // disabled state can't leave a fill behind.
+            if !isEnabled {
+                backgroundLayer.opacity = 0
+            } else if !isReadOnly && isMouseDown {
                 backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
                 backgroundLayer.opacity = 1
-            } else if isHovered {
+            } else if !isReadOnly && isHovered {
                 backgroundLayer.backgroundColor = hoverBackgroundColor.cgColor
                 backgroundLayer.opacity = 1
             } else {
                 backgroundLayer.opacity = 0
             }
 
-            nameLabel.textColor = tintColor
-            chevronImageView.contentTintColor = tintColor
+            let contentColor = isEnabled ? tintColor : NSColor.secondaryLabelColor
+            nameLabel.textColor = contentColor
+            chevronImageView.contentTintColor = contentColor
         }
 
         CATransaction.commit()
@@ -319,7 +350,7 @@ final class AIChatModelPickerButton: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        isHovered = true
+        isHovered = isEnabled && !isReadOnly
         NSCursor.arrow.set()
     }
 
@@ -333,7 +364,7 @@ final class AIChatModelPickerButton: NSView {
 
     /// For the cases where the tracking area can't be trusted — see `sendMenuOpeningAction`.
     private func refreshHoverState() {
-        guard let window else {
+        guard isEnabled, !isReadOnly, let window else {
             isHovered = false
             return
         }
@@ -346,16 +377,19 @@ final class AIChatModelPickerButton: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        guard isEnabled, !isReadOnly else { return }
         wantsFocusRing = false
         isMouseDown = true
     }
 
     override func mouseDragged(with event: NSEvent) {
+        guard isEnabled, !isReadOnly else { return }
         let locationInView = convert(event.locationInWindow, from: nil)
         isMouseDown = bounds.contains(locationInView)
     }
 
     override func mouseUp(with event: NSEvent) {
+        guard isEnabled, !isReadOnly else { return }
         let locationInView = convert(event.locationInWindow, from: nil)
         if bounds.contains(locationInView) && isMouseDown {
             if let action, let target {
@@ -369,6 +403,14 @@ final class AIChatModelPickerButton: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
+        guard !isReadOnly else {
+            if event.keyCode == 48 {
+                onTabPressed?()
+            } else {
+                super.keyDown(with: event)
+            }
+            return
+        }
         switch event.keyCode {
         case 48: // Tab
             if let onTabPressed {
@@ -377,7 +419,7 @@ final class AIChatModelPickerButton: NSView {
                 super.keyDown(with: event)
             }
         case 49, 36: // Space, Return - trigger action
-            if let action, let target {
+            if isEnabled, let action, let target {
                 NSApp.sendAction(action, to: target, from: self)
             }
         default:
@@ -393,7 +435,7 @@ final class AIChatModelPickerButton: NSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        guard !isHidden, frame.contains(point) else { return nil }
+        guard !isHidden, !isReadOnly, frame.contains(point) else { return nil }
         return self
     }
 

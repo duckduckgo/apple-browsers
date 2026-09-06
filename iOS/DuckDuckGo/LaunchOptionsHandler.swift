@@ -34,12 +34,6 @@ public final class LaunchOptionsHandler {
 
     // MARK: - UI Test Override Constants
 
-    private enum PIRTestOverrides {
-        static let profileState = "pir.profileState"
-        static let debugServer = "pir.debugServer"
-        static let openDashboardForTesting = "pir.openDashboardForTesting"
-    }
-
     /// Constants for UI test override launch parameters
     /// These allow Maestro tests to override feature flags, config rollouts, and experiments
     private enum UITestOverrides {
@@ -146,32 +140,9 @@ public final class LaunchOptionsHandler {
         sanitisedEnvParameter(string: userDefaults.string(forKey: Self.appVariantName))
     }
 
-    public var pirProfileStateOverride: String? {
-        guard allowsPIRTestOverrides else { return nil }
-        return sanitisedEnvParameter(string: userDefaults.string(forKey: PIRTestOverrides.profileState))
-    }
-
-    public var shouldAutostartPIRDebugServer: Bool {
-        guard allowsPIRTestOverrides else { return false }
-        return userDefaults.string(forKey: PIRTestOverrides.debugServer) == "true"
-    }
-
-    public var shouldOpenPIRDashboardForTesting: Bool {
-        guard allowsPIRTestOverrides else { return false }
-        return userDefaults.string(forKey: PIRTestOverrides.openDashboardForTesting) == "true"
-    }
-
     private func sanitisedEnvParameter(string: String?) -> String? {
         guard let string, string != "null" else { return nil }
         return string
-    }
-
-    private var allowsPIRTestOverrides: Bool {
-#if DEBUG
-        isUITesting
-#else
-        false
-#endif
     }
 }
 

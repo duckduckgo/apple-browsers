@@ -127,7 +127,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
-    private let autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating?
+    private let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? // swiftlint:disable:this weak_delegate
 
     let themeManager: ThemeManaging
     private let tabDragAndDropManager: TabDragAndDropManager
@@ -230,7 +230,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
         tabDragAndDropManager: TabDragAndDropManager,
-        autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil
+        cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? = nil
     ) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -243,7 +243,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 aiChatMenuConfig: aiChatMenuConfig,
                 duckAIChromeButtonsVisibilityManager: duckAIChromeButtonsVisibilityManager,
                 tabDragAndDropManager: tabDragAndDropManager,
-                autoconsentStatsPopoverCoordinator: autoconsentStatsPopoverCoordinator
+                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
             )
         }!
     }
@@ -262,7 +262,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging,
           themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
           tabDragAndDropManager: TabDragAndDropManager,
-          autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil) {
+          cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? = nil) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.fireproofDomains = fireproofDomains
@@ -276,7 +276,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         )
         self.themeManager = themeManager
         self.tabDragAndDropManager = tabDragAndDropManager
-        self.autoconsentStatsPopoverCoordinator = autoconsentStatsPopoverCoordinator
+        self.cookiePopupsBlockedPromoDelegate = cookiePopupsBlockedPromoDelegate
 
         standardTabHeight = themeManager.theme.tabStyleProvider.standardTabHeight
         pinnedTabHeight = themeManager.theme.tabStyleProvider.pinnedTabHeight
@@ -336,6 +336,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         setupAsBurnerWindowIfNeeded(theme: theme)
         subscribeToPinnedTabsSettingChanged()
         setupScrollButtons()
+        setupScrollInsets()
         setupTabsContainersHeight()
         subscribeToThemeChanges()
 
@@ -1039,7 +1040,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let newChatItem = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(duckAIMenuNewChatAction), keyEquivalent: "")
         newChatItem.target = self
-        newChatItem.image = DesignSystemImages.Glyphs.Size12.compose
+        newChatItem.withImage(DesignSystemImages.Glyphs.Size12.compose, visibleOnMacOS27: true)
         // Display-only: mirror the main menu's ⌥⌘N (handling lives on the main-menu item).
         newChatItem.keyEquivalent = "n"
         newChatItem.keyEquivalentModifierMask = [.command, .option]
@@ -1051,10 +1052,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         sidebarItem.target = self
         if isDuckAIChatPresented {
             sidebarItem.title = UserText.aiChatMenuCloseSidebar
-            sidebarItem.image = Self.closeSidebarMenuIcon()
+            sidebarItem.withImage(Self.closeSidebarMenuIcon(), visibleOnMacOS27: true)
         } else {
             sidebarItem.title = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
-            sidebarItem.image = Self.openSidebarMenuIcon()
+            sidebarItem.withImage(Self.openSidebarMenuIcon(), visibleOnMacOS27: true)
         }
         // Display-only: mirror the main menu's ⌥⌘L. This transient popup doesn't register the shortcut
         // globally (the main-menu item owns handling); it just shows the glyph for discoverability.
@@ -1222,6 +1223,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         rightScrollButtonHeight.constant = theme.tabBarButtonSize
     }
 
+    private func setupScrollInsets() {
+        collectionView.horizontalScrollInset = theme.tabStyleProvider.shouldShowSShapedTab ? TabBarViewItem.horizontalInset : 0
+    }
+
     private func setupTabsContainersHeight() {
         scrollViewHeightConstraint.constant = theme.tabStyleProvider.tabsScrollViewHeight
         pinnedTabsContainerHeightConstraint.constant = theme.tabStyleProvider.pinnedTabsContainerViewHeight
@@ -1367,7 +1372,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Actions
 
     @objc func addButtonAction(_ sender: NSButton) {
-        autoconsentStatsPopoverCoordinator?.dismissDialogDueToNewTabBeingShown()
+        cookiePopupsBlockedPromoDelegate?.dismissDueToNewTabBeingShown()
         tabCollectionViewModel.insertOrAppendNewTab()
     }
 
@@ -2209,9 +2214,10 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
             return NSEdgeInsetsZero
         }
         if theme.tabStyleProvider.shouldShowSShapedTab {
-            let isRightScrollButtonVisible = !isPinnedTabs && !rightScrollButton.isHidden
-            let isLeftScrollButonVisible = !isPinnedTabs && !leftScrollButton.isHidden
-            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 10 : 12, bottom: 0, right: isRightScrollButtonVisible ? 10 : -12)
+            // With no right scroll button, the trailing ramp bleeds under the footer instead.
+            let inset = TabBarViewItem.horizontalInset
+            return NSEdgeInsets(top: 0, left: inset, bottom: 0, right: rightScrollButton.isHidden ? -inset : inset)
+
         } else if let flowLayout = collectionViewLayout as? NSCollectionViewFlowLayout {
             return flowLayout.sectionInset
         } else {
@@ -2909,7 +2915,7 @@ extension TabBarViewController: NSMenuDelegate {
             keyEquivalent: "Y"
         )
         duckAIItem.target = self
-        duckAIItem.image = Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.aiChat)
+        duckAIItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.aiChat), visibleOnMacOS27: true)
         menu.addItem(duckAIItem)
 
         if !isMenuButtonLayout {
@@ -2931,7 +2937,7 @@ extension TabBarViewController: NSMenuDelegate {
             keyEquivalent: ""
         )
         settingsItem.target = self
-        settingsItem.image = Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.settingsAiChat)
+        settingsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.settingsAiChat), visibleOnMacOS27: true)
         menu.addItem(settingsItem)
     }
 

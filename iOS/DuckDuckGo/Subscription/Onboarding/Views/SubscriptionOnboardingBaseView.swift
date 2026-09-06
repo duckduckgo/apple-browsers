@@ -18,17 +18,25 @@
 //
 
 import SwiftUI
+import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 
+/// The content insets `SubscriptionOnboardingBaseView` applies to every page
+enum SubscriptionOnboardingPageInsets {
+    static let horizontal: CGFloat = 24
+    static let vertical: CGFloat = 20
+}
+
 private enum Metrics {
-    static let horizontalPadding: CGFloat = 24
+    static let horizontalPadding = SubscriptionOnboardingPageInsets.horizontal
     static let navigationButtonSize: CGFloat = 44
     static let navigationGlyphSize: CGFloat = 24
-    static let contentVerticalPadding: CGFloat = 20
-    static let sectionSpacing: CGFloat = 24
+    static let contentVerticalPadding = SubscriptionOnboardingPageInsets.vertical
+    static let sectionSpacing: CGFloat = 16
     static let footerSpacing: CGFloat = 8
+    static let footerBlurFadeHeight: CGFloat = 40
 }
 
 /// The navigation bar's leading button: either a back button or a close button. Both render as a
@@ -90,28 +98,46 @@ enum SubscriptionOnboardingFooter {
     case double(primary: SubscriptionOnboardingFooterButton, secondary: SubscriptionOnboardingFooterButton)
 }
 
+private struct FooterBlockHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 /// A generic page for the post-subscription onboarding flow: an optional leading button and centered title,
 /// an optional header, a caller-supplied body, and an optional bottom-pinned footer.
-struct SubscriptionOnboardingBaseView<Content: View>: View {
+struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View {
 
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
     private let header: SubscriptionOnboardingHeaderView?
     private let footer: SubscriptionOnboardingFooter?
     private let scrollsContent: Bool
+    private let declaresNavigationChrome: Bool
+    private let footerBlur: Bool
+    private let pageBackground: PageBackground
     private let content: Content
+
+    @State private var footerBlockHeight: CGFloat = 0
 
     init(title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
          header: SubscriptionOnboardingHeaderView? = nil,
          footer: SubscriptionOnboardingFooter? = nil,
          scrollsContent: Bool = true,
+         declaresNavigationChrome: Bool = true,
+         footerBlur: Bool = false,
+         @ViewBuilder pageBackground: () -> PageBackground = { EmptyView() },
          @ViewBuilder content: () -> Content) {
         self.title = title
         self.navigationButton = navigationButton
         self.header = header
         self.footer = footer
         self.scrollsContent = scrollsContent
+        self.declaresNavigationChrome = declaresNavigationChrome
+        self.footerBlur = footerBlur
+        self.pageBackground = pageBackground()
         self.content = content()
     }
 
@@ -120,10 +146,39 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     }
 
     var body: some View {
+        let page = pageWithFooter
+
+        if declaresNavigationChrome {
+            navigationChrome(around: page)
+        } else {
+            page
+        }
+    }
+
+    /// Overlays the footer instead of reserving space below it — `footerBlur`, or always on iPad.
+    private var usesBlurredFooter: Bool {
+        footerBlur || DevicePlatform.isIpad
+    }
+
+    @ViewBuilder
+    private var pageWithFooter: some View {
         let page = pageContent
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background { pageBackground }
             .background(pageBackgroundColor.ignoresSafeArea())
-            .safeAreaInset(edge: .bottom) { footerView }
+
+        if usesBlurredFooter {
+            page
+                .overlay(alignment: .bottom) { blurredFooterView }
+                .onPreferenceChange(FooterBlockHeightKey.self) { footerBlockHeight = $0 }
+        } else {
+            page.safeAreaInset(edge: .bottom) { footerView }
+        }
+    }
+
+    @ViewBuilder
+    private func navigationChrome<Page: View>(around page: Page) -> some View {
+        let bar = page
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
             .navigationBarBackground(pageBackgroundColor)
@@ -131,9 +186,9 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
         // On iOS 26 the toolbar wraps its items in a shared Liquid Glass background (with a drop
         // shadow). Hide it so the leading button shows only its own circular fill.
         if #available(iOS 26.0, *) {
-            page.toolbar { toolbarContent.sharedBackgroundVisibility(.hidden) }
+            bar.toolbar { toolbarContent.sharedBackgroundVisibility(.hidden) }
         } else {
-            page.toolbar { toolbarContent }
+            bar.toolbar { toolbarContent }
         }
     }
 
@@ -151,8 +206,9 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
             header
             content
         }
-        .padding(.vertical, Metrics.contentVerticalPadding)
+        .padding(.top, Metrics.contentVerticalPadding)
         .padding(.horizontal, Metrics.horizontalPadding)
+        .padding(.bottom, usesBlurredFooter ? footerBlockHeight : Metrics.contentVerticalPadding)
     }
 }
 
@@ -214,6 +270,28 @@ private extension SubscriptionOnboardingBaseView {
             .padding(.horizontal, Metrics.horizontalPadding)
     }
 
+    /// The `footerBlur` variant of `footerView`
+    @ViewBuilder
+    var blurredFooterView: some View {
+        if footer != nil {
+            VStack(spacing: 0) {
+                LinearGradient(colors: [pageBackgroundColor.opacity(0), pageBackgroundColor],
+                              startPoint: .top,
+                              endPoint: .bottom)
+                    .frame(height: Metrics.footerBlurFadeHeight)
+                    .allowsHitTesting(false)
+                footerView
+                    .padding(.bottom, Metrics.contentVerticalPadding)
+                    .background(pageBackgroundColor, ignoresSafeAreaEdges: .bottom)
+            }
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(key: FooterBlockHeightKey.self, value: proxy.size.height)
+                }
+            }
+        }
+    }
+
     /// A footer button's underlying control: a `Button` for a tap action, or a `NavigationLink` for a push
     /// destination. The button style is applied by the caller so both cases share it.
     @ViewBuilder
@@ -248,6 +326,7 @@ private extension SubscriptionOnboardingBaseView {
 private extension View {
     /// Paints the navigation bar with the page color so it matches the flat `surfaceTertiary` page.
     /// `toolbarBackground` is iOS 16+, so on iOS 15 the bar keeps the system default background.
+    #warning("Post-iOS15-Drop: drop the fork and apply `toolbarBackground` unconditionally.")
     @ViewBuilder
     func navigationBarBackground(_ color: Color) -> some View {
         if #available(iOS 16.0, *) {
@@ -374,6 +453,35 @@ private func onboardingPreviewLongBody() -> some View {
         .subscriptionOnboardingNavigationContainer()
     }
     .dynamicTypeSize(.accessibility5)
+}
+
+#Preview("Blurred footer background") {
+    RebrandedPreview {
+        SubscriptionOnboardingBaseView(
+            title: "Step 2 of 4",
+            navigationButton: .back({}),
+            header: onboardingPreviewHeader(),
+            footer: .single(.init("Activate", action: {})),
+            footerBlur: true) {
+            onboardingPreviewLongBody()
+        }
+        .subscriptionOnboardingNavigationContainer()
+    }
+}
+
+#Preview("Blurred footer background - Dark") {
+    RebrandedPreview {
+        SubscriptionOnboardingBaseView(
+            title: "Step 2 of 4",
+            navigationButton: .back({}),
+            header: onboardingPreviewHeader(),
+            footer: .single(.init("Activate", action: {})),
+            footerBlur: true) {
+            onboardingPreviewLongBody()
+        }
+        .subscriptionOnboardingNavigationContainer()
+    }
+    .preferredColorScheme(.dark)
 }
 
 #Preview("Back + step, no footer") {

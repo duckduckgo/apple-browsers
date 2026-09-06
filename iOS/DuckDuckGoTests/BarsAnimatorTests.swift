@@ -666,6 +666,8 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { .zero }
 
+    var floatingNewTabPageTopObscuredHeight: CGFloat = 0
+
     var omniBar: OmniBar = {
         let omniBar = MockOmniBar()
         omniBar.mockBarView.expectedHeight = 52

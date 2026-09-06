@@ -164,7 +164,8 @@ extension TabViewController {
             darkReaderFeatureSettings: darkReaderFeatureSettings,
             autoplaySettings: autoplaySettings,
             adBlockingAvailability: adBlockingAvailability,
-            eventHub: eventHub)
+            eventHub: eventHub,
+            webExtensionManagerProvider: webExtensionManagerProvider)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

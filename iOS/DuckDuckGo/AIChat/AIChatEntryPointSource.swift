@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import AIChat
 import Core
 import PixelKit
 
@@ -52,7 +53,7 @@ enum AIChatEntryPointPixel: PixelKit.Event {
     }
 }
 
-enum AIChatEntryPointSource: String {
+public enum AIChatEntryPointSource: String {
     case addressBarPrompt = "address_bar_prompt"
     case addressBarIcon = "address_bar_icon"
     case addressBarShortcutChip = "address_bar_shortcut_chip"
@@ -62,6 +63,7 @@ enum AIChatEntryPointSource: String {
     case browsingMenuNTP = "browsing_menu_ntp"
     case browsingMenuWebpage = "browsing_menu_webpage"
     case tabSwitcher = "tab_switcher"
+    case tabSwitcherExistingChat = "tab_switcher_existing_chat"
     case tabsBarButton = "tabs_bar_button"
     case chatHistoryNewChat = "chat_history_new_chat"
     case chatHistoryOpenChat = "chat_history_open_chat"
@@ -78,6 +80,8 @@ enum AIChatEntryPointSource: String {
     case widgetControlCenter = "widget_control_center"
     case siri
     case deepLinkOther = "deep_link_other"
+    case returnToChatCard = "return_to_chat_card"
+    case ddgHomepage = "ddg_homepage"
 }
 
 extension AIChatEntryPointSource {
@@ -95,10 +99,23 @@ extension AIChatEntryPointSource {
 
     /// Names the page behind an `openAIChat` user-script request so it is not reported as a typed
     /// address. `nil` for duck.ai and debug hosts, which have no entry of their own.
-    static func forFrontEndOpenRequest(messageHost: String?) -> AIChatEntryPointSource? {
+    static func forFrontEndOpenRequest(messageHost: String?, pageURL: URL?) -> AIChatEntryPointSource? {
+        if pageURL?.isDuckDuckGoHomepageEntry == true { return .ddgHomepage }
         guard let messageHost, messageHost == URL.ddg.host else { return nil }
         return .serp
     }
+
+    /// Attributes a navigation the page itself started into Duck.ai. Only the DuckDuckGo homepage
+    /// is named; links from other pages stay unattributed rather than being lumped into a catch-all.
+    static func forInPageNavigation(from currentURL: URL?, to targetURL: URL) -> AIChatEntryPointSource? {
+        guard currentURL?.isDuckDuckGoHomepageEntry == true, targetURL.isDuckAIURL else { return nil }
+        return .ddgHomepage
+    }
+}
+
+private extension URL {
+    /// The homepage proper: `duckduckgo.com/?ia=chat` shares its shape but is a Duck.ai page.
+    var isDuckDuckGoHomepageEntry: Bool { isDuckDuckGoHomepage && !isDuckAIURL }
 }
 
 extension WidgetSourceType {

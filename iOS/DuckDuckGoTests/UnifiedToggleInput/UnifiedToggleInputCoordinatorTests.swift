@@ -18,6 +18,8 @@
 //
 
 import AIChat
+import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import Combine
 import Core
 import UIKit
@@ -34,6 +36,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var mockPreferences: MockAIChatPreferences!
     private var mockToggleModeStorage: MockToggleModeStorage!
     private var mockSubmissionMetrics: MockSwitchBarSubmissionMetrics!
+    private var mockFeatureDiscovery: MockFeatureDiscovery!
     private var retainedBridgeReadyWebView: WKWebView?
     private var retainedBridgeReadyBroker: UserScriptMessageBroker?
     private var cancellables = Set<AnyCancellable>()
@@ -43,12 +46,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockPreferences = MockAIChatPreferences()
         mockToggleModeStorage = MockToggleModeStorage()
         mockSubmissionMetrics = MockSwitchBarSubmissionMetrics()
+        mockFeatureDiscovery = MockFeatureDiscovery()
         sut = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
             toggleModeStorage: mockToggleModeStorage,
             switchBarSubmissionMetrics: mockSubmissionMetrics,
+            featureDiscovery: mockFeatureDiscovery,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
         )
         mockDelegate = MockUnifiedToggleInputDelegate()
@@ -62,6 +67,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockPreferences = nil
         mockToggleModeStorage = nil
         mockSubmissionMetrics = nil
+        mockFeatureDiscovery = nil
         retainedBridgeReadyWebView = nil
         retainedBridgeReadyBroker = nil
         super.tearDown()
@@ -374,6 +380,26 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
                       "Empty model list ⇒ no access-checked selectedModel ⇒ block must remain")
     }
 
+    // MARK: - Bound-chat prompt submission reporting
+
+    func testWhenPromptGoesToBoundChatThenTheSubmissionIsReportedOnce() {
+        sut.duckAIEntrySourceProvider = { .addressBarIcon }
+        let userScript = makeBridgeReadyUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+
+        XCTAssertEqual(mockDelegate.duckAIPromptSubmissionOrigins, [.addressBarIcon])
+        XCTAssertNil(mockDelegate.submittedPrompt, "A bound chat takes the prompt directly, without navigation")
+    }
+
+    func testWhenNoChatIsBoundThenTheSubmissionIsNotReportedAsBoundChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "a new prompt", mode: .aiChat)
+
+        XCTAssertTrue(mockDelegate.duckAIPromptSubmissionOrigins.isEmpty)
+        XCTAssertEqual(mockDelegate.submittedPrompt, "a new prompt")
+    }
+
     // MARK: - Recovery Picker Session Pixels
 
     func test_recoveryPickerSession_fullFunnel_smokeTest() {
@@ -638,6 +664,32 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.textState, .empty)
     }
 
+    // MARK: - VC Delegate: Submit — first-prompt flag
+
+    func test_submitAIChat_marksFirstDuckAIPromptSubmitted() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertTrue(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    /// Every pixel of the submission must read the pre-submission state, so the mark
+    /// may only land after the prompt has been delivered.
+    func test_submitAIChat_marksFirstPromptOnlyAfterDelivery() {
+        var markedAtDeliveryTime: Bool?
+        mockDelegate.onPromptSubmit = { [mockFeatureDiscovery] in
+            markedAtDeliveryTime = mockFeatureDiscovery?.wasSetWasUsedBeforeCalled(for: .duckAIPrompt)
+        }
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertEqual(markedAtDeliveryTime, false)
+        XCTAssertTrue(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    func test_submitSearch_doesNotMarkFirstDuckAIPrompt() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "ducks", mode: .search)
+        XCTAssertFalse(mockFeatureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
     func test_submitProgrammatic_contextualNoBoundScript_passesAttachmentsBeforeClearing() {
         sut = UnifiedToggleInputCoordinator(
             host: .contextualChat,
@@ -772,18 +824,16 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.usesOmnibarMargins)
     }
 
-    func test_activateFromSearchTopPosition_withVoiceSearchDisabledAndAIVoiceEnabled_hidesInlineVoiceButton() {
+    func test_activateFromSearchTopPosition_withVoiceSearchDisabled_hidesInlineVoiceButton() {
         sut.updateVoiceSearchAvailability(false)
-        sut.updateAIVoiceChatAvailability(true)
 
         sut.activateFromOmnibar(inputMode: .search, cardPosition: .top)
 
         XCTAssertEqual(sut.viewController.handler.buttonState, .noButtons)
     }
 
-    func test_activateFromSearchBottomPosition_withVoiceSearchDisabledAndAIVoiceEnabled_hidesInlineVoiceButton() {
+    func test_activateFromSearchBottomPosition_withVoiceSearchDisabled_hidesInlineVoiceButton() {
         sut.updateVoiceSearchAvailability(false)
-        sut.updateAIVoiceChatAvailability(true)
 
         sut.activateFromOmnibar(inputMode: .search, cardPosition: .bottom)
 
@@ -2557,8 +2607,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.committedMode, .aiChat)
     }
 
-    func test_inlineVoiceSearchTap_requestsVoiceSearch() {
+    func test_inlineVoiceSearchTap_inSearchMode_requestsVoiceSearch() {
         sut.updateVoiceSearchAvailability(true)
+        sut.activateFromOmnibar(inputMode: .search)
 
         sut.viewController.handler.microphoneButtonTapped()
 
@@ -2567,7 +2618,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_collapsedAIVoiceChatButtonTap_requestsAIVoiceChat() {
-        sut.updateAIVoiceChatAvailability(true)
         sut.showCollapsed()
 
         sut.viewController.handler.microphoneButtonTapped()
@@ -2577,7 +2627,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_initialCollapsedAIVoiceChatButton_usesPlainWaveformStyle() {
-        sut.updateAIVoiceChatAvailability(true)
         sut.showCollapsed()
 
         let voiceButton = findButton(accessibilityIdentifier: "Browser.OmniBar.Button.VoiceSearch", in: sut.viewController.view)
@@ -2588,7 +2637,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_expandedAIChatInlineVoiceSearchTap_requestsVoiceSearch() {
         sut.updateVoiceSearchAvailability(true)
-        sut.updateAIVoiceChatAvailability(true)
         sut.showExpanded(inputMode: .aiChat)
 
         sut.viewController.handler.microphoneButtonTapped()
@@ -2599,7 +2647,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_expandedAIChatInlineVoiceSearchTap_whenVoiceSearchDisabled_ignoresStaleTap() {
         sut.updateVoiceSearchAvailability(false)
-        sut.updateAIVoiceChatAvailability(true)
         sut.showExpanded(inputMode: .aiChat)
 
         sut.viewController.handler.microphoneButtonTapped()
@@ -2616,20 +2663,17 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Toolbar Voice Chat State Sync
 
-    func test_showCollapsed_whenAIVoiceChatEnabled_setsToolbarVoiceChatActive() {
-        sut.updateAIVoiceChatAvailability(true)
+    func test_showCollapsed_setsToolbarVoiceChatActive() {
         sut.showCollapsed()
         XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
     }
 
     func test_showExpanded_inSearchMode_clearsToolbarVoiceChatActive() {
-        sut.updateAIVoiceChatAvailability(true)
         sut.showExpanded(inputMode: .search)
         XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
     }
 
     func test_deactivateToOmnibar_refreshesToolbarVoiceChatFlag() {
-        sut.updateAIVoiceChatAvailability(true)
         sut.activateFromOmnibar(inputMode: .aiChat)
         XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
 
@@ -2702,6 +2746,204 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "https://example.com")
     }
 
+    // MARK: - Create Image model switch (updatedCreateImage)
+
+    func test_updatedCreateImage_whenSelectedModelDoesNotSupportAttachments_showsDisabledAttachmentButtonWithoutMenu() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+
+        XCTAssertFalse(coordinator.viewController.isImageButtonHidden)
+        XCTAssertFalse(coordinator.viewController.isImageButtonEnabled)
+        XCTAssertNil(coordinator.viewController.attachmentMenu)
+    }
+
+    func test_updatedCreateImageDisabled_whenSelectedModelDoesNotSupportAttachments_hidesAttachmentButton() {
+        let coordinator = makeCreateImageCoordinator(isEnabled: false)
+        seedModels(coordinator, selecting: "mistral")
+
+        XCTAssertTrue(coordinator.viewController.isImageButtonHidden)
+    }
+
+    func test_selectingCreateImage_onAModelWithoutImageSupport_switchesToTheFallbackModel() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "image-capable")
+        XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
+    }
+
+    func test_selectingCreateImage_landsOnExactlyTheModelTheResolverProposed() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+        let proposed = coordinator.modelStore.imageGenerationFallbackModel?.id
+        XCTAssertNotNil(proposed)
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, proposed)
+    }
+
+    func test_selectingCreateImage_prefersTheEndorsedImageCapableModel() {
+        let coordinator = makeCreateImageCoordinator()
+        coordinator.modelStore.models = [
+            makeModel(id: "mistral", access: true),
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "endorsed-image-model", access: true, supportedTools: [.imageGeneration], label: .everydayUse)
+        ]
+        coordinator.modelStore.updateSelectedModel("mistral", isNewChatContext: true)
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "endorsed-image-model")
+        XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
+    }
+
+    func test_selectingCreateImage_onAModelThatAlreadySupportsImages_leavesTheModelAlone() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "image-capable")
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "image-capable")
+        XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
+    }
+
+    /// An ongoing chat stays on the model it started with, so Create Image is simply unavailable —
+    /// the same no-op as before the flag.
+    func test_selectingCreateImage_duringAnOngoingChat_neitherSwitchesNorSelects() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+        _ = coordinator.prepareExternalPromptSubmission()
+        XCTAssertTrue(coordinator.hasSubmittedPrompt)
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "mistral")
+        XCTAssertNil(coordinator.selectedTool)
+    }
+
+    func test_selectingCreateImage_withoutTheFallbackModelOnTheList_neitherSwitchesNorSelects() {
+        let coordinator = makeCreateImageCoordinator()
+        coordinator.modelStore.models = [makeModel(id: "mistral", access: true)]
+        coordinator.modelStore.updateSelectedModel("mistral", isNewChatContext: true)
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "mistral")
+        XCTAssertNil(coordinator.selectedTool)
+    }
+
+    /// Switching to a model the user has no access to would land them on a third model, while the
+    /// footer card named this one.
+    func test_selectingCreateImage_withAnInaccessibleFallbackModel_doesNotSwitch() {
+        let coordinator = makeCreateImageCoordinator()
+        coordinator.modelStore.models = [
+            makeModel(id: "mistral", access: true),
+            makeModel(id: "image-capable", access: false, supportedTools: [.imageGeneration])
+        ]
+        coordinator.modelStore.updateSelectedModel("mistral", isNewChatContext: true)
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "mistral")
+        XCTAssertNil(coordinator.selectedTool)
+    }
+
+    func test_selectingCreateImage_withTheFlagOff_keepsTheOldSilentNoOp() {
+        let coordinator = makeCreateImageCoordinator(isEnabled: false)
+        seedModels(coordinator, selecting: "mistral")
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "mistral")
+        XCTAssertNil(coordinator.selectedTool)
+    }
+
+    /// The second tap deselects. Switching the model there would be the exact opposite of what the
+    /// user asked for.
+    func test_deselectingCreateImage_doesNotSwitchTheModel() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "image-capable")
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertNil(coordinator.selectedTool)
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "image-capable")
+    }
+
+    // MARK: - "New Image" from the chat header
+
+    func test_newImageEntryPoint_onAModelWithoutImageSupport_switchesTheModelAndSelectsTheTool() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+
+        coordinator.selectTool(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "image-capable")
+        XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
+    }
+
+    /// `selectTool` is a select, not a toggle — "New Image" must never turn image generation off.
+    func test_newImageEntryPoint_onAnAlreadySelectedTool_keepsItSelected() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+        coordinator.selectTool(.imageGeneration)
+
+        coordinator.selectTool(.imageGeneration)
+
+        XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
+    }
+
+    func test_newImageEntryPoint_withTheFlagOff_keepsTheOldSilentNoOp() {
+        let coordinator = makeCreateImageCoordinator(isEnabled: false)
+        seedModels(coordinator, selecting: "mistral")
+
+        coordinator.selectTool(.imageGeneration)
+
+        XCTAssertEqual(coordinator.modelStore.persistedModelId, "mistral")
+        XCTAssertNil(coordinator.selectedTool)
+    }
+
+    // MARK: - Model chip during Create Image
+
+    /// The chip reports the pinned model as a plain label: visible, no chevron, no menu to open.
+    func test_createImageSelected_leavesTheModelChipVisibleAsAReadOnlyLabel() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertFalse(coordinator.viewController.isModelChipHidden)
+        XCTAssertTrue(coordinator.viewController.isModelChipMenuIndicatorHidden)
+        XCTAssertNil(coordinator.viewController.modelPickerMenu)
+    }
+
+    func test_createImageSelected_withTheFlagOff_hidesTheModelChipEntirely() {
+        let coordinator = makeCreateImageCoordinator(isEnabled: false)
+        seedModels(coordinator, selecting: "image-capable")
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
+        XCTAssertTrue(coordinator.viewController.isModelChipHidden)
+    }
+
+    func test_deselectingCreateImage_restoresTheModelPicker() {
+        let coordinator = makeCreateImageCoordinator()
+        seedModels(coordinator, selecting: "mistral")
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+
+        XCTAssertFalse(coordinator.viewController.isModelChipHidden)
+        XCTAssertFalse(coordinator.viewController.isModelChipMenuIndicatorHidden)
+        XCTAssertNotNil(coordinator.viewController.modelPickerMenu)
+    }
+
     // MARK: - Helpers
 
     private func configureImageAttachments() {
@@ -2721,15 +2963,39 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         return userScript
     }
 
+    /// The `updatedCreateImage` flag must be explicit: the production default reads the live feature
+    /// flagger, which would make these tests depend on remote config.
+    private func makeCreateImageCoordinator(isEnabled: Bool = true) -> UnifiedToggleInputCoordinator {
+        UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: MockAIChatPreferences(),
+            toggleModeStorage: mockToggleModeStorage,
+            updatedCreateImageFeature: MockUpdatedCreateImageFeature(isAvailable: isEnabled)
+        )
+    }
+
+    private func seedModels(_ coordinator: UnifiedToggleInputCoordinator, selecting id: String) {
+        coordinator.modelStore.models = [
+            makeModel(id: "mistral", access: true),
+            makeModel(id: "image-capable", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "second-image-capable", access: true, supportedTools: [.imageGeneration])
+        ]
+        coordinator.modelStore.updateSelectedModel(id, isNewChatContext: true)
+        coordinator.modelStore.onModelsUpdated?()
+    }
+
     private func makeModel(id: String,
                            access: Bool,
                            supportsImageUpload: Bool = false,
                            supportedTools: [AIChatRAGTool] = [],
                            accessTier: [String] = [],
-                           supportedReasoningEffort: [AIChatReasoningEffort] = []) -> AIChatModel {
+                           supportedReasoningEffort: [AIChatReasoningEffort] = [],
+                           label: AIChatModelLabel? = nil) -> AIChatModel {
         AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload,
                     supportedTools: supportedTools, entityHasAccess: access,
-                    accessTier: accessTier, supportedReasoningEffort: supportedReasoningEffort)
+                    accessTier: accessTier, supportedReasoningEffort: supportedReasoningEffort,
+                    label: label)
     }
 
     private func hasQueryItem(in components: URLComponents?, name: String, value: String) -> Bool {
@@ -2989,6 +3255,10 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     }
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() { didRequestAppMenuCount += 1 }
+    var duckAIPromptSubmissionOrigins: [AIChatEntryPointSource?] = []
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
+        duckAIPromptSubmissionOrigins.append(origin)
+    }
 }
 
 private final class MockAIChatPreferences: AIChatPreferencesPersisting {
@@ -3008,6 +3278,10 @@ private final class MockToggleModeStorage: ToggleModeStoring {
 }
 
 private struct MockUpdatedModelPickerFeature: UpdatedModelPickerFeatureProviding {
+    let isAvailable: Bool
+}
+
+private struct MockUpdatedCreateImageFeature: UpdatedCreateImageFeatureProviding {
     let isAvailable: Bool
 }
 

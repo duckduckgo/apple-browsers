@@ -61,6 +61,10 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewDuckAITabForUrl url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didStartDuckAINavigationTo url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource, opensNewTab: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
+
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestReopenClosedTabAt url: URL) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewBackgroundTabForUrl url: URL, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
@@ -311,8 +315,7 @@ final class StubEventHub: EventHubManaging {
     private(set) var closedTabIDs: [EventHubTabID] = []
 
     func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
-    func handleImmediateEvent(_ type: String, data: Encodable?) {}
-    func handleAggregatedEvent(_ type: String, data: Encodable?) {}
+    func handleNativeEvent(_ type: String, data: Encodable?) {}
 
     func onNavigationStarted(tabID: EventHubTabID, url: String) {
         navigationStarts.append((tabID, url))

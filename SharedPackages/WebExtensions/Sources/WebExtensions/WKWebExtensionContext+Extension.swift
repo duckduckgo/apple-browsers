@@ -26,11 +26,12 @@ private let requiresExtractionKey = "appleRequiresExtraction"
 
 /// Extension types identified via manifest `browser_specific_settings.duckduckgo.id`.
 @available(macOS 15.4, iOS 18.4, *)
-public enum DuckDuckGoWebExtensionType: String, Codable, CaseIterable {
+public enum DuckDuckGoWebExtensionType: String, Codable, CaseIterable, Sendable {
     /// Embedded web extension (e.g. autoconsent/CPM).
     case embedded = "com.duckduckgo.web-extension.embedded"
     case darkReader = "org.duckduckgo.web-extension.darkreader"
     case adBlockingExtension = "com.duckduckgo.content-blocker-extension"
+    case searchToken = "com.duckduckgo.web-extension.search-token"
 
     /// Short human-readable label used in breakage reports.
     public var shortLabel: String {
@@ -38,6 +39,7 @@ public enum DuckDuckGoWebExtensionType: String, Codable, CaseIterable {
         case .embedded: return "embedded"
         case .darkReader: return "darkMode"
         case .adBlockingExtension: return "adBlocking"
+        case .searchToken: return "searchToken"
         }
     }
 }

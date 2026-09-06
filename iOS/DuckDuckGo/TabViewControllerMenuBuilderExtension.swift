@@ -403,8 +403,7 @@ extension TabViewController {
         return BrowsingMenuEntry.regular(name: UserText.actionCopy, image: image, action: { [weak self] in
             guard let strongSelf = self else { return }
             if !strongSelf.isError, let url = strongSelf.webView.url {
-                // `webView.url` carries the search-token param on SERP navigations; strip it before it hits the pasteboard.
-                strongSelf.onCopyAction(forUrl: SerpSearchTokenInterceptor.strippingToken(from: url))
+                strongSelf.onCopyAction(forUrl: url)
             } else if let text = self?.chromeDelegate?.omniBar.text {
                 strongSelf.onCopyAction(for: text)
             }
@@ -771,6 +770,8 @@ extension TabViewController {
     }
     
     private func firePixelForActivityType(_ activityType: UIActivity.ActivityType) {
+        let addToHomeScreen: UIActivity.ActivityType? = if #available(iOS 16.4, *) { .addToHomeScreen } else { nil }
+
         switch activityType {
         case .copyToPasteboard:
             Pixel.fire(pixel: .shareSheetActivityCopy)
@@ -784,6 +785,8 @@ extension TabViewController {
             Pixel.fire(pixel: .shareSheetActivityPrint)
         case .addToReadingList:
             Pixel.fire(pixel: .shareSheetActivityAddToReadingList)
+        case addToHomeScreen:
+            Pixel.fire(pixel: .shareSheetActivityAddToHomeScreen)
         default:
             Pixel.fire(pixel: .shareSheetActivityOther)
         }

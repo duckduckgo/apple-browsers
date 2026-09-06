@@ -50,6 +50,10 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionVPNShortcutClick
     case subscriptionVPNNotificationClick
     // Subscription Onboarding Flow
+    case subscriptionOnboardingFlowStarted(entryPoint: String, isDuckAIEnabled: Bool)
+    case subscriptionOnboardingStepShown(step: String, entryPoint: String)
+    case subscriptionOnboardingStepCompleted(step: String, entryPoint: String)
+    case subscriptionOnboardingStepSkipped(step: String, entryPoint: String)
     case subscriptionOnboardingConnectionInfoFailure(Error)
     case subscriptionOnboardingAIModelsFailure(Error)
     case subscriptionOnboardingSubscriptionFailure(Error)
@@ -78,6 +82,10 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionVPNShortcutClick: return "subscription_vpn_shortcut_click"
         case .subscriptionVPNNotificationClick: return "subscription_vpn_notification_click"
             // Subscription Onboarding Flow
+        case .subscriptionOnboardingFlowStarted: return "subscription_onboarding_flow_started"
+        case .subscriptionOnboardingStepShown(let step, _): return "subscription_onboarding_step_shown_\(step)"
+        case .subscriptionOnboardingStepCompleted(let step, _): return "subscription_onboarding_step_completed_\(step)"
+        case .subscriptionOnboardingStepSkipped(let step, _): return "subscription_onboarding_step_skipped_\(step)"
         case .subscriptionOnboardingConnectionInfoFailure: return "subscription_onboarding_connection-info_failure"
         case .subscriptionOnboardingAIModelsFailure: return "subscription_onboarding_ai-models_failure"
         case .subscriptionOnboardingSubscriptionFailure: return "subscription_onboarding_subscription_failure"
@@ -89,6 +97,8 @@ enum SubscriptionPixel: PixelKit.Event {
         static let sourceKey = "source"
         static let platformKey = "platform"
         static let vpnSubscriptionActiveKey = "vpnSubscriptionActive"
+        static let entryPointKey = "entry_point"
+        static let duckAIEnabledKey = "duck_ai_enabled"
     }
 
     private static func vpnSubscriptionActiveValue(_ isSubscriptionActive: Bool?) -> String {
@@ -116,6 +126,13 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionVPNAddressBarImpression(let isSubscriptionActive),
                 .subscriptionVPNAddressBarClick(let isSubscriptionActive):
             return [SubscriptionPixelsDefaults.vpnSubscriptionActiveKey: Self.vpnSubscriptionActiveValue(isSubscriptionActive)]
+        case .subscriptionOnboardingFlowStarted(let entryPoint, let isDuckAIEnabled):
+            return [SubscriptionPixelsDefaults.entryPointKey: entryPoint,
+                    SubscriptionPixelsDefaults.duckAIEnabledKey: String(isDuckAIEnabled)]
+        case .subscriptionOnboardingStepShown(_, let entryPoint),
+                .subscriptionOnboardingStepCompleted(_, let entryPoint),
+                .subscriptionOnboardingStepSkipped(_, let entryPoint):
+            return [SubscriptionPixelsDefaults.entryPointKey: entryPoint]
         default:
             return nil
         }
@@ -141,6 +158,10 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionVPNWidgetClick,
                 .subscriptionVPNShortcutClick,
                 .subscriptionVPNNotificationClick,
+                .subscriptionOnboardingFlowStarted,
+                .subscriptionOnboardingStepShown,
+                .subscriptionOnboardingStepCompleted,
+                .subscriptionOnboardingStepSkipped,
                 .subscriptionOnboardingConnectionInfoFailure,
                 .subscriptionOnboardingAIModelsFailure,
                 .subscriptionOnboardingSubscriptionFailure:

@@ -24,6 +24,7 @@ import UIKit
 struct SubscriptionOnboardingDuckAIChatLauncher {
 
     /// - Returns: whether a `MainViewController` was reachable, so a caller can recover if it wasn't.
+    /// Only the debug menu still relies on this fallback — production always supplies a real `onRequestDuckAIChat` closure instead.
     func launch(modelID: String?) -> Bool {
         guard let mainViewController = UIApplication.shared.firstKeyWindow?.rootViewController as? MainViewController else {
             assertionFailure("Expected MainViewController as rootViewController when launching Duck.ai from onboarding")

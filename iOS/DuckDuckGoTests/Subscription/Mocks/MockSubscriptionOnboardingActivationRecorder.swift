@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingPIRLaunchState.swift
+//  MockSubscriptionOnboardingActivationRecorder.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,11 +17,24 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import Foundation
+@testable import DuckDuckGo
 
-#warning("Post-iOS15-Drop: fold back into the flow view model")
-/// The PIR launch's presentation
-@MainActor
-final class SubscriptionOnboardingPIRLaunchState: ObservableObject {
-    @Published var isPresentingPIR = false
+final class MockSubscriptionOnboardingActivationRecorder: SubscriptionOnboardingActivationRecording {
+
+    var recordDuckAIActivatedCalled = false
+    var recordPIRActivatedCalled = false
+    var recordVPNActivatedCalled = false
+
+    func recordDuckAIActivated() {
+        recordDuckAIActivatedCalled = true
+    }
+
+    func recordPIRActivated() {
+        recordPIRActivatedCalled = true
+    }
+
+    func recordVPNActivated() {
+        recordVPNActivatedCalled = true
+    }
 }

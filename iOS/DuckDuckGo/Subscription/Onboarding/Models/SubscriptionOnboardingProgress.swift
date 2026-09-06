@@ -20,6 +20,7 @@
 import Foundation
 import FoundationExtensions
 import Persistence
+import Subscription
 import os.log
 
 /// Serializes the read-decide-write sequences below across every `SubscriptionOnboardingProgressPersisting` conformer.
@@ -34,6 +35,8 @@ protocol SubscriptionOnboardingProgressPersisting {
     var fullyCompletedAt: Date? { get set }
     /// How many times the card has been shown since reaching 100%, for the 2-view cap.
     var completionViewCount: Int { get set }
+    /// When the flow was first opened from the post-checkout entry point.
+    var postCheckoutFlowStartedAt: Date? { get set }
 }
 
 extension SubscriptionOnboardingProgressPersisting {
@@ -66,6 +69,13 @@ extension SubscriptionOnboardingProgressPersisting {
         fullyCompletedAt = now
         return true
     }
+
+    mutating func recordPostCheckoutFlowStartedIfNeeded(now: Date) {
+        progressLock.lock()
+        defer { progressLock.unlock() }
+        guard postCheckoutFlowStartedAt == nil else { return }
+        postCheckoutFlowStartedAt = now
+    }
 }
 
 struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPersisting {
@@ -75,6 +85,7 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
         case cardFirstShownDate = "subscription.onboarding.card-first-shown-date"
         case fullyCompletedAt = "subscription.onboarding.fully-completed-at"
         case completionViewCount = "subscription.onboarding.completion-view-count"
+        case postCheckoutFlowStartedAt = "subscription.onboarding.post-checkout-flow-started-at"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -106,11 +117,16 @@ struct SubscriptionOnboardingProgressPersistor: SubscriptionOnboardingProgressPe
         get { read(.completionViewCount) ?? 0 }
         set { write(newValue, for: .completionViewCount) }
     }
+
+    var postCheckoutFlowStartedAt: Date? {
+        get { read(.postCheckoutFlowStartedAt) }
+        set { write(newValue, for: .postCheckoutFlowStartedAt) }
+    }
 }
 
 // MARK: - Progress
 
-/// This customer's checklist and how much of it they have completed; every reader (flow, progress screen, settings card) goes through this so none of them can disagree.
+/// This customer's checklist and how much of it they have completed; every reader (flow, progress screen, settings card) goes through this
 struct SubscriptionOnboardingProgress {
 
     /// How long the Subscription Settings card lives, measured from its first display.
@@ -124,9 +140,17 @@ struct SubscriptionOnboardingProgress {
 
     private var persistor: SubscriptionOnboardingProgressPersisting
 
-    init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool) {
+    init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool, entitlement: EntitlementStatus) {
         self.persistor = persistor
-        self.checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable)
+        self.checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
+    }
+
+    /// Awaits the customer's real subscription entitlement, then builds `Progress` from it
+    static func make(persistor: SubscriptionOnboardingProgressPersisting,
+                     isPIRAvailable: Bool,
+                     subscriptionManager: any SubscriptionManager) async -> SubscriptionOnboardingProgress {
+        let entitlement = await subscriptionManager.getAllEntitlementStatus()
+        return SubscriptionOnboardingProgress(persistor: persistor, isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }
 
     /// Read on demand, since items complete outside whatever screen is asking.
@@ -141,6 +165,10 @@ struct SubscriptionOnboardingProgress {
 
     mutating func markComplete(_ item: SubscriptionOnboardingChecklistItem) {
         persistor.markComplete(item)
+    }
+
+    mutating func recordPostCheckoutFlowStartedIfNeeded(now: Date) {
+        persistor.recordPostCheckoutFlowStartedIfNeeded(now: now)
     }
 
     /// Stays up for the rest of the run once complete, capped at 2 views total once complete, and expires 14 days after it first appeared regardless.
@@ -185,8 +213,8 @@ struct SubscriptionOnboardingProgress {
 extension SubscriptionOnboardingProgress {
 
     /// Fixed progress with no storage behind it, for previews and debug rows.
-    init(completedItems: Set<SubscriptionOnboardingChecklistItem>, isPIRAvailable: Bool = true) {
-        self.init(persistor: FixedPersistor(completedItems: completedItems), isPIRAvailable: isPIRAvailable)
+    init(completedItems: Set<SubscriptionOnboardingChecklistItem>, isPIRAvailable: Bool = true, entitlement: EntitlementStatus = .mockAllEnabled) {
+        self.init(persistor: FixedPersistor(completedItems: completedItems), isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }
 
     private struct FixedPersistor: SubscriptionOnboardingProgressPersisting {
@@ -194,6 +222,19 @@ extension SubscriptionOnboardingProgress {
         var cardFirstShownDate: Date?
         var fullyCompletedAt: Date?
         var completionViewCount: Int = 0
+        var postCheckoutFlowStartedAt: Date?
+    }
+}
+
+extension EntitlementStatus {
+
+    /// Every entitlement enabled, for previews, debug rows, and tests.
+    static var mockAllEnabled: EntitlementStatus {
+        EntitlementStatus(networkProtection: true,
+                          dataBrokerProtection: true,
+                          identityTheftRestoration: true,
+                          identityTheftRestorationGlobal: true,
+                          paidAIChat: true)
     }
 }
 

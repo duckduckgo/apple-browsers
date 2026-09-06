@@ -160,6 +160,8 @@ final class SettingsViewModel: ObservableObject {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     let keyValueStore: ThrowingKeyValueStoring
+    lazy var subscriptionOnboardingSession = AppDependencyProvider.shared.subscriptionOnboardingSession
+    private let vpnController: SubscriptionOnboardingVPNControlling
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
@@ -169,6 +171,8 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
     var onRequestOpenDuckAIChat: (() -> Void)?
+    /// `nil` unless a real `MainViewController` is available; the onboarding flow falls back to `SubscriptionOnboardingDuckAIChatLauncher` when unset.
+    var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
@@ -202,6 +206,18 @@ final class SettingsViewModel: ObservableObject {
 
     var meetsLocaleRequirement: Bool {
         runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
+    }
+
+    /// Whether this customer can use PIR: the feature flag is on and the app exposes a PIR view controller.
+    var isPIRAvailable: Bool {
+        PIRAvailability.isAvailable(isPIREnabled: isPIREnabled,
+                                    meetsLocaleRequirement: meetsLocaleRequirement,
+                                    provider: dataBrokerProtectionViewControllerProvider)
+    }
+
+    var isPIRActivated: Bool {
+        PIRActivation.isActivated(profileStateManager: profileStateManager,
+                                  freemiumDBPUserStateManager: freemiumDBPUserStateManager)
     }
 
     var canShowFreemiumPIRSettingsEntryPoint: Bool {
@@ -1038,7 +1054,8 @@ final class SettingsViewModel: ObservableObject {
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
          autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
-         adBlockingAvailability: AdBlockingAvailabilityProviding
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController()
     ) {
 
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
@@ -1084,6 +1101,7 @@ final class SettingsViewModel: ObservableObject {
         )
         self.whatsNewCoordinator = whatsNewCoordinator
         self.adBlockingAvailability = adBlockingAvailability
+        self.vpnController = vpnController
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
         refreshNextStepsVisibility(animated: false)
@@ -1416,6 +1434,7 @@ extension SettingsViewModel {
     }
 
     func onFirstAppear() {
+        recordOnboardingActivationsIfNeeded()
         Task {
             await initState()
             triggerDeepLinkNavigation(to: self.deepLinkTarget)
@@ -1423,10 +1442,41 @@ extension SettingsViewModel {
     }
 
     func onSubsequentAppear() {
+        recordOnboardingActivationsIfNeeded()
         refreshNextStepsVisibility(animated: false)
         Task {
             await setupSubscriptionEnvironment()
         }
+    }
+
+    private func recordOnboardingActivationsIfNeeded() {
+        recordPIRActivationIfNeeded()
+        reportVPNActivatedExperimentMetricIfNeeded()
+        Task {
+            await recordVPNActivationIfNeeded()
+        }
+    }
+
+    /// Backfill only: profiles saved from now on record themselves via `BrokerProfileJobEventsHandler.onProfileSaved`.
+    private func recordPIRActivationIfNeeded() {
+        guard isPIRActivated else { return }
+        SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordPIRActivated()
+    }
+
+    /// Backfill only: a config being installed is considered vpn step completed. Already-complete customers
+    /// are filtered out above, so this only repeats the IPC round-trip for customers still incomplete.
+    private func recordVPNActivationIfNeeded() async {
+        let persistor = SubscriptionOnboardingProgressPersistor(keyValueStore: keyValueStore)
+        guard !persistor.completedItems.contains(.vpn) else { return }
+        guard await vpnController.isVPNConfigured() else { return }
+        SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore).recordVPNActivated()
+    }
+
+    /// Reads the live connection status rather than `state.networkProtectionConnected`, which isn't loaded
+    /// yet the first time this runs on `onFirstAppear`.
+    private func reportVPNActivatedExperimentMetricIfNeeded() {
+        guard vpnController.isConnected else { return }
+        SubscriptionOnboardingExperiment.fireVPNActivatedMetric(isSubscriptionActive: state.subscription.hasActiveSubscription)
     }
 
     @MainActor
@@ -1566,7 +1616,7 @@ extension SettingsViewModel {
     private func isFeatureAvailableForNewBadge(_ feature: NewBadgeFeature) -> Bool {
         switch feature {
         case .personalInformationRemoval:
-            return isPIREnabled && meetsLocaleRequirement && dataBrokerProtectionViewControllerProvider != nil
+            return isPIRAvailable
         }
     }
 

@@ -17,11 +17,12 @@
 //  limitations under the License.
 //
 
-/// Whether the checklist reached 100% during *this* run of the app.
+/// App-scoped onboarding flags that must survive *this* run of the app.
 ///
 /// Held at app scope and injected. `SettingsViewModel` is rebuilt on every Settings presentation, so a flag
-/// owned any lower would reset mid-session and take the card with it.
+/// owned any lower would reset mid-session and take the card (or its backfill checks) with it.
 protocol SubscriptionOnboardingSessionStateManaging: AnyObject {
+    /// Whether the checklist reached 100% during this session.
     var didCompleteDuringThisSession: Bool { get }
     func recordCompletedDuringThisSession()
 }

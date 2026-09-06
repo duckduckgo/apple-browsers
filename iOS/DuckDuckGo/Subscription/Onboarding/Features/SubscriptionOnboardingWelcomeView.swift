@@ -25,7 +25,13 @@ import UIComponents
 /// An overview of the four premium protections (VPN, Identity Theft Restoration, Advanced AI Models, Personal Information Removal).
 /// Tapping a row presents that feature's  info screen (``SubscriptionOnboardingInfoView``) as a sheet; the primary button starts the flow.
 struct SubscriptionOnboardingWelcomeView: View {
+    /// Drops `.vpnWidget` and `.vpnTips` on top of that, since neither is a "premium protection" of its own.
+    static func displayedFeatures(entitledChecklist: [SubscriptionOnboardingChecklistItem]) -> [SubscriptionOnboardingChecklistItem] {
+        entitledChecklist.filter { $0 != .vpnWidget && $0 != .vpnTips }
+    }
+
     var navigationButton: SubscriptionOnboardingNavigationButton?
+    var features: [SubscriptionOnboardingChecklistItem] = displayedFeatures(entitledChecklist: SubscriptionOnboardingChecklistItem.allCases)
     var onNext: () -> Void = {}
 
     @State private var selectedFeature: SubscriptionOnboardingChecklistItem?
@@ -38,7 +44,7 @@ struct SubscriptionOnboardingWelcomeView: View {
                 title: UserText.subscriptionOnboardingWelcomeTitle,
                 explanation: UserText.subscriptionOnboardingWelcomeExplanation),
             footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: onNext))) {
-            WelcomeCard(onSelect: { selectedFeature = $0 })
+            WelcomeCard(features: features, onSelect: { selectedFeature = $0 })
         }
         .subscriptionOnboardingInfoSheet(item: $selectedFeature)
     }
@@ -55,10 +61,11 @@ private struct WelcomeCard: View {
         static let contentInsetVertical: CGFloat = 14
     }
 
-    private let features = SubscriptionOnboardingChecklistItem.features
+    private let features: [SubscriptionOnboardingChecklistItem]
     private let onSelect: (SubscriptionOnboardingChecklistItem) -> Void
 
-    init(onSelect: @escaping (SubscriptionOnboardingChecklistItem) -> Void) {
+    init(features: [SubscriptionOnboardingChecklistItem], onSelect: @escaping (SubscriptionOnboardingChecklistItem) -> Void) {
+        self.features = features
         self.onSelect = onSelect
     }
 

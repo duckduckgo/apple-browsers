@@ -39,7 +39,8 @@ final class DBPService: NSObject {
 
     init(appDependencies: DependencyProvider,
          contentBlocking: ContentBlocking,
-         freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording) {
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             runTypeProvider: appDependencies.dbpSettings)
@@ -67,9 +68,18 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 pixelHandler: notificationPixelHandler
             )
+            let subscriptionManager = appDependencies.subscriptionManager
             let eventsHandler = BrokerProfileJobEventsHandler(
                 userNotificationService: notificationService,
-                freemiumUserStateManager: freemiumDBPUserStateManager
+                freemiumUserStateManager: freemiumDBPUserStateManager,
+                // Marks the onboarding checklist's PIR step and reports the PIR-activated experiment metric.
+                // Fires for freemium saves too, so subscription status is checked rather than assumed.
+                onProfileSaved: {
+                    onboardingActivationRecorder.recordPIRActivated()
+                    Task {
+                        SubscriptionOnboardingExperiment.firePIRActivatedMetric(isSubscriptionActive: await subscriptionManager.isActiveSubscription())
+                    }
+                }
             )
 
             #if DEBUG

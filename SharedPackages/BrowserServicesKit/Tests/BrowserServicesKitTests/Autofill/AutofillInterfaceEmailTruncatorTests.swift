@@ -18,8 +18,7 @@
 //
 
 import XCTest
-import Core
-@testable import DuckDuckGo
+import BrowserServicesKit
 
 class AutofillInterfaceEmailTruncatorTests: XCTestCase {
 

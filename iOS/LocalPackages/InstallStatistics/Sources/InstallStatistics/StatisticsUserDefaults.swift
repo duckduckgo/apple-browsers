@@ -18,9 +18,9 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import FoundationExtensions
 
-public class StatisticsUserDefaults: StatisticsStore {
+public class StatisticsUserDefaults {
 
     private let groupName: String
 
@@ -38,7 +38,7 @@ public class StatisticsUserDefaults: StatisticsStore {
     }
 
     public init() {
-        self.groupName = "\(Global.groupIdPrefix).statistics"
+        self.groupName = Bundle.main.appGroup(bundle: .statistics)
     }
 
     public init(groupName: String) {
@@ -92,7 +92,6 @@ public class StatisticsUserDefaults: StatisticsStore {
         get {
             return userDefaults?.string(forKey: Keys.variant)
         }
-
         set {
             userDefaults?.setValue(newValue, forKey: Keys.variant)
         }
@@ -102,9 +101,13 @@ public class StatisticsUserDefaults: StatisticsStore {
         get {
             return userDefaults?.string(forKey: Keys.duckAIRetentionAtb)
         }
-
         set {
             userDefaults?.setValue(newValue, forKey: Keys.duckAIRetentionAtb)
         }
+    }
+
+    public var atbWithVariant: String? {
+        guard let atb else { return nil }
+        return atb + (variant ?? "")
     }
 }

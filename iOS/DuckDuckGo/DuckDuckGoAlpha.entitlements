@@ -18,7 +18,7 @@
 		<string>group.com.duckduckgo.alpha.contentblocker</string>
 		<string>group.com.duckduckgo.alpha.database</string>
 		<string>group.com.duckduckgo.alpha.netp</string>
-		<string>group.com.duckduckgo.alpha.statistics</string>
+		<string>$(STATISTICS_APP_GROUP)</string>
 		<string>group.com.duckduckgo.alpha.vault</string>
 	</array>
 	<key>keychain-access-groups</key>

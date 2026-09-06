@@ -174,7 +174,7 @@ extension TabViewController {
     static func inPageDuckAIEntrySource(currentURL: URL?,
                                         navigationAction: WKNavigationAction,
                                         pendingNativeLoadURL: URL?) -> AIChatEntryPointSource? {
-        guard navigationAction.isTargetingMainFrame(),
+        guard navigationAction.isTargetingMainFrame,
               navigationAction.navigationType != .backForward,
               navigationAction.navigationType != .reload,
               let targetURL = navigationAction.request.url,

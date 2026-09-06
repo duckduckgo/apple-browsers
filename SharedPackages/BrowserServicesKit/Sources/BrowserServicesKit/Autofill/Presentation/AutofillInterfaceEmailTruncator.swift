@@ -1,6 +1,5 @@
 //
 //  AutofillInterfaceEmailTruncator.swift
-//  DuckDuckGo
 //
 //  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
@@ -25,19 +24,19 @@ public struct AutofillInterfaceEmailTruncator {
         if emailComponents.count > 1 && email.count > maxLength {
             let ellipsis = "..."
             let minimumPrefixSize = 3
-            
+
             let difference = email.count - maxLength + ellipsis.count
             if let username = emailComponents.first,
                let domain = emailComponents.last {
-                
+
                 var prefixCount = username.count - difference
                 prefixCount = prefixCount < 0 ? minimumPrefixSize : prefixCount
                 let prefix = username.prefix(prefixCount)
-                
+
                 return "\(prefix)\(ellipsis)@\(domain)"
             }
         }
-        
+
         return email
     }
 }

@@ -50,6 +50,7 @@ let package = Package(
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
+        .package(path: "../WideEvent"),
         .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.2.0"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
@@ -79,6 +80,7 @@ let package = Package(
         .target(
             name: "BrowserServicesKit",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "Autofill", package: "duckduckgo-autofill"),
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
                 .product(name: "Persistence", package: "Persistence"),
@@ -439,6 +441,7 @@ let package = Package(
         .target(
             name: "Subscription",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "DDGError", package: "DDGError"),
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
@@ -637,6 +640,7 @@ let package = Package(
         .testTarget(
             name: "BrowserServicesKitTests",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "SharedObjCTestsUtils",
                 "BrowserServicesKit",
                 "BrowserServicesKitTestsUtils",
@@ -823,6 +827,7 @@ let package = Package(
         .testTarget(
             name: "SubscriptionTests",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "PixelKit", package: "PixelKit"),
                 "SharedObjCTestsUtils",
                 "Subscription",

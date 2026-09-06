@@ -2561,6 +2561,13 @@
 		FD555C0BE82E630360DC2E5A /* ToggleModeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6090D90640A2B1A529EDBAAB /* ToggleModeStorage.swift */; };
 		FDEC1A2B30260001000000F1 /* IOSMonthlyFreeTrialDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDEC1A2B30260001000000F2 /* IOSMonthlyFreeTrialDeciderTests.swift */; };
 		FE3F04733168A7D8D43EE6ED /* SubscriptionOnboardingVPNTipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9779E9CF15760D18FCBCD448 /* SubscriptionOnboardingVPNTipsView.swift */; };
+		64C0847679ED02196F3D425D /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 3D0759507C5E488826CC23DC /* WideEvent */; };
+		75F9178AB05048B7B847DE10 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = F65BA8F830862DB77E43E2C1 /* WideEvent */; };
+		708BA1CBA61D18E2FCEC6043 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 524F28DF1A4A0B9EAD27884C /* WideEvent */; };
+		736A204C310F11DBE15B6949 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 53409DEAE1AB86700EA52DA3 /* WideEvent */; };
+		D4D81B61DD5ECD8A1B8CD562 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 14E03AB9D3B48B3B39B8F80B /* WideEvent */; };
+		97C2107CB4A1ADE8A0F4947D /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = F8A1A79EDA7B2B3CD82BA1B0 /* WideEvent */; };
+		0CEF7424DF47598D800EB920 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 3E0D167D2CFCE3C99849696D /* WideEvent */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -5298,6 +5305,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				97C2107CB4A1ADE8A0F4947D /* WideEvent in Frameworks */,
 				FCFC00031F00000000020001 /* DDGError in Frameworks */,
 				ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */,
 				02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */,
@@ -5320,6 +5328,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				708BA1CBA61D18E2FCEC6043 /* WideEvent in Frameworks */,
 				FCFC00031F00000000010001 /* DDGError in Frameworks */,
 				A64F1A060000000000000006 /* FeatureFlags-iOS in Frameworks */,
 				8518F12B2F742E1800B53C75 /* ScreenTimeDataCleaner in Frameworks */,
@@ -5374,6 +5383,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4D81B61DD5ECD8A1B8CD562 /* WideEvent in Frameworks */,
 				A64F1A070000000000000007 /* FeatureFlags-iOS in Frameworks */,
 				9FE59CDA2E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport in Frameworks */,
 				EE9EEFAE2B804DF8AEDC9A6F /* SitePermissions in Frameworks */,
@@ -5427,6 +5437,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0CEF7424DF47598D800EB920 /* WideEvent in Frameworks */,
 				A64F1A080000000000000008 /* FeatureFlags-iOS in Frameworks */,
 				4B69239F2F28720300A816B9 /* AIChat in Frameworks */,
 				986CD5352DE8F4FA00AFA98A /* RemoteMessaging in Frameworks */,
@@ -5467,6 +5478,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				736A204C310F11DBE15B6949 /* WideEvent in Frameworks */,
 				A64F1A090000000000000009 /* FeatureFlags-iOS in Frameworks */,
 				986CD5372DE8F50100AFA98A /* RemoteMessaging in Frameworks */,
 				7BC26CB62DFC156A00E52480 /* VPNTestUtils in Frameworks */,
@@ -5492,6 +5504,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				64C0847679ED02196F3D425D /* WideEvent in Frameworks */,
 				A64F1A0A000000000000000A /* FeatureFlags-iOS in Frameworks */,
 				CC55B23F2E82CD650032E8BD /* BrowserServicesKitTestsUtils in Frameworks */,
 				98E564902DE8DE7200E6E75F /* RemoteMessaging in Frameworks */,
@@ -5534,6 +5547,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75F9178AB05048B7B847DE10 /* WideEvent in Frameworks */,
 				FCFC00031F00000000030001 /* URLPredictor in Frameworks */,
 				A64F1A050000000000000005 /* FeatureFlags-iOS in Frameworks */,
 				C1A60F242F1FE5EC0078851C /* Common in Frameworks */,
@@ -11290,6 +11304,7 @@
 			);
 			name = PacketTunnelProvider;
 			packageProductDependencies = (
+				F8A1A79EDA7B2B3CD82BA1B0 /* WideEvent */,
 				FCFC00021F00000000020001 /* DDGError */,
 				4BC8948B2C7902E6009AA141 /* WireGuard */,
 				4BC95EB02D7417BF002FAB32 /* Subscription */,
@@ -11384,6 +11399,7 @@
 			);
 			name = DuckDuckGo;
 			packageProductDependencies = (
+				524F28DF1A4A0B9EAD27884C /* WideEvent */,
 				FCFC00021F00000000010001 /* DDGError */,
 				A64F1A030000000000000003 /* FeatureFlags-iOS */,
 				31E69A62280F4CB600478327 /* DuckUI */,
@@ -11444,6 +11460,7 @@
 			);
 			name = UnitTests;
 			packageProductDependencies = (
+				14E03AB9D3B48B3B39B8F80B /* WideEvent */,
 				A64F1A040000000000000004 /* FeatureFlags-iOS */,
 				F486D3352506A037002D07D7 /* OHHTTPStubs */,
 				F486D3372506A225002D07D7 /* OHHTTPStubsSwift */,
@@ -11528,6 +11545,7 @@
 			);
 			name = IntegrationTests;
 			packageProductDependencies = (
+				3E0D167D2CFCE3C99849696D /* WideEvent */,
 				A64F1A0B000000000000000B /* FeatureFlags-iOS */,
 				1E1D8B622995143200C96994 /* OHHTTPStubs */,
 				1E1D8B642995143200C96994 /* OHHTTPStubsSwift */,
@@ -11605,6 +11623,7 @@
 			);
 			name = WebViewUnitTests;
 			packageProductDependencies = (
+				53409DEAE1AB86700EA52DA3 /* WideEvent */,
 				A64F1A0C000000000000000C /* FeatureFlags-iOS */,
 				984249C02CED4F430071C7DB /* OHHTTPStubs */,
 				984249C22CED4F430071C7DB /* OHHTTPStubsSwift */,
@@ -11658,6 +11677,7 @@
 			);
 			name = SharedStateTests;
 			packageProductDependencies = (
+				3D0759507C5E488826CC23DC /* WideEvent */,
 				A64F1A0D000000000000000D /* FeatureFlags-iOS */,
 				98E564832DE8DE3F00E6E75F /* Common */,
 				98E564852DE8DE5700E6E75F /* Persistence */,
@@ -11715,6 +11735,7 @@
 			);
 			name = Core;
 			packageProductDependencies = (
+				F65BA8F830862DB77E43E2C1 /* WideEvent */,
 				FCFC00021F00000000030001 /* URLPredictor */,
 				A64F1A020000000000000002 /* FeatureFlags-iOS */,
 				F486D33325069BBB002D07D7 /* Kingfisher */,
@@ -18608,6 +18629,34 @@
 		FCFC00021F00000000030001 /* URLPredictor */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = URLPredictor;
+		};
+		3D0759507C5E488826CC23DC /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		F65BA8F830862DB77E43E2C1 /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		524F28DF1A4A0B9EAD27884C /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		53409DEAE1AB86700EA52DA3 /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		14E03AB9D3B48B3B39B8F80B /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		F8A1A79EDA7B2B3CD82BA1B0 /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
+		};
+		3E0D167D2CFCE3C99849696D /* WideEvent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WideEvent;
 		};
 /* End XCSwiftPackageProductDependency section */
 

@@ -36,6 +36,7 @@ let package = Package(
         .library(name: "DataBrokerProtectionCoreTestsUtils", targets: ["DataBrokerProtectionCoreTestsUtils"]),
     ],
     dependencies: [
+        .package(path: "../WideEvent"),
         .package(path: "../Persistence"),
         .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
@@ -48,6 +49,7 @@ let package = Package(
         .target(
             name: "DataBrokerProtectionCore",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "PixelKit"),
@@ -75,6 +77,7 @@ let package = Package(
         .target(
             name: "DataBrokerProtectionCoreTestsUtils",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "DataBrokerProtectionCore",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "PixelKit"),
@@ -88,6 +91,7 @@ let package = Package(
         .testTarget(
             name: "DataBrokerProtectionCoreTests",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "DataBrokerProtectionCore",
                 "DataBrokerProtectionCoreTestsUtils",
                 "BrowserServicesKit",

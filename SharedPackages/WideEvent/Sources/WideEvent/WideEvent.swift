@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PixelKit
 import os.log
 import Common
 import FoundationExtensions

@@ -23,6 +23,7 @@ import Foundation
 import VPN
 import NetworkProtectionIPC
 import PixelKit
+import WideEvent
 import UDSHelper
 import os.log
 import PrivacyConfig

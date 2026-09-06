@@ -18,7 +18,7 @@
 
 import XCTest
 import Networking
-import PixelKit
+import WideEvent
 import Subscription
 @testable import VPN
 

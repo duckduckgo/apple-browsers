@@ -27,7 +27,7 @@ import FoundationExtensions
 import Network
 import NetworkExtension
 import os.log
-import PixelKit
+import WideEvent
 import UserNotifications
 
 open class PacketTunnelProvider: NEPacketTunnelProvider {

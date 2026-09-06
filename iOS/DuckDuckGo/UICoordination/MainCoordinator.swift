@@ -21,7 +21,7 @@ import Foundation
 import Core
 import Combine
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 import Persistence

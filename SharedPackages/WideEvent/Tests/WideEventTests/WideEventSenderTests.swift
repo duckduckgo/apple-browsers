@@ -17,7 +17,8 @@
 //
 
 import XCTest
-@testable import PixelKit
+import PixelKit
+@testable import WideEvent
 import Foundation
 
 final class WideEventSenderTests: XCTestCase {

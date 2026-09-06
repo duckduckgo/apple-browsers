@@ -26,6 +26,7 @@ import WebKit
 import XCTest
 import UserScript
 @_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription

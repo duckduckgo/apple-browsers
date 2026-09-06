@@ -48,6 +48,9 @@
          location = "group:PixelKit">
       </FileRef>
       <FileRef
+         location = "group:WideEvent">
+      </FileRef>
+      <FileRef
          location = "group:ScreenTimeDataCleaner">
       </FileRef>
       <FileRef

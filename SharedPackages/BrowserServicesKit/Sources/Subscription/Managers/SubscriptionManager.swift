@@ -22,7 +22,7 @@ import Common
 import FoundationExtensions
 import os.log
 import Networking
-import PixelKit
+import WideEvent
 
 public enum AuthVersion: String {
     // case v1 // removed

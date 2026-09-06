@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 public final class OptOutSubmissionWideEventData: WideEventData {
     public static let metadata = WideEventMetadata(

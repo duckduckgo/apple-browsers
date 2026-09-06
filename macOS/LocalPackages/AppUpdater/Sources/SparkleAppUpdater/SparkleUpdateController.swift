@@ -27,6 +27,7 @@ import FoundationExtensions
 import os.log
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Sparkle
 import Subscription

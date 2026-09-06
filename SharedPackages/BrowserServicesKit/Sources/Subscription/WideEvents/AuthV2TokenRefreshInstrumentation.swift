@@ -19,7 +19,7 @@
 import Foundation
 import Common
 import Networking
-import PixelKit
+import WideEvent
 
 public protocol AuthV2TokenRefreshInstrumenting: AnyObject {
     var eventMapping: EventMapping<OAuthClientRefreshEvent> { get }

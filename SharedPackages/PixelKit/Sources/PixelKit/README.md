@@ -426,4 +426,4 @@ See [TestingSupport/README.md](TestingSupport/README.md) for why these types liv
 | [RetryQueue/README.md](RetryQueue/README.md) | How failed pixels are persisted and replayed |
 | [TestingSupport/README.md](TestingSupport/README.md) | `PixelKitMock` and friends |
 | `.cursor/rules/pixels.mdc` | Repo-wide pixel conventions, definitions, validation |
-| `WideEvent/` | Wide events: multi-step flows reported as a single record |
+| [WideEvent](../../../WideEvent/README.md) | Separate package for multi-step flows reported as a single record |

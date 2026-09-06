@@ -23,7 +23,7 @@ import Combine
 import Core
 import Subscription
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 
 final class SubscriptionRestoreViewModel: ObservableObject {
     

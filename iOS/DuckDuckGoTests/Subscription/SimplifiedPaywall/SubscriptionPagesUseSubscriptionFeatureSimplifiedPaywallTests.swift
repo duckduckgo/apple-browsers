@@ -22,6 +22,7 @@ import BrowserServicesKit
 import SubscriptionTestingUtilities
 import Core
 @_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PixelExperimentKit
 @testable import Subscription
 @testable import DuckDuckGo

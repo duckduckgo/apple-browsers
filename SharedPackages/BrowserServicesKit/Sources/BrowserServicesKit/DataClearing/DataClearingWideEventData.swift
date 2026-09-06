@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 /// Wide event data for tracking data clearing operations.
 ///

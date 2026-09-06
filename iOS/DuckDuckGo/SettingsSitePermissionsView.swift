@@ -206,17 +206,28 @@ struct SettingsSitePermissionsView: View {
         List {
             Section {
                 ForEach(SettingsSitePermissionsViewModel.supportedPermissionTypes, id: \.self) { permissionType in
-                    NavigationLink(destination: globalPicker(for: permissionType)) {
-                        SettingsCellView(label: permissionType.settingsTitle,
-                                         image: Image(uiImage: permissionType.settingsIcon(for: .ask)),
-                                         accessory: .rightDetail(viewModel.globalDefault(for: permissionType).settingsTitle))
+                    Menu {
+                        Picker(permissionType.settingsTitle, selection: viewModel.globalDefaultBinding(for: permissionType)) {
+                            ForEach(GlobalSitePermissionDecision.allCases, id: \.self) { decision in
+                                Text(decision.settingsTitle).tag(decision)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                        .labelsHidden()
+                    } label: {
+                        SettingsSitePermissionMenuLabel(permissionType: permissionType,
+                                                        selection: viewModel.globalDefault(for: permissionType).settingsTitle)
                     }
+                    .accessibilityLabel(permissionType.settingsTitle)
                     .accessibilityValue(viewModel.globalDefault(for: permissionType).settingsTitle)
                     .accessibilityIdentifier("Settings.SitePermissions.Global.\(permissionType.rawValue)")
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
             } header: {
-                sectionHeader(UserText.sitePermissions)
+                Text(UserText.sitePermissions)
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .textCase(nil)
             } footer: {
                 Text(systemSettingsFooter)
                     .environment(\.openURL, OpenURLAction { url in
@@ -243,7 +254,10 @@ struct SettingsSitePermissionsView: View {
                         .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                     }
                 } header: {
-                    sectionHeader(UserText.settingsSitePermissionsManageSites)
+                    Text(UserText.settingsSitePermissionsManageSites)
+                        .font(.body.weight(.semibold))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .textCase(nil)
                 }
 
                 Section {
@@ -256,30 +270,12 @@ struct SettingsSitePermissionsView: View {
                 }
             }
         }
+        .sitePermissionsSectionSpacing()
         .applySettingsListModifiers(title: UserText.sitePermissions, displayMode: .inline, viewModel: settingsViewModel)
         .disabled(!settingsViewModel.state.sitePermissionsEnabled)
         .onFirstAppear {
             viewModel.didOpen()
         }
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .daxHeadline()
-            .foregroundColor(Color(designSystemColor: .textSecondary))
-            .textCase(nil)
-    }
-
-    private func globalPicker(for permissionType: SitePermissionType) -> some View {
-        ListBasedPicker(
-            title: permissionType.settingsTitle,
-            options: GlobalSitePermissionDecision.allCases,
-            selectedOption: viewModel.globalDefaultBinding(for: permissionType),
-            descriptionForOption: { $0.settingsTitle },
-            sectionHeader: permissionType.settingsTitle
-        )
-        .applySettingsListModifiers(title: "", displayMode: .inline, viewModel: settingsViewModel)
-        .disabled(!settingsViewModel.state.sitePermissionsEnabled)
     }
 
     private var systemSettingsFooter: AttributedString {
@@ -304,14 +300,28 @@ private struct SettingsSitePermissionsSiteView: View {
         List {
             Section {
                 ForEach(SettingsSitePermissionsViewModel.supportedPermissionTypes, id: \.self) { permissionType in
-                    NavigationLink(destination: sitePicker(for: permissionType)) {
-                        SettingsCellView(label: permissionType.settingsTitle,
-                                         accessory: .rightDetail(viewModel.siteDecision(for: permissionType, at: site).settingsTitle))
+                    Menu {
+                        Picker(permissionType.settingsTitle, selection: viewModel.siteDecisionBinding(for: permissionType, at: site)) {
+                            ForEach(SitePermissionDecision.allCases, id: \.self) { decision in
+                                Text(decision.settingsTitle).tag(decision)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                        .labelsHidden()
+                    } label: {
+                        SettingsSitePermissionMenuLabel(permissionType: permissionType,
+                                                        selection: viewModel.siteDecision(for: permissionType, at: site).settingsTitle)
                     }
+                    .accessibilityLabel(permissionType.settingsTitle)
                     .accessibilityValue(viewModel.siteDecision(for: permissionType, at: site).settingsTitle)
                     .accessibilityIdentifier("Settings.SitePermissions.Site.\(permissionType.rawValue)")
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
+            } header: {
+                Text(String(format: UserText.settingsSitePermissionsSiteHeaderFormat, site.host))
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .textCase(nil)
             }
 
             Section {
@@ -324,27 +334,45 @@ private struct SettingsSitePermissionsSiteView: View {
                 .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
         }
-        .applySettingsListModifiers(title: pageTitle, displayMode: .inline, viewModel: settingsViewModel)
+        .sitePermissionsSectionSpacing()
+        .applySettingsListModifiers(title: site.host, displayMode: .inline, viewModel: settingsViewModel)
         .disabled(!settingsViewModel.state.sitePermissionsEnabled)
     }
+}
 
-    private var pageTitle: String {
-        String(format: UserText.settingsSitePermissionsSiteHeaderFormat, site.host)
+private struct SettingsSitePermissionMenuLabel: View {
+    let permissionType: SitePermissionType
+    let selection: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            permissionType.settingsIcon
+                .font(.title3)
+                .frame(width: 24, height: 24)
+                .accessibilityHidden(true)
+            Text(permissionType.settingsTitle)
+                .daxBodyRegular()
+            Spacer(minLength: 16)
+            Text(selection)
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.footnote.weight(.bold))
+                .foregroundColor(Color(UIColor.tertiaryLabel))
+                .accessibilityHidden(true)
+        }
+        .foregroundColor(Color(designSystemColor: .textPrimary))
     }
+}
 
-    private func sitePicker(for permissionType: SitePermissionType) -> some View {
-        ListBasedPicker(
-            title: permissionType.settingsTitle,
-            options: SitePermissionDecision.allCases,
-            selectedOption: viewModel.siteDecisionBinding(for: permissionType, at: site),
-            descriptionForOption: { $0.settingsTitle },
-            iconProvider: { decision in
-                Image(uiImage: permissionType.settingsIcon(for: decision))
-            },
-            sectionHeader: permissionType.settingsTitle
-        )
-        .applySettingsListModifiers(title: "", displayMode: .inline, viewModel: settingsViewModel)
-        .disabled(!settingsViewModel.state.sitePermissionsEnabled)
+private extension List {
+    @ViewBuilder
+    func sitePermissionsSectionSpacing() -> some View {
+        if #available(iOS 17, *) {
+            listSectionSpacing(24)
+        } else {
+            self
+        }
     }
 }
 
@@ -375,26 +403,14 @@ private extension SitePermissionType {
         }
     }
 
-    func settingsIcon(for decision: SitePermissionDecision) -> DesignSystemImage {
-        switch (self, decision) {
-        case (.camera, .ask):
-            return DesignSystemImages.Glyphs.Size24.video
-        case (.camera, .allow):
-            return DesignSystemImages.Glyphs.Size24.videoSolid
-        case (.camera, .deny):
-            return DesignSystemImages.Glyphs.Size24.videoBlocked
-        case (.microphone, .ask):
-            return DesignSystemImages.Glyphs.Size24.microphone
-        case (.microphone, .allow):
-            return DesignSystemImages.Glyphs.Size24.microphoneSolid
-        case (.microphone, .deny):
-            return DesignSystemImages.Glyphs.Size24.microphoneBlocked
-        case (.location, .ask):
-            return DesignSystemImages.Glyphs.Size24.location
-        case (.location, .allow):
-            return DesignSystemImages.Glyphs.Size24.locationSolid
-        case (.location, .deny):
-            return DesignSystemImages.Glyphs.Size24.locationBlocked
+    var settingsIcon: Image {
+        switch self {
+        case .camera:
+            return Image(systemName: "video")
+        case .microphone:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
+        case .location:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.location)
         }
     }
 }

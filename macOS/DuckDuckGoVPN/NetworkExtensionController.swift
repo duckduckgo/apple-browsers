@@ -24,6 +24,18 @@ import NetworkProtectionUI
 import SystemExtensionManager
 import SystemExtensions
 
+/// The system extension operations the VPN start flow depends on.
+///
+/// Exists so the tunnel controller can be exercised without touching `OSSystemExtensionManager`,
+/// whose activation requests need real user approval and cannot be driven from a test.
+///
+protocol NetworkExtensionControlling {
+    func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws
+    func deactivateSystemExtension() async throws
+    func openSystemExtensionSettings()
+    func systemExtensionActivationState() async -> SystemExtensionActivationState
+}
+
 /// The VPN's network extension session object.
 ///
 /// Through this class the app that owns the VPN can interact with the network extension.
@@ -42,7 +54,7 @@ final class NetworkExtensionController {
     }
 }
 
-extension NetworkExtensionController {
+extension NetworkExtensionController: NetworkExtensionControlling {
 
     func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws {
         do {

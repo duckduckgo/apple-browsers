@@ -60,6 +60,9 @@
          location = "group:SnapshotTestingSupport">
       </FileRef>
       <FileRef
+         location = "group:UITestingSupport">
+      </FileRef>
+      <FileRef
          location = "group:UIComponents">
       </FileRef>
       <FileRef

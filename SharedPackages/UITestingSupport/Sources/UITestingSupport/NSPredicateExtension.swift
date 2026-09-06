@@ -20,7 +20,7 @@ import Foundation
 import XCTest
 import ObjectiveC
 
-extension NSPredicate {
+public extension NSPredicate {
 
     private class ComputedKeyPathHelper: NSObject {
         @objc var value: Any?
@@ -73,6 +73,8 @@ extension NSPredicate {
         case is Double.Type, is Float.Type:
             formatSpecifier = "%f"
         case is Bool.Type:
+            // The type switch guarantees this cast.
+            // swiftlint:disable:next force_cast
             let boolValue = value as! Bool
             return NSPredicate(format: "%K == %@", key, NSNumber(value: boolValue))
         default:
@@ -420,7 +422,7 @@ extension NSPredicate {
 
 }
 
-extension NSPredicate {
+public extension NSPredicate {
 
     private static let customDescriptionKey = UnsafeRawPointer(bitPattern: "customDescriptionKey".hashValue)!
     private var customDescription: String? {
@@ -440,7 +442,7 @@ extension NSPredicate {
 
     private static let swizzlePredicateFormatOnce: Void = {
         let originalSelector = #selector(getter: predicateFormat)
-        let swizzledSelector = #selector(getter: swizzled_predicateFormat)
+        let swizzledSelector = #selector(getter: swizzledPredicateFormat)
 
         guard let originalMethod = class_getInstanceMethod(NSPredicate.self, originalSelector),
               let swizzledMethod = class_getInstanceMethod(NSPredicate.self, swizzledSelector) else {
@@ -450,11 +452,11 @@ extension NSPredicate {
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }()
 
-    @objc private dynamic var swizzled_predicateFormat: String {
+    @objc private dynamic var swizzledPredicateFormat: String {
         if let customDesc = self.customDescription {
             return customDesc
         }
-        return self.swizzled_predicateFormat
+        return self.swizzledPredicateFormat
     }
 
 }

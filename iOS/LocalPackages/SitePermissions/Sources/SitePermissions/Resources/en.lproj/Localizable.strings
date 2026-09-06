@@ -1,0 +1,23 @@
+"sitePermissions.dialog.camera.title" = "“%@” website wants to access your camera";
+"sitePermissions.dialog.microphone.title" = "“%@” website wants to access your microphone";
+"sitePermissions.dialog.camera-and-microphone.title" = "“%@” website wants to access your camera and microphone";
+"sitePermissions.dialog.allow-once" = "Allow Once";
+"sitePermissions.dialog.allow-while-using-site" = "Allow While Using Site";
+"sitePermissions.dialog.never-allow" = "Never Allow";
+"sitePermissions.recovery.toast.camera" = "DuckDuckGo couldn’t give camera access to this site";
+"sitePermissions.recovery.toast.microphone" = "DuckDuckGo couldn’t give microphone access to this site";
+"sitePermissions.recovery.toast.camera-and-microphone" = "DuckDuckGo couldn’t give camera and microphone access to this site";
+"sitePermissions.recovery.reminder.camera.title" = "DuckDuckGo needs to access your camera";
+"sitePermissions.recovery.reminder.camera.body" = "Camera permissions are needed if you want to use camera features on this site.";
+"sitePermissions.recovery.reminder.microphone.title" = "DuckDuckGo needs to access your microphone";
+"sitePermissions.recovery.reminder.microphone.body" = "Microphone permissions are needed if you want to use microphone features on this site.";
+"sitePermissions.recovery.reminder.camera-and-microphone.title" = "DuckDuckGo needs to access your camera and microphone";
+"sitePermissions.recovery.reminder.camera-and-microphone.body" = "Camera and microphone permissions are needed if you want to use related features on this site.";
+"sitePermissions.recovery.reminder.change-permissions" = "Change Permissions";
+"sitePermissions.recovery.reminder.cancel" = "Cancel";
+"sitePermissions.voice-search.reminder.title" = "DuckDuckGo needs to access your microphone";
+"sitePermissions.voice-search.reminder.body" = "Microphone permissions are needed if you want to use our Private Voice Search.";
+"sitePermissions.voice-search.reminder.hide" = "Hide Voice Search";
+
+/* Body of the reminder shown when iOS microphone access for Duck.ai Voice Chat is blocked. */
+"sitePermissions.voice-chat.reminder.body" = "Microphone permissions are needed if you want to use Voice Chat in Duck.ai.";

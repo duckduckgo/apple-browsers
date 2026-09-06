@@ -395,7 +395,7 @@ extension TabViewController {
             onDecisionChanged: { [weak self, weak coordinator] change in
                 guard let self else { return }
                 if self.tabModel.fireTab {
-                    coordinator?.applyFireModeManagementDecision(change.to, for: change.permissionType)
+                    coordinator?.applyFireModeManagementDecision(change.to, for: change.permissionType, at: site)
                 }
                 self.fireSitePermissionsEvent(
                     .permissionCenterChanged(type: change.permissionType, from: change.from, to: change.to)

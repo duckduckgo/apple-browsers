@@ -137,7 +137,7 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
         let harness = try CoordinatorHarness(isFireMode: true)
         harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in }, completion: { _ in })
 
-        harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera)
+        harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera, at: harness.site)
 
         let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
         XCTAssertTrue(snapshot.isFireMode)
@@ -157,6 +157,23 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
         XCTAssertTrue(snapshot.storedPermissions.isEmpty)
         XCTAssertFalse(snapshot.showsMenuEntry)
         XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .allow)
+    }
+
+    func testWhenFireDecisionChangesBeforeFirstRequestThenSnapshotAndRequestUseOverride() throws {
+        let harness = try CoordinatorHarness(isFireMode: true)
+        harness.store.setPersistentDecision(.deny, for: .camera, at: harness.site)
+
+        harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera, at: harness.site)
+
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertEqual(snapshot.storedPermissions[.camera], .allow)
+        XCTAssertEqual(snapshot.ephemeralPermissionTypes, [.camera])
+        var resolutions = [SitePermissionResolution]()
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
+            XCTFail("The Fire override should allow without prompting")
+        }, completion: { resolutions.append($0) })
+        XCTAssertEqual(resolutions, [.grant])
+        XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .deny)
     }
 
     func testFireModeUndoRestoresStoredRecordButNotEphemeralGrant() async throws {
@@ -180,7 +197,7 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
     func testExternalRevocationClearsFireOverrideAndRevealsPersistentDecision() throws {
         let harness = try CoordinatorHarness(isFireMode: true)
         harness.store.setPersistentDecision(.deny, for: .camera, at: harness.site)
-        harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera)
+        harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera, at: harness.site)
 
         harness.coordinator.revokeManagementSessionState(for: [.camera], at: harness.site)
 

@@ -343,8 +343,11 @@ public final class SitePermissionsCoordinator {
         }
     }
 
-    public func applyFireModeManagementDecision(_ decision: SitePermissionDecision, for permissionType: SitePermissionType) {
+    public func applyFireModeManagementDecision(_ decision: SitePermissionDecision,
+                                                for permissionType: SitePermissionType,
+                                                at site: SitePermissionKey) {
         guard isFireMode else { return }
+        currentManagementSite = site
         fireModeRemovedPermissionTypes.remove(permissionType)
         fireModeManagementOverrides[permissionType] = decision
         switch decision {

@@ -291,9 +291,9 @@ public final class SitePermissionsCoordinator {
             switch storedPermissions[permissionType] {
             case .allow:
                 isAllowedAtSite = true
-            case .ask, .deny:
+            case .deny:
                 isAllowedAtSite = false
-            case nil:
+            case .ask, nil:
                 isAllowedAtSite = siteAllowedPermissionTypes.contains(permissionType)
                     || ephemeralPermissionTypes.contains(permissionType)
             }

@@ -97,6 +97,30 @@ final class SitePermissionsManagementCoordinatorTests: XCTestCase {
         XCTAssertFalse(ended.showsMenuEntry)
     }
 
+    func testWhenExplicitAskAllowsOnceAndSystemDeniesThenReminderRemainsReachable() async throws {
+        let harness = try CoordinatorHarness()
+        harness.store.resetDecision(for: .camera, at: harness.site)
+        harness.systemStates[.camera] = .notDetermined
+        harness.authorizationRequester = {
+            harness.systemStates[$0] = .denied
+            return .denied
+        }
+        let completed = expectation(description: "Request completed")
+
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { _ in completed.fulfill() })
+
+        await fulfillment(of: [completed], timeout: 1)
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertEqual(snapshot.storedPermissions[.camera], .ask)
+        XCTAssertEqual(snapshot.systemBlockedPermissionTypes, [.camera])
+        XCTAssertTrue(snapshot.showsMenuEntry)
+
+        harness.store.setPersistentDecision(.deny, for: .camera, at: harness.site)
+        XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).systemBlockedPermissionTypes.isEmpty)
+    }
+
     func testNavigationClearsRequestedAndSessionStateButPreservesStoredRecord() async throws {
         let harness = try CoordinatorHarness()
         harness.store.resetDecision(for: .camera, at: harness.site)

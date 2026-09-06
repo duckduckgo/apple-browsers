@@ -106,10 +106,9 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
         refresh()
         callbacks.didRequestRevocation(site, Set(Self.supportedPermissionTypes))
         callbacks.didRemoveSite()
-        presentUndoToast(String(format: UserText.settingsSitePermissionsRemovedSiteFormat, site.host)) { [weak self] in
-            guard let self else { return }
+        presentUndoToast(String(format: UserText.settingsSitePermissionsRemovedSiteFormat, site.host)) { [weak self, store, callbacks] in
             store.restore(snapshot)
-            refresh()
+            self?.refresh()
             callbacks.didUndoRemoval()
         }
     }
@@ -123,10 +122,9 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
             callbacks.didRequestRevocation($0, Set(Self.supportedPermissionTypes))
         }
         callbacks.didRemoveAll()
-        presentUndoToast(UserText.settingsSitePermissionsRemovedAll) { [weak self] in
-            guard let self else { return }
+        presentUndoToast(UserText.settingsSitePermissionsRemovedAll) { [weak self, store, callbacks] in
             store.restore(snapshot)
-            refresh()
+            self?.refresh()
             callbacks.didUndoRemoval()
         }
     }

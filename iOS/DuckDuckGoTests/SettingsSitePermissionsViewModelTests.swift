@@ -196,6 +196,36 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
         XCTAssertEqual(undoCount, 1)
     }
 
+    func testWhenSettingsModelIsReleasedThenUndoStillRestoresRemovedPermissions() throws {
+        for removeAll in [false, true] {
+            let store = makeStore()
+            let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+            store.setPersistentDecision(.allow, for: .camera, at: site)
+            var undo: (() -> Void)?
+            var undoCount = 0
+            var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+            callbacks.didUndoRemoval = { undoCount += 1 }
+            var sut: SettingsSitePermissionsViewModel? = makeSUT(
+                store: store,
+                presentUndoToast: { _, action in undo = action },
+                callbacks: callbacks)
+            weak var weakSUT = sut
+
+            if removeAll {
+                sut?.removeAllSitePermissions()
+            } else {
+                sut?.removePermissions(for: site)
+            }
+            sut = nil
+
+            XCTAssertNil(weakSUT)
+            XCTAssertNil(store.decision(for: .camera, at: site))
+            try XCTUnwrap(undo)()
+            XCTAssertEqual(store.decision(for: .camera, at: site), .allow)
+            XCTAssertEqual(undoCount, 1)
+        }
+    }
+
     func testUndoDoesNotOverwriteNewerSiteDecision() throws {
         let store = makeStore()
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))

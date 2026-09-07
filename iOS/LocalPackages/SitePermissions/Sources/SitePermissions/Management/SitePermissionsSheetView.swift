@@ -62,15 +62,17 @@ public struct SitePermissionsSheetView: View {
             header
 
             if !viewModel.rows.isEmpty {
-                permissionRows
+                VStack(alignment: .leading, spacing: Constants.copySpacing) {
+                    permissionRows
+                    if viewModel.state == .permissionsOnly {
+                        reloadCaption
+                    }
+                }
             }
 
             switch viewModel.state {
             case .permissionsOnly:
-                VStack(alignment: .leading, spacing: Constants.copySpacing) {
-                    reloadCaption
-                    actionCard(includesRemove: true, includesSystemSettings: false)
-                }
+                actionCard(includesRemove: true, includesSystemSettings: false)
             case .permissionsAndReminder:
                 VStack(alignment: .leading, spacing: Constants.copySpacing) {
                     actionCard(includesRemove: true, includesSystemSettings: true)

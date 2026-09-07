@@ -130,7 +130,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         sut.clearAttachedContext()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.state)
         XCTAssertNil(sut.attachedContextURL)
     }
 
@@ -141,8 +141,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         sut.showAttachAffordance()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
-        XCTAssertFalse(sut.chipViewModel.isVisible)
+        XCTAssertNil(sut.chipViewModel.state)
         XCTAssertEqual(sut.attachedContextURL, url)
         XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
     }
@@ -155,7 +154,6 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         sut.showAttachAffordance()
 
         XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
-        XCTAssertTrue(sut.chipViewModel.isVisible)
         XCTAssertEqual(sut.attachedContextURL, url)
         XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)
     }
@@ -193,7 +191,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         sut.prepareForNewChat()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.state)
         XCTAssertNil(sut.attachedContextURL)
     }
 
@@ -339,17 +337,19 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 }
 
 private func XCTAssertEqualState(
-    _ actual: AIChatContextChipView.State,
+    _ actual: AIChatContextChipView.State?,
     _ expected: AIChatContextChipView.State,
     file: StaticString = #filePath,
     line: UInt = #line
 ) {
     switch (actual, expected) {
-    case (.placeholder, .placeholder):
-        return
+    case let (.suggested(actualTitle, _), .suggested(expectedTitle, _)):
+        XCTAssertEqual(actualTitle, expectedTitle, file: file, line: line)
     case let (.attached(actualTitle, _), .attached(expectedTitle, _)):
         XCTAssertEqual(actualTitle, expectedTitle, file: file, line: line)
+    case (.loading, .loading):
+        return
     default:
-        XCTFail("Expected \(expected), got \(actual)", file: file, line: line)
+        XCTFail("Expected \(expected), got \(String(describing: actual))", file: file, line: line)
     }
 }

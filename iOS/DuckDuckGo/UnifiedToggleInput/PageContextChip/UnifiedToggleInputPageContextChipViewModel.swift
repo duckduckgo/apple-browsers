@@ -30,21 +30,18 @@ enum PageContextAttachmentDeliveryState {
 
 /// Drives the page-context chip in the contextual chat UTI.
 ///
-/// `attachedContext` is command-driven so JS-side auto-emissions don't bleed in; the host
-/// pushes after attach/detach. Auto-attach OFF clears on nav-away (mirrors legacy FE); ON
-/// preserves the attachment while the host re-collects. Half-sheet carry-over arrives
-/// `.delivered`, so the chat opens silent.
+/// Command-driven so JS-side auto-emissions don't bleed in; the host pushes after attach, detach
+/// and suggest. Half-sheet carry-over arrives `.delivered`, so the chat opens silent.
 ///
-/// Visibility:
-///   - attach affordance command → hidden placeholder.
-///   - attached + pending → `.attached` feedback until the user submits.
-///   - attached + delivered → hidden (already submitted).
-///   - no attachment → hidden placeholder. Context attach is offered from the attachment menu.
+/// `state` is what to draw, and `nil` means draw nothing:
+///   - loading → `.loading`.
+///   - attached + pending → `.attached` until the user submits; delivered → nil.
+///   - suggested → `.suggested`, the offer to attach the page navigated to. Not attached until tapped.
+///   - otherwise nil. Context attach is also offered from the attachment menu.
 @MainActor
 final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
-    @Published private(set) var state: AIChatContextChipView.State = .placeholder
-    @Published private(set) var isVisible: Bool = false
+    @Published private(set) var state: AIChatContextChipView.State?
 
     /// Invoked when the user requests page-context attachment from the attachment menu.
     var onAttachActionRequested: (() -> Void)?
@@ -52,8 +49,15 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     /// Invoked when the user taps the X on the attached chip.
     var onRemoveActionRequested: (() -> Void)?
 
+    /// Invoked when the user taps the suggested chip, accepting the offer to attach that page.
+    var onSuggestionAccepted: ((AIChatPageContext) -> Void)?
+
+    /// Invoked when the user taps the X on the suggested chip.
+    var onSuggestionDismissed: (() -> Void)?
+
     private let isAutoAttachEnabled: () -> Bool
     private(set) var attachedContext: AIChatPageContext?
+    private(set) var suggestedContext: AIChatPageContext?
     private var attachedURL: URL?
     private var originatingURL: URL?
     /// Presentation-only pending/delivered flag; set solely by `setAttached`, never decided by the chip.
@@ -84,11 +88,32 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         recompute()
     }
 
+    /// Clears any suggestion inline: a separate `clearSuggested()` would publish a second time and
+    /// make the strip drop the chip and re-add it.
     func setAttached(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
         isShowingAttachAffordance = false
         isLoading = false
+        suggestedContext = nil
         updateAttachment(context, deliveryState: deliveryState)
         Logger.contextualUTI.debug("PageContextChip attached")
+        recompute()
+    }
+
+    /// Offers the page as an attachment without attaching it. Never displaces a pending attachment.
+    func setSuggested(_ context: AIChatPageContext) {
+        guard pendingAttachedContextData == nil else {
+            Logger.contextualUTI.debug("PageContextChip keeping pending attachment instead of suggesting")
+            return
+        }
+        suggestedContext = context
+        Logger.contextualUTI.debug("PageContextChip suggested")
+        recompute()
+    }
+
+    func clearSuggested() {
+        guard suggestedContext != nil else { return }
+        suggestedContext = nil
+        Logger.contextualUTI.debug("PageContextChip suggestion cleared")
         recompute()
     }
 
@@ -123,7 +148,14 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         recompute()
     }
 
+    /// The accepted suggestion is left in place: the attach round trip comes back as `setAttached`,
+    /// which clears it in the same pass.
     func tapToAttach() {
+        if let suggestedContext {
+            Logger.contextualUTI.info("PageContextChip suggestion accepted")
+            onSuggestionAccepted?(suggestedContext)
+            return
+        }
         if let url = originatingURL {
             Logger.contextualUTI.info("PageContext attach requested — attaching \(url.shortDescription, privacy: .private)")
         } else {
@@ -132,7 +164,15 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         onAttachActionRequested?()
     }
 
+    /// Dismissing a suggestion is not a detach: nothing was attached, so it must not run the removal
+    /// path or fire its pixel.
     func tapToRemove() {
+        if suggestedContext != nil {
+            Logger.contextualUTI.info("PageContextChip suggestion dismissed")
+            clearSuggested()
+            onSuggestionDismissed?()
+            return
+        }
         Logger.contextualUTI.info("PageContextChip remove tapped — detaching")
         clearAttached()
         onRemoveActionRequested?()
@@ -160,34 +200,30 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     }
 
     private func recompute() {
-        let isMatching = attachedURL != nil && attachedURL == originatingURL
         let branch: String
 
         if isLoading {
             state = .loading
-            isVisible = true
             branch = "loading"
-        } else if isShowingAttachAffordance {
-            state = .placeholder
-            isVisible = false
-            branch = "attachAffordance"
-        } else if let ctx = attachedContext {
+        } else if let ctx = attachedContext, attachmentDeliveryState == .pendingSubmit {
             state = .attached(title: ctx.title, favicon: ctx.favicon)
-            isVisible = attachmentDeliveryState == .pendingSubmit
-            branch = "attached(matching=\(isMatching), deliveryState=\(attachmentDeliveryState))"
+            branch = "attached"
+        } else if let suggestion = suggestedContext {
+            state = .suggested(title: suggestion.title, favicon: suggestion.favicon)
+            branch = "suggested"
         } else {
-            state = .placeholder
-            isVisible = false
-            branch = "noAttachment"
+            state = nil
+            branch = attachedContext != nil ? "attachedDelivered" : "nothing"
         }
 
         let stateDesc: String = {
             switch state {
-            case .placeholder: return "placeholder"
+            case .suggested(let title, _): return "suggested(\(title))"
             case .attached(let title, _): return "attached(\(title))"
             case .loading: return "loading"
+            case nil: return "none"
             }
         }()
-        Logger.contextualUTI.debug("ChipViewModel recompute → \(branch, privacy: .public) state=\(stateDesc, privacy: .public) isVisible=\(self.isVisible, privacy: .public) auto=\(self.isAutoAttachEnabled(), privacy: .public) attached=\(self.attachedContext != nil, privacy: .public) attachedURL=\(self.attachedURL?.shortDescription ?? "nil", privacy: .private) originatingURL=\(self.originatingURL?.shortDescription ?? "nil", privacy: .private)")
+        Logger.contextualUTI.debug("ChipViewModel recompute → \(branch, privacy: .public) state=\(stateDesc, privacy: .public) affordance=\(self.isShowingAttachAffordance, privacy: .public) auto=\(self.isAutoAttachEnabled(), privacy: .public) attached=\(self.attachedContext != nil, privacy: .public) attachedURL=\(self.attachedURL?.shortDescription ?? "nil", privacy: .private) originatingURL=\(self.originatingURL?.shortDescription ?? "nil", privacy: .private)")
     }
 }

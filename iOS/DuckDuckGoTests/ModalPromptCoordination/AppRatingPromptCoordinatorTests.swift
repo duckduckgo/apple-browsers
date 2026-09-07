@@ -42,6 +42,7 @@ final class AppRatingPromptCoordinatorTests {
     private let keyValueStore: MockKeyValueFileStore
     private let storage = InMemoryAppRatingPromptStorage()
     private let featureFlagger = MockFeatureFlagger()
+    private var firedPixels: [AppRatingPromptPixel] = []
 
     init() {
         keyValueStore = MockKeyValueFileStore()
@@ -167,6 +168,20 @@ final class AppRatingPromptCoordinatorTests {
         #expect(sut.unredeemedSlotCount == 0)
     }
 
+    @Test("Each request reports its own pixel")
+    func eachRequestReportsItsOwnPixel() {
+        let sut = makeCoordinator(isCoordinationEnabled: true)
+        accrueUsageDays(3)
+
+        sut.didRequestRating()
+        #expect(firedPixels == [.firstRequest])
+
+        accrueUsageDays(4)
+        sut.didRequestRating()
+
+        #expect(firedPixels == [.firstRequest, .secondRequest])
+    }
+
     // MARK: - Debug reset
 
     @Test("The debug reset clears both the count and the eligibility state")
@@ -199,7 +214,8 @@ final class AppRatingPromptCoordinatorTests {
                 isCoordinationEnabled: isCoordinationEnabled,
                 maxUnredeemedSlots: maxUnredeemedSlots
             ),
-            store: AppRatingPromptSlotStore(keyValueStore: keyValueStore)
+            store: AppRatingPromptSlotStore(keyValueStore: keyValueStore),
+            firePixel: { [weak self] in self?.firedPixels.append($0) }
         )
     }
 

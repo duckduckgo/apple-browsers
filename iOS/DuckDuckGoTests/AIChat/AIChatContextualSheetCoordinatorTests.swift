@@ -1290,6 +1290,106 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(attachment.deliveryState, .delivered)
     }
 
+    // MARK: - Suggested Page Context
+
+    @MainActor
+    func testNavigatingWithAnActiveChatAndAutoAttachOffOffersTheNewPage() async throws {
+        // Given
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        sut.sessionState.beginChatForUTISubmission()
+        sut.sessionState.updateUnifiedToggleInputActive(true)
+        originatingTabURLSubject.send(URL(string: "https://en.wikipedia.org/wiki/Tokamak")!)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        // When
+        await sut.notifyPageChanged()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Tokamak", url: "https://en.wikipedia.org/wiki/Tokamak"))
+        await yieldUntil { host.chipViewModel.suggestedContext != nil }
+
+        // Then — the page was read and offered, but nothing is attached
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(host.chipViewModel.suggestedContext?.title, "Tokamak")
+        XCTAssertNil(host.chipViewModel.attachedContext)
+        XCTAssertNil(host.chipViewModel.pendingAttachedContextData)
+        XCTAssertEqual(sut.sessionState.chipState, .placeholder)
+    }
+
+    @MainActor
+    func testAcceptingTheOfferAttachesThePageWithoutCollectingItAgain() async throws {
+        // Given
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        sut.sessionState.beginChatForUTISubmission()
+        sut.sessionState.updateUnifiedToggleInputActive(true)
+        originatingTabURLSubject.send(URL(string: "https://en.wikipedia.org/wiki/Tokamak")!)
+        await sut.notifyPageChanged()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Tokamak", url: "https://en.wikipedia.org/wiki/Tokamak"))
+        await yieldUntil { host.chipViewModel.suggestedContext != nil }
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        // When
+        host.chipViewModel.tapToAttach()
+        await yieldUntil { host.chipViewModel.attachedContext != nil }
+
+        // Then
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0, "The page was already read")
+        XCTAssertEqual(host.chipViewModel.pendingAttachedContextData?.title, "Tokamak")
+        XCTAssertNil(host.chipViewModel.suggestedContext)
+    }
+
+    @MainActor
+    func testDismissingTheOfferDoesNotDetachAnything() async throws {
+        // Given
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        sut.sessionState.beginChatForUTISubmission()
+        sut.sessionState.updateUnifiedToggleInputActive(true)
+        originatingTabURLSubject.send(URL(string: "https://en.wikipedia.org/wiki/Tokamak")!)
+        await sut.notifyPageChanged()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Tokamak", url: "https://en.wikipedia.org/wiki/Tokamak"))
+        await yieldUntil { host.chipViewModel.suggestedContext != nil }
+
+        // When
+        host.chipViewModel.tapToRemove()
+
+        // Then
+        XCTAssertNil(host.chipViewModel.suggestedContext)
+        XCTAssertNil(sut.sessionState.suggestedContext)
+        XCTAssertNil(host.chipViewModel.state)
+    }
+
+    @MainActor
+    func testNavigatingWithAutoAttachOnStillAttachesSilently() async throws {
+        // Given — the regression guard: auto-attach must keep its existing behaviour
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        sut.sessionState.beginChatForUTISubmission()
+        sut.sessionState.updateUnifiedToggleInputActive(true)
+        originatingTabURLSubject.send(URL(string: "https://en.wikipedia.org/wiki/Tokamak")!)
+
+        // When
+        await sut.notifyPageChanged()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Tokamak", url: "https://en.wikipedia.org/wiki/Tokamak"))
+        await yieldUntil { host.chipViewModel.attachedContext != nil }
+
+        // Then
+        XCTAssertNil(host.chipViewModel.suggestedContext, "Auto-attach attaches; it does not offer")
+        XCTAssertEqual(host.chipViewModel.attachedContext?.title, "Tokamak")
+    }
+
     // MARK: - UTI Chip Delivery Tests
 
     @MainActor

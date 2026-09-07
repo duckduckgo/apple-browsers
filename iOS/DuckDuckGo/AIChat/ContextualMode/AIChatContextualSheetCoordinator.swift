@@ -679,8 +679,16 @@ final class AIChatContextualSheetCoordinator {
             }
         } else if sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
-            sessionState.clearProcessingNavigationFlag()
-            pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+            if sessionState.shouldSuggestPageContextOnNavigation() {
+                // Read the page so the chip can offer it by name. Attached only if the user taps.
+                sessionState.markPendingSuggestedContextCollection()
+                if !pageContextHandler.triggerContextCollection(trigger: .navigation) {
+                    sessionState.clearProcessingNavigationFlag()
+                }
+            } else {
+                sessionState.clearProcessingNavigationFlag()
+                pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+            }
         } else if shouldCollectSignalsOnly {
             startSignalsOnlyCollection()
         } else {
@@ -821,6 +829,16 @@ private extension AIChatContextualSheetCoordinator {
             guard let self else { return }
             self.removeAttachedContext()
         }
+        host.onSuggestionAccepted = { [weak self] in
+            self?.sessionState.acceptSuggestedContext()
+        }
+        host.onSuggestionDismissed = { [weak self] in
+            self?.sessionState.dismissSuggestedContext()
+        }
+        // A host built mid-session (collapse, expand) inherits the offer already on screen.
+        if let suggestion = sessionState.suggestedContext {
+            host.setSuggestedContext(suggestion)
+        }
         host.onPromptSubmitted = { [weak self] in
             guard let self else { return }
             self.selectionJourneyInstrumentation.promptSubmitted()
@@ -945,6 +963,14 @@ private extension AIChatContextualSheetCoordinator {
 
         if let host = persistentUTIHost, targets.contains(.utiAttachAffordance) {
             host.showAttachAffordance()
+        }
+
+        if let host = persistentUTIHost, targets.contains(.utiSuggestedContext) {
+            if let suggestion = sessionState.suggestedContext {
+                host.setSuggestedContext(suggestion)
+            } else {
+                host.clearSuggestedContext()
+            }
         }
 
         if targets.contains(.frontendBridge) {

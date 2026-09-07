@@ -162,14 +162,14 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         originatingURL.send(url)
         makeSUT()
         sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
-        var accepted: AIChatPageContext?
+        var acceptCallCount = 0
         var attachCallCount = 0
-        sut.onSuggestionAccepted = { accepted = $0 }
+        sut.onSuggestionAccepted = { acceptCallCount += 1 }
         sut.onAttachRequested = { attachCallCount += 1 }
 
         sut.chipViewModel.tapToAttach()
 
-        XCTAssertEqual(accepted?.title, "Page A")
+        XCTAssertEqual(acceptCallCount, 1)
         XCTAssertEqual(attachCallCount, 0)
     }
 

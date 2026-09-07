@@ -529,12 +529,12 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         originatingURL.send(URL(string: url))
         makeSUT()
         sut.setSuggested(makeContext(title: "Tokamak", url: url))
-        var accepted: AIChatPageContext?
-        sut.onSuggestionAccepted = { accepted = $0 }
+        var acceptCalls = 0
+        sut.onSuggestionAccepted = { acceptCalls += 1 }
 
         sut.tapToAttach()
 
-        XCTAssertEqual(accepted?.title, "Tokamak")
+        XCTAssertEqual(acceptCalls, 1)
         XCTAssertEqual(attachCalls, 0)
         // Left in place: the attach round trip comes back as setAttached, which clears it.
         XCTAssertNotNil(sut.suggestedContext)

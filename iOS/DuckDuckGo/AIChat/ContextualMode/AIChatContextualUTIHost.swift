@@ -49,7 +49,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onAttachRequested: (() -> Void)?
     var onRemoveRequested: (() -> Void)?
     /// The user accepted the offer to attach the page they navigated to.
-    var onSuggestionAccepted: ((AIChatPageContext) -> Void)?
+    var onSuggestionAccepted: (() -> Void)?
     var onSuggestionDismissed: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
@@ -122,8 +122,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         chipViewModel.onRemoveActionRequested = { [weak self] in
             self?.onRemoveRequested?()
         }
-        chipViewModel.onSuggestionAccepted = { [weak self] context in
-            self?.onSuggestionAccepted?(context)
+        chipViewModel.onSuggestionAccepted = { [weak self] in
+            self?.onSuggestionAccepted?()
         }
         chipViewModel.onSuggestionDismissed = { [weak self] in
             self?.onSuggestionDismissed?()

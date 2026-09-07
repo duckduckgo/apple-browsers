@@ -158,6 +158,15 @@ final class AIChatContextualSheetCoordinator {
         AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
     }
 
+    /// Drops a chat that was deleted elsewhere. Checked on every presentation, because a live session
+    /// holds the conversation in memory and never goes through the restore path.
+    private func discardActiveChatIfDeleted() {
+        guard sessionState.hasActiveChat,
+              isChatDeleted(chatID: sessionState.contextualChatURL?.duckAIChatID) else { return }
+        Logger.aiChat.debug("[Contextual] Active chat was deleted, clearing it")
+        clearActiveChat()
+    }
+
     /// Whether a persisted chat has been deleted, or `false` when that cannot be established.
     private func isChatDeleted(chatID: String?) -> Bool {
         guard let chatID,
@@ -277,6 +286,7 @@ final class AIChatContextualSheetCoordinator {
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil,
                       skippingAutoAttach: Bool = false) async {
+        discardActiveChatIfDeleted()
         sessionState.refreshAutoAttachSetting()
         sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         clearStaleManualContextIfNeeded()
@@ -713,9 +723,7 @@ private extension AIChatContextualSheetCoordinator {
     func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?, opensOntoSubmittedChat: Bool = false) {
         guard presentingVC.presentedViewController == nil, floatingInputViewController == nil else { return }
 
-        if let restoreURL, !isChatDeleted(chatID: restoreURL.duckAIChatID) {
-            sessionState.restoreChat(with: restoreURL)
-        }
+        restoreChatIfAvailable(restoreURL)
 
         let suggestionsReader = makeSuggestionsReaderIfEnabled()
         let persistentUTIHost = isImmediateContextualUTIEnabled
@@ -742,6 +750,18 @@ private extension AIChatContextualSheetCoordinator {
 
         presentingVC.present(sheetVC, animated: true)
         isSheetPresented = true
+    }
+
+    /// Restores a persisted chat, or clears the tab's stale pointer when that chat has since been deleted.
+    /// Leaving the pointer behind keeps `hasContextualChatToReopen` true, so the address bar would offer
+    /// to reopen a conversation that no longer exists.
+    func restoreChatIfAvailable(_ restoreURL: URL?) {
+        guard let restoreURL else { return }
+        guard !isChatDeleted(chatID: restoreURL.duckAIChatID) else {
+            delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
+            return
+        }
+        sessionState.restoreChat(with: restoreURL)
     }
 
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {

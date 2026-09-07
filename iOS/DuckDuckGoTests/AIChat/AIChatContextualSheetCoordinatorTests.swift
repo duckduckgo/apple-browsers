@@ -1456,6 +1456,59 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenAnOpenChatIsDeletedElsewhereThenItDoesNotReopen() async throws {
+        // A live session keeps the conversation in memory, so nothing consults the store on the way
+        // back in unless we ask: the sheet reopened onto a chat the user had just deleted.
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+        XCTAssertTrue(sut.sessionState.hasActiveChat)
+
+        try mockNativeStorage.deleteChat(chatId: savedChatID)
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertFalse(sut.sessionState.hasActiveChat)
+        XCTAssertNil(sut.sessionState.contextualChatURL)
+    }
+
+    @MainActor
+    func testWhenAnOpenChatStillExistsThenItReopens() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertTrue(sut.sessionState.hasActiveChat)
+        XCTAssertEqual(sut.sessionState.contextualChatURL, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheSavedChatWasDeletedThenTheTabsStaleURLIsCleared() async {
+        // Skipping the restore is not enough on its own: the tab keeps its pointer, so
+        // `hasContextualChatToReopen` stays true and the address bar offers a chat that is gone.
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        mockDelegate.contextualChatURLUpdates = []
+
+        _ = await restoredURL()
+
+        XCTAssertTrue(mockDelegate.contextualChatURLUpdates.contains { $0 == nil },
+                      "the tab must be told to drop the URL of a chat that no longer exists")
+    }
+
+    @MainActor
+    func testWhenTheSavedChatIsStillInTheStoreThenTheTabsURLIsLeftAlone() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        mockDelegate.contextualChatURLUpdates = []
+
+        _ = await restoredURL()
+
+        XCTAssertFalse(mockDelegate.contextualChatURLUpdates.contains { $0 == nil },
+                       "a chat that restored fine must keep the tab's URL")
+    }
+
+    @MainActor
     func testWhenTheStoreCannotBeReadThenTheSavedChatIsStillRestored() async {
         // The regression: an unanswerable store must not cost the user their chat.
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]

@@ -81,7 +81,7 @@ enum Preferences {
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
-            websitePermissionManager: WebsitePermissionManaging,
+            websitePermissionManager: PermissionManagerProtocol,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,

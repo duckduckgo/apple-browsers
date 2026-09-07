@@ -31,20 +31,11 @@ protocol PermissionDecisionOverriding: AnyObject {
     func decision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
 }
 
-struct WebsitePermissionEntry: Equatable {
-    let domain: String
-    let permissionType: PermissionType
-    let decision: PersistedPermissionDecision
-}
-
-protocol WebsitePermissionManaging: AnyObject {
-    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> { get }
-}
-
 protocol PermissionManagerProtocol: AnyObject {
 
     typealias PublishedPermission = (domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision)
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { get }
+    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> { get }
 
     func hasPermissionPersisted(forDomain domain: String, permissionType: PermissionType) -> Bool
     func hasAnyPermissionPersisted(forDomain domain: String) -> Bool
@@ -65,7 +56,7 @@ protocol PermissionManagerProtocol: AnyObject {
     var persistedPermissionTypes: Set<PermissionType> { get }
 }
 
-final class PermissionManager: PermissionManagerProtocol, WebsitePermissionManaging {
+final class PermissionManager: PermissionManagerProtocol {
 
     private let store: PermissionStore
     private var permissions = [String: [PermissionType: StoredPermission]]()

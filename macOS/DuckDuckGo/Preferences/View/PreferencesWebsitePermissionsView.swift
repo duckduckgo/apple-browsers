@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import PreferencesUI_macOS
@@ -113,22 +112,13 @@ struct PreferencesWebsitePermissionsView: View {
 
 
 #if DEBUG
-private final class PreviewWebsitePermissionManager: WebsitePermissionManaging {
-
-    private let entries: [WebsitePermissionEntry]
-
-    init(entries: [WebsitePermissionEntry]) {
-        self.entries = entries
-    }
-
-    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
-        Just(entries).eraseToAnyPublisher()
-    }
-}
-
 @MainActor
 private func previewModel(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
-    WebsitePermissionsViewModel(permissionManager: PreviewWebsitePermissionManager(entries: entries))
+    let permissionManager = PermissionManagerMock()
+    for entry in entries {
+        permissionManager.setPermission(entry.decision, forDomain: entry.domain, permissionType: entry.permissionType)
+    }
+    return WebsitePermissionsViewModel(permissionManager: permissionManager)
 }
 
 private let previewEntries: [WebsitePermissionEntry] = [

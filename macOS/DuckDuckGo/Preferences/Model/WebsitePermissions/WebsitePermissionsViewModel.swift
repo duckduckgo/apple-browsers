@@ -24,11 +24,11 @@ final class WebsitePermissionsViewModel: ObservableObject {
     @Published
     private(set) var viewState = WebsitePermissionsViewState()
 
-    private let permissionManager: WebsitePermissionManaging
+    private let permissionManager: PermissionManagerProtocol
     private var permissionsCancellable: AnyCancellable?
     private var didAppear = false
 
-    init(permissionManager: WebsitePermissionManaging) {
+    init(permissionManager: PermissionManagerProtocol) {
         self.permissionManager = permissionManager
     }
 

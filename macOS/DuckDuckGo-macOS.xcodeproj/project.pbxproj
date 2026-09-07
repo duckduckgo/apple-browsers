@@ -614,6 +614,7 @@
 		3706FB14293F65D500E42796 /* ConnectBitwardenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBDEE8F28FC14760092FAA6 /* ConnectBitwardenViewModel.swift */; };
 		3706FB15293F65D500E42796 /* NSNotificationName+DataImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5A4F4B27F3A5AA008FBD88 /* NSNotificationName+DataImport.swift */; };
 		3706FB16293F65D500E42796 /* StoredPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C853726944B880048FEBE /* StoredPermission.swift */; };
+		A3F6EC01C15C4147828B3020 /* WebsitePermissionEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84EEF9CB3E34FACB67C22CA /* WebsitePermissionEntry.swift */; };
 		3706FB19293F65D500E42796 /* FireViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB7320826DD0CD9002FACF9 /* FireViewController.swift */; };
 		3706FB1A293F65D500E42796 /* OutlineSeparatorViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B92928626670D1600AD2C21 /* OutlineSeparatorViewCell.swift */; };
 		3706FB1B293F65D500E42796 /* SafariDataImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CFD26FE191E001E4761 /* SafariDataImporter.swift */; };
@@ -2763,8 +2764,6 @@
 		96A0383E30261A5C00225654 /* BookmarksRootMenuItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96A0383C30261A5B00225654 /* BookmarksRootMenuItem.swift */; };
 		96B6A494304EC0B5009BF9EC /* WebsitePermissionCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B6A493304EC0B5009BF9EC /* WebsitePermissionCategory.swift */; };
 		96B6A495304EC0B5009BF9EC /* WebsitePermissionCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B6A493304EC0B5009BF9EC /* WebsitePermissionCategory.swift */; };
-		96B6A498304EC64B009BF9EC /* WebsitePermissionManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B6A497304EC64A009BF9EC /* WebsitePermissionManagerMock.swift */; };
-		96B6A499304EC64B009BF9EC /* WebsitePermissionManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B6A497304EC64A009BF9EC /* WebsitePermissionManagerMock.swift */; };
 		96B6A49B304EC980009BF9EC /* WebsitePermissionsViewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B6A49A304EC980009BF9EC /* WebsitePermissionsViewState.swift */; };
 		96B6A49C304EC980009BF9EC /* WebsitePermissionsViewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96B6A49A304EC980009BF9EC /* WebsitePermissionsViewState.swift */; };
 		9812D895276CEDA5004B6181 /* ContentBlockerRulesLists.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9812D894276CEDA5004B6181 /* ContentBlockerRulesLists.swift */; };
@@ -3364,6 +3363,7 @@
 		B64C84F1269310120048FEBE /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C84F0269310120048FEBE /* PermissionManager.swift */; };
 		B64C853026943BC10048FEBE /* Permissions.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B64C852E26943BC10048FEBE /* Permissions.xcdatamodeld */; };
 		B64C853826944B880048FEBE /* StoredPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C853726944B880048FEBE /* StoredPermission.swift */; };
+		DCABE414D64349E8947B38A7 /* WebsitePermissionEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84EEF9CB3E34FACB67C22CA /* WebsitePermissionEntry.swift */; };
 		B64C853D26944B940048FEBE /* PermissionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64C853C26944B940048FEBE /* PermissionStore.swift */; };
 		B64CE01E2B8622D700126CA5 /* AddressBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */; };
 		B64CE01F2B8622D700126CA5 /* AddressBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */; };
@@ -6269,7 +6269,6 @@
 		964473F2302B2E2B007A51C8 /* BookmarkReorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkReorder.swift; sourceTree = "<group>"; };
 		96A0383C30261A5B00225654 /* BookmarksRootMenuItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksRootMenuItem.swift; sourceTree = "<group>"; };
 		96B6A493304EC0B5009BF9EC /* WebsitePermissionCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionCategory.swift; sourceTree = "<group>"; };
-		96B6A497304EC64A009BF9EC /* WebsitePermissionManagerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionManagerMock.swift; sourceTree = "<group>"; };
 		96B6A49A304EC980009BF9EC /* WebsitePermissionsViewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionsViewState.swift; sourceTree = "<group>"; };
 		9812D894276CEDA5004B6181 /* ContentBlockerRulesLists.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlockerRulesLists.swift; sourceTree = "<group>"; };
 		9826B09F2747DF3D0092F683 /* ContentBlocking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlocking.swift; sourceTree = "<group>"; };
@@ -6669,6 +6668,7 @@
 		B64C84F0269310120048FEBE /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
 		B64C852F26943BC10048FEBE /* Permissions.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Permissions.xcdatamodel; sourceTree = "<group>"; };
 		B64C853726944B880048FEBE /* StoredPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredPermission.swift; sourceTree = "<group>"; };
+		F84EEF9CB3E34FACB67C22CA /* WebsitePermissionEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsitePermissionEntry.swift; sourceTree = "<group>"; };
 		B64C853C26944B940048FEBE /* PermissionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStore.swift; sourceTree = "<group>"; };
 		B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarTests.swift; sourceTree = "<group>"; };
 		B65349A9265CF45000DCC645 /* DispatchQueueExtensionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchQueueExtensionsTests.swift; sourceTree = "<group>"; };
@@ -10828,7 +10828,6 @@
 		96B6A496304EC644009BF9EC /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
-				96B6A497304EC64A009BF9EC /* WebsitePermissionManagerMock.swift */,
 			);
 			path = Mocks;
 			sourceTree = "<group>";
@@ -12550,6 +12549,7 @@
 				B64C84F0269310120048FEBE /* PermissionManager.swift */,
 				845F57282E97FCC900C7F78A /* PermissionManagerMock.swift */,
 				B64C853726944B880048FEBE /* StoredPermission.swift */,
+				F84EEF9CB3E34FACB67C22CA /* WebsitePermissionEntry.swift */,
 				B64C853C26944B940048FEBE /* PermissionStore.swift */,
 				1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */,
 				B64C852E26943BC10048FEBE /* Permissions.xcdatamodeld */,
@@ -15951,6 +15951,7 @@
 				7B99CF322EEAC1A5003FA486 /* UserNotificationAuthorizationService.swift in Sources */,
 				1E54C6612F6AFA2A002370BD /* YouTubeAdBlockingPreferences.swift in Sources */,
 				3706FB16293F65D500E42796 /* StoredPermission.swift in Sources */,
+				A3F6EC01C15C4147828B3020 /* WebsitePermissionEntry.swift in Sources */,
 				85774B042A71CDD000DE0561 /* BlockMenuItem.swift in Sources */,
 				3706FB19293F65D500E42796 /* FireViewController.swift in Sources */,
 				96B6A49B304EC980009BF9EC /* WebsitePermissionsViewState.swift in Sources */,
@@ -17016,7 +17017,6 @@
 				37D315C32D4A42280019C1F8 /* RecentActivityFavoritesHandlerTests.swift in Sources */,
 				3706FDE9293F661700E42796 /* StateRestorationManagerTests.swift in Sources */,
 				374EF08429B7575B003D2E87 /* RecentlyClosedCoordinatorTests.swift in Sources */,
-				96B6A499304EC64B009BF9EC /* WebsitePermissionManagerMock.swift in Sources */,
 				3706FDEA293F661700E42796 /* BookmarkNodeTests.swift in Sources */,
 				3706FDEB293F661700E42796 /* WebsiteDataStoreTests.swift in Sources */,
 				56B33CE22D5F58D20062DBC2 /* VPNPreferencesModelTests.swift in Sources */,
@@ -18337,6 +18337,7 @@
 				4BBDEE9328FC14760092FAA6 /* ConnectBitwardenViewModel.swift in Sources */,
 				4B5A4F4C27F3A5AA008FBD88 /* NSNotificationName+DataImport.swift in Sources */,
 				B64C853826944B880048FEBE /* StoredPermission.swift in Sources */,
+				DCABE414D64349E8947B38A7 /* WebsitePermissionEntry.swift in Sources */,
 				369BA9862F31305F0037B56D /* DataClearingPixels.swift in Sources */,
 				AAB7320926DD0CD9002FACF9 /* FireViewController.swift in Sources */,
 				31C26A0D2CBE9DFE00FFF462 /* AIChatPreferences.swift in Sources */,
@@ -19787,7 +19788,6 @@
 				9F1556822DDC41E600A35DBA /* MockDefaultBrowserAndDockPromptStorage.swift in Sources */,
 				BBD31EAB2E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift in Sources */,
 				CCD899FC2ECDCF7D008E738B /* MockDefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */,
-				96B6A498304EC64B009BF9EC /* WebsitePermissionManagerMock.swift in Sources */,
 				5681ED402BDB955100F59729 /* SyncCredentialsAdapterTests.swift in Sources */,
 				5681ED432BDBA5F900F59729 /* SyncBookmarksAdapterTests.swift in Sources */,
 				4BBF09232830812900EE1418 /* FileSystemDSL.swift in Sources */,

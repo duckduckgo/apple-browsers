@@ -23,7 +23,7 @@ import XCTest
 @MainActor
 final class WebsitePermissionsViewModelTests: XCTestCase {
     func testWhenThereAreNoPersistedPermissionsThenAllRowsHaveZeroCount() {
-        let model = WebsitePermissionsViewModel(permissionManager: WebsitePermissionManagerMock())
+        let model = WebsitePermissionsViewModel(permissionManager: PermissionManagerMock())
         model.send(action: .onAppear)
         let rows = model.viewState.rows
 
@@ -47,8 +47,10 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
             WebsitePermissionEntry(domain: "example.com", permissionType: .autoplayPolicy, decision: .allow),
         ]
 
-        let permissionManager = WebsitePermissionManagerMock()
-        permissionManager.send(entries)
+        let permissionManager = PermissionManagerMock()
+        for entry in entries {
+            permissionManager.setPermission(entry.decision, forDomain: entry.domain, permissionType: entry.permissionType)
+        }
         let model = WebsitePermissionsViewModel(permissionManager: permissionManager)
         let expectation = expectation(description: "Initial permissions loaded")
         let cancellable = model.$viewState
@@ -75,7 +77,7 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
     }
 
     func testWhenPermissionSnapshotChangesThenRowsAreUpdated() {
-        let permissionManager = WebsitePermissionManagerMock()
+        let permissionManager = PermissionManagerMock()
         let model = WebsitePermissionsViewModel(permissionManager: permissionManager)
         let expectation = expectation(description: "Rows updated")
         var cancellable: AnyCancellable?
@@ -90,9 +92,7 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
 
         model.send(action: .onAppear)
 
-        permissionManager.send([
-            WebsitePermissionEntry(domain: "example.com", permissionType: .microphone, decision: .allow),
-        ])
+        permissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .microphone)
 
         wait(for: [expectation], timeout: 1)
         withExtendedLifetime(cancellable) {}

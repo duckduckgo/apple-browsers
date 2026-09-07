@@ -42,7 +42,7 @@ final class PreferencesViewController: NSViewController {
     private var bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager
     private let featureFlagger: FeatureFlagger
     private let pinningManager: PinningManager
-    private let websitePermissionManager: WebsitePermissionManaging
+    private let websitePermissionManager: PermissionManagerProtocol
 
     init(
         syncService: DDGSyncing,
@@ -51,7 +51,7 @@ final class PreferencesViewController: NSViewController {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),
         featureFlagger: FeatureFlagger,
-        websitePermissionManager: WebsitePermissionManaging,
+        websitePermissionManager: PermissionManagerProtocol,
         defaultBrowserPreferences: DefaultBrowserPreferences,
         downloadsPreferences: DownloadsPreferences,
         searchPreferences: SearchPreferences,

@@ -24,7 +24,7 @@ import ConcurrencyExtensions
 import Foundation
 import FoundationExtensions
 
-final class PermissionManagerMock: PermissionManagerProtocol, WebsitePermissionManaging {
+final class PermissionManagerMock: PermissionManagerProtocol {
 
     var permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> {

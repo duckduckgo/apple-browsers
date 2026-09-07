@@ -1,5 +1,5 @@
 //
-//  WebsitePermissionManagerMock.swift
+//  WebsitePermissionEntry.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,18 +16,8 @@
 //  limitations under the License.
 //
 
-import Combine
-
-@testable import DuckDuckGo_Privacy_Browser
-
-final class WebsitePermissionManagerMock: WebsitePermissionManaging {
-    private let subject = CurrentValueSubject<[WebsitePermissionEntry], Never>([])
-
-    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
-        subject.eraseToAnyPublisher()
-    }
-
-    func send(_ entries: [WebsitePermissionEntry]) {
-        subject.send(entries)
-    }
+struct WebsitePermissionEntry: Equatable {
+    let domain: String
+    let permissionType: PermissionType
+    let decision: PersistedPermissionDecision
 }

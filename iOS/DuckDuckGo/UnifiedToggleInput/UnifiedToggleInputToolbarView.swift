@@ -76,7 +76,7 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     func refreshFireMode(fireMode: Bool) {
         isFireTab = fireMode
-        // Toolbar stays on the OS trait — it sits on the light card surface even in fire mode, so its icons must not be forced dark or they lose contrast against it.
+        overrideUserInterfaceStyle = fireMode ? .dark : .unspecified
         updateSubmitButtonAppearance()
     }
 

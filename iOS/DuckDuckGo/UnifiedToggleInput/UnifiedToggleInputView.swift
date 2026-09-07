@@ -847,9 +847,9 @@ final class UnifiedToggleInputView: UIView {
     private func applyFireModeAppearance(isFireTab: Bool) {
         let background = cardBackgroundColor(isFireTab: isFireTab)
         applyCardBackgroundColor(background)
-        // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; the text input forces `.dark` so its dynamic colors resolve against the dark input fill.
+        // cardView keeps the OS trait so `fireModeCardBackground` picks its light variant in light OS; content subviews force `.dark` so their dynamic colors resolve against the dark surface.
         let style: UIUserInterfaceStyle = isFireTab ? .dark : .unspecified
-        // Only the text input should force dark; the toolbar sits on the still-light card surface, so its icons must keep resolving against the OS trait or they lose contrast against it.
+        // Future direct content subviews inherit fire-mode appearance by default; card chrome and collapsed flanking accessories keep the OS trait.
         fireModeContentSubviews.forEach {
             $0.overrideUserInterfaceStyle = style
         }
@@ -967,8 +967,7 @@ final class UnifiedToggleInputView: UIView {
             $0 !== cardView &&
             $0 !== expandedShadowView &&
             $0 !== aiTabCollapsedFireButton &&
-            $0 !== aiTabCollapsedMenuButton &&
-            $0 !== toolsToolbar
+            $0 !== aiTabCollapsedMenuButton
         }
     }
 

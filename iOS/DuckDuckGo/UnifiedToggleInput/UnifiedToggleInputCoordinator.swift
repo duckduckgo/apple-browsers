@@ -969,8 +969,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case .tryForFree:
             subscriptionUpsellPresenter.presentPurchaseFlow(origin: usageWarningFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
-            // Web reads the entry before its next /status and /chat, so there is nothing to reload.
-            usageLimitsStore?.write(entries)
+            // Pushed to the live chat, the way a model change is. With no chat bound there is
+            // nothing to push to, so it falls back to the entry web reads on its next hydration —
+            // which is what macOS does throughout.
+            if let boundUserScript {
+                Logger.duckAIUsageWarnings.debug("[UsageWarnings] weekly-limit hand-off: chat is live, pushing the action")
+                boundUserScript.submitStartUsingWeeklyLimitAction()
+            } else {
+                Logger.duckAIUsageWarnings.debug("[UsageWarnings] weekly-limit hand-off: no chat bound, writing the entry")
+                usageLimitsStore?.write(entries)
+            }
         }
     }
 

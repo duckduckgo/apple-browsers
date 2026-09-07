@@ -21,13 +21,14 @@ import Foundation
 public enum SubscriptionFeatureFlags {
     case useSubscriptionUSARegionOverride
     case useSubscriptionROWRegionOverride
+    case useSubscriptionNoProductsOverride
 }
 
 public extension SubscriptionFeatureFlags {
 
     var defaultState: Bool {
         switch self {
-        case .useSubscriptionUSARegionOverride, .useSubscriptionROWRegionOverride:
+        case .useSubscriptionUSARegionOverride, .useSubscriptionROWRegionOverride, .useSubscriptionNoProductsOverride:
             return false
         }
     }

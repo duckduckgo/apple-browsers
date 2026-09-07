@@ -87,6 +87,8 @@ final class TabCrashRecoveryExtension {
     private let firePixel: (PixelKit.Event, [String: String]) -> Void
     private let reportBrokenSite: (NSWindow?) -> Void
     private let tabCrashAggregator: TabCrashAggregator
+    /// Marks the next completed navigation so CPM health reporting can attribute it to this crash.
+    private let onTabCrash: () -> Void
 
     private var cancellables = Set<AnyCancellable>()
     private var lastPixelFireTime: Date?
@@ -97,6 +99,7 @@ final class TabCrashRecoveryExtension {
         webViewPublisher: some Publisher<WKWebView, Never>,
         webViewErrorPublisher: some Publisher<WKError?, Never>,
         crashLoopDetector: TabCrashLoopDetecting = TabCrashLoopDetector(),
+        onTabCrash: @escaping () -> Void = {},
         firePixel: @escaping (PixelKit.Event, [String: String]) -> Void = { event, parameters in
             PixelKit.fire(event, frequency: .dailyAndStandard, withAdditionalParameters: parameters)
         },
@@ -105,6 +108,7 @@ final class TabCrashRecoveryExtension {
     ) {
         self.featureFlagger = featureFlagger
         self.crashLoopDetector = crashLoopDetector
+        self.onTabCrash = onTabCrash
         self.firePixel = firePixel
         self.reportBrokenSite = reportBrokenSite
         self.tabCrashAggregator = tabCrashAggregator
@@ -187,6 +191,7 @@ extension TabCrashRecoveryExtension: NavigationResponder {
         let crashTimestamp = crashLoopDetector.currentDate()
         let isCrashLoop = crashLoopDetector.isCrashLoop(for: crashTimestamp, lastCrashTimestamp: lastCrashedAt)
         tabDidCrashSubject.send(isCrashLoop ? .crashLoop : .single)
+        onTabCrash()
         lastCrashedAt = crashTimestamp
 
         if isCrashLoop {

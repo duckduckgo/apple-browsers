@@ -62,10 +62,10 @@ public protocol VPNSessionHealthInstrumentation: AnyObject, Sendable {
     func tunnelReconfigurationStarted()
 
     /// Terminates the segment, and is the point at which a user switching the VPN off mid-outage is recorded as a silent failure.
-    func providerStopped(reason: NEProviderStopReason)
+    func tunnelStopped(reason: NEProviderStopReason)
 
     /// Terminates the segment as a failure.
-    func providerCancelledWithError()
+    func tunnelCancelledWithError()
 
     /// Completes a segment left behind by a process that disappeared. Called once on launch.
     func processOrphanEvents()
@@ -165,12 +165,12 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     // MARK: - Termination
 
-    public func providerStopped(reason: NEProviderStopReason) {
+    public func tunnelStopped(reason: NEProviderStopReason) {
         let endReason = reason.asSegmentEndReason
         advance { $0.stopping(endReason, at: $1) }
     }
 
-    public func providerCancelledWithError() {
+    public func tunnelCancelledWithError() {
         advance { $0.cancellingWithError(at: $1) }
     }
 

@@ -1012,7 +1012,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         Logger.networkProtection.log("🛑 Stopping tunnel with reason \(String(describing: reason), privacy: .public)")
 
-        sessionHealth.providerStopped(reason: reason)
+        sessionHealth.tunnelStopped(reason: reason)
 
         do {
             try await stopTunnel()
@@ -1046,7 +1046,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         Logger.networkProtection.error("Stopping tunnel with error \(stopError.localizedDescription, privacy: .public)")
 
-        sessionHealth.providerCancelledWithError()
+        sessionHealth.tunnelCancelledWithError()
 
         do {
             try await stopTunnel()

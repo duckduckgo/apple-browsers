@@ -112,6 +112,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             guard oldValue != aiChatInputBoxVisibility else { return }
+            Logger.unifiedInputState.debug("aiChatInputBoxVisibility \(oldValue.rawValue, privacy: .public) → \(self.aiChatInputBoxVisibility.rawValue, privacy: .public) [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
             persistDraftToStore()
         }
     }
@@ -708,6 +709,32 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
     }
 
+    /// A committed navigation replaces the tab's FE document: FE-asserted visibility/voice state
+    /// resets (unless natively pre-asserted for it), and a chat change discards the draft.
+    func handleNavigationCommit(tabUID: TabUID, didChangeChat: Bool, startsWithHiddenInput: Bool = false) {
+        Logger.unifiedInputState.debug("handleNavigationCommit [\(tabUID, privacy: .public)] didChangeChat=\(didChangeChat, privacy: .public) startsHidden=\(startsWithHiddenInput, privacy: .public) — live tab [\(self.currentTabUID ?? "nil", privacy: .public)]")
+        let visibility: AIChatInputBoxVisibility = startsWithHiddenInput ? .hidden : .unknown
+        if tabUID == currentTabUID {
+            aiChatInputBoxVisibility = visibility
+            isVoiceSessionActive = false
+            if didChangeChat {
+                if !currentText.isEmpty { setText("") }
+                clearAttachments()
+                if toolsController.selectedTool != nil { resetToolsSelection() }
+            }
+        }
+        let current = stateStore.state(for: tabUID)
+        var updated = current
+        updated.aiChatInputBoxVisibility = visibility
+        updated.isVoiceSessionActive = false
+        if didChangeChat {
+            updated.clearDraft()
+        }
+        if updated != current {
+            stateStore.update(updated, for: tabUID)
+        }
+    }
+
     /// Persists per-tab-only state — text and attachments. These are drafts the user
     /// is actively building; they belong to the tab, not to the global last-used
     /// defaults, and must not write through to global preferences.
@@ -742,9 +769,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         textModel.resetToEmpty()
         guard let uid = currentTabUID else { return }
         var cleared = snapshotCurrentState()
-        cleared.text = ""
-        cleared.attachments = []
-        cleared.selectedTool = nil
+        cleared.clearDraft()
         stateStore.recordUserChoice(cleared, for: uid, isNewChatContext: false)
         Logger.unifiedInputState.debug("submission cleared store text + attachments + tool for tab [\(uid)]")
     }

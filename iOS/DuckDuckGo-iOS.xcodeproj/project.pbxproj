@@ -5110,6 +5110,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				708BA1CBA61D18E2FCEC6043 /* WideEvent in Frameworks */,
+				C14882ED27F211A000D59F0C /* SwiftSoup in Frameworks */,
 				D61CDA182B7CF78300A0FBB9 /* ZIPFoundation in Frameworks */,
 				FCFC00031F00000000010001 /* DDGError in Frameworks */,
 				A64F1A060000000000000006 /* FeatureFlags-iOS in Frameworks */,
@@ -5351,7 +5352,6 @@
 				4BABF9183022746600B46B44 /* AppRouting in Frameworks */,
 				4BACF9183022746600B46B44 /* InstallStatistics in Frameworks */,
 				4BC95E8D2D741700002FAB32 /* DuckPlayer in Frameworks */,
-				C14882ED27F211A000D59F0C /* SwiftSoup in Frameworks */,
 				4BC95E892D7416F2002FAB32 /* ContentBlocking in Frameworks */,
 				4BC95E972D741749002FAB32 /* SyncDataProviders in Frameworks */,
 				4BC95E9D2D74175A002FAB32 /* SpecialErrorPages in Frameworks */,
@@ -8659,7 +8659,6 @@
 		C14882D627F2010700D59F0C /* ImportExport */ = {
 			isa = PBXGroup;
 			children = (
-				C14882D927F2011C00D59F0C /* BookmarksImporter.swift */,
 			);
 			name = ImportExport;
 			sourceTree = "<group>";
@@ -10245,6 +10244,7 @@
 		F1668BCC1E798025008CBA04 /* Bookmarks */ = {
 			isa = PBXGroup;
 			children = (
+				C14882D927F2011C00D59F0C /* BookmarksImporter.swift */,
 				C14882D727F2011C00D59F0C /* BookmarksExporter.swift */,
 				C1963862283794A000298D4D /* BookmarksCachingSearch.swift */,
 				98629D302C21765A001E6031 /* BookmarksStateValidation.swift */,
@@ -10907,6 +10907,7 @@
 			name = DuckDuckGo;
 			packageProductDependencies = (
 				524F28DF1A4A0B9EAD27884C /* WideEvent */,
+				C14882EC27F211A000D59F0C /* SwiftSoup */,
 				D61CDA172B7CF78300A0FBB9 /* ZIPFoundation */,
 				FCFC00021F00000000010001 /* DDGError */,
 				A64F1A030000000000000003 /* FeatureFlags-iOS */,
@@ -11248,7 +11249,6 @@
 				FCFC00021F00000000030001 /* URLPredictor */,
 				A64F1A020000000000000002 /* FeatureFlags-iOS */,
 				F486D33325069BBB002D07D7 /* Kingfisher */,
-				C14882EC27F211A000D59F0C /* SwiftSoup */,
 				CB6CC7E32CD2529000320907 /* BrokenSitePrompt */,
 				CBECDB6E2CD3DFBE005B8B87 /* PageRefreshMonitor */,
 				4BC95E802D7416D7002FAB32 /* Bookmarks */,
@@ -11882,6 +11882,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C14882DC27F2011C00D59F0C /* BookmarksImporter.swift in Sources */,
 				C14882DA27F2011C00D59F0C /* BookmarksExporter.swift in Sources */,
 				C1963863283794A000298D4D /* BookmarksCachingSearch.swift in Sources */,
 				98629D312C21765A001E6031 /* BookmarksStateValidation.swift in Sources */,
@@ -13997,7 +13998,6 @@
 				FC0A7B0B2F00000100AAB001 /* PixelKitParameterProvider.swift in Sources */,
 				F41C2DA526C1975E00F9A760 /* LegacyBookmarksCoreDataStorage.swift in Sources */,
 				6F9857342CD27FA2001BE9A0 /* BoolFileMarker.swift in Sources */,
-				C14882DC27F2011C00D59F0C /* BookmarksImporter.swift in Sources */,
 				CBAA195A27BFE15600A4BD49 /* NSManagedObjectContextExtension.swift in Sources */,
 				F124B95A2F2CC20C00B29447 /* BuildFlags.swift in Sources */,
 				85BDC3192436161C0053DB07 /* LoginFormDetectionUserScript.swift in Sources */,

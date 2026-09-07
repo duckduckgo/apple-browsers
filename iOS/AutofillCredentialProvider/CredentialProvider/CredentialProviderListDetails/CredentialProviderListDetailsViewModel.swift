@@ -48,6 +48,7 @@ final class CredentialProviderListDetailsViewModel: ObservableObject {
     var account: SecureVaultModels.WebsiteAccount?
 
     private let tld: TLD
+    private let clipboardExpirationInterval: TimeInterval
     private let autofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher()
     private let autofillDomainNameUrlSort = AutofillDomainNameUrlSort()
 
@@ -86,9 +87,11 @@ final class CredentialProviderListDetailsViewModel: ObservableObject {
     internal init(account: SecureVaultModels.WebsiteAccount? = nil,
                   tld: TLD,
                   emailManager: EmailManager = EmailManager(),
-                  shouldProvideTextToInsert: Bool) {
+                  shouldProvideTextToInsert: Bool,
+                  clipboardExpirationInterval: TimeInterval = .minutes(1)) {
         self.account = account
         self.tld = tld
+        self.clipboardExpirationInterval = clipboardExpirationInterval
         self.headerViewModel = CredentialProviderListDetailsHeaderViewModel()
         self.shouldProvideTextToInsert = shouldProvideTextToInsert
         if let account = account {
@@ -119,7 +122,7 @@ final class CredentialProviderListDetailsViewModel: ObservableObject {
         case .password:
             message = UserText.credentialProviderDetailsCopyToastPasswordCopied
             UIPasteboard.general.setItems([[UTType.utf8PlainText.identifier: password]],
-                                         options: [.expirationDate: Date().addingTimeInterval(.minutes(1))])
+                                         options: [.expirationDate: Date().addingTimeInterval(clipboardExpirationInterval)])
             Pixel.fire(pixel: .autofillManagementCopyPassword)
         case .address:
             message = UserText.credentialProviderDetailsCopyToastAddressCopied

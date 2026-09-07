@@ -65,6 +65,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
     var emailManager: EmailManager
     private let syncService: DDGSyncing
     private let pasteboard: UIPasteboard
+    private let clipboardExpirationInterval: TimeInterval
 
     private let tld: TLD
     private let autofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher()
@@ -183,10 +184,12 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
                   syncService: DDGSyncing,
                   tld: TLD,
                   emailManager: EmailManager = EmailManager(),
-                  pasteboard: UIPasteboard = .general) {
+                  pasteboard: UIPasteboard = .general,
+                  clipboardExpirationInterval: TimeInterval = .minutes(1)) {
         self.account = account
         self.syncService = syncService
         self.pasteboard = pasteboard
+        self.clipboardExpirationInterval = clipboardExpirationInterval
         self.tld = tld
         self.headerViewModel = AutofillLoginDetailsHeaderViewModel()
         self.emailManager = emailManager
@@ -253,7 +256,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
         case .password:
             message = UserText.autofillCopyToastPasswordCopied
             pasteboard.setItems([[UTType.utf8PlainText.identifier: password]],
-                                options: [.expirationDate: Date().addingTimeInterval(.minutes(1))])
+                                options: [.expirationDate: Date().addingTimeInterval(clipboardExpirationInterval)])
             Pixel.fire(pixel: .autofillManagementCopyPassword)
         case .address:
             message = UserText.autofillCopyToastAddressCopied

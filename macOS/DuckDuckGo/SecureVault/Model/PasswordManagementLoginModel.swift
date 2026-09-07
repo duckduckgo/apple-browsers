@@ -135,6 +135,7 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
     private let tld: TLD
     private let urlSort: AutofillDomainNameUrlSort
     private let pasteboard: NSPasteboard
+    private let clipboardExpirationInterval: TimeInterval
     private let notificationCenter: NotificationCenter
     private let workspaceNotificationCenter: NotificationCenter
     private let scheduleClipboardClear: (TimeInterval, @escaping () -> Void) -> Void
@@ -147,6 +148,7 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
          tld: TLD,
          urlSort: AutofillDomainNameUrlSort,
          pasteboard: NSPasteboard = .general,
+         clipboardExpirationInterval: TimeInterval = .minutes(1),
          notificationCenter: NotificationCenter = .default,
          workspaceNotificationCenter: NotificationCenter = NSWorkspace.shared.notificationCenter,
          scheduleClipboardClear: @escaping (TimeInterval, @escaping () -> Void) -> Void = { interval, clear in
@@ -159,6 +161,7 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
         self.tld = tld
         self.urlSort = urlSort
         self.pasteboard = pasteboard
+        self.clipboardExpirationInterval = clipboardExpirationInterval
         self.notificationCenter = notificationCenter
         self.workspaceNotificationCenter = workspaceNotificationCenter
         self.scheduleClipboardClear = scheduleClipboardClear
@@ -201,7 +204,7 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
                     clearPassword()
                 }
                 // Keep cleanup alive even after the password manager closes, without retaining the password or model.
-                scheduleClipboardClear(.minutes(1)) {
+                scheduleClipboardClear(clipboardExpirationInterval) {
                     notificationCenter.removeObserver(quitObserver)
                     workspaceNotificationCenter.removeObserver(sleepObserver)
                     clearPassword()

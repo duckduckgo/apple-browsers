@@ -19,6 +19,7 @@
 import XCTest
 import AppKit
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -177,6 +178,29 @@ final class PasswordManagementClipboardTests: XCTestCase {
         XCTAssertEqual(scheduledIntervals, [60])
         scheduledClears.first?()
         XCTAssertNil(pasteboard.string(forType: .string))
+    }
+
+    func testPasswordExpiresUsingDefaultSchedulerAndCustomInterval() async {
+        let pasteboard = self.pasteboard!
+        let model = PasswordManagementLoginModel(
+            onSaveRequested: { _ in },
+            onDeleteRequested: { _ in },
+            urlMatcher: AutofillDomainNameUrlMatcher(),
+            emailManager: EmailManager(),
+            tld: TLD(),
+            urlSort: AutofillDomainNameUrlSort(),
+            pasteboard: pasteboard,
+            clipboardExpirationInterval: .milliseconds(100),
+            notificationCenter: notifications,
+            workspaceNotificationCenter: workspaceNotifications)
+
+        model.copy("test-password", fieldType: .password)
+
+        XCTAssertEqual(pasteboard.string(forType: .string), "test-password")
+        let cleared = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in pasteboard.string(forType: .string) == nil },
+            object: nil)
+        await fulfillment(of: [cleared], timeout: 5)
     }
 
     func testExpirationPreservesNewerClipboardContentsEvenWhenTextMatches() {

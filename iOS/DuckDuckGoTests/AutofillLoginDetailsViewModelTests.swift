@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import UIKit
 import UniformTypeIdentifiers
 import XCTest
@@ -40,6 +41,25 @@ final class AutofillLoginDetailsViewModelTests: XCTestCase {
         let expiration = try XCTUnwrap(pasteboard.options[.expirationDate] as? Date)
         XCTAssertGreaterThanOrEqual(expiration, beforeCopy.addingTimeInterval(60))
         XCTAssertLessThanOrEqual(expiration, afterCopy.addingTimeInterval(60))
+    }
+
+    func testCopiedPasswordRoundTripsAndExpiresWithCustomInterval() async {
+        let pasteboard = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        let model = AutofillLoginDetailsViewModel(
+            syncService: MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false),
+            tld: TLD(),
+            pasteboard: pasteboard,
+            clipboardExpirationInterval: .milliseconds(100))
+        model.password = "päss🔒word"
+
+        model.copyToPasteboard(.password)
+
+        XCTAssertEqual(pasteboard.string, model.password)
+        let cleared = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in pasteboard.string == nil },
+            object: nil)
+        await fulfillment(of: [cleared], timeout: 5)
     }
 
     func testOtherFieldsAreCopiedWithoutExpiration() {

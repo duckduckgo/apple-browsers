@@ -82,10 +82,13 @@ enum WebExtensionPixel: PixelKit.Event {
     case darkReaderNotLoaded
     case adBlockingExtensionNotLoaded
     case adBlockingScriptletsNotFetched(extensionLoaded: Bool)
-
     // MARK: - Daily State
 
     case dailyAdBlockingState(isEnabled: Bool, analyticsEnabled: Bool)
+
+    // MARK: - Debug
+
+    case debugCPM(CPMWebExtensionPixelMetadata)
 
     // MARK: - PixelKit.Event
 
@@ -167,6 +170,8 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_ad_blocking_not_loaded_macos"
         case .adBlockingScriptletsNotFetched:
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
+        case .debugCPM(let metadata):
+            return metadata.name
         }
     }
 
@@ -198,8 +203,19 @@ enum WebExtensionPixel: PixelKit.Event {
             ]
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             return ["extension_loaded": extensionLoaded ? "true" : "false"]
+        case .debugCPM(let metadata):
+            return metadata.parameters
         default:
             return nil
+        }
+    }
+
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .debugCPM:
+            return .none
+        default:
+            return .platformDefault
         }
     }
 
@@ -216,6 +232,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedInstalled
         case .darkReader: return .darkReaderInstalled
         case .adBlockingExtension: return .adBlockingExtensionInstalled
+        case .searchToken: return nil
         }
     }
 
@@ -224,6 +241,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedUpgraded(fromVersion: fromVersion, toVersion: toVersion)
         case .darkReader: return .darkReaderUpgraded(fromVersion: fromVersion, toVersion: toVersion)
         case .adBlockingExtension: return .adBlockingExtensionUpgraded(fromVersion: fromVersion, toVersion: toVersion)
+        case .searchToken: return nil
         }
     }
 
@@ -232,6 +250,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedInstallError(error: error)
         case .darkReader: return .darkReaderInstallError(error: error)
         case .adBlockingExtension: return .adBlockingExtensionInstallError(error: error)
+        case .searchToken: return nil
         }
     }
 
@@ -240,6 +259,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .embeddedNotLoaded
         case .darkReader: return .darkReaderNotLoaded
         case .adBlockingExtension: return .adBlockingExtensionNotLoaded
+        case .searchToken: return nil
         }
     }
 }
@@ -251,6 +271,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
 
     func fire(_ event: WebExtensionPixelEvent) {
         let pixel: WebExtensionPixel
+        let frequency: PixelKit.Frequency
         switch event {
         case .installed:
             pixel = .installed
@@ -294,7 +315,28 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
+        case .cpmInitializationFailed,
+             .cpmMessagingStuck,
+             .cpmMessagingRecoveredWithoutExtensionReload,
+             .cpmMessagingRecoveredAfterExtensionReload,
+             .cpmMessagingExtensionReloadFailed:
+            guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
+            pixel = .debugCPM(metadata)
         }
-        PixelKit.fire(pixel, frequency: .dailyAndStandard)
+        if let metadata = CPMWebExtensionPixelMetadata(event: event) {
+            frequency = metadata.frequency.pixelKitFrequency
+        } else {
+            frequency = .dailyAndStandard
+        }
+        PixelKit.fire(pixel, frequency: frequency)
+    }
+}
+
+private extension CPMWebExtensionPixelFrequency {
+    var pixelKitFrequency: PixelKit.Frequency {
+        switch self {
+        case .daily: return .daily
+        case .dailyAndCount: return .dailyAndCount
+        }
     }
 }

@@ -1047,4 +1047,11 @@ extension XCUIApplication {
         debugMenu.menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoQueueDebugMenu]
     }
 
+    func resetPromo(withID promoID: String) {
+        let promoResetItem = promoQueueMenu
+            .menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoMenuItem(promoID)]
+            .menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.undismissClearItem]
+            .clickAfterExistenceTestSucceeds()
+    }
+
 }

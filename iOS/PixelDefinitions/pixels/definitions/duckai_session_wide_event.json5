@@ -1,0 +1,66 @@
+{
+    "m_ios_wide_duckai_session": {
+        "description": "Wide pixel sent at the end of a Duck.ai session on iOS: one visit to a full Duck.ai tab, from the tab becoming visible until Duck.ai is left, the app is backgrounded, or the process ends. Opening the tab switcher does not end the session.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            // Standard wide event parameters
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventMetaVersion",
+
+            // Wide event type identifier
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-duckai-session"]
+            },
+
+            // Feature identifier
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["duckai_session"]
+            },
+
+            // Feature data
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "How the session ended. SUCCESS uses left_duckai; CANCELLED uses app_backgrounded; UNKNOWN uses app_terminated when an in-flight session is recovered at the next launch.",
+                "enum": ["left_duckai", "app_backgrounded", "app_terminated"]
+            },
+            {
+                "key": "feature.data.ext.exit_trigger",
+                "type": "string",
+                "description": "The action that caused the transition away from Duck.ai. Present only when status_reason is left_duckai.",
+                "enum": ["back_or_close", "tab_switched", "new_tab_opened", "fire_tab_opened", "search_started", "other_navigation"]
+            },
+            {
+                "key": "feature.data.ext.step.prompt_submitted",
+                "type": "boolean",
+                "description": "A prompt was submitted in the visible Duck.ai tab. Present only when true."
+            },
+            {
+                "key": "feature.data.ext.step.new_chat_created",
+                "type": "boolean",
+                "description": "A new chat was created from the active Duck.ai session. Present only when true."
+            },
+            {
+                "key": "feature.data.ext.step.chat_id_changed",
+                "type": "boolean",
+                "description": "The visible tab's Duck.ai URL changed from one chatID value to another, including missing to present. Present only when true. The identifier is never sent."
+            }
+        ]
+    }
+}

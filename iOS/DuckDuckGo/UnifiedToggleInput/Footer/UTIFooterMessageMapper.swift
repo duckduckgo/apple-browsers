@@ -30,6 +30,20 @@ struct UTIFooterMessageMapper {
         self.resetDescriber = resetDescriber
     }
 
+    func message(for notice: CreateImageModelSwitchNotice) -> UTIFooterMessage {
+        let subtitleFormat = notice.previousModelHasExtraPrivacyProtections
+            ? UserText.utiCreateImageModelSwitchPrivacyPreservingSubtitle
+            : UserText.utiCreateImageModelSwitchSubtitle
+
+        return UTIFooterMessage(
+            icon: .modelSwitch,
+            title: String(format: UserText.utiCreateImageModelSwitchTitle, notice.newModelShortName),
+            subtitle: String(format: subtitleFormat, notice.previousModelShortName),
+            primaryAction: nil,
+            isDismissible: true
+        )
+    }
+
     func message(for warning: DuckAiUsageWarning) -> UTIFooterMessage {
         UTIFooterMessage(
             icon: Self.icon(for: warning),
@@ -40,12 +54,22 @@ struct UTIFooterMessageMapper {
         )
     }
 
+    func message(for notice: DuckAiHighUsageModelNotice) -> UTIFooterMessage {
+        UTIFooterMessage(
+            icon: .info,
+            title: String(format: UserText.utiDuckAIWarningsHighUsageModel, notice.modelShortName),
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: true
+        )
+    }
+
     /// The ring tracks the real percentage; a reached limit reads as an alert rather than a full ring.
     private static func icon(for warning: DuckAiUsageWarning) -> UTIFooterMessage.Icon {
         switch warning.message {
         case .approaching:
-            return .usageRing(progress: Double(warning.percent) / 100)
-        case .dailyLimitReached, .weeklyLimitReached, .advancedModelsLimitReached:
+            return .usageRing(progress: Double(warning.percent) / 100, severity: warning.severity)
+        case .freeReached, .dailyReached, .weeklyReached, .weeklyReachedDegraded:
             return .alert
         }
     }
@@ -57,35 +81,37 @@ struct UTIFooterMessageMapper {
             case .daily: return String(format: UserText.utiDuckAIWarningsDailyUsageTitle, warning.percent)
             case .weekly: return String(format: UserText.utiDuckAIWarningsWeeklyUsageTitle, warning.percent)
             }
-        case .dailyLimitReached:
+        case .dailyReached:
             return UserText.utiDuckAIWarningsDailyLimitReached
-        case .weeklyLimitReached:
+        case .weeklyReached:
             return UserText.utiDuckAIWarningsWeeklyLimitReached
-        case .advancedModelsLimitReached:
+        case .weeklyReachedDegraded:
             return UserText.utiDuckAIWarningsAdvancedModelsLimitReached
+        case .freeReached:
+            // One id whichever window ran out, so the window picks the noun.
+            switch warning.window {
+            case .daily: return UserText.utiDuckAIWarningsDailyLimitReached
+            case .weekly: return UserText.utiDuckAIWarningsWeeklyLimitReached
+            }
         }
     }
 
     private static func primaryAction(for warning: DuckAiUsageWarning) -> UTIFooterMessage.PrimaryAction? {
         guard let title = actionTitle(for: warning.action) else { return nil }
-        return UTIFooterMessage.PrimaryAction(title: title, showsModelPicker: warning.offersModelPicker)
+        return UTIFooterMessage.PrimaryAction(title: title)
     }
 
-    /// `nil` hides the button. `.startUsingWeeklyLimit` has no native route yet, and a button that
-    /// does nothing is worse than none.
+    /// `nil` hides the button, which is also how a switch with nothing to switch to renders.
     private static func actionTitle(for action: DuckAiUsageAction?) -> String? {
         switch action {
         case .none:
             return nil
-        case .switchToModel(let suggestion):
-            return suggestion.modelShortName.map { String(format: UserText.utiDuckAIWarningsSwitchToModel, $0) }
-                ?? UserText.utiDuckAIWarningsSwitchModel
-        case .switchToFreeModel:
-            return UserText.utiDuckAIWarningsSwitchToFreeModel
+        case .switchToModel, .switchToFreeModel:
+            return UserText.utiDuckAIWarningsSwitch
         case .tryForFree(let isTrialEligible):
             return isTrialEligible ? UserText.utiDuckAIWarningsTryForFree : UserText.utiDuckAIWarningsSubscribe
         case .startUsingWeeklyLimit:
-            return nil
+            return UserText.utiDuckAIWarningsStartUsingWeeklyLimit
         }
     }
 }

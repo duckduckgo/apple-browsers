@@ -225,6 +225,48 @@
         ],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
+    "search-token_web_extension_installed": {
+        "description": "The search token web extension was installed.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "search-token_web_extension_upgraded": {
+        "description": "The search token web extension was upgraded to a new version.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "from_version",
+                "type": "string",
+                "description": "The previous version of the search token extension before upgrade"
+            },
+            {
+                "key": "to_version",
+                "type": "string",
+                "description": "The new version of the search token extension after upgrade"
+            }
+        ]
+    },
+    "search-token_web_extension_install_error": {
+        "description": "The search token web extension failed to install.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
     "m_web_extension_ad_blocking_settings_open": {
         "description": "Fires when the user opens the YouTube Ad Blocking settings screen.",
         "owners": ["miasma13"],
@@ -479,6 +521,16 @@
     "web_extension_ad_blocking_not_loaded": {
         "description": "Fires when the ad-blocking extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "search-token_web_extension_not_loaded": {
+        "description": "The search token web extension was expected to be loaded but was not.",
+        "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": [
             ["daily", "platform", "form_factor"],

@@ -307,7 +307,13 @@ final class FireDialogViewModel: ObservableObject {
         // In that case such tab isn't recorded in history and we're unable to present a history item for it,
         // and effectively burning a tab wouldn't delete any history items.
         let hasVisitWithHistoryItems = tab.localHistory.contains(where: { $0.historyEntry != nil })
-        guard hasVisitWithHistoryItems else { return false }
+
+        // Duck Player set to "always open in new tab" would show a tab with no history
+        // that should still allow burning, i.e. closing the tab. In reality, the Duck Player visit
+        // is not recorded in history (only the YouTube visit in another tab is recorded).
+        // Therefore, always allow to close Duck Player tab.
+        let isDuckPlayer = tab.content.urlForWebView?.isDuckPlayer == true
+        guard hasVisitWithHistoryItems || isDuckPlayer else { return false }
 
         return tab.content.isExternalUrl || tab.canGoBack || tab.canGoForward
     }

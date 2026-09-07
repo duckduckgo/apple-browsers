@@ -20,17 +20,30 @@
 import AIChat
 import Foundation
 
+struct CreateImageModelSwitchNotice: Equatable {
+    let previousModelShortName: String
+    let newModelShortName: String
+    let previousModelHasExtraPrivacyProtections: Bool
+
+    init(previousModel: AIChatModel, newModel: AIChatModel) {
+        previousModelShortName = previousModel.shortName
+        newModelShortName = newModel.shortName
+        previousModelHasExtraPrivacyProtections = previousModel.provider == .oss
+    }
+}
+
 struct UTIFooterMessage: Equatable {
 
     enum Icon: Equatable {
-        case usageRing(progress: Double)
+        case none
+        case usageRing(progress: Double, severity: DuckAiUsageSeverity)
         case alert
+        case info
+        case modelSwitch
     }
 
     struct PrimaryAction: Equatable {
         let title: String
-        /// The chevron beside the title, which opens the model picker. Only a model switch offers it.
-        let showsModelPicker: Bool
     }
 
     let icon: Icon

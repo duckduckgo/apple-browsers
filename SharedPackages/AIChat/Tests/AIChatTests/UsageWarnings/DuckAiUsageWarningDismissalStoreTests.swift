@@ -38,54 +38,94 @@ final class DuckAiUsageWarningDismissalStoreTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Dismissal
+
     func testWhenNothingWasStoredThenThereIsNoDismissal() {
-        XCTAssertNil(sut.dismissal(for: .daily))
-        XCTAssertNil(sut.dismissal(for: .weekly))
+        XCTAssertNil(sut.dismissal())
     }
 
     func testDismissalRoundTrips() {
-        sut.setDismissal(DuckAiUsageWarningDismissal(resetsAt: resetsAt, threshold: 75), for: .weekly)
+        sut.setDismissal(DuckAiUsageWarningDismissal(noticeID: "approaching", resetsAt: resetsAt))
 
-        let stored = sut.dismissal(for: .weekly)
-        XCTAssertEqual(stored?.threshold, 75)
-        XCTAssertTrue(stored?.applies(to: resetsAt) ?? false)
-    }
-
-    func testWindowsAreStoredIndependently() {
-        sut.setDismissal(DuckAiUsageWarningDismissal(resetsAt: resetsAt, threshold: 50), for: .daily)
-
-        XCTAssertNotNil(sut.dismissal(for: .daily))
-        XCTAssertNil(sut.dismissal(for: .weekly))
+        let stored = sut.dismissal()
+        XCTAssertEqual(stored?.noticeID, "approaching")
+        XCTAssertEqual(stored?.resetsAtEpochSeconds, Int(resetsAt.timeIntervalSince1970))
     }
 
     func testSettingNilClearsTheStoredDismissal() {
-        sut.setDismissal(DuckAiUsageWarningDismissal(resetsAt: resetsAt, threshold: 50), for: .daily)
+        sut.setDismissal(DuckAiUsageWarningDismissal(noticeID: "approaching", resetsAt: resetsAt))
 
-        sut.setDismissal(nil, for: .daily)
+        sut.setDismissal(nil)
 
-        XCTAssertNil(sut.dismissal(for: .daily))
+        XCTAssertNil(sut.dismissal())
     }
 
     /// A record we can't read is treated as "not dismissed" — showing the message again is the safe
     /// failure, and it self-heals on the next dismissal.
     func testWhenTheStoredValueIsUnreadableThenThereIsNoDismissal() {
-        try? keyValueStore.set(Data("not json".utf8), forKey: "aichat.usage-warning.dismissal.daily")
+        try? keyValueStore.set(Data("not json".utf8), forKey: "aichat.usage-warning.dismissal")
 
-        XCTAssertNil(sut.dismissal(for: .daily))
+        XCTAssertNil(sut.dismissal())
     }
 
-    /// `resetsAt` is persisted as whole seconds so a `Codable` round trip can't drift it out of equality
-    /// with the snapshot it has to match.
+    /// `resetsAt` is persisted as whole seconds so a `Codable` round trip can't drift it out of
+    /// equality with the notice it has to match.
     func testResetTimestampSurvivesTheRoundTripWithSubSecondPrecision() {
         let fractional = Date(timeIntervalSince1970: 1_755_018_000.4)
-        sut.setDismissal(DuckAiUsageWarningDismissal(resetsAt: fractional, threshold: 50), for: .daily)
+        sut.setDismissal(DuckAiUsageWarningDismissal(noticeID: "approaching", resetsAt: fractional))
 
-        XCTAssertTrue(sut.dismissal(for: .daily)?.applies(to: fractional) ?? false)
+        XCTAssertTrue(sut.dismissal()?.applies(to: notice(id: .approaching, resetsAt: fractional)) ?? false)
+    }
+
+    func testADismissalAppliesOnlyToItsOwnNoticeAndResetPeriod() {
+        let dismissal = DuckAiUsageWarningDismissal(notice: notice(id: .approaching, resetsAt: resetsAt))
+
+        XCTAssertTrue(dismissal.applies(to: notice(id: .approaching, resetsAt: resetsAt)))
+        XCTAssertFalse(dismissal.applies(to: notice(id: .dailyReached, resetsAt: resetsAt)))
+        XCTAssertFalse(dismissal.applies(to: notice(id: .approaching,
+                                                   resetsAt: resetsAt.addingTimeInterval(3600))))
+    }
+
+    // MARK: - Acted-on snapshot
+
+    func testActedSnapshotRoundTripsAndIsStoredSeparately() {
+        sut.setActedSnapshot(DuckAiUsageWarningActedSnapshot(noticeID: "dailyReached", signature: "snapshot-1"))
+
+        XCTAssertEqual(sut.actedSnapshot()?.signature, "snapshot-1")
+        XCTAssertNil(sut.dismissal())
+    }
+
+    func testSettingNilClearsTheActedSnapshot() {
+        sut.setActedSnapshot(DuckAiUsageWarningActedSnapshot(noticeID: "dailyReached", signature: "snapshot-1"))
+
+        sut.setActedSnapshot(nil)
+
+        XCTAssertNil(sut.actedSnapshot())
+    }
+
+    func testAnActedSnapshotAppliesOnlyToItsOwnNoticeAndPayload() {
+        let acted = DuckAiUsageWarningActedSnapshot(noticeID: "dailyReached", signature: "snapshot-1")
+
+        XCTAssertTrue(acted.applies(to: notice(id: .dailyReached, resetsAt: resetsAt), signature: "snapshot-1"))
+        XCTAssertFalse(acted.applies(to: notice(id: .dailyReached, resetsAt: resetsAt), signature: "snapshot-2"))
+        XCTAssertFalse(acted.applies(to: notice(id: .weeklyReached, resetsAt: resetsAt), signature: "snapshot-1"))
+        XCTAssertFalse(acted.applies(to: notice(id: .dailyReached, resetsAt: resetsAt), signature: nil))
+    }
+
+    // MARK: - Helpers
+
+    private func notice(id: DuckAiUsageNotice.ID, resetsAt: Date) -> DuckAiUsageNotice {
+        DuckAiUsageNotice(id: id,
+                          window: .daily,
+                          percentUsed: id == .approaching ? 75 : 100,
+                          resetsAt: resetsAt,
+                          reached: id != .approaching,
+                          dismissible: id == .approaching)
     }
 }
 
 /// A local stub rather than `PersistenceTestingUtils`: only this file needs one, and keeping the
-/// dependency out of the test target matches `DuckAiUsageLimitsTests`.
+/// dependency out of the test target matches the other native-storage tests.
 private final class InMemoryThrowingStore: ThrowingKeyValueStoring {
 
     private var values: [String: Any] = [:]

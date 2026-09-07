@@ -33,6 +33,7 @@ import UniformTypeIdentifiers
 final class IPadOmnibarAttachmentController {
 
     private let store: UTIModelStore
+    private let keepsUnavailableAttachmentButtonVisible: Bool
     private let presenter = UnifiedToggleInputAttachmentPresenter()
 
     /// The strip that renders and owns the pending attachments. Set by the omnibar view controller
@@ -52,8 +53,9 @@ final class IPadOmnibarAttachmentController {
     /// Requested after a picker completes, so the omnibar can ensure it stays expanded.
     var onExpandRequested: (() -> Void)?
 
-    init(store: UTIModelStore) {
+    init(store: UTIModelStore, keepsUnavailableAttachmentButtonVisible: Bool = false) {
         self.store = store
+        self.keepsUnavailableAttachmentButtonVisible = keepsUnavailableAttachmentButtonVisible
 
         presenter.onExpandIfNeeded = { [weak self] in
             self?.onExpandRequested?()
@@ -77,6 +79,10 @@ final class IPadOmnibarAttachmentController {
     /// Whether the selected model accepts any attachment kind (so the button should be shown at all).
     var isAttachButtonAvailable: Bool {
         store.selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty
+    }
+
+    var isAttachButtonVisible: Bool {
+        isAttachButtonAvailable || (store.selectedModel != nil && keepsUnavailableAttachmentButtonVisible)
     }
 
     /// Whether the current selection still allows attaching more (so the button should be enabled).

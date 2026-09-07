@@ -106,6 +106,14 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateModelChipConfiguration() }
     }
 
+    var isModelChipMenuIndicatorHidden: Bool = false {
+        didSet {
+            guard oldValue != isModelChipMenuIndicatorHidden else { return }
+            updateModelChipConfiguration()
+            modelChipButton.isUserInteractionEnabled = !isModelChipMenuIndicatorHidden
+        }
+    }
+
     var selectedTool: AIChatRAGTool? {
         didSet { updateChipVisibility() }
     }
@@ -259,9 +267,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     private lazy var modelChipButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.title = modelName
-        config.image = UIImage(systemName: "chevron.down")?.withConfiguration(
-            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
-        )
+        config.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
         config.imagePlacement = .trailing
         config.imagePadding = Constants.chipSpacing
         config.titleLineBreakMode = .byTruncatingTail
@@ -501,8 +507,13 @@ private extension UnifiedToggleInputToolbarView {
         return button
     }
 
+    static let modelChipMenuIndicatorImage = UIImage(systemName: "chevron.down")?.withConfiguration(
+        UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+    )
+
     private func updateModelChipConfiguration() {
         modelChipButton.configuration?.title = modelName
+        modelChipButton.configuration?.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
     }
 
     private func updateModelPickerPrimaryAction() {

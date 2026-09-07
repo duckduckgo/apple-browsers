@@ -44,8 +44,17 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contextSubject.eraseToAnyPublisher()
         }
 
+        private let documentReadInProgressSubject = CurrentValueSubject<Bool, Never>(false)
+        var documentReadInProgressPublisher: AnyPublisher<Bool, Never> {
+            documentReadInProgressSubject.eraseToAnyPublisher()
+        }
+
         func sendContext(_ context: AIChatPageContext?) {
             contextSubject.send(context)
+        }
+
+        func sendDocumentReadInProgress(_ inProgress: Bool) {
+            documentReadInProgressSubject.send(inProgress)
         }
 
         var isCurrentPageAttachableReturnValue = true
@@ -349,6 +358,32 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isFloatingInputPresented)
         XCTAssertNotNil(sut.sheetViewController)
         XCTAssertEqual(sut.sessionState.contextualChatURL, restoreURL)
+    }
+
+    @MainActor
+    func testAttachSelectionExpandsInputForExistingChat() async throws {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        sut.sessionState.handlePromptSubmission("Previous prompt")
+
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        XCTAssertFalse(host.isInputCollapsed)
+    }
+
+    @MainActor
+    func testPresentingExistingChatWithoutSelectionKeepsInputCollapsed() async throws {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        sut.sessionState.handlePromptSubmission("Previous prompt")
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        XCTAssertTrue(host.isInputCollapsed)
     }
 
     /// The signals-only payload is content-free and marked unattached, so pushing it while a page is
@@ -767,9 +802,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     // MARK: - Multiple Page Contexts Tests
 
     @MainActor
-    func testNotifyPageChangedSendsNavigationSignalWhenAutoCollectOffAndMultipleContextsEnabled() async {
+    func testNotifyPageChangedSendsNavigationSignalWhenAutoCollectOff() async {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
 
@@ -795,33 +829,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testNotifyPageChangedDoesNotSendNavigationSignalWhenMultipleContextsDisabled() async {
-        // Given - flag OFF (default)
-        mockSettings.isAutomaticContextAttachmentEnabled = false
-        await sut.presentSheet(from: mockPresentingVC)
-
-        sut.sessionState.handlePromptSubmission("Hello")
-
-        var receivedPush = false
-        sut.sessionState.effects
-            .sink { effect in
-                if case .deliverPageContext = effect {
-                    receivedPush = true
-                }
-            }
-            .store(in: &cancellables)
-
-        // When
-        await sut.notifyPageChanged()
-
-        // Then - no signal sent (backward compatible)
-        XCTAssertFalse(receivedPush)
-    }
-
-    @MainActor
     func testNotifyPageChangedDoesNotPushContextWhenSheetDismissedButRetained() async {
         // Given - sheet presented, chat started, then dismissed
-        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
         mockSettings.isAutomaticContextAttachmentEnabled = true
         await sut.presentSheet(from: mockPresentingVC)
         sut.sessionState.handlePromptSubmission("Hello")
@@ -852,8 +861,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testNotifyPageChangedDoesNotSendNullSignalWhenSheetDismissedButRetained() async {
-        // Given - auto-collect OFF, multi-context ON, chat started, then dismissed
-        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        // Given - auto-collect OFF, chat started, then dismissed
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         sut.sessionState.handlePromptSubmission("Hello")
@@ -883,7 +891,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testImmediateUTINotifyPageChangedSendsAttachAffordanceWhenSheetDismissedButRetained() async {
         // Given - immediate UTI keeps a persistent host while the sheet is dismissed
         mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .multiplePageContexts]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         sut.sessionState.beginChatForUTISubmission()
@@ -984,7 +992,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     @MainActor
     func testNotifyPageChangedAutoCollectsWhenImmediateUTISheetIsDismissed() async {
         mockUnifiedToggleInputFeature.isAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .multiplePageContexts]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = true
 
         await sut.presentSheet(from: mockPresentingVC)

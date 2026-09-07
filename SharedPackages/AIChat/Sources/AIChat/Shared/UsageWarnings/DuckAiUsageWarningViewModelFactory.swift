@@ -22,23 +22,20 @@ import Foundation
 /// their own app targets.
 public enum DuckAiUsageWarningViewModelFactory {
 
-    /// `nil` when the feature is inactive: flag off, or no storage bridge on this surface.
+    /// `nil` when the feature is inactive: flag off, or no storage bridge on this surface. No tier
+    /// input — which message a user qualifies for is web's decision now.
     public static func make(isFeatureEnabled: Bool,
                             storage: DuckAiNativeStorageHandling?,
                             dismissalStore: DuckAiUsageWarningDismissalStoring,
-                            tierProvider: @escaping () -> AIChatUserTier,
-                            isInternalUser: @escaping () -> Bool,
                             modelSuggester: DuckAiModelSuggesting = NullDuckAiModelSuggester(),
                             isTrialEligible: @escaping () -> Bool = { false },
                             isFireMode: @escaping () -> Bool = { false },
-                            pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
+                            storagePixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
     ) -> DuckAiUsageWarningViewModel? {
         guard isFeatureEnabled, let storage else { return nil }
 
         return DuckAiUsageWarningViewModel(
-            limitsProvider: DuckAiUsageLimitsProvider(storage: storage, pixelFiring: pixelFiring),
-            tierProvider: tierProvider,
-            isInternalUser: isInternalUser,
+            snapshotProvider: DuckAiUsageSnapshotProvider(storage: storage, pixelFiring: storagePixelFiring),
             dismissalStore: dismissalStore,
             modelSuggester: modelSuggester,
             isTrialEligible: isTrialEligible,

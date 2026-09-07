@@ -24,7 +24,9 @@ import DDGSync
 import Bookmarks
 import AIChat
 import PixelKit
+import Persistence
 import PrivacyConfig
+import SitePermissions
 import UserScript
 import WebKit
 import WKAbstractions
@@ -81,8 +83,6 @@ protocol FireExecutorDelegate: AnyObject {
     func didFinishBurningTabs(fireRequest: FireRequest)
     func willStartBurningData(fireRequest: FireRequest)
     func didFinishBurningData(fireRequest: FireRequest)
-    func willStartBurningAIHistory(fireRequest: FireRequest)
-    func didFinishBurningAIHistory(fireRequest: FireRequest)
     func didFinishBurning(fireRequest: FireRequest)
 }
 
@@ -148,6 +148,7 @@ class FireExecutor: FireExecuting {
     
     // MARK: - Init
     
+    @MainActor
     init(tabManager: TabManaging,
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          websiteDataManager: WebsiteDataManaging,
@@ -218,6 +219,9 @@ class FireExecutor: FireExecuting {
             TextZoomFireWorker(fireproofing: fireproofing,
                                textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                dataClearingWideEventService: dataClearingWideEventService),
+            PermissionsFireWorker(store: SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+                                  fireproofing: fireproofing,
+                                  dataClearingWideEventService: dataClearingWideEventService),
             HistoryFireWorker(historyManager: historyManager,
                               dataClearingWideEventService: dataClearingWideEventService),
             PrivacyStatsFireWorker(privacyStats: privacyStats,
@@ -278,17 +282,25 @@ class FireExecutor: FireExecuting {
         let shouldBurnAIChats = shouldBurnAIHistory(request)
         
         // Pre-fetch domains once for tab scope when tabs or data burning is needed
-        let domains: [String]?
+        let domainResult: Result<[String], Error>?
         if case .tab(let viewModel) = request.scope, shouldBurnTabs || shouldBurnData {
-            domains = await Array(viewModel.visitedDomains())
+            do {
+                domainResult = .success(Array(try await viewModel.visitedDomains()))
+            } catch {
+                domainResult = .failure(error)
+            }
         } else {
-            domains = nil
+            domainResult = nil
         }
+        let domains = domainResult.map { (try? $0.get()) ?? [] }
         
         // Start async tasks
-        async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(request: request, applicationState: applicationState, domains: domains) : ()
+        async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(
+            request: request,
+            applicationState: applicationState,
+            domainResult: domainResult) : ()
         
-        async let aiTask: Void = shouldBurnAIChats ? burnAIHistoryWithDelegateCallbacks(request: request) : ()
+        async let aiTask: Void = shouldBurnAIChats ? burnAIHistory(request: request) : ()
 
         // Execute sync tasks
         cancelOngoingDownloadsIfNeeded(request)
@@ -389,17 +401,10 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnDataWithDelegateCallbacks(request: FireRequest,
                                                applicationState: DataStoreWarmup.ApplicationState,
-                                               domains: [String]?) async {
+                                               domainResult: Result<[String], Error>?) async {
         delegate?.willStartBurningData(fireRequest: request)
-        await burnData(scope: request.scope, applicationState: applicationState, domains: domains)
+        await burnData(scope: request.scope, applicationState: applicationState, domainResult: domainResult)
         delegate?.didFinishBurningData(fireRequest: request)
-    }
-    
-    @MainActor
-    private func burnAIHistoryWithDelegateCallbacks(request: FireRequest) async {
-        delegate?.willStartBurningAIHistory(fireRequest: request)
-        await burnAIHistory(request: request)
-        delegate?.didFinishBurningAIHistory(fireRequest: request)
     }
     
     // MARK: Burn Tabs Helpers
@@ -484,22 +489,22 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnData(scope: FireRequest.Scope,
                           applicationState: DataStoreWarmup.ApplicationState,
-                          domains: [String]?) async {
+                          domainResult: Result<[String], Error>?) async {
         await dataStoreWarmupWorker.setApplicationState(applicationState)
-        await dataStoreWarmupWorker.execute(scope: scope, domains: domains, fireModeCapability: fireModeCapability)
+        await dataStoreWarmupWorker.execute(scope: scope, domainResult: domainResult, fireModeCapability: fireModeCapability)
         
         let measurement = pixelsReporter.beginMeasurement()
 
         await withTaskGroup(of: Void.self) { group in
             for worker in fireWorkers {
                 group.addTask {
-                    await worker.execute(scope: scope, domains: domains, fireModeCapability: self.fireModeCapability)
+                    await worker.execute(scope: scope, domainResult: domainResult, fireModeCapability: self.fireModeCapability)
                 }
             }
         }
         let duration = pixelsReporter.duration(of: measurement)
         pixelsReporter.fireDataClearingCompletionPixel(dataClearingCompletionPixel(for: scope,
-                                                                                  domains: domains,
+                                                                                  domains: domainResult.map { (try? $0.get()) ?? [] },
                                                                                   duration: duration))
     }
 

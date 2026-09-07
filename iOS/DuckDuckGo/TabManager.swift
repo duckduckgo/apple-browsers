@@ -83,7 +83,6 @@ protocol TabControllerCacheDelegate: AnyObject {
 @MainActor
 protocol TabManagerFireModeDelegate: AnyObject {
     func tabManagerDidCloseLastFireTab()
-    func tabManagerDidChangeBrowsingMode(_ mode: BrowsingMode)
 }
 
 protocol TrackerAnimationSuppressing {
@@ -175,6 +174,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let toggleModeStorage: ToggleModeStoring
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    private weak var controllerPendingTerminationRecovery: TabViewController?
 
     // Save debouncing. Fires after `saveDebounceInterval` of quiet, or `saveMaxWait` since
     // the first call in the burst (whichever comes first) so sustained activity cannot push
@@ -314,7 +314,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             return
         }
         _currentBrowsingMode = mode
-        fireModeDelegate?.tabManagerDidChangeBrowsingMode(mode)
         Pixel.fire(pixel: .browsingModeSwitched, withAdditionalParameters: [
             PixelParameters.browsingMode: mode.pixelParamValue,
             PixelParameters.source: source.rawValue
@@ -394,7 +393,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager })
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -524,7 +524,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager })
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -670,6 +671,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     private func removeFromCache(_ controller: TabViewController) {
+        if controllerPendingTerminationRecovery === controller {
+            controllerPendingTerminationRecovery = nil
+        }
         if let index = tabControllerCache.firstIndex(of: controller) {
             tabControllerCache.remove(at: index)
         }
@@ -743,6 +747,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                 }
 
                 current()?.reload()
+            } else {
+                controllerPendingTerminationRecovery = controller
             }
         } else {
             evictFromCache(controller, reason: .webContentProcessTermination)
@@ -1023,6 +1029,10 @@ extension TabManager {
     @MainActor
     @objc
     private func onApplicationBecameActive(_ notification: NSNotification) {
+        if let controllerPendingTerminationRecovery {
+            self.controllerPendingTerminationRecovery = nil
+            invalidateCache(forController: controllerPendingTerminationRecovery, reloadCurrent: true)
+        }
         assertTabPreviewCount()
     }
 

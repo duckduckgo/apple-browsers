@@ -24,10 +24,12 @@ import Foundation
 
 final class PermissionStoreMock: PermissionStore {
     var permissions = [PermissionEntity]()
+    var rawPermissions: [RawPermissionRow]?
     var error: Error?
 
     enum CallHistoryItem: Equatable {
         case load
+        case loadRaw
         case update(id: NSManagedObjectID, decision: PersistedPermissionDecision?)
         case remove(NSManagedObjectID)
         case add(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision)
@@ -42,6 +44,24 @@ final class PermissionStoreMock: PermissionStore {
             throw error
         }
         return permissions
+    }
+
+    func loadRawPermissions() throws -> [RawPermissionRow] {
+        history.append(.loadRaw)
+        if let error {
+            throw error
+        }
+        if let rawPermissions {
+            return rawPermissions
+        }
+        return permissions.map { entity in
+            RawPermissionRow(storageIdentifier: entity.domain + "|" + entity.type.rawValue,
+                             objectID: entity.permission.id,
+                             domain: entity.domain,
+                             permissionType: entity.type.rawValue,
+                             allow: entity.permission.decision == .allow,
+                             isRemoved: entity.permission.decision == .ask)
+        }
     }
 
     func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: (@MainActor (Error?) -> Void)?) {

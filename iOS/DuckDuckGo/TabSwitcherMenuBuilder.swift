@@ -29,6 +29,7 @@ struct TabSwitcherMultiSelectMenuState {
     let selectedContainsWebPages: Bool
     let allContainsWebPages: Bool
     var shouldShowSelectionToggleActions = true
+    var shouldShowCloseSelectedAction = true
 
     var canShowDeselectAll: Bool { shouldShowSelectionToggleActions && selectedCount > 0 && selectedCount == totalCount }
     var canShowSelectAll: Bool { shouldShowSelectionToggleActions && selectedCount < totalCount }
@@ -36,7 +37,7 @@ struct TabSwitcherMultiSelectMenuState {
     var canAddBookmarks: Bool { selectedContainsWebPages }
     var canCloseOther: Bool { selectedCount > 0 && selectedCount < totalCount }
     var canBookmarkAll: Bool { selectedCount == 0 && allContainsWebPages }
-    var canClose: Bool { selectedCount > 0 }
+    var canClose: Bool { shouldShowCloseSelectedAction && selectedCount > 0 }
 
     var canShowSelectionMenu: Bool {
         canShowDeselectAll || canShowSelectAll || canShare || canAddBookmarks ||
@@ -141,12 +142,12 @@ class DefaultTabSwitcherMenuBuilder: TabSwitcherMenuBuilding {
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
+                state.canAddBookmarks ? action(UserText.bookmarkSelectedTabs(withCount: state.selectedCount),
+                                               DesignSystemImages.Glyphs.Size16.bookmarkAll,
+                                               actions.onBookmarkSelected) : nil,
                 state.canShare ? action(UserText.shareLinks(withCount: state.selectedCount),
                                         DesignSystemImages.Glyphs.Size16.shareApple,
                                         actions.onShare) : nil,
-                state.canAddBookmarks ? action(UserText.bookmarkSelectedTabs(withCount: state.selectedCount),
-                                               DesignSystemImages.Glyphs.Size16.bookmarkAdd,
-                                               actions.onBookmarkSelected) : nil,
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [

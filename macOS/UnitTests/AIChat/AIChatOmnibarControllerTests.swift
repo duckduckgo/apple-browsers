@@ -1625,9 +1625,38 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(pixelHandler.events.contains(.createImageSubmittedWithUnsupportedModel))
     }
 
-    func testWhenImageGenerationIsSubmittedWithKnownUnsupportedSelectedModel_ThenErrorPixelFires() async {
+    func testWhenImageGenerationIsSubmittedWithoutAccessibleImageModel_ThenErrorPixelFiresAndLegacyModeIsUsed() async {
         // Given
-        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = false
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "unsupported", supportedTools: [])
+        ]
+        mockPreferences.selectedModelId = "unsupported"
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.toggleImageGenerationMode()
+        controller.updateText("draw a lighthouse")
+
+        // When
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertTrue(pixelHandler.events.contains(.createImageUnavailable))
+        XCTAssertTrue(pixelHandler.events.contains(.createImageSubmittedWithUnsupportedModel))
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case .query(let query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertNil(query.modelId)
+        XCTAssertNil(query.toolChoice)
+        XCTAssertEqual(query.mode, AIChatNativePrompt.imageGenerationMode)
+    }
+
+    func testWhenImageGenerationSwitchesToFallbackBeforeSubmission_ThenErrorPixelDoesNotFire() async {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.updatedCreateImage.rawValue] = true
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "unsupported", supportedTools: []),
             makeRemoteModel(id: "fallback", supportedTools: ["GenerateImage"])
@@ -1640,9 +1669,18 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         // When
         controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         // Then
-        XCTAssertTrue(pixelHandler.events.contains(.createImageSubmittedWithUnsupportedModel))
+        XCTAssertFalse(pixelHandler.events.contains(.createImageSubmittedWithUnsupportedModel))
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case .query(let query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.modelId, "fallback")
+        XCTAssertEqual(query.toolChoice, [AIChatRAGTool.imageGeneration.rawValue])
+        XCTAssertNil(query.mode)
     }
 
     // MARK: - Reasoning Effort Tests

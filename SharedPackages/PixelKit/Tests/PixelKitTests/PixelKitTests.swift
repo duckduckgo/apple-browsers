@@ -17,8 +17,7 @@
 //
 
 import XCTest
-@testable import PixelKit
-@_spi(Testing) import PixelKit
+@_spi(Testing) @testable import PixelKit
 import os.log
 
 final class PixelKitTests: XCTestCase {

@@ -271,17 +271,19 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     @MainActor
+    var imageGenerationModelId: String? {
+        guard isUpdatedCreateImageEnabled else { return nil }
+        return imageGenerationModel(in: availableModelsProvider())?.id
+    }
+
+    @MainActor
     func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
         guard isUpdatedCreateImageEnabled else { return nil }
 
         let models = availableModelsProvider()
         let previousModel = models.first(where: { $0.id == aiChatPreferencesPersistor.selectedModelId })
-        guard let previousModel,
-              !previousModel.supportsTool(.imageGeneration) else {
-            return nil
-        }
-
-        guard let imageModel = AIChatModel.preferredImageGenerationModel(in: models) else {
+        guard let imageModel = imageGenerationModel(in: models),
+              previousModel?.id != imageModel.id else {
             return nil
         }
 
@@ -289,21 +291,30 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         aiChatPreferencesPersistor.selectedModelShortName = imageModel.shortName
         clearReasoningEffortIfUnsupported(by: imageModel)
 
-        let secondaryText = previousModel.provider == .oss
-            ? UserText.aiChatCreateImageModelSwitchPrivacySubtitle(previousModel.shortName)
-            : UserText.aiChatCreateImageModelSwitchSubtitle(previousModel.shortName)
+        guard let previousModel else { return nil }
+        let notice = AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: imageModel)
         return NewTabPageDataModel.OmnibarCreateImageModelSwitch(
-            message: UserText.aiChatCreateImageModelSwitchTitle(imageModel.shortName),
-            secondaryText: secondaryText
+            message: notice.localizedTitle,
+            secondaryText: notice.localizedSubtitle
         )
     }
 
+    private func imageGenerationModel(in models: [AIChatModel]) -> AIChatModel? {
+        if let selectedModel = models.first(where: { $0.id == aiChatPreferencesPersistor.selectedModelId }),
+           selectedModel.entityHasAccess,
+           selectedModel.supportsTool(.imageGeneration) {
+            return selectedModel
+        }
+        return AIChatModel.preferredImageGenerationModel(in: models)
+    }
+
     private func clearReasoningEffortIfUnsupported(by model: AIChatModel) {
-        guard let rawValue = aiChatPreferencesPersistor.selectedReasoningEffort,
-              let effort = AIChatReasoningEffort(rawValue: rawValue),
-              !model.isAccessible(effort) else {
+        guard let rawValue = aiChatPreferencesPersistor.selectedReasoningEffort else { return }
+        guard let effort = AIChatReasoningEffort(rawValue: rawValue) else {
+            aiChatPreferencesPersistor.selectedReasoningEffort = nil
             return
         }
+        guard !model.supportedReasoningEffort.contains(effort) else { return }
         aiChatPreferencesPersistor.selectedReasoningEffort = nil
     }
 

@@ -306,14 +306,21 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let action: NewTabPageDataModel.SubmitChatAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        let imageGenerationModelId = imageGenerationModelIdForSubmission(action: action)
+        let isUpdatedImageGenerationSubmission = configProvider.isUpdatedCreateImageEnabled && action.mode == AIChatNativePrompt.imageGenerationMode
+        let imageGenerationModelId = isUpdatedImageGenerationSubmission ? configProvider.imageGenerationModelId : nil
+        let modelId = isUpdatedImageGenerationSubmission ? imageGenerationModelId : modelIdForSubmission(action: action)
+        let toolChoice: [String]? = if isUpdatedImageGenerationSubmission {
+            imageGenerationModelId == nil ? nil : [AIChatRAGTool.imageGeneration.rawValue]
+        } else {
+            action.toolChoice
+        }
         await actionHandler.submitChat(
             action.chat,
             target: action.target,
-            modelId: imageGenerationModelId ?? modelIdForSubmission(action: action),
+            modelId: modelId,
             images: action.images,
             mode: imageGenerationModelId == nil ? action.mode : nil,
-            toolChoice: imageGenerationModelId == nil ? action.toolChoice : [AIChatRAGTool.imageGeneration.rawValue],
+            toolChoice: toolChoice,
             reasoningEffort: reasoningEffortForSubmission(action: action),
             pageContexts: action.pageContext,
             files: action.files
@@ -336,19 +343,6 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private func modelIdForSubmission(action: NewTabPageDataModel.SubmitChatAction) -> String? {
         guard let modelId = action.modelId else { return nil }
         return matchedItem(forModelId: modelId)?.isAvailable == false ? nil : modelId
-    }
-
-    @MainActor
-    private func imageGenerationModelIdForSubmission(action: NewTabPageDataModel.SubmitChatAction) -> String? {
-        guard configProvider.isUpdatedCreateImageEnabled,
-              action.mode == AIChatNativePrompt.imageGenerationMode,
-              let selectedModelId = configProvider.selectedModelId,
-              let selectedModel = matchedItem(forModelId: selectedModelId),
-              selectedModel.isAvailable,
-              selectedModel.supportedTools.contains(AIChatRAGTool.imageGeneration.rawValue) else {
-            return nil
-        }
-        return selectedModelId
     }
 
     @MainActor

@@ -32,7 +32,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     var savedPermissions = [String: [PermissionType: PersistedPermissionDecision]]()
-    var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType)] = []
+    var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType, lastModified: Date)] = []
 
     /// Stands in for `PermissionDecisionOverriding`: when it returns a decision, that decision is the
     /// effective one and `savedPermissions` is left alone. Nil (the default) means no override.
@@ -74,8 +74,11 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         savedPermissions[domain.droppingWwwPrefix()]?[permissionType]
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
-        setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType))
+    func setPermission(_ decision: PersistedPermissionDecision,
+                       forDomain domain: String,
+                       permissionType: PermissionType,
+                       lastModified: Date = Date()) {
+        setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType, lastModified: lastModified))
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = decision
     }
 

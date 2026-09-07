@@ -23,6 +23,10 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class PermissionManagerTests: XCTestCase {
+
+    /// Fixed instant handed to `setPermission`, so assertions compare exactly rather than by range.
+    private static let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
+
     var store: PermissionStoreMock!
     lazy var manager: PermissionManager! = {
         PermissionManager(store: store)
@@ -203,29 +207,32 @@ final class PermissionManagerTests: XCTestCase {
         }
     }
 
-    func testWhenPermissionIsFirstStoredThenLastModifiedIsStamped() {
+    func testWhenPermissionIsFirstStoredThenSuppliedLastModifiedIsPersisted() {
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .camera, lastModified: Self.referenceDate)
+
+        XCTAssertEqual(store.addedLastModified, [Self.referenceDate])
+    }
+
+    func testWhenExistingPermissionIsUpdatedThenSuppliedLastModifiedIsPersisted() {
+        store.permissions = [.entity1]
+        XCTAssertNil(PermissionEntity.entity1.permission.lastModified, "Fixture starts without a timestamp")
+
+        manager.setPermission(.deny,
+                              forDomain: PermissionEntity.entity1.domain,
+                              permissionType: PermissionEntity.entity1.type,
+                              lastModified: Self.referenceDate)
+
+        // The store must be handed the instant the caller supplied, not one read from a clock inside.
+        XCTAssertEqual(store.lastModifiedByObjectId[PermissionEntity.entity1.permission.id] ?? nil, Self.referenceDate)
+    }
+
+    func testWhenLastModifiedIsNotSuppliedThenTheCurrentTimeIsStamped() {
         let before = Date()
 
         manager.setPermission(.allow, forDomain: "example.com", permissionType: .camera)
 
-        XCTAssertEqual(store.addedLastModified.count, 1)
         guard let stamped = store.addedLastModified.first else {
             return XCTFail("Expected add to receive a lastModified")
-        }
-        XCTAssertGreaterThanOrEqual(stamped, before)
-        XCTAssertLessThanOrEqual(stamped, Date())
-    }
-
-    func testWhenExistingPermissionIsUpdatedThenStoreAndMemoryReceiveTheSameLastModified() {
-        store.permissions = [.entity1]
-        XCTAssertNil(PermissionEntity.entity1.permission.lastModified, "Fixture starts without a timestamp")
-        let before = Date()
-
-        manager.setPermission(.deny, forDomain: PermissionEntity.entity1.domain, permissionType: PermissionEntity.entity1.type)
-
-        // The store must be handed the same instant the manager keeps in memory, not a second `Date()`.
-        guard let written = store.lastModifiedByObjectId[PermissionEntity.entity1.permission.id], let stamped = written else {
-            return XCTFail("Expected update to receive a lastModified")
         }
         XCTAssertGreaterThanOrEqual(stamped, before)
         XCTAssertLessThanOrEqual(stamped, Date())

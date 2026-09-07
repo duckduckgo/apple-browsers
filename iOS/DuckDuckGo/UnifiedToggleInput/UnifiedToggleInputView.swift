@@ -239,6 +239,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
     }
 
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet { toolsToolbar.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit }
+    }
+
     var isGenerating: Bool = false {
         didSet { toolsToolbar.isGenerating = isGenerating }
     }
@@ -1145,7 +1149,7 @@ final class UnifiedToggleInputView: UIView {
             aiTabCollapsedMenuButton.isHidden = true
         }
         guard layout != currentLayout else {
-            updateExpandedBorderVisibility(expanded && layout.showsToggle)
+            updateExpandedBorderVisibility(expanded && (layout.showsToggle || layout.showsToolbar))
             return
         }
         currentLayout = layout
@@ -1213,7 +1217,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.maskedCorners = Constants.allCorners
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
-        updateExpandedBorderVisibility(expanded && showsToggle)
+        updateExpandedBorderVisibility(expanded && (showsToggle || showToolbar))
         let changes = {
             self.setCardFlanked(layout == .flanked)
             // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything

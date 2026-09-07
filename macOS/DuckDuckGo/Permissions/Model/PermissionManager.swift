@@ -57,8 +57,8 @@ protocol PermissionManagerProtocol: AnyObject {
 }
 
 extension PermissionManagerProtocol {
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType, lastModified: Date = Date()) {
-        setPermission(decision, forDomain: domain, permissionType: permissionType, lastModified: lastModified)
+    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+        setPermission(decision, forDomain: domain, permissionType: permissionType, lastModified: Date())
     }
 }
 
@@ -235,7 +235,8 @@ extension PermissionManager: PermissionManagerDebugging {
                                         permissionType: row.permissionType,
                                         allow: row.allow,
                                         isRemoved: row.isRemoved,
-                                        effectiveDecision: effectiveDecision)
+                                        effectiveDecision: effectiveDecision,
+                                        lastModified: row.lastModified)
         }
     }
 

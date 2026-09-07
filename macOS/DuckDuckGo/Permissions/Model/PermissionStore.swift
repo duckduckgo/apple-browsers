@@ -222,7 +222,8 @@ extension PermissionStore {
                              domain: entity.domain,
                              permissionType: entity.type.rawValue,
                              allow: entity.permission.decision == .allow,
-                             isRemoved: entity.permission.decision == .ask)
+                             isRemoved: entity.permission.decision == .ask,
+                             lastModified: entity.permission.lastModified)
         }
     }
 }
@@ -248,7 +249,8 @@ extension LocalPermissionStore {
                                             domain: domain,
                                             permissionType: permissionType,
                                             allow: managedObject.allow,
-                                            isRemoved: managedObject.isRemoved)
+                                            isRemoved: managedObject.isRemoved,
+                                            lastModified: managedObject.lastModified)
                 }
             } catch {
                 coreDataError = error

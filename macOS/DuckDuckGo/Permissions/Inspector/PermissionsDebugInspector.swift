@@ -148,6 +148,8 @@ private extension PersistedPermissionDecision {
 
 /// JSON row shape consumed by the inspector page's script. Field names match the
 /// `PermissionManagedObject` columns, except `effective`/`isFireproof`, which are runtime state.
+/// `lastModified` is an ISO-8601 string rather than a date, so the page can sort the raw values
+/// lexicographically and still format them for display.
 private struct Row: Encodable {
     let key: String
     let domainEncrypted: String
@@ -158,6 +160,14 @@ private struct Row: Encodable {
     let effectiveDecision: String
     let isOverridden: Bool
     let isFireproof: Bool
+    let lastModified: String?
+
+    /// Fractional seconds included so two decisions stamped in the same second still order correctly.
+    private static let dateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
 
     init(entry: PermissionDebugEntry, isFireproof: Bool) {
         key = entry.storageIdentifier
@@ -171,6 +181,7 @@ private struct Row: Encodable {
             : effectiveDecision
         isOverridden = entry.isOverridden
         self.isFireproof = isFireproof
+        lastModified = entry.lastModified.map(Self.dateFormatter.string(from:))
     }
 }
 

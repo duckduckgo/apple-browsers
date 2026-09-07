@@ -305,7 +305,8 @@ final class PermissionManagerTests: XCTestCase {
                              domain: "www.example.com",
                              permissionType: PermissionType.camera.rawValue,
                              allow: true,
-                             isRemoved: false)
+                             isRemoved: false,
+                             lastModified: Self.referenceDate)
         ]
 
         let entry = try XCTUnwrap(manager.allPermissionsDebugEntries().first)
@@ -314,6 +315,25 @@ final class PermissionManagerTests: XCTestCase {
         XCTAssertEqual(entry.storageIdentifier, "stored-row")
         XCTAssertEqual(entry.effectiveDecision, .allow)
         XCTAssertFalse(entry.isOverridden)
+        XCTAssertEqual(entry.lastModified, Self.referenceDate)
+    }
+
+    func testDebugEntriesReportNoTimestampForRowsSavedBeforeTheColumnExisted() throws {
+        let objectID = NSManagedObjectID()
+        store.rawPermissions = [
+            RawPermissionRow(storageIdentifier: "legacy-row",
+                             objectID: objectID,
+                             domain: "example.com",
+                             permissionType: PermissionType.camera.rawValue,
+                             allow: true,
+                             isRemoved: false,
+                             lastModified: nil)
+        ]
+
+        let entry = try XCTUnwrap(manager.allPermissionsDebugEntries().first)
+
+        // The inspector renders this as an em dash rather than dating the row to now.
+        XCTAssertNil(entry.lastModified)
     }
 
     func testDebugRemovalDeletesRawRowWithUnknownPermissionType() {
@@ -324,7 +344,8 @@ final class PermissionManagerTests: XCTestCase {
                              domain: "example.com",
                              permissionType: "future-permission-type",
                              allow: false,
-                             isRemoved: true)
+                             isRemoved: true,
+                             lastModified: nil)
         ]
 
         let removedCount = manager.removePermissionsDebugEntries(withIdentifiers: ["unknown-row"])
@@ -340,7 +361,8 @@ final class PermissionManagerTests: XCTestCase {
                              domain: "example.com",
                              permissionType: "future-permission-type",
                              allow: false,
-                             isRemoved: true)
+                             isRemoved: true,
+                             lastModified: nil)
         ]
 
         let removedCount = manager.removeAllPermissions()

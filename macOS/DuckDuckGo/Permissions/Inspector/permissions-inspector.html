@@ -29,6 +29,9 @@
                     td.domain a { color: LinkText; text-decoration: none; }
                     td.domain a:hover { text-decoration: underline; }
                     td.type, td.bool { white-space: nowrap; font-family: ui-monospace, monospace; font-size: 11px; }
+                    /* Tabular figures so the timestamps line up column-wise. */
+                    td.date { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 11px; }
+                    td.date .missing { color: GrayText; }
                     td.effective { white-space: nowrap; }
                     /* Columns that aren't stored columns. */
                     th.derived, td.derived { border-left: 1px solid rgba(128,128,128,0.4); }
@@ -73,6 +76,7 @@
                 <th class="sortable" data-sort="type">permissionType</th>
                 <th class="sortable" data-sort="allow">allow</th>
                 <th class="sortable" data-sort="isRemoved">isRemoved</th>
+                <th class="sortable" data-sort="lastModified" title="When the user last explicitly set this decision. Empty for rows saved before the column existed. Rows with no timestamp always sort last.">lastModified</th>
                 <th class="sortable derived" data-sort="effective" title="What the app acts on; differs from the stored columns only while a PermissionDecisionOverriding is active. Not a stored column.">effective</th>
                 <th class="sortable derived" data-sort="fireproof" title="Whether the domain is fireproof, so its permissions survive a burn. Not a stored column.">fireproof</th>
             </tr></thead>

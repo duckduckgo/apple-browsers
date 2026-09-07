@@ -32,6 +32,8 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     var savedPermissions = [String: [PermissionType: PersistedPermissionDecision]]()
+    /// Mirrors the `lastModified` column so debug entries report what was stamped.
+    var savedLastModified = [String: [PermissionType: Date]]()
     var setPermissionCalls: [(decision: PersistedPermissionDecision, domain: String, permissionType: PermissionType, lastModified: Date)] = []
 
     /// Stands in for `PermissionDecisionOverriding`: when it returns a decision, that decision is the
@@ -80,10 +82,12 @@ final class PermissionManagerMock: PermissionManagerProtocol {
                        lastModified: Date = Date()) {
         setPermissionCalls.append((decision: decision, domain: domain, permissionType: permissionType, lastModified: lastModified))
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = decision
+        savedLastModified[domain.droppingWwwPrefix(), default: [:]][permissionType] = lastModified
     }
 
     func removePermission(forDomain domain: String, permissionType: PermissionType) {
         savedPermissions[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
+        savedLastModified[domain.droppingWwwPrefix(), default: [:]][permissionType] = nil
     }
 
     var burnPermissionsCalled = false
@@ -134,7 +138,8 @@ extension PermissionManagerMock: PermissionManagerDebugging {
                                      permissionType: type.rawValue,
                                      allow: decision == .allow,
                                      isRemoved: decision == .ask,
-                                     effectiveDecision: permission(forDomain: domain, permissionType: type))
+                                     effectiveDecision: permission(forDomain: domain, permissionType: type),
+                                     lastModified: savedLastModified[domain]?[type])
             }
         }
     }

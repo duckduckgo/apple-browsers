@@ -20,12 +20,12 @@
 import Foundation
 import PixelKit
 
-/// Counts how often the app asks iOS for the App Store rating dialog. There are two requests per
-/// install, so each of these fires at most once.
+/// Counts how often the app asks iOS for the App Store rating dialog. Two requests per install, so
+/// this fires at most twice, and the `request` parameter says which one it was.
 ///
-/// iOS decides whether it actually draws the dialog, using a yearly quota and the user's
-/// Settings > App Store > In-App Ratings & Reviews toggle, and tells us nothing either way. These
-/// therefore count requests, not impressions.
+/// iOS decides whether it draws the dialog, using a yearly quota and the user's
+/// Settings > App Store > In-App Ratings & Reviews toggle, and tells us nothing either way, so this
+/// counts requests rather than impressions.
 enum AppRatingPromptPixel: PixelKit.Event, Equatable {
     /// The first of the two per-install requests, due after 3 unique usage days.
     case firstRequest

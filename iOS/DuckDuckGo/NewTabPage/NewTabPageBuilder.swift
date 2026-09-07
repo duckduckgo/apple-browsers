@@ -25,8 +25,7 @@ import Onboarding
 import RemoteMessaging
 import Subscription
 
-/// Builds the New Tab Page shown in a browser tab, holding the dependencies that outlive any single
-/// page so that the choice of implementation is made in one place.
+/// Builds the New Tab Page shown in a browser tab.
 struct NewTabPageBuilder {
 
     let favoritesInteractionModel: FavoritesListInteracting
@@ -45,8 +44,7 @@ struct NewTabPageBuilder {
     let internalUserCommands: URLBasedDebugCommands
     let floatingUIManager: FloatingUIManaging
 
-    /// `daxDialogFactory` is supplied per page because it holds a reference back to the presenting
-    /// view controller.
+    /// `daxDialogFactory` is supplied per page rather than stored.
     func makeNewTabPage(tab: Tab,
                         openedAfterIdle: Bool,
                         daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
@@ -68,7 +66,7 @@ struct NewTabPageBuilder {
                                  faviconsCache: faviconsCache,
                                  subscriptionManager: subscriptionManager,
                                  internalUserCommands: internalUserCommands,
-                                 // Read per page: the user can change this setting while the app runs.
+                                 // Read per page: the setting can change while the app runs.
                                  narrowLayoutInLandscape: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                  floatingUIManager: floatingUIManager)
     }

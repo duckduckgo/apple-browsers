@@ -47,7 +47,7 @@ extension NSError {
         var parameters = [String: String]()
 
         if let resultCode = userInfo[SQLiteUserInfoKey.secureStorageResultCode] as? NSNumber
-        /* ?? userInfo[SQLiteUserInfoKey.coreDataResultCode] as? NSNumber */ {
+            ?? userInfo[SQLiteUserInfoKey.coreDataResultCode] as? NSNumber {
             parameters[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(resultCode.intValue)"
         }
 
@@ -81,6 +81,6 @@ extension NSError {
         static let secureStorageResultCode = "SQLiteResultCode"
         static let secureStorageExtendedResultCode = "SQLiteExtendedResultCode"
         /// Written by Core Data, which reports no extended code.
-        // static let coreDataResultCode = "NSSQLiteErrorDomain" // Disabled for now
+        static let coreDataResultCode = "NSSQLiteErrorDomain" // Disabled for now
     }
 }

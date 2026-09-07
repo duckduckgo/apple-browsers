@@ -1105,23 +1105,23 @@ extension UnifiedInputContentContainerViewController {
 /// switch-tab exactly like the standalone NTP.
 extension UnifiedInputContentContainerViewController: NewTabPageControllerDelegate {
 
-    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
     }
 
-    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidEditFavorite(favorite)
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+    func newTabPageDidRequestSwitchToTab(_ controller: any NewTabPage, tab: Tab) {
         delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
     }
 
-    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+    func newTabPageDidRequestTabSwitcher(_ controller: any NewTabPage) {
         delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
     }
 
-    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {}
+    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage) {}
 
     func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {}
 }

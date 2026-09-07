@@ -6469,15 +6469,15 @@ extension MainViewController: EscapeHatchActionRouter {
 
 extension MainViewController: NewTabPageControllerDelegate {
 
-    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         self.onSelectFavorite(favorite)
     }
 
-    func newTabPageDidScroll(_ controller: NewTabPageViewController) {
+    func newTabPageDidScroll(_ controller: any NewTabPage) {
         recordNewTabPageSessionAction { $0.scrollView() }
     }
 
-    func newTabPage(_ controller: NewTabPageViewController, didInteractWithMessage interaction: NewTabPageMessageInteraction) {
+    func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) {
         recordNewTabPageSessionAction { instrumentation in
             switch interaction {
             case .callToAction: instrumentation.clickMessageCta()
@@ -6486,15 +6486,15 @@ extension MainViewController: NewTabPageControllerDelegate {
         }
     }
 
-    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         segueToEditBookmark(favorite)
     }
 
-    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {
+    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage) {
         faviconsFetcherOnboarding.presentOnboardingIfNeeded(from: self)
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+    func newTabPageDidRequestSwitchToTab(_ controller: any NewTabPage, tab: Tab) {
         let targetTabsModel = tabManager.tabsModel(for: tab.mode)
         guard targetTabsModel.tabExists(tab: tab) else {
             clearEscapeHatch()
@@ -6512,12 +6512,12 @@ extension MainViewController: NewTabPageControllerDelegate {
         clearEscapeHatch()
     }
 
-    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+    func newTabPageDidRequestTabSwitcher(_ controller: any NewTabPage) {
         ntpAfterIdleInstrumentation.escapeHatchTabSwitcherTapped()
         requestTabSwitcher()
     }
 
-    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: NewTabPageViewController) {
+    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage) {
         markSearchContextualOnboardingAsSeen()
     }
 

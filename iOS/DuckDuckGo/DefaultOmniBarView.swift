@@ -1327,6 +1327,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
+        // leadingButtonsContainer/trailingButtonsContainer are stackView siblings of searchAreaContainerView,
+        // not its subviews, so the loop above never reaches them. Their icons need the same override —
+        // otherwise in fire mode they keep resolving against the ambient (light) trait while their glass/fill
+        // background is forced dark via fireModeBackground/fireModeCardBackground, losing contrast.
+        leadingButtonsContainer.overrideUserInterfaceStyle = style
+        trailingButtonsContainer.overrideUserInterfaceStyle = style
         if isBottomFloatingField, !isFloatingMinimalChromeBar, !fireMode, let embeddedGlassInterfaceStyle {
             glassEffect.overrideUserInterfaceStyle = embeddedGlassInterfaceStyle
         }

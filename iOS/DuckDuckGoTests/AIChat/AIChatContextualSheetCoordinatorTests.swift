@@ -192,6 +192,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var sut: AIChatContextualSheetCoordinator!
     private var mockDelegate: MockDelegate!
     private var mockPresentingVC: MockPresentingViewController!
+    private let savedChatID = "760d681e-9173-4abd-a120-d660783787e9"
+    private lazy var savedChatURL = URL(string: "https://duckduckgo.com/?ia=chat&chatID=\(savedChatID)")!
     private var mockSettings: MockAIChatSettingsProvider!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
@@ -1422,6 +1424,95 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         }
     }
 
+    // MARK: - Restoring a chat that may have been deleted
+
+    @MainActor
+    private func makeCoordinator(storage: DuckAiNativeStorageHandling?) -> AIChatContextualSheetCoordinator {
+        AIChatContextualSheetCoordinator(
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            aiChatSettings: mockSettings,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            pageContextHandler: mockPageContextHandler,
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
+            ),
+            duckAiNativeStorageHandler: storage
+        )
+    }
+
+    @MainActor
+    private func restoredURL(storage: DuckAiNativeStorageHandling?) async -> URL? {
+        sut = makeCoordinator(storage: storage)
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+        return sut.sessionState.contextualChatURL
+    }
+
+    @MainActor
+    func testWhenTheSavedChatIsStillInTheStoreThenItIsRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        let storage = StubDuckAiNativeStorage()
+        storage.chats[savedChatID] = DuckAiChatRecord(chatId: savedChatID, data: Data())
+
+        let restored = await restoredURL(storage: storage)
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheSavedChatWasDeletedThenItIsNotRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+
+        let restored = await restoredURL(storage: StubDuckAiNativeStorage())
+
+        XCTAssertNil(restored)
+    }
+
+    @MainActor
+    func testWhenTheStoreCannotBeReadThenTheSavedChatIsStillRestored() async {
+        // The regression: an unanswerable store must not cost the user their chat.
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        let storage = StubDuckAiNativeStorage()
+        storage.readError = StubDuckAiNativeStorage.ReadFailure()
+
+        let restored = await restoredURL(storage: storage)
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenTheStoreIsNotMigratedThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        let storage = StubDuckAiNativeStorage()
+        storage.migrationDone = false
+
+        let restored = await restoredURL(storage: storage)
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenNativeDataAccessIsOffThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        let restored = await restoredURL(storage: StubDuckAiNativeStorage())
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
+    @MainActor
+    func testWhenThereIsNoStoreThenTheSavedChatIsStillRestored() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+
+        let restored = await restoredURL(storage: nil)
+
+        XCTAssertEqual(restored, savedChatURL)
+    }
+
     private func makeTestContext(title: String = "Test Page", url: String = "https://example.com") -> AIChatPageContext {
         let contextData = AIChatPageContextData(
             title: title,
@@ -1446,4 +1537,41 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTFail("Expected attached chip state", file: file, line: line)
     }
 
+}
+
+/// Only `getChat` and `isMigrationDone` carry behaviour; the rest satisfies the protocol.
+final class StubDuckAiNativeStorage: DuckAiNativeStorageHandling {
+
+    var chats: [String: DuckAiChatRecord] = [:]
+    var migrationDone = true
+    var readError: Error?
+
+    struct ReadFailure: Error {}
+
+    func getChat(chatId: String) throws -> DuckAiChatRecord? {
+        if let readError { throw readError }
+        return chats[chatId]
+    }
+
+    func isMigrationDone() throws -> Bool { migrationDone }
+
+    func putEntry(key: String, value: Any) throws {}
+    func getEntry(key: String) throws -> Any? { nil }
+    func getAllEntries() throws -> [String: Any] { [:] }
+    func deleteEntry(key: String) throws {}
+    func deleteAllEntries() throws {}
+    func replaceAllEntries(_ entries: [String: Any]) throws {}
+    func putChat(chatId: String, data: Data) throws {}
+    func putChats(_ chats: [DuckAiChatRecord]) throws {}
+    func getAllChats() throws -> [DuckAiChatRecord] { [] }
+    func deleteChat(chatId: String) throws {}
+    func deleteAllChats() throws {}
+    func putFile(uuid: String, chatId: String, data: Data) throws {}
+    func getFile(uuid: String) throws -> DuckAiFileContent? { nil }
+    func listFiles() throws -> [DuckAiFileMetadata] { [] }
+    func deleteFile(uuid: String) throws {}
+    func deleteFiles(chatId: String) throws {}
+    func deleteAllFiles() throws {}
+    func isMigrationDone(key: String) throws -> Bool { migrationDone }
+    func markMigrationDone(key: String) throws {}
 }

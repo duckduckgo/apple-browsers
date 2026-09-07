@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 
 /// `NSButton` that paints a pointing-hand cursor when the mouse is over it.
 ///
@@ -32,6 +33,54 @@ import AppKit
 final class PointingHandButton: NSButton {
 
     private var trackingArea: NSTrackingArea?
+
+    /// Opt-in: the attachment cards draw their own affordance, so only the callers that want the
+    /// omnibar's voice-button treatment ask for it. Sets its own corner radius, since the fill is
+    /// the only thing that needs one.
+    var hoverFillCornerRadius: CGFloat? {
+        didSet {
+            wantsLayer = true
+            layer?.cornerRadius = hoverFillCornerRadius ?? 0
+            updateHoverFill()
+        }
+    }
+
+    private var isMouseOver = false {
+        didSet { updateHoverFill() }
+    }
+
+    private var isMouseDown = false {
+        didSet { updateHoverFill() }
+    }
+
+    /// The same three steps the voice button animates through, minus its resting fill — a bare
+    /// glyph until pointed at.
+    private func updateHoverFill() {
+        guard hoverFillCornerRadius != nil else { return }
+
+        let fill: DesignSystemColor? = if isMouseDown {
+            .controlsFillTertiary
+        } else if isMouseOver {
+            .controlsFillSecondary
+        } else {
+            nil
+        }
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer?.backgroundColor = fill.map { NSColor(designSystemColor: $0).cgColor } ?? NSColor.clear.cgColor
+        }
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateHoverFill()
+    }
+
+    /// `super` runs its own tracking loop until mouse-up, so the pressed state brackets it.
+    override func mouseDown(with event: NSEvent) {
+        isMouseDown = true
+        super.mouseDown(with: event)
+        isMouseDown = false
+    }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -51,6 +100,7 @@ final class PointingHandButton: NSButton {
     }
 
     override func mouseEntered(with event: NSEvent) {
+        isMouseOver = true
         NSCursor.pointingHand.set()
     }
 
@@ -59,6 +109,7 @@ final class PointingHandButton: NSButton {
     }
 
     override func mouseExited(with event: NSEvent) {
+        isMouseOver = false
         // Hand control back to the surrounding card view's tracking area, which sets `.arrow`.
         // Without this, the pointing-hand cursor would linger briefly until the next move.
         NSCursor.arrow.set()

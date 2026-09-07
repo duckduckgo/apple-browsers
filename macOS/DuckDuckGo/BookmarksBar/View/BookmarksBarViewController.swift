@@ -79,9 +79,6 @@ final class BookmarksBarViewController: NSViewController {
         return indicatorFrameInCollectionView.minX - 3
     }
 
-    @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)
-    var bookmarksBarPromptShown: Bool
-
     static func create(
         tabCollectionViewModel: TabCollectionViewModel,
         bookmarkManager: BookmarkManager,
@@ -207,9 +204,21 @@ final class BookmarksBarViewController: NSViewController {
         frameDidChangeNotification()
     }
 
-    func showBookmarksBarPrompt() {
-        BookmarksBarPromptPopover().show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
-        self.bookmarksBarPromptShown = true
+    private var bookmarksBarPrompt: BookmarksBarPromptPopover?
+
+    func showBookmarksBarPrompt(onDismiss: @escaping (PromoResult) -> Void) {
+        let popover = BookmarksBarPromptPopover()
+        popover.viewController.rootView.model.onDismiss = { [weak self] result in
+            self?.bookmarksBarPrompt = nil
+            onDismiss(result)
+        }
+        bookmarksBarPrompt = popover
+        popover.show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
+    }
+
+    func retractBookmarksBarPromptIfNeeded() {
+        bookmarksBarPrompt?.retract()
+        bookmarksBarPrompt = nil
     }
 
     func userInteraction(prevented: Bool) {
@@ -657,7 +666,14 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
 
     private func dispatchBookmarksBarHover() {
         guard let mainWindow = view.window else { return }
-        let windowPoint = mainWindow.convertPoint(fromScreen: NSEvent.mouseLocation)
+        let mouseLocation = NSEvent.mouseLocation
+        // In a short window a folder menu can cover the Bookmarks Bar. The local
+        // mouse-moved monitor also receives events sent to the menu window, so ignore
+        // the hover when a menu is displayed above the point: without this the
+        // Bookmarks Bar selection changes and the menu closes while the user moves
+        // the cursor over the menu items.
+        guard !isBookmarksBarMenuDisplayed(at: mouseLocation) else { return }
+        let windowPoint = mainWindow.convertPoint(fromScreen: mouseLocation)
         let cvPoint = bookmarksBarCollectionView.convert(windowPoint, from: nil)
         if bookmarksBarCollectionView.bounds.contains(cvPoint),
            let indexPath = bookmarksBarCollectionView.indexPathForItem(at: cvPoint),
@@ -671,6 +687,12 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
                 mouseDidHover(over: clippedItemsIndicator as Any)
             }
         }
+    }
+
+    /// Is a bookmarks menu window the frontmost window at the given screen point?
+    private func isBookmarksBarMenuDisplayed(at screenPoint: NSPoint) -> Bool {
+        let windowNumber = NSWindow.windowNumber(at: screenPoint, belowWindowWithWindowNumber: 0)
+        return NSApp.window(withWindowNumber: windowNumber) is BookmarksBarMenuWindow
     }
 
     func openNextBookmarksMenu(_ sender: any BookmarksBarMenuPopoverPresenting) {
@@ -747,11 +769,5 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
             return
         }
     }
-
-}
-
-extension Notification.Name {
-
-    static let bookmarkPromptShouldShow = Notification.Name(rawValue: "bookmarkPromptShouldShow")
 
 }

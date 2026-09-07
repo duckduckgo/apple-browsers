@@ -6,6 +6,7 @@ import os
 import signal
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -31,7 +32,7 @@ def copy_output(source: BinaryIO) -> None:
 def process_group_exists(process_group: int) -> bool:
     try:
         os.killpg(process_group, 0)
-    except ProcessLookupError:
+    except (ProcessLookupError, PermissionError):
         return False
     return True
 
@@ -42,7 +43,7 @@ def terminate_process_group(process: subprocess.Popen[bytes], grace: int) -> str
         return "already_exited"
     try:
         os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
+    except (ProcessLookupError, PermissionError):
         return "already_exited"
     deadline = time.monotonic() + grace
     while time.monotonic() < deadline:
@@ -52,7 +53,7 @@ def terminate_process_group(process: subprocess.Popen[bytes], grace: int) -> str
         time.sleep(0.05)
     try:
         os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
+    except (ProcessLookupError, PermissionError):
         return "terminated"
     try:
         process.wait(timeout=grace)
@@ -62,10 +63,19 @@ def terminate_process_group(process: subprocess.Popen[bytes], grace: int) -> str
 
 
 def write_status(path: Path, state: str, return_code: int, cleanup: str) -> None:
-    path.write_text(
-        f"{state}\t{return_code}\t{cleanup}\n",
-        encoding="utf-8",
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=path.parent,
+        prefix=f".{path.name}.",
     )
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+            output.write(f"{state}\t{return_code}\t{cleanup}\n")
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
 
 
 def main() -> int:

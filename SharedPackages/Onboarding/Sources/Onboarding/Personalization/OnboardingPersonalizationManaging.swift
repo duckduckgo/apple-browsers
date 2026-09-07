@@ -91,13 +91,17 @@ public protocol OnboardingDuckAIPersonalizing: AnyObject {
 public protocol OnboardingAdBlockingPersonalizing: AnyObject {
     /// Whether ad blocking on YouTube is enabled.
     var isYouTubeAdBlockingEnabled: Bool { get }
-    /// Whether Duck Player is enabled for YouTube.
-    var isDuckPlayerEnabled: Bool { get }
+    /// Whether cookie pop-up protection (autoconsent) is enabled.
+    var isCookiePopUpProtectionEnabled: Bool { get }
+    /// Whether cookie pop-ups without opt-outs are auto-accepted (only applies while protection is on).
+    var isPopUpsWithoutOptOutsEnabled: Bool { get }
 
     /// Enables or disables ad blocking on YouTube.
     func setYouTubeAdBlocking(_ enabled: Bool)
-    /// Enables or disables Duck Player.
-    func setDuckPlayer(_ enabled: Bool)
+    /// Enables or disables cookie pop-up protection. Disabling also clears pop-ups-without-opt-outs.
+    func setCookiePopUpProtection(_ enabled: Bool)
+    /// Enables or disables auto-accepting pop-ups without opt-outs.
+    func setPopUpsWithoutOptOuts(_ enabled: Bool)
 }
 
 /// Injected into `OnboardingIntroViewModel`, applied once when the reason is picked to perform initial setup.

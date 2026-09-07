@@ -100,6 +100,7 @@ final class AIChatTextSelectionFeatureTests: XCTestCase {
 final class TabViewControllerTextSelectionMenuTests: XCTestCase {
 
     private struct MockTextSelectionFeature: AIChatTextSelectionFeatureProviding {
+        var isEnabled: Bool { isAskAvailable || isSearchAvailable }
         let isAskAvailable: Bool
         let isSearchAvailable: Bool
     }

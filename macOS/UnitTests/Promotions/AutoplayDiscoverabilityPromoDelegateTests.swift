@@ -18,8 +18,7 @@
 
 import Combine
 import FeatureFlags_macOS
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -69,14 +68,15 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
 
     // MARK: - Audience
 
-    /// `.ignored()` retires the promo permanently, which is what stops it from resurfacing once the
-    /// user is no longer new. `.noChange` would leave it eligible.
+    /// `.retired` retires the promo permanently, which is what stops it from resurfacing once the
+    /// user is no longer new. `.noChange` would leave it eligible, and `.ignored()` would record a
+    /// dismissal that contributes to the global cooldown despite nothing having been displayed.
     func testWhenNewUserThenShowRetiresThePromo() async {
         sut = makeSUT(isNewUser: true)
 
         let result = await sut.show(history: PromoHistoryRecord(id: "autoplay-discoverability"), force: false)
 
-        XCTAssertEqual(result, .ignored())
+        XCTAssertEqual(result, .retired)
     }
 
     // MARK: - Eligibility Publisher

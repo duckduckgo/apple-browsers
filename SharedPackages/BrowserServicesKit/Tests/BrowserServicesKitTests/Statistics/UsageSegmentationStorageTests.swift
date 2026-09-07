@@ -19,9 +19,8 @@
 import Foundation
 import XCTest
 @testable import BrowserServicesKit
-import PersistenceTestingUtils
 
-@testable import Persistence
+@_spi(Testing) @testable import Persistence
 
 final class UsageSegmentationStorageTests: XCTestCase {
 

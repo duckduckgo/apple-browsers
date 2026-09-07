@@ -161,7 +161,7 @@ extension OnboardingIntroStep {
     static let aiModelSelection: Self = .renderable(.aiModelSelection)
     static let toggleInputModeSelection: Self = .renderable(.toggleInputModeSelection)
     static let keepDuckAISelection: Self = .renderable(.keepDuckAISelection)
-    static let duckPlayerSelection: Self = .renderable(.duckPlayerSelection)
+    static let adBlockingPersonalization: Self = .renderable(.adBlockingPersonalization)
     static let setDefaultBrowser: Self = .renderable(.setDefaultBrowser)
     static let aiIntro: Self = .renderable(.aiIntro)
     static let addToDockPromo: Self = .renderable(.addToDockPromo)
@@ -185,7 +185,7 @@ extension OnboardingIntroStep {
         case aiModelSelection // NA Experiment AI Model Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-77761&m=dev
         case toggleInputModeSelection // NA Experiment Omnibar Input Mode Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-76416&m=dev
         case keepDuckAISelection // NA Experiment Duck.ai Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=437-33810&m=dev
-        case duckPlayerSelection // NA Experiment Duck Player Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-83427&m=dev
+        case adBlockingPersonalization // NA Experiment Ad Blocking Personalisation (YouTube ad blocking + cookie pop-up protection)
         case setDefaultBrowser
         case aiIntro
         case appIconSelection
@@ -218,7 +218,7 @@ extension OnboardingIntroStep {
         case .renderable(.aiModelSelection): return .aiModelSelection
         case .renderable(.toggleInputModeSelection): return .toggleInputModeSelection
         case .renderable(.keepDuckAISelection): return .keepDuckAISelection
-        case .renderable(.duckPlayerSelection): return .duckPlayerSelection
+        case .renderable(.adBlockingPersonalization): return .adBlockingPersonalization
         case .renderable(.setDefaultBrowser): return .setDefaultBrowser
         case .renderable(.aiIntro): return .aiIntro
         case .renderable(.addToDockPromo): return .addToDockPromo
@@ -260,7 +260,7 @@ enum OnboardingResumeStep: String {
     case aiModelSelection // NA Experiment: reason-tailored step checkpoints.
     case toggleInputModeSelection // NA Experiment: reason-tailored step checkpoints.
     case keepDuckAISelection // NA Experiment: reason-tailored step checkpoints.
-    case duckPlayerSelection // NA Experiment: reason-tailored step checkpoints.
+    case adBlockingPersonalization // NA Experiment: reason-tailored step checkpoints.
     case setDefaultBrowser = "browserComparison"
     case aiIntro = "aiComparison"
     case addToDockPromo
@@ -489,7 +489,7 @@ private extension OnboardingManager {
         case .noAI:
             personalisationSteps = [.aiSearchSettingsSelection, .keepDuckAISelection]
         case .blockAds:
-            personalisationSteps = [.duckPlayerSelection, .searchExperienceSelection]
+            personalisationSteps = [.adBlockingPersonalization, .searchExperienceSelection]
         }
 
         return [.setDefaultBrowser] + personalisationSteps + commonSteps

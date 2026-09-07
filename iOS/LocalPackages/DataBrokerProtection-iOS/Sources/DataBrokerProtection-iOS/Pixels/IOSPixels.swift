@@ -40,6 +40,9 @@ public enum IOSPixels {
 }
 
 extension IOSPixels: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     public var name: String {
         switch self {
         case .backgroundTaskStarted: return "m_ios_dbp_background-task_started"

@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils

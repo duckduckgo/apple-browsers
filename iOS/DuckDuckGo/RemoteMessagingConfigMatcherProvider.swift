@@ -161,12 +161,14 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
                                                                         subscriptionDataProvider: subscription,
-                                                                        autofillUsageStore: autofillUsageStore)
+                                                                        autofillUsageStore: autofillUsageStore,
+                                                                        featureDiscovery: featureDiscovery)
         } else {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
                                                                         subscriptionDataProvider: nil,
-                                                                        autofillUsageStore: autofillUsageStore)
+                                                                        autofillUsageStore: autofillUsageStore,
+                                                                        featureDiscovery: featureDiscovery)
         }
 
         let dismissedMessageIds = store.fetchDismissedRemoteMessageIDs()

@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import RemoteMessagingTestsUtils
@@ -81,6 +81,20 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertTrue(promo.respectsGlobalCooldown)
         XCTAssertTrue(promo.setsGlobalCooldown)
         XCTAssertNil(promo.delegate)
+    }
+
+    func testFactoryCreatesBookmarkToolbarPromoWithCorrectConfiguration() async {
+        let promo = await PromoServiceFactory.bookmarkToolbar(dependencies: dependencies)
+
+        XCTAssertEqual(promo.id, "bookmark-toolbar")
+        XCTAssertEqual(promo.triggers, [.bookmarkAdded, .bookmarksImported])
+        XCTAssertEqual(promo.initiated, .user)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertNil(promo.promoType.timeoutInterval)
+        XCTAssertEqual(promo.context, .global)
+        XCTAssertTrue(promo.respectsGlobalCooldown)
+        XCTAssertTrue(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
     }
 
     func testFactoryCreatesDefaultBrowserAndDockPromosWithCorrectConfiguration() async {
@@ -153,6 +167,7 @@ extension PromoServiceFactoryTests {
             isOnboardingCompletedProvider: { true },
             dockCustomization: DockCustomizerMock()
         )
+        let windowControllersManager = WindowControllersManagerMock()
         return PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
@@ -164,7 +179,24 @@ extension PromoServiceFactoryTests {
             subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
             featureFlagger: MockFeatureFlagger(),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
-            windowControllersManager: WindowControllersManagerMock()
+            windowControllersManager: WindowControllersManagerMock(),
+            syncService: nil,
+            syncBookmarksAdapter: nil,
+            pinningManager: MockPinningManager(),
+            cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                keyValueStore: InMemoryThrowingKeyValueStore(),
+                windowControllersManager: windowControllersManager,
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                appearancePreferences: AppearancePreferences(
+                    persistor: AppearancePreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                    featureFlagger: MockFeatureFlagger(),
+                    aiChatMenuConfig: MockAIChatConfig()
+                ),
+                onboardingStateUpdater: MockOnboardingStateUpdater(),
+                autoconsentStats: MockAutoconsentStats()
+            )
         )
     }
 }

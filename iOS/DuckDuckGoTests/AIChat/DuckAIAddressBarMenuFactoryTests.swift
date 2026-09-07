@@ -24,11 +24,9 @@ import XCTest
 
 final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
 
-    private func makeActions(pageFavicon: UIImage? = nil,
-                             onNewChat: @escaping () -> Void = {},
+    private func makeActions(onNewChat: @escaping () -> Void = {},
                              onAskAboutPage: @escaping () -> Void = {}) -> [UIMenuElement] {
         DuckAIAddressBarMenuFactory.makeActions(
-            pageFavicon: pageFavicon,
             onNewChat: onNewChat,
             onAskAboutPage: onAskAboutPage
         )
@@ -44,11 +42,6 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
     }
 
     // MARK: - Structure
-
-    func testMenuIsTitledDuckAi() {
-        let menu = DuckAIAddressBarMenuFactory.makeMenu(pageFavicon: nil, onNewChat: {}, onAskAboutPage: {})
-        XCTAssertEqual(menu.title, UserText.duckAiFeatureName)
-    }
 
     func testActionsAreSplitIntoSeparateInlineGroupsSoASeparatorIsDrawn() {
         let elements = makeActions()
@@ -66,20 +59,14 @@ final class DuckAIAddressBarMenuFactoryTests: XCTestCase {
 
     // MARK: - Icons
 
-    func testAskAboutPageUsesThePageFaviconWhenAvailable() {
-        let favicon = UIImage(systemName: "globe")!
-        let askAboutPage = flattenedActions(makeActions(pageFavicon: favicon))[1]
-        XCTAssertIdentical(askAboutPage.image, favicon)
-    }
-
-    func testAskAboutPageFallsBackToAGlyphWithoutAFavicon() {
+    /// A fixed glyph rather than the page favicon, so the row reads the same on every site.
+    func testAskAboutPageUsesTheChevronCircleDownGlyph() {
         let askAboutPage = flattenedActions(makeActions())[1]
-        XCTAssertEqual(askAboutPage.image, DesignSystemImages.Glyphs.Size16.tabContent)
+        XCTAssertEqual(askAboutPage.image, DesignSystemImages.Glyphs.Size16.chevronCircleDown)
     }
 
-    func testNewChatAlwaysUsesTheComposeGlyph() {
-        let favicon = UIImage(systemName: "globe")!
-        let newChat = flattenedActions(makeActions(pageFavicon: favicon))[0]
+    func testNewChatUsesTheComposeGlyph() {
+        let newChat = flattenedActions(makeActions())[0]
         XCTAssertEqual(newChat.image, DesignSystemImages.Glyphs.Size16.compose)
     }
 

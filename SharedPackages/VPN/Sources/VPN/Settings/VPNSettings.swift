@@ -396,17 +396,6 @@ public final class VPNSettings {
         }
     }
 
-    /// Syncs `excludeCGNAT` against the feature-flag state. When the flag is off, the
-    /// value is forced to `false`. When on, the stored value is left alone (the storage
-    /// default produces the experimental on-by-default for users with the flag).
-    /// Call at app launch, tunnel start, and when the VPN settings screen appears so
-    /// readers of the raw value (tunnel, metadata) always see the effective value.
-    public func updateExcludeCGNAT(isFeatureEnabled: Bool) {
-        let effective = isFeatureEnabled ? excludeCGNAT : false
-        guard excludeCGNAT != effective else { return }
-        excludeCGNAT = effective
-    }
-
     // MARK: - Exclude APNs
 
     public var excludeAPNsPublisher: AnyPublisher<Bool, Never> {

@@ -19,10 +19,20 @@
 
 import AppIntents
 import NetworkExtension
+import Persistence
 import VPN
 import WidgetKit
 import Core
 import VPNWidgetSupport
+
+/// Configures `PixelKit.shared` for the Widgets extension process, once. Guarded to the extension
+/// only: these intents also compile into the main app, which already has its own `PixelKit.shared`.
+enum WidgetsPixelKitSetup {
+    static let didSetUp: Void = {
+        guard Bundle.main.bundlePath.hasSuffix(".appex") else { return }
+        PixelKitExtensionSetup.setUp(session: "ios-widgets", defaults: UserDefaults.networkProtectionGroupDefaults)
+    }()
+}
 
 // MARK: - Enable & Disable
 
@@ -43,6 +53,7 @@ struct WidgetDisableVPNIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         do {
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetDisconnectAttempt)
 
@@ -94,6 +105,7 @@ struct WidgetEnableVPNIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         do {
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetConnectAttempt)
 
@@ -132,6 +144,7 @@ struct CancelSnoozeVPNIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         do {
             let managers = try await NETunnelProviderManager.loadAllFromPreferences()
             guard let manager = managers.first, let session = manager.connection as? NETunnelProviderSession else {
@@ -156,7 +169,9 @@ struct CancelSnoozeLiveActivityAppIntent: LiveActivityIntent {
     static var isDiscoverable: Bool = false
     static var openAppWhenRun: Bool = false
 
+    @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
         guard let manager = managers.first, let session = manager.connection as? NETunnelProviderSession else {
             return .result()

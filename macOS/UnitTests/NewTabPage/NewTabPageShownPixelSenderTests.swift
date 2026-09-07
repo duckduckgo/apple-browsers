@@ -18,7 +18,7 @@
 
 import Combine
 import NewTabPage
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils

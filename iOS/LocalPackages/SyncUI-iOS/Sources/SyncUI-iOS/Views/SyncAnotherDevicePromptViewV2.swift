@@ -84,7 +84,7 @@ struct SyncAnotherDevicePromptViewV2: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
-                        model.dismissConnectingSheet()
+                        model.dismissAnotherDevicePrompt()
                     } label: {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                     }

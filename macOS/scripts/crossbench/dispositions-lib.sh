@@ -11,8 +11,8 @@
 #
 # The accounting is per repetition. A site is replayed N times and some of those
 # repetitions still produce no usable number — because LCP never finalized inside
-# the load window, or because the probe wrote nothing at all. The caller's
-# summarize_lcp keeps the counts and hands them back through the LAST_* globals;
+# the load window, or because the probe wrote nothing at all. The caller keeps
+# the counts and hands them back through the LAST_* globals;
 # classify_outcome turns them into the one-column summary that is `outcome`.
 #
 # THE VALIDATION COLUMNS
@@ -21,7 +21,7 @@
 # VALIDATION_HTTP_STATUS, VALIDATION_DETAIL, and ARCHIVE_SHA256 for each site.
 #
 # CONTRACT — the caller must set these before sourcing is useful:
-#   BROWSER_NAME      'chrome' | 'safari'
+#   BROWSER_NAME      'chrome' | 'safari' | 'ddg'
 #   BROWSER_VERSION   version string recorded on every row
 #   MEASURED_REPS     repetitions the run intends per site
 #   LOAD_WINDOW       dwell per load, human form ('12s'), for log text
@@ -31,7 +31,7 @@
 # Runner identity, recorded per row. GitHub sets ImageOS/ImageVersion on hosted
 # runners; the run log that would otherwise tell you which image ran is deleted
 # after 90 days, while these rows live for a year.
-RUNNER_IMAGE="${ImageOS:-$(uname -s)-$(uname -r)}${ImageVersion:+/$ImageVersion}"
+RUNNER_IMAGE="${RUNNER_IMAGE:-${ImageOS:-$(uname -s)-$(uname -r)}${ImageVersion:+/$ImageVersion}}"
 
 # ---- per-repetition counters ------------------------------------------------
 # The caller's summarize_lcp owns these; reset before every site so a site that

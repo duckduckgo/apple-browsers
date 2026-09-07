@@ -30,19 +30,19 @@ enum EncryptionKeyStoreError: Error, ErrorWithPixelParameters {
     case cannotTransformDataToString(OSStatus)
     case cannotTransfrotmStringToBase64Data(OSStatus)
 
-    var errorParameters: [String: String] {
+    var status: OSStatus {
         switch self {
-        case .storageFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .readFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .deletionFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .cannotTransformDataToString(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .cannotTransfrotmStringToBase64Data(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
+        case .storageFailed(let status),
+             .readFailed(let status),
+             .deletionFailed(let status),
+             .cannotTransformDataToString(let status),
+             .cannotTransfrotmStringToBase64Data(let status):
+            return status
         }
+    }
+
+    var errorParameters: [String: String] {
+        [PixelKit.Parameters.keychainErrorCode: "\(status)"]
     }
 }
 

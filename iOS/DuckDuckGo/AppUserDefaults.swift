@@ -137,6 +137,7 @@ public class AppUserDefaults: AppSettings {
         static let onboardingForceRestorePromptEligibleKey = "com.duckduckgo.ios.debug.onboardingForceRestorePromptEligible"
         static let onboardingFlowTypeKey = "com.duckduckgo.ios.debug.onboardingFlowType"
         static let shakeToOpenDebugMenuEnabledKey = "com.duckduckgo.ios.debug.shakeToOpenDebugMenuEnabled"
+        static let slowAnimationsEnabledKey = "com.duckduckgo.ios.debug.slowAnimationsEnabled"
     }
 
     private var userDefaults: UserDefaults? {
@@ -529,6 +530,20 @@ public class AppUserDefaults: AppSettings {
             userDefaults?.set(newValue, forKey: DebugKeys.shakeToOpenDebugMenuEnabledKey)
         }
     }
+
+    /// Mirrors Simulator Debug → Slow Animations for in-app / on-device use.
+    var slowAnimationsEnabled: Bool {
+        get {
+            return userDefaults?.object(forKey: DebugKeys.slowAnimationsEnabledKey) as? Bool ?? false
+        }
+
+        set {
+            userDefaults?.set(newValue, forKey: DebugKeys.slowAnimationsEnabledKey)
+        }
+    }
+
+    /// `CALayer.speed` that approximates the Simulator's typical 10× Slow Animations drag.
+    static let slowAnimationsLayerSpeed: Float = 0.1
 
     var autofillDebugScriptEnabled: Bool {
         get {

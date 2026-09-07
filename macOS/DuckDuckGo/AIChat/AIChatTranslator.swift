@@ -54,6 +54,7 @@ final class AIChatTranslator: AIChatTranslating {
     private let aiChatCoordinator: AIChatCoordinating
     private let aiChatTabOpener: AIChatTabOpening
     private let pixelFiring: PixelFiring?
+    private let currentPageContextProvider: () -> PageContextProtocol?
     private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
 
     init(
@@ -61,12 +62,14 @@ final class AIChatTranslator: AIChatTranslating {
         aiChatCoordinator: AIChatCoordinating,
         aiChatTabOpener: AIChatTabOpening,
         pixelFiring: PixelFiring?,
+        currentPageContextProvider: @escaping () -> PageContextProtocol?,
         aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatCoordinator = aiChatCoordinator
         self.aiChatTabOpener = aiChatTabOpener
         self.pixelFiring = pixelFiring
+        self.currentPageContextProvider = currentPageContextProvider
         self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
     }
 
@@ -97,8 +100,10 @@ final class AIChatTranslator: AIChatTranslating {
                 ),
                 frequency: .dailyAndStandard
             )
-            aiChatConversationSourceHandler.setData(.translation)
+            aiChatConversationSourceHandler.setData(.contextualTranslate)
         }
+        // The selection is what the user asked about — don't also auto-attach the whole page.
+        currentPageContextProvider()?.suppressAutoPageContextForSelectionAction()
         aiChatCoordinator.revealChat(for: prompt)
     }
 

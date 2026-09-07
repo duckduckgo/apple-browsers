@@ -44,6 +44,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
+    var isPerformanceMetricsOn: Bool {
+        featureFlagger.isFeatureOn(.dbpPerformanceMetrics)
+    }
+
     var isExtractedProfileRefreshOn: Bool {
         featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }

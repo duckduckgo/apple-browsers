@@ -86,6 +86,7 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionCancelPendingDowngradeClick
     // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
+    case subscriptionAutomaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)
     case subscriptionInvalidRefreshTokenSignedOut
     case subscriptionInvalidRefreshTokenRecovered
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
@@ -203,6 +204,7 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionCancelPendingDowngradeClick: return "m_mac_\(appDistribution)_subscription_settings_cancel-pending-downgrade_click"
             // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
+        case .subscriptionAutomaticSignOut: return "m_mac_\(appDistribution)_privacy-pro_auth_account_automatically_signed_out"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_recovered"
         case .subscriptionAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
@@ -286,6 +288,10 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.description]
+        case .subscriptionAutomaticSignOut(let data, let source, _):
+            var parameters = data.parameters
+            parameters[SubscriptionPixelsDefaults.sourceKey] = source.description
+            return parameters
         case .subscriptionActive(let authVersion):
             return [AuthVersion.key: authVersion.rawValue]
         case .freeTrialVPNActivation(let activationDay),
@@ -349,6 +355,7 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionAddEmailSuccess,
                 .subscriptionWelcomeFAQClick,
                 .subscriptionInvalidRefreshTokenDetected,
+                .subscriptionAutomaticSignOut,
                 .subscriptionInvalidRefreshTokenSignedOut,
                 .subscriptionInvalidRefreshTokenRecovered,
                 .subscriptionAuthV2GetTokensError,

@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Subscription
 
 /// Represents the origin point from which the user enters the subscription funnel in the macOS app.
 enum SubscriptionFunnelOrigin: String {
@@ -84,14 +85,6 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
     case addressBarReasoningDropdown = "funnel_addressbar_macos__reasoningdropdown"
 
-    /// User entered the funnel by tapping a gated model in duck.ai's own model picker.
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
-    case duckAIModelPicker = "funnel_duckai_macos__modelpicker"
-
-    /// User entered the funnel by tapping a gated reasoning effort in duck.ai's own omnibar.
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
-    case duckAIReasoningDropdown = "funnel_duckai_macos__reasoningdropdown"
-
     /// User entered the funnel by tapping a gated model or reasoning effort in the New Tab Page's duck.ai omnibar.
     /// https://app.asana.com/1/137249556945/task/1216424447885172
     case newTabPageOmnibar = "funnel_newtab_macos__omnibar"
@@ -109,6 +102,12 @@ enum SubscriptionFunnelOrigin: String {
     /// Gated reasoning effort shown in the Prompt Bar's reasoning picker. Impression only, as above.
     case promptBarReasoningDropdown = "funnel_promptbar_macos__reasoningdropdown"
 
+    /// Upsell on the usage-limit card below the address bar's duck.ai omnibar.
+    case addressBarUsageLimit = "funnel_addressbar_macos__usagelimit"
+
+    /// The same card on the Prompt Bar.
+    case promptBarUsageLimit = "funnel_promptbar_macos__usagelimit"
+
     // MARK: - Duck.ai Funnel Origins (frontend-reported)
 
     /// Entry points shown in the duck.ai web frontend; reported over the `reportMetric` bridge because
@@ -125,13 +124,71 @@ enum SubscriptionFunnelOrigin: String {
     case duckAIDisclaimerBanner = "funnel_duckai_macos__disclaimerbanner"
     case duckAIVoiceChatLimit = "funnel_duckai_macos__voicechatlimit"
     case duckAIVoiceChatDurationLimit = "funnel_duckai_macos__voicechatdurationlimit"
-
-    /// The model switcher under a chat response. Only ever reported as a modal's `source` — the surface
-    /// itself is frontend-only, so nothing native fires this on its own.
+    case duckAIModelPicker = "funnel_duckai_macos__modelpicker"
+    case duckAIReasoningDropdown = "funnel_duckai_macos__reasoningdropdown"
     case duckAISwitchModel = "funnel_duckai_macos__switchmodel"
 
     /// The frontend opened a modal without attributing it to an entry point.
     case duckAIUnknown = "funnel_duckai_macos__unknown"
+}
+
+extension SubscriptionFunnelOrigin {
+
+    static func purchaseWideEventEntryPoint(for origin: String?) -> SubscriptionPurchaseWideEventData.EntryPoint {
+        guard let origin else { return .web }
+        guard let funnelOrigin = Self(rawValue: origin) else { return .unknown }
+        return funnelOrigin.purchaseWideEventEntryPoint
+    }
+
+    private var purchaseWideEventEntryPoint: SubscriptionPurchaseWideEventData.EntryPoint {
+        switch self {
+        case .winBackNewTabPage,
+                .newTabPageNextStepsCard,
+                .fireWindowPromo,
+                .newTabPageOmnibar,
+                .newTabPageModelPicker,
+                .newTabPageReasoningDropdown:
+            return .newTabPage
+        case .addressBarModelPicker,
+                .addressBarReasoningDropdown,
+                .duckAIModelPicker,
+                .duckAIReasoningDropdown,
+                .promptBarModelPicker,
+                .promptBarReasoningDropdown,
+                .addressBarUsageLimit,
+                .promptBarUsageLimit,
+                .duckAIAiSidebar,
+                .duckAIActivateSubscription,
+                .duckAIFreeLabel,
+                .duckAIFreeLimit,
+                .duckAIImageGenerationLimit,
+                .duckAIPlusLimit,
+                .duckAIPromotionCard,
+                .duckAISettings,
+                .duckAIDisclaimerBanner,
+                .duckAIVoiceChatLimit,
+                .duckAIVoiceChatDurationLimit,
+                .duckAISwitchModel,
+                .duckAIUnknown:
+            return .duckAI
+        case .appMenu,
+                .winBackMenu:
+            return .appMenu
+        case .winBackLaunch:
+            return .appPromotion
+        case .appSettings,
+                .winBackSettings:
+            return .settings
+        case .onboardingSubscriptionUpsell:
+            return .onboarding
+        case .vpnToolbarUpsell,
+                .vpnToolbarRevoked,
+                .vpnMenuBarRevoked:
+            return .vpn
+        case .freeScan:
+            return .personalInformationRemoval
+        }
+    }
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

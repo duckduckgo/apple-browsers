@@ -81,4 +81,47 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
     func testHomeTabWinsOverAPresentedSurface() {
         XCTAssertEqual(resolve(isHomeTab: true, isContextualSurfacePresented: true), .legacyDuckAI)
     }
+
+    // MARK: - Contextual glyph
+
+    private func showsGlyph(isContextualModeAvailable: Bool = true,
+                            isHomeTab: Bool = false,
+                            hasChatToReopen: Bool = false,
+                            isContextualSurfacePresented: Bool = false) -> Bool {
+        DuckAIAddressBarEntry.showsContextualGlyph(
+            isContextualModeAvailable: isContextualModeAvailable,
+            isHomeTab: isHomeTab,
+            hasChatToReopen: hasChatToReopen,
+            isContextualSurfacePresented: isContextualSurfacePresented
+        )
+    }
+
+    func testNoGlyphOnAWebPageWithNothingGoingOn() {
+        XCTAssertFalse(showsGlyph())
+    }
+
+    func testAChatToReopenShowsTheGlyph() {
+        XCTAssertTrue(showsGlyph(hasChatToReopen: true))
+    }
+
+    /// An open surface counts even before a prompt, so the glyph appears as soon as it does.
+    func testAPresentedSurfaceShowsTheGlyphWithoutAChat() {
+        XCTAssertTrue(showsGlyph(isContextualSurfacePresented: true))
+    }
+
+    /// Dismissing without prompting leaves neither, which is what takes the glyph away again.
+    func testDismissingWithoutAChatDropsTheGlyph() {
+        XCTAssertFalse(showsGlyph(hasChatToReopen: false, isContextualSurfacePresented: false))
+    }
+
+    func testContextualModeOffNeverShowsTheGlyph() {
+        XCTAssertFalse(showsGlyph(isContextualModeAvailable: false, hasChatToReopen: true))
+    }
+
+    /// Matches `resolve`, which sends the home tab to `.legacyDuckAI`: the glyph must not promise a
+    /// contextual session the tap will not open.
+    func testHomeTabNeverShowsTheGlyph() {
+        XCTAssertFalse(showsGlyph(isHomeTab: true, hasChatToReopen: true))
+        XCTAssertFalse(showsGlyph(isHomeTab: true, isContextualSurfacePresented: true))
+    }
 }

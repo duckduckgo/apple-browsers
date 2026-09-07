@@ -110,6 +110,11 @@ struct DebugScreensView: View {
                                         Text(verbatim: "Default: \(model.featureFlagDefaultValue(flag))")
                                             .font(.caption)
                                             .foregroundColor(.gray)
+                                        if flag == .promoPresentationCoordination {
+                                            Text(verbatim: "Relaunch required for changes to take effect.")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
                                     }
                                 }
                                 Button(action: {
@@ -209,6 +214,14 @@ struct DebugTogglesView: View {
                     Text(verbatim: "Inspectable WebViews")
                 } icon: {
                     Image(systemName: "globe")
+                }
+            }
+
+            Toggle(isOn: $model.isSlowAnimationsEnabled) {
+                Label {
+                    Text(verbatim: "Slow Animations")
+                } icon: {
+                    Image(systemName: "tortoise")
                 }
             }
         }

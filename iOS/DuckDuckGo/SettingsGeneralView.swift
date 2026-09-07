@@ -85,7 +85,7 @@ struct SettingsGeneralView: View {
                                                options: AfterInactivityIdleInterval.allCases,
                                                selectedOption: viewModel.afterInactivityIdleIntervalBinding)
 
-                        SettingsCellView(label: UserText.settingsLastTabShortcutLabel,
+                        SettingsCellView(label: UserText.settingsReturnToShortcutLabel,
                                          subtitle: UserText.settingsLastTabShortcutSubtitle,
                                          accessory: .toggle(isOn: viewModel.lastTabShortcutEnabledBinding))
                     }

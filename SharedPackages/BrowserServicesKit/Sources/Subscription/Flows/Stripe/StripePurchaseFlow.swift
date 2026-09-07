@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DDGError
 import StoreKit
 import os.log
 import Networking
@@ -135,8 +136,8 @@ public final class DefaultStripePurchaseFlow: StripePurchaseFlow {
 
     public func completeSubscriptionPurchase() async {
         Logger.subscriptionStripePurchaseFlow.log("Completing subscription purchase")
-        subscriptionManager.clearSubscriptionCache()
         _ = try? await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
+        _ = try? await subscriptionManager.getSubscription(forceRefresh: true)
         NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
     }
 }

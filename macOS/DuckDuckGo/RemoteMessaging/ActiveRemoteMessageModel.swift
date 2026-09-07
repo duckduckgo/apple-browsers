@@ -56,6 +56,11 @@ final class ActiveRemoteMessageModel: ObservableObject {
     let openURLHandler: (URL) async -> Void
 
     /**
+     * Handler for refreshing usage-related survey parameters before opening the URL.
+     */
+    let surveyURLRefresher: (String) -> String
+
+    /**
      * Handler for opening the user feedback dialog.
      */
     let navigateToFeedbackHandler: () async -> Void
@@ -92,12 +97,14 @@ final class ActiveRemoteMessageModel: ObservableObject {
         remoteMessagingStore: @escaping @autoclosure () -> RemoteMessagingStoring?,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding?,
         openURLHandler: @escaping (URL) async -> Void,
+        surveyURLRefresher: @escaping (String) -> String = ActiveRemoteMessageModel.defaultSurveyURLRefresher,
         navigateToFeedbackHandler: @escaping () async -> Void,
         navigateToPIRHandler: @escaping () async -> Void,
         navigateToSoftwareUpdateHandler: @escaping () async -> Void
     ) {
         self.store = remoteMessagingStore
         self.openURLHandler = openURLHandler
+        self.surveyURLRefresher = surveyURLRefresher
         self.navigateToFeedbackHandler = navigateToFeedbackHandler
         self.navigateToPIRHandler = navigateToPIRHandler
         self.navigateToSoftwareUpdateHandler = navigateToSoftwareUpdateHandler

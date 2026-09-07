@@ -28,7 +28,8 @@ final class MockOnboardingPersonalizationManager: OnboardingPersonalizationManag
     var areAIGeneratedImagesHidden = false
     var isDuckAIEnabled = false
     var isYouTubeAdBlockingEnabled = false
-    var isDuckPlayerEnabled = false
+    var isCookiePopUpProtectionEnabled = false
+    var isPopUpsWithoutOptOutsEnabled = false
 
     private(set) var applyDefaultsCallCount = 0
     private(set) var capturedApplyDefaultsReason: OnboardingDownloadReason?
@@ -43,7 +44,8 @@ final class MockOnboardingPersonalizationManager: OnboardingPersonalizationManag
     func setAIGeneratedImagesHidden(_ hidden: Bool) { areAIGeneratedImagesHidden = hidden }
     func setDuckAIEnabled(_ enabled: Bool) { isDuckAIEnabled = enabled }
     func setYouTubeAdBlocking(_ enabled: Bool) { isYouTubeAdBlockingEnabled = enabled }
-    func setDuckPlayer(_ enabled: Bool) { isDuckPlayerEnabled = enabled }
+    func setCookiePopUpProtection(_ enabled: Bool) { isCookiePopUpProtectionEnabled = enabled }
+    func setPopUpsWithoutOptOuts(_ enabled: Bool) { isPopUpsWithoutOptOutsEnabled = enabled }
     func applyDefaults(for reason: OnboardingDownloadReason) {
         applyDefaultsCallCount += 1
         capturedApplyDefaultsReason = reason

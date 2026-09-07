@@ -11,7 +11,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_skip-onboarding": {
@@ -26,7 +27,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_set-default": {
@@ -41,7 +43,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_ai-intro": {
@@ -56,7 +59,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_add-to-dock": {
@@ -71,7 +75,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_app-icon-color": {
@@ -91,7 +96,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_address-bar-position": {
@@ -111,7 +117,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_search-experience": {
@@ -131,7 +138,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_search-chat-toggle": {
@@ -151,7 +159,8 @@
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
             "onboardingSource",
-            "onboardingFlow"
+            "onboardingFlow",
+            "onboardingFlowVariant"
         ]
     },
     "m_ios_onboarding_search": {
@@ -263,6 +272,185 @@
     "m_ios_onboarding_subscription-promo": {
         "description": "Fired during contextual onboarding on the Subscription Promotion step.",
         "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_download-choice": {
+        "description": "Fired during linear onboarding on the Download Reason screen of the download-reason segmented flow (treatment cohort). The variant is not carried here because it is set by this choice.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On the engagement (clicked) event: the download reason the user selected",
+                "enum": ["search", "ai-chat", "no-ai", "ad-blocking"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_preferences_serp": {
+        "description": "Fired during linear onboarding on the SERP preferences step of the download-reason segmented flow (treatment cohort).",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "recently_visited_sites_enabled",
+                "type": "boolean",
+                "description": "On the engagement (clicked) event: whether recently visited sites is enabled: true or false"
+            },
+            {
+                "key": "safe_search_enabled",
+                "type": "boolean",
+                "description": "On the engagement (clicked) event: whether safe search is enabled: true or false"
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_preferences_ai-model": {
+        "description": "Fired during linear onboarding on the AI model picker step of the download-reason segmented flow (treatment cohort).",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On the engagement (clicked) event: the provider of the selected AI model",
+                "enum": ["anthropic", "openai", "mistral", "unknown"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_preferences_ai-toggle-mode": {
+        "description": "Fired during linear onboarding on the Search/AI address-bar toggle-mode step of the download-reason segmented flow (treatment cohort).",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "boolean",
+                "description": "On the engagement (clicked) event: whether new tabs open with AI chat: true or false"
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_preferences_ai-search": {
+        "description": "Fired during linear onboarding on the AI search settings step of the download-reason segmented flow (treatment cohort).",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "search_assist_enabled",
+                "type": "boolean",
+                "description": "On the engagement (clicked) event: whether search assist is enabled: true or false"
+            },
+            {
+                "key": "ai_generated_images_enabled",
+                "type": "boolean",
+                "description": "On the engagement (clicked) event: whether AI-generated images are enabled (shown): true or false"
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_preferences_duck-ai": {
+        "description": "Fired during linear onboarding on the 'Keep Duck.ai on/off' step of the download-reason segmented flow (treatment cohort).",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On the engagement (clicked) event: whether the user chose to keep Duck.ai on or off",
+                "enum": ["on", "off"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_preferences_ad-blocking": {
+        "description": "Fired during linear onboarding on the ad-blocking & cookie preferences step of the download-reason segmented flow (treatment cohort).",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "youtube_ad_blocking_enabled",
+                "type": "boolean",
+                "description": "On the engagement (clicked) event: whether YouTube ad blocking is enabled: true or false"
+            },
+            {
+                "key": "cookie_popup_protection_enabled",
+                "type": "boolean",
+                "description": "On the engagement (clicked) event: whether cookie pop-up protection (autoconsent) is enabled: true or false"
+            },
+            {
+                "key": "popups_without_optouts_enabled",
+                "type": "boolean",
+                "description": "On the engagement (clicked) event: whether cookie pop-ups without opt-outs are auto-accepted: true or false"
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingFlowVariant"
+        ]
+    },
+    "m_ios_onboarding_end-try-duckai": {
+        "description": "Fired on the 'Try Duck.ai' end-of-journey dialog (new-tab surface) of the download-reason segmented flow, to measure the Try Duck.ai CTA CTR (shown vs engage/dismiss).",
+        "owners": ["alessandroboron"],
         "triggers": ["other"],
         "parameters": [
             "appVersion",

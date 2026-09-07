@@ -78,7 +78,47 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         handler.applyLoadedAttachments(makeResult(images: 3))
 
         XCTAssertEqual(delegate.addedImages, 1)
+        XCTAssertEqual(delegate.imageRejectionReasons, [.capacityReached])
         XCTAssertEqual(delegate.presentedErrors, ["You can only attach 3 images at a time."])
+    }
+
+    /// The gap this closes: no banner to show, but the drop must still be visible in metrics.
+    func testApplyRecordsImageRejectionEvenWithoutACapacityMessage() {
+        let delegate = MockPasteDelegate()
+        delegate.imageHeadroom = 0
+        delegate.capacityMessage = nil
+        let handler = makeHandler(delegate)
+
+        handler.applyLoadedAttachments(makeResult(images: 2))
+
+        XCTAssertEqual(delegate.addedImages, 0)
+        XCTAssertEqual(delegate.imageRejectionReasons, [.capacityReached])
+        XCTAssertTrue(delegate.presentedErrors.isEmpty)
+    }
+
+    /// A full conversation truncates at a zero allowance before any decode, so no add is refused — it must still read as capacity, not truncation.
+    func testApplyReportsCapacityWhenNoImageCouldBeLoadedAtAll() {
+        let delegate = MockPasteDelegate()
+        let handler = makeHandler(delegate)
+        var result = makeResult()
+        result.imagesTruncated = true
+
+        handler.applyLoadedAttachments(result)
+
+        XCTAssertEqual(delegate.imageRejectionReasons, [.capacityReached])
+    }
+
+    /// Some images fit and the rest were dropped — that is genuine truncation.
+    func testApplyReportsTruncationWhenSomeImagesWereLoaded() {
+        let delegate = MockPasteDelegate()
+        let handler = makeHandler(delegate)
+        var result = makeResult(images: 2)
+        result.imagesTruncated = true
+
+        handler.applyLoadedAttachments(result)
+
+        XCTAssertEqual(delegate.addedImages, 2)
+        XCTAssertEqual(delegate.imageRejectionReasons, [.allowanceTruncated])
     }
 
     func testApplyWithinImageHeadroomShowsNoCapacityMessage() {
@@ -136,6 +176,7 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         handler.applyLoadedAttachments(result)
 
         XCTAssertEqual(delegate.addedImages, 1)
+        XCTAssertEqual(delegate.imageRejectionReasons, [.allowanceTruncated])
         XCTAssertEqual(delegate.presentedErrors, ["You can only attach 3 images at a time."])
     }
 
@@ -150,6 +191,79 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
 
         XCTAssertTrue(delegate.callLog.isEmpty)
         XCTAssertTrue(delegate.presentedErrors.isEmpty)
+    }
+
+    // MARK: - Probe memoisation
+
+    func testProbeReadsPasteboardOnceWhileClipboardUnchanged() {
+        let pasteboard = seededPasteboard(image: true)
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        let spy = ProbeSpy(answer: true)
+        let probe = PasteboardAttachmentProbe(read: spy.read)
+
+        let answers = (0..<5).map { _ in probe.hasSupportedAttachments(in: pasteboard, allowsImages: true, allowedFileTypes: [.pdf]) }
+
+        XCTAssertEqual(answers, Array(repeating: true, count: 5))
+        XCTAssertEqual(spy.readCount, 1)
+    }
+
+    func testProbeRereadsAfterClipboardChanges() {
+        let pasteboard = seededPasteboard(image: true)
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        let spy = ProbeSpy(answer: true)
+        let probe = PasteboardAttachmentProbe(read: spy.read)
+
+        _ = probe.hasSupportedAttachments(in: pasteboard, allowsImages: true, allowedFileTypes: [.pdf])
+        pasteboard.string = "duckduckgo.com"
+        spy.answer = false
+
+        XCTAssertFalse(probe.hasSupportedAttachments(in: pasteboard, allowsImages: true, allowedFileTypes: [.pdf]))
+        XCTAssertEqual(spy.readCount, 2)
+    }
+
+    /// A model change alters what the input accepts, so the cached answer must not survive it even on an unchanged clipboard.
+    func testProbeRereadsWhenAcceptedAttachmentTypesChange() {
+        let pasteboard = seededPasteboard(image: true)
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        let spy = ProbeSpy(answer: true)
+        let probe = PasteboardAttachmentProbe(read: spy.read)
+
+        _ = probe.hasSupportedAttachments(in: pasteboard, allowsImages: true, allowedFileTypes: [.pdf])
+        _ = probe.hasSupportedAttachments(in: pasteboard, allowsImages: true, allowedFileTypes: [.plainText])
+        XCTAssertEqual(spy.readCount, 2)
+
+        _ = probe.hasSupportedAttachments(in: pasteboard, allowsImages: false, allowedFileTypes: [.plainText])
+        XCTAssertEqual(spy.readCount, 3)
+    }
+
+    func testProbeRereadsForADifferentPasteboard() {
+        let first = seededPasteboard(image: true)
+        let second = seededPasteboard(image: true)
+        defer {
+            UIPasteboard.remove(withName: first.name)
+            UIPasteboard.remove(withName: second.name)
+        }
+        let spy = ProbeSpy(answer: true)
+        let probe = PasteboardAttachmentProbe(read: spy.read)
+
+        _ = probe.hasSupportedAttachments(in: first, allowsImages: true, allowedFileTypes: [.pdf])
+        _ = probe.hasSupportedAttachments(in: second, allowsImages: true, allowedFileTypes: [.pdf])
+
+        XCTAssertEqual(spy.readCount, 2)
+    }
+
+    func testCanPasteReadsPasteboardOnceForRepeatedMenuBuilds() {
+        let delegate = MockPasteDelegate()
+        let spy = ProbeSpy(answer: true)
+        let handler = makeHandler(delegate, probe: PasteboardAttachmentProbe(read: spy.read))
+        let pasteboard = seededPasteboard(image: true)
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+
+        for _ in 0..<5 {
+            XCTAssertTrue(handler.canPasteAttachments(from: pasteboard))
+        }
+
+        XCTAssertEqual(spy.readCount, 1)
     }
 
     // MARK: - Text control paste override
@@ -187,8 +301,8 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeHandler(_ delegate: MockPasteDelegate) -> UnifiedToggleInputPasteHandler {
-        let handler = UnifiedToggleInputPasteHandler()
+    private func makeHandler(_ delegate: MockPasteDelegate, probe: PasteboardAttachmentProbe = PasteboardAttachmentProbe()) -> UnifiedToggleInputPasteHandler {
+        let handler = UnifiedToggleInputPasteHandler(attachmentProbe: probe)
         handler.delegate = delegate
         return handler
     }
@@ -237,7 +351,8 @@ private final class MockPasteDelegate: UnifiedToggleInputPasteDelegate {
     private(set) var callLog: [String] = []
     private(set) var addedImages = 0
     private(set) var addedFiles = 0
-    private(set) var rejectionReasons: [PasteRejectionReason] = []
+    private(set) var rejectionReasons: [PasteFileRejectionReason] = []
+    private(set) var imageRejectionReasons: [PasteImageRejectionReason] = []
     private(set) var presentedErrors: [String] = []
 
     var pasteAttachmentSupport: UnifiedToggleInputPasteSupport { support }
@@ -259,9 +374,13 @@ private final class MockPasteDelegate: UnifiedToggleInputPasteDelegate {
         callLog.append("file")
     }
 
-    func reportRejectedPaste(reason: PasteRejectionReason) {
+    func reportRejectedPastedFiles(reason: PasteFileRejectionReason) {
         rejectionReasons.append(reason)
         callLog.append("rejected")
+    }
+
+    func reportRejectedPastedImages(reason: PasteImageRejectionReason) {
+        imageRejectionReasons.append(reason)
     }
 
     func presentPasteError(_ message: String) {
@@ -276,4 +395,19 @@ private final class MockAttachmentPasteHandler: AttachmentPasteHandling {
 
     func canPasteAttachments(from pasteboard: UIPasteboard) -> Bool { canPasteResult }
     func pasteAttachments(from pasteboard: UIPasteboard) { pasteCallCount += 1 }
+}
+
+@MainActor
+private final class ProbeSpy {
+    var answer: Bool
+    private(set) var readCount = 0
+
+    init(answer: Bool) {
+        self.answer = answer
+    }
+
+    func read(_ pasteboard: UIPasteboard, _ allowsImages: Bool, _ allowedFileTypes: [UTType]) -> Bool {
+        readCount += 1
+        return answer
+    }
 }

@@ -413,8 +413,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     }
 
     @MainActor
-    func presentDeviceDetails(_ device: SyncDevice) {
-        syncSettingsHandler.presentDeviceDetails(device)
+    func presentDeviceDetails(_ device: SyncDevice) async {
+        await syncSettingsHandler.presentDeviceDetails(device)
     }
 
     @MainActor
@@ -423,8 +423,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     }
 
     @MainActor
-    func presentDeleteAccount() {
-        syncSettingsHandler.presentDeleteAccount()
+    func presentDeleteAccount() async {
+        await syncSettingsHandler.presentDeleteAccount()
     }
 
     @MainActor

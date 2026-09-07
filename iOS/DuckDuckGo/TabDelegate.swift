@@ -34,7 +34,7 @@ protocol TabDelegate: AnyObject {
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
     /// The current cached search token, or nil if none is live. Used by the SERP interceptor
-    /// to attach the `dindextoken` URL param for the treatment cohort of the Search Token experiment.
+    /// to attach the `X-DDG-Search-Token` header for the treatment cohort of the Search Token experiment.
     func searchToken(for tab: TabViewController) -> String?
 
     func tabDidRequestNewTab(_ tab: TabViewController)
@@ -57,6 +57,18 @@ protocol TabDelegate: AnyObject {
     func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
+             inheritingAttribution: AdClickAttributionLogic.State?)
+
+    func tab(_ tab: TabViewController,
+             didRequestNewDuckAITabForUrl url: URL,
+             entrySource: AIChatEntryPointSource)
+
+    /// A navigation the page started into Duck.ai from a page native attributes, today the DuckDuckGo homepage.
+    /// Opens a page-owned tab when `opensNewTab`; either way the tab hosting the chat is stamped with `entrySource`.
+    func tab(_ tab: TabViewController,
+             didStartDuckAINavigationTo url: URL,
+             entrySource: AIChatEntryPointSource,
+             opensNewTab: Bool,
              inheritingAttribution: AdClickAttributionLogic.State?)
 
     /// Called on navigate forward on a tab that had just closed a link-opened tab via back.
@@ -191,6 +203,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController)
 
     func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: TabViewController)
+
+    func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
 extension TabDelegate {
@@ -204,6 +218,8 @@ extension TabDelegate {
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
+
+    func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {}
 
     func searchToken(for tab: TabViewController) -> String? { nil }
 

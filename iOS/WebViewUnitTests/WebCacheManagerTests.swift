@@ -20,7 +20,7 @@
 import XCTest
 @testable import Core
 import WebKit
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 import WKAbstractions
 

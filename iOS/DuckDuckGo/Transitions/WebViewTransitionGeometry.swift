@@ -32,30 +32,39 @@ enum WebViewTransitionGeometry {
     }
 
     static func previewFrame(for cellBounds: CGSize, previewSize: CGSize, isGridViewEnabled: Bool) -> CGRect {
-        guard isGridViewEnabled, let previewAspectRatio = aspectRatio(of: previewSize) else {
+        guard let previewAspectRatio = aspectRatio(of: previewSize) else {
             return CGRect(origin: .zero, size: cellBounds)
         }
 
-        let availableHeight = cellBounds.height - TabViewCell.Constants.cellHeaderHeight
-        let containerAspectRatio = availableHeight / cellBounds.width
+        guard isGridViewEnabled else {
+            return CGRect(x: 0,
+                          y: 0,
+                          width: cellBounds.width,
+                          height: cellBounds.width * previewAspectRatio)
+        }
+
+        let horizontalInset = TabViewGridCell.Constants.previewHorizontalInset / 2
+        let availableWidth = cellBounds.width - TabViewGridCell.Constants.previewHorizontalInset
+        let availableHeight = cellBounds.height
+            - TabViewGridCell.Constants.headerHeight
+            - TabViewGridCell.Constants.previewBottomPadding
+        guard availableWidth > 0, availableHeight > 0 else {
+            return CGRect(origin: .zero, size: cellBounds)
+        }
+        let containerAspectRatio = availableHeight / availableWidth
 
         if previewAspectRatio <= containerAspectRatio {
-            // Wide (landscape) preview: fill the cell height and centre horizontally so the
-            // overflow is centre-cropped (matching `TabViewCell.updatePreviewToDisplay`), rather
-            // than showing only the left edge or leaving empty space.
             let width = availableHeight / previewAspectRatio
             return CGRect(x: (cellBounds.width - width) / 2,
-                          y: TabViewCell.Constants.cellHeaderHeight,
+                          y: TabViewGridCell.Constants.headerHeight,
                           width: width,
                           height: availableHeight)
         }
 
-        // Tall (portrait) preview: fit the cell width and anchor at the top, cropping excess height.
-        return CGRect(x: 0,
-                      y: TabViewCell.Constants.cellHeaderHeight,
-                      width: cellBounds.width,
-                      height: cellBounds.width * previewAspectRatio - 8)
-            .insetBy(dx: 4, dy: 4)
+        return CGRect(x: horizontalInset,
+                      y: TabViewGridCell.Constants.headerHeight,
+                      width: availableWidth,
+                      height: availableWidth * previewAspectRatio)
     }
 
     static func destinationImageFrame(for containerSize: CGSize, previewSize: CGSize?) -> CGRect {
@@ -67,5 +76,14 @@ enum WebViewTransitionGeometry {
                       y: 0,
                       width: containerSize.width,
                       height: containerSize.width * previewAspectRatio)
+    }
+
+    static func webContentFrame(from containerFrame: CGRect, topObscuredHeight: CGFloat) -> CGRect {
+        let top = max(0, topObscuredHeight)
+        guard top > 0, containerFrame.height > top, top.isFinite else { return containerFrame }
+        return CGRect(x: containerFrame.minX,
+                      y: containerFrame.minY + top,
+                      width: containerFrame.width,
+                      height: containerFrame.height - top)
     }
 }

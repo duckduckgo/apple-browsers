@@ -375,9 +375,7 @@ extension MainViewController {
     func segueToSettingsCookiePopupManagement() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.openCookiePopupManagement()
-        }
+        launchSettings(deepLinkTarget: .cookiePopupProtection)
     }
 
     func segueToSettingsAutofillWith(account: SecureVaultModels.WebsiteAccount?,
@@ -501,7 +499,9 @@ extension MainViewController {
                                                             syncAutoRestoreHandler: syncAutoRestoreHandler,
                                                             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                                             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                            promoCoordinationDiagnosticsProvider: promoCoordinationService,
+                                                            promoCoordinationCooldownResetter: promoCoordinationService)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
@@ -593,13 +593,7 @@ extension MainViewController {
             }
         }
 
-        if let controller = self.presentedViewController as? OmniBarEditingStateViewController {
-            controller.dismissAnimated {
-                doLaunch()
-            }
-        } else {
-            doLaunch()
-        }
+        doLaunch()
     }
 
     private func launchDebugSettings(completion: ((DebugScreensViewController) -> Void)? = nil) {
@@ -625,7 +619,9 @@ extension MainViewController {
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
-            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
+            promoCoordinationCooldownResetter: self.promoCoordinationService))
 
         debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
 

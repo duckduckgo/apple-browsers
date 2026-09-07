@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import PixelKit
 import PrivacyConfig
 import Common
 import FoundationExtensions
@@ -27,7 +28,6 @@ import os.log
 /// *** Deprecated.  Use PixelKit for new pixels. ***
 public struct PixelParameters {
     public static let url = "url"
-    public static let duration = "dur"
     static let test = "test"
     public static let appVersion = "appVersion"
 
@@ -91,6 +91,11 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let aiChatSelectionCount = "selection_count"
+    public static let aiChatHadUnsubmittedSelections = "had_unsubmitted_selections"
+    public static let aiChatSuggestionScope = "suggestion_scope"
+    public static let aiChatSuggestionsSurface = "surface"
+    public static let aiChatFirstPromptNewInstall = "first_prompt_new_install"
     public static let cookiePopupPreference = "cookie_popup_preference"
     public static let autoconsentEnabled = "autoconsent_enabled"
     public static let timeSinceShown = "time_since_shown"
@@ -251,11 +256,7 @@ public class Pixel {
         DefaultInternalUserDecider(store: InternalUserStore()).isInternalUser
     }
 
-    public static let defaultPixelUserAgent: String = {
-        // Strip patch version component as per https://app.asana.com/0/69071770703008/1209176655620013/f
-        let trimmedOSVersion = AppVersion.shared.osVersionMajorMinor
-        return DefaultUserAgentManager.duckduckGoUserAgent(for: AppVersion.shared, osVersion: trimmedOSVersion)
-    }()
+    public static let defaultPixelUserAgent: String = PixelUserAgent.default
 
     public enum QueryParameters: Codable {
         case atb

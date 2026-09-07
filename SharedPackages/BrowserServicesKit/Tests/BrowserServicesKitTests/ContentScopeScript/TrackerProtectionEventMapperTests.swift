@@ -157,6 +157,128 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
         XCTAssertFalse(mapper.isSameSiteObservation(observation))
     }
 
+    // MARK: - DuckDuckGo-Owned Domains Treated As Same Site
+
+    /// TDS that treats duckduckgo.com as a blocked tracker, so a nil result proves the
+    /// same-site guard ran — not merely that the request is unknown to the TDS.
+    private func makeDuckDuckGoAsTrackerTDS() -> TrackerData {
+        let tracker = KnownTracker(
+            domain: "duckduckgo.com",
+            defaultAction: .block,
+            owner: KnownTracker.Owner(name: "DuckDuckGo", displayName: "DuckDuckGo", ownedBy: nil),
+            prevalence: 0.1,
+            subdomains: nil,
+            categories: ["Analytics"],
+            rules: nil)
+
+        let entity = Entity(displayName: "DuckDuckGo", domains: ["duckduckgo.com"], prevalence: 0.1)
+
+        return TrackerData(
+            trackers: ["duckduckgo.com": tracker],
+            entities: ["DuckDuckGo": entity],
+            domains: ["duckduckgo.com": "DuckDuckGo"],
+            cnames: nil)
+    }
+
+    func testWhenRequestToDuckDuckGoComOnDuckAiPageThenIsSameSiteReturnsTrue() {
+        let mapper = makeMapper()
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://sync.duckduckgo.com/sync/data",
+            resourceType: "xmlhttprequest",
+            potentiallyBlocked: false,
+            pageUrl: "https://duck.ai")
+
+        XCTAssertTrue(mapper.isSameSiteObservation(observation),
+                      "Requests between DuckDuckGo-owned domains must count as same site")
+    }
+
+    func testWhenRequestToDuckAiOnDuckDuckGoComPageThenIsSameSiteReturnsTrue() {
+        let mapper = makeMapper()
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://duck.ai/script.js",
+            resourceType: "script",
+            potentiallyBlocked: false,
+            pageUrl: "https://duckduckgo.com/?q=test")
+
+        XCTAssertTrue(mapper.isSameSiteObservation(observation),
+                      "The DuckDuckGo domain rule must apply in both directions")
+    }
+
+    func testWhenBothHostsAreSubdomainsOfDuckDuckGoOwnedDomainsThenIsSameSiteReturnsTrue() {
+        let mapper = makeMapper()
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://improving.duckduckgo.com/t/pixel",
+            resourceType: "image",
+            potentiallyBlocked: false,
+            pageUrl: "https://beta.duck.ai/chat")
+
+        XCTAssertTrue(mapper.isSameSiteObservation(observation),
+                      "Subdomains must resolve to their eTLD+1 before the DuckDuckGo domain check")
+    }
+
+    func testWhenRequestToDuckDuckGoComOnDuckAiPageThenNoThirdPartyRequestIsReported() {
+        let mapper = makeMapper()
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://sync.duckduckgo.com/sync/data",
+            resourceType: "xmlhttprequest",
+            potentiallyBlocked: false,
+            pageUrl: "https://duck.ai")
+
+        XCTAssertNil(mapper.makeThirdPartyRequest(from: observation),
+                     "sync.duckduckgo.com must not be reported as a 3rd party request on duck.ai")
+    }
+
+    func testWhenDuckDuckGoComIsAKnownTrackerOnDuckAiPageThenClassifyReturnsNil() {
+        let mapper = makeMapper(trackerData: makeDuckDuckGoAsTrackerTDS())
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://sync.duckduckgo.com/sync/data",
+            resourceType: "xmlhttprequest",
+            potentiallyBlocked: true,
+            pageUrl: "https://duck.ai")
+
+        XCTAssertNil(mapper.classifyResource(observation),
+                     "The same-site guard must suppress DuckDuckGo-to-DuckDuckGo requests before TDS lookup")
+    }
+
+    func testWhenPageIsNotDuckDuckGoOwnedThenRequestToDuckDuckGoComStaysCrossSite() {
+        let mapper = makeMapper()
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://improving.duckduckgo.com/t/pixel",
+            resourceType: "image",
+            potentiallyBlocked: false,
+            pageUrl: "https://example.com")
+
+        XCTAssertFalse(mapper.isSameSiteObservation(observation),
+                       "A DuckDuckGo request on a non-DuckDuckGo page is still cross site")
+        XCTAssertNotNil(mapper.makeThirdPartyRequest(from: observation))
+    }
+
+    func testWhenRequestIsNotDuckDuckGoOwnedThenDuckAiPageStaysCrossSite() {
+        let mapper = makeMapper()
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://tracker.com/pixel.js",
+            resourceType: "script",
+            potentiallyBlocked: true,
+            pageUrl: "https://duck.ai")
+
+        XCTAssertFalse(mapper.isSameSiteObservation(observation),
+                       "A non-DuckDuckGo request on duck.ai is still cross site")
+        XCTAssertNotNil(mapper.classifyResource(observation),
+                        "Trackers must still be reported on DuckDuckGo pages")
+    }
+
+    func testWhenDomainOnlyContainsDuckDuckGoAsSubstringThenItStaysCrossSite() {
+        let mapper = makeMapper()
+        let observation = TrackerProtectionSubfeature.ResourceObservation(
+            url: "https://notduckduckgo.com/pixel.js",
+            resourceType: "script",
+            potentiallyBlocked: false,
+            pageUrl: "https://duck.ai")
+
+        XCTAssertFalse(mapper.isSameSiteObservation(observation),
+                       "Only exact eTLD+1 matches count as DuckDuckGo-owned")
+    }
+
     // MARK: - Native Allowlist Override
 
     func testAllowlistedTrackerIsNotBlocked() {

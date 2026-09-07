@@ -47,6 +47,16 @@ extension DataImport {
             return validProfiles
         }
 
+        /// Profiles whose data directory exists on disk but can't be read because we need permissions (macOS 27+)
+        var permissionDeniedProfiles: [BrowserProfile] {
+            profiles.filter { $0.accessState == .permissionDenied }
+        }
+
+        /// Indicates if the browser has at least one profile the app can't access yet, and no importable profiles.
+        var requiresDirectoryAccessPermission: Bool {
+            validImportableProfiles.isEmpty && !permissionDeniedProfiles.isEmpty
+        }
+
         init(browser: ThirdPartyBrowser, profiles: [BrowserProfile], validateProfileData: @escaping ProfileDataValidator = BrowserProfile.validateProfileData) {
             self.browser = browser
             self.profiles = profiles
@@ -58,7 +68,7 @@ extension DataImport {
             switch browser {
             case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
                 preferredProfileName = Constants.chromiumDefaultProfileName
-                return validImportableProfiles.first { $0.profileName == Constants.chromiumDefaultProfileName } ?? validImportableProfiles.first ?? profiles.first
+                return validImportableProfiles.first { $0.profileName == Constants.chromiumDefaultProfileName } ?? validImportableProfiles.first ?? permissionDeniedProfiles.first ?? profiles.first
             case .firefox, .tor:
                 preferredProfileName = Constants.firefoxDefaultProfileName
             case .safari, .safariTechnologyPreview, .bitwarden, .lastPass, .onePassword7, .onePassword8:
@@ -76,7 +86,8 @@ extension DataImport {
                 return validImportableProfiles.first ?? profiles.first
             }
 
-            return validImportableProfiles.first
+            // Fall back to an access-restricted profile so the browser is still offered for import
+            return validImportableProfiles.first ?? permissionDeniedProfiles.first
         }
     }
 
@@ -84,6 +95,13 @@ extension DataImport {
 
         enum Constants {
             static let chromiumSystemProfileName = "System Profile"
+        }
+
+        /// Whether the app can read the profile's data directory.
+        /// On macOS 27+ apps with `com.apple.security.*` entitlements are denied access to other apps' `~/Library/Application Support/*` directories (TCC).
+        enum AccessState: Equatable {
+            case readable
+            case permissionDenied
         }
 
         let profileURL: URL
@@ -98,6 +116,11 @@ extension DataImport {
         let browser: ThirdPartyBrowser
         private let fileStore: FileStore
         private let fallbackProfileName: String
+
+        let accessState: AccessState
+        var requiresDirectoryAccessPermission: Bool {
+            accessState == .permissionDenied
+        }
 
         enum ProfilePreferences {
             case chromium(ChromiumPreferences)
@@ -127,10 +150,11 @@ extension DataImport {
             profilePreferences?.appVersion
         }
 
-        init(browser: ThirdPartyBrowser, profileURL: URL, fileStore: FileStore = FileManager.default) {
+        init(browser: ThirdPartyBrowser, profileURL: URL, fileStore: FileStore = FileManager.default, accessState: AccessState = .readable) {
             self.browser = browser
             self.fileStore = fileStore
             self.profileURL = profileURL
+            self.accessState = accessState
 
             self.fallbackProfileName = Self.getDefaultProfileName(at: profileURL)
 

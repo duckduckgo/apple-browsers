@@ -42,6 +42,10 @@ public final class AIChatQuickActionChipView: UIView {
         static let glassShadowOpacity: Float = 0.02
         static let glassShadowRadius: CGFloat = 15
         static let glassShadowOffsetY: CGFloat = 8
+        /// Darkens the glass so the pills separate from the page behind them. iOS 26 only — the
+        /// earlier blur fallback has no tint to carry it.
+        static let glassTintAlphaLight: CGFloat = 0.06
+        static let glassTintAlphaDark: CGFloat = 0.14
         /// Outer 8 plus the label group's inner 6, per the design.
         static let glassIconLeadingPadding: CGFloat = 14
         static let glassIconLabelSpacing: CGFloat = 8
@@ -68,6 +72,8 @@ public final class AIChatQuickActionChipView: UIView {
     private var iconLabelSpacingConstraint: NSLayoutConstraint?
     private var labelTrailingConstraint: NSLayoutConstraint?
     private var glassBackgroundView: UIVisualEffectView?
+    /// Tint the live glass effect was built for, so an unchanged appearance skips the rebuild.
+    private var appliedGlassTintAlpha: CGFloat?
 
     // MARK: - UI Components
 
@@ -129,6 +135,8 @@ private extension AIChatQuickActionChipView {
         case .translucent:
             glassBackgroundView?.removeFromSuperview()
             glassBackgroundView = nil
+            // The next `.glass` pass builds a bare effect view, so the remembered tint no longer applies.
+            appliedGlassTintAlpha = nil
             hostContent(in: self)
             backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
             layer.borderWidth = Constants.borderWidth
@@ -141,14 +149,15 @@ private extension AIChatQuickActionChipView {
                                    iconToLabel: Constants.iconLabelSpacing,
                                    trailing: Constants.trailingPadding)
         case .glass:
-            // The glass is the background: nothing of ours behind it, and no tint holding it lighter than the
-            // page it sits over. It adapts to that page, and its `contentView` keeps the label legible as it does.
+            // The glass is the background: nothing of ours behind it. It adapts to the page it sits over,
+            // darkened by its own tint so the pills read against light page content.
             backgroundColor = .clear
             // No border: it lives on this layer, so it can't scale with the glass's interactive
             // expansion and would sit inside the enlarged pill on touch.
             layer.borderWidth = 0
-            installGlassBackgroundIfNeeded()
-            hostContent(in: glassBackgroundView?.contentView ?? self)
+            let glass = installGlassBackgroundIfNeeded()
+            applyGlassTint(on: glass)
+            hostContent(in: glass.contentView)
             applyGlassShadow()
             applyCornerRadius(Constants.height / 2)
             heightConstraint?.constant = Constants.height
@@ -175,17 +184,15 @@ private extension AIChatQuickActionChipView {
     }
 
     /// Shaped via `cornerConfiguration` — a layer `cornerRadius` leaves the effect rectangular behind it.
-    func installGlassBackgroundIfNeeded() {
-        guard glassBackgroundView == nil else { return }
+    @discardableResult
+    func installGlassBackgroundIfNeeded() -> UIVisualEffectView {
+        if let glassBackgroundView { return glassBackgroundView }
 
-        let effectView: UIVisualEffectView
+        let effectView = UIVisualEffectView()
         if #available(iOS 26.0, *) {
-            let effect = UIGlassEffect(style: .regular)
-            effect.isInteractive = true
-            effectView = UIVisualEffectView(effect: effect)
             effectView.cornerConfiguration = .capsule()
         } else {
-            effectView = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
+            effectView.effect = UIBlurEffect(style: .systemThinMaterial)
             effectView.clipsToBounds = true
             effectView.layer.cornerCurve = .continuous
         }
@@ -199,6 +206,29 @@ private extension AIChatQuickActionChipView {
             effectView.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
         glassBackgroundView = effectView
+        return effectView
+    }
+
+    /// `UIGlassEffect`'s tint is fixed at init, so a theme flip needs a fresh effect. Skipped when the
+    /// tint hasn't moved — assigning `effect` rebuilds the backdrop chain.
+    func applyGlassTint(on glass: UIVisualEffectView) {
+        guard #available(iOS 26.0, *) else { return }
+
+        let alpha = glassTintAlpha
+        guard appliedGlassTintAlpha != alpha else { return }
+        appliedGlassTintAlpha = alpha
+
+        let effect = UIGlassEffect(style: .regular)
+        effect.isInteractive = true
+        effect.tintColor = UIColor.black.withAlphaComponent(alpha)
+        glass.effect = effect
+    }
+
+    /// Dark glass carries more tint: it sits over darker content, so the same value would barely read.
+    var glassTintAlpha: CGFloat {
+        traitCollection.userInterfaceStyle == .dark
+            ? Constants.glassTintAlphaDark
+            : Constants.glassTintAlphaLight
     }
 
     func applyGlassShadow() {

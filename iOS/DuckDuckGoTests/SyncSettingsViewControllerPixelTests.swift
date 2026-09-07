@@ -106,6 +106,20 @@ final class SyncSettingsViewControllerPixelTests {
         })
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Another-device prompt dismissal fires the dismissed pixel", .timeLimit(.minutes(1)))
+    func anotherDevicePromptDismissalFiresDismissedPixel() {
+        let vc = makeViewController(source: "test_source", enabledFeatureFlags: [.simplifiedSyncSetupV2])
+
+        vc.fireSyncSetupPixel(event: .anotherDevicePromptDismissed)
+
+        #expect(PixelFiringMock.allPixelsFired.contains {
+            $0.pixelName == Pixel.Event.settingsSyncAnotherDevicePromptDismissed.name &&
+            $0.params == ["ui_version": "v2"] &&
+            $0.includedParams == [.appVersion]
+        })
+    }
+
     private func makeViewController(source: String?, enabledFeatureFlags: [FeatureFlag]) -> SyncSettingsViewController {
         SyncSettingsViewController(
             syncService: ddgSyncing,

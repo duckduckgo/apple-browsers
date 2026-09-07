@@ -23,7 +23,7 @@ import Foundation
 struct ResolvePageSuggestionsInput {
 
     /// What the offered suggestions should act on.
-    enum Scope {
+    enum Scope: String, Equatable {
         case page
         case selection
     }

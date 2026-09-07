@@ -59,7 +59,7 @@ final class DefaultTutorialSettings: TutorialSettings {
         static let hasSeenOnboarding = "com.duckduckgo.tutorials.hasSeenOnboarding"
         static let hasSkippedOnboarding = "com.duckduckgo.tutorials.hasSkippedOnboarding"
         static let onboardingFlowType = "com.duckduckgo.tutorials.onboardingFlowType"
-        static let onboardingDownloadReason = "com.duckduckgo.tutorials.onboardingDownloadReason"
+        static let onboardingDownloadReason = OnboardingDownloadReasonStore.key
     }
 
     private func userDefaults() -> UserDefaults {

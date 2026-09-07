@@ -25,12 +25,11 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import EventHub
 import PrivacyDashboard
-import Persistence
+@_spi(Testing) import Persistence
 import Subscription
 import SubscriptionTestingUtilities
 import SpecialErrorPages
 import MaliciousSiteProtection
-import PersistenceTestingUtils
 @testable import DuckDuckGo
 import Combine
 @testable import Core
@@ -43,6 +42,7 @@ final class MockTabDelegate: TabDelegate {
     private(set) var didRequestFireButtonPulseCalled = false
     private(set) var tabDidRequestPrivacyDashboardButtonPulseCalled = false
     private(set) var privacyDashboardAnimated: Bool?
+    private(set) var reportBrokenSiteEntryPoints: [PrivacyDashboardEntryPoint] = []
     var isAIChatEnabled = false
     var isEmailProtectionSignedIn = false
 
@@ -62,6 +62,10 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewDuckAITabForUrl url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didStartDuckAINavigationTo url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource, opensNewTab: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
+
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestReopenClosedTabAt url: URL) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewBackgroundTabForUrl url: URL, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
@@ -74,7 +78,9 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didChangePrivacyInfo privacyInfo: PrivacyDashboard.PrivacyInfo?) {}
 
-    func tabDidRequestReportBrokenSite(tab: DuckDuckGo.TabViewController, entryPoint: PrivacyDashboardEntryPoint) {}
+    func tabDidRequestReportBrokenSite(tab: DuckDuckGo.TabViewController, entryPoint: PrivacyDashboardEntryPoint) {
+        reportBrokenSiteEntryPoints.append(entryPoint)
+    }
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestToggleReportWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {}
 
@@ -312,8 +318,7 @@ final class StubEventHub: EventHubManaging {
     private(set) var closedTabIDs: [EventHubTabID] = []
 
     func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
-    func handleImmediateEvent(_ type: String, data: Encodable?) {}
-    func handleAggregatedEvent(_ type: String, data: Encodable?) {}
+    func handleNativeEvent(_ type: String, data: Encodable?) {}
 
     func onNavigationStarted(tabID: EventHubTabID, url: String) {
         navigationStarts.append((tabID, url))

@@ -140,7 +140,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         config.limits = makeLimits()
         let sut = makeController()
 
-        sut.reportRejectedPaste(reason: .fileTooLarge)
+        sut.reportRejectedPastedFiles(reason: .fileTooLarge)
 
         XCTAssertEqual(view.validationMessage, UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 5))
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
@@ -154,7 +154,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         config.inputMode = .aiChat
         let sut = makeController()
 
-        sut.reportRejectedPaste(reason: .fileTooLarge)
+        sut.reportRejectedPastedFiles(reason: .fileTooLarge)
         XCTAssertNotNil(view.validationMessage)
 
         // A re-sync with no attachment-derived error must fall back to the transient banner, not clear it.
@@ -173,6 +173,32 @@ final class UTIAttachmentControllerTests: XCTestCase {
         sut.updateAttachButtonPresentation()
 
         XCTAssertTrue(view.imageButtonHidden)
+    }
+
+    func testUpdateAttachButtonPresentation_whenUnavailableButtonShouldRemainVisible_showsDisabledButtonWithoutMenu() {
+        config.model = makeModel(supportsImageUpload: false, supportedFileTypes: [])
+        config.limits = makeLimits()
+        config.keepsUnavailableAttachmentButtonVisible = true
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        XCTAssertFalse(view.imageButtonHidden)
+        XCTAssertFalse(view.imageButtonEnabled)
+        XCTAssertNil(view.attachmentMenu)
+    }
+
+    func testUpdateAttachButtonPresentation_whenModelIsUnknown_hidesUnavailableButton() {
+        config.model = nil
+        config.limits = makeLimits()
+        config.keepsUnavailableAttachmentButtonVisible = true
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        XCTAssertTrue(view.imageButtonHidden)
+        XCTAssertFalse(view.imageButtonEnabled)
+        XCTAssertNil(view.attachmentMenu)
     }
 
     func testUpdateAttachButtonPresentation_disablesButtonWhileGenerating() {
@@ -238,6 +264,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
                 supportsImageUpload: { config.model?.supportsImageUpload ?? false },
                 supportedFileTypes: { config.model?.supportedFileTypes ?? [] },
                 hasSelectedModel: { config.model != nil },
+                keepsUnavailableAttachmentButtonVisible: { config.keepsUnavailableAttachmentButtonVisible },
                 attachmentLimits: { config.limits },
                 currentTabUID: { "tab-1" },
                 isPageContextAttachable: { nil },
@@ -301,6 +328,7 @@ private final class FakeEnvironmentConfig {
     var usage: AIChatAttachmentUsage?
     var inputMode: TextEntryMode = .aiChat
     var isContextualChatState = false
+    var keepsUnavailableAttachmentButtonVisible = false
 }
 
 @MainActor

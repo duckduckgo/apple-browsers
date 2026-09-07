@@ -50,6 +50,7 @@ struct ControlWidgetToggleVPNIntent: SetValueIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         if value {
             try await startVPN()
         } else {

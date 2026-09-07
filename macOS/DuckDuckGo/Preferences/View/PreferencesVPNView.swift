@@ -70,15 +70,13 @@ extension Preferences {
                         )
                     }
 
-                    if model.isExcludeCGNATAvailable {
-                        SpacedCheckbox {
-                            ToggleMenuItemWithDescription(
-                                UserText.vpnExcludeCGNATSettingTitle,
-                                UserText.vpnExcludeCGNATSettingDescription,
-                                isOn: $model.excludeCGNAT,
-                                spacing: 12
-                            )
-                        }
+                    SpacedCheckbox {
+                        ToggleMenuItemWithDescription(
+                            UserText.vpnExcludeCGNATSettingTitle,
+                            UserText.vpnExcludeCGNATSettingDescription,
+                            isOn: $model.excludeCGNAT,
+                            spacing: 12
+                        )
                     }
 
                     if model.isStrictRoutingAvailable {
@@ -209,35 +207,28 @@ extension Preferences {
 
                 // SECTION: Troubleshooting
 
-                if model.showsCopyDiagnosticsButton || model.showUninstallVPN {
-                    PreferencePaneSection(UserText.vpnTroubleshootingTitle) {
-                        if model.showsCopyDiagnosticsButton {
-                            PreferencePaneSubSection {
-                                Button(copyDiagnosticsButtonTitle) {
-                                    Task { @MainActor in
-                                        await model.copySupportInfo()
-                                    }
-                                }
-                                .disabled(model.copySupportInfoState != .idle)
-
-                                TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
+                PreferencePaneSection(UserText.vpnTroubleshootingTitle) {
+                    PreferencePaneSubSection {
+                        Button(copyDiagnosticsButtonTitle) {
+                            Task { @MainActor in
+                                await model.copySupportInfo()
                             }
                         }
+                        .disabled(model.copySupportInfoState != .idle)
 
-                        if model.showUninstallVPN {
-                            PreferencePaneSubSection {
-                                Button(UserText.uninstallVPNButtonTitle) {
-                                    Task { @MainActor in
-                                        await model.uninstallVPN()
-                                    }
+                        TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
+                    }
+
+                    if model.showUninstallVPN {
+                        PreferencePaneSubSection {
+                            Button(UserText.uninstallVPNButtonTitle) {
+                                Task { @MainActor in
+                                    await model.uninstallVPN()
                                 }
                             }
                         }
                     }
                 }
-            }
-            .onAppear {
-                model.onViewAppeared()
             }
         }
 

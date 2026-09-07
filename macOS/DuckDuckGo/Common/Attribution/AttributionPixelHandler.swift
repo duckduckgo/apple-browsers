@@ -65,9 +65,7 @@ final class GenericAttributionPixelHandler: AttributionPixelHandler {
             [:],
             self.parameters(additionalParameters, withOrigin: origin, locale: locale.identifier),
             nil,
-            nil,
             true,
-            false,
             { _, _ in }
         )
     }
@@ -94,10 +92,8 @@ extension GenericAttributionPixelHandler {
         _ frequency: PixelKit.Frequency,
         _ headers: [String: String],
         _ parameters: [String: String]?,
-        _ namePrefix: String?,
         _ allowedQueryReservedCharacters: CharacterSet?,
         _ includeAppVersionParameter: Bool,
-        _ doNotEnforcePrefix: Bool,
         _ onComplete: @escaping (Bool, Error?) -> Void
     ) -> Void
 }

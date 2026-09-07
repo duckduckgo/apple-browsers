@@ -46,6 +46,7 @@ final class SearchTokenFetcher {
     private let windowProvider: () -> TimeInterval
     private let now: () -> Date
     private let onFetchResult: (_ result: FetchResult) -> Void
+    private let onTokenRefreshed: (() -> Void)?
 
     private let lock = NSLock()
     private var cachedToken: String?
@@ -57,12 +58,14 @@ final class SearchTokenFetcher {
          ttlProvider: @escaping () -> TimeInterval = { 300 },
          windowProvider: @escaping () -> TimeInterval = { 120 },
          now: @escaping () -> Date = Date.init,
-         onFetchResult: @escaping (_ result: FetchResult) -> Void = { _ in }) {
+         onFetchResult: @escaping (_ result: FetchResult) -> Void = { _ in },
+         onTokenRefreshed: (() -> Void)? = nil) {
         self.requester = requester
         self.ttlProvider = ttlProvider
         self.windowProvider = windowProvider
         self.now = now
         self.onFetchResult = onFetchResult
+        self.onTokenRefreshed = onTokenRefreshed
     }
 
     /// The cached token while it is still within its TTL, otherwise `nil`. Synchronous, non-blocking.
@@ -89,6 +92,7 @@ final class SearchTokenFetcher {
         do {
             let token = try await requester.requestToken(userAgent: userAgent)
             cache(token: token, userAgent: userAgent)
+            onTokenRefreshed?()
             onFetchResult(.success)
             Logger.general.debug("SearchToken: fetched (len=\(token.count, privacy: .public))")
         } catch {

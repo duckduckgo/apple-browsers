@@ -20,8 +20,7 @@ import Combine
 import Common
 import Foundation
 import Gzip
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import Networking
@@ -214,6 +213,10 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
 
     func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
         return nil
+    }
+
+    func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
+        [:]
     }
 
     var identifier: String = "abcd"

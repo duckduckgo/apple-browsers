@@ -33,7 +33,6 @@ class AIChatSettingsTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: ["aiChatChromeSidebar": true, "aiChatSidebarFloating": true, "aiChatChromeMenuButton": false])
 
         addressBarTextField = app.addressBar
@@ -187,7 +186,6 @@ class AIChatSettingsTests: UITestCase {
 
         // Restore: re-enable Duck.ai
         app.activateAddressBar()
-        addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
         let restorePicker = app.popUpButtons[Identifiers.aiFeaturesToggle]
         XCTAssertTrue(restorePicker.waitForExistence(timeout: UITests.Timeouts.elementExistence))

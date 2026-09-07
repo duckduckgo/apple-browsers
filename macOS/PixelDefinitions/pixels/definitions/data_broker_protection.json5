@@ -251,6 +251,7 @@
             "dbpParentBroker",
             "dbpAttemptId",
             "dbpAttemptDuration",
+            "dbpAwakeDuration",
             {
                 "key": "tries",
                 "description": "The number of tries it took to submit successfully",
@@ -320,6 +321,7 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpAttemptDuration",
+            "dbpAwakeDuration",
             {
                 "key": "error_category",
                 "description": "High-level error classification",
@@ -838,6 +840,7 @@
                 "description": "Total duration of the scan in milliseconds",
                 "type": "number"
             },
+            "dbpAwakeDuration",
             "dbpStageTries",
             {
                 "key": "is_manual_scan",
@@ -876,6 +879,7 @@
                 "description": "Total duration of the scan in milliseconds",
                 "type": "number"
             },
+            "dbpAwakeDuration",
             "dbpStageTries",
             {
                 "key": "is_manual_scan",
@@ -916,6 +920,7 @@
                 "description": "Total duration of the scan in milliseconds",
                 "type": "number"
             },
+            "dbpAwakeDuration",
             {
                 "key": "error_category",
                 "description": "High-level error classification",

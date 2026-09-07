@@ -1600,7 +1600,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 shouldSelectNewTab: true
             )
 
-            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.contextMenu)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBarContextMenu)
             if let value = textFieldValue {
                 let query = aiChatAddressBarPromptExtractor.extractAIChatQuery(for: value)
                 aiChatTabOpener.openAIChatTab(with: query, behavior: behavior)
@@ -1617,7 +1617,7 @@ final class AddressBarButtonsViewController: NSViewController {
                                          minutesSinceSidebarHidden: aiChatCoordinator.sidebarHiddenAt(for: tab.uuid)?.minutesSinceNow())
                 PixelKit.fire(pixel, frequency: .dailyAndStandard)
                 if !isSidebarCurrentlyOpen {
-                    NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.contextMenu)
+                    NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBarContextMenu)
                 }
             }
 
@@ -2876,7 +2876,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         switch popover {
         case popovers.bookmarkPopover:
             if popovers.bookmarkPopover?.isNew == true {
-                NotificationCenter.default.post(name: .bookmarkPromptShouldShow, object: nil)
+                NotificationCenter.default.post(name: .bookmarkAdded, object: nil)
             }
             updateBookmarkButtonVisibility()
         case popovers.zoomPopover:

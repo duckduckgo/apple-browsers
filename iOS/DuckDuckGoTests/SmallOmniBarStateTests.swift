@@ -19,7 +19,7 @@
 
 import FeatureFlags_iOS
 import Foundation
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 import XCTest
 @testable import DuckDuckGo
@@ -633,7 +633,6 @@ class SmallOmniBarStateTests: XCTestCase {
         let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // Then
-        XCTAssertTrue(sut.showAIChatFullModeBranding)
         XCTAssertFalse(sut.showBackButton)
         XCTAssertFalse(sut.showForwardButton)
         XCTAssertFalse(sut.showBookmarksButton)

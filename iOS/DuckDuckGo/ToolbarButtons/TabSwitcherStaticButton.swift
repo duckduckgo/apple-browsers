@@ -59,6 +59,7 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
         setUpSubviews()
         self.isPointerInteractionEnabled = true
         self.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
+        self.accessibilityIdentifier = "Browser.Toolbar.Button.TabSwitcher"
     }
 
     @available(*, unavailable)

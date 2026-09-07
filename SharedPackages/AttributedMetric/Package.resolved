@@ -1,13 +1,13 @@
 {
-  "originHash" : "64b78ad8b27c565964b114334726bea94ef82fea3b0f4e230abbdc3030bba069",
+  "originHash" : "6d91ac473ab86162d99d79b5189099d84b906045950af9e66d78b9501c7dda8b",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "c2c1e53de6b5ea8c5515475c3d4cd8fd7a834fb7",
-        "version" : "16.2.0"
+        "revision" : "21aec4d902338cb10c422e091eb6a8c9f38a9be1",
+        "version" : "16.9.0"
       }
     },
     {
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/TrackerRadarKit.git",
       "state" : {
-        "revision" : "6d2db2a50cbd6d0a33d40864953bbef523489b28",
-        "version" : "3.1.0"
+        "revision" : "6ae7e79e77a4deb03fb5f21a73d701cae4132281",
+        "version" : "4.0.0"
       }
     }
   ],

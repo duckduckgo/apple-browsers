@@ -53,6 +53,11 @@ enum HomeSupportedMessageDisplayType {
 
 struct HomeMessageViewModel {
 
+    enum ViewIdentity: Hashable {
+        case legacy(messageID: String)
+        case coordinated(messageID: String, acquisitionIdentity: PromoQueueAcquisitionIdentity)
+    }
+
     enum ButtonAction: Equatable {
         case close
         case action(isShare: Bool) // a generic action that is specific to the type of message
@@ -61,6 +66,7 @@ struct HomeMessageViewModel {
     }
 
     let messageId: String
+    let acquisitionIdentity: PromoQueueAcquisitionIdentity?
     let modelType: HomeSupportedMessageDisplayType
     let messageActionHandler: RemoteMessagingActionHandling
     let preloadedImage: UIImage?
@@ -158,6 +164,13 @@ struct HomeMessageViewModel {
     let onDidClose: (ButtonAction?) async -> Void
     let onDidAppear: () -> Void
     let onAttachAdditionalParameters: ((_ useCase: SubscriptionDataReportingUseCase, _ params: [String: String]) -> [String: String])?
+
+    var viewIdentity: ViewIdentity {
+        if let acquisitionIdentity {
+            return .coordinated(messageID: messageId, acquisitionIdentity: acquisitionIdentity)
+        }
+        return .legacy(messageID: messageId)
+    }
 
     func mapActionToViewModel(
         remoteAction: RemoteAction,

@@ -25,17 +25,11 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var didCallPresentModalPromptIfNeeded = false
     private(set) var capturedPresenter: ModalPromptPresenter?
     private(set) var callCount = 0
-    private(set) var promoQueueWillTransitionTargets = [PromoQueueFeatureTargetState]()
-    private(set) var promoQueueDidTransitionTargets = [PromoQueueFeatureTargetState]()
     var didPresentModalPromptThisSession = false
-    var coordinatedPresentationDisposition = ModalPromptLeaseDisposition.retained
-    var reconcilePresentedModalResult = false
     private(set) var capturedModalLease: PromoQueueModalLease?
     private(set) var reconcilePresentedModalCallCount = 0
     var onPresentCoordinated: (@MainActor () -> Void)?
     var onReconcilePresentedModal: (@MainActor () -> Void)?
-    var onPromoQueueWillTransition: (@MainActor (PromoQueueFeatureTargetState) -> Void)?
-    var onPromoQueueDidTransition: (@MainActor (PromoQueueFeatureTargetState) -> Void)?
 
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
         didCallPresentModalPromptIfNeeded = true
@@ -46,31 +40,16 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease
-    ) -> ModalPromptLeaseDisposition {
+    ) {
         didCallPresentModalPromptIfNeeded = true
         capturedPresenter = presenter
         capturedModalLease = lease
         callCount += 1
         onPresentCoordinated?()
-        if coordinatedPresentationDisposition == .released {
-            lease.release()
-        }
-        return coordinatedPresentationDisposition
     }
 
-    func reconcilePresentedModal() -> Bool {
+    func reconcilePresentedModal() {
         reconcilePresentedModalCallCount += 1
         onReconcilePresentedModal?()
-        return reconcilePresentedModalResult
-    }
-
-    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {
-        promoQueueWillTransitionTargets.append(targetState)
-        onPromoQueueWillTransition?(targetState)
-    }
-
-    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {
-        promoQueueDidTransitionTargets.append(targetState)
-        onPromoQueueDidTransition?(targetState)
     }
 }

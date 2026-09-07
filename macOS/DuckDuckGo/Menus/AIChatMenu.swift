@@ -36,7 +36,7 @@ final class AIChatMenu: NSMenu {
     // MARK: - Actions
 
     struct Actions {
-        var openNewChat: @MainActor () -> Void
+        var openNewChat: @MainActor (AIChatMenuNewChatItem) -> Void
         var openNewVoiceChat: @MainActor () -> Void
         var openNewImageChat: @MainActor () -> Void
         var openChat: @MainActor (AIChatSuggestion) -> Void
@@ -48,7 +48,7 @@ final class AIChatMenu: NSMenu {
     private lazy var openDuckAIItem: NSMenuItem = {
         let item = NSMenuItem(title: UserText.aiChatMenuOpenDuckAI, action: #selector(openDuckAITapped), keyEquivalent: "")
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.duckAi
+        item.withImage(DesignSystemImages.Glyphs.Size12.duckAi, visibleOnMacOS27: origin == .moreOptionsMenu)
         return item
     }()
 
@@ -59,7 +59,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.compose
+        item.withImage(DesignSystemImages.Glyphs.Size12.compose, visibleOnMacOS27: origin == .moreOptionsMenu)
         return item
     }()
 
@@ -71,7 +71,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.voice
+        item.withImage(DesignSystemImages.Glyphs.Size12.voice, visibleOnMacOS27: origin == .moreOptionsMenu)
         return item
     }()
 
@@ -82,7 +82,7 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.option, .command]
         }
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.images
+        item.withImage(DesignSystemImages.Glyphs.Size12.images, visibleOnMacOS27: origin == .moreOptionsMenu)
         return item
     }()
 
@@ -94,7 +94,7 @@ final class AIChatMenu: NSMenu {
         if origin == .mainMenu {
             item.keyEquivalentModifierMask = [.command, .option]
         }
-        item.image = DesignSystemImages.Glyphs.Size12.aiChat
+        item.withImage(DesignSystemImages.Glyphs.Size12.aiChat)
         return item
     }()
 
@@ -107,7 +107,7 @@ final class AIChatMenu: NSMenu {
     private lazy var deleteAllChatsItem: NSMenuItem = {
         let item = NSMenuItem(title: UserText.aiChatMenuDeleteAllChats, action: #selector(deleteAllChatsTapped), keyEquivalent: "")
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.fire
+        item.withImage(DesignSystemImages.Glyphs.Size12.fire, visibleOnMacOS27: origin == .moreOptionsMenu)
         return item
     }()
 
@@ -216,7 +216,10 @@ final class AIChatMenu: NSMenu {
             let item = NSMenuItem(title: chat.title, action: #selector(chatItemTapped(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = chat
-            item.image = chat.isPinned ? DesignSystemImages.Color.Size12.chatPinned : DesignSystemImages.Color.Size12.chat
+            item.withImage(
+                chat.isPinned ? DesignSystemImages.Color.Size12.chatPinned : DesignSystemImages.Color.Size12.chat,
+                visibleOnMacOS27: true
+            )
             insertItem(item, at: labelIndex + 1 + offset)
             chatItems.append(item)
         }
@@ -225,7 +228,7 @@ final class AIChatMenu: NSMenu {
             let separator = NSMenuItem.separator()
             let viewAllItem = NSMenuItem(title: UserText.aiChatMenuViewAllChats, action: #selector(viewAllChatsTapped), keyEquivalent: "")
             viewAllItem.target = self
-            viewAllItem.image = DesignSystemImages.Glyphs.Size12.aiChatHistory
+            viewAllItem.withImage(DesignSystemImages.Glyphs.Size12.aiChatHistory, visibleOnMacOS27: true)
             let insertIndex = labelIndex + 1 + chats.count
             insertItem(separator, at: insertIndex)
             insertItem(viewAllItem, at: insertIndex + 1)
@@ -237,13 +240,13 @@ final class AIChatMenu: NSMenu {
     // MARK: - Action handlers
 
     @objc private func openDuckAITapped() {
-        actions.openNewChat()
+        actions.openNewChat(.openDuckAI)
         let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatOpenDuckAiMoreOptionsMenu : .aiChatOpenDuckAiMainMenu
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }
 
     @objc private func newChatTapped() {
-        actions.openNewChat()
+        actions.openNewChat(.newChat)
         let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatNewChatMoreOptionsMenu : .aiChatNewChatMainMenu
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }
@@ -268,12 +271,12 @@ final class AIChatMenu: NSMenu {
         if isChatPresented() {
             // A chat is already open → close it (sidebar or floating) with the sidebar-close icon.
             askAboutPageItem.title = UserText.aiChatMenuCloseSidebar
-            askAboutPageItem.image = TabBarViewController.closeSidebarMenuIcon()
+            askAboutPageItem.withImage(TabBarViewController.closeSidebarMenuIcon())
         } else {
             // "Ask About Page" (attachable) or "Open Sidebar" (nothing to attach), both with the
             // split button's sidebar-open icon.
             askAboutPageItem.title = isCurrentPageAttachable() ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
-            askAboutPageItem.image = TabBarViewController.openSidebarMenuIcon()
+            askAboutPageItem.withImage(TabBarViewController.openSidebarMenuIcon())
         }
         // Hold ⌥⌘L only while shown: a hidden item can still register its key equivalent in AppKit and
         // would then shadow the segmented layout's "Show Duck.ai Sidebar" ⌥⌘L, silently no-opping it.
@@ -291,7 +294,7 @@ final class AIChatMenu: NSMenu {
     }
 
     @objc private func viewAllChatsTapped() {
-        actions.openNewChat()
+        actions.openNewChat(.viewAllChats)
         let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatViewAllChatsMoreOptionsMenu : .aiChatViewAllChatsMainMenu
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }
@@ -303,9 +306,9 @@ final class AIChatMenu: NSMenu {
         dialog.confirmed = {
             let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatDeleteAllChatsMoreOptionsMenu : .aiChatDeleteAllChatsMainMenu
             PixelKit.fire(pixel, frequency: .dailyAndStandard)
-            PixelKit.fire(FireButtonPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true)
-            PixelKit.fire(FireButtonPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
-            PixelKit.fire(FireButtonPixel.burn(.aiChats), frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            PixelKit.fire(FireButtonPixel.fireStarted, frequency: .dailyAndCount)
+            PixelKit.fire(FireButtonPixel.fireStartedInSession, frequency: .dailyAndCount)
+            PixelKit.fire(FireButtonPixel.burn(.aiChats), frequency: .dailyAndCount)
             Task { @MainActor in
                 await actions.deleteAllChats()
             }
@@ -316,11 +319,52 @@ final class AIChatMenu: NSMenu {
 
 // MARK: - Default actions factory
 
+/// These three items share one action, so the item has to travel with the call to stay
+/// distinguishable in the conversation pixel.
+enum AIChatMenuNewChatItem {
+    case openDuckAI
+    case newChat
+    case viewAllChats
+}
+
+/// Bundled per menu so each menu declares its own sources once, instead of deriving them from a
+/// bare surface at the point of use.
+struct AIChatMenuConversationSources {
+    let openDuckAI: AIChatConversationSource
+    let newChat: AIChatConversationSource
+    let viewAllChats: AIChatConversationSource
+    let voice: AIChatConversationSource
+    let image: AIChatConversationSource
+    let recentChat: AIChatConversationSource
+
+    static let mainMenu = Self(openDuckAI: .mainMenuOpenDuckAI,
+                               newChat: .mainMenuNewChat,
+                               viewAllChats: .mainMenuViewAllChats,
+                               voice: .mainMenuVoice,
+                               image: .mainMenuImage,
+                               recentChat: .mainMenuRecentChat)
+
+    static let moreOptionsMenu = Self(openDuckAI: .moreOptionsMenuOpenDuckAI,
+                                      newChat: .moreOptionsMenuNewChat,
+                                      viewAllChats: .moreOptionsMenuViewAllChats,
+                                      voice: .moreOptionsMenuVoice,
+                                      image: .moreOptionsMenuImage,
+                                      recentChat: .moreOptionsMenuRecentChat)
+
+    func source(for item: AIChatMenuNewChatItem) -> AIChatConversationSource {
+        switch item {
+        case .openDuckAI: return openDuckAI
+        case .newChat: return newChat
+        case .viewAllChats: return viewAllChats
+        }
+    }
+}
+
 extension AIChatMenu.Actions {
 
     @MainActor
     static func makeDefault(
-        conversationSource: AIChatConversationSource,
+        conversationSources: AIChatMenuConversationSources,
         remoteSettings: AIChatRemoteSettings,
         tabOpener: AIChatTabOpening,
         historyCleaner: AIChatHistoryCleaning,
@@ -329,23 +373,23 @@ extension AIChatMenu.Actions {
         aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) -> AIChatMenu.Actions {
         AIChatMenu.Actions(
-            openNewChat: {
-                aiChatConversationSourceHandler.setData(conversationSource)
+            openNewChat: { item in
+                aiChatConversationSourceHandler.setData(conversationSources.source(for: item))
                 tabOpener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
             },
             openNewVoiceChat: {
                 let sourceCollection = windowControllersManager.lastKeyMainWindowController?
                     .mainViewController.tabCollectionViewModel
-                aiChatConversationSourceHandler.setData(.voice)
+                aiChatConversationSourceHandler.setData(conversationSources.voice)
                 tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: .newTab(selected: true))
             },
             openNewImageChat: {
                 let url = AIChatURLParameters.imageModeURL(from: remoteSettings.aiChatURL)
-                aiChatConversationSourceHandler.setData(.imageGeneration)
+                aiChatConversationSourceHandler.setData(conversationSources.image)
                 tabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
             },
             openChat: { suggestion in
-                aiChatConversationSourceHandler.setData(.recentChat)
+                aiChatConversationSourceHandler.setData(conversationSources.recentChat)
                 tabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
             },
             deleteAllChats: {

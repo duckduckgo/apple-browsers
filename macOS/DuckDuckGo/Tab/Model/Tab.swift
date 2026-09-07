@@ -37,6 +37,7 @@ import PrivacyConfig
 import SERPSettings
 import SpecialErrorPages
 import UserScript
+import WebExtensions
 import WebKit
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
@@ -74,6 +75,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var permissionManager: PermissionManagerProtocol
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
         let eventHub: EventHubManaging
+        let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -163,7 +165,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      aiChatSessionStore: AIChatSessionStoring? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
                      themeManager: ThemeManaging? = nil,
-                     eventHub: EventHubManaging? = nil
+                     eventHub: EventHubManaging? = nil,
+                     webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging? = { NSApp.delegateTyped.webExtensionManager }
     ) {
 
         let duckPlayer = duckPlayer
@@ -231,7 +234,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   aiChatSessionStore: aiChatSessionStore ?? NSApp.delegateTyped.aiChatSessionStore,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
                   themeManager: themeManager ?? NSApp.delegateTyped.themeManager,
-                  eventHub: eventHub ?? NSApp.delegateTyped.eventHubIntegration.eventHub
+                  eventHub: eventHub ?? NSApp.delegateTyped.eventHubIntegration.eventHub,
+                  webExtensionManagerProvider: webExtensionManagerProvider
         )
     }
 
@@ -283,7 +287,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          aiChatSessionStore: AIChatSessionStoring,
          tabCrashAggregator: TabCrashAggregator,
          themeManager: ThemeManaging,
-         eventHub: EventHubManaging
+         eventHub: EventHubManaging,
+         webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging?
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -312,7 +317,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         specialPagesUserScript?
             .withAllSubfeatures()
         let configuration = webViewConfiguration ?? WKWebViewConfiguration()
-        configuration.applyStandardConfiguration(contentBlocking: privacyFeatures.contentBlocking,
+        configuration.applyStandardConfiguration(featureFlagger: featureFlagger,
+                                                 contentBlocking: privacyFeatures.contentBlocking,
                                                  burnerMode: burnerMode,
                                                  earlyAccessHandlers: specialPagesUserScript.map { [$0] } ?? [])
         self.webViewConfiguration = configuration
@@ -368,7 +374,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           autoplayPreferences: autoplayPreferences,
                                                           permissionManager: permissionManager,
                                                           webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                          eventHub: eventHub)
+                                                          eventHub: eventHub,
+                                                          webExtensionManagerProvider: webExtensionManagerProvider)
         let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
                                                                             tabID: self.uuid,
                                                                             isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
@@ -378,6 +385,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                                             contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
                                                                             setContent: { tabGetter()?.setContent($0) },
                                                                             closeTab: { tabGetter().map { $0.delegate?.closeTab($0) } },
+                                                                            reportBrokenSite: { sourceWindow in
+                                                                                Application.appDelegate.openReportBrokenSite(entryPoint: .webKitTerminationErrorPage, in: sourceWindow)
+                                                                            },
                                                                             titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
                                                                             errorPublisher: _error.projectedValue.eraseToAnyPublisher(),
                                                                             userScriptsPublisher: userScriptsPublisher,
@@ -1009,7 +1019,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         // In the case of an error only reload web URLs to prevent uxss attacks via redirecting to javascript://
         if let error = error,
            let failingUrl = error.failingUrl ?? content.urlForWebView,
-           failingUrl.isHttp || failingUrl.isHttps {
+           // treat debug:// URLs as valid hypertext URLs for reloading (used in UI tests to simulate connection errors)
+           failingUrl.isHttp || failingUrl.isHttps || (featureFlagger.isFeatureOn(.debugURLScheme) && failingUrl.isDebugURLScheme) {
 
             // Use location.replace to retry the failed URL in-place without adding a back/forward
             // entry. Invoke without user gesture so the resulting navigation arrives at the policy
@@ -1093,7 +1104,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @MainActor
     private func shouldReload(_ url: URL, source: ReloadIfNeededSource) -> Bool {
         /// Use unified logic if enabled to decide if URL is valid
-        guard url.isValid(usingUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) else { return false }
+        guard url.isValid(usingUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor))
+                // treat debug:// URLs as valid hypertext URLs for reloading (used in UI tests to simulate connection errors)
+                || (featureFlagger.isFeatureOn(.debugURLScheme) && url.isDebugURLScheme) else { return false }
 
         switch source {
         // should load when Web View is displayed?
@@ -1106,6 +1119,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             switch error {
             case .some(URLError.notConnectedToInternet),
                  .some(URLError.networkConnectionLost):
+                guard !webView.isLoading else { return false }
                 // reload when showing error due to connection failure
                 return true
             default:

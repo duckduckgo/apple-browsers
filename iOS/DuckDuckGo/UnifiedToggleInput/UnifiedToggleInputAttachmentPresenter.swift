@@ -125,6 +125,11 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
 
         return UIMenu(children: actions)
     }
+
+    /// Opens the system file picker directly (bypassing the attachment menu) for the promo "add file" CTA.
+    func presentFilePicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
+        presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
+    }
 }
 
 private extension UnifiedToggleInputAttachmentPresenter {

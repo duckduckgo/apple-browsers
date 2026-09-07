@@ -63,6 +63,8 @@ class SettingsLegacyViewProvider: ObservableObject {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+    let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
+    let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -85,7 +87,9 @@ class SettingsLegacyViewProvider: ObservableObject {
          syncAutoRestoreHandler: SyncAutoRestoreHandling,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
+         promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -108,6 +112,8 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
+        self.promoCoordinationCooldownResetter = promoCoordinationCooldownResetter
     }
     
     enum LegacyView {
@@ -116,7 +122,6 @@ class SettingsLegacyViewProvider: ObservableObject {
              autofill,
              appIcon,
              gpc,
-             autoconsent,
              unprotectedSites,
              fireproofSites,
              keyboard,
@@ -164,13 +169,14 @@ class SettingsLegacyViewProvider: ObservableObject {
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
-            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
+            promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter))
     }
 
     // Legacy UIKit Views (Pushed unmodified)
     var addToDock: UIViewController { instantiate( "instructions", fromStoryboard: StoryboardName.homeRow) }
     var gpc: UIViewController { instantiate("DoNotSell", fromStoryboard: StoryboardName.settings) }
-    var autoConsent: UIViewController { instantiate("AutoconsentSettingsViewController", fromStoryboard: StoryboardName.settings) }
     var unprotectedSites: UIViewController { UnprotectedSitesViewController() }
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController { instantiate("Keyboard", fromStoryboard: StoryboardName.settings) }

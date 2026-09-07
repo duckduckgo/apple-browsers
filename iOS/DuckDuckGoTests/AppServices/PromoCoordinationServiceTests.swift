@@ -18,12 +18,7 @@
 //
 
 import UIKit
-import Foundation
-import Combine
-import Core
-import PrivacyConfig
 import Testing
-import PersistenceTestingUtils
 @testable import DuckDuckGo
 
 @MainActor
@@ -33,8 +28,8 @@ final class PromoCoordinationServiceTests {
     private let contextualOnboardingMock: MockContextualOnboardingStatusProvider
     private let managerMock: MockModalPromptCoordinationManager
     private let presenterMock: MockModalPromptPresenter
-    private let featureFlaggerMock: MockFeatureFlagger
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
+    private let promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy
     private var sut: PromoCoordinationService!
 
     init() {
@@ -42,8 +37,8 @@ final class PromoCoordinationServiceTests {
         contextualOnboardingMock = MockContextualOnboardingStatusProvider(hasSeenOnboarding: true)
         managerMock = MockModalPromptCoordinationManager()
         presenterMock = MockModalPromptPresenter()
-        featureFlaggerMock = MockFeatureFlagger()
         promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
+        promoQueueCooldownPolicy = MockPromoQueueCooldownPolicy()
     }
 
     // MARK: - Launch Source Checks
@@ -62,8 +57,9 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            mode: .legacy,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy
         )
 
         // WHEN
@@ -81,8 +77,9 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            mode: .legacy,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy
         )
 
         // WHEN
@@ -104,8 +101,9 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            mode: .legacy,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy
         )
 
         // WHEN
@@ -123,8 +121,9 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            mode: .legacy,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy
         )
 
         // WHEN
@@ -144,29 +143,9 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(managerMock.didCallPresentModalPromptIfNeeded)
-    }
-
-    @Test("Check Modal Is Presented When OmniBarEditingStateViewController Is Presented")
-    func whenOmniBarEditingStateIsPresentedThenModalIsPresented() {
-        // GIVEN
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = OmniBarEditingStateViewController(
-            switchBarHandler: MockSwitchBarHandler()
-        )
-        sut = PromoCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            mode: .legacy,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy
         )
 
         // WHEN
@@ -184,8 +163,9 @@ final class PromoCoordinationServiceTests {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            mode: .legacy,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy
         )
 
         // WHEN
@@ -209,9 +189,6 @@ final class PromoCoordinationServiceTests {
     )
     func whenHigherPriorityProvidersReturnNilThenCorrectProviderIsUsed(priority: ProviderPriority) throws {
         // GIVEN
-        let keyValueStore = try MockKeyValueFileStore()
-        let privacyConfigManager = MockPrivacyConfigurationManager()
-
         let providers = ModalPromptProviders(
             newAddressBarPicker: MockModalPromptProvider(shouldReturnPrompt: priority == .newAddressBarPicker),
             defaultBrowser: MockModalPromptProvider(shouldReturnPrompt: priority == .defaultBrowser),
@@ -224,15 +201,18 @@ final class PromoCoordinationServiceTests {
 
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
+        let manager = ModalPromptCoordinationManager(
+            providers: providers.ordered,
+            cooldownManager: MockPromptCooldownManager(),
+            onboardingStatusProvider: contextualOnboardingMock
+        )
 
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            keyValueStore: keyValueStore,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
-            privacyConfigManager: privacyConfigManager,
-            providers: providers,
-            featureFlagger: featureFlaggerMock,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            modalPromptCoordinationManager: manager,
+            mode: .legacy,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy
         )
 
         // WHEN
@@ -299,41 +279,4 @@ private final class MockDismissingViewController: UIViewController {
         get { _isBeingDismissed }
         set { _isBeingDismissed = newValue }
     }
-}
-
-private final class MockSwitchBarHandler: SwitchBarHandling {
-    var currentText: String = ""
-    var currentToggleState: TextEntryMode = .search
-    var isVoiceSearchEnabled: Bool = false
-    var hasUserInteractedWithText: Bool = false
-    var isCurrentTextValidURL: Bool = false
-    var buttonState: SwitchBarButtonState = .noButtons
-    var isTopBarPosition: Bool = true
-    var isToggleEnabled: Bool = false
-    var isFireTab: Bool = false
-    var hidesVoiceButton: Bool = false
-    var isUsingExpandedBottomBarHeight: Bool = false
-    var isUsingFadeOutAnimation: Bool = false
-    var shouldDisableAutocorrectOnEmpty: Bool = false
-    var hasSubmittedPrompt: Bool = false
-    let isAIVoiceChatEnabled: Bool = false
-    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
-    var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
-    var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
-    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
-    var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
-    var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
-    var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
-    var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
-    var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
-    var modeParameters: [String: String] { [:] }
-    func updateCurrentText(_ text: String) {}
-    func submitText(_ text: String) {}
-    func setToggleState(_ state: TextEntryMode) {}
-    func clearText() {}
-    func microphoneButtonTapped() {}
-    func markUserInteraction() {}
-    func clearButtonTapped() {}
-    func stopGeneratingButtonTapped() {}
-    func updateBarPosition(isTop: Bool) {}
 }

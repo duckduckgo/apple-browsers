@@ -11,6 +11,8 @@
             "appVersion",
             "errorDomain",
             "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
             {
                 "key": "operation",
                 "type": "string",

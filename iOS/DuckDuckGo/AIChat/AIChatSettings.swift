@@ -53,20 +53,17 @@ final class AIChatSettings: AIChatSettingsProvider {
     private let keyValueStore: KeyValueStoring
     private let notificationCenter: NotificationCenter
     private let featureFlagger: FeatureFlagger
-    private let switchBarFunnel: SwitchBarFunnelProviding
     
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          notificationCenter: NotificationCenter = .default,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         switchBarFunnel: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard)) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.debugSettings = debugSettings
         self.keyValueStore = keyValueStore
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
-        self.switchBarFunnel = switchBarFunnel
 
         migrateAddressBarSettingIfNeeded()
     }
@@ -159,7 +156,7 @@ final class AIChatSettings: AIChatSettingsProvider {
 
     var isAIChatSearchInputUserSettingsEnabled: Bool {
         keyValueStore.bool(.showAIChatExperimentalSearchInputKey, defaultValue: .showAIChatExperimentalSearchInputDefaultValue)
-                            && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalAddressBar)
+            && isAIChatEnabled
     }
 
     var isAIChatSearchInputUserSettingsDisabledByUser: Bool {
@@ -226,15 +223,8 @@ final class AIChatSettings: AIChatSettingsProvider {
 
         if enable {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOn)
-            
-            
-            // Process feature enabled funnel step
-            switchBarFunnel.processStep(.featureEnabled)
         } else {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOff)
-            
-            // Reset funnel when feature is disabled
-            resetFunnelStorage()
         }
     }
 
@@ -331,13 +321,6 @@ final class AIChatSettings: AIChatSettingsProvider {
                                       withAdditionalParameters: ["value": mode.rawValue])
     }
 
-    /// Process the settings view funnels step
-    func processSettingsViewedFunnelStep() {
-        if !isAIChatSearchInputUserSettingsEnabled {
-            switchBarFunnel.processStep(.settingsViewed)
-        }
-    }
-
     // MARK: - Private
 
     private func triggerSettingsChangedNotification() {
@@ -353,10 +336,6 @@ final class AIChatSettings: AIChatSettingsProvider {
         }
     }
     
-    /// Reset all funnel storage when the new input feature is disabled
-    private func resetFunnelStorage() {
-        switchBarFunnel.resetAllFunnelState()
-    }
 }
 
 // MARK: - Keys for storage

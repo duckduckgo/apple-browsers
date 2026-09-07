@@ -24,11 +24,19 @@ import RemoteMessaging
 
 struct HomeMessageViewModelBuilder {
 
+    static func canBuild(for remoteMessage: RemoteMessageModel) -> Bool {
+        guard let content = remoteMessage.content else {
+            return false
+        }
+        return HomeSupportedMessageDisplayType(content) != nil
+    }
+
     static func build(for remoteMessage: RemoteMessageModel,
                       with subscriptionDataReporter: SubscriptionDataReporting?,
                       messageActionHandler: RemoteMessagingActionHandling,
                       imageLoader: RemoteMessagingImageLoading,
                       pixelReporter: RemoteMessagingPixelReporting?,
+                      acquisitionIdentity: PromoQueueAcquisitionIdentity? = nil,
                       onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void,
                       onDidAppear: @escaping () -> Void) -> HomeMessageViewModel? {
         guard
@@ -65,6 +73,7 @@ struct HomeMessageViewModelBuilder {
 
         return HomeMessageViewModel(
             messageId: remoteMessage.id,
+            acquisitionIdentity: acquisitionIdentity,
             modelType: homeSupportedMessageDisplayType,
             messageActionHandler: messageActionHandler,
             preloadedImage: preloadedImage,

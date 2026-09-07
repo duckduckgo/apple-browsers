@@ -590,6 +590,241 @@ final class PixelExperimentKitTests: XCTestCase {
         )
     }
 
+    func testFireNewAIPromptExperimentPixels_WithValue1() {
+        let subfeatureID = "credentialsSaving"
+        let cohort = "control"
+        let enrollmentDate0 = Date()
+        let enrollmentDate1 = Date().addingTimeInterval(.days(-1)) // 1 day ago
+        let enrollmentDate2 = Date().addingTimeInterval(.days(-2)) // 2 days ago
+        let enrollmentDate4 = Date().addingTimeInterval(.days(-4)) // 4 days ago
+        let enrollmentDate5 = Date().addingTimeInterval(.days(-5)) // 5 days ago
+        let enrollmentDate7 = Date().addingTimeInterval(.days(-7)) // 7 days ago
+        let enrollmentDate8 = Date().addingTimeInterval(.days(-8)) // 8 days ago
+        let enrollmentDate14 = Date().addingTimeInterval(.days(-14)) // 14 days ago
+        let enrollmentDate15 = Date().addingTimeInterval(.days(-15)) // 15 days ago
+        let experimentData0 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate0)
+        let experimentData1 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate1)
+        let experimentData2 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate2)
+        let experimentData4 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate4)
+        let experimentData5 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate5)
+        let experimentData7 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate7)
+        let experimentData8 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate8)
+        let experimentData14 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate14)
+        let experimentData15 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate15)
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData0]
+        PixelKit.fireNewAIPromptExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 0-0
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData1]
+        PixelKit.fireNewAIPromptExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 1-1
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData2]
+        PixelKit.fireNewAIPromptExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 0) // Nothing (days 2-4 not in any window)
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData4]
+        PixelKit.fireNewAIPromptExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 0) // Nothing (days 2-4 not in any window)
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData5]
+        PixelKit.fireNewAIPromptExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 5-7
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData7]
+        PixelKit.fireNewAIPromptExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 5-7
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData8]
+        PixelKit.fireNewAIPromptExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 8-14
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData14]
+        PixelKit.fireNewAIPromptExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 8-14
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData15]
+        PixelKit.fireNewAIPromptExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 0) // Nothing (after day 14)
+    }
+
+    func testFireNewAIPromptExperimentPixels_WithMultipleExperiments() {
+        // GIVEN
+        let subfeatureID1 = "credentialsSaving"
+        let cohort1 = "control"
+        let enrollmentDate1 = Date().addingTimeInterval(.days(-6)) // 6 days ago
+        let experimentData1 = ExperimentData(parentID: "autofill", cohortID: cohort1, enrollmentDate: enrollmentDate1)
+
+        let subfeatureID2 = "inlineIconCredentials"
+        let cohort2 = "test"
+        let enrollmentDate2 = Date().addingTimeInterval(.days(-10)) // 10 days ago
+        let experimentData2 = ExperimentData(parentID: "autofill", cohortID: cohort2, enrollmentDate: enrollmentDate2)
+
+        mockFeatureFlagger.experiments = [
+            subfeatureID1: experimentData1,
+            subfeatureID2: experimentData2
+        ]
+
+        // WHEN
+        PixelKit.fireNewAIPromptExperimentPixels()
+
+        // THEN
+        // Verify pixel for the first experiment
+        XCTAssertTrue(
+            firedEvent.contains {
+                $0.name == "experiment_metrics_\(subfeatureID1)_\(cohort1)"
+            }
+        )
+        XCTAssertTrue(
+            firedEvent.contains {
+                $0.parameters?[PixelKit.Constants.metricKey] == PixelKit.Constants.aiChatMetricValue
+            }
+        )
+        XCTAssertTrue(
+            firedEvent.contains {
+                $0.parameters?[PixelKit.Constants.conversionWindowDaysKey] == "5-7"
+            }
+        )
+
+        // Verify pixel also fired for the second experiment (day 10 is within 8-14 window)
+        XCTAssertTrue(
+            firedEvent.contains {
+                $0.name == "experiment_metrics_\(subfeatureID2)_\(cohort2)"
+            }
+        )
+        XCTAssertTrue(
+            firedEvent.contains {
+                $0.parameters?[PixelKit.Constants.conversionWindowDaysKey] == "8-14"
+            }
+        )
+    }
+
+    func testFireNewAIChatExperimentPixels_WithValue1() {
+        let subfeatureID = "credentialsSaving"
+        let cohort = "control"
+        let enrollmentDate0 = Date()
+        let enrollmentDate1 = Date().addingTimeInterval(.days(-1))
+        let enrollmentDate2 = Date().addingTimeInterval(.days(-2))
+        let enrollmentDate4 = Date().addingTimeInterval(.days(-4))
+        let enrollmentDate5 = Date().addingTimeInterval(.days(-5))
+        let enrollmentDate7 = Date().addingTimeInterval(.days(-7))
+        let enrollmentDate8 = Date().addingTimeInterval(.days(-8))
+        let enrollmentDate14 = Date().addingTimeInterval(.days(-14))
+        let enrollmentDate15 = Date().addingTimeInterval(.days(-15))
+        let experimentData0 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate0)
+        let experimentData1 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate1)
+        let experimentData2 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate2)
+        let experimentData4 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate4)
+        let experimentData5 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate5)
+        let experimentData7 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate7)
+        let experimentData8 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate8)
+        let experimentData14 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate14)
+        let experimentData15 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate15)
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData0]
+        PixelKit.fireNewAIChatExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 0-0
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData1]
+        PixelKit.fireNewAIChatExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 1-1
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData2]
+        PixelKit.fireNewAIChatExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 0) // Nothing (days 2-4 not in any window)
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData4]
+        PixelKit.fireNewAIChatExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 0) // Nothing (days 2-4 not in any window)
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData5]
+        PixelKit.fireNewAIChatExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 5-7
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData7]
+        PixelKit.fireNewAIChatExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 5-7
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData8]
+        PixelKit.fireNewAIChatExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 8-14
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData14]
+        PixelKit.fireNewAIChatExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 8-14
+        clearEvents()
+
+        mockFeatureFlagger.experiments = [subfeatureID: experimentData15]
+        PixelKit.fireNewAIChatExperimentPixels()
+        XCTAssertEqual(firedEvent.count, 0) // Nothing (after day 14)
+    }
+
+    func testFireNewAIChatExperimentPixels_WithMultipleExperiments() {
+        // GIVEN
+        let subfeatureID1 = "credentialsSaving"
+        let cohort1 = "control"
+        let enrollmentDate1 = Date().addingTimeInterval(.days(-6)) // 6 days ago
+        let experimentData1 = ExperimentData(parentID: "autofill", cohortID: cohort1, enrollmentDate: enrollmentDate1)
+
+        let subfeatureID2 = "inlineIconCredentials"
+        let cohort2 = "test"
+        let enrollmentDate2 = Date().addingTimeInterval(.days(-10)) // 10 days ago
+        let experimentData2 = ExperimentData(parentID: "autofill", cohortID: cohort2, enrollmentDate: enrollmentDate2)
+
+        mockFeatureFlagger.experiments = [
+            subfeatureID1: experimentData1,
+            subfeatureID2: experimentData2
+        ]
+
+        // WHEN
+        PixelKit.fireNewAIChatExperimentPixels()
+
+        // THEN
+        XCTAssertTrue(
+            firedEvent.contains {
+                $0.name == "experiment_metrics_\(subfeatureID1)_\(cohort1)"
+            }
+        )
+        XCTAssertTrue(
+            firedEvent.contains {
+                $0.parameters?[PixelKit.Constants.metricKey] == PixelKit.Constants.aiChatNewChatMetricValue
+            }
+        )
+        XCTAssertTrue(
+            firedEvent.contains {
+                $0.parameters?[PixelKit.Constants.conversionWindowDaysKey] == "5-7"
+            }
+        )
+
+        // Verify pixel also fired for the second experiment (day 10 is within 8-14 window)
+        XCTAssertTrue(
+            firedEvent.contains {
+                $0.name == "experiment_metrics_\(subfeatureID2)_\(cohort2)"
+            }
+        )
+        XCTAssertTrue(
+            firedEvent.contains {
+                $0.parameters?[PixelKit.Constants.conversionWindowDaysKey] == "8-14"
+            }
+        )
+    }
+
     private func clearEvents() {
         firedEvent = []
         firedEventSet = []

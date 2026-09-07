@@ -21,7 +21,7 @@ import Common
 import FoundationExtensions
 import History
 import HistoryView
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import TrackerRadarKit

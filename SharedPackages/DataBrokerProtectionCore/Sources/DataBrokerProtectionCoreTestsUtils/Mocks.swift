@@ -261,6 +261,10 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
         return nil
     }
 
+    public func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
+        [:]
+    }
+
     public func userEnabledProtection(forDomain: String) {
 
     }
@@ -1585,6 +1589,7 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
 
     public var durationSinceLastStageCalled = false
     public var durationSinceStartTimeCalled = false
+    public var awakeDurationSinceStartTimeCalled = false
     public var fireOptOutStartCalled = false
     public var fireOptOutEmailGenerateCalled = false
     public var fireOptOutCaptchaParseCalled = false
@@ -1621,6 +1626,11 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
 
     public func durationSinceStartTime() -> Double {
         durationSinceStartTimeCalled = true
+        return 0.0
+    }
+
+    public func awakeDurationSinceStartTime() -> Double {
+        awakeDurationSinceStartTimeCalled = true
         return 0.0
     }
 
@@ -1729,6 +1739,7 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         self.stage = nil
         durationSinceLastStageCalled = false
         durationSinceStartTimeCalled = false
+        awakeDurationSinceStartTimeCalled = false
         fireOptOutStartCalled = false
         fireOptOutEmailGenerateCalled = false
         fireOptOutCaptchaParseCalled = false
@@ -2035,6 +2046,11 @@ public final class MockEmailConfirmationJobProvider: EmailConfirmationJobProvidi
 }
 
 public final class MockBrokerProfileJobQueue: BrokerProfileJobQueue {
+    private enum QueueEntry {
+        case operation(Operation)
+        case barrier(@Sendable () -> Void)
+    }
+
     public var maxConcurrentOperationCount = 1
 
     public var operations: [Operation] = []
@@ -2046,7 +2062,7 @@ public final class MockBrokerProfileJobQueue: BrokerProfileJobQueue {
     public private(set) var didCallAddCount = 0
     public private(set) var didCallAddBarrierBlockCount = 0
 
-    private var barrierBlock: (@Sendable () -> Void)?
+    private var entries: [QueueEntry] = []
 
     public init() { }
 
@@ -2058,28 +2074,43 @@ public final class MockBrokerProfileJobQueue: BrokerProfileJobQueue {
     public func addOperation(_ op: Operation) {
         didCallAddCount += 1
         self.operations.append(op)
+        entries.append(.operation(op))
     }
 
     public func addBarrierBlock1(_ barrier: @escaping @Sendable () -> Void) {
         didCallAddBarrierBlockCount += 1
-        self.barrierBlock = barrier
+        entries.append(.barrier(barrier))
     }
 
     public func completeAllOperations() {
-        operations.forEach { $0.start() }
-        operations.removeAll()
-        barrierBlock?()
+        while !entries.isEmpty {
+            switch entries.removeFirst() {
+            case .operation(let operation):
+                operation.start()
+                operations.removeAll { $0 === operation }
+            case .barrier(let barrier):
+                barrier()
+            }
+        }
+    }
+
+    public func completeNextBarrierBlock() {
+        guard case .barrier(let barrier)? = entries.first else { return }
+        entries.removeFirst()
+        barrier()
     }
 
     public func completeOperationsUpTo(index: Int) {
         guard index < operationCount else { return }
 
-        (0..<index).forEach {
-            operations[$0].start()
-        }
-
-        (0..<index).forEach {
-            operations.remove(at: $0)
+        let completedOperations = Array(operations.prefix(index))
+        completedOperations.forEach { operation in
+            operation.start()
+            operations.removeAll { $0 === operation }
+            entries.removeAll { entry in
+                guard case .operation(let queuedOperation) = entry else { return false }
+                return queuedOperation === operation
+            }
         }
     }
 }

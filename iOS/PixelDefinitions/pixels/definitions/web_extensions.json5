@@ -69,28 +69,6 @@
         ],
         "parameters": ["appVersion"]
     },
-    "m_web_extension_deferred_protected_data_unavailable": {
-        "description": "Fires when web extension loading or embedded install is deferred because protected data is unavailable (e.g. device locked before first unlock).",
-        "owners": ["miasma13"],
-        "triggers": ["other"],
-        "suffixes": [
-            ["daily", "platform", "form_factor"],
-            ["platform", "form_factor"]
-        ],
-        "parameters": ["appVersion"],
-        "expires": "2026-07-15"
-    },
-    "m_web_extension_resumed_protected_data_available": {
-        "description": "Fires when protected data becomes available and previously deferred web extension load/install work is executed.",
-        "owners": ["miasma13"],
-        "triggers": ["other"],
-        "suffixes": [
-            ["daily", "platform", "form_factor"],
-            ["platform", "form_factor"]
-        ],
-        "parameters": ["appVersion"],
-        "expires": "2026-07-15"
-    },
     "m_web_extension_load_error": {
         "description": "Fires during app startup when loading installed web extensions fails (at least one extension failed to load).",
         "owners": ["tomasstrba"],
@@ -240,6 +218,48 @@
     "m_web_extension_ad_blocking_install_error": {
         "description": "Fires when installing or upgrading the ad blocking web extension fails.",
         "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "search-token_web_extension_installed": {
+        "description": "The search token web extension was installed.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "search-token_web_extension_upgraded": {
+        "description": "The search token web extension was upgraded to a new version.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "from_version",
+                "type": "string",
+                "description": "The previous version of the search token extension before upgrade"
+            },
+            {
+                "key": "to_version",
+                "type": "string",
+                "description": "The new version of the search token extension after upgrade"
+            }
+        ]
+    },
+    "search-token_web_extension_install_error": {
+        "description": "The search token web extension failed to install.",
+        "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": [
             ["daily", "platform", "form_factor"],
@@ -501,6 +521,16 @@
     "web_extension_ad_blocking_not_loaded": {
         "description": "Fires when the ad-blocking extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "search-token_web_extension_not_loaded": {
+        "description": "The search token web extension was expected to be loaded but was not.",
+        "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": [
             ["daily", "platform", "form_factor"],

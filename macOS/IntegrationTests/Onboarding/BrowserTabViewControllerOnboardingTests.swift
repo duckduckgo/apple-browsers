@@ -24,7 +24,7 @@ import FeatureFlags_macOS
 import History
 import HistoryView
 import Onboarding
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard

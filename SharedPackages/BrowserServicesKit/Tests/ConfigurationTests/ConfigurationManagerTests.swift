@@ -17,8 +17,7 @@
 //
 
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import Configuration
 @testable import Networking
 import NetworkingTestingUtils

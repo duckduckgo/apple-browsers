@@ -82,4 +82,20 @@ extension DuckAIPromptSurface {
         case .promptBar: true
         }
     }
+
+    /// Which surface the usage-warning pixels report.
+    var usageWarningPixelSurface: DuckAiUsageWarningPixelSurface {
+        switch self {
+        case .addressBar: .addressBar
+        case .promptBar: .promptBar
+        }
+    }
+
+    /// Funnel origin for the usage-limit card's upsell.
+    var usageLimitFunnelOrigin: SubscriptionFunnelOrigin {
+        switch self {
+        case .addressBar: .addressBarUsageLimit
+        case .promptBar: .promptBarUsageLimit
+        }
+    }
 }

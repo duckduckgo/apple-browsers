@@ -20,7 +20,7 @@
 import Foundation
 import Testing
 import class Common.EventMapping
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import SetDefaultBrowserCore
 @testable import DuckDuckGo
 

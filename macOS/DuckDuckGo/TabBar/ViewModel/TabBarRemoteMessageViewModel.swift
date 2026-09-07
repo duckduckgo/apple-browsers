@@ -47,6 +47,11 @@ final class TabBarRemoteMessageViewModel: ObservableObject {
         })
     }
 
+    func refreshSurveyURL(_ surveyURL: URL) -> URL {
+        let refreshedURLString = tabBarRemoteActiveMessage.refreshSurveyURL(surveyURL.absoluteString)
+        return URL(string: refreshedURLString) ?? surveyURL
+    }
+
     func onSurveyOpened() {
         Task { await tabBarRemoteActiveMessage.onSurveyOpened() }
     }

@@ -55,6 +55,7 @@ struct AppServices {
     let inactivityNotificationSchedulerService: InactivityNotificationSchedulerService
     let wideEventService: WideEventService
     let aiChatService: AIChatService
+    let applicationShortcutItemsService: ApplicationShortcutItemsService
     let eventHubService: EventHubService
 
 }

@@ -20,8 +20,12 @@
 import Foundation
 import PixelKit
 import Networking
+import Subscription
 
 enum SubscriptionPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     // Subscription
     case subscriptionActive
     // Auth
@@ -45,6 +49,10 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionVPNWidgetClick
     case subscriptionVPNShortcutClick
     case subscriptionVPNNotificationClick
+    // Subscription Onboarding Flow
+    case subscriptionOnboardingConnectionInfoFailure(Error)
+    case subscriptionOnboardingAIModelsFailure(Error)
+    case subscriptionOnboardingSubscriptionFailure(Error)
 
     var name: String {
         switch self {
@@ -69,6 +77,10 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionVPNWidgetClick: return "subscription_vpn_widget_click"
         case .subscriptionVPNShortcutClick: return "subscription_vpn_shortcut_click"
         case .subscriptionVPNNotificationClick: return "subscription_vpn_notification_click"
+            // Subscription Onboarding Flow
+        case .subscriptionOnboardingConnectionInfoFailure: return "subscription_onboarding_connection-info_failure"
+        case .subscriptionOnboardingAIModelsFailure: return "subscription_onboarding_ai-models_failure"
+        case .subscriptionOnboardingSubscriptionFailure: return "subscription_onboarding_subscription_failure"
         }
     }
 
@@ -128,8 +140,44 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionVPNAddressBarClick,
                 .subscriptionVPNWidgetClick,
                 .subscriptionVPNShortcutClick,
-                .subscriptionVPNNotificationClick:
+                .subscriptionVPNNotificationClick,
+                .subscriptionOnboardingConnectionInfoFailure,
+                .subscriptionOnboardingAIModelsFailure,
+                .subscriptionOnboardingSubscriptionFailure:
             return [.pixelSource]
+        }
+    }
+}
+
+// This is a separate definition in order to get the correct platform and form factor suffixes, which the subscription pixels above do not have.
+enum SubscriptionAutomaticSignOutPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
+    case automaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)
+
+    private static let sourceKey = "source"
+
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var name: String {
+        switch self {
+        case .automaticSignOut: return "m_privacy-pro_auth_account_automatically_signed_out"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .automaticSignOut(let data, let source, _):
+            var parameters = data.parameters
+            parameters[Self.sourceKey] = source.rawValue
+            return parameters
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .automaticSignOut: return [.pixelSource]
         }
     }
 }

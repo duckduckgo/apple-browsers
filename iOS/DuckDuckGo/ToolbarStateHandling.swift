@@ -58,7 +58,9 @@ final class ToolbarHandler: ToolbarStateHandling {
     weak var toolbar: BrowserToolbarView?
 
     lazy var backButton = {
-        BrowserChromeButton.createToolbarButton(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
+        let button = BrowserChromeButton.createToolbarButton(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
+        button.accessibilityIdentifier = "Browser.Toolbar.Button.Back"
+        return button
     }()
 
     lazy var fireButton = {
@@ -68,21 +70,32 @@ final class ToolbarHandler: ToolbarStateHandling {
     }()
 
     lazy var forwardButton = {
-        BrowserChromeButton.createToolbarButton(title: UserText.keyCommandBrowserForward, image: DesignSystemImages.Glyphs.Size24.arrowRight)
+        let button = BrowserChromeButton.createToolbarButton(
+            title: UserText.keyCommandBrowserForward,
+            image: DesignSystemImages.Glyphs.Size24.arrowRight
+        )
+        button.accessibilityIdentifier = "Browser.Toolbar.Button.Forward"
+        return button
     }()
 
     private(set) var tabSwitcherView: UIView
 
     lazy var bookmarkButton = {
-        BrowserChromeButton.createToolbarButton(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarks)
+        let button = BrowserChromeButton.createToolbarButton(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarks)
+        button.accessibilityIdentifier = "Browser.Toolbar.Button.Bookmarks"
+        return button
     }()
 
     lazy var passwordsButton = {
-        BrowserChromeButton.createToolbarButton(title: UserText.actionOpenPasswords, image: DesignSystemImages.Glyphs.Size24.key)
+        let button = BrowserChromeButton.createToolbarButton(title: UserText.actionOpenPasswords, image: DesignSystemImages.Glyphs.Size24.key)
+        button.accessibilityIdentifier = "Browser.Toolbar.Button.Passwords"
+        return button
     }()
 
     lazy var browserMenuButton = {
-        BrowserChromeButton.createToolbarButton(title: UserText.menuButtonHint, image: DesignSystemImages.Glyphs.Size24.menuHamburger)
+        let button = BrowserChromeButton.createToolbarButton(title: UserText.menuButtonHint, image: DesignSystemImages.Glyphs.Size24.menuHamburger)
+        button.accessibilityIdentifier = "Browser.Toolbar.Button.Menu"
+        return button
     }()
 
     private var state: ToolbarContentState?
@@ -93,6 +106,7 @@ final class ToolbarHandler: ToolbarStateHandling {
             title: UserText.tabSwitcherAccessibilityLabel,
             image: DesignSystemImages.Glyphs.Size24.tabNew
         )
+        tabSwitcher.accessibilityIdentifier = "Browser.Toolbar.Button.TabSwitcher"
         self.tabSwitcherView = tabSwitcher
     }
 

@@ -20,8 +20,8 @@ import Bookmarks
 import Combine
 import ConcurrencyExtensions
 import Foundation
-import PixelKitTestingUtilities
-import SharedTestUtilities
+@_spi(Testing) import PixelKit
+@_spi(Testing) import SharedTestUtilities
 import Utilities
 import XCTest
 import os.log

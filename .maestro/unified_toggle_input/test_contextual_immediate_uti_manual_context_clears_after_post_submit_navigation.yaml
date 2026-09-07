@@ -7,9 +7,9 @@ name: test_contextual_immediate_uti_manual_context_clears_after_post_submit_navi
 
 ---
 
-# With immediate contextual UTI on and automatic attachment off, manually attached
-# page context is cleared when the sheet is closed after first submit, the user
-# navigates to another page, and then reopens contextual Duck.ai.
+# With automatic attachment off, the page attached when entering through the menu's Ask About Page is
+# cleared once the sheet is closed after the first submit, the user navigates elsewhere, and the
+# contextual surface is reopened. Ask About Page is still offered to attach the new page.
 
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
@@ -19,7 +19,6 @@ name: test_contextual_immediate_uti_manual_context_clears_after_post_submit_navi
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.unifiedToggleInput: "true"
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "true"
         ff.aiChatAutoAttachContextByDefault: "false"
@@ -33,15 +32,11 @@ name: test_contextual_immediate_uti_manual_context_clears_after_post_submit_navi
 - pressKey: Enter
 - assertVisible: ".*Privacy Test Pages.*"
 
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-- assertVisible:
-    id: "AIChat.ContextualSheet"
-- assertNotVisible:
-    id: "AIChat.ContextChip.AttachedTitle"
+- runFlow:
+    file: ../shared/open_contextual_duckai_from_address_bar.yaml
 
-- tapOn: "Attach"
-- tapOn: "Ask About Page"
+- assertNotVisible:
+    id: "AIChat.ContextualSheet"
 - extendedWaitUntil:
     visible:
         id: "AIChat.ContextChip.AttachedTitle"
@@ -55,6 +50,10 @@ name: test_contextual_immediate_uti_manual_context_clears_after_post_submit_navi
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextualSheet"
+    timeout: 15000
 
 - tapOn:
     id: "AIChat.ContextualSheet.CloseButton"
@@ -71,6 +70,8 @@ name: test_contextual_immediate_uti_manual_context_clears_after_post_submit_navi
     id: "Browser.OmniBar.Button.AIChat"
 - assertVisible:
     id: "AIChat.ContextualSheet"
+- runFlow:
+    file: ../shared/expand_contextual_uti.yaml
 - assertNotVisible:
     id: "AIChat.ContextChip.AttachedTitle"
 - assertNotVisible:

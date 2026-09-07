@@ -50,7 +50,6 @@ class AIChatMenuButtonTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: [
             "aiChatChromeSidebar": true,
             "aiChatSidebarFloating": true,

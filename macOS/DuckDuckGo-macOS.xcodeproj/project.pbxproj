@@ -10849,7 +10849,6 @@
 			children = (
 				38994C5DE0CE5FDD50D36C3E /* SyncFaviconsPromoDelegate.swift */,
 			);
-			name = Promo;
 			path = Promo;
 			sourceTree = "<group>";
 		};

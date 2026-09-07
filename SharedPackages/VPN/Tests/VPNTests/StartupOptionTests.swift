@@ -219,6 +219,43 @@ final class StartupOptionsTests: XCTestCase {
         XCTAssertFalse(other.enforceRoutes)
     }
 
+    func testVPNSettingsSnapshotRoundTripsEndpointPortOverride() throws {
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(3600),
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false,
+            endpointPortOverride: 51820
+        )
+
+        let decoded = try JSONDecoder().decode(VPNSettingsSnapshot.self, from: JSONEncoder().encode(snapshot))
+
+        XCTAssertEqual(decoded.endpointPortOverride, 51820)
+    }
+
+    func testVPNSettingsSnapshotDefaultsEndpointPortOverrideToNilWhenMissingFromPayload() throws {
+        // Simulate a snapshot persisted by an older version that predates carrying the override.
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(3600),
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false,
+            endpointPortOverride: 51820
+        )
+        let encoded = try JSONEncoder().encode(snapshot)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        json.removeValue(forKey: "endpointPortOverride")
+        let legacyData = try JSONSerialization.data(withJSONObject: json)
+
+        let decoded = try JSONDecoder().decode(VPNSettingsSnapshot.self, from: legacyData)
+
+        XCTAssertNil(decoded.endpointPortOverride)
+    }
+
     func testCorruptedVPNSettingsResultInResetOption() {
         let corruptedData = "invalid json data".data(using: .utf8)!
 

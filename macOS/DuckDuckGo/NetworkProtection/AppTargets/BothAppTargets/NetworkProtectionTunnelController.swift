@@ -296,7 +296,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 .setSelectedLocation,
                 .setDNSSettings,
                 .setShowInMenuBar,
-                .setDisableRekeying:
+                .setDisableRekeying,
+                .setEndpointPortOverride:
             // Intentional no-op as this is handled by the extension or the agent's app delegate
             break
         }

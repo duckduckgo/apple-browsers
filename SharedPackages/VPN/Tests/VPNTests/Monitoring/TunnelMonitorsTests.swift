@@ -327,6 +327,7 @@ final class TunnelMonitorsTests: XCTestCase {
 
         XCTAssertEqual(failureRecoveryHandler.attemptCount, 1)
         XCTAssertEqual(failureRecoveryHandler.lastExcludeLocalNetworks, false)
+        XCTAssertNil(failureRecoveryHandler.lastEndpointPortOverride)
     }
 
     func testTunnelFailureCallback_failureDetected_appliesRecoveryConfig() async throws {
@@ -671,6 +672,7 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
     var lastExcludeLocalNetworks: Bool?
     var lastExcludeCGNAT: Bool?
     var lastDNSSettings: NetworkProtectionDNSSettings?
+    var lastEndpointPortOverride: UInt16?
     var configResultToUpdate: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult?
     var afterSuccessfulConfigUpdate: (@MainActor () -> Void)?
 
@@ -679,6 +681,7 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
         excludeLocalNetworks: Bool,
         excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
+        endpointPortOverride: UInt16?,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async {
         attemptCount += 1
@@ -686,6 +689,7 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
         lastExcludeLocalNetworks = excludeLocalNetworks
         lastExcludeCGNAT = excludeCGNAT
         lastDNSSettings = dnsSettings
+        lastEndpointPortOverride = endpointPortOverride
 
         if let configResultToUpdate {
             do {

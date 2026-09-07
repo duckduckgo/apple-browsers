@@ -435,6 +435,7 @@ private final class DeviceManagementSpy: NetworkProtectionDeviceManagement {
         excludeLocalNetworks: Bool,
         excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
+        endpointPortOverride: UInt16?,
         regenerateKey: Bool
     ) async throws -> NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult {
         await beforeReturningResult?()

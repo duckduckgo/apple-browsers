@@ -224,6 +224,50 @@ final class NetworkProtectionDeviceManagerTests: XCTestCase {
         // THEN
         XCTAssertEqual(configuration.0.interface.dns.first?.address.rawValue, expectedIPAddress.rawValue)
     }
+
+    func testTunnelConfiguration_WithEndpointPortOverride_UsesOverridePortAndKeepsHost() async throws {
+        // GIVEN
+        let server = NetworkProtectionServer.mockRegisteredServer
+        let serverEndpoint = try XCTUnwrap(server.serverInfo.endpoint)
+        let privateKey = keyStore.newKeyPair().privateKey
+
+        // WHEN
+        let tunnelConfiguration = try await manager.tunnelConfiguration(
+            interfacePrivateKey: privateKey,
+            server: server,
+            excludeLocalNetworks: false,
+            excludeCGNAT: false,
+            dnsSettings: .ddg(blockRiskyDomains: false),
+            endpointPortOverride: 51820
+        )
+
+        // THEN
+        let peerEndpoint = try XCTUnwrap(tunnelConfiguration.peers.first?.endpoint)
+        XCTAssertEqual(peerEndpoint.port, 51820)
+        XCTAssertEqual(peerEndpoint.host, serverEndpoint.host)
+    }
+
+    func testTunnelConfiguration_WithoutEndpointPortOverride_UsesServerPort() async throws {
+        // GIVEN
+        let server = NetworkProtectionServer.mockRegisteredServer
+        let serverEndpoint = try XCTUnwrap(server.serverInfo.endpoint)
+        let privateKey = keyStore.newKeyPair().privateKey
+
+        // WHEN
+        let tunnelConfiguration = try await manager.tunnelConfiguration(
+            interfacePrivateKey: privateKey,
+            server: server,
+            excludeLocalNetworks: false,
+            excludeCGNAT: false,
+            dnsSettings: .ddg(blockRiskyDomains: false),
+            endpointPortOverride: nil
+        )
+
+        // THEN
+        let peerEndpoint = try XCTUnwrap(tunnelConfiguration.peers.first?.endpoint)
+        XCTAssertEqual(peerEndpoint.port, serverEndpoint.port)
+        XCTAssertEqual(peerEndpoint.host, serverEndpoint.host)
+    }
 }
 
 extension NetworkProtectionDeviceManager {
@@ -235,6 +279,7 @@ extension NetworkProtectionDeviceManager {
             excludeLocalNetworks: false,
             excludeCGNAT: false,
             dnsSettings: .ddg(blockRiskyDomains: protectionActive),
+            endpointPortOverride: nil,
             regenerateKey: regenerateKey
         )
     }

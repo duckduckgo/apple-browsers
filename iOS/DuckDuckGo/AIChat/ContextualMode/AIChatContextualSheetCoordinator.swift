@@ -158,8 +158,27 @@ final class AIChatContextualSheetCoordinator {
         AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
     }
 
-    /// Drops a chat that was deleted elsewhere. Checked on every presentation, because a live session
-    /// holds the conversation in memory and never goes through the restore path.
+    /// Whether this tab has a conversation to return to. A chat the store says was deleted is not one,
+    /// so the address bar offers New Chat / Ask About Page instead of reopening something that is gone.
+    func hasChatToReopen(persistedChatURL: URL?) -> Bool {
+        guard sessionState.hasActiveChat || persistedChatURL != nil else { return false }
+        let chatID = sessionState.contextualChatURL?.duckAIChatID ?? persistedChatURL?.duckAIChatID
+        return !isChatDeleted(chatID: chatID)
+    }
+
+    /// Reconciles the session before any surface opens. Both entry points need every step, and when
+    /// they each carried their own copy one of them was missed.
+    private func prepareSessionForPresentation() {
+        discardActiveChatIfDeleted()
+        sessionState.refreshAutoAttachSetting()
+        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
+        clearStaleManualContextIfNeeded()
+        startObservingContextUpdates()
+    }
+
+    /// Drops a chat that was deleted elsewhere. Runs before any surface opens: the session still holds
+    /// the conversation in memory, and leaving it there contradicts the address bar, which has already
+    /// stopped offering it.
     private func discardActiveChatIfDeleted() {
         guard sessionState.hasActiveChat,
               isChatDeleted(chatID: sessionState.contextualChatURL?.duckAIChatID) else { return }
@@ -286,12 +305,8 @@ final class AIChatContextualSheetCoordinator {
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil,
                       skippingAutoAttach: Bool = false) async {
-        discardActiveChatIfDeleted()
-        sessionState.refreshAutoAttachSetting()
-        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
-        clearStaleManualContextIfNeeded()
+        prepareSessionForPresentation()
 
-        startObservingContextUpdates()
         collectContextForNewSession(skippingAutoAttach: skippingAutoAttach)
 
         stopSessionTimer()
@@ -312,11 +327,8 @@ final class AIChatContextualSheetCoordinator {
                                       skippingAutoAttach: Bool) async {
         guard floatingInputViewController == nil, !isSheetPresented else { return }
 
-        sessionState.refreshAutoAttachSetting()
-        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
-        clearStaleManualContextIfNeeded()
+        prepareSessionForPresentation()
 
-        startObservingContextUpdates()
         if skippingAutoAttach {
             collectContextForNewSession(skippingAutoAttach: true)
         } else {

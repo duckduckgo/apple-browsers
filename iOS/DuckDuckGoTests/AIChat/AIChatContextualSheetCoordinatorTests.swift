@@ -1456,6 +1456,44 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenTheChatIsDeletedThenTheAddressBarStopsOfferingIt() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+        XCTAssertTrue(sut.hasChatToReopen(persistedChatURL: savedChatURL))
+
+        try mockNativeStorage.deleteChat(chatId: savedChatID)
+
+        XCTAssertFalse(sut.hasChatToReopen(persistedChatURL: savedChatURL))
+    }
+
+    @MainActor
+    func testWhenTheStoreCannotAnswerThenTheAddressBarKeepsOfferingTheChat() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+
+        mockNativeStorage.failsReads = true
+
+        XCTAssertTrue(sut.hasChatToReopen(persistedChatURL: savedChatURL))
+    }
+
+    @MainActor
+    func testWhenAskingAboutThePageAfterADeletionThenTheStaleChatIsCleared() async throws {
+        // The floating input is the other way in, and it reconciles the session too — otherwise it
+        // opens believing a deleted chat is live, and the prompt goes nowhere.
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+        sut.dismissSheet()
+        try mockNativeStorage.deleteChat(chatId: savedChatID)
+
+        await sut.presentFloatingInput(from: mockPresentingVC)
+
+        XCTAssertFalse(sut.sessionState.hasActiveChat)
+    }
+
+    @MainActor
     func testWhenAnOpenChatIsDeletedElsewhereThenItDoesNotReopen() async throws {
         // A live session keeps the conversation in memory, so nothing consults the store on the way
         // back in unless we ask: the sheet reopened onto a chat the user had just deleted.

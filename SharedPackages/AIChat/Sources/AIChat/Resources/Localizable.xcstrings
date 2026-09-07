@@ -979,6 +979,18 @@
         }
       }
     },
+    "duckai.contextual.ask.about.page.title" : {
+      "comment" : "Title for the chip offering to attach the page the user just navigated to. %@ is the page title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask About %@"
+          }
+        }
+      }
+    },
     "duckai.contextual.attach.content" : {
       "comment" : "Title for the attach placeholder chip in Duck.ai contextual sheet",
       "extractionState" : "extracted_with_value",

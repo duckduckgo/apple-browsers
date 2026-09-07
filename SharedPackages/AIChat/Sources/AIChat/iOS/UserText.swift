@@ -36,7 +36,19 @@ public struct UserText {
         comment: "Editorial descriptor shown beneath a model in the model picker when it consumes usage limits faster"
     )
     public static let attachPageContent = NSLocalizedString("duckai.contextual.attach.content", value: "Attach Page Content", comment: "Title for the attach placeholder chip in Duck.ai contextual sheet")
-    public static let askAboutPage = NSLocalizedString("duckai.contextual.ask.about.page", value: "Ask About Page", comment: "Title for the button that re-attaches the current page's content after the user removed it")
+    public static let askAboutPage = NSLocalizedString("duckai.contextual.ask.about.page", bundle: Bundle.module, value: "Ask About Page", comment: "Title for the button that re-attaches the current page's content after the user removed it")
+
+    /// Falls back to `askAboutPage` when the page has no title.
+    public static func askAboutPage(title: String) -> String {
+        guard !title.isEmpty else { return askAboutPage }
+        let format = NSLocalizedString(
+            "duckai.contextual.ask.about.page.title",
+            bundle: Bundle.module,
+            value: "Ask About %@",
+            comment: "Title for the chip offering to attach the page the user just navigated to. %@ is the page title"
+        )
+        return String(format: format, title)
+    }
 
 }
 #endif

@@ -1452,11 +1452,18 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         return sut.sessionState.contextualChatURL
     }
 
+    private func migratedStorage() throws -> DuckAiNativeMemoryStorageHandler {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.markMigrationDone(key: DuckAiMigrationKey.chats)
+        try storage.markMigrationDone(key: DuckAiMigrationKey.files)
+        return storage
+    }
+
     @MainActor
-    func testWhenTheSavedChatIsStillInTheStoreThenItIsRestored() async {
+    func testWhenTheSavedChatIsStillInTheStoreThenItIsRestored() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
-        let storage = StubDuckAiNativeStorage()
-        storage.chats[savedChatID] = DuckAiChatRecord(chatId: savedChatID, data: Data())
+        let storage = try migratedStorage()
+        try storage.putChat(chatId: savedChatID, data: Data())
 
         let restored = await restoredURL(storage: storage)
 
@@ -1464,10 +1471,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTheSavedChatWasDeletedThenItIsNotRestored() async {
+    func testWhenTheSavedChatWasDeletedThenItIsNotRestored() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
 
-        let restored = await restoredURL(storage: StubDuckAiNativeStorage())
+        let restored = await restoredURL(storage: try migratedStorage())
 
         XCTAssertNil(restored)
     }
@@ -1476,10 +1483,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testWhenTheStoreCannotBeReadThenTheSavedChatIsStillRestored() async {
         // The regression: an unanswerable store must not cost the user their chat.
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
-        let storage = StubDuckAiNativeStorage()
-        storage.readError = StubDuckAiNativeStorage.ReadFailure()
 
-        let restored = await restoredURL(storage: storage)
+        let restored = await restoredURL(storage: UnreadableDuckAiStorage())
 
         XCTAssertEqual(restored, savedChatURL)
     }
@@ -1487,10 +1492,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     @MainActor
     func testWhenTheStoreIsNotMigratedThenTheSavedChatIsStillRestored() async {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
-        let storage = StubDuckAiNativeStorage()
-        storage.migrationDone = false
 
-        let restored = await restoredURL(storage: storage)
+        let restored = await restoredURL(storage: DuckAiNativeMemoryStorageHandler())
 
         XCTAssertEqual(restored, savedChatURL)
     }
@@ -1499,7 +1502,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testWhenNativeDataAccessIsOffThenTheSavedChatIsStillRestored() async {
         mockFeatureFlagger.enabledFeatureFlags = []
 
-        let restored = await restoredURL(storage: StubDuckAiNativeStorage())
+        let restored = await restoredURL(storage: DuckAiNativeMemoryStorageHandler())
 
         XCTAssertEqual(restored, savedChatURL)
     }
@@ -1539,39 +1542,33 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
 }
 
-/// Only `getChat` and `isMigrationDone` carry behaviour; the rest satisfies the protocol.
-final class StubDuckAiNativeStorage: DuckAiNativeStorageHandling {
-
-    var chats: [String: DuckAiChatRecord] = [:]
-    var migrationDone = true
-    var readError: Error?
+/// The in-memory handler cannot be made to fail, and an unreadable store is the case that matters.
+final class UnreadableDuckAiStorage: DuckAiNativeStorageHandling {
 
     struct ReadFailure: Error {}
 
-    func getChat(chatId: String) throws -> DuckAiChatRecord? {
-        if let readError { throw readError }
-        return chats[chatId]
-    }
+    private let backing = DuckAiNativeMemoryStorageHandler()
 
-    func isMigrationDone() throws -> Bool { migrationDone }
+    func getChat(chatId: String) throws -> DuckAiChatRecord? { throw ReadFailure() }
+    func isMigrationDone() throws -> Bool { true }
 
-    func putEntry(key: String, value: Any) throws {}
-    func getEntry(key: String) throws -> Any? { nil }
-    func getAllEntries() throws -> [String: Any] { [:] }
-    func deleteEntry(key: String) throws {}
-    func deleteAllEntries() throws {}
-    func replaceAllEntries(_ entries: [String: Any]) throws {}
-    func putChat(chatId: String, data: Data) throws {}
-    func putChats(_ chats: [DuckAiChatRecord]) throws {}
-    func getAllChats() throws -> [DuckAiChatRecord] { [] }
-    func deleteChat(chatId: String) throws {}
-    func deleteAllChats() throws {}
-    func putFile(uuid: String, chatId: String, data: Data) throws {}
-    func getFile(uuid: String) throws -> DuckAiFileContent? { nil }
-    func listFiles() throws -> [DuckAiFileMetadata] { [] }
-    func deleteFile(uuid: String) throws {}
-    func deleteFiles(chatId: String) throws {}
-    func deleteAllFiles() throws {}
-    func isMigrationDone(key: String) throws -> Bool { migrationDone }
-    func markMigrationDone(key: String) throws {}
+    func putEntry(key: String, value: Any) throws { try backing.putEntry(key: key, value: value) }
+    func getEntry(key: String) throws -> Any? { try backing.getEntry(key: key) }
+    func getAllEntries() throws -> [String: Any] { try backing.getAllEntries() }
+    func deleteEntry(key: String) throws { try backing.deleteEntry(key: key) }
+    func deleteAllEntries() throws { try backing.deleteAllEntries() }
+    func replaceAllEntries(_ entries: [String: Any]) throws { try backing.replaceAllEntries(entries) }
+    func putChat(chatId: String, data: Data) throws { try backing.putChat(chatId: chatId, data: data) }
+    func putChats(_ chats: [DuckAiChatRecord]) throws { try backing.putChats(chats) }
+    func getAllChats() throws -> [DuckAiChatRecord] { try backing.getAllChats() }
+    func deleteChat(chatId: String) throws { try backing.deleteChat(chatId: chatId) }
+    func deleteAllChats() throws { try backing.deleteAllChats() }
+    func putFile(uuid: String, chatId: String, data: Data) throws { try backing.putFile(uuid: uuid, chatId: chatId, data: data) }
+    func getFile(uuid: String) throws -> DuckAiFileContent? { try backing.getFile(uuid: uuid) }
+    func listFiles() throws -> [DuckAiFileMetadata] { try backing.listFiles() }
+    func deleteFile(uuid: String) throws { try backing.deleteFile(uuid: uuid) }
+    func deleteFiles(chatId: String) throws { try backing.deleteFiles(chatId: chatId) }
+    func deleteAllFiles() throws { try backing.deleteAllFiles() }
+    func isMigrationDone(key: String) throws -> Bool { true }
+    func markMigrationDone(key: String) throws { try backing.markMigrationDone(key: key) }
 }

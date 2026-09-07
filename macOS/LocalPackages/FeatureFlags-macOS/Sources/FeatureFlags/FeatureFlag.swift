@@ -63,6 +63,7 @@ public enum FeatureFlag: String, CaseIterable {
     case networkProtectionAppStoreSysexMessage
 
     /// Gates the VPN Session Health Telemetry
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
     case vpnSessionHealthTelemetry
 
     /// Gates the "Strict routing" VPN toggle.

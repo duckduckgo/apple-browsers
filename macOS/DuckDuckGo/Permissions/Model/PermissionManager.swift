@@ -129,13 +129,20 @@ final class PermissionManager: PermissionManagerProtocol {
         defer {
             self.permissionSubject.send( (domain, permissionType, decision) )
         }
+        let lastModified = Date()
         if var oldValue = permissions[domain]?[permissionType] {
             oldValue.decision = decision
+            oldValue.lastModified = lastModified
             storedPermission = oldValue
-            store.update(objectWithId: oldValue.id, decision: decision)
+            store.update(objectWithId: oldValue.id, decision: decision, lastModified: lastModified)
         } else {
             do {
-                storedPermission = try store.add(domain: domain, permissionType: permissionType, decision: decision)
+                storedPermission = try store.add(
+                    domain: domain,
+                    permissionType: permissionType,
+                    decision: decision,
+                    lastModified: lastModified
+                )
             } catch {
                 Logger.general.error("PermissionStore: Failed to store permission")
                 return

@@ -203,6 +203,56 @@ final class PermissionManagerTests: XCTestCase {
         }
     }
 
+    func testWhenPermissionIsFirstStoredThenLastModifiedIsStamped() {
+        let before = Date()
+
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .camera)
+
+        XCTAssertEqual(store.addedLastModified.count, 1)
+        guard let stamped = store.addedLastModified.first else {
+            return XCTFail("Expected add to receive a lastModified")
+        }
+        XCTAssertGreaterThanOrEqual(stamped, before)
+        XCTAssertLessThanOrEqual(stamped, Date())
+    }
+
+    func testWhenExistingPermissionIsUpdatedThenStoreAndMemoryReceiveTheSameLastModified() {
+        store.permissions = [.entity1]
+        XCTAssertNil(PermissionEntity.entity1.permission.lastModified, "Fixture starts without a timestamp")
+        let before = Date()
+
+        manager.setPermission(.deny, forDomain: PermissionEntity.entity1.domain, permissionType: PermissionEntity.entity1.type)
+
+        // The store must be handed the same instant the manager keeps in memory, not a second `Date()`.
+        guard let written = store.lastModifiedByObjectId[PermissionEntity.entity1.permission.id], let stamped = written else {
+            return XCTFail("Expected update to receive a lastModified")
+        }
+        XCTAssertGreaterThanOrEqual(stamped, before)
+        XCTAssertLessThanOrEqual(stamped, Date())
+    }
+
+    func testWhenPermissionIsRemovedThenLastModifiedIsNotWritten() {
+        store.permissions = [.entity1]
+
+        manager.removePermission(forDomain: PermissionEntity.entity1.domain, permissionType: PermissionEntity.entity1.type)
+
+        // Removal deletes the row rather than stamping it, so no lastModified is ever written.
+        XCTAssertEqual(store.history, [.load, .remove(PermissionEntity.entity1.permission.id)])
+        XCTAssertFalse(store.lastModifiedByObjectId.keys.contains(PermissionEntity.entity1.permission.id))
+        XCTAssertTrue(store.addedLastModified.isEmpty)
+    }
+
+    func testWhenPermissionIsUnchangedThenNothingIsWrittenToTheStore() {
+        store.permissions = [.entity1]
+
+        manager.setPermission(PermissionEntity.entity1.permission.decision,
+                              forDomain: PermissionEntity.entity1.domain,
+                              permissionType: PermissionEntity.entity1.type)
+
+        XCTAssertEqual(store.history, [.load])
+        XCTAssertTrue(store.addedLastModified.isEmpty)
+    }
+
     func testWhenPermissionsBurnedThenTheyAreCleared() {
         store.permissions = [.entity1, .entity2]
 

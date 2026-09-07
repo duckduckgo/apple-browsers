@@ -37,6 +37,10 @@ final class PermissionStoreMock: PermissionStore {
     }
 
     var history = [CallHistoryItem]()
+    /// Last `lastModified` written per object id, so tests can assert what the manager stamped.
+    var lastModifiedByObjectId: [NSManagedObjectID: Date?] = [:]
+    /// `lastModified` values passed to `add`, in call order.
+    var addedLastModified: [Date] = []
 
     func loadPermissions() throws -> [PermissionEntity] {
         history.append(.load)
@@ -64,8 +68,12 @@ final class PermissionStoreMock: PermissionStore {
         }
     }
 
-    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: (@MainActor (Error?) -> Void)?) {
+    func update(objectWithId id: NSManagedObjectID,
+                decision: PersistedPermissionDecision?,
+                lastModified: Date?,
+                completionHandler: (@MainActor (Error?) -> Void)?) {
         history.append(.update(id: id, decision: decision))
+        lastModifiedByObjectId[id] = lastModified
         MainActor.assumeMainThread {
             completionHandler?(nil)
         }
@@ -78,12 +86,16 @@ final class PermissionStoreMock: PermissionStore {
         }
     }
 
-    func add(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision) throws -> StoredPermission {
+    func add(domain: String,
+             permissionType: PermissionType,
+             decision: PersistedPermissionDecision,
+             lastModified: Date) throws -> StoredPermission {
         history.append(.add(domain: domain, permissionType: permissionType, decision: decision))
         if let error = error {
             throw error
         }
-        return StoredPermission(id: .init(), decision: decision)
+        addedLastModified.append(lastModified)
+        return StoredPermission(id: .init(), decision: decision, lastModified: lastModified)
     }
 
     func clear(except: [StoredPermission], completionHandler: (@MainActor (Error?) -> Void)?) {

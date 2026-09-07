@@ -71,29 +71,29 @@ final class IsChatDeletedTests: XCTestCase {
     }
 
     func testWhenTheStoreHasNoSuchChatThenItWasDeleted() {
-        XCTAssertTrue(isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
+        XCTAssertTrue(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
     }
 
     func testWhenTheStoreHasTheChatThenItWasNotDeleted() {
         storage.chats[chatID] = DuckAiChatRecord(chatId: chatID, data: Data())
 
-        XCTAssertFalse(isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
+        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
     }
 
     func testWhenTheReadFailsThenNoDeletionIsClaimed() {
         storage.readError = StubDuckAiNativeStorage.ReadFailure()
 
-        XCTAssertFalse(isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
+        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
     }
 
     func testWhenTheStoreCannotAnswerThenNoDeletionIsClaimed() {
         storage.migrationDone = false
-        XCTAssertFalse(isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true), "unmigrated store")
+        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true), "unmigrated store")
 
         storage.migrationDone = true
-        XCTAssertFalse(isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: false), "native access off")
-        XCTAssertFalse(isChatDeleted(chatID: chatID, in: nil, isNativeDataAccessEnabled: true), "no store")
-        XCTAssertFalse(isChatDeleted(chatID: nil, in: storage, isNativeDataAccessEnabled: true), "no chat id")
+        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: false), "native access off")
+        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: chatID, in: nil, isNativeDataAccessEnabled: true), "no store")
+        XCTAssertFalse(AIChatContextualSheetCoordinator.isChatDeleted(chatID: nil, in: storage, isNativeDataAccessEnabled: true), "no chat id")
     }
 }
 

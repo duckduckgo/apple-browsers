@@ -81,7 +81,7 @@ final class PullToRefreshViewAdapter: NSObject {
 
     static func refreshBackgroundColor(pageBackgroundColor: UIColor?, isFloatingUIEnabled: Bool) -> UIColor {
         isFloatingUIEnabled
-            ? UIColor(designSystemColor: .surfaceCanvas)
+            ? UIColor(designSystemColor: .background)
             : pageBackgroundColor ?? UIColor(designSystemColor: .background)
     }
 

@@ -206,7 +206,10 @@ struct SettingsSitePermissionsView: View {
         List {
             Section {
                 ForEach(SettingsSitePermissionsViewModel.supportedPermissionTypes, id: \.self) { permissionType in
-                    Menu {
+                    SettingsSitePermissionRow(
+                        permissionType: permissionType,
+                        selection: viewModel.globalDefault(for: permissionType).settingsTitle,
+                        accessibilityIdentifier: "Settings.SitePermissions.Global.\(permissionType.rawValue)") {
                         Picker(permissionType.settingsTitle, selection: viewModel.globalDefaultBinding(for: permissionType)) {
                             ForEach(GlobalSitePermissionDecision.allCases, id: \.self) { decision in
                                 Text(decision.settingsTitle).tag(decision)
@@ -214,13 +217,7 @@ struct SettingsSitePermissionsView: View {
                         }
                         .pickerStyle(.inline)
                         .labelsHidden()
-                    } label: {
-                        SettingsSitePermissionMenuLabel(permissionType: permissionType,
-                                                        selection: viewModel.globalDefault(for: permissionType).settingsTitle)
                     }
-                    .accessibilityLabel(permissionType.settingsTitle)
-                    .accessibilityValue(viewModel.globalDefault(for: permissionType).settingsTitle)
-                    .accessibilityIdentifier("Settings.SitePermissions.Global.\(permissionType.rawValue)")
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
             } header: {
@@ -300,7 +297,10 @@ private struct SettingsSitePermissionsSiteView: View {
         List {
             Section {
                 ForEach(SettingsSitePermissionsViewModel.supportedPermissionTypes, id: \.self) { permissionType in
-                    Menu {
+                    SettingsSitePermissionRow(
+                        permissionType: permissionType,
+                        selection: viewModel.siteDecision(for: permissionType, at: site).settingsTitle,
+                        accessibilityIdentifier: "Settings.SitePermissions.Site.\(permissionType.rawValue)") {
                         Picker(permissionType.settingsTitle, selection: viewModel.siteDecisionBinding(for: permissionType, at: site)) {
                             ForEach(SitePermissionDecision.allCases, id: \.self) { decision in
                                 Text(decision.settingsTitle).tag(decision)
@@ -308,13 +308,7 @@ private struct SettingsSitePermissionsSiteView: View {
                         }
                         .pickerStyle(.inline)
                         .labelsHidden()
-                    } label: {
-                        SettingsSitePermissionMenuLabel(permissionType: permissionType,
-                                                        selection: viewModel.siteDecision(for: permissionType, at: site).settingsTitle)
                     }
-                    .accessibilityLabel(permissionType.settingsTitle)
-                    .accessibilityValue(viewModel.siteDecision(for: permissionType, at: site).settingsTitle)
-                    .accessibilityIdentifier("Settings.SitePermissions.Site.\(permissionType.rawValue)")
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
             } header: {
@@ -340,9 +334,11 @@ private struct SettingsSitePermissionsSiteView: View {
     }
 }
 
-private struct SettingsSitePermissionMenuLabel: View {
+private struct SettingsSitePermissionRow<MenuContent: View>: View {
     let permissionType: SitePermissionType
     let selection: String
+    let accessibilityIdentifier: String
+    @ViewBuilder let menuContent: () -> MenuContent
 
     var body: some View {
         HStack(spacing: 12) {
@@ -352,14 +348,22 @@ private struct SettingsSitePermissionMenuLabel: View {
                 .accessibilityHidden(true)
             Text(permissionType.settingsTitle)
                 .daxBodyRegular()
-            Spacer(minLength: 16)
-            Text(selection)
-                .daxBodyRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-            Image(systemName: "chevron.up.chevron.down")
-                .font(.footnote.weight(.bold))
-                .foregroundColor(Color(UIColor.tertiaryLabel))
                 .accessibilityHidden(true)
+            Spacer(minLength: 16)
+            Menu(content: menuContent) {
+                HStack(spacing: 12) {
+                    Text(selection)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.footnote.weight(.bold))
+                        .foregroundColor(Color(UIColor.tertiaryLabel))
+                        .accessibilityHidden(true)
+                }
+            }
+            .accessibilityLabel(permissionType.settingsTitle)
+            .accessibilityValue(selection)
+            .accessibilityIdentifier(accessibilityIdentifier)
         }
         .foregroundColor(Color(designSystemColor: .textPrimary))
     }

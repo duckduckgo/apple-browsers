@@ -2074,6 +2074,7 @@ extension BrowserTabViewController {
     }
 }
 
+#if DEBUG
 @available(macOS 14.0, *)
 #Preview {
     BrowserTabViewController(
@@ -2093,6 +2094,7 @@ extension BrowserTabViewController {
         pinningManager: Application.appDelegate.pinningManager
     )
 }
+#endif
 
 // MARK: - Tab Selection for AI Chat Sidebar
 

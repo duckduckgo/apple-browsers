@@ -683,6 +683,7 @@ final class AIChatContextualSheetCoordinator {
                 sessionState.clearProcessingNavigationFlag()
             }
         } else if sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
+            print("🔎PH nav: entered the active-chat branch")
             sessionState.notifyFrontendOfMultiContextNavigation()
             if isPagePlaceholderEnabled, sessionState.shouldSuggestPageContextOnNavigation() {
                 // Read the page so the chip can offer it by name. Attached only if the user taps.

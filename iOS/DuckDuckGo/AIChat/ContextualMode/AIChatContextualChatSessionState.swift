@@ -759,7 +759,9 @@ final class AIChatContextualChatSessionState {
     /// Navigating with a chat already open and auto-attach off: offer the new page rather than
     /// silently attaching it or doing nothing.
     func shouldSuggestPageContextOnNavigation() -> Bool {
-        isUnifiedToggleInputActive && hasActiveChat && !shouldAutoCollectContext
+        let result = isUnifiedToggleInputActive && hasActiveChat && !shouldAutoCollectContext
+        print("🔎PH shouldSuggest: utiActive=\(isUnifiedToggleInputActive) hasActiveChat=\(hasActiveChat) autoAttachOff=\(!shouldAutoCollectContext) frontendState=\(frontendState) → \(result)")
+        return result
     }
 
 }

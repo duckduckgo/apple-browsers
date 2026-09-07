@@ -162,6 +162,22 @@ class MainViewController: UIViewController {
 
     var newTabPageViewController: (any NewTabPage)?
 
+    private lazy var newTabPageBuilder = NewTabPageBuilder(favoritesInteractionModel: favoritesViewModel,
+                                                           homePageMessagesConfiguration: homePageConfiguration,
+                                                           subscriptionDataReporting: subscriptionDataReporter,
+                                                           daxDialogsManager: daxDialogsManager,
+                                                           onboardingFlowProvider: onboardingManager,
+                                                           faviconLoader: faviconLoader,
+                                                           faviconsCache: favicons,
+                                                           remoteMessagingActionHandler: remoteMessagingActionHandler,
+                                                           remoteMessagingImageLoader: remoteMessagingImageLoader,
+                                                           remoteMessagingPixelReporter: remoteMessagingPixelReporter,
+                                                           appSettings: appSettings,
+                                                           aiChatSettings: aiChatSettings,
+                                                           subscriptionManager: subscriptionManager,
+                                                           internalUserCommands: internalUserCommands,
+                                                           floatingUIManager: floatingUIManager)
+
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?
 
@@ -2209,29 +2225,10 @@ class MainViewController: UIViewController {
         }
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
-        let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
-        let controller = NewTabPageViewController(isFocussedState: false,
-                                                  openedAfterIdle: hatch != nil,
-                                                  dismissKeyboardOnScroll: true,
-                                                  tab: tabModel,
-                                                  interactionModel: favoritesViewModel,
-                                                  homePageMessagesConfiguration: homePageConfiguration,
-                                                  subscriptionDataReporting: subscriptionDataReporter,
-                                                  newTabDialogFactory: newTabDaxDialogFactory,
-                                                  daxDialogsManager: daxDialogsManager,
-                                                  onboardingFlowProvider: onboardingManager,
-                                                  faviconLoader: faviconLoader,
-                                                  remoteMessagingActionHandler: remoteMessagingActionHandler,
-                                                  remoteMessagingImageLoader: remoteMessagingImageLoader,
-                                                  remoteMessagingPixelReporter: remoteMessagingPixelReporter,
-                                                  appSettings: appSettings,
-                                                  faviconsCache: favicons,
-                                                  subscriptionManager: subscriptionManager,
-                                                  internalUserCommands: internalUserCommands,
-                                                  narrowLayoutInLandscape: narrowLayoutInLandscape,
-                                                  floatingUIManager: floatingUIManager
-        )
+        let controller = newTabPageBuilder.makeNewTabPage(tab: tabModel,
+                                                          openedAfterIdle: hatch != nil,
+                                                          daxDialogFactory: newTabDaxDialogFactory)
 
         controller.delegate = self
         controller.chromeDelegate = self

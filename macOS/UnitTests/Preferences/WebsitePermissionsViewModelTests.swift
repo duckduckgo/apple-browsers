@@ -22,11 +22,24 @@ import XCTest
 
 @MainActor
 final class WebsitePermissionsViewModelTests: XCTestCase {
-    func testWhenThereAreNoPersistedPermissionsThenAllRowsHaveZeroCount() {
-        let model = WebsitePermissionsViewModel(permissionManager: PermissionManagerMock())
-        model.send(action: .onAppear)
-        let rows = model.viewState.rows
+    private var permissionManager: PermissionManagerMock!
 
+    override func setUp() {
+        super.setUp()
+        permissionManager = PermissionManagerMock()
+    }
+
+    override func tearDown() {
+        permissionManager = nil
+        super.tearDown()
+    }
+
+    func testWhenThereAreNoPersistedPermissionsThenAllRowsHaveZeroCount() {
+        let sut = createSUT()
+
+        sut.send(action: .onAppear)
+
+        let rows = sut.viewState.rows
         XCTAssertEqual(rows.map(\.category), [
             .notifications,
             .location,
@@ -46,24 +59,18 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
             WebsitePermissionEntry(domain: "example.com", permissionType: .externalScheme(scheme: "zoommtg"), decision: .allow),
             WebsitePermissionEntry(domain: "example.com", permissionType: .autoplayPolicy, decision: .allow),
         ]
-
-        let permissionManager = PermissionManagerMock()
-        for entry in entries {
-            permissionManager.setPermission(entry.decision, forDomain: entry.domain, permissionType: entry.permissionType)
-        }
-        let model = WebsitePermissionsViewModel(permissionManager: permissionManager)
+        let sut = createSUT(entries: entries)
         let expectation = expectation(description: "Initial permissions loaded")
-        let cancellable = model.$viewState
+        let cancellable = sut.$viewState
             .map(\.rows)
             .first { $0.first(where: { $0.category == .externalApps })?.count == 2 }
             .sink { _ in expectation.fulfill() }
 
-        model.send(action: .onAppear)
+        sut.send(action: .onAppear)
         wait(for: [expectation], timeout: 1)
         withExtendedLifetime(cancellable) {}
 
-        let counts = Dictionary(uniqueKeysWithValues: model.viewState.rows.map { ($0.category, $0.count) })
-
+        let counts = Dictionary(uniqueKeysWithValues: sut.viewState.rows.map { ($0.category, $0.count) })
         XCTAssertEqual(counts[.notifications], 1)
         XCTAssertEqual(counts[.location], 0)
         XCTAssertEqual(counts[.camera], 1)
@@ -71,17 +78,18 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         XCTAssertEqual(counts[.externalApps], 2)
         XCTAssertEqual(counts[.popups], 0)
 
-        let loadedRows = model.viewState.rows
-        model.send(action: .onAppear)
-        XCTAssertEqual(model.viewState.rows, loadedRows)
+        let loadedRows = sut.viewState.rows
+
+        sut.send(action: .onAppear)
+
+        XCTAssertEqual(sut.viewState.rows, loadedRows)
     }
 
     func testWhenPermissionSnapshotChangesThenRowsAreUpdated() {
-        let permissionManager = PermissionManagerMock()
-        let model = WebsitePermissionsViewModel(permissionManager: permissionManager)
+        let sut = createSUT()
         let expectation = expectation(description: "Rows updated")
         var cancellable: AnyCancellable?
-        cancellable = model.$viewState
+        cancellable = sut.$viewState
             .map(\.rows)
             .first { rows in
                 rows.first(where: { $0.category == .microphone })?.count == 1
@@ -89,12 +97,18 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
             .sink { _ in
                 expectation.fulfill()
             }
-
-        model.send(action: .onAppear)
+        sut.send(action: .onAppear)
 
         permissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .microphone)
 
         wait(for: [expectation], timeout: 1)
         withExtendedLifetime(cancellable) {}
+    }
+
+    private func createSUT(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {
+        for entry in entries {
+            permissionManager.setPermission(entry.decision, forDomain: entry.domain, permissionType: entry.permissionType)
+        }
+        return WebsitePermissionsViewModel(permissionManager: permissionManager)
     }
 }

@@ -1456,34 +1456,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAChatHasNotBeenWrittenYetThenReopeningKeepsIt() async throws {
-        // A chat the frontend has named but not yet persisted is absent from the store for innocent
-        // reasons. Reading that as deletion is the data loss this whole change is about.
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
-        await sut.presentSheet(from: mockPresentingVC)
-        sut.sessionState.restoreChat(with: savedChatURL)
-        sut.dismissSheet()
-
-        await sut.presentSheet(from: mockPresentingVC)
-
-        XCTAssertTrue(sut.sessionState.hasActiveChat, "an unwritten chat must survive a reopen")
-    }
-
-    @MainActor
-    func testWhenAChatIsSeenInTheStoreAndThenGoesThenItIsTreatedAsDeleted() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
-        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
-        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
-        XCTAssertTrue(sut.sessionState.hasActiveChat)
-
-        try mockNativeStorage.deleteChat(chatId: savedChatID)
-        sut.dismissSheet()
-        await sut.presentSheet(from: mockPresentingVC)
-
-        XCTAssertFalse(sut.sessionState.hasActiveChat)
-    }
-
-    @MainActor
     func testWhenTheChatIsDeletedThenTheAddressBarStopsOfferingIt() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())

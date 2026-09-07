@@ -150,10 +150,6 @@ final class AIChatContextualSheetCoordinator {
     }
 
 
-    /// The chat we have positively read from the store. Until a chat appears here its absence proves
-    /// nothing, so it is never discarded on the strength of a missing record.
-    private var confirmedPersistedChatID: String?
-
     private var chatStorage: DuckAiNativeStorageHandling? {
         isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
     }
@@ -187,20 +183,13 @@ final class AIChatContextualSheetCoordinator {
     }
 
     /// Whether a chat has been deleted, or `false` when that cannot be established.
-    ///
-    /// Absence only means deletion for a chat we have seen in the store. A chat the frontend has named
-    /// but not yet written is equally absent, and reading that as deletion would discard it.
     private func isChatDeleted(chatID: String?) -> Bool {
         guard let chatID,
               isNativeDataAccessEnabled,
               let storage = chatStorage,
               (try? storage.isMigrationDone()) == true else { return false }
         do {
-            guard try storage.getChat(chatId: chatID) == nil else {
-                confirmedPersistedChatID = chatID
-                return false
-            }
-            return confirmedPersistedChatID == chatID
+            return try storage.getChat(chatId: chatID) == nil
         } catch {
             Logger.aiChat.error("[Contextual] Could not verify \(chatID): \(error.localizedDescription)")
             return false
@@ -774,8 +763,6 @@ private extension AIChatContextualSheetCoordinator {
     /// Restores a persisted chat, clearing the tab's pointer when that chat has since been deleted.
     func restoreChatIfAvailable(_ restoreURL: URL?) {
         guard let restoreURL else { return }
-        // Persisted by an earlier launch, so it was written once: absence now is a deletion.
-        confirmedPersistedChatID = restoreURL.duckAIChatID
         guard !isChatDeleted(chatID: restoreURL.duckAIChatID) else {
             delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
             return

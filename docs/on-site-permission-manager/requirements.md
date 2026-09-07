@@ -250,7 +250,7 @@ Copy-review goals (from the copy task, 1214494688509116): align our dialogue str
 
 ## 9. Measurement & Instrumentation
 
-No Asana or Figma task defines a pixel list for this project. The closest sources: the parent problem task's KPI friction signals ("need new pixels"), macOS's shipped `permission_*` family, and Android's dialog impression/click pixels. **Proposed set (adopted as the implementation default 2026-08-28, pending DRI review of final names).** All are type+decision only — never a domain; PixelKit appends the platform suffix:
+No Asana or Figma task defines a pixel list for this project. The closest sources: the parent problem task's KPI friction signals ("need new pixels"), macOS's shipped `permission_*` family, and Android's dialog impression/click pixels. **Final set — approved by the DRI 2026-08-28.** All are type+decision only — never a domain; PixelKit appends the platform suffix:
 
 | # | Pixel | When |
 |---|---|---|
@@ -286,7 +286,7 @@ No Asana or Figma task defines a pixel list for this project. The closest source
 | OQ-13 | **Resolved and ratified provisionally at kick-off 2026-08-28 ("copy macOS and see how it feels"):** the site decision commits at choice time; an OS denial never rewrites it (FR-5 invariant), keeping the menu/recovery sheet reachable. Deliberate divergence from Android's commit-after-OS-success | independent review → ratified |
 | OQ-14 | **Resolved at kick-off 2026-08-28: no visible design changes** — VoiceOver labels only; the existing designs (icons + row state text) stand | independent review → decided |
 | OQ-15 | **Kick-off 2026-08-28: v1 adds no special alert** for `restricted`/unavailable OS states — standard denied handling applies (accepting a possible Settings dead-end); the states stay modeled in the system client. Sveta will demo the real restricted experience and the UX will be revisited from there | independent review → deferred |
-| OQ-16 | **Default adopted (2026-08-28):** the proposed pixel set in §9, with `permission_center_dismissed_dirty` as the friction signal — pending DRI review of the final names | independent review → defaulted |
+| OQ-16 | **Resolved (2026-08-28):** the pixel set in §9 is approved by the DRI, with `permission_center_dismissed_dirty` as the friction signal | independent review → approved |
 | OQ-17 | **Default adopted (2026-08-28):** yes — any stored record (explicit Ask included) or active state shows the menu entry; finalize after a working build | review round 2 → defaulted |
 | OQ-18 | **Default adopted (2026-08-28):** sheet rows = stored ∪ active ∪ requested-this-visit; globally-denied types add no row; finalize after a working build | review round 2 → defaulted |
 | OQ-19 | **Resolved (macOS model, per the decision rule; consistent with kick-off's no-design-changes call):** `.muted` maps to a paused state and is **not** shown as red in-use; the VoiceOver label reflects it | review round 2 → decided |

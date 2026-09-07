@@ -282,6 +282,7 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
     }
 }
 
+/// A test harness supplies an isolated store and setup helpers so each test can exercise the view model independently.
 @MainActor
 private final class Harness {
     let site: SitePermissionKey

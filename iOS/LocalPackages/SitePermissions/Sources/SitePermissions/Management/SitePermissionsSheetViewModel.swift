@@ -20,8 +20,11 @@
 import Combine
 
 public enum SitePermissionsSheetState: Equatable, Sendable {
+    /// Permission rows without a reminder to enable access in system settings.
     case permissionsOnly
+    /// Permission rows and a reminder to enable access in system settings.
     case permissionsAndReminder
+    /// A reminder to enable access in system settings, with no permission rows.
     case reminderOnly
 }
 
@@ -76,9 +79,13 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
 
     public struct Row: Equatable, Identifiable, Sendable {
         public enum IconState: Equatable, Sendable {
+            /// Capture is inactive and the site decision is Ask Each Time.
             case outline
+            /// Capture is inactive and the site decision is Never Allow.
             case blocked
+            /// Capture is paused, or inactive with an Allow decision.
             case solid
+            /// The site is actively using the camera or microphone.
             case inUse
         }
 

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+/// Combines stored permissions, visit state, and system authorization for the browser menu and management sheet.
 public struct SitePermissionsManagementSnapshot: Equatable, Sendable {
 
     public let site: SitePermissionKey

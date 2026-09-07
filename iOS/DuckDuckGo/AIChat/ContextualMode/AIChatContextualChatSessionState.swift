@@ -480,6 +480,8 @@ final class AIChatContextualChatSessionState {
     /// Begin a manual attach operation (user tapped "Attach Page")
     func beginManualAttach(fromFrontend: Bool = false) {
         Logger.aiChat.debug("[SessionState] Manual attach requested (frontend: \(fromFrontend))")
+        // An attach the user asked for must not be swallowed by an offer still waiting on JS.
+        pendingSuggestedContextCollection = false
         pixelHandler.beginManualAttach()
         isManualAttachInProgress = true
         isManualAttachFromFrontend = fromFrontend
@@ -495,6 +497,7 @@ final class AIChatContextualChatSessionState {
         deliveredContextURLWithNoNavigationSince = nil
         // The offer belongs to the page that was current when it was made.
         suggestedContext = nil
+        pendingSuggestedContextCollection = false
         if shouldAutoCollectContext, userDowngradedToPlaceholder {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[SessionState] Page navigation cleared temporary context removal")
@@ -569,6 +572,12 @@ final class AIChatContextualChatSessionState {
     /// The next collection is an offer, not an attachment: hold it for the chip and leave `chipState` alone.
     func markPendingSuggestedContextCollection() {
         pendingSuggestedContextCollection = true
+    }
+
+    /// A collection that never started, or timed out, would otherwise leave the flag to hijack the
+    /// next unrelated one — JS silence publishes nothing.
+    func cancelPendingSuggestedContextCollection() {
+        pendingSuggestedContextCollection = false
     }
 
     func markPendingSignalsOnlyCollection() {

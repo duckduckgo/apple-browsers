@@ -687,6 +687,7 @@ final class AIChatContextualSheetCoordinator {
                 // Read the page so the chip can offer it by name. Attached only if the user taps.
                 sessionState.markPendingSuggestedContextCollection()
                 if !pageContextHandler.triggerContextCollection(trigger: .navigation) {
+                    sessionState.cancelPendingSuggestedContextCollection()
                     sessionState.clearProcessingNavigationFlag()
                 }
             } else {

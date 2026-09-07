@@ -2280,6 +2280,29 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertNil(sessionState.intendedAttachedContext)
     }
 
+    func testWhenAnOfferIsStillPendingThenAManualAttachIsNotSwallowedByIt() {
+        // A collection that never lands (blocked page, JS silence) leaves the flag set, and it must
+        // not turn the next user-initiated attach into an offer.
+        sessionState.markPendingSuggestedContextCollection()
+
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testWhenAPendingOfferIsCancelledThenTheNextCollectionIsUnaffected() {
+        sessionState.markPendingSuggestedContextCollection()
+        sessionState.cancelPendingSuggestedContextCollection()
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        XCTAssertNil(sessionState.suggestedContext)
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
+    }
+
     func testWhenNavigatingThenAPreviousOfferIsDropped() {
         sessionState.markPendingSuggestedContextCollection()
         sessionState.updateContext(makeTestContext(title: "Tokamak"))

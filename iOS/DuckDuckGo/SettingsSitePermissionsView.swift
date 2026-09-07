@@ -250,6 +250,11 @@ struct SettingsSitePermissionsView: View {
                         }
                         .accessibilityIdentifier("Settings.SitePermissions.Site.\(site.host)")
                         .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(UserText.actionDelete, role: .destructive) {
+                                viewModel.removePermissions(for: site)
+                            }
+                        }
                     }
                 } header: {
                     Text(UserText.settingsSitePermissionsManageSites)

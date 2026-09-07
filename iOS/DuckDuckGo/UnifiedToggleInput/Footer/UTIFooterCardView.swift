@@ -355,6 +355,7 @@ final class UTIFooterActionButton: UIView {
 
     private static func makePrimaryConfiguration() -> UIButton.Configuration {
         var configuration = UIButton.Configuration.plain()
+        configuration.titleLineBreakMode = .byTruncatingTail
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 0,
                                                               leading: Constants.titleHorizontalPadding,
                                                               bottom: 0,

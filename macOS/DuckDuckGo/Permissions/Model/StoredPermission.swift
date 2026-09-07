@@ -49,8 +49,6 @@ enum PersistedPermissionDecision {
 struct StoredPermission: Equatable {
     let id: NSManagedObjectID
     var decision: PersistedPermissionDecision
-    /// When the user last explicitly set this decision. `nil` for permissions persisted before this
-    /// attribute existed, so recency-ordered UI can leave them out rather than dating them to now.
     var lastModified: Date?
 }
 
@@ -73,10 +71,12 @@ struct PermissionEntity: Equatable {
             assertionFailure("\(#file): Failed to create PermissionEntity from PermissionManagedObject")
             return nil
         }
-
-        self.permission = StoredPermission(id: managedObject.objectID,
-                                           decision: managedObject.decision,
-                                           lastModified: managedObject.lastModified)
+        
+        self.permission = StoredPermission(
+            id: managedObject.objectID,
+            decision: managedObject.decision,
+            lastModified: managedObject.lastModified
+        )
         self.domain = domain
         self.type = permissionType
     }

@@ -30,21 +30,25 @@ protocol PermissionStore: AnyObject {
     /// re-encodes them from the decoded entities, which is enough for test doubles; `LocalPermissionStore`
     /// reads the real columns so the page can't misreport a row the app didn't write itself.
     func loadRawPermissions() throws -> [RawPermissionRow]
-    func update(objectWithId id: NSManagedObjectID,
-                decision: PersistedPermissionDecision?,
-                lastModified: Date?,
-                completionHandler: (@MainActor (Error?) -> Void)?)
+    func update(
+        objectWithId id: NSManagedObjectID,
+        decision: PersistedPermissionDecision?,
+        lastModified: Date?,
+        completionHandler: (@MainActor (Error?) -> Void)?
+    )
     func remove(objectWithId id: NSManagedObjectID, completionHandler: (@MainActor (Error?) -> Void)?)
-    func add(domain: String,
-             permissionType: PermissionType,
-             decision: PersistedPermissionDecision,
-             lastModified: Date) throws -> StoredPermission
-
+    func add(
+        domain: String,
+        permissionType: PermissionType,
+        decision: PersistedPermissionDecision,
+        lastModified: Date
+    ) throws -> StoredPermission
+    
     func clear(except: [StoredPermission], completionHandler: (@MainActor (Error?) -> Void)?)
 }
 
 extension PermissionStore {
-
+    
     func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, lastModified: Date?) {
         update(objectWithId: id, decision: decision, lastModified: lastModified, completionHandler: nil)
     }
@@ -92,10 +96,12 @@ final class LocalPermissionStore: PermissionStore {
         return entities
     }
 
-    func update(objectWithId id: NSManagedObjectID,
-                decision: PersistedPermissionDecision?,
-                lastModified: Date?,
-                completionHandler: (@MainActor (Error?) -> Void)?) {
+    func update(
+        objectWithId id: NSManagedObjectID,
+        decision: PersistedPermissionDecision?,
+        lastModified: Date?,
+        completionHandler: (@MainActor (Error?) -> Void)?
+    ) {
         func mainQueueCompletion(error: Error?) {
             guard completionHandler != nil else { return }
             DispatchQueue.main.asyncOrNow {
@@ -166,13 +172,15 @@ final class LocalPermissionStore: PermissionStore {
             }
         }
     }
-
-    private func performAdd(domain: String,
-                            permissionType: PermissionType,
-                            decision: PersistedPermissionDecision,
-                            lastModified: Date) -> Result<NSManagedObjectID, Error>? {
+    
+    private func performAdd(
+        domain: String,
+        permissionType: PermissionType,
+        decision: PersistedPermissionDecision,
+        lastModified: Date
+    ) -> Result<NSManagedObjectID, Error>? {
         guard let context = context else { return nil }
-
+        
         var result: Result<NSManagedObjectID, Error>?
         context.performAndWait { [context] in
             let entityName = PermissionManagedObject.className()

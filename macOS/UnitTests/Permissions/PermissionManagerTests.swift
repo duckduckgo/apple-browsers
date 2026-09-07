@@ -23,11 +23,9 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class PermissionManagerTests: XCTestCase {
-
-    /// Fixed instant handed to `setPermission`, so assertions compare exactly rather than by range.
     private static let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
-
     var store: PermissionStoreMock!
+    
     lazy var manager: PermissionManager! = {
         PermissionManager(store: store)
     }()

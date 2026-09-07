@@ -1,5 +1,5 @@
 //
-//  WebsitePermissionsView.swift
+//  PreferencesWebsitePermissionsView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import DesignResourcesKitIcons
 import PreferencesUI_macOS
 import SwiftUI
 
-struct WebsitePermissionsView: View {
+struct PreferencesWebsitePermissionsView: View {
     private enum Constants {
         static let cornerRadius: CGFloat = 12
         static let separatorHeight: CGFloat = 1
@@ -41,15 +41,18 @@ struct WebsitePermissionsView: View {
         PreferencePane(UserText.websitePermissions) {
             permissionsSection
         }
+        .task {
+            model.send(action: .onAppear)
+        }
     }
 
     private var permissionsSection: some View {
         PreferencePaneSection(UserText.permissionsSection) {
             VStack(spacing: 0) {
-                ForEach(Array(model.rows.enumerated()), id: \.element.id) { index, row in
+                ForEach(Array(model.viewState.rows.enumerated()), id: \.element.id) { index, row in
                     permissionRow(row)
 
-                    if index < model.rows.count - 1 {
+                    if shouldShowSeparator(afterRowAt: index) {
                         Rectangle()
                             .fill(Color(designSystemColor: .containerBorderPrimary))
                             .frame(height: Constants.separatorHeight)
@@ -62,9 +65,13 @@ struct WebsitePermissionsView: View {
         }
     }
 
-    private func permissionRow(_ row: WebsitePermissionRow) -> some View {
+    private func shouldShowSeparator(afterRowAt index: Int) -> Bool {
+        index < model.viewState.rows.count - 1
+    }
+
+    private func permissionRow(_ row: WebsitePermissionsViewState.Row) -> some View {
         HStack(spacing: 10) {
-            Image(nsImage: row.category.icon)
+            Image(nsImage: row.icon)
                 .renderingMode(.template)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -72,7 +79,7 @@ struct WebsitePermissionsView: View {
                 .foregroundColor(Color(designSystemColor: .iconsSecondary))
 
             HStack(spacing: 6) {
-                Text(row.category.title)
+                Text(row.title)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
 
@@ -100,49 +107,10 @@ struct WebsitePermissionsView: View {
         .frame(height: Constants.rowHeight)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityIdentifier(row.category.accessibilityIdentifier)
+        .accessibilityIdentifier(row.accessibilityIdentifier)
     }
 }
 
-private extension WebsitePermissionCategory {
-    var title: String {
-        switch self {
-        case .notifications:
-            return UserText.permissionNotification
-        case .location:
-            return UserText.permissionGeolocation
-        case .camera:
-            return UserText.permissionCamera
-        case .microphone:
-            return UserText.permissionMicrophone
-        case .externalApps:
-            return UserText.permissionCenterExternalApps
-        case .popups:
-            return UserText.permissionPopups
-        }
-    }
-
-    var icon: NSImage {
-        switch self {
-        case .notifications:
-            return DesignSystemImages.Glyphs.Size16.permissionsNotification
-        case .location:
-            return DesignSystemImages.Glyphs.Size16.permissionsLocation
-        case .camera:
-            return DesignSystemImages.Glyphs.Size16.permissionCamera
-        case .microphone:
-            return DesignSystemImages.Glyphs.Size16.permissionMicrophone
-        case .externalApps:
-            return DesignSystemImages.Glyphs.Size16.openIn
-        case .popups:
-            return DesignSystemImages.Glyphs.Size16.popupBlocked
-        }
-    }
-
-    var accessibilityIdentifier: String {
-        "WebsitePermissions.\(self)"
-    }
-}
 
 #if DEBUG
 private final class PreviewWebsitePermissionManager: WebsitePermissionManaging {
@@ -175,7 +143,7 @@ private let previewEntries: [WebsitePermissionEntry] = [
 ]
 
 #Preview("Website Permissions - Light") {
-    WebsitePermissionsView(model: previewModel(entries: previewEntries))
+    PreferencesWebsitePermissionsView(model: previewModel(entries: previewEntries))
         .frame(width: 544, alignment: .topLeading)
         .padding(.horizontal, 24)
         .padding(.vertical, 32)
@@ -183,7 +151,7 @@ private let previewEntries: [WebsitePermissionEntry] = [
 }
 
 #Preview("Website Permissions - Dark") {
-    WebsitePermissionsView(model: previewModel(entries: previewEntries))
+    PreferencesWebsitePermissionsView(model: previewModel(entries: previewEntries))
         .frame(width: 544, alignment: .topLeading)
         .padding(.horizontal, 24)
         .padding(.vertical, 32)
@@ -191,7 +159,7 @@ private let previewEntries: [WebsitePermissionEntry] = [
 }
 
 #Preview("Website Permissions - No Saved Permissions") {
-    WebsitePermissionsView(model: previewModel())
+    PreferencesWebsitePermissionsView(model: previewModel())
         .frame(width: 544, alignment: .topLeading)
         .padding(.horizontal, 24)
         .padding(.vertical, 32)

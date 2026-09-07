@@ -18,14 +18,14 @@
 
 import Combine
 import XCTest
-
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 final class WebsitePermissionsViewModelTests: XCTestCase {
-
     func testWhenThereAreNoPersistedPermissionsThenAllRowsHaveZeroCount() {
-        let rows = WebsitePermissionsViewModel.makeRows(from: [])
+        let model = WebsitePermissionsViewModel(permissionManager: WebsitePermissionManagerMock())
+        model.send(action: .onAppear)
+        let rows = model.viewState.rows
 
         XCTAssertEqual(rows.map(\.category), [
             .notifications,
@@ -47,7 +47,20 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
             WebsitePermissionEntry(domain: "example.com", permissionType: .autoplayPolicy, decision: .allow),
         ]
 
-        let counts = Dictionary(uniqueKeysWithValues: WebsitePermissionsViewModel.makeRows(from: entries).map { ($0.category, $0.count) })
+        let permissionManager = WebsitePermissionManagerMock()
+        permissionManager.send(entries)
+        let model = WebsitePermissionsViewModel(permissionManager: permissionManager)
+        let expectation = expectation(description: "Initial permissions loaded")
+        let cancellable = model.$viewState
+            .map(\.rows)
+            .first { $0.first(where: { $0.category == .externalApps })?.count == 2 }
+            .sink { _ in expectation.fulfill() }
+
+        model.send(action: .onAppear)
+        wait(for: [expectation], timeout: 1)
+        withExtendedLifetime(cancellable) {}
+
+        let counts = Dictionary(uniqueKeysWithValues: model.viewState.rows.map { ($0.category, $0.count) })
 
         XCTAssertEqual(counts[.notifications], 1)
         XCTAssertEqual(counts[.location], 0)
@@ -55,6 +68,10 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         XCTAssertEqual(counts[.microphone], 0)
         XCTAssertEqual(counts[.externalApps], 2)
         XCTAssertEqual(counts[.popups], 0)
+
+        let loadedRows = model.viewState.rows
+        model.send(action: .onAppear)
+        XCTAssertEqual(model.viewState.rows, loadedRows)
     }
 
     func testWhenPermissionSnapshotChangesThenRowsAreUpdated() {
@@ -62,7 +79,8 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
         let model = WebsitePermissionsViewModel(permissionManager: permissionManager)
         let expectation = expectation(description: "Rows updated")
         var cancellable: AnyCancellable?
-        cancellable = model.$rows
+        cancellable = model.$viewState
+            .map(\.rows)
             .first { rows in
                 rows.first(where: { $0.category == .microphone })?.count == 1
             }
@@ -70,24 +88,13 @@ final class WebsitePermissionsViewModelTests: XCTestCase {
                 expectation.fulfill()
             }
 
+        model.send(action: .onAppear)
+
         permissionManager.send([
             WebsitePermissionEntry(domain: "example.com", permissionType: .microphone, decision: .allow),
         ])
 
         wait(for: [expectation], timeout: 1)
         withExtendedLifetime(cancellable) {}
-    }
-}
-
-private final class WebsitePermissionManagerMock: WebsitePermissionManaging {
-
-    private let subject = CurrentValueSubject<[WebsitePermissionEntry], Never>([])
-
-    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
-        subject.eraseToAnyPublisher()
-    }
-
-    func send(_ entries: [WebsitePermissionEntry]) {
-        subject.send(entries)
     }
 }

@@ -2231,46 +2231,72 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
-    // MARK: - Suggested page context
+    // MARK: - Offered page context
 
-    func testWhenSuggestedCollectionLandsThenItIsOfferedWithoutAttaching() {
+    /// Auto-attach off, UTI active, chat under way: the conditions the offer shares with auto-attach.
+    private func arrangeOfferConditions() {
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+    }
+
+    func testWhenTheSettingIsOffThenACollectedPageIsOfferedRatherThanAttached() {
         var deliveredTargets: PageContextDeliveryTargets?
         sessionState.effects
             .sink { effect in
                 if case .deliverPageContext(_, let targets) = effect { deliveredTargets = targets }
             }
             .store(in: &cancellables)
+        arrangeOfferConditions()
 
-        sessionState.markPendingSuggestedContextCollection()
         sessionState.updateContext(makeTestContext(title: "Tokamak"))
 
         XCTAssertEqual(sessionState.suggestedContext?.title, "Tokamak")
         XCTAssertEqual(deliveredTargets, .utiSuggestedContext)
         XCTAssertEqual(sessionState.chipState, .placeholder, "An offer is not an attachment")
-        XCTAssertNil(sessionState.latestContext, "A suggestion must stay out of the attach path")
     }
 
-    func testWhenSuggestedCollectionReturnsNothingThenNothingIsOffered() {
-        sessionState.markPendingSuggestedContextCollection()
-        sessionState.updateContext(makeTestContext(title: "Empty", content: ""))
+    func testWhenTheSettingIsOnThenTheSamePageIsAttachedNotOffered() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
 
         XCTAssertNil(sessionState.suggestedContext)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
     }
 
-    func testWhenSuggestionIsAcceptedThenItBecomesTheAttachedContext() {
-        sessionState.markPendingSuggestedContextCollection()
+    func testWhenThereIsNoChatThenNothingIsOffered() {
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.updateUnifiedToggleInputActive(true)
+
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testWhenThePageIsAlreadyAttachedThenItIsNotOfferedAgain() {
+        let url = "https://en.wikipedia.org/wiki/Tokamak"
+        arrangeOfferConditions()
+        sessionState.updateContext(makeTestContext(title: "Tokamak", url: url))
+        sessionState.acceptSuggestedContext()
+
+        XCTAssertFalse(sessionState.shouldOfferPageContext(for: URL(string: url)))
+    }
+
+    func testWhenAnOfferIsAcceptedThenItBecomesTheAttachedContext() {
+        arrangeOfferConditions()
         sessionState.updateContext(makeTestContext(title: "Tokamak"))
 
         sessionState.acceptSuggestedContext()
 
         XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
-        XCTAssertEqual(sessionState.latestContext?.title, "Tokamak")
         XCTAssertNil(sessionState.suggestedContext)
     }
 
-    func testWhenSuggestionIsDismissedThenNothingIsAttachedOrDetached() {
-        sessionState.markPendingSuggestedContextCollection()
+    func testWhenAnOfferIsDismissedThenNothingIsAttachedOrDetached() {
+        arrangeOfferConditions()
         sessionState.updateContext(makeTestContext(title: "Tokamak"))
 
         sessionState.dismissSuggestedContext()
@@ -2280,31 +2306,8 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertNil(sessionState.intendedAttachedContext)
     }
 
-    func testWhenAnOfferIsStillPendingThenAManualAttachIsNotSwallowedByIt() {
-        // A collection that never lands (blocked page, JS silence) leaves the flag set, and it must
-        // not turn the next user-initiated attach into an offer.
-        sessionState.markPendingSuggestedContextCollection()
-
-        sessionState.beginManualAttach()
-        sessionState.updateContext(makeTestContext(title: "Tokamak"))
-
-        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
-        XCTAssertNil(sessionState.suggestedContext)
-    }
-
-    func testWhenAPendingOfferIsCancelledThenTheNextCollectionIsUnaffected() {
-        sessionState.markPendingSuggestedContextCollection()
-        sessionState.cancelPendingSuggestedContextCollection()
-        mockSettings.isAutomaticContextAttachmentEnabled = true
-
-        sessionState.updateContext(makeTestContext(title: "Tokamak"))
-
-        XCTAssertNil(sessionState.suggestedContext)
-        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
-    }
-
     func testWhenNavigatingThenAPreviousOfferIsDropped() {
-        sessionState.markPendingSuggestedContextCollection()
+        arrangeOfferConditions()
         sessionState.updateContext(makeTestContext(title: "Tokamak"))
 
         sessionState.notifyPageChanged()

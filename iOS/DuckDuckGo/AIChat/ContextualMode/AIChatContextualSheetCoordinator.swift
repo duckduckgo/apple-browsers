@@ -567,7 +567,7 @@ final class AIChatContextualSheetCoordinator {
         } else if currentPageURL != nil, shouldCollectSignalsOnly {
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)
-        } else if offerPageContextIfNeeded(trigger: .tabContent) {
+        } else if offerPageContextIfNeeded(trigger: .auto) {
             // Opening onto a page this chat has not been given: offer it.
         } else {
             // No collection attempted — still measure the current page's attachability.
@@ -575,25 +575,18 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
-    /// Reads the page so the chip can offer it; a tap is what attaches it. Requires a live observer —
-    /// the result is published to the coordinator's subscription, and with none the read is wasted.
+    /// Auto-attach's counterpart: the same read, offered instead of attached. Requires a live observer,
+    /// since the result reaches the session only through the coordinator's subscription.
     @discardableResult
     private func offerPageContextIfNeeded(trigger: PageContextExtractionTrigger) -> Bool {
         guard isPagePlaceholderEnabled,
               isActivelyObservingContext,
-              currentPageURL != nil,
-              sessionState.shouldSuggestPageContextOnNavigation() else {
-            print("🔎PH offer: skipped flag=\(isPagePlaceholderEnabled) observing=\(isActivelyObservingContext) url=\(currentPageURL != nil)")
+              sessionState.shouldOfferPageContext(for: currentPageURL) else {
+            print("🔎PH offer: skipped flag=\(isPagePlaceholderEnabled) observing=\(isActivelyObservingContext) shouldOffer=\(sessionState.shouldOfferPageContext(for: currentPageURL))")
             return false
         }
         print("🔎PH offer: collecting (trigger: \(trigger.rawValue))")
-        sessionState.markPendingSuggestedContextCollection()
-        guard pageContextHandler.triggerContextCollection(trigger: trigger) else {
-            print("🔎PH offer: collection FAILED to start")
-            sessionState.cancelPendingSuggestedContextCollection()
-            return false
-        }
-        return true
+        return pageContextHandler.triggerContextCollection(trigger: trigger)
     }
 
     private func makeChipsViewController() -> AIChatContextualInputViewController {
@@ -693,7 +686,7 @@ final class AIChatContextualSheetCoordinator {
 
     /// Called by TabViewController when the page navigates to a new URL.
     func notifyPageChanged() async {
-        print("🔎PH nav: hasActiveSheet=\(hasActiveSheet) hasActiveChat=\(sessionState.hasActiveChat) flag=\(isPagePlaceholderEnabled) shouldSuggest=\(sessionState.shouldSuggestPageContextOnNavigation()) autoCollect=\(sessionState.shouldTriggerAutoCollect()) observing=\(isActivelyObservingContext) immediateUTI=\(isImmediateContextualUTIEnabled)")
+        print("🔎PH nav: hasActiveSheet=\(hasActiveSheet) hasActiveChat=\(sessionState.hasActiveChat) flag=\(isPagePlaceholderEnabled) shouldOffer=\(sessionState.shouldOfferPageContext(for: currentPageURL)) autoCollect=\(sessionState.shouldTriggerAutoCollect()) observing=\(isActivelyObservingContext) immediateUTI=\(isImmediateContextualUTIEnabled)")
         guard hasActiveSheet else { return }
         sessionState.notifyPageChanged()
 

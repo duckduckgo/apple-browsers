@@ -27,7 +27,7 @@ import FeatureFlags_iOS
 /// Coordinates the subscription promotion launch sheet for users who skipped onboarding.
 ///
 /// Self-contained: owns eligibility, pixel firing, and CTA navigation.
-/// Uses only stable, synchronous signals — no dependency on async product availability.
+/// Uses only stable, synchronous signals, including already-loaded product availability.
 protocol SubscriptionPromoCoordinating: AnyObject {
     /// Per-coordinator presentation gate. Each coordinator decides independently whether the
     /// current onboarding state permits the launch prompt to be shown.
@@ -84,8 +84,16 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
             && isReturningUser
             && tutorialSettings.hasSkippedOnboarding
             && hasCooldownPassed()
-        Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: \(shouldShow)")
-        return shouldShow
+        guard shouldShow else {
+            Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: false")
+            return false
+        }
+        guard subscriptionManager.isSubscriptionPurchaseEligible else {
+            Logger.subscription.debug("[Subscription Promo] App Store products unavailable, skipping.")
+            return false
+        }
+        Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: true")
+        return true
     }
 
     func markLaunchPromptPresented() {

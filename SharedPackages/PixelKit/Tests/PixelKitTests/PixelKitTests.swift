@@ -1211,6 +1211,15 @@ final class PixelKitTests: XCTestCase {
         let standardParameters: [PixelKitStandardParameter]? = nil
     }
 
+    /// `m_netp_daily_active_d` is a real shipped name whose `_d` is part of the name, not a
+    /// frequency suffix PixelKit appended. `.legacyDailyNoSuffix` exists precisely for it.
+    private struct LegacyDailyNoSuffixTestEvent: PixelKit.Event {
+        let namePrefix: PixelKitNamePrefix = .none
+        let name = "m_netp_daily_active_d"
+        let parameters: [String: String]? = nil
+        let standardParameters: [PixelKitStandardParameter]? = nil
+    }
+
     // MARK: - Options presets
 
     func testOptionsPresetsMatchTheirMemberwiseEquivalents() {
@@ -1331,6 +1340,27 @@ final class PixelKitTests: XCTestCase {
         wait(for: [fired], timeout: 1.0)
         XCTAssertEqual(store.items.map(\.pixelName), recorder.pixelNames)
         XCTAssertEqual(store.items.first?.pixelName.hasSuffix("_daily"), true)
+    }
+
+    // MARK: - Legacy daily no-suffix frequency
+
+    func testLegacyDailyNoSuffixAcceptsANameThatAlreadyEndsWithTheDailyMarker() {
+        let userDefaults = UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)")!
+        var firedNames: [String] = []
+        let pixelKit = PixelKit(dryRun: false,
+                                appVersion: "1.0.0",
+                                source: PixelKit.Source.iOS.rawValue,
+                                defaultHeaders: [:],
+                                pixelCalendar: nil,
+                                defaults: userDefaults) { name, _, _, _, _, _ in
+            firedNames.append(name)
+        }
+
+        // `m_netp_daily_active_d` is a real shipped name whose `_d` is part of the name, not a
+        // frequency suffix PixelKit appended. `.legacyDailyNoSuffix` exists precisely for it.
+        pixelKit.fire(LegacyDailyNoSuffixTestEvent(), frequency: .legacyDailyNoSuffix)
+
+        XCTAssertEqual(firedNames, ["m_netp_daily_active_d_ios_phone"])
     }
 
     // MARK: - Static async entry point

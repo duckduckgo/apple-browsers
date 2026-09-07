@@ -117,6 +117,16 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
         return recordActedOnCurrentSnapshot()
     }
 
+    /// A switch from the bar's own picker settles the message only if web offered that model as a step
+    /// down from the one the user was on. Read off the CTA: iOS re-resolves before reporting the switch.
+    public func userSwitchedModel(from previousModelId: String?, to modelId: String) {
+        guard let cta = lastReadSnapshot.cta, cta.id.asksForModelSwitch,
+              cta.target(forSelectedModelId: previousModelId).candidateModelIds.contains(modelId) else { return }
+
+        Logger.aiChat.debug("Duck.ai usage warning stood down: user switched model")
+        recordActedOnCurrentSnapshot()
+    }
+
     @discardableResult
     private func recordActedOnCurrentSnapshot() -> Bool {
         guard let notice = lastReadSnapshot.notice,
@@ -133,6 +143,13 @@ public final class DuckAiUsageWarningViewModel: ObservableObject {
 
         Logger.aiChat.debug("Duck.ai usage warning model picker opened")
         onOpenModelPicker?()
+    }
+
+    /// Whether a switch was taken on the notice in the current snapshot, whatever web has published
+    /// since: the record outlives the signature match that hides the message.
+    public var hasActedOnCurrentNotice: Bool {
+        guard let notice = lastReadSnapshot.notice, let acted = dismissalStore.actedSnapshot() else { return false }
+        return acted.noticeID == notice.id.rawValue
     }
 
     /// Teardown: drops the message without recording a dismissal.

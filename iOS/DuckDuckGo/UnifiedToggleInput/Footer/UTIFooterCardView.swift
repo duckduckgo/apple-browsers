@@ -29,7 +29,7 @@ final class UTIFooterCardView: UIView {
         static let cornerRadius: CGFloat = 28
         static let contentTopGap: CGFloat = 12
         static let contentBottom: CGFloat = 12
-        static let contentLeading: CGFloat = 16
+        static let contentLeading: CGFloat = 20
         static let contentTrailing: CGFloat = 12
         static let iconSize: CGFloat = 16
         static let iconTextGap: CGFloat = 10

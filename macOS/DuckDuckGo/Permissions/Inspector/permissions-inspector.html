@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Permissions</title>
+                <style>
+                    :root { color-scheme: light dark; }
+                    body { font: 13px -apple-system, system-ui, sans-serif; margin: 0; padding: 0 16px 24px; }
+                    h1 { font-size: 18px; margin: 0 0 8px; }
+                    header { position: sticky; top: 0; background: Canvas; padding-top: 12px; z-index: 2; }
+                    .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+                    /* The bare controls have no visible edges on the page's flat background, so give them one. */
+                    #search, #typeFilter { background: rgba(128,128,128,0.16); color: inherit;
+                        border: 1px solid rgba(128,128,128,0.42); border-radius: 6px; }
+                    #search { flex: 1; min-width: 200px; padding: 4px 8px; }
+                    #typeFilter { padding: 4px 6px; }
+                    #count { color: GrayText; white-space: nowrap; }
+                    button { padding: 4px 10px; }
+                    button.danger { color: #fff; background: #c0392b; border: 0; border-radius: 4px; }
+                    button:disabled { opacity: 0.5; }
+                    /* Single table so the header row shares column widths with the body. */
+                    table { width: 100%; border-collapse: collapse; table-layout: auto; }
+                    th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid rgba(128,128,128,0.25); vertical-align: middle; }
+                    thead th { position: sticky; top: var(--header-h, 0px); background: Canvas; z-index: 1; }
+                    .sortable { cursor: pointer; user-select: none; }
+                    .sortable:hover { text-decoration: underline; }
+                    td.domain { overflow-wrap: anywhere; font-family: ui-monospace, monospace; font-size: 11px; }
+                    td.domain a { color: LinkText; text-decoration: none; }
+                    td.domain a:hover { text-decoration: underline; }
+                    td.type, td.bool { white-space: nowrap; font-family: ui-monospace, monospace; font-size: 11px; }
+                    td.effective { white-space: nowrap; }
+                    /* Columns that aren't stored columns. */
+                    th.derived, td.derived { border-left: 1px solid rgba(128,128,128,0.4); }
+                    th.derived { font-style: italic; }
+                    tr.decision-allow td:first-child { border-left: 3px solid #1a7f37; }
+                    tr.decision-ask td:first-child { border-left: 3px solid #9a6700; }
+                    tr.decision-deny td:first-child { border-left: 3px solid #cf222e; }
+                    tr.overridden { background: rgba(192,57,43,0.10); }
+                    .badge { display: inline-block; padding: 0 5px; border-radius: 3px; font-size: 10px; text-transform: uppercase;
+                        letter-spacing: 0.04em; background: rgba(128,128,128,0.25); }
+                    .badge.override { background: rgba(192,57,43,0.30); }
+                    .decision { display: inline-block; padding: 1px 7px; border-radius: 999px; font-weight: 600; }
+                    .decision.allow { color: #1a7f37; background: rgba(46,160,67,0.16); }
+                    .decision.ask { color: #9a6700; background: rgba(191,135,0,0.18); }
+                    .decision.deny { color: #cf222e; background: rgba(207,34,46,0.14); }
+                    @media (prefers-color-scheme: dark) {
+                        tr.decision-allow td:first-child { border-left-color: #56d364; }
+                        tr.decision-ask td:first-child { border-left-color: #e3b341; }
+                        tr.decision-deny td:first-child { border-left-color: #ff7b72; }
+                        .decision.allow { color: #56d364; }
+                        .decision.ask { color: #e3b341; }
+                        .decision.deny { color: #ff7b72; }
+                    }
+                </style>
+    </head>
+    <body>
+        <header>
+            <h1>Permissions</h1>
+            <div class="toolbar">
+                <input id="search" type="search" placeholder="Filter by domain or type" autocomplete="off">
+                    <select id="typeFilter"><option value="">All types</option></select>
+                    <span id="count"></span>
+                    <button id="reload">Reload</button>
+                    <button id="deleteSelected" disabled>Delete selected</button>
+                    <button id="deleteAll" class="danger">Delete all</button>
+            </div>
+        </header>
+        <table>
+            <thead><tr>
+                <th><input type="checkbox" id="selectAll"></th>
+                <th class="sortable" data-sort="domain">domainEncrypted</th>
+                <th class="sortable" data-sort="type">permissionType</th>
+                <th class="sortable" data-sort="allow">allow</th>
+                <th class="sortable" data-sort="isRemoved">isRemoved</th>
+                <th class="sortable derived" data-sort="effective" title="What the app acts on; differs from the stored columns only while a PermissionDecisionOverriding is active. Not a stored column.">effective</th>
+                <th class="sortable derived" data-sort="fireproof" title="Whether the domain is fireproof, so its permissions survive a burn. Not a stored column.">fireproof</th>
+            </tr></thead>
+            <tbody id="rows"></tbody>
+        </table>
+        <script src="/app.js"></script>
+    </body>
+</html>

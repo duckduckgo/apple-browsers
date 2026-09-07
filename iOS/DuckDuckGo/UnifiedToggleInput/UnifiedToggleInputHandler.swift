@@ -97,13 +97,6 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
-    var isAIVoiceChatEnabled: Bool = false {
-        didSet {
-            guard isAIVoiceChatEnabled != oldValue else { return }
-            updateButtonState()
-        }
-    }
-
     var hidesVoiceButton: Bool = false {
         didSet {
             guard hidesVoiceButton != oldValue else { return }
@@ -260,8 +253,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - Private
 
     private func updateButtonState() {
-        let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
-            && !prefersDictationOverVoiceChat
+        let aiVoiceChatAvailable = !isExpanded && currentToggleState == .aiChat && !prefersDictationOverVoiceChat
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 

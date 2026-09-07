@@ -60,10 +60,9 @@ final class UTIModelSelector {
         let onUserChoiceRecorded: () -> Void
         let clearSubmitRecoveryBlock: () -> Void
         let onModelApplied: (String) -> Void
-        /// A model the user actually changed to, as opposed to a re-application of the current one.
-        let onModelSelectionChanged: (String) -> Void
-        /// The same switch, announced before it is applied, for listeners whose state it changes.
-        let onModelSelectionWillChange: (String) -> Void
+        /// A model the user actually changed to, as opposed to a re-application of the current one,
+        /// with the one they left.
+        let onModelSelectionChanged: (_ previousModelId: String?, _ modelId: String) -> Void
     }
 
     private let modelStore: UTIModelStore
@@ -112,18 +111,16 @@ final class UTIModelSelector {
         }
 
         if model.entityHasAccess {
-            let isNewSelection = modelId != modelStore.persistedModelId
+            let previousModelId = modelStore.persistedModelId
+            let isNewSelection = modelId != previousModelId
             pendingGatedModelId = nil
             // Supported model picked in the native picker — the recovery card's reason to block
             // submit is gone, so drop the block (no-op when it wasn't set).
             callbacks.clearSubmitRecoveryBlock()
-            if isNewSelection {
-                callbacks.onModelSelectionWillChange(modelId)
-            }
             updateSelectedModel(modelId)
             if isNewSelection {
                 pixelReporter.reportModelSelected(modelId: modelId)
-                callbacks.onModelSelectionChanged(modelId)
+                callbacks.onModelSelectionChanged(previousModelId, modelId)
             }
             callbacks.onModelApplied(modelId)
         } else {
@@ -164,7 +161,8 @@ final class UTIModelSelector {
             return false
         }
 
-        let isNewSelection = modelId != modelStore.persistedModelId
+        let previousModelId = modelStore.persistedModelId
+        let isNewSelection = modelId != previousModelId
         pendingGatedModelId = nil
         // Mirror the direct-selection path: the gated model in the recovery-card
         // is now accessible (post-purchase), so drop the recovery-card submit block.
@@ -172,7 +170,7 @@ final class UTIModelSelector {
         updateSelectedModel(modelId)
         if isNewSelection {
             pixelReporter.reportModelSelected(modelId: modelId)
-            callbacks.onModelSelectionChanged(modelId)
+            callbacks.onModelSelectionChanged(previousModelId, modelId)
         }
         callbacks.onModelApplied(modelId)
         return true

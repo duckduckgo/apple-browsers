@@ -149,8 +149,7 @@ extension RedesignedNewTabPageViewController: NewTabPageEscapeHatchPresenting {
     func setEscapeHatch(_ model: EscapeHatchModel?) {}
 }
 
-/// Contextual dialogs are not hosted on this page yet. The presentation entry points trap in debug;
-/// the two that maintain an already-visible dialog are no-ops.
+/// Contextual dialogs are not hosted on this page yet.
 extension RedesignedNewTabPageViewController: NewTabPageOnboardingPresenting {
 
     func showNextDaxDialog() {

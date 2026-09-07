@@ -83,7 +83,5 @@ protocol NewTabPage: UIViewController,
     /// `UIViewController.dismiss(animated:completion:)`.
     func dismiss()
 
-    /// Width decides part of the page's framing, so a resize has to be pushed in rather than
-    /// observed.
     func widthChanged()
 }

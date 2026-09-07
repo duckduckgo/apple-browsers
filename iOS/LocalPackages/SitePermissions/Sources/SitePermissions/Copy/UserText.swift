@@ -126,46 +126,46 @@ enum UserText {
 
     enum PermissionManagement {
         static func title(domain: String) -> String {
-            let format = NSLocalizedString("sitePermissions.management.title", bundle: Bundle.module,
+            let format = NotLocalizedString("sitePermissions.management.title", bundle: Bundle.module,
                                            value: "Permissions for “%@”",
                                            comment: "Title of the on-site permission sheet. The placeholder is the website domain.")
             return String(format: format, domain)
         }
 
-        static let camera = NSLocalizedString("sitePermissions.management.camera", bundle: Bundle.module,
+        static let camera = NotLocalizedString("sitePermissions.management.camera", bundle: Bundle.module,
                                               value: "Camera",
                                               comment: "Camera permission row label.")
-        static let microphone = NSLocalizedString("sitePermissions.management.microphone", bundle: Bundle.module,
+        static let microphone = NotLocalizedString("sitePermissions.management.microphone", bundle: Bundle.module,
                                                   value: "Microphone",
                                                   comment: "Microphone permission row label.")
-        static let askEachTime = NSLocalizedString("sitePermissions.management.ask-each-time", bundle: Bundle.module,
+        static let askEachTime = NotLocalizedString("sitePermissions.management.ask-each-time", bundle: Bundle.module,
                                                    value: "Ask Each Time",
                                                    comment: "Permission picker option that asks again when a site requests access.")
-        static let allowThisTime = NSLocalizedString("sitePermissions.management.allow-this-time", bundle: Bundle.module,
+        static let allowThisTime = NotLocalizedString("sitePermissions.management.allow-this-time", bundle: Bundle.module,
                                                      value: "Allow This Time",
                                                      comment: "Checked permission picker option while a one-time grant is active.")
-        static let alwaysAllow = NSLocalizedString("sitePermissions.management.always-allow", bundle: Bundle.module,
+        static let alwaysAllow = NotLocalizedString("sitePermissions.management.always-allow", bundle: Bundle.module,
                                                    value: "Always Allow",
                                                    comment: "Permission picker option that always allows this site.")
-        static let neverAllow = NSLocalizedString("sitePermissions.management.never-allow", bundle: Bundle.module,
+        static let neverAllow = NotLocalizedString("sitePermissions.management.never-allow", bundle: Bundle.module,
                                                   value: "Never Allow",
                                                   comment: "Permission picker option that never allows this site.")
-        static let reloadCaption = NSLocalizedString("sitePermissions.management.reload-caption", bundle: Bundle.module,
+        static let reloadCaption = NotLocalizedString("sitePermissions.management.reload-caption", bundle: Bundle.module,
                                                      value: "Reload the page for changes to take effect.",
                                                      comment: "Caption below on-site permission rows explaining when changes apply.")
-        static let removePermissions = NSLocalizedString("sitePermissions.management.remove-permissions", bundle: Bundle.module,
+        static let removePermissions = NotLocalizedString("sitePermissions.management.remove-permissions", bundle: Bundle.module,
                                                          value: "Remove Permissions",
                                                          comment: "Action that removes all stored permissions for the current site.")
-        static let goToSystemSettings = NSLocalizedString("sitePermissions.management.go-to-system-settings", bundle: Bundle.module,
+        static let goToSystemSettings = NotLocalizedString("sitePermissions.management.go-to-system-settings", bundle: Bundle.module,
                                                           value: "Go to System Settings",
                                                           comment: "Action that opens DuckDuckGo's page in iOS Settings.")
-        static let close = NSLocalizedString("sitePermissions.management.close", bundle: Bundle.module,
+        static let close = NotLocalizedString("sitePermissions.management.close", bundle: Bundle.module,
                                              value: "Close",
                                              comment: "Accessibility label for the on-site permission sheet close button.")
-        static let inUseFormat = NSLocalizedString("sitePermissions.management.accessibility.in-use", bundle: Bundle.module,
+        static let inUseFormat = NotLocalizedString("sitePermissions.management.accessibility.in-use", bundle: Bundle.module,
                                                    value: "%@, in use",
                                                    comment: "VoiceOver value for an actively used permission. The placeholder is its selected state.")
-        static let pausedFormat = NSLocalizedString("sitePermissions.management.accessibility.paused", bundle: Bundle.module,
+        static let pausedFormat = NotLocalizedString("sitePermissions.management.accessibility.paused", bundle: Bundle.module,
                                                     value: "%@, paused",
                                                     comment: "VoiceOver value for a paused permission. The placeholder is its selected state.")
 
@@ -203,22 +203,22 @@ enum UserText {
         }
 
         static func reminder(permissionTypes: Set<SitePermissionType>) -> String? {
-            let format = NSLocalizedString("sitePermissions.management.reminder", bundle: Bundle.module,
+            let format = NotLocalizedString("sitePermissions.management.reminder", bundle: Bundle.module,
                                            value: "DuckDuckGo needs to access your %@, if you want to use related features on this site.",
                                            comment: "Reminder shown when iOS blocks permissions a site is allowed to use. "
                                                + "The placeholder is a localized list of permission names. Copy requires review.")
             let list: String
             switch permissionTypes.intersection([.camera, .microphone]) {
             case [.camera]:
-                list = NSLocalizedString("sitePermissions.management.reminder.camera", bundle: Bundle.module,
+                list = NotLocalizedString("sitePermissions.management.reminder.camera", bundle: Bundle.module,
                                          value: "camera",
                                          comment: "Camera name in the system-permission reminder sentence.")
             case [.microphone]:
-                list = NSLocalizedString("sitePermissions.management.reminder.microphone", bundle: Bundle.module,
+                list = NotLocalizedString("sitePermissions.management.reminder.microphone", bundle: Bundle.module,
                                          value: "microphone",
                                          comment: "Microphone name in the system-permission reminder sentence.")
             case [.camera, .microphone]:
-                list = NSLocalizedString("sitePermissions.management.reminder.camera-and-microphone", bundle: Bundle.module,
+                list = NotLocalizedString("sitePermissions.management.reminder.camera-and-microphone", bundle: Bundle.module,
                                          value: "camera and microphone",
                                          comment: "Camera and microphone list in the system-permission reminder sentence. Copy requires review.")
             default:

@@ -51,6 +51,8 @@ enum DuckAIPromptPixelEvent: Equatable {
     /// The native upsell dialog was shown after a gated pick. Carries the origin because it varies
     /// per picker within a surface.
     case subscriptionUpsellShown(origin: String)
+    /// A gated picker row was clicked. Carries the origin because it varies per picker within a surface.
+    case gatedRowClick(origin: String)
     case subscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String, origin: String)
     case voiceChatOpened
 }
@@ -102,6 +104,8 @@ struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
             .aiChatAddressBarReasoningPickerShown(origin: SubscriptionFunnelOrigin.addressBarReasoningDropdown.rawValue)
         case .subscriptionUpsellShown(let origin):
             .aiChatAddressBarSubscriptionUpsellShown(origin: origin)
+        case .gatedRowClick(let origin):
+            .aiChatAddressBarGatedRowClick(origin: origin)
         case .subscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):
             .aiChatAddressBarSubscriptionUpsellTriggered(currentTier: currentTier,
                                                         requiredTier: requiredTier,

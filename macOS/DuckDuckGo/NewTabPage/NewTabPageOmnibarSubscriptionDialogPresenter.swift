@@ -30,20 +30,30 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
 
     private let coordinator: SubscriptionNavigationCoordinator
     private let subscriptionManager: any SubscriptionManager
+    private let pixelFiring: PixelFiring?
+    // Allows tests to exercise the show flow without presenting an AppKit dialog.
+    private let showDialog: @MainActor (AIChatSubscriptionUpsellDialog) -> Void
 
-    init(coordinator: SubscriptionNavigationCoordinator, subscriptionManager: any SubscriptionManager) {
+    init(coordinator: SubscriptionNavigationCoordinator,
+         subscriptionManager: any SubscriptionManager,
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         showDialog: @escaping @MainActor (AIChatSubscriptionUpsellDialog) -> Void = { @MainActor dialog in dialog.show() }) {
         self.coordinator = coordinator
         self.subscriptionManager = subscriptionManager
+        self.pixelFiring = pixelFiring
+        self.showDialog = showDialog
     }
 
     func showSubscriptionUpsellDialog(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) async {
-        Self.fireDialogShown(source: source)
-        makeUpsellDialog(userTier: await resolveUserTier(), source: source).show()
+        fireGatedRowClick(source: source)
+        fireDialogShown(source: source)
+        showDialog(makeUpsellDialog(userTier: await resolveUserTier(), source: source))
     }
 
     func showSubscriptionUpgradeDialog(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
-        Self.fireDialogShown(source: source)
-        makeUpgradeDialog(source: source).show()
+        fireGatedRowClick(source: source)
+        fireDialogShown(source: source)
+        showDialog(makeUpgradeDialog(source: source))
     }
 
     /// Checks `userTier == .free` before trusting StoreKit eligibility — trial eligibility is
@@ -52,9 +62,9 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
         var dialog: AIChatSubscriptionUpsellDialog = .upsell(
             isEligibleForFreeTrial: userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
         )
-        dialog.onSubscribe = { [coordinator] in
+        dialog.onSubscribe = { [self, coordinator] in
             coordinator.navigateToSubscriptionPurchase(origin: Self.origin(for: source).rawValue, featurePage: Self.featurePage)
-            Self.firePixel(flowType: "purchase", source: source)
+            firePixel(flowType: "purchase", source: source)
         }
         dialog.onHaveSubscription = { [coordinator] in
             coordinator.navigateToSubscriptionActivation()
@@ -65,9 +75,9 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
     /// Fires only for an existing Plus subscriber gated to Pro.
     func makeUpgradeDialog(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) -> AIChatSubscriptionUpsellDialog {
         var dialog: AIChatSubscriptionUpsellDialog = .proUpgrade()
-        dialog.onSubscribe = { [coordinator] in
+        dialog.onSubscribe = { [self, coordinator] in
             coordinator.navigateToSubscriptionPlans(origin: Self.origin(for: source).rawValue, featurePage: Self.featurePage)
-            Self.firePixel(flowType: "upgrade", source: source)
+            firePixel(flowType: "upgrade", source: source)
         }
         dialog.onHaveSubscription = { [coordinator] in
             coordinator.navigateToSubscriptionActivation()
@@ -100,21 +110,24 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
         }
     }
 
-    private static func fireDialogShown(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
-        PixelKit.fire(
-            AIChatPixel.aiChatNtpSubscriptionUpsellShown(origin: origin(for: source).rawValue),
-            frequency: .dailyAndCount,
-            includeAppVersionParameter: true
-        )
+    /// The NTP picker is web: this is the native side of a gated-row tap.
+    private func fireGatedRowClick(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
+        pixelFiring?.fire(
+            AIChatPixel.aiChatNtpGatedRowClick(origin: Self.origin(for: source).rawValue),
+            frequency: .dailyAndCount)
     }
 
-    private static func firePixel(flowType: String, source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
-        PixelKit.fire(
+    private func fireDialogShown(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
+        pixelFiring?.fire(
+            AIChatPixel.aiChatNtpSubscriptionUpsellShown(origin: Self.origin(for: source).rawValue),
+            frequency: .dailyAndCount)
+    }
+
+    private func firePixel(flowType: String, source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
+        pixelFiring?.fire(
             AIChatPixel.aiChatNtpSubscriptionUpsellTriggered(flowType: flowType,
                                                              source: source.rawValue,
-                                                             origin: origin(for: source).rawValue),
-            frequency: .dailyAndCount,
-            includeAppVersionParameter: true
-        )
+                                                             origin: Self.origin(for: source).rawValue),
+            frequency: .dailyAndCount)
     }
 }

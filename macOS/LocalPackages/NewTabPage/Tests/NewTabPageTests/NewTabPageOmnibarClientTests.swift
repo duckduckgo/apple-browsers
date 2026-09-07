@@ -777,10 +777,11 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         configProvider.isUpdatedCreateImageEnabled = true
         configProvider.imageGenerationModelId = "preferred-image-model"
         let expectation = expectation(description: "submitChatCalled")
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, modelId, _, mode, toolChoice, _, _, _ in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, modelId, _, mode, toolChoice, reasoningEffort, _, _ in
             XCTAssertEqual(modelId, "preferred-image-model")
             XCTAssertNil(mode)
             XCTAssertEqual(toolChoice, [AIChatRAGTool.imageGeneration.rawValue])
+            XCTAssertNil(reasoningEffort)
             expectation.fulfill()
         }
 
@@ -791,7 +792,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
             images: nil,
             mode: AIChatNativePrompt.imageGenerationMode,
             toolChoice: nil,
-            reasoningEffort: nil,
+            reasoningEffort: "medium",
             pageContext: nil,
             files: nil
         )

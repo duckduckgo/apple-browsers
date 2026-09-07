@@ -321,7 +321,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             images: action.images,
             mode: imageGenerationModelId == nil ? action.mode : nil,
             toolChoice: toolChoice,
-            reasoningEffort: reasoningEffortForSubmission(action: action),
+            reasoningEffort: isUpdatedImageGenerationSubmission ? nil : reasoningEffortForSubmission(action: action),
             pageContexts: action.pageContext,
             files: action.files
         )

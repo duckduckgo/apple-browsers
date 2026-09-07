@@ -52,17 +52,14 @@ public final class AIChatContextChipView: UIView {
     // MARK: - State
 
     public enum State {
-        /// `title` is the raw page title; the chip wraps it in "Ask About …".
         case suggested(title: String, favicon: UIImage?)
         case attached(title: String, favicon: UIImage?)
         case loading
     }
 
     private var currentState: State?
-
     private var loadingView: AIChatSuggestionsLoadingView?
 
-    /// Only live in the suggested state, where the whole pill is the attach button.
     private lazy var chipTapRecognizer: UITapGestureRecognizer = {
         let recognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
         recognizer.delegate = self

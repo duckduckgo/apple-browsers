@@ -88,8 +88,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         recompute()
     }
 
-    /// Clears any suggestion inline: a separate `clearSuggested()` would publish a second time and
-    /// make the strip drop the chip and re-add it.
     func setAttached(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
         isShowingAttachAffordance = false
         isLoading = false
@@ -148,8 +146,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         recompute()
     }
 
-    /// The accepted suggestion is left in place: the attach round trip comes back as `setAttached`,
-    /// which clears it in the same pass.
     func tapToAttach() {
         if let suggestedContext {
             Logger.contextualUTI.info("PageContextChip suggestion accepted")

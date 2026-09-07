@@ -148,7 +148,7 @@ private extension PersistedPermissionDecision {
 
 /// JSON row shape consumed by the inspector page's script. Field names match the
 /// `PermissionManagedObject` columns, except `effective`/`isFireproof`, which are runtime state.
-/// `lastModified` is an ISO-8601 string rather than a date, so the page can sort the raw values
+/// `lastModified` is an ISO-8601 UTC string rather than a date, so the page can sort the raw values
 /// lexicographically and still format them for display.
 private struct Row: Encodable {
     let key: String
@@ -162,10 +162,12 @@ private struct Row: Encodable {
     let isFireproof: Bool
     let lastModified: String?
 
+    /// Always UTC, so a stored instant reads the same whatever timezone the machine is in.
     /// Fractional seconds included so two decisions stamped in the same second still order correctly.
     private static let dateFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter
     }()
 

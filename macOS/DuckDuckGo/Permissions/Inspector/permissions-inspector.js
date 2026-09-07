@@ -150,9 +150,18 @@ function lastModifiedCell(row) {
         return td;
     }
     var parsed = new Date(row.lastModified);
-    var span = el("span", isNaN(parsed.getTime()) ? row.lastModified : parsed.toLocaleString());
+    if (isNaN(parsed.getTime())) {
+        td.appendChild(el("span", row.lastModified));
+        return td;
+    }
+    // Always rendered in UTC: a debug page shouldn't shift a stored instant into whatever
+    // timezone the machine happens to be in, or two people would read the same row differently.
+    var span = el("span", parsed.toISOString().replace("T", " ").replace(/\.\d+Z$/, ""));
     span.title = row.lastModified;
+    var zone = el("span", " UTC");
+    zone.className = "tz";
     td.appendChild(span);
+    td.appendChild(zone);
     return td;
 }
 

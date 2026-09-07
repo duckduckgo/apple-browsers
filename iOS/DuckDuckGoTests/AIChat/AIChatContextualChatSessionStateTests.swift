@@ -2231,6 +2231,64 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
+    // MARK: - Suggested page context
+
+    func testWhenSuggestedCollectionLandsThenItIsOfferedWithoutAttaching() {
+        var deliveredTargets: PageContextDeliveryTargets?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(_, let targets) = effect { deliveredTargets = targets }
+            }
+            .store(in: &cancellables)
+
+        sessionState.markPendingSuggestedContextCollection()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        XCTAssertEqual(sessionState.suggestedContext?.title, "Tokamak")
+        XCTAssertEqual(deliveredTargets, .utiSuggestedContext)
+        XCTAssertEqual(sessionState.chipState, .placeholder, "An offer is not an attachment")
+        XCTAssertNil(sessionState.latestContext, "A suggestion must stay out of the attach path")
+    }
+
+    func testWhenSuggestedCollectionReturnsNothingThenNothingIsOffered() {
+        sessionState.markPendingSuggestedContextCollection()
+        sessionState.updateContext(makeTestContext(title: "Empty", content: ""))
+
+        XCTAssertNil(sessionState.suggestedContext)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+    }
+
+    func testWhenSuggestionIsAcceptedThenItBecomesTheAttachedContext() {
+        sessionState.markPendingSuggestedContextCollection()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        sessionState.acceptSuggestedContext()
+
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Tokamak")
+        XCTAssertEqual(sessionState.latestContext?.title, "Tokamak")
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testWhenSuggestionIsDismissedThenNothingIsAttachedOrDetached() {
+        sessionState.markPendingSuggestedContextCollection()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        sessionState.dismissSuggestedContext()
+
+        XCTAssertNil(sessionState.suggestedContext)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertNil(sessionState.intendedAttachedContext)
+    }
+
+    func testWhenNavigatingThenAPreviousOfferIsDropped() {
+        sessionState.markPendingSuggestedContextCollection()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        sessionState.notifyPageChanged()
+
+        XCTAssertNil(sessionState.suggestedContext, "The offer belonged to the page we left")
+    }
+
     private func makeSuggestedPrompts(ids: [String]) -> [ContextualSuggestedPrompt] {
         ids.map { id in
             ContextualSuggestedPrompt(id: id, label: id, prompt: "\(id).", icon: nil)

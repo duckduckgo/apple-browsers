@@ -97,6 +97,7 @@ struct PageContextDeliveryTargets: OptionSet {
     static let utiChip = PageContextDeliveryTargets(rawValue: 1 << 0)
     static let frontendBridge = PageContextDeliveryTargets(rawValue: 1 << 1)
     static let utiAttachAffordance = PageContextDeliveryTargets(rawValue: 1 << 2)
+    static let utiSuggestedContext = PageContextDeliveryTargets(rawValue: 1 << 3)
 }
 
 // MARK: - Session State
@@ -178,6 +179,9 @@ final class AIChatContextualChatSessionState {
     private var isProcessingNavigation = false
 
     private var pendingSignalsOnlyCollection = false
+    /// Collected on navigation but deliberately not attached — the chip offers it, a tap attaches it.
+    private(set) var suggestedContext: AIChatPageContext?
+    private var pendingSuggestedContextCollection = false
     private var suppressesAutoAttachForSelectionEntry = false
 
     private(set) var suggestionsLoadState: SuggestionsLoadState = .loaded
@@ -325,6 +329,23 @@ final class AIChatContextualChatSessionState {
         pixelHandler.firePromptSubmittedWithSelections(count: unsubmittedSelections.count)
     }
 
+    /// The user tapped the suggested chip. Reuses the collected context rather than re-reading the page.
+    /// Promoting it into `latestContext` is what makes it attached — until now it was deliberately kept
+    /// out, and delivery matches on it to find the favicon-carrying wrapper.
+    func acceptSuggestedContext() {
+        guard let context = suggestedContext else { return }
+        suggestedContext = nil
+        latestContext = context
+        attachContextFromSuggestionTap(context)
+    }
+
+    /// The user dismissed the offer. Nothing was attached, so this is not a detach.
+    func dismissSuggestedContext() {
+        guard suggestedContext != nil else { return }
+        suggestedContext = nil
+        Logger.aiChat.debug("[SessionState] Suggested context dismissed")
+    }
+
     func attachContextFromSuggestionTap(_ context: AIChatPageContext) {
         chipState = .attached(context)
         userDowngradedToPlaceholder = false
@@ -398,6 +419,8 @@ final class AIChatContextualChatSessionState {
         isDocumentChipLoading = false
         isProcessingNavigation = false
         pendingSignalsOnlyCollection = false
+        pendingSuggestedContextCollection = false
+        suggestedContext = nil
         suggestionsResolveTask?.cancel()
         suggestionsTimeoutTask?.cancel()
         suggestions = []
@@ -470,6 +493,8 @@ final class AIChatContextualChatSessionState {
         // A real navigation means any subsequent context update is fresh, even if it later
         // resolves to a URL that was already submitted (e.g. the user navigated away and back).
         deliveredContextURLWithNoNavigationSince = nil
+        // The offer belongs to the page that was current when it was made.
+        suggestedContext = nil
         if shouldAutoCollectContext, userDowngradedToPlaceholder {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[SessionState] Page navigation cleared temporary context removal")
@@ -516,7 +541,7 @@ final class AIChatContextualChatSessionState {
         if shouldDeliverToFrontendBridge(nil) {
             targets.insert(.frontendBridge)
         }
-        if shouldShowUTIAttachAffordanceForMultiContextNavigation() {
+        if shouldSuggestPageContextOnNavigation() {
             targets.insert(.utiAttachAffordance)
         }
 
@@ -539,6 +564,11 @@ final class AIChatContextualChatSessionState {
             Logger.aiChat.debug("[SessionState] Auto-attach enabled - cleared user downgrade")
         }
         wasAutoAttachEnabled = isEnabled
+    }
+
+    /// The next collection is an offer, not an attachment: hold it for the chip and leave `chipState` alone.
+    func markPendingSuggestedContextCollection() {
+        pendingSuggestedContextCollection = true
     }
 
     func markPendingSignalsOnlyCollection() {
@@ -573,6 +603,16 @@ final class AIChatContextualChatSessionState {
     /// Updates the latest page context and determines attach behavior based on internal state.
     func updateContext(_ context: AIChatPageContext?) {
         resolveSuggestionsIfLoading(from: context)
+
+        if pendingSuggestedContextCollection {
+            pendingSuggestedContextCollection = false
+            isProcessingNavigation = false
+            lastCollectedContext = context
+            guard let context, context.contextData.hasAttachedPage else { return }
+            suggestedContext = context
+            emit(.deliverPageContext(context.contextData, targets: .utiSuggestedContext))
+            return
+        }
 
         if pendingSignalsOnlyCollection {
             pendingSignalsOnlyCollection = false
@@ -706,7 +746,9 @@ final class AIChatContextualChatSessionState {
         return shouldDeliver
     }
 
-    func shouldShowUTIAttachAffordanceForMultiContextNavigation() -> Bool {
+    /// Navigating with a chat already open and auto-attach off: offer the new page rather than
+    /// silently attaching it or doing nothing.
+    func shouldSuggestPageContextOnNavigation() -> Bool {
         isUnifiedToggleInputActive && hasActiveChat && !shouldAutoCollectContext
     }
 

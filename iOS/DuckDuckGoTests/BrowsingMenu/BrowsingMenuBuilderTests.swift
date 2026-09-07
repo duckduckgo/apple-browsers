@@ -199,6 +199,28 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
+    func testFireModeRemovalAndUndoUpdateBothMenusWithoutDeletingStoredPermission() async throws {
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        let sut = makeTabViewController(featureEnabled: true, storedDecision: .allow, store: store, fireTab: true)
+        let url = try XCTUnwrap(sut.webView.url)
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: url))
+        XCTAssertNil(sut.sitePermissionsState.coordinator)
+        assertSitePermissionsEntry(isPresent: true, on: sut)
+        await grantCurrentSessionCameraPermission(on: sut)
+        let coordinator = try XCTUnwrap(sut.sitePermissionsState.coordinator)
+
+        coordinator.removeManagementSessionState(for: [.camera], at: site)
+
+        assertSitePermissionsEntry(isPresent: false, on: sut)
+        XCTAssertEqual(store.decision(for: .camera, at: site), .allow)
+
+        coordinator.restoreFireModeManagementState(for: [.camera], at: site)
+
+        assertSitePermissionsEntry(isPresent: true, on: sut)
+        XCTAssertEqual(store.decision(for: .camera, at: site), .allow)
+    }
+
+    @MainActor
     func testRevokingMatchingSiteClearsCurrentSessionMenuEligibility() async {
         let sut = makeTabViewController(featureEnabled: true, storedDecision: nil)
         await grantCurrentSessionCameraPermission(on: sut)
@@ -376,6 +398,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         featureEnabled: Bool,
         storedDecision: SitePermissionDecision?,
         store: SitePermissionsStore? = nil,
+        fireTab: Bool = false,
         revokePermissionsInOtherTabs: @escaping (SitePermissionKey, Set<SitePermissionType>, String) -> Void = { _, _, _ in }
     ) -> TabViewController {
         let url = URL(string: "https://example.com/path")!
@@ -390,7 +413,8 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         let sut = TabViewController.fake(
             customWebView: { SitePermissionsMenuURLWebView(url: url, configuration: $0) },
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : []),
-            link: Link(title: nil, url: url)
+            link: Link(title: nil, url: url),
+            fireTab: fireTab
         )
         sut.sitePermissionsDependenciesProvider = {
             SitePermissionsDependencies(

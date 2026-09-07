@@ -47,7 +47,7 @@ private final class SitePermissionsManagementPresentationDelegate: NSObject, UIA
 // Keeps teardown independent of the controller's lifetime while confining permission state to this file.
 @MainActor
 final class SitePermissionsState {
-    fileprivate var coordinator: SitePermissionsCoordinator?
+    fileprivate(set) var coordinator: SitePermissionsCoordinator?
     fileprivate var mediaCaptureUserScript: MediaCaptureUserScript?
     fileprivate var dialogHostingController: UIViewController?
     fileprivate var recoveryHostingController: UIViewController?
@@ -369,12 +369,13 @@ extension TabViewController {
             return false
         }
 
-        let storedPermissions = dependencies.store.permissions(for: site)
-        if storedPermissions[.camera] != nil || storedPermissions[.microphone] != nil {
-            return true
+        // Fire-mode removals hide saved permissions for the visit without changing the store.
+        if let coordinator = sitePermissionsState.coordinator {
+            return coordinator.managementSnapshot(for: site).showsMenuEntry
         }
 
-        return sitePermissionsState.coordinator?.managementSnapshot(for: site).showsMenuEntry == true
+        let storedPermissions = dependencies.store.permissions(for: site)
+        return storedPermissions[.camera] != nil || storedPermissions[.microphone] != nil
     }
 
     func presentSitePermissionsManagement() {

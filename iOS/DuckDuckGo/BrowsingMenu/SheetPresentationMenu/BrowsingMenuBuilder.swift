@@ -231,6 +231,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         appendInternalFeedbackSection(from: entryBuilder, to: &sections)
 
+        // Size the initial menu sheet to keep Open Bookmarks visible without scrolling.
         let preferredDetentItemCount = sections.flatMap(\.items)
             .firstIndex { $0.tag == .openBookmarks }
             .map { $0 + 1 }

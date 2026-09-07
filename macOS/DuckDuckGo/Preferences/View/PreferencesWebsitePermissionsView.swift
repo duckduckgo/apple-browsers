@@ -110,7 +110,6 @@ struct PreferencesWebsitePermissionsView: View {
     }
 }
 
-
 #if DEBUG
 @MainActor
 private func previewModel(entries: [WebsitePermissionEntry] = []) -> WebsitePermissionsViewModel {

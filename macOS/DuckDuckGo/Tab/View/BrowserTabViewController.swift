@@ -2089,7 +2089,7 @@ extension BrowserTabViewController {
         dockPreferences: Application.appDelegate.dockPreferences,
         accessibilityPreferences: Application.appDelegate.accessibilityPreferences,
         duckPlayer: Application.appDelegate.duckPlayer,
-        permissionManager: Application.appDelegate.permissionManager,
+        permissionManager: PermissionManagerMock(),
         pinningManager: Application.appDelegate.pinningManager
     )
 }

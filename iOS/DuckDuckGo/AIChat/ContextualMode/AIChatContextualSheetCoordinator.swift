@@ -150,6 +150,10 @@ final class AIChatContextualSheetCoordinator {
     }
 
 
+    /// The chat we have positively read from the store. Until a chat appears here its absence proves
+    /// nothing, so it is never discarded on the strength of a missing record.
+    private var confirmedPersistedChatID: String?
+
     private var chatStorage: DuckAiNativeStorageHandling? {
         isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
     }
@@ -158,16 +162,14 @@ final class AIChatContextualSheetCoordinator {
         AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
     }
 
-    /// Whether this tab has a conversation to return to. A chat the store says was deleted is not one,
-    /// so the address bar offers New Chat / Ask About Page instead of reopening something that is gone.
+    /// Whether this tab has a conversation to return to. A deleted chat is not one.
     func hasChatToReopen(persistedChatURL: URL?) -> Bool {
         guard sessionState.hasActiveChat || persistedChatURL != nil else { return false }
         let chatID = sessionState.contextualChatURL?.duckAIChatID ?? persistedChatURL?.duckAIChatID
         return !isChatDeleted(chatID: chatID)
     }
 
-    /// Reconciles the session before any surface opens. Both entry points need every step, and when
-    /// they each carried their own copy one of them was missed.
+    /// Reconciles the session before any surface opens.
     private func prepareSessionForPresentation() {
         discardActiveChatIfDeleted()
         sessionState.refreshAutoAttachSetting()
@@ -176,9 +178,7 @@ final class AIChatContextualSheetCoordinator {
         startObservingContextUpdates()
     }
 
-    /// Drops a chat that was deleted elsewhere. Runs before any surface opens: the session still holds
-    /// the conversation in memory, and leaving it there contradicts the address bar, which has already
-    /// stopped offering it.
+    /// Drops a chat that was deleted elsewhere, so the session cannot contradict the address bar.
     private func discardActiveChatIfDeleted() {
         guard sessionState.hasActiveChat,
               isChatDeleted(chatID: sessionState.contextualChatURL?.duckAIChatID) else { return }
@@ -186,14 +186,21 @@ final class AIChatContextualSheetCoordinator {
         clearActiveChat()
     }
 
-    /// Whether a persisted chat has been deleted, or `false` when that cannot be established.
+    /// Whether a chat has been deleted, or `false` when that cannot be established.
+    ///
+    /// Absence only means deletion for a chat we have seen in the store. A chat the frontend has named
+    /// but not yet written is equally absent, and reading that as deletion would discard it.
     private func isChatDeleted(chatID: String?) -> Bool {
         guard let chatID,
               isNativeDataAccessEnabled,
               let storage = chatStorage,
               (try? storage.isMigrationDone()) == true else { return false }
         do {
-            return try storage.getChat(chatId: chatID) == nil
+            guard try storage.getChat(chatId: chatID) == nil else {
+                confirmedPersistedChatID = chatID
+                return false
+            }
+            return confirmedPersistedChatID == chatID
         } catch {
             Logger.aiChat.error("[Contextual] Could not verify \(chatID): \(error.localizedDescription)")
             return false
@@ -764,11 +771,11 @@ private extension AIChatContextualSheetCoordinator {
         isSheetPresented = true
     }
 
-    /// Restores a persisted chat, or clears the tab's stale pointer when that chat has since been deleted.
-    /// Leaving the pointer behind keeps `hasContextualChatToReopen` true, so the address bar would offer
-    /// to reopen a conversation that no longer exists.
+    /// Restores a persisted chat, clearing the tab's pointer when that chat has since been deleted.
     func restoreChatIfAvailable(_ restoreURL: URL?) {
         guard let restoreURL else { return }
+        // Persisted by an earlier launch, so it was written once: absence now is a deletion.
+        confirmedPersistedChatID = restoreURL.duckAIChatID
         guard !isChatDeleted(chatID: restoreURL.duckAIChatID) else {
             delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
             return

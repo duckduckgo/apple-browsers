@@ -160,7 +160,7 @@ class MainViewController: UIViewController {
         return emailManager
     }()
 
-    var newTabPageViewController: NewTabPageViewController?
+    var newTabPageViewController: (any NewTabPage)?
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?
@@ -6773,7 +6773,7 @@ extension MainViewController: TabDelegate {
         // on every dismissal path.
         newTabPageViewController?.view.alpha = 0
         DispatchQueue.main.async { [weak self] in
-            self?.newTabPageViewController?.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)
+            self?.newTabPageViewController?.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message, textEntryMode: nil)
         }
     }
     

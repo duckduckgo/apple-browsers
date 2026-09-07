@@ -134,6 +134,62 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertNil(sut.attachedContextURL)
     }
 
+    func test_setSuggestedContext_showsTheOfferWithoutAttachingIt() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
+
+        XCTAssertEqualState(sut.chipViewModel.state, .suggested(title: "Page A", favicon: nil))
+        XCTAssertNil(sut.attachedContextURL)
+        XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
+    }
+
+    func test_clearSuggestedContext_removesTheOffer() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
+
+        sut.clearSuggestedContext()
+
+        XCTAssertNil(sut.chipViewModel.state)
+    }
+
+    func test_chipTapOnASuggestion_forwardsAcceptanceNotAnAttachRequest() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
+        var accepted: AIChatPageContext?
+        var attachCallCount = 0
+        sut.onSuggestionAccepted = { accepted = $0 }
+        sut.onAttachRequested = { attachCallCount += 1 }
+
+        sut.chipViewModel.tapToAttach()
+
+        XCTAssertEqual(accepted?.title, "Page A")
+        XCTAssertEqual(attachCallCount, 0)
+    }
+
+    func test_chipRemoveOnASuggestion_forwardsDismissalNotARemoval() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
+        var dismissCallCount = 0
+        var removeCallCount = 0
+        sut.onSuggestionDismissed = { dismissCallCount += 1 }
+        sut.onRemoveRequested = { removeCallCount += 1 }
+
+        sut.chipViewModel.tapToRemove()
+
+        XCTAssertEqual(dismissCallCount, 1)
+        XCTAssertEqual(removeCallCount, 0)
+        XCTAssertNil(sut.chipViewModel.state)
+    }
+
     func test_showAttachAffordanceKeepsPlaceholderHiddenWithoutClearingDeliveredAttachment() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)

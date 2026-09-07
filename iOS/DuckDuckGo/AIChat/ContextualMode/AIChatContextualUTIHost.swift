@@ -48,6 +48,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     var onAttachRequested: (() -> Void)?
     var onRemoveRequested: (() -> Void)?
+    /// The user accepted the offer to attach the page they navigated to.
+    var onSuggestionAccepted: ((AIChatPageContext) -> Void)?
+    var onSuggestionDismissed: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
@@ -119,6 +122,12 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         chipViewModel.onRemoveActionRequested = { [weak self] in
             self?.onRemoveRequested?()
         }
+        chipViewModel.onSuggestionAccepted = { [weak self] context in
+            self?.onSuggestionAccepted?(context)
+        }
+        chipViewModel.onSuggestionDismissed = { [weak self] in
+            self?.onSuggestionDismissed?()
+        }
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
 
@@ -164,6 +173,15 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     func clearAttachedContext() {
         chipViewModel.clearAttached()
+    }
+
+    /// Offers the page as an attachment. Attached only if the user taps the chip.
+    func setSuggestedContext(_ context: AIChatPageContext) {
+        chipViewModel.setSuggested(context)
+    }
+
+    func clearSuggestedContext() {
+        chipViewModel.clearSuggested()
     }
 
     /// One chip per attached selection, alongside the page-context chip. An empty list removes them all.

@@ -70,36 +70,30 @@ final class IsChatDeletedTests: XCTestCase {
         storage = StubDuckAiNativeStorage()
     }
 
-    private func wasDeleted(_ chatID: String?,
-                            storage: DuckAiNativeStorageHandling?,
-                            nativeDataAccess: Bool = true) -> Bool {
-        isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: nativeDataAccess)
-    }
-
     func testWhenTheStoreHasNoSuchChatThenItWasDeleted() {
-        XCTAssertTrue(wasDeleted(chatID, storage: storage))
+        XCTAssertTrue(isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
     }
 
     func testWhenTheStoreHasTheChatThenItWasNotDeleted() {
         storage.chats[chatID] = DuckAiChatRecord(chatId: chatID, data: Data())
 
-        XCTAssertFalse(wasDeleted(chatID, storage: storage))
+        XCTAssertFalse(isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
     }
 
     func testWhenTheReadFailsThenNoDeletionIsClaimed() {
         storage.readError = StubDuckAiNativeStorage.ReadFailure()
 
-        XCTAssertFalse(wasDeleted(chatID, storage: storage))
+        XCTAssertFalse(isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true))
     }
 
     func testWhenTheStoreCannotAnswerThenNoDeletionIsClaimed() {
         storage.migrationDone = false
-        XCTAssertFalse(wasDeleted(chatID, storage: storage), "unmigrated store")
+        XCTAssertFalse(isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: true), "unmigrated store")
 
         storage.migrationDone = true
-        XCTAssertFalse(wasDeleted(chatID, storage: storage, nativeDataAccess: false), "native access off")
-        XCTAssertFalse(wasDeleted(chatID, storage: nil), "no store")
-        XCTAssertFalse(wasDeleted(nil, storage: storage), "no chat id")
+        XCTAssertFalse(isChatDeleted(chatID: chatID, in: storage, isNativeDataAccessEnabled: false), "native access off")
+        XCTAssertFalse(isChatDeleted(chatID: chatID, in: nil, isNativeDataAccessEnabled: true), "no store")
+        XCTAssertFalse(isChatDeleted(chatID: nil, in: storage, isNativeDataAccessEnabled: true), "no chat id")
     }
 }
 

@@ -130,42 +130,49 @@ public struct SitePermissionsSheetView: View {
     }
 
     private func permissionRow(_ row: SitePermissionsSheetViewModel.Row) -> some View {
-        Menu {
-            ForEach(row.options, id: \.self) { option in
-                Button {
-                    viewModel.select(option, for: row.permissionType)
-                } label: {
-                    if option == row.selectedOption {
-                        Label(UserText.PermissionManagement.title(for: option), systemImage: "checkmark")
-                    } else {
-                        Text(UserText.PermissionManagement.title(for: option))
-                    }
-                }
-            }
-        } label: {
+        HStack(spacing: 8) {
             CardItem(
                 icon: CardItemIcon(position: .leadingColumn,
                                    visual: .image(permissionIcon(for: row).renderingMode(.template)),
                                    size: .size24,
                                    spacing: Constants.iconSpacing),
-                title: CardItemText(row.title, font: .bodyRegular),
-                trailing: .custom(HStack(spacing: 8) {
+                title: CardItemText(row.title, font: .bodyRegular)
+            )
+            .foregroundColor(iconColor(for: row))
+            .padding(.vertical, Constants.rowVerticalInset)
+            .accessibilityHidden(true)
+
+            Menu {
+                ForEach(row.options, id: \.self) { option in
+                    Button {
+                        viewModel.select(option, for: row.permissionType)
+                    } label: {
+                        if option == row.selectedOption {
+                            Label(UserText.PermissionManagement.title(for: option), systemImage: "checkmark")
+                        } else {
+                            Text(UserText.PermissionManagement.title(for: option))
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 8) {
                     Text(row.stateText)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                     Image(systemName: "chevron.up.chevron.down")
                         .foregroundColor(Color(designSystemColor: .iconsTertiary))
-                }),
-                accessibilityValue: row.accessibilityValue
-            )
-            .foregroundColor(iconColor(for: row))
-            .padding(.horizontal, Constants.rowHorizontalInset)
-            .padding(.vertical, Constants.rowVerticalInset)
-            .contentShape(Rectangle())
+                        .accessibilityHidden(true)
+                }
+                .padding(.vertical, Constants.rowVerticalInset)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .simultaneousGesture(TapGesture().onEnded { _ in viewModel.beginEditing() })
+            .accessibilityLabel(row.title)
+            .accessibilityValue(row.accessibilityValue)
+            .accessibilityIdentifier("SitePermissions.Sheet.\(row.permissionType.rawValue.capitalized)")
         }
-        .buttonStyle(.plain)
-        .simultaneousGesture(TapGesture().onEnded { _ in viewModel.beginEditing() })
-        .accessibilityIdentifier("SitePermissions.Sheet.\(row.permissionType.rawValue.capitalized)")
+        .padding(.horizontal, Constants.rowHorizontalInset)
     }
 
     private var reloadCaption: some View {

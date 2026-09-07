@@ -567,10 +567,33 @@ final class AIChatContextualSheetCoordinator {
         } else if currentPageURL != nil, shouldCollectSignalsOnly {
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)
+        } else if offerPageContextIfNeeded(trigger: .tabContent) {
+            // Opening onto a page this chat has not been given: offer it.
         } else {
             // No collection attempted — still measure the current page's attachability.
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
         }
+    }
+
+    /// Reads the page so the chip can offer it; a tap is what attaches it. Requires a live observer —
+    /// the result is published to the coordinator's subscription, and with none the read is wasted.
+    @discardableResult
+    private func offerPageContextIfNeeded(trigger: PageContextExtractionTrigger) -> Bool {
+        guard isPagePlaceholderEnabled,
+              isActivelyObservingContext,
+              currentPageURL != nil,
+              sessionState.shouldSuggestPageContextOnNavigation() else {
+            print("🔎PH offer: skipped flag=\(isPagePlaceholderEnabled) observing=\(isActivelyObservingContext) url=\(currentPageURL != nil)")
+            return false
+        }
+        print("🔎PH offer: collecting (trigger: \(trigger.rawValue))")
+        sessionState.markPendingSuggestedContextCollection()
+        guard pageContextHandler.triggerContextCollection(trigger: trigger) else {
+            print("🔎PH offer: collection FAILED to start")
+            sessionState.cancelPendingSuggestedContextCollection()
+            return false
+        }
+        return true
     }
 
     private func makeChipsViewController() -> AIChatContextualInputViewController {
@@ -685,16 +708,7 @@ final class AIChatContextualSheetCoordinator {
         } else if sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             print("🔎PH nav: entered the active-chat branch")
             sessionState.notifyFrontendOfMultiContextNavigation()
-            if isPagePlaceholderEnabled, sessionState.shouldSuggestPageContextOnNavigation() {
-                // Read the page so the chip can offer it by name. Attached only if the user taps.
-                print("🔎PH nav: taking the suggestion branch, collecting")
-                sessionState.markPendingSuggestedContextCollection()
-                if !pageContextHandler.triggerContextCollection(trigger: .navigation) {
-                    print("🔎PH nav: collection FAILED to start")
-                    sessionState.cancelPendingSuggestedContextCollection()
-                    sessionState.clearProcessingNavigationFlag()
-                }
-            } else {
+            if !offerPageContextIfNeeded(trigger: .navigation) {
                 sessionState.clearProcessingNavigationFlag()
                 pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
             }

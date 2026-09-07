@@ -18,6 +18,8 @@
 //
 
 import AIChat
+import Combine
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -75,34 +77,89 @@ final class IsChatDeletedTests: XCTestCase {
     }
 
     func testWhenTheStoreHasNoSuchChatThenItWasDeleted() {
-
+        XCTAssertTrue(wasDeleted(chatID, storage: storage))
     }
 
     func testWhenTheStoreHasTheChatThenItWasNotDeleted() {
         storage.chats[chatID] = DuckAiChatRecord(chatId: chatID, data: Data())
 
+        XCTAssertFalse(wasDeleted(chatID, storage: storage))
     }
 
     func testWhenTheReadFailsThenNoDeletionIsClaimed() {
-        // The bug this replaces: an unanswerable store read as proof of deletion.
         storage.readError = StubDuckAiNativeStorage.ReadFailure()
 
+        XCTAssertFalse(wasDeleted(chatID, storage: storage))
     }
 
-    func testWhenTheStoreIsNotMigratedThenNoDeletionIsClaimed() {
+    func testWhenTheStoreCannotAnswerThenNoDeletionIsClaimed() {
         storage.migrationDone = false
+        XCTAssertFalse(wasDeleted(chatID, storage: storage), "unmigrated store")
 
+        storage.migrationDone = true
+        XCTAssertFalse(wasDeleted(chatID, storage: storage, nativeDataAccess: false), "native access off")
+        XCTAssertFalse(wasDeleted(chatID, storage: nil), "no store")
+        XCTAssertFalse(wasDeleted(nil, storage: storage), "no chat id")
+    }
+}
+
+/// The behaviour the helper exists for: a saved chat is restored unless the store says it is gone.
+@MainActor
+final class RestoringADeletedChatTests: XCTestCase {
+
+    private let chatURL = URL(string: "https://duckduckgo.com/?ia=chat&chatID=760d681e-9173-4abd-a120-d660783787e9")!
+    private var storage: StubDuckAiNativeStorage!
+    private var presentingVC: MockPresentingViewController!
+    private let featureFlagger = MockFeatureFlagger()
+
+    override func setUp() {
+        super.setUp()
+        storage = StubDuckAiNativeStorage()
+        presentingVC = MockPresentingViewController()
+        featureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
     }
 
-    func testWhenNativeDataAccessIsOffThenNoDeletionIsClaimed() {
-        XCTAssertFalse(wasDeleted(chatID, storage: storage, nativeDataAccess: false))
+    private func makeSUT() -> AIChatContextualSheetCoordinator {
+        AIChatContextualSheetCoordinator(
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            aiChatSettings: MockAIChatSettingsProvider(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: PassthroughSubject().eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: featureFlagger,
+            pageContextHandler: MockPageContextHandler(),
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: Just(nil).eraseToAnyPublisher(),
+                didFinish: Just(nil).eraseToAnyPublisher()
+            ),
+            duckAiNativeStorageHandler: storage
+        )
     }
 
-    func testWhenThereIsNoStoreThenNoDeletionIsClaimed() {
+    func testWhenTheChatIsStillInTheStoreThenItIsRestored() async {
+        storage.chats["760d681e-9173-4abd-a120-d660783787e9"] = DuckAiChatRecord(chatId: "760d681e-9173-4abd-a120-d660783787e9", data: Data())
+        let sut = makeSUT()
 
+        await sut.presentSheet(from: presentingVC, restoreURL: chatURL)
+
+        XCTAssertEqual(sut.sessionState.contextualChatURL, chatURL)
     }
 
-    func testWhenThereIsNoChatIDThenNoDeletionIsClaimed() {
-        XCTAssertFalse(wasDeleted(nil, storage: storage))
+    func testWhenTheChatWasDeletedThenItIsNotRestored() async {
+        let sut = makeSUT()
+
+        await sut.presentSheet(from: presentingVC, restoreURL: chatURL)
+
+        XCTAssertNil(sut.sessionState.contextualChatURL)
+    }
+
+    func testWhenTheStoreCannotAnswerThenTheChatIsStillRestored() async {
+        // The regression: an unreadable store must not cost the user their chat.
+        storage.readError = StubDuckAiNativeStorage.ReadFailure()
+        let sut = makeSUT()
+
+        await sut.presentSheet(from: presentingVC, restoreURL: chatURL)
+
+        XCTAssertEqual(sut.sessionState.contextualChatURL, chatURL)
     }
 }

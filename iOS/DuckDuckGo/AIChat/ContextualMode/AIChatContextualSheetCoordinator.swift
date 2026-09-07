@@ -77,10 +77,6 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 }
 
 /// Whether a persisted chat has been deleted, or `false` when that cannot be established.
-///
-/// Deletion must be proven by a keyed read returning nothing. A store that is absent, unmigrated or
-/// unreadable cannot answer, and its silence is not evidence: treating it as such discards chats that
-/// are perfectly fine.
 func isChatDeleted(chatID: String?,
                    in storage: DuckAiNativeStorageHandling?,
                    isNativeDataAccessEnabled: Bool) -> Bool {
